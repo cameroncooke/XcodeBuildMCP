@@ -8,36 +8,41 @@
 // Import server components
 import { createServer, startServer } from './server/server.js';
 
-// Import individual tools instead of tool groups
-// Build tools - Import new split tools
+// Import tools from refactored modules
+// macOS build tools
 import {
-  registerMacOSBuildWorkspaceTool,
-  registerMacOSBuildProjectTool,
-  registerIOSSimulatorBuildByNameWorkspaceTool,
-  registerIOSSimulatorBuildByNameProjectTool,
-  registerIOSSimulatorBuildByIdWorkspaceTool,
-  registerIOSSimulatorBuildByIdProjectTool,
-  registerIOSDeviceBuildWorkspaceTool,
-  registerIOSDeviceBuildProjectTool,
-  registerMacOSBuildAndRunWorkspaceTool,
-  registerMacOSBuildAndRunProjectTool,
-  registerIOSSimulatorBuildAndRunByNameWorkspaceTool,
-  registerIOSSimulatorBuildAndRunByNameProjectTool,
-  registerIOSSimulatorBuildAndRunByIdWorkspaceTool,
-  registerIOSSimulatorBuildAndRunByIdProjectTool,
-  registerShowBuildSettingsWorkspaceTool,
-  registerShowBuildSettingsProjectTool,
+  registerMacOSBuildTools,
+  registerMacOSBuildAndRunTools,
+} from './tools/build_macos.js';
+
+// iOS simulator build tools
+import {
+  registerIOSSimulatorBuildTools,
+  registerIOSSimulatorBuildAndRunTools,
+} from './tools/build_ios_simulator.js';
+
+// iOS device build tools
+import { registerIOSDeviceBuildTools } from './tools/build_ios_device.js';
+
+// App path tools
+import {
   registerGetAppPathByNameWorkspaceTool,
   registerGetAppPathByNameProjectTool,
   registerGetAppPathByIdWorkspaceTool,
   registerGetAppPathByIdProjectTool,
   registerGetAppPathForDeviceWorkspaceTool,
   registerGetAppPathForDeviceProjectTool,
+} from './tools/app_path.js';
+
+// Build settings and scheme tools
+import {
+  registerShowBuildSettingsWorkspaceTool,
+  registerShowBuildSettingsProjectTool,
   registerListSchemesWorkspaceTool,
   registerListSchemesProjectTool,
-} from './tools/build.js';
+} from './tools/build_settings.js';
 
-// Simulator tools (unaffected by this refactor)
+// Simulator tools
 import {
   registerListSimulatorsTool,
   registerBootSimulatorTool,
@@ -46,11 +51,14 @@ import {
   registerLaunchAppInSimulatorTool,
 } from './tools/simulator.js';
 
-// Bundle ID tools (unaffected by this refactor)
+// Bundle ID tools
 import { registerGetMacOSBundleIdTool, registerGetiOSBundleIdTool } from './tools/bundleId.js';
 
 // Clean tool - Import new split tools
 import { registerCleanWorkspaceTool, registerCleanProjectTool } from './tools/clean.js';
+
+// Launch tools
+import { registerLaunchMacOSAppTool } from './tools/launch.js';
 
 // Import utilities
 import { log } from './utils/logger.js';
@@ -68,21 +76,16 @@ async function main(): Promise<void> {
     // 1. List/Discovery tools first
     registerListSchemesWorkspaceTool(server);
     registerListSchemesProjectTool(server);
-    registerListSimulatorsTool(server); // Unchanged
+    registerListSimulatorsTool(server);
 
     // 2. Clean tool
     registerCleanWorkspaceTool(server);
     registerCleanProjectTool(server);
 
     // 3. Build tools
-    registerMacOSBuildWorkspaceTool(server);
-    registerMacOSBuildProjectTool(server);
-    registerIOSSimulatorBuildByNameWorkspaceTool(server);
-    registerIOSSimulatorBuildByNameProjectTool(server);
-    registerIOSSimulatorBuildByIdWorkspaceTool(server);
-    registerIOSSimulatorBuildByIdProjectTool(server);
-    registerIOSDeviceBuildWorkspaceTool(server);
-    registerIOSDeviceBuildProjectTool(server);
+    registerMacOSBuildTools(server);
+    registerIOSSimulatorBuildTools(server);
+    registerIOSDeviceBuildTools(server);
 
     // 4. Build settings tool
     registerShowBuildSettingsWorkspaceTool(server);
@@ -96,31 +99,30 @@ async function main(): Promise<void> {
     registerGetAppPathForDeviceWorkspaceTool(server);
     registerGetAppPathForDeviceProjectTool(server);
 
-    // 6. Simulator control tools (Unchanged)
+    // 6. Simulator management tools
     registerBootSimulatorTool(server);
     registerOpenSimulatorTool(server);
 
-    // 7. App installation and launch tools (Unchanged)
+    // 7. App installation and launch tools
     registerInstallAppInSimulatorTool(server);
     registerLaunchAppInSimulatorTool(server);
 
-    // 8. Bundle ID tools (Unchanged)
+    // 8. Bundle ID tools
     registerGetMacOSBundleIdTool(server);
     registerGetiOSBundleIdTool(server);
 
-    // 9. Build and run tools (combines multiple steps)
-    registerMacOSBuildAndRunWorkspaceTool(server);
-    registerMacOSBuildAndRunProjectTool(server);
-    registerIOSSimulatorBuildAndRunByNameWorkspaceTool(server);
-    registerIOSSimulatorBuildAndRunByNameProjectTool(server);
-    registerIOSSimulatorBuildAndRunByIdWorkspaceTool(server);
-    registerIOSSimulatorBuildAndRunByIdProjectTool(server);
+    // 9. Launch tools
+    registerLaunchMacOSAppTool(server);
+
+    // 10. Build and run tools
+    registerMacOSBuildAndRunTools(server);
+    registerIOSSimulatorBuildAndRunTools(server);
 
     // Start the server
     await startServer(server);
 
     // Log successful startup
-    log('info', 'XcodeBuildMCP server started successfully with refactored tools');
+    log('info', 'XcodeBuildMCP server started successfully');
   } catch (error) {
     console.error('Fatal error in main():', error);
     process.exit(1);

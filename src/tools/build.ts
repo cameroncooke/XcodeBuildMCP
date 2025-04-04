@@ -13,9 +13,6 @@ import {
   XcodeParams,
 } from '../utils/xcode.js';
 import {
-  validateRequiredParam,
-  validateCondition,
-  validateAtLeastOneParam,
   createTextResponse,
 } from '../utils/validation.js';
 import { ToolResponse } from '../types/common.js';
