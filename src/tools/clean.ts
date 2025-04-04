@@ -5,8 +5,7 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { log } from '../utils/logger.js';
-import { executeXcodeCommand, addXcodeParameters } from '../utils/xcode.js';
-import { validateCondition } from '../utils/validation.js';
+import { executeXcodeCommand, addXcodeParameters, XcodeParams } from '../utils/xcode.js';
 import { ToolResponse } from '../types/common.js';
 
 // Define a type for content items that matches the ToolResponse content array type
@@ -21,78 +20,121 @@ type ContentItem =
         | { [key: string]: unknown; uri: string; blob: string; mimeType?: string };
     };
 
-export function registerCleanTool(server: McpServer): void {
+// --- Private Helper Function ---
+
+/**
+ * Internal logic for cleaning build products.
+ */
+async function _handleCleanLogic(params: {
+  workspacePath?: string;
+  projectPath?: string;
+  scheme?: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+}): Promise<ToolResponse> {
+  const warningMessages: ContentItem[] = [];
+  // Initial path check removed, assume one path is present or none (for implicit)
+
+  log('info', 'Starting xcodebuild clean request (internal)');
+
+  try {
+    const command = ['xcodebuild', 'clean'];
+    // Use XcodeParams type for clarity when calling addXcodeParameters
+    const xcodeParams: XcodeParams = { ...params };
+    addXcodeParameters(command, xcodeParams, 'Cleaning');
+
+    const result = await executeXcodeCommand(command, 'Clean');
+
+    if (!result.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Clean operation failed: ${String(result.error)}`,
+          } as ContentItem,
+        ],
+        isError: true, // Mark as error
+      };
+    }
+
+    // Construct success message, including context if provided
+    let successMessage = '✅ Clean operation successful.';
+    if (params.scheme) successMessage += ` For scheme '${params.scheme}'.`;
+    if (params.configuration) successMessage += ` Configuration '${params.configuration}'.`;
+    if (params.workspacePath) successMessage += ` In workspace '${params.workspacePath}'.`;
+    else if (params.projectPath) successMessage += ` In project '${params.projectPath}'.`;
+    else successMessage += ' In current directory project/workspace.'; // If neither provided
+
+     successMessage += `\nOutput:\n${String(result.output)}`; // Include output
+
+
+    const responseContent: ContentItem[] = [
+      ...warningMessages, // Keep potential warnings from addXcodeParameters if any arise later
+      {
+        type: 'text',
+        text: successMessage,
+      } as ContentItem,
+    ];
+
+    return {
+      content: responseContent,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('error', `Error during clean operation: ${errorMessage}`);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Clean operation failed: ${errorMessage}`,
+        } as ContentItem,
+      ],
+      isError: true, // Mark as error
+    };
+  }
+}
+
+// --- Public Tool Definitions ---
+
+export function registerCleanWorkspaceTool(server: McpServer): void {
   server.tool(
-    'clean',
-    "Cleans build products using xcodebuild's native clean action. Note: All parameters must be provided as an object, even if empty {}. Example: clean({ workspacePath: '/path/to/workspace', scheme: 'MyScheme' }) Note: In some environments, this tool may be prefixed as mcp0_clean.",
+    'clean_workspace',
+    "Cleans build products for a specific workspace using xcodebuild. IMPORTANT: Requires workspacePath. Scheme/Configuration are optional. Example: clean_workspace({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
     {
-      workspacePath: z.string().optional().describe('Path to the .xcworkspace file'),
-      projectPath: z.string().optional().describe('Path to the .xcodeproj file'),
-      scheme: z.string().optional().describe('The scheme to clean'),
+      workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
+      scheme: z.string().optional().describe('Optional: The scheme to clean'),
       configuration: z
         .string()
         .optional()
-        .describe('Build configuration to clean (Debug, Release, etc.)'),
+        .describe('Optional: Build configuration to clean (Debug, Release, etc.)'),
       derivedDataPath: z
         .string()
         .optional()
-        .describe('Path where build products and other derived data will go'),
+        .describe('Optional: Path where derived data might be located'),
       extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
     },
-    async (params): Promise<ToolResponse> => {
-      const pathValidation = validateCondition(
-        !!(params.workspacePath || params.projectPath),
-        'Neither workspacePath nor projectPath was provided. xcodebuild will look for a project in the current directory.',
-      );
+    (params) => _handleCleanLogic(params),
+  );
+}
 
-      const warningMessages: ContentItem[] = [];
-      if (!pathValidation.isValid && pathValidation.warningResponse) {
-        warningMessages.push({
-          type: 'text',
-          text: String(pathValidation.warningResponse.content[0].text),
-        } as ContentItem);
-      }
-
-      log('info', 'Starting xcodebuild clean request');
-
-      try {
-        const command = ['xcodebuild', 'clean'];
-        addXcodeParameters(command, params, 'Cleaning');
-        const result = await executeXcodeCommand(command, 'Clean');
-
-        if (!result.success) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Clean operation failed: ${String(result.error)}`,
-              } as ContentItem,
-            ],
-          };
-        }
-
-        const responseContent: ContentItem[] = [
-          ...warningMessages,
-          {
-            type: 'text',
-            text: `Clean operation successful: ${String(result.output)}`,
-          } as ContentItem,
-        ];
-
-        return {
-          content: responseContent,
-        };
-      } catch (error) {
-        log('error', `Error during clean operation: ${error}`);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Clean operation failed: ${error instanceof Error ? error.message : String(error)}`,
-            } as ContentItem,
-          ],
-        };
-      }
+export function registerCleanProjectTool(server: McpServer): void {
+  server.tool(
+    'clean_project',
+    "Cleans build products for a specific project file using xcodebuild. IMPORTANT: Requires projectPath. Scheme/Configuration are optional. Example: clean_project({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+    {
+      projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
+      scheme: z.string().optional().describe('Optional: The scheme to clean'),
+      configuration: z
+        .string()
+        .optional()
+        .describe('Optional: Build configuration to clean (Debug, Release, etc.)'),
+      derivedDataPath: z
+        .string()
+        .optional()
+        .describe('Optional: Path where derived data might be located'),
+      extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
     },
+    (params) => _handleCleanLogic(params),
   );
 }
