@@ -80,3 +80,7 @@ xcuserdata/
 # parcel-bundler cache
 .cache
 .parcel-cache
+
+# Windsurf rules
+.windsurfrules
+
