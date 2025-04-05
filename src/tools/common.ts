@@ -117,7 +117,7 @@ export function registerTool<T extends object>(
   handler: (params: T) => Promise<ToolResponse>
 ): void {
   // Create a wrapper handler that matches the signature expected by server.tool
-  const wrappedHandler = (args: Record<string, any>, /* extra: RequestHandlerExtra */): Promise<ToolResponse> => {
+  const wrappedHandler = (args: Record<string, any>, extra: any): Promise<ToolResponse> => {
     // Assert the type *before* calling the original handler
     // This confines the type assertion to one place
     const typedParams = args as T; 

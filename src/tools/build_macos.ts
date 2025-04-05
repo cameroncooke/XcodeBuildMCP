@@ -8,7 +8,9 @@ import { promisify } from 'util';
 import { log } from '../utils/logger.js';
 import {
   executeXcodeCommand,
+  ProgressCallback,
 } from '../utils/xcode.js';
+import { createProgressCallback } from '../utils/progress.js';
 import {
   createTextResponse,
 } from '../utils/validation.js';
@@ -63,7 +65,10 @@ async function _handleMacOSBuildLogic(params: {
 
     command.push('build');
 
-    const result = await executeXcodeCommand(command, 'macOS Build');
+    // Create a progress callback for this operation
+    const progressCallback = createProgressCallback(`macOS Build ${params.scheme}`);
+    
+    const result = await executeXcodeCommand(command, 'macOS Build', progressCallback);
 
     let match;
     while ((match = warningRegex.exec(result.output)) !== null) {
@@ -110,23 +115,26 @@ async function _getAppPathFromBuildSettings(params: {
   derivedDataPath?: string;
   extraArgs?: string[];
 }): Promise<{ success: boolean; appPath?: string; error?: string }> {
-  try {
-    const getAppSettingsCommand = ['xcodebuild'];
+    try {
+      const getAppSettingsCommand = ['xcodebuild'];
 
-    if (params.workspacePath) {
-      getAppSettingsCommand.push('-workspace', params.workspacePath);
-    } else if (params.projectPath) {
-      getAppSettingsCommand.push('-project', params.projectPath);
-    } // Path guaranteed by caller validation
-    getAppSettingsCommand.push(
-      '-scheme',
-      params.scheme,
-      '-configuration',
-      params.configuration,
-      '-showBuildSettings'
-    );
+      if (params.workspacePath) {
+        getAppSettingsCommand.push('-workspace', params.workspacePath);
+      } else if (params.projectPath) {
+        getAppSettingsCommand.push('-project', params.projectPath);
+      } // Path guaranteed by caller validation
+      getAppSettingsCommand.push(
+        '-scheme',
+        params.scheme,
+        '-configuration',
+        params.configuration,
+        '-showBuildSettings'
+      );
 
-    const settingsResult = await executeXcodeCommand(getAppSettingsCommand, 'Get Build Settings for Launch');
+      // Create a progress callback for getting build settings
+      const settingsProgressCallback = createProgressCallback(`Get Build Settings ${params.scheme}`);
+      
+      const settingsResult = await executeXcodeCommand(getAppSettingsCommand, 'Get Build Settings for Launch', settingsProgressCallback);
     if (!settingsResult.success) {
       return { success: false, error: settingsResult.error };
     }
@@ -166,10 +174,10 @@ async function _handleMacOSBuildAndRunLogic(params: {
     const buildResult = await _handleMacOSBuildLogic(params);
 
     // 1. Check if the build itself failed
-    if (buildResult.status !== 'success') {
+    if (buildResult.isError) {
       return buildResult; // Return build failure directly
     }
-    const warningMessages = buildResult.content?.filter(c => c.type === 'text' && !c.isError) ?? [];
+    const warningMessages = buildResult.content?.filter(c => c.type === 'text') ?? [];
 
     // 2. Build succeeded, now get the app path using the helper
     const appPathResult = await _getAppPathFromBuildSettings(params);

@@ -45,9 +45,25 @@ export interface XcodeParams {
 }
 
 
+import { v4 as uuidv4 } from 'uuid';
+import { ToolProgressUpdate } from '../types/common.js';
+
+/**
+ * Function type for progress updates
+ */
+export type ProgressCallback = (update: ToolProgressUpdate) => void;
+
+/**
+ * Execute an xcodebuild command with optional progress reporting
+ * @param command Command array to execute
+ * @param logPrefix Prefix for logging
+ * @param progressCallback Optional callback for progress updates
+ * @returns Promise resolving to command response
+ */
 export async function executeXcodeCommand(
   command: string[],
   logPrefix: string,
+  progressCallback?: ProgressCallback
 ): Promise<XcodeCommandResponse> {
   // Properly escape arguments for shell
   const escapedCommand = command.map((arg) => {
@@ -63,6 +79,25 @@ export async function executeXcodeCommand(
   log('info', `Executing ${logPrefix} command: ${commandString}`);
   log('debug', `DEBUG - Raw command array: ${JSON.stringify(command)}`);
 
+  // Create unique operation ID for this command execution
+  const operationId = uuidv4();
+  
+  // Set up progress tracking
+  let lastProgressUpdate = 0;
+  const progressUpdateInterval = 1000; // Update interval in ms
+  let lastProgressMessage = '';
+  
+  // Initial progress update if callback provided
+  if (progressCallback) {
+    progressCallback({
+      operationId,
+      status: 'running',
+      progress: 0,
+      message: `Starting ${logPrefix}...`,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   return new Promise((resolve) => {
     // Using 'sh -c' to handle complex commands and quoting properly
     const process = spawn('sh', ['-c', commandString], {
@@ -73,25 +108,115 @@ export async function executeXcodeCommand(
 
     let stdout = '';
     let stderr = '';
+    
+    // Track build phase and progress heuristics
+    let currentPhase = '';
+    const buildPhases = ['CompileC', 'CompileSwift', 'Linking', 'CodeSign'];
+    let totalFiles = 0;
+    let processedFiles = 0;
+    let estimatedProgress = 0;
+
+    // Function to send progress updates
+    const sendProgressUpdate = (message: string, forceSend = false) => {
+      const now = Date.now();
+      // Only send updates if forced or after interval has passed
+      if (progressCallback && (forceSend || now - lastProgressUpdate > progressUpdateInterval)) {
+        lastProgressUpdate = now;
+        lastProgressMessage = message;
+        
+        progressCallback({
+          operationId,
+          status: 'running',
+          progress: estimatedProgress,
+          message,
+          timestamp: new Date().toISOString(),
+          details: `Phase: ${currentPhase || 'Preparing'}`
+        });
+      }
+    };
 
     process.stdout.on('data', (data) => {
       const chunk = data.toString();
       stdout += chunk;
-      // Log chunks for debugging large output
-      // log('debug', `stdout chunk: ${chunk.length} bytes`);
+      
+      // Progress reporting based on output analysis
+      if (progressCallback) {
+        // Look for common xcodebuild output patterns to estimate progress
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          // Detect compilation phase
+          for (const phase of buildPhases) {
+            if (line.includes(phase)) {
+              if (currentPhase !== phase) {
+                currentPhase = phase;
+                // Phase transition resets counters
+                const phaseIndex = buildPhases.indexOf(phase);
+                // Base progress on phase (rough estimate)
+                estimatedProgress = Math.min(Math.floor(25 * phaseIndex), 90);
+                sendProgressUpdate(`${phase} phase...`, true);
+              }
+              
+              // Count files for compilation phases
+              if (phase === 'CompileC' || phase === 'CompileSwift') {
+                processedFiles++;
+                if (totalFiles > 0) {
+                  // Adjust progress within the phase
+                  const phaseProgress = Math.min(Math.floor((processedFiles / totalFiles) * 100), 100);
+                  estimatedProgress = Math.min(estimatedProgress + phaseProgress / 4, 95);
+                }
+              }
+              
+              sendProgressUpdate(`Processing: ${line.substring(0, 80)}...`);
+              break;
+            }
+          }
+          
+          // Look for "x of y files" patterns
+          const fileCountMatch = line.match(/(\d+) of (\d+) files/);
+          if (fileCountMatch && fileCountMatch.length >= 3) {
+            processedFiles = parseInt(fileCountMatch[1], 10);
+            totalFiles = parseInt(fileCountMatch[2], 10);
+            if (totalFiles > 0) {
+              // Update progress based on file counts
+              estimatedProgress = Math.min(Math.floor((processedFiles / totalFiles) * 90), 95);
+              sendProgressUpdate(`Processing file ${processedFiles} of ${totalFiles}`, true);
+            }
+          }
+        }
+      }
     });
 
     process.stderr.on('data', (data) => {
       const chunk = data.toString();
       stderr += chunk;
       // Log stderr chunks immediately
-       log('warning', `stderr chunk: ${chunk.trim()}`);
+      log('warning', `stderr chunk: ${chunk.trim()}`);
+      
+      // Send error info in progress updates
+      if (progressCallback) {
+        sendProgressUpdate(`Warning: ${chunk.substring(0, 100)}...`, true);
+      }
     });
 
     process.on('close', (exitCode) => {
       const success = exitCode === 0;
 
       log('info', `${logPrefix} process completed with exit code: ${exitCode}`);
+
+      // Final progress update on completion
+      if (progressCallback) {
+        progressCallback({
+          operationId,
+          status: success ? 'completed' : 'failed',
+          progress: success ? 100 : estimatedProgress,
+          message: success 
+            ? `${logPrefix} completed successfully` 
+            : `${logPrefix} failed with exit code ${exitCode}`,
+          timestamp: new Date().toISOString(),
+          details: success ? undefined : stderr.substring(0, 500)
+        });
+      }
 
       if (success) {
         log('info', `${logPrefix} operation successful`);
@@ -111,6 +236,18 @@ export async function executeXcodeCommand(
 
     process.on('error', (err) => {
         log('error', `${logPrefix} failed to start process: ${err.message}`);
+        
+        // Process error progress update
+        if (progressCallback) {
+          progressCallback({
+            operationId,
+            status: 'failed',
+            progress: 0,
+            message: `Failed to start ${logPrefix} process: ${err.message}`,
+            timestamp: new Date().toISOString()
+          });
+        }
+        
         resolve({
             success: false,
             output: stdout,

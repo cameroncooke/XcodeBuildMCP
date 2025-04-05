@@ -6,19 +6,7 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { log } from '../utils/logger.js';
 import { executeXcodeCommand, addXcodeParameters, XcodeParams } from '../utils/xcode.js';
-import { ToolResponse } from '../types/common.js';
-
-// Define a type for content items that matches the ToolResponse content array type
-type ContentItem =
-  | { [key: string]: unknown; type: 'text'; text: string }
-  | { [key: string]: unknown; type: 'image'; data: string; mimeType: string }
-  | {
-      [key: string]: unknown;
-      type: 'resource';
-      resource:
-        | { [key: string]: unknown; text: string; uri: string; mimeType?: string }
-        | { [key: string]: unknown; uri: string; blob: string; mimeType?: string };
-    };
+import { ToolResponse, ToolResponseContent } from '../types/common.js';
 
 // --- Private Helper Function ---
 
@@ -33,7 +21,7 @@ async function _handleCleanLogic(params: {
   derivedDataPath?: string;
   extraArgs?: string[];
 }): Promise<ToolResponse> {
-  const warningMessages: ContentItem[] = [];
+  const warningMessages: ToolResponseContent[] = [];
   // Initial path check removed, assume one path is present or none (for implicit)
 
   log('info', 'Starting xcodebuild clean request (internal)');
@@ -52,7 +40,7 @@ async function _handleCleanLogic(params: {
           {
             type: 'text',
             text: `Clean operation failed: ${String(result.error)}`,
-          } as ContentItem,
+          },
         ],
         isError: true, // Mark as error
       };
@@ -69,12 +57,12 @@ async function _handleCleanLogic(params: {
      successMessage += `\nOutput:\n${String(result.output)}`; // Include output
 
 
-    const responseContent: ContentItem[] = [
+    const responseContent: ToolResponseContent[] = [
       ...warningMessages, // Keep potential warnings from addXcodeParameters if any arise later
       {
         type: 'text',
         text: successMessage,
-      } as ContentItem,
+      },
     ];
 
     return {
@@ -88,7 +76,7 @@ async function _handleCleanLogic(params: {
         {
           type: 'text',
           text: `Clean operation failed: ${errorMessage}`,
-        } as ContentItem,
+        },
       ],
       isError: true, // Mark as error
     };

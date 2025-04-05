@@ -1,28 +1,41 @@
 /**
- * Common type definitions used throughout the XcodeBuildMCP project
+ * Common type definitions used across the server
  */
 
 /**
- * Standard response type for tool handlers that matches the MCP SDK expectations
+ * ToolResponse - Standard response format for tools
+ * Compatible with MCP CallToolResult interface from the SDK
  */
 export interface ToolResponse {
-  [key: string]: unknown;
-  content: Array<
-    | { [key: string]: unknown; type: 'text'; text: string }
-    | { [key: string]: unknown; type: 'image'; data: string; mimeType: string }
-    | {
-        [key: string]: unknown;
-        type: 'resource';
-        resource:
-          | { [key: string]: unknown; text: string; uri: string; mimeType?: string }
-          | { [key: string]: unknown; uri: string; blob: string; mimeType?: string };
-      }
-  >;
+  content: ToolResponseContent[];
   isError?: boolean;
+  _meta?: Record<string, unknown>;
+  [key: string]: unknown; // Index signature to match CallToolResult
 }
 
 /**
- * Validation result interface
+ * Contents that can be included in a tool response
+ */
+export type ToolResponseContent = {
+  type: 'text';
+  text: string;
+  [key: string]: unknown; // Index signature to match ContentItem
+};
+
+/**
+ * ToolProgressUpdate - Structure for progress updates during long-running operations
+ */
+export interface ToolProgressUpdate {
+  operationId: string;
+  status: 'running' | 'completed' | 'failed';
+  progress?: number; // 0-100 percentage
+  message: string;
+  timestamp: string;
+  details?: string;
+}
+
+/**
+ * ValidationResult - Result of parameter validation operations
  */
 export interface ValidationResult {
   isValid: boolean;

@@ -55,6 +55,12 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - **Bundle ID Extraction**: Extract bundle identifiers from iOS and macOS app bundles
 - **App Launching**: Launch built applications on both simulators and macOS
 
+### Operation Progress
+- **Real-time Feedback**: Get detailed progress updates during long-running operations
+- **Build Phase Tracking**: Monitor compilation, linking, and code signing phases
+- **Status Reporting**: View operation status, estimated progress, and error information
+- [Learn more about progress updates](docs/progress-updates.md)
+
 
 ## Getting started
 
