@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "BF7C7C33-E738-44B3-B3DB-F6A58286B6F9",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:MCPTest.xcodeproj",
+        "identifier" : "8BA9F8302D62A18100C22D5D",
+        "name" : "MCPTestTests"
+      }
+    }
+  ],
+  "version" : 1
+}

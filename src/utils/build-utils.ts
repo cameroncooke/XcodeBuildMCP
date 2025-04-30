@@ -206,6 +206,7 @@ When done capturing logs, use: stop_and_get_simulator_log({ logSessionId: 'SESSI
           text: `✅ ${platformOptions.logPrefix} ${buildAction} succeeded for scheme ${params.scheme}.`,
         },
       ],
+      rawOutput: result.output + (result.error ? '\n' + result.error : ''),
     };
 
     // Only add additional info if we have any

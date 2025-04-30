@@ -11,7 +11,10 @@ import Testing
 struct MCPTestTests {
 
     @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
+        #expect(1 == 1)
     }
 
+    @Test func example3() async throws {
+        #expect(1 == 2)
+    }
 }

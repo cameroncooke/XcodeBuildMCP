@@ -1,0 +1,29 @@
+{
+  "configurations" : [
+    {
+      "id" : "03F30AE4-48A7-4967-B8BE-2A15CC349E34",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:MCPTest.xcodeproj",
+      "identifier" : "8BA9F7E92D62A14300C22D5D",
+      "name" : "MCPTest"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:MCPTest.xcodeproj",
+        "identifier" : "8BA9F7F92D62A14500C22D5D",
+        "name" : "MCPTestTests"
+      }
+    }
+  ],
+  "version" : 1
+}

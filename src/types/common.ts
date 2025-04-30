@@ -35,6 +35,7 @@ export interface ToolResponse {
   content: ToolResponseContent[];
   isError?: boolean;
   _meta?: Record<string, unknown>;
+  rawOutput?: string; // Raw output from command execution
   [key: string]: unknown; // Index signature to match CallToolResult
 }
 
