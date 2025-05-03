@@ -84,3 +84,6 @@ xcuserdata/
 # Windsurf rules
 .windsurfrules
 
+
+# Sentry Config File
+.sentryclirc

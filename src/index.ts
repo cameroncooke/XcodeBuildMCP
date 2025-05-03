@@ -13,6 +13,9 @@
  * - Handling server lifecycle events
  */
 
+// Import Sentry instrumentation at the very top
+import './instrument.js';
+
 // Import server components
 import { createServer, startServer } from './server/server.js';
 
@@ -175,5 +178,6 @@ async function main(): Promise<void> {
 // Start the server
 main().catch((error) => {
   console.error('Unhandled exception:', error);
-  process.exit(1);
+  // Give Sentry a moment to send the error before exiting
+  setTimeout(() => process.exit(1), 1000);
 });
