@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.3.1] - 2025-05-03
+- Added Sentry integration for error reporting
+
 ## [v1.3.0] - 2025-04-28
 
 - Added support for interacting with the simulator (tap, swipe etc.)
