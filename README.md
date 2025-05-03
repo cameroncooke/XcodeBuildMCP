@@ -165,7 +165,7 @@ When reporting issues on GitHub, please include the full output from the diagnos
 
 ![xcodebuildmcp4](https://github.com/user-attachments/assets/17300a18-f47a-428a-aad3-dc094859c1b2)
 
-### Building and running iOS app in Claude Code
+### Building and running iOS app in Claude Desktop
 https://github.com/user-attachments/assets/e3c08d75-8be6-4857-b4d0-9350b26ef086
 
 ## Contributing
