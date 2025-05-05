@@ -75,7 +75,7 @@ The XcodeBuildMCP server provides the following tool capabilities:
 ### Prerequisites
 
 - macOS 14.5 or later
-- Xcode 18.x or later
+- Xcode 16.x or later
 - mise
 
 ### One-line setup with mise
