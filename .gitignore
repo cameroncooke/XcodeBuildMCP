@@ -87,3 +87,6 @@ xcuserdata/
 
 # Sentry Config File
 .sentryclirc
+
+# incremental builds
+Makefile

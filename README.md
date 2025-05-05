@@ -18,6 +18,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
    * [One-line setup with mise](#one-line-setup-with-mise)
    * [Configure MCP clients](#configure-mcp-clients)
    * [Enabling UI Automation (beta)](#enabling-ui-automation-beta)
+- [Incremental build support](#incremental-build-support)   
 - [Troubleshooting](#troubleshooting)
    * [Diagnostic Tool](#diagnostic-tool)
       + [Using with mise](#using-with-mise)
@@ -56,6 +57,7 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - **Build Operations**: Platform-specific build tools for macOS, iOS simulator, and iOS device targets
 - **Project Information**: Tools to list schemes and show build settings for Xcode projects and workspaces
 - **Clean Operations**: Clean build products using xcodebuild's native clean action
+- **Incremental build support**: Lightning fast builds using incremental build support (experimental, opt-in required)
 
 ### Simulator management
 - **Simulator Control**: List, boot, and open iOS simulators 
@@ -135,6 +137,35 @@ pip install fb-idb==1.1.7
 
 > [!NOTE]
 > Displaying images in tool responses and embedding them in chat context may not be supported by all MCP Clients; it's currently known to be supported in Cursor.
+
+## Incremental build support
+
+XcodeBuildMCP includes experimental support for incremental builds. This feature is disabled by default and can be enabled by setting the `INCREMENTAL_BUILDS_ENABLED` environment variable to `true`:
+
+To enable incremental builds, set the `INCREMENTAL_BUILDS_ENABLED` environment variable to `true`:
+
+Example MCP client configuration:
+```bash
+{
+  "mcpServers": {
+    "XcodeBuildMCP": {
+      "command": "mise",
+      "args": [
+        "x",
+        "npm:xcodebuildmcp@1.3.5",
+        "--",
+        "xcodebuildmcp"
+      ],
+      "env": {
+        "INCREMENTAL_BUILDS_ENABLED": "true"
+      }        
+    }
+  }
+}
+```
+
+> [!IMPORTANT]
+> Please note that incremental builds support is currently highly experimental and your mileage may vary. Please report any issues you encounter to the [issue tracker](https://github.com/cameroncooke/XcodeBuildMCP/issues).
 
 ## Troubleshooting
 

@@ -50,7 +50,7 @@ if ('version' in xcodeInfo) {
 
 const envVars = getEnvironmentVariables();
 tags.env_XCODEBUILDMCP_DEBUG = envVars.XCODEBUILDMCP_DEBUG || 'false';
-tags.env_XCODEMAKE_ENABLED = envVars.XCODEMAKE_ENABLED || 'false';
+tags.env_XCODEMAKE_ENABLED = envVars.INCREMENTAL_BUILDS_ENABLED || 'false';
 tags.env_XCODEBUILDMCP_RUNNING_UNDER_MISE = envVars.XCODEBUILDMCP_RUNNING_UNDER_MISE || 'false';
 
 const miseAvailable = checkBinaryAvailability('mise');

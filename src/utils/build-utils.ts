@@ -11,6 +11,7 @@
  * - Standardizing response formatting for build results
  * - Managing build-specific error handling and reporting
  * - Supporting various build actions (build, clean, showBuildSettings, etc.)
+ * - Supporting xcodemake as an alternative build strategy for faster incremental builds
  *
  * This file depends on the lower-level utilities in xcode.ts for command execution
  * while adding build-specific behavior, formatting, and error handling.
@@ -20,6 +21,15 @@ import { log } from './logger.js';
 import { executeXcodeCommand, XcodePlatform, constructDestinationString } from './xcode.js';
 import { ToolResponse, SharedBuildParams, PlatformBuildOptions } from '../types/common.js';
 import { createTextResponse } from './validation.js';
+import {
+  isXcodemakeEnabled,
+  isXcodemakeAvailable,
+  executeXcodemakeCommand,
+  executeMakeCommand,
+  doesMakefileExist,
+  doesMakeLogFileExist,
+} from './xcodemake.js';
+import path from 'path';
 
 /**
  * Common function to execute an Xcode build command across platforms
@@ -48,12 +58,36 @@ export async function executeXcodeBuild(
 
   log('info', `Starting ${platformOptions.logPrefix} ${buildAction} for scheme ${params.scheme}`);
 
+  // Check if xcodemake is enabled and available
+  const useXcodemake = isXcodemakeEnabled();
+  let xcodemakeAvailable = false;
+
+  if (useXcodemake && buildAction === 'build') {
+    xcodemakeAvailable = await isXcodemakeAvailable();
+    if (!xcodemakeAvailable) {
+      log('info', 'xcodemake is enabled but not available. Falling back to xcodebuild.');
+      buildMessages.push({
+        type: 'text',
+        text: '⚠️ incremental build support is enabled but xcodemake is not found in PATH. Falling back to xcodebuild.',
+      });
+    } else {
+      log('info', 'Using xcodemake for faster incremental builds.');
+      buildMessages.push({
+        type: 'text',
+        text: 'ℹ️ Using xcodemake for faster incremental builds.',
+      });
+    }
+  }
+
   try {
     const command = ['xcodebuild'];
 
+    let projectDir = '';
     if (params.workspacePath) {
+      projectDir = path.dirname(params.workspacePath);
       command.push('-workspace', params.workspacePath);
     } else if (params.projectPath) {
+      projectDir = path.dirname(params.projectPath);
       command.push('-project', params.projectPath);
     }
 
@@ -116,13 +150,47 @@ export async function executeXcodeBuild(
       command.push('-derivedDataPath', params.derivedDataPath);
     }
 
-    if (params.extraArgs) {
+    if (params.extraArgs && params.extraArgs.length > 0) {
       command.push(...params.extraArgs);
     }
 
     command.push(buildAction);
 
-    const result = await executeXcodeCommand(command, platformOptions.logPrefix);
+    // Execute the command using xcodemake or xcodebuild
+    let result;
+    if (useXcodemake && xcodemakeAvailable) {
+      // Check if Makefile already exists
+      const makefileExists = doesMakefileExist(projectDir);
+      log('debug', 'Makefile exists: ' + makefileExists);
+
+      // Check if Makefile log already exists
+      const makeLogFileExists = doesMakeLogFileExist(projectDir, command);
+      log('debug', 'Makefile log exists: ' + makeLogFileExists);
+
+      if (makefileExists && makeLogFileExists) {
+        // Use make for incremental builds
+        buildMessages.push({
+          type: 'text',
+          text: 'ℹ️ Using make for incremental build',
+        });
+        result = await executeMakeCommand(projectDir, platformOptions.logPrefix);
+      } else {
+        // Generate Makefile using xcodemake
+        buildMessages.push({
+          type: 'text',
+          text: 'ℹ️ Generating Makefile with xcodemake (first build may take longer)',
+        });
+        // Remove 'xcodebuild' from the command array before passing to executeXcodemakeCommand
+        result = await executeXcodemakeCommand(
+          projectDir,
+          command.slice(1),
+          platformOptions.logPrefix,
+        );
+      }
+    } else {
+      // Use standard xcodebuild
+      result = await executeXcodeCommand(command, platformOptions.logPrefix);
+    }
 
     // Grep warnings and errors from stdout (build output)
     const warningOrErrorLines = grepWarningsAndErrors(result.output);
@@ -162,6 +230,14 @@ export async function executeXcodeBuild(
 
     // Create additional info based on platform and action
     let additionalInfo = '';
+
+    // Add xcodemake info if relevant
+    if (useXcodemake && xcodemakeAvailable && buildAction === 'build') {
+      additionalInfo += `xcodemake: Using faster incremental builds with xcodemake. 
+Future builds will use the generated Makefile for improved performance.
+
+`;
+    }
 
     // Only show next steps for 'build' action
     if (buildAction === 'build') {

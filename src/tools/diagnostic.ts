@@ -19,6 +19,7 @@ import { log } from '../utils/logger.js';
 import { execSync } from 'child_process';
 import { version } from '../version.js';
 import { areIdbToolsAvailable } from '../utils/idb-setup.js';
+import { isXcodemakeEnabled, isXcodemakeAvailable, doesMakefileExist } from '../utils/xcodemake.js';
 import * as os from 'os';
 
 // Constants
@@ -109,7 +110,7 @@ export function getXcodeInfo():
 export function getEnvironmentVariables(): Record<string, string | undefined> {
   const relevantVars = [
     'XCODEBUILDMCP_DEBUG',
-    'XCODEMAKE_ENABLED',
+    'INCREMENTAL_BUILDS_ENABLED',
     'XCODEBUILDMCP_RUNNING_UNDER_MISE',
     'PATH',
     'DEVELOPER_DIR',
@@ -195,6 +196,11 @@ export async function runDiagnosticTool(_params: unknown): Promise<ToolResponse>
   // Check for idb tools availability
   const idbAvailable = areIdbToolsAvailable();
 
+  // Check for xcodemake configuration
+  const xcodemakeEnabled = isXcodemakeEnabled();
+  const xcodemakeAvailable = await isXcodemakeAvailable();
+  const makefileExists = doesMakefileExist('./');
+
   // Compile the diagnostic information
   const diagnosticInfo = {
     serverVersion: version,
@@ -209,6 +215,11 @@ export async function runDiagnosticTool(_params: unknown): Promise<ToolResponse>
         available: idbAvailable,
         uiAutomationSupported:
           idbAvailable && binaryStatus['idb'].available && binaryStatus['idb_companion'].available,
+      },
+      xcodemake: {
+        enabled: xcodemakeEnabled,
+        available: xcodemakeAvailable,
+        makefileExists: makefileExists,
       },
       mise: {
         running_under_mise: Boolean(process.env.XCODEBUILDMCP_RUNNING_UNDER_MISE),
@@ -255,6 +266,11 @@ export async function runDiagnosticTool(_params: unknown): Promise<ToolResponse>
     `- Available: ${diagnosticInfo.features.idb.available ? '✅ Yes' : '❌ No'}`,
     `- UI Automation Supported: ${diagnosticInfo.features.idb.uiAutomationSupported ? '✅ Yes' : '❌ No'}`,
 
+    `\n### Incremental Builds`,
+    `- Enabled: ${diagnosticInfo.features.xcodemake.enabled ? '✅ Yes' : '❌ No'}`,
+    `- Available: ${diagnosticInfo.features.xcodemake.available ? '✅ Yes' : '❌ No'}`,
+    `- Makefile exists: ${diagnosticInfo.features.xcodemake.makefileExists ? '✅ Yes' : '❌ No'}`,
+
     `\n### Mise Integration`,
     `- Running under mise: ${diagnosticInfo.features.mise.running_under_mise ? '✅ Yes' : '❌ No'}`,
     `- Mise available: ${diagnosticInfo.features.mise.available ? '✅ Yes' : '❌ No'}`,
@@ -262,12 +278,15 @@ export async function runDiagnosticTool(_params: unknown): Promise<ToolResponse>
     `\n## Tool Availability Summary`,
     `- Build Tools: ${!('error' in diagnosticInfo.xcode) ? '\u2705 Available' : '\u274c Not available'}`,
     `- UI Automation Tools: ${diagnosticInfo.features.idb.uiAutomationSupported ? '\u2705 Available' : '\u274c Not available'}`,
+    `- Incremental Build Support: ${diagnosticInfo.features.xcodemake.available && diagnosticInfo.features.xcodemake.enabled ? '\u2705 Available & Enabled' : diagnosticInfo.features.xcodemake.available ? '\u2705 Available but Disabled' : '\u274c Not available'}`,
 
     `\n## Sentry`,
     `- Sentry enabled: ${diagnosticInfo.environmentVariables.SENTRY_DISABLED !== 'true' ? '✅ Yes' : '❌ No'}`,
 
     `\n## Troubleshooting Tips`,
     `- If UI automation tools are not available, install idb: \`pip3 install fb-idb\``,
+    `- If incremental build support is not available, you can download the tool from https://github.com/cameroncooke/xcodemake. Make sure it's executable and available in your PATH`,
+    `- To enable xcodemake, set environment variable: \`export INCREMENTAL_BUILDS_ENABLED=1\``,
     `- For mise integration, follow instructions in the README.md file`,
   ].join('\n');
 

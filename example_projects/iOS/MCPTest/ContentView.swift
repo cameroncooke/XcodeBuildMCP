@@ -9,7 +9,7 @@ import SwiftUI
 import OSLog
 
 struct ContentView: View {
-    @State private var text = ""
+    @State private var text: String = ""
 
     var body: some View {
         VStack {
@@ -24,7 +24,7 @@ struct ContentView: View {
             Button("Log something") {
                 let message = ProcessInfo.processInfo.environment.map { "\($0.key): \($0.value)" }.joined(separator: "\n")
                 Logger.myApp.debug("Environment: \(message)")                
-                debugPrint("Button was pressed")
+                debugPrint("Button was pressed.")
 
                 text = "You just pressed the button!"
             }

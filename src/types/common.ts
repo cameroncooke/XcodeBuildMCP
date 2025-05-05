@@ -64,13 +64,18 @@ export interface ValidationResult {
 }
 
 /**
- * XcodeCommandResponse - Result of xcodebuild command execution
+ * CommandResponse - Generic result of command execution
  */
-export interface XcodeCommandResponse {
+export interface CommandResponse {
   success: boolean;
   output: string;
   error?: string;
 }
+
+/**
+ * XcodeCommandResponse - Result of xcodebuild command execution
+ */
+export type XcodeCommandResponse = CommandResponse;
 
 /**
  * Interface for shared build parameters
