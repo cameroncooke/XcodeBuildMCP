@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.4.0-beta.1] - 2025-05-05
+- Added experimental support for incremental builds (requires opt-in)
+
 ## [v1.3.5] - 2025-05-05
 - Fixed the text input UI automation tool
 - Improve the UI automation tool hints to reduce agent tool call errors
