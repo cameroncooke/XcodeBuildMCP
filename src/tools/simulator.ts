@@ -10,6 +10,7 @@
  * - Opening the Simulator.app application
  * - Installing applications in simulators
  * - Launching applications in simulators by bundle ID
+ * - Setting the appearance mode of simulators (dark/light)
  */
 
 import { z } from 'zod';
@@ -488,6 +489,65 @@ export function registerOpenSimulatorTool(server: McpServer): void {
             {
               type: 'text',
               text: `Open simulator operation failed: ${errorMessage}`,
+            },
+          ],
+        };
+      }
+    },
+  );
+}
+
+export function registerSetSimulatorAppearanceTool(server: McpServer): void {
+  server.tool(
+    'set_simulator_appearance',
+    'Sets the appearance mode (dark/light) of an iOS simulator.',
+    {
+      simulatorUuid: z
+        .string()
+        .describe('UUID of the simulator to use (obtained from list_simulators)'),
+      mode: z
+        .enum(['dark', 'light'])
+        .describe('The appearance mode to set (either "dark" or "light")'),
+    },
+    async (params): Promise<ToolResponse> => {
+      const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
+      if (!simulatorUuidValidation.isValid) {
+        return simulatorUuidValidation.errorResponse!;
+      }
+
+      log('info', `Setting simulator ${params.simulatorUuid} appearance to ${params.mode} mode`);
+
+      try {
+        const command = ['xcrun', 'simctl', 'ui', params.simulatorUuid, 'appearance', params.mode];
+        const result = await executeXcodeCommand(command, 'Set Simulator Appearance');
+
+        if (!result.success) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Failed to set simulator appearance: ${result.error}`,
+              },
+            ],
+          };
+        }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Successfully set simulator ${params.simulatorUuid} to ${params.mode} mode`,
+            },
+          ],
+        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        log('error', `Error setting simulator appearance: ${errorMessage}`);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Failed to set simulator appearance: ${errorMessage}`,
             },
           ],
         };
