@@ -59,6 +59,7 @@ import {
   registerInstallAppInSimulatorTool,
   registerLaunchAppInSimulatorTool,
   registerLaunchAppWithLogsInSimulatorTool,
+  registerSetSimulatorAppearanceTool,
 } from './tools/simulator.js';
 
 // Import bundle ID tools
@@ -134,6 +135,7 @@ async function main(): Promise<void> {
     // Register Simulator management tools
     registerBootSimulatorTool(server);
     registerOpenSimulatorTool(server);
+    registerSetSimulatorAppearanceTool(server);
 
     // Register App installation and launch tools
     registerInstallAppInSimulatorTool(server);
