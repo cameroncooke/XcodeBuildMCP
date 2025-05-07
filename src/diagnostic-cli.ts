@@ -21,7 +21,7 @@ async function runDiagnostic(): Promise<void> {
     const { runDiagnosticTool } = await import('./tools/diagnostic.js');
 
     // Run the diagnostic tool
-    const result = await runDiagnosticTool({});
+    const result = await runDiagnosticTool();
 
     // Output the diagnostic information
     if (result.content && result.content.length > 0) {

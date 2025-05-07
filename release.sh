@@ -74,7 +74,10 @@ run "npm version \"$VERSION\" --no-git-tag-version"
 # README update
 echo ""
 echo "📝 Updating version in README.md..."
-run "sed -i '' -E \"s/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?/@$VERSION/g\" README.md"
+run "sed -i '' \"s/@[0-9]*\.[0-9]*\.[0-9]*/@$VERSION/g\" README.md"
+echo ""
+echo "📝 Updating version in TOOL_OPTIONS.md..."
+run "sed -i '' \"s/@[0-9]*\.[0-9]*\.[0-9]*/@$VERSION/g\" TOOL_OPTIONS.md"
 
 # Build
 echo ""
@@ -91,6 +94,9 @@ run "git tag \"v$VERSION\""
 echo ""
 echo "🚀 Pushing to origin..."
 run "git push origin $BRANCH --tags"
+
+echo "📦 Creating GitHub release..."
+run "gh release create "v$VERSION" --generate-notes -t \"Release v$VERSION\""
 
 # npm publish
 echo ""

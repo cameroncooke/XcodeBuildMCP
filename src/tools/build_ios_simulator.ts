@@ -730,19 +730,3 @@ export function registerIOSSimulatorBuildAndRunByIdProjectTool(server: McpServer
     },
   );
 }
-
-// Register all iOS simulator build tools
-export function registerIOSSimulatorBuildTools(server: McpServer): void {
-  registerIOSSimulatorBuildByNameWorkspaceTool(server);
-  registerIOSSimulatorBuildByNameProjectTool(server);
-  registerIOSSimulatorBuildByIdWorkspaceTool(server);
-  registerIOSSimulatorBuildByIdProjectTool(server);
-}
-
-// Register all iOS simulator build and run tools
-export function registerIOSSimulatorBuildAndRunTools(server: McpServer): void {
-  registerIOSSimulatorBuildAndRunByNameWorkspaceTool(server);
-  registerIOSSimulatorBuildAndRunByNameProjectTool(server);
-  registerIOSSimulatorBuildAndRunByIdWorkspaceTool(server);
-  registerIOSSimulatorBuildAndRunByIdProjectTool(server);
-}

@@ -21,6 +21,7 @@ import { version } from '../version.js';
 import { areIdbToolsAvailable } from '../utils/idb-setup.js';
 import { isXcodemakeEnabled, isXcodemakeAvailable, doesMakefileExist } from '../utils/xcodemake.js';
 import * as os from 'os';
+import { ToolGroup, isSelectiveToolsEnabled, listEnabledGroups } from '../utils/tool-groups.js';
 
 // Constants
 const LOG_PREFIX = '[Diagnostic]';
@@ -124,9 +125,21 @@ export function getEnvironmentVariables(): Record<string, string | undefined> {
 
   const envVars: Record<string, string | undefined> = {};
 
+  // Add standard environment variables
   for (const varName of relevantVars) {
     envVars[varName] = process.env[varName];
   }
+
+  // Add all tool and group environment variables for debugging
+  Object.keys(process.env).forEach((key) => {
+    if (
+      key.startsWith('XCODEBUILDMCP_TOOL_') ||
+      key.startsWith('XCODEBUILDMCP_GROUP_') ||
+      key.startsWith('XCODEBUILDMCP_')
+    ) {
+      envVars[key] = process.env[key];
+    }
+  });
 
   return envVars;
 }
@@ -165,11 +178,44 @@ function getNodeInfo(): Record<string, string> {
 }
 
 /**
+ * Get information about tool groups and their status
+ */
+export function getToolGroupsInfo(): Record<string, unknown> {
+  const selectiveMode = isSelectiveToolsEnabled();
+  const enabledGroups = listEnabledGroups();
+
+  const toolGroups: Record<string, { enabled: boolean; envVar: string }> = {};
+
+  // Add information about each tool group
+  for (const group of Object.values(ToolGroup)) {
+    const isEnabled = process.env[group] === 'true';
+    toolGroups[group] = {
+      enabled: isEnabled,
+      envVar: group,
+    };
+  }
+
+  return {
+    selectiveMode,
+    enabledGroups,
+    groups: toolGroups,
+  };
+}
+
+/**
+ * Get a list of individually enabled tools via environment variables
+ */
+function getIndividuallyEnabledTools(): string[] {
+  return Object.keys(process.env)
+    .filter((key) => key.startsWith('XCODEBUILDMCP_TOOL_') && process.env[key] === 'true')
+    .map((key) => key.replace('XCODEBUILDMCP_TOOL_', ''));
+}
+
+/**
  * Run the diagnostic tool and return the results
- * @param params Optional parameters (not used)
  * @returns Promise resolving to ToolResponse with diagnostic information
  */
-export async function runDiagnosticTool(_params: unknown): Promise<ToolResponse> {
+export async function runDiagnosticTool(): Promise<ToolResponse> {
   log('info', `${LOG_PREFIX}: Running diagnostic tool`);
 
   // Check for required binaries
@@ -195,6 +241,12 @@ export async function runDiagnosticTool(_params: unknown): Promise<ToolResponse>
 
   // Check for idb tools availability
   const idbAvailable = areIdbToolsAvailable();
+
+  // Get tool groups information
+  const toolGroupsInfo = getToolGroupsInfo();
+
+  // Get individually enabled tools
+  const individuallyEnabledTools = getIndividuallyEnabledTools();
 
   // Check for xcodemake configuration
   const xcodemakeEnabled = isXcodemakeEnabled();
@@ -226,6 +278,12 @@ export async function runDiagnosticTool(_params: unknown): Promise<ToolResponse>
         available: binaryStatus['mise'].available,
       },
     },
+    toolGroups: toolGroupsInfo as {
+      selectiveMode: boolean;
+      enabledGroups: string[];
+      groups: Record<string, { enabled: boolean; envVar: string }>;
+    },
+    individuallyEnabledTools,
   };
 
   // Format the diagnostic information as a nicely formatted text response
@@ -275,6 +333,24 @@ export async function runDiagnosticTool(_params: unknown): Promise<ToolResponse>
     `- Running under mise: ${diagnosticInfo.features.mise.running_under_mise ? '✅ Yes' : '❌ No'}`,
     `- Mise available: ${diagnosticInfo.features.mise.available ? '✅ Yes' : '❌ No'}`,
 
+    `\n### Tool Groups Status`,
+    ...(diagnosticInfo.toolGroups.selectiveMode
+      ? Object.entries(diagnosticInfo.toolGroups.groups).map(([group, info]) => {
+          // Extract the group name without the prefix for display purposes
+          const displayName = group.replace('XCODEBUILDMCP_GROUP_', '');
+          return `- ${displayName}: ${info.enabled ? '✅ Enabled' : '❌ Disabled'} (Set with ${info.envVar}=true)`;
+        })
+      : ['- All tool groups are enabled (selective mode is disabled).']),
+
+    `\n### Individually Enabled Tools`,
+    ...(diagnosticInfo.toolGroups.selectiveMode
+      ? diagnosticInfo.individuallyEnabledTools.length > 0
+        ? diagnosticInfo.individuallyEnabledTools.map(
+            (tool) => `- ${tool}: ✅ Enabled (via XCODEBUILDMCP_TOOL_${tool}=true)`,
+          )
+        : ['- No tools are individually enabled via environment variables.']
+      : ['- All tools are enabled (selective mode is disabled).']),
+
     `\n## Tool Availability Summary`,
     `- Build Tools: ${!('error' in diagnosticInfo.xcode) ? '\u2705 Available' : '\u274c Not available'}`,
     `- UI Automation Tools: ${diagnosticInfo.features.idb.uiAutomationSupported ? '\u2705 Available' : '\u274c Not available'}`,
@@ -288,6 +364,11 @@ export async function runDiagnosticTool(_params: unknown): Promise<ToolResponse>
     `- If incremental build support is not available, you can download the tool from https://github.com/cameroncooke/xcodemake. Make sure it's executable and available in your PATH`,
     `- To enable xcodemake, set environment variable: \`export INCREMENTAL_BUILDS_ENABLED=1\``,
     `- For mise integration, follow instructions in the README.md file`,
+    `- To enable specific tool groups, set the appropriate environment variables (e.g., \`export XCODEBUILDMCP_GROUP_DISCOVERY=true\`)`,
+    `- If you're having issues with environment variables, make sure to use the correct prefix:`,
+    `  - Use \`XCODEBUILDMCP_GROUP_NAME=true\` to enable a tool group`,
+    `  - Use \`XCODEBUILDMCP_TOOL_NAME=true\` to enable an individual tool`,
+    `  - Common mistake: Using \`XCODEBUILDMCP_BUILD_IOS_SIM=true\` instead of \`XCODEBUILDMCP_GROUP_BUILD_IOS_SIM=true\``,
   ].join('\n');
 
   return {
@@ -312,8 +393,8 @@ export function registerDiagnosticTool(server: McpServer): void {
     {
       enabled: z.boolean().optional().describe('Optional: dummy parameter to satisfy MCP protocol'),
     },
-    async (params): Promise<ToolResponse> => {
-      return runDiagnosticTool(params);
+    async (): Promise<ToolResponse> => {
+      return runDiagnosticTool();
     },
   );
 }

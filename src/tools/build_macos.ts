@@ -212,8 +212,8 @@ async function _handleMacOSBuildAndRunLogic(params: {
 
 // --- Public Tool Definitions ---
 
-// Register build tools
-export function registerMacOSBuildTools(server: McpServer): void {
+// Register macOS build workspace tool
+export function registerMacOSBuildWorkspaceTool(server: McpServer): void {
   type WorkspaceParams = {
     workspacePath: string;
     scheme: string;
@@ -241,7 +241,10 @@ export function registerMacOSBuildTools(server: McpServer): void {
         configuration: params.configuration ?? 'Debug',
       }),
   );
+}
 
+// Register macOS build project tool
+export function registerMacOSBuildProjectTool(server: McpServer): void {
   type ProjectParams = {
     projectPath: string;
     scheme: string;
@@ -271,8 +274,8 @@ export function registerMacOSBuildTools(server: McpServer): void {
   );
 }
 
-// Register build and run tools
-export function registerMacOSBuildAndRunTools(server: McpServer): void {
+// Register macOS build and run workspace tool
+export function registerMacOSBuildAndRunWorkspaceTool(server: McpServer): void {
   type WorkspaceParams = {
     workspacePath: string;
     scheme: string;
@@ -299,7 +302,10 @@ export function registerMacOSBuildAndRunTools(server: McpServer): void {
         configuration: params.configuration ?? 'Debug',
       }),
   );
+}
 
+// Register macOS build and run project tool
+export function registerMacOSBuildAndRunProjectTool(server: McpServer): void {
   type ProjectParams = {
     projectPath: string;
     scheme: string;

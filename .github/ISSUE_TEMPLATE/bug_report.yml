@@ -21,15 +21,17 @@ body:
     id: debug
     attributes:
       label: Debug Output
-      description: Output from the diagnostic tool
+      description: Output from the diagnostic tool, run `mise x npm:xcodebuildmcp@1.3.5 -- xcodebuildmcp-diagnostic` in your terminal (replacing the @ version with the version number you're using) and paste the output here
       placeholder: |
         ```
-        # Run the diagnostic tool using mise
-        mise x npm:xcodebuildmcp@latest -- xcodebuildmcp-diagnostic
+        Running XcodeBuildMCP Diagnostic Tool (v1.3.5)...
+        Collecting system information and checking dependencies...
         
-        # Or using npx
-        npx xcodebuildmcp@latest xcodebuildmcp-diagnostic
-        ```
+        [2025-05-07T10:06:22.737Z] [INFO] [Diagnostic]: Running diagnostic tool
+        # XcodeBuildMCP Diagnostic Report
+        
+        ...
+        ```        
     validations:
       required: true      
       

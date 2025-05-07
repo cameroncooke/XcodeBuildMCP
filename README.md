@@ -10,26 +10,27 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 - [Overview](#overview)
 - [Why?](#why)
 - [Features](#features)
-   * [Xcode project management](#xcode-project-management)
-   * [Simulator management](#simulator-management)
-   * [App utilities](#app-utilities)
+  - [Xcode project management](#xcode-project-management)
+  - [Simulator management](#simulator-management)
+  - [App utilities](#app-utilities)
 - [Getting started](#getting-started)
-   * [Prerequisites](#prerequisites)
-   * [One-line setup with mise](#one-line-setup-with-mise)
-   * [Configure MCP clients](#configure-mcp-clients)
-   * [Enabling UI Automation (beta)](#enabling-ui-automation-beta)
-- [Incremental build support](#incremental-build-support)   
+  - [Prerequisites](#prerequisites)
+  - [One-line setup with mise](#one-line-setup-with-mise)
+  - [Configure MCP clients](#configure-mcp-clients)
+  - [Enabling UI Automation (beta)](#enabling-ui-automation-beta)
+- [Incremental build support](#incremental-build-support)
 - [Troubleshooting](#troubleshooting)
-   * [Diagnostic Tool](#diagnostic-tool)
-      + [Using with mise](#using-with-mise)
-      + [Using with npx](#using-with-npx)
+  - [Diagnostic Tool](#diagnostic-tool)
+    - [Using with mise](#using-with-mise)
+    - [Using with npx](#using-with-npx)
 - [Privacy](#privacy)
-   * [What is sent to Sentry?](#what-is-sent-to-sentry)
-   * [Opting Out of Sentry](#opting-out-of-sentry)
+  - [What is sent to Sentry?](#what-is-sent-to-sentry)
+  - [Opting Out of Sentry](#opting-out-of-sentry)
+- [Selective tool registration](#selective-tool-registration)
 - [Demos](#demos)
-   * [Autonomously fixing build errors in Cursor](#autonomously-fixing-build-errors-in-cursor)
-   * [Utilising the new UI automation and screen capture features](#utilising-the-new-ui-automation-and-screen-capture-features)
-   * [Building and running iOS app in Claude Desktop](#building-and-running-ios-app-in-claude-desktop)
+  - [Autonomously fixing build errors in Cursor](#autonomously-fixing-build-errors-in-cursor)
+  - [Utilising the new UI automation and screen capture features](#utilising-the-new-ui-automation-and-screen-capture-features)
+  - [Building and running iOS app in Claude Desktop](#building-and-running-ios-app-in-claude-desktop)
 - [Contributing](#contributing)
 - [Licence](#licence)
 
@@ -93,7 +94,7 @@ For more information about mise, visit the [official documentation](https://mise
 
 ### Configure MCP clients
 
-Configure your MCP client (Windsurf, Cursor, Claude Desktop, etc.) to use the XcodeBuildMCP server by adding the following configuration, changing the version number to match the version you wish to use:
+Configure your MCP client (Windsurf, Cursor, Claude Desktop, etc.) to use the XcodeBuildMCP server by ammending your client application's MCP configuration, changing the version number to match the version you wish to use:
 
 ```json
 {
@@ -129,7 +130,7 @@ brew install idb-companion
 The idb client is also required but XcodeBuildMCP attmepts to install it for you. If you find that the UI automation features are still not available you can install the client manually using the following command (assumes you have Python installed):
 
 ```bash
-pip install fb-idb==1.1.7
+pipx install fb-idb==1.1.7
 ```
 
 > [!IMPORTANT]
@@ -229,6 +230,33 @@ Example MCP client configuration:
   }
 }
 ```
+
+## Selective tool registration
+
+By default all tools are enabled but for some clients it may be useful to only enable specific tools to reduce the amount of context that is sent to the client. This can be achieved by setting specific environment variables in your clients MCP configuration.
+
+Once you have enabled one or more tools or groups of tools all other tools will be disabled. For example, to enable only the simulator related tools, you can set the environment variable to `XCODEBUILDMCP_GROUP_IOS_SIMULATOR_WORKFLOW=true` this will only expose tools for building, running and debugging on simulators
+
+```bash
+{
+  "mcpServers": {
+    "XcodeBuildMCP": {
+      "command": "mise",
+      "args": [
+        "x",
+        "npm:xcodebuildmcp@1.3.6",
+        "--",
+        "xcodebuildmcp"
+      ],
+      "env": {
+        "XCODEBUILDMCP_GROUP_IOS_SIMULATOR_WORKFLOW": "true"
+      }        
+    }
+  }
+}
+```
+
+You can find a list of available tools and detailed instructions on how to enable them in the [TOOL_OPTIONS.md](TOOL_OPTIONS.md) file.
 
 ## Demos
 
