@@ -96,7 +96,11 @@ echo "🚀 Pushing to origin..."
 run "git push origin $BRANCH --tags"
 
 echo "📦 Creating GitHub release..."
-run "gh release create "v$VERSION" --generate-notes -t \"Release v$VERSION\""
+if [[ "$NPM_TAG" == "beta" || "$NPM_TAG" == "alpha" || "$NPM_TAG" == "rc" || "$NPM_TAG" == "experimental" ]]; then
+  run "gh release create "v$VERSION" --generate-notes -t \"Release v$VERSION\" --prerelease"
+else
+  run "gh release create "v$VERSION" --generate-notes -t \"Release v$VERSION\""
+fi
 
 # npm publish
 echo ""

@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.4.0-beta.2] - 2025-05-07
+- Same as beta 1 but has the latest features from the main release channel
+
 ## [v1.4.0-beta.1] - 2025-05-05
 - Added experimental support for incremental builds (requires opt-in)
 
