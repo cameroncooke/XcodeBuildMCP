@@ -30,20 +30,8 @@ body:
         [2025-05-07T10:06:22.737Z] [INFO] [Diagnostic]: Running diagnostic tool
         # XcodeBuildMCP Diagnostic Report
         
-        ....
-        ```
-Server Version: 1.3.5
-
-## System Information
-- platform: darwin
-- release: 24.4.0
-- arch: arm64
-- cpus: 11 x Apple M3 Pro
-- memory: 18 GB
-- hostname: NOTHS0034
-- username: cameroncooke
-- homedir: /Users/cameroncooke
-- tmpdir: /var/folders/5w/2c4zqf3s5wvb4g45rgsv948w0000gp/T
+        ...
+        ```        
     validations:
       required: true      
       
