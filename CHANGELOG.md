@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.4.0-beta.3] - 2025-05-07
+- Fixed issue where incremental builds would only work for "Debug" build configurations
+- 
 ## [v1.4.0-beta.2] - 2025-05-07
 - Same as beta 1 but has the latest features from the main release channel
 
