@@ -7,6 +7,13 @@ DRY_RUN=false
 NPM_TAG_SPECIFIED=false
 NPM_TAG="latest"
 
+# Validate version format
+if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?$ ]]; then
+  echo "❌ Invalid version format: $VERSION"
+  echo "Version must be in format: x.y.z or x.y.z-tag.n (e.g., 1.4.0 or 1.4.0-beta.3)"
+  exit 1
+fi
+
 # Set default tag based on version format
 if [[ "$VERSION" =~ -beta ]]; then
   NPM_TAG="beta"
@@ -74,10 +81,10 @@ run "npm version \"$VERSION\" --no-git-tag-version"
 # README update
 echo ""
 echo "📝 Updating version in README.md..."
-run "sed -i '' \"s/@[0-9]*\.[0-9]*\.[0-9]*/@$VERSION/g\" README.md"
+run "sed -i '' -E 's/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/@'"$VERSION"'/g' README.md"
 echo ""
 echo "📝 Updating version in TOOL_OPTIONS.md..."
-run "sed -i '' \"s/@[0-9]*\.[0-9]*\.[0-9]*/@$VERSION/g\" TOOL_OPTIONS.md"
+run "sed -i '' -E 's/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/@'"$VERSION"'/g' TOOL_OPTIONS.md"
 
 # Build
 echo ""
