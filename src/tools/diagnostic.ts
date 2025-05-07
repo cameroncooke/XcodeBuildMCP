@@ -360,7 +360,7 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
     `- Sentry enabled: ${diagnosticInfo.environmentVariables.SENTRY_DISABLED !== 'true' ? '✅ Yes' : '❌ No'}`,
 
     `\n## Troubleshooting Tips`,
-    `- If UI automation tools are not available, install idb: \`pip3 install fb-idb\``,
+    `- If UI automation tools are not available, install idb: \`pipx install fb-idb\``,
     `- If incremental build support is not available, you can download the tool from https://github.com/cameroncooke/xcodemake. Make sure it's executable and available in your PATH`,
     `- To enable xcodemake, set environment variable: \`export INCREMENTAL_BUILDS_ENABLED=1\``,
     `- For mise integration, follow instructions in the README.md file`,

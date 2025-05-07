@@ -190,22 +190,8 @@ export function doesMakeLogFileExist(projectDir: string, command: string[]): boo
   try {
     process.chdir(projectDir);
 
-    // Filter out any -configuration parameters just like in executeXcodemakeCommand
-    const filteredCommand = command.filter((arg, index, array) => {
-      // Filter out -configuration and its value
-      if (arg === '-configuration' && index < array.length - 1) {
-        // Skip this argument and its value
-        return false;
-      }
-      // Also skip the value that follows -configuration
-      if (index > 0 && array[index - 1] === '-configuration') {
-        return false;
-      }
-      return true;
-    });
-
     // Construct the expected log filename
-    const xcodemakeCommand = ['xcodemake', ...filteredCommand.slice(1)];
+    const xcodemakeCommand = ['xcodemake', ...command.slice(1)];
     const escapedCommand = xcodemakeCommand.map((arg) => {
       // Remove projectDir from arguments if present at the start
       const prefix = projectDir + '/';
@@ -250,22 +236,7 @@ export async function executeXcodemakeCommand(
   // Change directory to project directory, this is needed for xcodemake to work
   process.chdir(projectDir);
 
-  // Create the xcodemake command with the build arguments, using potentially overridden path
-  // Filter out any -configuration parameters as this is added by xcodemake
-  const filteredArgs = buildArgs.filter((arg, index, array) => {
-    // Filter out -configuration and its value
-    if (arg === '-configuration' && index < array.length - 1) {
-      // Skip this argument and its value
-      return false;
-    }
-    // Also skip the value that follows -configuration
-    if (index > 0 && array[index - 1] === '-configuration') {
-      return false;
-    }
-    return true;
-  });
-
-  const xcodemakeCommand = [getXcodemakeCommand(), ...filteredArgs];
+  const xcodemakeCommand = [getXcodemakeCommand(), ...buildArgs];
 
   // Properly escape arguments for shell
   const escapedCommand = xcodemakeCommand.map((arg) => {
