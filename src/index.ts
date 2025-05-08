@@ -37,12 +37,42 @@ async function main(): Promise<void> {
     // Register tools
     registerTools(server);
 
+    // Handle process termination gracefully
+    process.on('SIGTERM', () => {
+      log('info', 'Received SIGTERM signal, shutting down gracefully...');
+      server.disconnect().catch(error => {
+        log('error', `Error during graceful shutdown: ${error}`);
+      });
+    });
+
+    process.on('SIGINT', () => {
+      log('info', 'Received SIGINT signal, shutting down gracefully...');
+      server.disconnect().catch(error => {
+        log('error', `Error during graceful shutdown: ${error}`);
+      });
+    });
+
+    // Handle uncaught errors to prevent crashes
+    process.on('uncaughtException', (error) => {
+      log('error', `Uncaught exception: ${error.stack || error.message}`);
+      // Don't exit immediately - allow time for cleanup
+      server.disconnect().catch(() => {}).finally(() => {
+        setTimeout(() => process.exit(1), 1000);
+      });
+    });
+
+    process.on('unhandledRejection', (reason, promise) => {
+      log('error', `Unhandled promise rejection at: ${promise}`);
+      log('error', `Reason: ${reason}`);
+    });
+
     // Start the server
     await startServer(server);
 
     // Log successful startup
     log('info', `XcodeBuildMCP server (version ${version}) started successfully`);
   } catch (error) {
+    log('error', `Fatal error in main(): ${error}`);
     console.error('Fatal error in main():', error);
     process.exit(1);
   }
@@ -50,6 +80,7 @@ async function main(): Promise<void> {
 
 // Start the server
 main().catch((error) => {
+  log('error', `Unhandled exception in main(): ${error.stack || error.message}`);
   console.error('Unhandled exception:', error);
   // Give Sentry a moment to send the error before exiting
   setTimeout(() => process.exit(1), 1000);
