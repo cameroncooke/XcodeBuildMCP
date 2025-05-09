@@ -15,6 +15,9 @@ src/version.ts
 # IDE and editor files
 .idea/
 .vscode/
+.vscode/*
+!.vscode/mcp.json
+!.vscode/launch.json
 *.swp
 *.swo
 .DS_Store

@@ -1,0 +1,12 @@
+{
+    "servers": {
+        "my-mcp-server": {
+            "type": "stdio",
+            "command": "node",
+            "args": [
+                "--inspect=9999",
+                "${workspaceFolder}/build/index.js"
+            ]
+        }
+    }
+}
