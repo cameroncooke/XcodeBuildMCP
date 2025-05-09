@@ -245,7 +245,7 @@ async function _handleDiscoveryLogic(params: DiscoverProjectsParams): Promise<To
 
 export function registerDiscoverProjectsTool(server: McpServer): void {
   server.tool(
-    'discover_projects',
+    'discover_projs',
     'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
     {
       workspaceRoot: z.string().describe('The absolute path of the workspace root to scan within.'),

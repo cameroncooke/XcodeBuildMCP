@@ -334,7 +334,7 @@ Next Steps:
 - Option 3: Launch app with logs in one step (for a fresh start):
   launch_app_with_logs_in_simulator({ simulatorUuid: '${simulatorUuid}', bundleId: '${bundleId}' })
 
-When done with any option, use: stop_and_get_simulator_log({ logSessionId: 'SESSION_ID' })`,
+When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
         },
       ],
     };
@@ -363,8 +363,8 @@ export function registerIOSSimulatorBuildByNameWorkspaceTool(server: McpServer):
 
   registerTool<Params>(
     server,
-    'ios_simulator_build_by_name_workspace',
-    "Builds an iOS app from a workspace for a specific simulator by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: ios_simulator_build_by_name_workspace({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+    'build_ios_sim_name_ws',
+    "Builds an iOS app from a workspace for a specific simulator by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_ios_sim_name_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
     {
       workspacePath: workspacePathSchema,
       scheme: schemeSchema,
@@ -411,8 +411,8 @@ export function registerIOSSimulatorBuildByNameProjectTool(server: McpServer): v
 
   registerTool<Params>(
     server,
-    'ios_simulator_build_by_name_project',
-    "Builds an iOS app from a project file for a specific simulator by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: ios_simulator_build_by_name_project({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+    'build_ios_sim_name_proj',
+    "Builds an iOS app from a project file for a specific simulator by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_ios_sim_name_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
     {
       projectPath: projectPathSchema,
       scheme: schemeSchema,
@@ -459,8 +459,8 @@ export function registerIOSSimulatorBuildByIdWorkspaceTool(server: McpServer): v
 
   registerTool<Params>(
     server,
-    'ios_simulator_build_by_id_workspace',
-    "Builds an iOS app from a workspace for a specific simulator by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: ios_simulator_build_by_id_workspace({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
+    'build_ios_sim_id_ws',
+    "Builds an iOS app from a workspace for a specific simulator by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_ios_sim_id_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
     {
       workspacePath: workspacePathSchema,
       scheme: schemeSchema,
@@ -507,8 +507,8 @@ export function registerIOSSimulatorBuildByIdProjectTool(server: McpServer): voi
 
   registerTool<Params>(
     server,
-    'ios_simulator_build_by_id_project',
-    "Builds an iOS app from a project file for a specific simulator by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: ios_simulator_build_by_id_project({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
+    'build_ios_sim_id_proj',
+    "Builds an iOS app from a project file for a specific simulator by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: build_ios_sim_id_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
     {
       projectPath: projectPathSchema,
       scheme: schemeSchema,
@@ -555,8 +555,8 @@ export function registerIOSSimulatorBuildAndRunByNameWorkspaceTool(server: McpSe
 
   registerTool<Params>(
     server,
-    'ios_simulator_build_and_run_by_name_workspace',
-    "Builds and runs an iOS app from a workspace on a simulator specified by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: ios_simulator_build_and_run_by_name_workspace({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+    'build_run_ios_sim_name_ws',
+    "Builds and runs an iOS app from a workspace on a simulator specified by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_run_ios_sim_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
     {
       workspacePath: workspacePathSchema,
       scheme: schemeSchema,
@@ -603,8 +603,8 @@ export function registerIOSSimulatorBuildAndRunByNameProjectTool(server: McpServ
 
   registerTool<Params>(
     server,
-    'ios_simulator_build_and_run_by_name_project',
-    "Builds and runs an iOS app from a project file on a simulator specified by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: ios_simulator_build_and_run_by_name_project({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+    'build_run_ios_sim_name_proj',
+    "Builds and runs an iOS app from a project file on a simulator specified by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_run_ios_sim_name_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
     {
       projectPath: projectPathSchema,
       scheme: schemeSchema,
@@ -651,8 +651,8 @@ export function registerIOSSimulatorBuildAndRunByIdWorkspaceTool(server: McpServ
 
   registerTool<Params>(
     server,
-    'ios_simulator_build_and_run_by_id_workspace',
-    "Builds and runs an iOS app from a workspace on a simulator specified by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: ios_simulator_build_and_run_by_id_workspace({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
+    'build_run_ios_sim_id_ws',
+    "Builds and runs an iOS app from a workspace on a simulator specified by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_run_ios_sim_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
     {
       workspacePath: workspacePathSchema,
       scheme: schemeSchema,
@@ -699,8 +699,8 @@ export function registerIOSSimulatorBuildAndRunByIdProjectTool(server: McpServer
 
   registerTool<Params>(
     server,
-    'ios_simulator_build_and_run_by_id_project',
-    "Builds and runs an iOS app from a project file on a simulator specified by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: ios_simulator_build_and_run_by_id_project({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
+    'build_run_ios_sim_id_proj',
+    "Builds and runs an iOS app from a project file on a simulator specified by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: build_run_ios_sim_id_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
     {
       projectPath: projectPathSchema,
       scheme: schemeSchema,

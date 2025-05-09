@@ -24,12 +24,12 @@ import { createTextContent } from './common.js';
 import { startLogCapture } from '../utils/log_capture.js';
 
 /**
- * Boots an iOS simulator. IMPORTANT: You MUST provide the simulatorUuid parameter. Example: boot_simulator({ simulatorUuid: 'YOUR_UUID_HERE' }) Note: In some environments, this tool may be prefixed as mcp0_boot_simulator.
+ * Boots an iOS simulator. IMPORTANT: You MUST provide the simulatorUuid parameter. Example: boot_sim({ simulatorUuid: 'YOUR_UUID_HERE' })
  */
 export function registerBootSimulatorTool(server: McpServer): void {
   server.tool(
-    'boot_simulator',
-    "Boots an iOS simulator. IMPORTANT: You MUST provide the simulatorUuid parameter. Example: boot_simulator({ simulatorUuid: 'YOUR_UUID_HERE' }) Note: In some environments, this tool may be prefixed as mcp0_boot_simulator.",
+    'boot_sim',
+    "Boots an iOS simulator. IMPORTANT: You MUST provide the simulatorUuid parameter. Example: boot_sim({ simulatorUuid: 'YOUR_UUID_HERE' })",
     {
       simulatorUuid: z
         .string()
@@ -63,16 +63,16 @@ export function registerBootSimulatorTool(server: McpServer): void {
             {
               type: 'text',
               text: `Simulator booted successfully. Next steps:
-1. Open the Simulator app: open_simulator({ enabled: true })
-2. Install an app: install_app_in_simulator({ simulatorUuid: "${params.simulatorUuid}", appPath: "PATH_TO_YOUR_APP" })
-3. Launch an app: launch_app_in_simulator({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID" })
+1. Open the Simulator app: open_sim({ enabled: true })
+2. Install an app: install_app_sim({ simulatorUuid: "${params.simulatorUuid}", appPath: "PATH_TO_YOUR_APP" })
+3. Launch an app: launch_app_sim({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID" })
 4. Log capture options:
    - Option 1: Capture structured logs only (app continues running):
-     start_simulator_log_capture({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID" })
+     start_sim_log_cap({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID" })
    - Option 2: Capture both console and structured logs (app will restart):
-     start_simulator_log_capture({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID", captureConsole: true })
+     start_sim_log_cap({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID", captureConsole: true })
    - Option 3: Launch app with logs in one step:
-     launch_app_with_logs_in_simulator({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID" })`,
+     launch_app_logs_sim({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID" })`,
             },
           ],
         };
@@ -94,7 +94,7 @@ export function registerBootSimulatorTool(server: McpServer): void {
 
 export function registerListSimulatorsTool(server: McpServer): void {
   server.tool(
-    'list_simulators',
+    'list_sims',
     'Lists available iOS simulators with their UUIDs. ',
     {
       enabled: z.boolean(),
@@ -138,13 +138,12 @@ export function registerListSimulatorsTool(server: McpServer): void {
           }
 
           responseText += 'Next Steps:\n';
+          responseText += "1. Boot a simulator: boot_sim({ simulatorUuid: 'UUID_FROM_ABOVE' })\n";
+          responseText += '2. Open the simulator UI: open_sim({ enabled: true })\n';
           responseText +=
-            "1. Boot a simulator: boot_simulator({ simulatorUuid: 'UUID_FROM_ABOVE' })\n";
-          responseText += '2. Open the simulator UI: open_simulator({})\n';
+            "3. Build for simulator: build_ios_sim_id_proj({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })\n"; // Example using project variant
           responseText +=
-            "3. Build for simulator: ios_simulator_build_by_id({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })\n";
-          responseText +=
-            "4. Get app path: get_app_path_by_id({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })";
+            "4. Get app path: get_sim_app_path_id_proj({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })"; // Example using project variant
 
           return {
             content: [
@@ -182,8 +181,8 @@ export function registerListSimulatorsTool(server: McpServer): void {
 
 export function registerInstallAppInSimulatorTool(server: McpServer): void {
   server.tool(
-    'install_app_in_simulator',
-    "Installs an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and appPath parameters. Example: install_app_in_simulator({ simulatorUuid: 'YOUR_UUID_HERE', appPath: '/path/to/your/app.app' })",
+    'install_app_sim',
+    "Installs an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and appPath parameters. Example: install_app_sim({ simulatorUuid: 'YOUR_UUID_HERE', appPath: '/path/to/your/app.app' })",
     {
       simulatorUuid: z
         .string()
@@ -243,8 +242,8 @@ export function registerInstallAppInSimulatorTool(server: McpServer): void {
             {
               type: 'text',
               text: `Next Steps:
-1. Open the Simulator app: open_simulator({})
-2. Launch the app: launch_app_in_simulator({ simulatorUuid: "${params.simulatorUuid}"${bundleId ? `, bundleId: "${bundleId}"` : ', bundleId: "YOUR_APP_BUNDLE_ID"'} })`,
+1. Open the Simulator app: open_sim({ enabled: true })
+2. Launch the app: launch_app_sim({ simulatorUuid: "${params.simulatorUuid}"${bundleId ? `, bundleId: "${bundleId}"` : ', bundleId: "YOUR_APP_BUNDLE_ID"'} })`,
             },
           ],
         };
@@ -266,8 +265,8 @@ export function registerInstallAppInSimulatorTool(server: McpServer): void {
 
 export function registerLaunchAppInSimulatorTool(server: McpServer): void {
   server.tool(
-    'launch_app_in_simulator',
-    "Launches an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and bundleId parameters.\n\nNote: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_in_simulator({ simulatorUuid: 'YOUR_UUID_HERE', bundleId: 'com.example.MyApp' })",
+    'launch_app_sim',
+    "Launches an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and bundleId parameters.\n\nNote: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_sim({ simulatorUuid: 'YOUR_UUID_HERE', bundleId: 'com.example.MyApp' })",
     {
       simulatorUuid: z
         .string()
@@ -359,13 +358,13 @@ export function registerLaunchAppInSimulatorTool(server: McpServer): void {
 1. You can now interact with the app in the simulator.
 2. Log capture options:
    - Option 1: Capture structured logs only (app continues running):
-     start_simulator_log_capture({ simulatorUuid: "${params.simulatorUuid}", bundleId: "${params.bundleId}" })
+     start_sim_log_cap({ simulatorUuid: "${params.simulatorUuid}", bundleId: "${params.bundleId}" })
    - Option 2: Capture both console and structured logs (app will restart):
-     start_simulator_log_capture({ simulatorUuid: "${params.simulatorUuid}", bundleId: "${params.bundleId}", captureConsole: true })
+     start_sim_log_cap({ simulatorUuid: "${params.simulatorUuid}", bundleId: "${params.bundleId}", captureConsole: true })
    - Option 3: Restart with logs in one step:
-     launch_app_with_logs_in_simulator({ simulatorUuid: "${params.simulatorUuid}", bundleId: "${params.bundleId}" })
+     launch_app_logs_sim({ simulatorUuid: "${params.simulatorUuid}", bundleId: "${params.bundleId}" })
 
-3. When done with any option, use: stop_and_get_simulator_log({ logSessionId: 'SESSION_ID' })`,
+3. When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
             },
           ],
         };
@@ -387,7 +386,7 @@ export function registerLaunchAppInSimulatorTool(server: McpServer): void {
 
 export function registerLaunchAppWithLogsInSimulatorTool(server: McpServer): void {
   server.tool(
-    'launch_app_with_logs_in_simulator',
+    'launch_app_logs_sim',
     'Launches an app in an iOS simulator and captures its logs.',
     {
       simulatorUuid: z
@@ -437,7 +436,7 @@ export function registerLaunchAppWithLogsInSimulatorTool(server: McpServer): voi
 
 export function registerOpenSimulatorTool(server: McpServer): void {
   server.tool(
-    'open_simulator',
+    'open_sim',
     'Opens the iOS Simulator app.',
     {
       enabled: z.boolean(),
@@ -469,15 +468,15 @@ export function registerOpenSimulatorTool(server: McpServer): void {
             {
               type: 'text',
               text: `Next Steps:
-1. Boot a simulator if needed: boot_simulator({ simulatorUuid: 'UUID_FROM_LIST_SIMULATORS' })
+1. Boot a simulator if needed: boot_sim({ simulatorUuid: 'UUID_FROM_LIST_SIMULATORS' })
 2. Launch your app and interact with it
 3. Log capture options:
    - Option 1: Capture structured logs only (app continues running):
-     start_simulator_log_capture({ simulatorUuid: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' })
+     start_sim_log_cap({ simulatorUuid: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' })
    - Option 2: Capture both console and structured logs (app will restart):
-     start_simulator_log_capture({ simulatorUuid: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID', captureConsole: true })
+     start_sim_log_cap({ simulatorUuid: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID', captureConsole: true })
    - Option 3: Launch app with logs in one step:
-     launch_app_with_logs_in_simulator({ simulatorUuid: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' })`,
+     launch_app_logs_sim({ simulatorUuid: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' })`,
             },
           ],
         };
@@ -499,7 +498,7 @@ export function registerOpenSimulatorTool(server: McpServer): void {
 
 export function registerSetSimulatorAppearanceTool(server: McpServer): void {
   server.tool(
-    'set_simulator_appearance',
+    'set_sim_appearance',
     'Sets the appearance mode (dark/light) of an iOS simulator.',
     {
       simulatorUuid: z

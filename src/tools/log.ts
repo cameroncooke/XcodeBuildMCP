@@ -55,7 +55,7 @@ export function registerStartSimulatorLogCaptureTool(server: McpServer): void {
     return {
       content: [
         createTextContent(
-          `Log capture started successfully. Session ID: ${sessionId}.\n\n${params.captureConsole ? 'Note: Your app was relaunched to capture console output.' : 'Note: Only structured logs are being captured.'}\n\nNext Steps:\n1.  Interact with your simulator and app.\n2.  Use 'stop_and_get_simulator_log' with session ID '${sessionId}' to stop capture and retrieve logs.`,
+          `Log capture started successfully. Session ID: ${sessionId}.\n\n${params.captureConsole ? 'Note: Your app was relaunched to capture console output.' : 'Note: Only structured logs are being captured.'}\n\nNext Steps:\n1.  Interact with your simulator and app.\n2.  Use 'stop_sim_log_cap' with session ID '${sessionId}' to stop capture and retrieve logs.`,
         ),
       ],
     };
@@ -63,8 +63,8 @@ export function registerStartSimulatorLogCaptureTool(server: McpServer): void {
 
   registerTool(
     server,
-    'start_simulator_log_capture',
-    'Starts capturing logs from a specified simulator. Returns a session ID. By default, captures only structured logs. Use captureConsole:true to also capture console output (will relaunch the app).',
+    'start_sim_log_cap',
+    'Starts capturing logs from a specified simulator. Returns a session ID. By default, captures only structured logs.',
     schema,
     handler,
   );
@@ -77,7 +77,7 @@ export function registerStartSimulatorLogCaptureTool(server: McpServer): void {
  */
 export function registerStopAndGetSimulatorLogTool(server: McpServer): void {
   const schema = {
-    logSessionId: z.string().describe('The session ID returned by start_simulator_log_capture.'),
+    logSessionId: z.string().describe('The session ID returned by start_sim_log_cap.'),
   };
 
   async function handler(params: { logSessionId: string }): Promise<ToolResponse> {
@@ -105,7 +105,7 @@ export function registerStopAndGetSimulatorLogTool(server: McpServer): void {
 
   registerTool(
     server,
-    'stop_and_get_simulator_log',
+    'stop_sim_log_cap',
     'Stops an active simulator log capture session and returns the captured logs.',
     schema,
     handler,

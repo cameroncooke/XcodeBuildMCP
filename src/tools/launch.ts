@@ -30,8 +30,8 @@ const execPromise = promisify(exec);
  */
 export function registerLaunchMacOSAppTool(server: McpServer): void {
   server.tool(
-    'launch_macos_app',
-    "Launches a macOS application. IMPORTANT: You MUST provide the appPath parameter. Example: launch_macos_app({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_launch_macos_app.",
+    'launch_mac_app',
+    "Launches a macOS application. IMPORTANT: You MUST provide the appPath parameter. Example: launch_mac_app({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_launch_macos_app.",
     {
       appPath: z
         .string()

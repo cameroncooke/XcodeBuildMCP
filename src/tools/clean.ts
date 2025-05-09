@@ -53,8 +53,8 @@ async function _handleCleanLogic(params: {
 
 export function registerCleanWorkspaceTool(server: McpServer): void {
   server.tool(
-    'clean_workspace',
-    "Cleans build products for a specific workspace using xcodebuild. IMPORTANT: Requires workspacePath. Scheme/Configuration are optional. Example: clean_workspace({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
+    'clean_ws',
+    "Cleans build products for a specific workspace using xcodebuild. IMPORTANT: Requires workspacePath. Scheme/Configuration are optional. Example: clean_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
     {
       workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
       scheme: z.string().optional().describe('Optional: The scheme to clean'),
@@ -74,8 +74,8 @@ export function registerCleanWorkspaceTool(server: McpServer): void {
 
 export function registerCleanProjectTool(server: McpServer): void {
   server.tool(
-    'clean_project',
-    "Cleans build products for a specific project file using xcodebuild. IMPORTANT: Requires projectPath. Scheme/Configuration are optional. Example: clean_project({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+    'clean_proj',
+    "Cleans build products for a specific project file using xcodebuild. IMPORTANT: Requires projectPath. Scheme/Configuration are optional. Example: clean_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
     {
       projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
       scheme: z.string().optional().describe('Optional: The scheme to clean'),

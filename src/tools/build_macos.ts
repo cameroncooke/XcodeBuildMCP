@@ -225,7 +225,7 @@ export function registerMacOSBuildWorkspaceTool(server: McpServer): void {
 
   registerTool<WorkspaceParams>(
     server,
-    'macos_build_workspace',
+    'build_mac_ws',
     'Builds a macOS app using xcodebuild from a workspace.',
     {
       workspacePath: workspacePathSchema,
@@ -256,7 +256,7 @@ export function registerMacOSBuildProjectTool(server: McpServer): void {
 
   registerTool<ProjectParams>(
     server,
-    'macos_build_project',
+    'build_mac_proj',
     'Builds a macOS app using xcodebuild from a project file.',
     {
       projectPath: projectPathSchema,
@@ -287,7 +287,7 @@ export function registerMacOSBuildAndRunWorkspaceTool(server: McpServer): void {
 
   registerTool<WorkspaceParams>(
     server,
-    'macos_build_and_run_workspace',
+    'build_run_mac_ws',
     'Builds and runs a macOS app from a workspace in one step.',
     {
       workspacePath: workspacePathSchema,
@@ -317,7 +317,7 @@ export function registerMacOSBuildAndRunProjectTool(server: McpServer): void {
 
   registerTool<ProjectParams>(
     server,
-    'macos_build_and_run_project',
+    'build_run_mac_proj',
     'Builds and runs a macOS app from a project file in one step.',
     {
       projectPath: projectPathSchema,

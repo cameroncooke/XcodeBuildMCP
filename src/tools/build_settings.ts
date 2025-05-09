@@ -124,7 +124,7 @@ async function _handleListSchemesLogic(params: {
       nextStepsText = `Next Steps:
 1. Build the app: ${projectOrWorkspace === 'workspace' ? 'macos_build_workspace' : 'macos_build_project'}({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })
    or for iOS: ${projectOrWorkspace === 'workspace' ? 'ios_simulator_build_by_name_workspace' : 'ios_simulator_build_by_name_project'}({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
-2. Show build settings: show_build_settings_${projectOrWorkspace}({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })`;
+2. Show build settings: ${projectOrWorkspace === 'workspace' ? 'show_build_set_ws' : 'show_build_set_proj'}({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })`;
     }
 
     return {
@@ -158,8 +158,8 @@ async function _handleListSchemesLogic(params: {
 export function registerShowBuildSettingsWorkspaceTool(server: McpServer): void {
   registerTool<BaseWorkspaceParams>(
     server,
-    'show_build_settings_workspace',
-    "Shows build settings from a workspace using xcodebuild. IMPORTANT: Requires workspacePath and scheme. Example: show_build_settings_workspace({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
+    'show_build_set_ws',
+    "Shows build settings from a workspace using xcodebuild. IMPORTANT: Requires workspacePath and scheme. Example: show_build_set_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
     {
       workspacePath: workspacePathSchema,
       scheme: schemeSchema,
@@ -183,8 +183,8 @@ export function registerShowBuildSettingsWorkspaceTool(server: McpServer): void 
 export function registerShowBuildSettingsProjectTool(server: McpServer): void {
   registerTool<BaseProjectParams>(
     server,
-    'show_build_settings_project',
-    "Shows build settings from a project file using xcodebuild. IMPORTANT: Requires projectPath and scheme. Example: show_build_settings_project({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+    'show_build_set_proj',
+    "Shows build settings from a project file using xcodebuild. IMPORTANT: Requires projectPath and scheme. Example: show_build_set_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
     {
       projectPath: projectPathSchema,
       scheme: schemeSchema,
@@ -208,8 +208,8 @@ export function registerShowBuildSettingsProjectTool(server: McpServer): void {
 export function registerListSchemesWorkspaceTool(server: McpServer): void {
   registerTool<BaseWorkspaceParams>(
     server,
-    'list_schemes_workspace',
-    "Lists available schemes in the workspace. IMPORTANT: Requires workspacePath. Example: list_schemes_workspace({ workspacePath: '/path/to/MyProject.xcworkspace' })",
+    'list_schems_ws',
+    "Lists available schemes in the workspace. IMPORTANT: Requires workspacePath. Example: list_schems_ws({ workspacePath: '/path/to/MyProject.xcworkspace' })",
     {
       workspacePath: workspacePathSchema,
     },
@@ -229,8 +229,8 @@ export function registerListSchemesWorkspaceTool(server: McpServer): void {
 export function registerListSchemesProjectTool(server: McpServer): void {
   registerTool<BaseProjectParams>(
     server,
-    'list_schemes_project',
-    "Lists available schemes in the project file. IMPORTANT: Requires projectPath. Example: list_schemes_project({ projectPath: '/path/to/MyProject.xcodeproj' })",
+    'list_schems_proj',
+    "Lists available schemes in the project file. IMPORTANT: Requires projectPath. Example: list_schems_proj({ projectPath: '/path/to/MyProject.xcodeproj' })",
     {
       projectPath: projectPathSchema,
     },

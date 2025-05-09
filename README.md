@@ -23,6 +23,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
   - [Diagnostic Tool](#diagnostic-tool)
     - [Using with mise](#using-with-mise)
     - [Using with npx](#using-with-npx)
+  - [MCP Server Logs](#mcp-server-logs)
 - [Privacy](#privacy)
   - [What is sent to Sentry?](#what-is-sent-to-sentry)
   - [Opting Out of Sentry](#opting-out-of-sentry)
@@ -199,6 +200,17 @@ The diagnostic tool will output comprehensive information about:
 - Feature availability status
 
 When reporting issues on GitHub, please include the full output from the diagnostic tool to help with troubleshooting.
+
+### MCP Server Logs
+
+It can be helpful to have access to the log messages from the MCP server to identify any issues. The logs are captured by the client application, for example in Cursor:
+
+Cursor:
+```bash
+find ~/Library/Application\ Support/Cursor/logs -name "Cursor MCP.log" -exec zip -r matching_logs.zip {} +
+```
+
+If your MCP client doesn't have log files you can run the server directly using the MCP Inspector tool see [Debugging](CONTRIBUTING.md#debugging) for more information on how to do this. Once running the MCP tool prints all log messages to it's error pane, which can be helpful in diagnosing issues.
 
 ## Privacy
 

@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.3.7] - 2025-05-08
+- Fix Claude Code issue due to long tool names
+
 ## [v1.4.0-beta.3] - 2025-05-07
 - Fixed issue where incremental builds would only work for "Debug" build configurations
 - 

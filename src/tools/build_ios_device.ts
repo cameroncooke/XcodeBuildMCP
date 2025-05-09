@@ -33,14 +33,14 @@ import {
 // --- Tool Registration Functions ---
 
 /**
- * Registers the ios_device_build_workspace tool.
+ * Registers the build_ios_dev_ws tool.
  */
 export function registerIOSDeviceBuildWorkspaceTool(server: McpServer): void {
   type Params = BaseWorkspaceParams;
   registerTool<Params>(
     server,
-    'ios_device_build_workspace',
-    "Builds an iOS app from a workspace for a physical device. IMPORTANT: Requires workspacePath and scheme. Example: ios_device_build_workspace({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
+    'build_ios_dev_ws',
+    "Builds an iOS app from a workspace for a physical device. IMPORTANT: Requires workspacePath and scheme. Example: build_ios_dev_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
     {
       workspacePath: workspacePathSchema,
       scheme: schemeSchema,
@@ -71,14 +71,14 @@ export function registerIOSDeviceBuildWorkspaceTool(server: McpServer): void {
 }
 
 /**
- * Registers the ios_device_build_project tool.
+ * Registers the build_ios_dev_proj tool.
  */
 export function registerIOSDeviceBuildProjectTool(server: McpServer): void {
   type Params = BaseProjectParams;
   registerTool<Params>(
     server,
-    'ios_device_build_project',
-    "Builds an iOS app from a project file for a physical device. IMPORTANT: Requires projectPath and scheme. Example: ios_device_build_project({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+    'build_ios_dev_proj',
+    "Builds an iOS app from a project file for a physical device. IMPORTANT: Requires projectPath and scheme. Example: build_ios_dev_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
     {
       projectPath: projectPathSchema,
       scheme: schemeSchema,
