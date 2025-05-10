@@ -50,6 +50,10 @@ import {
   registerLaunchAppInSimulatorTool,
   registerLaunchAppWithLogsInSimulatorTool,
   registerSetSimulatorAppearanceTool,
+  registerSetSimulatorLocationTool,
+  registerResetSimulatorLocationTool,
+  registerSetNetworkConditionTool,
+  registerResetNetworkConditionTool,
 } from '../tools/simulator.js';
 
 // Import bundle ID tools
@@ -283,6 +287,26 @@ const toolRegistrations = [
     register: registerSetSimulatorAppearanceTool,
     groups: [ToolGroup.SIMULATOR_MANAGEMENT],
     envVar: 'XCODEBUILDMCP_TOOL_SET_SIMULATOR_APPEARANCE',
+  },
+  {
+    register: registerSetSimulatorLocationTool,
+    groups: [ToolGroup.SIMULATOR_MANAGEMENT, ToolGroup.IOS_SIMULATOR_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SET_SIMULATOR_LOCATION',
+  },
+  {
+    register: registerResetSimulatorLocationTool,
+    groups: [ToolGroup.SIMULATOR_MANAGEMENT, ToolGroup.IOS_SIMULATOR_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_RESET_SIMULATOR_LOCATION',
+  },
+  {
+    register: registerSetNetworkConditionTool,
+    groups: [ToolGroup.SIMULATOR_MANAGEMENT, ToolGroup.IOS_SIMULATOR_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SET_NETWORK_CONDITION',
+  },
+  {
+    register: registerResetNetworkConditionTool,
+    groups: [ToolGroup.SIMULATOR_MANAGEMENT, ToolGroup.IOS_SIMULATOR_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_RESET_NETWORK_CONDITION',
   },
 
   // App installation and launch tools
