@@ -64,24 +64,12 @@ To configure your MCP client to use your local XcodeBuildMCP server you can use 
 
 VS Code is especially good for developing XcodeBuildMCP as it has a built-in way to view MCP client/server logs as well as the ability to configure MCP servers at a project level. It probably has the most comprehensive support for MCP development. 
 
-You can create a `.vscode/mcp.json` file in the root of the project with the following content:
+To make your development workflow in VS Code more efficient:
 
-```json
-{
-  "servers": {
-      "XcodeBuildMCP": {
-        "command": "node",
-        "args": [
-          "${workspaceFolder}/build/index.js"
-        ],
-        "env": {
-          "XCODEBUILDMCP_DEBUG": "true"
-        }
-      }
-  }
-}
-```
+1.  **Start the MCP Server**: Open the `.vscode/mcp.json` file. You can start the `xcode-mcp-server-dev` server either by clicking the `Start` CodeLens that appears above the server definition, or by opening the Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`), running `Mcp: List Servers`, selecting `xcode-mcp-server-dev`, and starting the server.
+2.  **Launch the Debugger**: Press `F5` to attach the Node.js debugger.
 
+Once these steps are completed, you can utilize the tools from the MCP server you are developing within this repository in agent mode.
 For more details on how to work with MCP servers in VS Code see: https://code.visualstudio.com/docs/copilot/chat/mcp-servers
 
 ### Debugging
