@@ -80,7 +80,7 @@ You can use MCP Inspector via:
 npm run inspect
 ```
 
-or if you prefer the explict command:
+or if you prefer the explicit command:
 
 ```bash
 npx @modelcontextprotocol/inspector node build/index.js
