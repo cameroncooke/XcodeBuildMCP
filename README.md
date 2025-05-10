@@ -17,6 +17,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
   - [Prerequisites](#prerequisites)
   - [One-line setup with mise](#one-line-setup-with-mise)
   - [Configure MCP clients](#configure-mcp-clients)
+    - [One click to install in VS Code](#one-click-to-install-in-vs-code)
   - [Enabling UI Automation (beta)](#enabling-ui-automation-beta)
 - [Incremental build support](#incremental-build-support)
 - [Troubleshooting](#troubleshooting)
@@ -147,7 +148,7 @@ brew tap facebook/fb
 brew install idb-companion
 ```
 
-The idb client is also required but XcodeBuildMCP attmepts to install it for you. If you find that the UI automation features are still not available you can install the client manually using the following command (assumes you have Python installed):
+The idb client is also required but XcodeBuildMCP attempts to install it for you. If you find that the UI automation features are still not available you can install the client manually using the following command (assumes you have Python installed):
 
 ```bash
 pipx install fb-idb==1.1.7
