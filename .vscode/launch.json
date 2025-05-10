@@ -4,7 +4,7 @@
     {
       "type": "node",
       "request": "attach",
-      "name": "Attach to MCP Server",
+      "name": "Attach to MCP Server Dev",
       "port": 9999,
       "restart": true,
       "skipFiles": [
@@ -12,7 +12,7 @@
       ],
       "sourceMaps": true,
       "outFiles": [
-        "${workspaceFolder}/build/**/*.js" // Add patterns for your compiled code
+        "${workspaceFolder}/build/**/*.js"
       ],
       "cwd": "${workspaceFolder}",
       "sourceMapPathOverrides": {
