@@ -1,0 +1,15 @@
+{
+    "servers": {
+        "xcode-mcp-server-dev": {
+            "type": "stdio",
+            "command": "node",
+            "args": [
+                "--inspect=9999",
+                "${workspaceFolder}/build/index.js"
+            ],
+            "env": {
+                "XCODEBUILDMCP_DEBUG": "true"
+            }
+        }
+    }
+}

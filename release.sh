@@ -81,7 +81,13 @@ run "npm version \"$VERSION\" --no-git-tag-version"
 # README update
 echo ""
 echo "📝 Updating version in README.md..."
+# Update version references in code examples using extended regex for precise semver matching
 run "sed -i '' -E 's/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/@'"$VERSION"'/g' README.md"
+
+# Update URL-encoded version references in shield links
+echo "📝 Updating version in README.md shield links..."
+run "sed -i '' -E 's/npm%3Axcodebuildmcp%40[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/npm%3Axcodebuildmcp%40'"$VERSION"'/g' README.md"
+
 echo ""
 echo "📝 Updating version in TOOL_OPTIONS.md..."
 run "sed -i '' -E 's/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/@'"$VERSION"'/g' TOOL_OPTIONS.md"
