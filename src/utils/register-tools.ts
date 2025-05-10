@@ -290,22 +290,22 @@ const toolRegistrations = [
   },
   {
     register: registerSetSimulatorLocationTool,
-    groups: [ToolGroup.SIMULATOR_MANAGEMENT, ToolGroup.IOS_SIMULATOR_WORKFLOW],
+    groups: [ToolGroup.SIMULATOR_MANAGEMENT],
     envVar: 'XCODEBUILDMCP_TOOL_SET_SIMULATOR_LOCATION',
   },
   {
     register: registerResetSimulatorLocationTool,
-    groups: [ToolGroup.SIMULATOR_MANAGEMENT, ToolGroup.IOS_SIMULATOR_WORKFLOW],
+    groups: [ToolGroup.SIMULATOR_MANAGEMENT],
     envVar: 'XCODEBUILDMCP_TOOL_RESET_SIMULATOR_LOCATION',
   },
   {
     register: registerSetNetworkConditionTool,
-    groups: [ToolGroup.SIMULATOR_MANAGEMENT, ToolGroup.IOS_SIMULATOR_WORKFLOW],
+    groups: [ToolGroup.SIMULATOR_MANAGEMENT],
     envVar: 'XCODEBUILDMCP_TOOL_SET_NETWORK_CONDITION',
   },
   {
     register: registerResetNetworkConditionTool,
-    groups: [ToolGroup.SIMULATOR_MANAGEMENT, ToolGroup.IOS_SIMULATOR_WORKFLOW],
+    groups: [ToolGroup.SIMULATOR_MANAGEMENT],
     envVar: 'XCODEBUILDMCP_TOOL_RESET_NETWORK_CONDITION',
   },
 
