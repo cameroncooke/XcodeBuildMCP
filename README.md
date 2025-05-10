@@ -120,7 +120,20 @@ Configure your MCP client (Windsurf, Cursor, Claude Desktop, etc.) to use the Xc
 
 #### One click to install in VS Code
 
-<!-- Note: update the version number in the URL to match the latest release version. -->
+<!-- Note: update the version number in the URL to match the latest release version.
+
+To generate 
+
+```
+let obj = {
+  "name": "XcodeBuildMCP",
+  "command": "mise",
+  "args": [ "x", "npm:xcodebuildmcp@1.3.7", "--", "xcodebuildmcp"]
+}
+
+// For Insiders, use `vscode-insiders` instead of `code`
+const link = encodeURIComponent(`vscode:mcp/install?${(JSON.stringify(obj))}`);
+``` -->
 
 [<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22mise%22%2C%22args%22%3A%5B%22x%22%2C%22npm%3Axcodebuildmcp%401.3.7%22%2C%22--%22%2C%22xcodebuildmcp%22%5D%7D) [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Finstall%3F%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22mise%22%2C%22args%22%3A%5B%22x%22%2C%22npm%3Axcodebuildmcp%401.3.7%22%2C%22--%22%2C%22xcodebuildmcp%22%5D%7D)
 
