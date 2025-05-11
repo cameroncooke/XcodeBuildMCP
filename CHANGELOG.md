@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.4.0] - 2025-05-11
+- Merge the incremental build beta branch into main
+- Add preferXcodebuild argument to build tools with improved error handling allowing the agent to force the use of xcodebuild over xcodemake for complex projects. It also adds a hint when incremental builds fail due to non-compiler errors, enabling the agent to automatically switch to xcodebuild for a recovery build attempt, improving reliability.
+
 ## [v1.3.7] - 2025-05-08
 - Fix Claude Code issue due to long tool names
 
