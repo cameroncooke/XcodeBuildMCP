@@ -45,6 +45,7 @@ async function _handleCleanLogic(params: {
       platform: XcodePlatform.macOS, // Default to macOS, but this doesn't matter much for clean
       logPrefix: 'Clean',
     },
+    false,
     'clean', // Specify 'clean' as the build action
   );
 }

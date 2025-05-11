@@ -54,6 +54,12 @@ export const launchArgsSchema = z
   .array(z.string())
   .optional()
   .describe('Additional arguments to pass to the app');
+export const preferXcodebuildSchema = z
+  .boolean()
+  .optional()
+  .describe(
+    'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
+  );
 
 export const platformDeviceSchema = z
   .enum([
@@ -83,6 +89,7 @@ export type BaseWorkspaceParams = {
   configuration?: string;
   derivedDataPath?: string;
   extraArgs?: string[];
+  preferXcodebuild?: boolean;
 };
 
 /**
@@ -94,6 +101,7 @@ export type BaseProjectParams = {
   configuration?: string;
   derivedDataPath?: string;
   extraArgs?: string[];
+  preferXcodebuild?: boolean;
 };
 
 /**

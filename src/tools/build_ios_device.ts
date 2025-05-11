@@ -25,10 +25,8 @@ import {
   extraArgsSchema,
   BaseWorkspaceParams,
   BaseProjectParams,
+  preferXcodebuildSchema,
 } from './common.js';
-
-// --- Parameter Type Definitions (Specific to iOS Device Build) ---
-// None needed currently, using base types
 
 // --- Tool Registration Functions ---
 
@@ -47,6 +45,7 @@ export function registerIOSDeviceBuildWorkspaceTool(server: McpServer): void {
       configuration: configurationSchema,
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params: Params) => {
       const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
@@ -64,6 +63,7 @@ export function registerIOSDeviceBuildWorkspaceTool(server: McpServer): void {
           platform: XcodePlatform.iOS,
           logPrefix: 'iOS Device Build',
         },
+        params.preferXcodebuild,
         'build',
       );
     },
@@ -85,6 +85,7 @@ export function registerIOSDeviceBuildProjectTool(server: McpServer): void {
       configuration: configurationSchema,
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params: Params) => {
       const projectValidation = validateRequiredParam('projectPath', params.projectPath);
@@ -102,6 +103,7 @@ export function registerIOSDeviceBuildProjectTool(server: McpServer): void {
           platform: XcodePlatform.iOS,
           logPrefix: 'iOS Device Build',
         },
+        params.preferXcodebuild,
         'build',
       );
     },

@@ -29,6 +29,7 @@ import {
   simulatorNameSchema,
   simulatorIdSchema,
   useLatestOSSchema,
+  preferXcodebuildSchema,
 } from './common.js';
 import { execSync } from 'child_process';
 
@@ -47,6 +48,7 @@ async function _handleIOSSimulatorBuildLogic(params: {
   useLatestOS: boolean;
   derivedDataPath?: string;
   extraArgs?: string[];
+  preferXcodebuild?: boolean;
 }): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
@@ -61,6 +63,7 @@ async function _handleIOSSimulatorBuildLogic(params: {
       useLatestOS: params.useLatestOS,
       logPrefix: 'iOS Simulator Build',
     },
+    params.preferXcodebuild,
     'build',
   );
 }
@@ -78,6 +81,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(params: {
   useLatestOS: boolean;
   derivedDataPath?: string;
   extraArgs?: string[];
+  preferXcodebuild?: boolean;
 }): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build and run for scheme ${params.scheme} (internal)`);
 
@@ -359,6 +363,7 @@ export function registerIOSSimulatorBuildByNameWorkspaceTool(server: McpServer):
     derivedDataPath?: string;
     extraArgs?: string[];
     useLatestOS?: boolean;
+    preferXcodebuild?: boolean;
   };
 
   registerTool<Params>(
@@ -373,6 +378,7 @@ export function registerIOSSimulatorBuildByNameWorkspaceTool(server: McpServer):
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
       useLatestOS: useLatestOSSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params: Params) => {
       // Validate required parameters
@@ -390,6 +396,7 @@ export function registerIOSSimulatorBuildByNameWorkspaceTool(server: McpServer):
         ...params,
         configuration: params.configuration ?? 'Debug',
         useLatestOS: params.useLatestOS ?? true,
+        preferXcodebuild: params.preferXcodebuild ?? false,
       });
     },
   );
@@ -407,6 +414,7 @@ export function registerIOSSimulatorBuildByNameProjectTool(server: McpServer): v
     derivedDataPath?: string;
     extraArgs?: string[];
     useLatestOS?: boolean;
+    preferXcodebuild?: boolean;
   };
 
   registerTool<Params>(
@@ -421,6 +429,7 @@ export function registerIOSSimulatorBuildByNameProjectTool(server: McpServer): v
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
       useLatestOS: useLatestOSSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params: Params) => {
       // Validate required parameters
@@ -438,6 +447,7 @@ export function registerIOSSimulatorBuildByNameProjectTool(server: McpServer): v
         ...params,
         configuration: params.configuration ?? 'Debug',
         useLatestOS: params.useLatestOS ?? true,
+        preferXcodebuild: params.preferXcodebuild ?? false,
       });
     },
   );
@@ -455,6 +465,7 @@ export function registerIOSSimulatorBuildByIdWorkspaceTool(server: McpServer): v
     derivedDataPath?: string;
     extraArgs?: string[];
     useLatestOS?: boolean;
+    preferXcodebuild?: boolean;
   };
 
   registerTool<Params>(
@@ -469,6 +480,7 @@ export function registerIOSSimulatorBuildByIdWorkspaceTool(server: McpServer): v
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
       useLatestOS: useLatestOSSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params: Params) => {
       // Validate required parameters
@@ -486,6 +498,7 @@ export function registerIOSSimulatorBuildByIdWorkspaceTool(server: McpServer): v
         ...params,
         configuration: params.configuration ?? 'Debug',
         useLatestOS: params.useLatestOS ?? true, // May be ignored by xcodebuild
+        preferXcodebuild: params.preferXcodebuild ?? false,
       });
     },
   );
@@ -503,6 +516,7 @@ export function registerIOSSimulatorBuildByIdProjectTool(server: McpServer): voi
     derivedDataPath?: string;
     extraArgs?: string[];
     useLatestOS?: boolean;
+    preferXcodebuild?: boolean;
   };
 
   registerTool<Params>(
@@ -517,6 +531,7 @@ export function registerIOSSimulatorBuildByIdProjectTool(server: McpServer): voi
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
       useLatestOS: useLatestOSSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params: Params) => {
       // Validate required parameters
@@ -534,6 +549,7 @@ export function registerIOSSimulatorBuildByIdProjectTool(server: McpServer): voi
         ...params,
         configuration: params.configuration ?? 'Debug',
         useLatestOS: params.useLatestOS ?? true, // May be ignored by xcodebuild
+        preferXcodebuild: params.preferXcodebuild ?? false,
       });
     },
   );
@@ -551,6 +567,7 @@ export function registerIOSSimulatorBuildAndRunByNameWorkspaceTool(server: McpSe
     derivedDataPath?: string;
     extraArgs?: string[];
     useLatestOS?: boolean;
+    preferXcodebuild?: boolean;
   };
 
   registerTool<Params>(
@@ -565,6 +582,7 @@ export function registerIOSSimulatorBuildAndRunByNameWorkspaceTool(server: McpSe
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
       useLatestOS: useLatestOSSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params: Params) => {
       // Validate required parameters
@@ -582,6 +600,7 @@ export function registerIOSSimulatorBuildAndRunByNameWorkspaceTool(server: McpSe
         ...params,
         configuration: params.configuration ?? 'Debug',
         useLatestOS: params.useLatestOS ?? true,
+        preferXcodebuild: params.preferXcodebuild ?? false,
       });
     },
   );
@@ -599,6 +618,7 @@ export function registerIOSSimulatorBuildAndRunByNameProjectTool(server: McpServ
     derivedDataPath?: string;
     extraArgs?: string[];
     useLatestOS?: boolean;
+    preferXcodebuild?: boolean;
   };
 
   registerTool<Params>(
@@ -613,6 +633,7 @@ export function registerIOSSimulatorBuildAndRunByNameProjectTool(server: McpServ
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
       useLatestOS: useLatestOSSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params: Params) => {
       // Validate required parameters
@@ -630,6 +651,7 @@ export function registerIOSSimulatorBuildAndRunByNameProjectTool(server: McpServ
         ...params,
         configuration: params.configuration ?? 'Debug',
         useLatestOS: params.useLatestOS ?? true,
+        preferXcodebuild: params.preferXcodebuild ?? false,
       });
     },
   );
@@ -647,6 +669,7 @@ export function registerIOSSimulatorBuildAndRunByIdWorkspaceTool(server: McpServ
     derivedDataPath?: string;
     extraArgs?: string[];
     useLatestOS?: boolean;
+    preferXcodebuild?: boolean;
   };
 
   registerTool<Params>(
@@ -661,6 +684,7 @@ export function registerIOSSimulatorBuildAndRunByIdWorkspaceTool(server: McpServ
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
       useLatestOS: useLatestOSSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params: Params) => {
       // Validate required parameters
@@ -678,6 +702,7 @@ export function registerIOSSimulatorBuildAndRunByIdWorkspaceTool(server: McpServ
         ...params,
         configuration: params.configuration ?? 'Debug',
         useLatestOS: params.useLatestOS ?? true, // May be ignored
+        preferXcodebuild: params.preferXcodebuild ?? false,
       });
     },
   );
@@ -695,6 +720,7 @@ export function registerIOSSimulatorBuildAndRunByIdProjectTool(server: McpServer
     derivedDataPath?: string;
     extraArgs?: string[];
     useLatestOS?: boolean;
+    preferXcodebuild?: boolean;
   };
 
   registerTool<Params>(
@@ -709,6 +735,7 @@ export function registerIOSSimulatorBuildAndRunByIdProjectTool(server: McpServer
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
       useLatestOS: useLatestOSSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params: Params) => {
       // Validate required parameters
@@ -726,6 +753,7 @@ export function registerIOSSimulatorBuildAndRunByIdProjectTool(server: McpServer
         ...params,
         configuration: params.configuration ?? 'Debug',
         useLatestOS: params.useLatestOS ?? true, // May be ignored
+        preferXcodebuild: params.preferXcodebuild ?? false,
       });
     },
   );
