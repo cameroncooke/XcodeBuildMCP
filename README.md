@@ -60,6 +60,7 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - **Build Operations**: Platform-specific build tools for macOS, iOS simulator, and iOS device targets
 - **Project Information**: Tools to list schemes and show build settings for Xcode projects and workspaces
 - **Clean Operations**: Clean build products using xcodebuild's native clean action
+- **Incremental build support**: Lightning fast builds using incremental build support (experimental, opt-in required)
 
 ### Simulator management
 - **Simulator Control**: List, boot, and open iOS simulators 
@@ -104,7 +105,7 @@ Configure your MCP client (Windsurf, Cursor, Claude Desktop, etc.) to use the Xc
       "command": "mise",
       "args": [
         "x",
-        "npm:xcodebuildmcp@1.3.8",
+        "npm:xcodebuildmcp@1.4.0-beta.4",
         "--",
         "xcodebuildmcp"
       ]
@@ -129,14 +130,14 @@ To generate
 let obj = {
   "name": "XcodeBuildMCP",
   "command": "mise",
-  "args": [ "x", "npm:xcodebuildmcp@1.3.8", "--", "xcodebuildmcp"]
+  "args": [ "x", "npm:xcodebuildmcp@1.4.0-beta.4", "--", "xcodebuildmcp"]
 }
 
 // For Insiders, use `vscode-insiders` instead of `code`
 const link = encodeURIComponent(`vscode:mcp/install?${(JSON.stringify(obj))}`);
 ``` -->
 
-[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22mise%22%2C%22args%22%3A%5B%22x%22%2C%22npm%3Axcodebuildmcp%401.3.8%22%2C%22--%22%2C%22xcodebuildmcp%22%5D%7D) [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Finstall%3F%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22mise%22%2C%22args%22%3A%5B%22x%22%2C%22npm%3Axcodebuildmcp%401.3.8%22%2C%22--%22%2C%22xcodebuildmcp%22%5D%7D)
+[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22mise%22%2C%22args%22%3A%5B%22x%22%2C%22npm%3Axcodebuildmcp%401.4.0-beta.4%22%2C%22--%22%2C%22xcodebuildmcp%22%5D%7D) [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Finstall%3F%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22mise%22%2C%22args%22%3A%5B%22x%22%2C%22npm%3Axcodebuildmcp%401.4.0-beta.4%22%2C%22--%22%2C%22xcodebuildmcp%22%5D%7D)
 
 
 ### Enabling UI Automation (beta)
@@ -162,8 +163,32 @@ pipx install fb-idb==1.1.7
 
 ## Incremental build support
 
-XcodeBuildMCP now includes experimental incremental build support in version 1.4.0-beta, dramatically reducing build times after the first full compile. This can significantly speed up your development workflow. Get started here:
-https://github.com/cameroncooke/XcodeBuildMCP/tree/1.4.0-beta?tab=readme-ov-file#incremental-build-support
+XcodeBuildMCP includes experimental support for incremental builds. This feature is disabled by default and can be enabled by setting the `INCREMENTAL_BUILDS_ENABLED` environment variable to `true`:
+
+To enable incremental builds, set the `INCREMENTAL_BUILDS_ENABLED` environment variable to `true`:
+
+Example MCP client configuration:
+```bash
+{
+  "mcpServers": {
+    "XcodeBuildMCP": {
+      "command": "mise",
+      "args": [
+        "x",
+        "npm:xcodebuildmcp@1.4.0-beta.4",
+        "--",
+        "xcodebuildmcp"
+      ],
+      "env": {
+        "INCREMENTAL_BUILDS_ENABLED": "true"
+      }        
+    }
+  }
+}
+```
+
+> [!IMPORTANT]
+> Please note that incremental builds support is currently highly experimental and your mileage may vary. Please report any issues you encounter to the [issue tracker](https://github.com/cameroncooke/XcodeBuildMCP/issues).
 
 ## Troubleshooting
 
@@ -177,14 +202,14 @@ The diagnostic tool is a standalone utility that checks your system configuratio
 
 ```bash
 # Run the diagnostic tool using mise
-mise x npm:xcodebuildmcp@1.3.8 -- xcodebuildmcp-diagnostic
+mise x npm:xcodebuildmcp@1.4.0-beta.4 -- xcodebuildmcp-diagnostic
 ```
 
 #### Using with npx
 
 ```bash
 # Run the diagnostic tool using npx
-npx xcodebuildmcp@1.3.8 xcodebuildmcp-diagnostic
+npx xcodebuildmcp@1.4.0-beta.4 xcodebuildmcp-diagnostic
 ```
 
 The diagnostic tool will output comprehensive information about:
@@ -227,7 +252,7 @@ Example MCP client configuration:
       "command": "mise",
       "args": [
         "x",
-        "npm:xcodebuildmcp@1.3.8",
+        "npm:xcodebuildmcp@1.4.0-beta.4",
         "--",
         "xcodebuildmcp"
       ],
@@ -252,7 +277,7 @@ Once you have enabled one or more tools or groups of tools all other tools will 
       "command": "mise",
       "args": [
         "x",
-        "npm:xcodebuildmcp@1.3.8",
+        "npm:xcodebuildmcp@1.4.0-beta.4",
         "--",
         "xcodebuildmcp"
       ],

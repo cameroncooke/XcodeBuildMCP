@@ -26,11 +26,30 @@ import { log } from './utils/logger.js';
 import { version } from './version.js';
 import { registerTools } from './utils/register-tools.js';
 
+// Import xcodemake utilities
+import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
+
 /**
  * Main function to start the server
  */
 async function main(): Promise<void> {
   try {
+    // Check if xcodemake is enabled and available
+    if (isXcodemakeEnabled()) {
+      log('info', 'xcodemake is enabled, checking if available...');
+      const available = await isXcodemakeAvailable();
+      if (available) {
+        log('info', 'xcodemake is available and will be used for builds');
+      } else {
+        log(
+          'warn',
+          'xcodemake is enabled but could not be made available, falling back to xcodebuild',
+        );
+      }
+    } else {
+      log('debug', 'xcodemake is disabled, using standard xcodebuild');
+    }
+
     // Create the server
     const server = createServer();
 

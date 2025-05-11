@@ -3,6 +3,15 @@
 ## [v1.3.7] - 2025-05-08
 - Fix Claude Code issue due to long tool names
 
+## [v1.4.0-beta.3] - 2025-05-07
+- Fixed issue where incremental builds would only work for "Debug" build configurations
+- 
+## [v1.4.0-beta.2] - 2025-05-07
+- Same as beta 1 but has the latest features from the main release channel
+
+## [v1.4.0-beta.1] - 2025-05-05
+- Added experimental support for incremental builds (requires opt-in)
+
 ## [v1.3.6] - 2025-05-07
 - Added support for enabling/disabling tools via environment variables
 

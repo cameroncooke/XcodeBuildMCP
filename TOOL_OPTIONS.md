@@ -195,7 +195,7 @@ Here is a fully worked example of how to configure Cursor/Windsurf to use specif
       "command": "mise",
       "args": [
         "x",
-        "npm:xcodebuildmcp@1.3.8",
+        "npm:xcodebuildmcp@1.4.0-beta.4",
         "--",
         "xcodebuildmcp"
       ],

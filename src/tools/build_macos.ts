@@ -29,6 +29,7 @@ import {
   configurationSchema,
   derivedDataPathSchema,
   extraArgsSchema,
+  preferXcodebuildSchema,
 } from './common.js';
 
 // Schema for architecture parameter
@@ -50,6 +51,7 @@ async function _handleMacOSBuildLogic(params: {
   derivedDataPath?: string;
   arch?: string;
   extraArgs?: string[];
+  preferXcodebuild?: boolean;
 }): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
@@ -62,6 +64,7 @@ async function _handleMacOSBuildLogic(params: {
       arch: params.arch,
       logPrefix: 'macOS Build',
     },
+    params.preferXcodebuild,
     'build',
   );
 }
@@ -138,6 +141,7 @@ async function _handleMacOSBuildAndRunLogic(params: {
   derivedDataPath?: string;
   arch?: string;
   extraArgs?: string[];
+  preferXcodebuild?: boolean;
 }): Promise<ToolResponse> {
   log('info', 'Handling macOS build & run logic...');
   const _warningMessages: { type: 'text'; text: string }[] = [];
@@ -221,6 +225,7 @@ export function registerMacOSBuildWorkspaceTool(server: McpServer): void {
     derivedDataPath?: string;
     arch?: string;
     extraArgs?: string[];
+    preferXcodebuild?: boolean;
   };
 
   registerTool<WorkspaceParams>(
@@ -234,11 +239,13 @@ export function registerMacOSBuildWorkspaceTool(server: McpServer): void {
       derivedDataPath: derivedDataPathSchema,
       arch: archSchema,
       extraArgs: extraArgsSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params) =>
       _handleMacOSBuildLogic({
         ...params,
         configuration: params.configuration ?? 'Debug',
+        preferXcodebuild: params.preferXcodebuild ?? false,
       }),
   );
 }
@@ -252,6 +259,7 @@ export function registerMacOSBuildProjectTool(server: McpServer): void {
     derivedDataPath?: string;
     arch?: string;
     extraArgs?: string[];
+    preferXcodebuild?: boolean;
   };
 
   registerTool<ProjectParams>(
@@ -265,11 +273,13 @@ export function registerMacOSBuildProjectTool(server: McpServer): void {
       derivedDataPath: derivedDataPathSchema,
       arch: archSchema,
       extraArgs: extraArgsSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params) =>
       _handleMacOSBuildLogic({
         ...params,
         configuration: params.configuration ?? 'Debug',
+        preferXcodebuild: params.preferXcodebuild ?? false,
       }),
   );
 }
@@ -283,6 +293,7 @@ export function registerMacOSBuildAndRunWorkspaceTool(server: McpServer): void {
     derivedDataPath?: string;
     arch?: string;
     extraArgs?: string[];
+    preferXcodebuild?: boolean;
   };
 
   registerTool<WorkspaceParams>(
@@ -295,11 +306,13 @@ export function registerMacOSBuildAndRunWorkspaceTool(server: McpServer): void {
       configuration: configurationSchema,
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params) =>
       _handleMacOSBuildAndRunLogic({
         ...params,
         configuration: params.configuration ?? 'Debug',
+        preferXcodebuild: params.preferXcodebuild ?? false,
       }),
   );
 }
@@ -313,6 +326,7 @@ export function registerMacOSBuildAndRunProjectTool(server: McpServer): void {
     derivedDataPath?: string;
     arch?: string;
     extraArgs?: string[];
+    preferXcodebuild?: boolean;
   };
 
   registerTool<ProjectParams>(
@@ -325,11 +339,13 @@ export function registerMacOSBuildAndRunProjectTool(server: McpServer): void {
       configuration: configurationSchema,
       derivedDataPath: derivedDataPathSchema,
       extraArgs: extraArgsSchema,
+      preferXcodebuild: preferXcodebuildSchema,
     },
     async (params) =>
       _handleMacOSBuildAndRunLogic({
         ...params,
         configuration: params.configuration ?? 'Debug',
+        preferXcodebuild: params.preferXcodebuild ?? false,
       }),
   );
 }
