@@ -61,8 +61,8 @@ async function main(): Promise<void> {
 
     // Clean up on exit
     process.on('SIGTERM', async () => {
-        await server.close();
-        process.exit(0);
+      await server.close();
+      process.exit(0);
     });
 
     process.on('SIGINT', async () => {
