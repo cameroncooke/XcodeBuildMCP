@@ -59,6 +59,12 @@ async function main(): Promise<void> {
     // Start the server
     await startServer(server);
 
+    // Clean up on exit
+    process.on('SIGINT', async () => {
+      await server.close();
+      process.exit(0);
+    });
+
     // Log successful startup
     log('info', `XcodeBuildMCP server (version ${version}) started successfully`);
   } catch (error) {
