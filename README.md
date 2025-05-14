@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server that provides Xcode-related tools for integration with AI assistants and other MCP clients.
 
+<a href="https://glama.ai/mcp/servers/@cameroncooke/XcodeBuildMCP">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@cameroncooke/XcodeBuildMCP/badge" alt="XcodeBuildMCP MCP server" />
+</a>
+
 [![CI](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml) [![CodeQL](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql)
 [![Licence: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/e0f4ab6d-e867-4c6e-90cd-77363faaafcc)
