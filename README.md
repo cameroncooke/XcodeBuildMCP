@@ -308,12 +308,12 @@ https://github.com/user-attachments/assets/e3c08d75-8be6-4857-b4d0-9350b26ef086
 
 Contributions are welcome! Here's how you can help improve XcodeBuildMCP.
 
-## MCP Server Verification
-
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/cameroncooke-xcodebuildmcp-badge.png)](https://mseep.ai/app/cameroncooke-xcodebuildmcp)
-
 See our [CONTRIBUTING](CONTRIBUTING.md) document for more information on how to configure your local environment and contribute to the project.
 
 ## Licence
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## MCP Server Verification
+
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/cameroncooke-xcodebuildmcp-badge.png)](https://mseep.ai/app/cameroncooke-xcodebuildmcp)
