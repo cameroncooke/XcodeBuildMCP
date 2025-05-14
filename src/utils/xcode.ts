@@ -2,85 +2,21 @@
  * Xcode Utilities - Core infrastructure for interacting with Xcode tools
  *
  * This utility module provides the foundation for all Xcode interactions across the codebase.
- * It offers low-level command execution, platform-specific utilities, and common functionality
- * that can be used by any module requiring Xcode tool integration.
+ * It offers platform-specific utilities, and common functionality that can be used by any module
+ * requiring Xcode tool integration.
  *
  * Responsibilities:
- * - Executing xcodebuild commands with proper argument handling (executeXcodeCommand)
- * - Managing process spawning, output capture, and error handling
  * - Constructing platform-specific destination strings (constructDestinationString)
- * - Defining common parameter interfaces for Xcode operations
-
  *
  * This file serves as the foundation layer for more specialized utilities like build-utils.ts,
  * which build upon these core functions to provide higher-level abstractions.
  */
 
-import { spawn } from 'child_process';
 import { log } from './logger.js';
-import { XcodePlatform, XcodeCommandResponse } from '../types/common.js';
+import { XcodePlatform } from '../types/common.js';
 
 // Re-export XcodePlatform for use in other modules
 export { XcodePlatform };
-
-/**
- * Execute an xcodebuild command
- * @param command Command array to execute
- * @param logPrefix Prefix for logging
- * @returns Promise resolving to command response
- */
-export async function executeXcodeCommand(
-  command: string[],
-  logPrefix: string,
-): Promise<XcodeCommandResponse> {
-  // Properly escape arguments for shell
-  const escapedCommand = command.map((arg) => {
-    // If the argument contains spaces or special characters, wrap it in quotes
-    // Ensure existing quotes are escaped
-    if (/[\s,"'=]/.test(arg) && !/^".*"$/.test(arg)) {
-      // Check if needs quoting and isn't already quoted
-      return `"${arg.replace(/(["\\])/g, '\\$1')}"`; // Escape existing quotes and backslashes
-    }
-    return arg;
-  });
-
-  const commandString = escapedCommand.join(' ');
-  log('info', `Executing ${logPrefix} command: ${commandString}`);
-  log('debug', `DEBUG - Raw command array: ${JSON.stringify(command)}`);
-
-  return new Promise((resolve, reject) => {
-    // Using 'sh -c' to handle complex commands and quoting properly
-    const process = spawn('sh', ['-c', commandString], {
-      stdio: ['ignore', 'pipe', 'pipe'], // ignore stdin, pipe stdout/stderr
-    });
-
-    let stdout = '';
-    let stderr = '';
-
-    process.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
-
-    process.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    process.on('close', (code) => {
-      const success = code === 0;
-      const response: XcodeCommandResponse = {
-        success,
-        output: stdout,
-        error: success ? undefined : stderr,
-      };
-
-      resolve(response);
-    });
-
-    process.on('error', (err) => {
-      reject(err);
-    });
-  });
-}
 
 /**
  * Constructs a destination string for xcodebuild from platform and simulator parameters
