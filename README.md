@@ -316,4 +316,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## MCP Server Verification
 
+### Glama.ai
+
+<a href="https://glama.ai/mcp/servers/@cameroncooke/XcodeBuildMCP">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@cameroncooke/XcodeBuildMCP/badge" alt="XcodeBuildMCP MCP server" />
+</a>
+
+### MseeP.a
+
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/cameroncooke-xcodebuildmcp-badge.png)](https://mseep.ai/app/cameroncooke-xcodebuildmcp)
