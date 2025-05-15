@@ -16,7 +16,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { log } from '../utils/logger.js';
 import { validateRequiredParam, createTextResponse } from '../utils/validation.js';
 import { ToolResponse, XcodePlatform } from '../types/common.js';
-import { executeXcodeCommand, constructDestinationString } from '../utils/xcode.js';
+import { executeCommand } from '../utils/command.js';
+import { constructDestinationString } from '../utils/xcode.js';
 import {
   registerTool,
   workspacePathSchema,
@@ -117,7 +118,7 @@ async function _handleGetAppPathLogic(params: {
     command.push('-destination', destinationString);
 
     // Execute the command directly
-    const result = await executeXcodeCommand(command, 'Get App Path');
+    const result = await executeCommand(command, 'Get App Path');
 
     if (!result.success) {
       return createTextResponse(`Failed to get app path: ${result.error}`, true);

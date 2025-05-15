@@ -14,7 +14,7 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { log } from '../utils/logger.js';
-import { executeXcodeCommand } from '../utils/xcode.js';
+import { executeCommand } from '../utils/command.js';
 import { validateRequiredParam, createTextResponse } from '../utils/validation.js';
 import { ToolResponse } from '../types/common.js';
 import {
@@ -53,7 +53,7 @@ async function _handleShowBuildSettingsLogic(params: {
     command.push('-scheme', params.scheme);
 
     // Execute the command directly
-    const result = await executeXcodeCommand(command, 'Show Build Settings');
+    const result = await executeCommand(command, 'Show Build Settings');
 
     if (!result.success) {
       return createTextResponse(`Failed to show build settings: ${result.error}`, true);
@@ -98,7 +98,7 @@ async function _handleListSchemesLogic(params: {
       command.push('-project', params.projectPath);
     } // No else needed, one path is guaranteed by callers
 
-    const result = await executeXcodeCommand(command, 'List Schemes');
+    const result = await executeCommand(command, 'List Schemes');
 
     if (!result.success) {
       return createTextResponse(`Failed to list schemes: ${result.error}`, true);

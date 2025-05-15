@@ -73,11 +73,6 @@ export interface CommandResponse {
 }
 
 /**
- * XcodeCommandResponse - Result of xcodebuild command execution
- */
-export type XcodeCommandResponse = CommandResponse;
-
-/**
  * Interface for shared build parameters
  */
 export interface SharedBuildParams {

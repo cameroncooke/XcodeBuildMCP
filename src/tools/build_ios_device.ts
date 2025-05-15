@@ -14,7 +14,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { XcodePlatform } from '../utils/xcode.js';
 import { validateRequiredParam } from '../utils/validation.js';
-import { executeXcodeBuild } from '../utils/build-utils.js';
+import { executeXcodeBuildCommand } from '../utils/build-utils.js';
 import {
   registerTool,
   workspacePathSchema,
@@ -54,7 +54,7 @@ export function registerIOSDeviceBuildWorkspaceTool(server: McpServer): void {
       const schemeValidation = validateRequiredParam('scheme', params.scheme);
       if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-      return executeXcodeBuild(
+      return executeXcodeBuildCommand(
         {
           ...params,
           configuration: params.configuration ?? 'Debug', // Default config
@@ -94,7 +94,7 @@ export function registerIOSDeviceBuildProjectTool(server: McpServer): void {
       const schemeValidation = validateRequiredParam('scheme', params.scheme);
       if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-      return executeXcodeBuild(
+      return executeXcodeBuildCommand(
         {
           ...params,
           configuration: params.configuration ?? 'Debug', // Default config

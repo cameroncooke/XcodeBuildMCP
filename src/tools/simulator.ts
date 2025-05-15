@@ -17,7 +17,7 @@ import { z } from 'zod';
 import { execSync } from 'child_process';
 import { log } from '../utils/logger.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { executeXcodeCommand } from '../utils/xcode.js';
+import { executeCommand } from '../utils/command.js';
 import { validateRequiredParam, validateFileExists } from '../utils/validation.js';
 import { ToolResponse } from '../types/common.js';
 import { createTextContent } from './common.js';
@@ -45,7 +45,7 @@ export function registerBootSimulatorTool(server: McpServer): void {
 
       try {
         const command = ['xcrun', 'simctl', 'boot', params.simulatorUuid];
-        const result = await executeXcodeCommand(command, 'Boot Simulator');
+        const result = await executeCommand(command, 'Boot Simulator');
 
         if (!result.success) {
           return {
@@ -104,7 +104,7 @@ export function registerListSimulatorsTool(server: McpServer): void {
 
       try {
         const command = ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'];
-        const result = await executeXcodeCommand(command, 'List Simulators');
+        const result = await executeCommand(command, 'List Simulators');
 
         if (!result.success) {
           return {
@@ -211,7 +211,7 @@ export function registerInstallAppInSimulatorTool(server: McpServer): void {
 
       try {
         const command = ['xcrun', 'simctl', 'install', params.simulatorUuid, params.appPath];
-        const result = await executeXcodeCommand(command, 'Install App in Simulator');
+        const result = await executeCommand(command, 'Install App in Simulator');
 
         if (!result.success) {
           return {
@@ -299,7 +299,7 @@ export function registerLaunchAppInSimulatorTool(server: McpServer): void {
           params.bundleId,
           'app',
         ];
-        const getAppContainerResult = await executeXcodeCommand(
+        const getAppContainerResult = await executeCommand(
           getAppContainerCmd,
           'Check App Installed',
         );
@@ -333,7 +333,7 @@ export function registerLaunchAppInSimulatorTool(server: McpServer): void {
           command.push(...params.args);
         }
 
-        const result = await executeXcodeCommand(command, 'Launch App in Simulator');
+        const result = await executeCommand(command, 'Launch App in Simulator');
 
         if (!result.success) {
           return {
@@ -446,7 +446,7 @@ export function registerOpenSimulatorTool(server: McpServer): void {
 
       try {
         const command = ['open', '-a', 'Simulator'];
-        const result = await executeXcodeCommand(command, 'Open Simulator');
+        const result = await executeCommand(command, 'Open Simulator');
 
         if (!result.success) {
           return {
@@ -523,7 +523,7 @@ async function executeSimctlCommandAndRespond(
 
   try {
     const command = ['xcrun', 'simctl', ...simctlSubCommand];
-    const result = await executeXcodeCommand(command, operationDescriptionForXcodeCommand);
+    const result = await executeCommand(command, operationDescriptionForXcodeCommand);
 
     if (!result.success) {
       const fullFailureMessage = `${failureMessagePrefix}: ${result.error}`;

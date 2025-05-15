@@ -13,11 +13,9 @@
  * - Auto-downloading xcodemake if enabled but not found
  */
 
-import { spawn, exec } from 'child_process';
 import { log } from './logger.js';
-import { XcodeCommandResponse, CommandResponse } from '../types/common.js';
+import { executeCommand, CommandResponse } from './command.js';
 import { existsSync, readdirSync } from 'fs';
-import { promisify } from 'util';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs/promises';
@@ -35,32 +33,6 @@ let overriddenXcodemakePath: string | null = null;
 export function isXcodemakeEnabled(): boolean {
   const envValue = process.env[XCODEMAKE_ENV_VAR];
   return envValue === '1' || envValue === 'true' || envValue === 'yes';
-}
-
-/**
- * Execute a shell command
- * @param command Command string to execute
- * @returns Promise resolving to command response
- */
-async function executeCommand(command: string): Promise<CommandResponse> {
-  log('info', `Executing command: ${command}`);
-  const execPromise = promisify(exec);
-
-  try {
-    const { stdout, stderr } = await execPromise(command);
-    return {
-      success: true,
-      output: stdout,
-      error: stderr.length > 0 ? stderr : undefined,
-    };
-  } catch (error) {
-    const err = error as { message: string; stderr?: string };
-    return {
-      success: false,
-      output: '',
-      error: err.stderr || err.message,
-    };
-  }
 }
 
 /**
@@ -144,7 +116,7 @@ export async function isXcodemakeAvailable(): Promise<boolean> {
     }
 
     // Check if xcodemake is available in PATH
-    const result = await executeCommand('which xcodemake');
+    const result = await executeCommand(['which', 'xcodemake']);
     if (result.success) {
       log('debug', 'xcodemake found in PATH');
       return true;
@@ -232,61 +204,16 @@ export async function executeXcodemakeCommand(
   projectDir: string,
   buildArgs: string[],
   logPrefix: string,
-): Promise<XcodeCommandResponse> {
+): Promise<CommandResponse> {
   // Change directory to project directory, this is needed for xcodemake to work
   process.chdir(projectDir);
 
   const xcodemakeCommand = [getXcodemakeCommand(), ...buildArgs];
 
-  // Properly escape arguments for shell
-  const escapedCommand = xcodemakeCommand.map((arg) => {
-    // Remove projectDir from arguments
-    arg = arg.replace(projectDir + '/', '');
+  // Remove projectDir from arguments
+  const command = xcodemakeCommand.map((arg) => arg.replace(projectDir + '/', ''));
 
-    // If the argument contains spaces or special characters, wrap it in quotes
-    // Ensure existing quotes are escaped
-    if (/[\s,"'=]/.test(arg) && !/^".*"$/.test(arg)) {
-      // Check if needs quoting and isn't already quoted
-      return `"${arg.replace(/(["\\])/g, '\\$1')}"`; // Escape existing quotes and backslashes
-    }
-    return arg;
-  });
-
-  const commandString = escapedCommand.join(' ');
-  log('info', `Executing ${logPrefix} command with xcodemake: ${commandString}`);
-
-  return new Promise((resolve, reject) => {
-    // Using 'sh -c' to handle complex commands and quoting properly
-    const process = spawn('sh', ['-c', commandString], {
-      stdio: ['ignore', 'pipe', 'pipe'], // ignore stdin, pipe stdout/stderr
-    });
-
-    let stdout = '';
-    let stderr = '';
-
-    process.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
-
-    process.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    process.on('close', (code) => {
-      const success = code === 0;
-      const response: XcodeCommandResponse = {
-        success,
-        output: stdout,
-        error: success ? undefined : stderr,
-      };
-
-      resolve(response);
-    });
-
-    process.on('error', (err) => {
-      reject(err);
-    });
-  });
+  return executeCommand(command, logPrefix);
 }
 
 /**
@@ -298,39 +225,7 @@ export async function executeXcodemakeCommand(
 export async function executeMakeCommand(
   projectDir: string,
   logPrefix: string,
-): Promise<XcodeCommandResponse> {
-  const command = `cd "${projectDir}" && make`;
-  log('info', `Executing ${logPrefix} command with make: ${command}`);
-
-  return new Promise((resolve, reject) => {
-    const process = spawn('sh', ['-c', command], {
-      stdio: ['ignore', 'pipe', 'pipe'], // ignore stdin, pipe stdout/stderr
-    });
-
-    let stdout = '';
-    let stderr = '';
-
-    process.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
-
-    process.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    process.on('close', (code) => {
-      const success = code === 0;
-      const response: XcodeCommandResponse = {
-        success,
-        output: stdout,
-        error: success ? undefined : stderr,
-      };
-
-      resolve(response);
-    });
-
-    process.on('error', (err) => {
-      reject(err);
-    });
-  });
+): Promise<CommandResponse> {
+  const command = ['cd', projectDir, '&&', 'make'];
+  return executeCommand(command, logPrefix);
 }

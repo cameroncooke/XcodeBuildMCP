@@ -8,7 +8,6 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { spawn } from 'child_process';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,6 +15,7 @@ import { ToolResponse } from '../types/common.js';
 import { log } from '../utils/logger.js';
 import { createTextResponse, validateRequiredParam } from '../utils/validation.js';
 import { DependencyError, IdbError, SystemError, createErrorResponse } from '../utils/errors.js';
+import { executeCommand } from '../utils/command.js';
 import { createIdbNotAvailableResponse } from '../utils/idb-setup.js';
 import { areIdbToolsAvailable } from '../utils/idb-setup.js';
 
@@ -43,79 +43,43 @@ async function executeIdbCommand(
     }
   }
 
-  const commandString = `${IDB_COMMAND} ${fullArgs.join(' ')}`;
-  log('info', `${LOG_PREFIX}: Executing: ${commandString}`);
+  // Construct the full command array with IDB_COMMAND as the first element
+  const fullCommand = [IDB_COMMAND, ...fullArgs];
 
-  return new Promise<string>((resolve, reject) => {
-    let stdoutData = '';
-    let stderrData = '';
-    let processError: Error | null = null;
+  try {
+    const result = await executeCommand(fullCommand, `${LOG_PREFIX}: ${commandName}`, false);
 
-    try {
-      const idbProcess = spawn(IDB_COMMAND, fullArgs, {
-        shell: false, // Use direct execution, assumes idb is in PATH
-      });
-
-      idbProcess.stdout.on('data', (data) => {
-        stdoutData += data.toString();
-      });
-
-      idbProcess.stderr.on('data', (data) => {
-        stderrData += data.toString();
-      });
-
-      idbProcess.on('error', (err) => {
-        log('error', `${LOG_PREFIX}: Failed to spawn idb: ${err.message}`);
-        processError = err;
-        // reject will be called in 'close' handler
-      });
-
-      idbProcess.on('close', (code) => {
-        log('debug', `${LOG_PREFIX}: Command "${commandName}" exited with code ${code}`);
-        log('debug', `${LOG_PREFIX}: stdout:\n${stdoutData}`);
-        if (stderrData) {
-          log('warning', `${LOG_PREFIX}: stderr:\n${stderrData}`);
-        }
-
-        if (processError) {
-          return reject(
-            new SystemError(`Failed to start idb command: ${processError.message}`, processError),
-          );
-        }
-
-        if (code !== 0) {
-          return reject(
-            new IdbError(
-              `idb command '${commandName}' failed with exit code ${code}.`,
-              commandName,
-              stderrData || stdoutData, // Provide output for context
-              simulatorUuid,
-            ),
-          );
-        }
-
-        // Some idb commands might print warnings or non-fatal errors to stderr.
-        // We resolve successfully but log the stderr. Consider if specific commands
-        // should treat stderr as a failure. For now, only non-zero exit code is fatal.
-        if (stderrData) {
-          log(
-            'warn',
-            `${LOG_PREFIX}: Command '${commandName}' produced stderr output but exited successfully. Output: ${stderrData}`,
-          );
-        }
-
-        resolve(stdoutData.trim());
-      });
-    } catch (error) {
-      // Catch synchronous errors during spawn setup
-      log('error', `${LOG_PREFIX}: Error setting up idb spawn: ${error}`);
-      reject(
-        new SystemError(
-          `Failed to initiate idb command execution: ${error instanceof Error ? error.message : String(error)}`,
-        ),
+    if (!result.success) {
+      throw new IdbError(
+        `idb command '${commandName}' failed.`,
+        commandName,
+        result.error || result.output,
+        simulatorUuid,
       );
     }
-  });
+
+    // Check for stderr output in successful commands
+    if (result.error) {
+      log(
+        'warn',
+        `${LOG_PREFIX}: Command '${commandName}' produced stderr output but exited successfully. Output: ${result.error}`,
+      );
+    }
+
+    return result.output.trim();
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error instanceof IdbError) {
+        throw error;
+      }
+
+      // Otherwise wrap it in a SystemError
+      throw new SystemError(`Failed to execute idb command: ${error.message}`, error);
+    }
+
+    // For any other type of error
+    throw new SystemError(`Failed to execute idb command: ${String(error)}`);
+  }
 }
 
 // --- Registration Function ---

@@ -16,10 +16,11 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { log } from '../utils/logger.js';
-import { XcodePlatform, executeXcodeCommand } from '../utils/xcode.js';
+import { XcodePlatform } from '../utils/xcode.js';
+import { executeCommand } from '../utils/command.js';
 import { createTextResponse } from '../utils/validation.js';
 import { ToolResponse } from '../types/common.js';
-import { executeXcodeBuild } from '../utils/build-utils.js';
+import { executeXcodeBuildCommand } from '../utils/build-utils.js';
 import { z } from 'zod';
 import {
   registerTool,
@@ -55,7 +56,7 @@ async function _handleMacOSBuildLogic(params: {
 }): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
-  return executeXcodeBuild(
+  return executeXcodeBuildCommand(
     {
       ...params,
     },
@@ -104,7 +105,7 @@ async function _getAppPathFromBuildSettings(params: {
     }
 
     // Execute the command directly
-    const result = await executeXcodeCommand(command, 'Get Build Settings for Launch');
+    const result = await executeCommand(command, 'Get Build Settings for Launch');
 
     if (!result.success) {
       return {
