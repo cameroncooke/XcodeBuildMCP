@@ -10,6 +10,7 @@
   "scripts": {
     "prebuild": "echo \"export const version = '$npm_package_version';\" > src/version.ts",
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755') && require('fs').chmodSync('build/diagnostic-cli.js', '755')\"",
+    "build:watch": "tsc --watch",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
     "format": "prettier --write 'src/**/*.{js,ts}'",
