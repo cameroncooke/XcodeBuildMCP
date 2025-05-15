@@ -1,6 +1,6 @@
 {
     "servers": {
-        "xcode-mcp-server-dev": {
+        "xcodebuildmcp-dev": {
             "type": "stdio",
             "command": "node",
             "args": [
