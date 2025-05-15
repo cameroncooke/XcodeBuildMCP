@@ -66,7 +66,7 @@ VS Code is especially good for developing XcodeBuildMCP as it has a built-in way
 
 To make your development workflow in VS Code more efficient:
 
-1.  **Start the MCP Server**: Open the `.vscode/mcp.json` file. You can start the `xcode-mcp-server-dev` server either by clicking the `Start` CodeLens that appears above the server definition, or by opening the Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`), running `Mcp: List Servers`, selecting `xcode-mcp-server-dev`, and starting the server.
+1.  **Start the MCP Server**: Open the `.vscode/mcp.json` file. You can start the `xcodebuildmcp-dev` server either by clicking the `Start` CodeLens that appears above the server definition, or by opening the Command Palette (`Cmd+Shift+P` or `Ctrl+Shift+P`), running `Mcp: List Servers`, selecting `xcodebuildmcp-dev`, and starting the server.
 2.  **Launch the Debugger**: Press `F5` to attach the Node.js debugger.
 
 Once these steps are completed, you can utilize the tools from the MCP server you are developing within this repository in agent mode.
