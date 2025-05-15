@@ -5,6 +5,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 [![CI](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml) [![CodeQL](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql)
 [![Licence: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/e0f4ab6d-e867-4c6e-90cd-77363faaafcc)
+[![smithery badge](https://smithery.ai/badge/@cameroncooke/XcodeBuildMCP)](https://smithery.ai/server/@cameroncooke/XcodeBuildMCP)
 
 ## Table of contents
 
@@ -16,6 +17,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
   - [App utilities](#app-utilities)
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
+  - [Installing via Smithery](#installing-via-smithery)
   - [One-line setup with mise](#one-line-setup-with-mise)
   - [Configure MCP clients](#configure-mcp-clients)
     - [One click to install in VS Code](#one-click-to-install-in-vs-code)
@@ -81,6 +83,14 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - macOS 14.5 or later
 - Xcode 16.x or later
 - mise
+
+### Installing via Smithery
+
+To install XcodeBuild MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@cameroncooke/XcodeBuildMCP):
+
+```bash
+npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client claude
+```
 
 ### One-line setup with mise
 
