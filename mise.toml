@@ -1,6 +1,2 @@
 [tools]
 node = "18"
-python = "3.11"
-
-[env]
-XCODEBUILDMCP_RUNNING_UNDER_MISE = "true"

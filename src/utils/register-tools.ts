@@ -74,14 +74,14 @@ import {
   registerStopAndGetSimulatorLogTool,
 } from '../tools/log.js';
 
-// Import idb tools
-import { registerIdbTools } from '../tools/idb.js';
+// Import axe tools
+import { registerAxeTools } from '../tools/axe.js';
+
+// Import screenshot tool
+import { registerScreenshotTool } from '../tools/screenshot.js';
 
 // Import diagnostic tool
 import { registerDiagnosticTool } from '../tools/diagnostic.js';
-
-// Import idb setup utility
-import { setupIdb } from '../utils/idb-setup.js';
 
 // Import MCP server
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -368,12 +368,18 @@ const toolRegistrations = [
     groups: [ToolGroup.UI_TESTING],
     envVar: 'XCODEBUILDMCP_TOOL_UI_AUTOMATION_TOOLS',
   },
+
+  // Screenshot tool
+  {
+    register: registerScreenshotTool,
+    groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.UI_TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_SCREENSHOT',
+  },
 ];
 
 // Registers the UI automation tools (will be split into individual tools in the future)
 function registerUIAutomationTools(server: McpServer): void {
-  setupIdb();
-  registerIdbTools(server);
+  registerAxeTools(server);
 }
 
 // Diagnostic tool

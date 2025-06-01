@@ -16,15 +16,15 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
   - [App utilities](#app-utilities)
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [One-line setup with mise](#one-line-setup-with-mise)
-  - [Configure MCP clients](#configure-mcp-clients)
+  - [UI Automation](#ui-automation)
+  - [Configure MCP client](#configure-mcp-client)
+    - [Alternative installation method using mise](#alternative-installation-method-using-mise)
     - [One click to install in VS Code](#one-click-to-install-in-vs-code)
-  - [Enabling UI Automation (beta)](#enabling-ui-automation-beta)
 - [Incremental build support](#incremental-build-support)
 - [Troubleshooting](#troubleshooting)
   - [Diagnostic Tool](#diagnostic-tool)
-    - [Using with mise](#using-with-mise)
     - [Using with npx](#using-with-npx)
+    - [Using with mise](#using-with-mise)
   - [MCP Server Logs](#mcp-server-logs)
 - [Privacy](#privacy)
   - [What is sent to Sentry?](#what-is-sent-to-sentry)
@@ -80,11 +80,41 @@ The XcodeBuildMCP server provides the following tool capabilities:
 
 - macOS 14.5 or later
 - Xcode 16.x or later
-- mise
+- Node 18.x or later
+- AXe 1.0.0 or later (optional, required for UI automation)
+  
+### UI Automation
 
-### One-line setup with mise
+For UI automation features (tap, swipe, type etc.), you'll need to install AXe:
 
-To install mise:
+```bash
+brew tap cameroncooke/axe
+brew install axe
+```
+
+For more information about AXe and other installation methods, see the [AXe repository](https://github.com/cameroncooke/axe).
+
+### Configure MCP client
+
+Configure your MCP client (Windsurf, Cursor, Claude Desktop, Claude Code etc.) to use the XcodeBuildMCP server by ammending your client application's MCP configuration.
+
+```json
+{
+  "mcpServers": {
+    "XcodeBuildMCP": {
+      "command": "npx",
+      "args": [
+        "-y"
+        "xcodebuildmcp@latest",
+      ]
+    }
+  }
+}
+```
+#### Alternative installation method using mise
+
+Alternatively, you can use XcodeBuildMCP without a specific installation of Node.js by using `mise` to install it:
+
 ```bash
 # macOS (Homebrew)
 brew install mise
@@ -93,11 +123,7 @@ brew install mise
 # See https://mise.jdx.dev/getting-started.html
 ```
 
-For more information about mise, visit the [official documentation](https://mise.jdx.dev/).
-
-### Configure MCP clients
-
-Configure your MCP client (Windsurf, Cursor, Claude Desktop, etc.) to use the XcodeBuildMCP server by ammending your client application's MCP configuration, changing the version number to match the version you wish to use:
+Then configure your MCP client to use mise to install XcodeBuildMCP:
 
 ```json
 {
@@ -130,37 +156,26 @@ To generate
 ```
 let obj = {
   "name": "XcodeBuildMCP",
-  "command": "mise",
-  "args": [ "x", "npm:xcodebuildmcp@1.4.0", "--", "xcodebuildmcp"]
+  "command": "npx",
+  "args": [ "-y", "xcodebuildmcp@latest"]
 }
 
-// For Insiders, use `vscode-insiders` instead of `code`
-const link = encodeURIComponent(`vscode:mcp/install?${(JSON.stringify(obj))}`);
+const linkVSCode = `vscode:mcp/install?${encodeURIComponent(JSON.stringify(obj))}`;
+const linkInsiders = `vscode-insiders:mcp/install?${encodeURIComponent(JSON.stringify(obj))}`;
+
+console.log("VS Code Link:");
+console.log(linkVSCode);
+console.log("\nVS Code Insiders Link:");
+console.log(linkInsiders);
+
+console.log("\nMarkdown for VS Code:");
+console.log(`[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](${linkVSCode})`);
+
+console.log("\nMarkdown for VS Code Insiders:");
+console.log(`[<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](${linkInsiders})`); 
 ``` -->
 
-[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22mise%22%2C%22args%22%3A%5B%22x%22%2C%22npm%3Axcodebuildmcp%401.4.0%22%2C%22--%22%2C%22xcodebuildmcp%22%5D%7D) [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Finstall%3F%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22mise%22%2C%22args%22%3A%5B%22x%22%2C%22npm%3Axcodebuildmcp%401.4.0%22%2C%22--%22%2C%22xcodebuildmcp%22%5D%7D)
-
-
-### Enabling UI Automation (beta)
-
-For UI automation features (tap, swipe, screenshot, etc.), you'll need to install Facebook's idb_companion:
-
-```bash
-brew tap facebook/fb
-brew install idb-companion
-```
-
-The idb client is also required but XcodeBuildMCP attempts to install it for you. If you find that the UI automation features are still not available you can install the client manually using the following command (assumes you have Python installed):
-
-```bash
-pipx install fb-idb==1.1.7
-```
-
-> [!IMPORTANT]
-> Please note that UI automation features are currently in beta so there might be some rough edges. If you encounter any issues, please report them in the [issue tracker](https://github.com/cameroncooke/XcodeBuildMCP/issues).
-
-> [!NOTE]
-> Displaying images in tool responses and embedding them in chat context may not be supported by all MCP Clients; it's currently known to be supported in Cursor.
+[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](vscode:mcp/install?%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D) [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](vscode-insiders:mcp/install?%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D)
 
 ## Incremental build support
 
@@ -173,12 +188,10 @@ Example MCP client configuration:
 {
   "mcpServers": {
     "XcodeBuildMCP": {
-      "command": "mise",
+      "command": "npx",
       "args": [
-        "x",
-        "npm:xcodebuildmcp@1.4.0",
-        "--",
-        "xcodebuildmcp"
+        "-y",
+        "xcodebuildmcp@latest"
       ],
       "env": {
         "INCREMENTAL_BUILDS_ENABLED": "true"
@@ -199,13 +212,6 @@ If you encounter issues with XcodeBuildMCP, the diagnostic tool can help identif
 
 The diagnostic tool is a standalone utility that checks your system configuration and reports on the status of all dependencies required by XcodeBuildMCP. It's particularly useful when reporting issues.
 
-#### Using with mise
-
-```bash
-# Run the diagnostic tool using mise
-mise x npm:xcodebuildmcp@1.4.0 -- xcodebuildmcp-diagnostic
-```
-
 #### Using with npx
 
 ```bash
@@ -213,11 +219,18 @@ mise x npm:xcodebuildmcp@1.4.0 -- xcodebuildmcp-diagnostic
 npx xcodebuildmcp@1.4.0 xcodebuildmcp-diagnostic
 ```
 
+#### Using with mise
+
+```bash
+# Run the diagnostic tool using mise
+mise x npm:xcodebuildmcp@1.4.0 -- xcodebuildmcp-diagnostic
+```
+
 The diagnostic tool will output comprehensive information about:
 
 - System and Node.js environment
 - Xcode installation and configuration
-- Required dependencies (xcodebuild, idb, etc.)
+- Required dependencies (xcodebuild, AXe, etc.)
 - Environment variables affecting XcodeBuildMCP
 - Feature availability status
 
@@ -250,12 +263,10 @@ Example MCP client configuration:
 {
   "mcpServers": {
     "XcodeBuildMCP": {
-      "command": "mise",
+      "command": "npx",
       "args": [
-        "x",
-        "npm:xcodebuildmcp@1.4.0",
-        "--",
-        "xcodebuildmcp"
+        "-y",
+        "xcodebuildmcp@latest"
       ],
       "env": {
         "SENTRY_DISABLED": "true"
@@ -275,12 +286,10 @@ Once you have enabled one or more tools or groups of tools all other tools will 
 {
   "mcpServers": {
     "XcodeBuildMCP": {
-      "command": "mise",
+      "command": "npx",
       "args": [
-        "x",
-        "npm:xcodebuildmcp@1.4.0",
-        "--",
-        "xcodebuildmcp"
+        "-y",
+        "xcodebuildmcp@latest"
       ],
       "env": {
         "XCODEBUILDMCP_GROUP_IOS_SIMULATOR_WORKFLOW": "true"

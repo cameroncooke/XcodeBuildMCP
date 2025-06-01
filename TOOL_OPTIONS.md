@@ -38,7 +38,7 @@ These groups organise tools based on common developer workflows, making it easie
 - **XCODEBUILDMCP_GROUP_DIAGNOSTICS=true** - Logging and diagnostics tools
   - _e.g., Log capture, debugging information._
 - **XCODEBUILDMCP_GROUP_UI_TESTING=true** - UI testing and automation tools
-  - _e.g., Tools for interacting with UI elements, typically via IDB._
+  - _e.g., Tools for interacting with UI elements via AXe._
 
 ## Enabling Individual Tools
 
@@ -112,8 +112,8 @@ To enable specific tools rather than entire groups, use the following environmen
 - **XCODEBUILDMCP_TOOL_START_SIMULATOR_LOG_CAPTURE=true** - Start capturing logs from a simulator.
 - **XCODEBUILDMCP_TOOL_STOP_AND_GET_SIMULATOR_LOG=true** - Stop capturing logs and retrieve them.
 
-#### UI Automation (IDB)
-- **XCODEBUILDMCP_TOOL_UI_AUTOMATION_TOOLS=true** - Enable UI automation tools (e.g., tap, swipe - requires IDB).
+#### UI Automation (AXe)
+- **XCODEBUILDMCP_TOOL_UI_AUTOMATION_TOOLS=true** - Enable UI automation tools (e.g., tap, swipe - requires AXe).
 
 #### Diagnostics
 - **XCODEBUILDMCP_DEBUG=true** - Enable diagnostic tool for XcodeBuildMCP server.
@@ -192,12 +192,10 @@ Here is a fully worked example of how to configure Cursor/Windsurf to use specif
 {
   "mcpServers": {
     "XcodeBuildMCP": {
-      "command": "mise",
+      "command": "npx",
       "args": [
-        "x",
-        "npm:xcodebuildmcp@1.4.0",
-        "--",
-        "xcodebuildmcp"
+        "-y",
+        "xcodebuildmcp@latest"
       ],
       "env": {
         "XCODEBUILDMCP_GROUP_PROJECT_DISCOVERY": "true",

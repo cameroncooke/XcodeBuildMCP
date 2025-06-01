@@ -15,7 +15,7 @@ import { ToolResponse } from '../types/common.js';
  *   - SystemError: Underlying system/OS issues
  *   - ConfigurationError: Application configuration problems
  *   - SimulatorError: iOS simulator-specific failures
- *   - IdbError: idb-specific errors
+ *   - AxeError: axe-specific errors
  *
  * The structured hierarchy allows error consumers to handle errors with the
  * appropriate level of specificity using instanceof checks or catch clauses.
@@ -92,18 +92,18 @@ export class SimulatorError extends XcodeBuildMCPError {
 }
 
 /**
- * Error thrown for idb-specific errors
+ * Error thrown for axe-specific errors
  */
-export class IdbError extends XcodeBuildMCPError {
+export class AxeError extends XcodeBuildMCPError {
   constructor(
     message: string,
-    public command?: string, // The idb command that failed
-    public idbOutput?: string, // Output from idb
+    public command?: string, // The axe command that failed
+    public axeOutput?: string, // Output from axe
     public simulatorId?: string,
   ) {
     super(message);
-    this.name = 'IdbError';
-    Object.setPrototypeOf(this, IdbError.prototype);
+    this.name = 'AxeError';
+    Object.setPrototypeOf(this, AxeError.prototype);
   }
 }
 

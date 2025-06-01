@@ -13,18 +13,12 @@ In addition to the prerequisites mentioned in the [Getting started](README.md/#g
 
 #### Optional: Enabling UI Automation
 
-When running locally, you'll need to install Facebook's idb tools:
+When running locally, you'll need to install AXe for UI automation:
 
 ```bash
-# Install idb_companion (required for UI automation)
-brew tap facebook/fb
-brew install idb-companion
-```
-
-Install fb-idb Python package:
-
-```bash
-pip install fb-idb==1.1.7
+# Install axe (required for UI automation)
+brew tap cameroncooke/axe
+brew install axe
 ```
 
 ### Installation
