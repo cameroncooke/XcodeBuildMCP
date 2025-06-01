@@ -1,5 +1,10 @@
 # Changelog
 
+## [v1.5.0] - 2025-06-01
+- UI automation is no longer in beta!
+- Added support for AXe UI automation
+- Revised default installation instructions to prefer npx instead of mise
+
 ## [v1.4.0] - 2025-05-11
 - Merge the incremental build beta branch into main
 - Add preferXcodebuild argument to build tools with improved error handling allowing the agent to force the use of xcodebuild over xcodemake for complex projects. It also adds a hint when incremental builds fail due to non-compiler errors, enabling the agent to automatically switch to xcodebuild for a recovery build attempt, improving reliability.
