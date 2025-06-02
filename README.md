@@ -104,8 +104,8 @@ Configure your MCP client (Windsurf, Cursor, Claude Desktop, Claude Code etc.) t
     "XcodeBuildMCP": {
       "command": "npx",
       "args": [
-        "-y"
-        "xcodebuildmcp@latest",
+        "-y",
+        "xcodebuildmcp@latest"
       ]
     }
   }
@@ -184,7 +184,7 @@ XcodeBuildMCP includes experimental support for incremental builds. This feature
 To enable incremental builds, set the `INCREMENTAL_BUILDS_ENABLED` environment variable to `true`:
 
 Example MCP client configuration:
-```bash
+```json
 {
   "mcpServers": {
     "XcodeBuildMCP": {
@@ -259,7 +259,7 @@ This project uses [Sentry](https://sentry.io/) for error monitoring and diagnost
 - If you do not wish to send error logs to Sentry, you can opt out by setting the environment variable `SENTRY_DISABLED=true`.
 
 Example MCP client configuration:
-```bash
+```json
 {
   "mcpServers": {
     "XcodeBuildMCP": {
@@ -282,7 +282,7 @@ By default all tools are enabled but for some clients it may be useful to only e
 
 Once you have enabled one or more tools or groups of tools all other tools will be disabled. For example, to enable only the simulator related tools, you can set the environment variable to `XCODEBUILDMCP_GROUP_IOS_SIMULATOR_WORKFLOW=true` this will only expose tools for building, running and debugging on simulators
 
-```bash
+```json
 {
   "mcpServers": {
     "XcodeBuildMCP": {
