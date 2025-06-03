@@ -83,6 +83,9 @@ import { registerScreenshotTool } from '../tools/screenshot.js';
 // Import diagnostic tool
 import { registerDiagnosticTool } from '../tools/diagnostic.js';
 
+// Import scaffold tool
+import { registerScaffoldTools } from '../tools/scaffold.js';
+
 // Import MCP server
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
@@ -374,6 +377,13 @@ const toolRegistrations = [
     register: registerScreenshotTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.UI_TESTING],
     envVar: 'XCODEBUILDMCP_TOOL_SCREENSHOT',
+  },
+
+  // Scaffold tool
+  {
+    register: registerScaffoldTools,
+    groups: [ToolGroup.PROJECT_DISCOVERY],
+    envVar: 'XCODEBUILDMCP_TOOL_SCAFFOLD_PROJECT',
   },
 ];
 

@@ -114,6 +114,10 @@ To enable specific tools rather than entire groups, use the following environmen
 
 #### UI Automation (AXe)
 - **XCODEBUILDMCP_TOOL_UI_AUTOMATION_TOOLS=true** - Enable UI automation tools (e.g., tap, swipe - requires AXe).
+- **XCODEBUILDMCP_TOOL_SCREENSHOT=true** - Capture screenshots from iOS simulators.
+
+#### Project Scaffolding
+- **XCODEBUILDMCP_TOOL_SCAFFOLD_PROJECT=true** - Scaffold new iOS/macOS projects from templates.
 
 #### Diagnostics
 - **XCODEBUILDMCP_DEBUG=true** - Enable diagnostic tool for XcodeBuildMCP server.

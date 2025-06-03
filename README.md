@@ -62,6 +62,7 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - **Project Information**: Tools to list schemes and show build settings for Xcode projects and workspaces
 - **Clean Operations**: Clean build products using xcodebuild's native clean action
 - **Incremental build support**: Lightning fast builds using incremental build support (experimental, opt-in required)
+- **Project Scaffolding**: Create new iOS and macOS projects from modern templates with workspace + SPM package architecture, customizable bundle identifiers, deployment targets, and device families
 
 ### Simulator management
 - **Simulator Control**: List, boot, and open iOS simulators 

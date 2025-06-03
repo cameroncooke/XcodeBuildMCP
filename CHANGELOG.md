@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+- Moved project templates to external GitHub repositories for independent versioning
+- Added support for downloading templates from GitHub releases
+- Added local template override support via environment variables
+- Added `scaffold_ios_project` and `scaffold_macos_project` tools for creating new projects
+- Centralized template version management in package.json for easier updates
+
 ## [v1.5.0] - 2025-06-01
 - UI automation is no longer in beta!
 - Added support for AXe UI automation
