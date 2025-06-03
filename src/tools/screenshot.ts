@@ -25,7 +25,7 @@ const LOG_PREFIX = '[Screenshot]';
 export function registerScreenshotTool(server: McpServer): void {
   server.tool(
     'screenshot',
-    'Captures a screenshot of the simulator screen and returns the path to the PNG file.',
+    "Captures screenshot for visual verification. For UI coordinates, use describe_ui instead (don't determine coordinates from screenshots).",
     {
       simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
     },

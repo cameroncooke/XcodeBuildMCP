@@ -18,6 +18,37 @@ import { areAxeToolsAvailable } from '../utils/axe-setup.js';
 const AXE_COMMAND = 'axe';
 const LOG_PREFIX = '[AXe]';
 
+// Session tracking for describe_ui warnings
+interface DescribeUISession {
+  timestamp: number;
+  simulatorUuid: string;
+}
+
+const describeUITimestamps = new Map<string, DescribeUISession>();
+const DESCRIBE_UI_WARNING_TIMEOUT = 60000; // 60 seconds
+
+function recordDescribeUICall(simulatorUuid: string): void {
+  describeUITimestamps.set(simulatorUuid, {
+    timestamp: Date.now(),
+    simulatorUuid,
+  });
+}
+
+function getCoordinateWarning(simulatorUuid: string): string | null {
+  const session = describeUITimestamps.get(simulatorUuid);
+  if (!session) {
+    return 'Warning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.';
+  }
+
+  const timeSinceDescribe = Date.now() - session.timestamp;
+  if (timeSinceDescribe > DESCRIBE_UI_WARNING_TIMEOUT) {
+    const secondsAgo = Math.round(timeSinceDescribe / 1000);
+    return `Warning: describe_ui was last called ${secondsAgo} seconds ago. Consider refreshing UI coordinates with describe_ui instead of using potentially stale coordinates.`;
+  }
+
+  return null;
+}
+
 async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
@@ -78,15 +109,15 @@ export function registerAxeTools(server: McpServer): void {
     return;
   }
 
-  // 1. describe_all
+  // 1. describe_ui
   server.tool(
-    'describe_all',
-    'Gets the full accessibility hierarchy for the running app in the specified simulator as JSON.',
+    'describe_ui',
+    'Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation.',
     {
       simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
     },
     async (params): Promise<ToolResponse> => {
-      const toolName = 'describe_all';
+      const toolName = 'describe_ui';
       const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
       if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
 
@@ -97,6 +128,9 @@ export function registerAxeTools(server: McpServer): void {
 
       try {
         const responseText = await executeAxeCommand(commandArgs, simulatorUuid, 'describe-ui');
+
+        // Record the describe_ui call for warning system
+        recordDescribeUICall(simulatorUuid);
 
         log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
         return {
@@ -111,8 +145,9 @@ export function registerAxeTools(server: McpServer): void {
             {
               type: 'text',
               text: `Next Steps:
-- Use tap, swipe, etc. to interact with the UI.
-- Use screenshot to capture the current state.`,
+- Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)
+- Re-run describe_ui after layout changes
+- Screenshots are for visual verification only`,
             },
           ],
         };
@@ -145,7 +180,7 @@ export function registerAxeTools(server: McpServer): void {
   // 2. tap
   server.tool(
     'tap',
-    'Tap on a specific point on the screen. Optionally include pre-delay and post-delay for timing control.',
+    "Tap at specific coordinates. Use describe_ui to get precise element coordinates (don't guess from screenshots). Supports optional timing delays.",
     {
       simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
       x: z.number().int('X coordinate must be an integer'),
@@ -176,7 +211,15 @@ export function registerAxeTools(server: McpServer): void {
       try {
         await executeAxeCommand(commandArgs, simulatorUuid, 'tap');
         log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-        return createTextResponse(`Tap at (${x}, ${y}) simulated successfully.`);
+
+        const warning = getCoordinateWarning(simulatorUuid);
+        const message = `Tap at (${x}, ${y}) simulated successfully.`;
+
+        if (warning) {
+          return createTextResponse(`${message}\n\n${warning}`);
+        }
+
+        return createTextResponse(message);
       } catch (error) {
         log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
         if (error instanceof DependencyError) {
@@ -206,7 +249,7 @@ export function registerAxeTools(server: McpServer): void {
   // 3. long_press
   server.tool(
     'long_press',
-    'Simulates a long press event at (x, y) for a given duration (ms). This is a convenience wrapper around the touch command.',
+    "Long press at specific coordinates for given duration (ms). Use describe_ui for precise coordinates (don't guess from screenshots).",
     {
       simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
       x: z.number().int('X coordinate must be an integer'),
@@ -247,9 +290,15 @@ export function registerAxeTools(server: McpServer): void {
       try {
         await executeAxeCommand(commandArgs, simulatorUuid, 'touch');
         log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-        return createTextResponse(
-          `Long press at (${x}, ${y}) for ${duration}ms simulated successfully.`,
-        );
+
+        const warning = getCoordinateWarning(simulatorUuid);
+        const message = `Long press at (${x}, ${y}) for ${duration}ms simulated successfully.`;
+
+        if (warning) {
+          return createTextResponse(`${message}\n\n${warning}`);
+        }
+
+        return createTextResponse(message);
       } catch (error) {
         log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
         if (error instanceof DependencyError) {
@@ -279,7 +328,7 @@ export function registerAxeTools(server: McpServer): void {
   // 4. swipe
   server.tool(
     'swipe',
-    'Perform a swipe gesture from one point to another on the screen with configurable timing and precision.',
+    "Swipe from one point to another. Use describe_ui for precise coordinates (don't guess from screenshots). Supports configurable timing.",
     {
       simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
       x1: z.number().int('Start X coordinate must be an integer'),
@@ -338,9 +387,15 @@ export function registerAxeTools(server: McpServer): void {
       try {
         await executeAxeCommand(commandArgs, simulatorUuid, 'swipe');
         log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-        return createTextResponse(
-          `Swipe from (${x1}, ${y1}) to (${x2}, ${y2})${optionsText} simulated successfully.`,
-        );
+
+        const warning = getCoordinateWarning(simulatorUuid);
+        const message = `Swipe from (${x1}, ${y1}) to (${x2}, ${y2})${optionsText} simulated successfully.`;
+
+        if (warning) {
+          return createTextResponse(`${message}\n\n${warning}`);
+        }
+
+        return createTextResponse(message);
       } catch (error) {
         log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
         if (error instanceof DependencyError) {
@@ -370,7 +425,7 @@ export function registerAxeTools(server: McpServer): void {
   // 5. type_text
   server.tool(
     'type_text',
-    'Type text by entering a sequence of characters. Supports US keyboard characters (A-Z, a-z, 0-9, and symbols). Make sure to tap the center of the text field first to focus it.',
+    'Type text (supports US keyboard characters). Use describe_ui to find text field, tap to focus, then type.',
     {
       simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
       text: z.string().min(1, 'Text cannot be empty'),
@@ -591,7 +646,7 @@ export function registerAxeTools(server: McpServer): void {
   // 9. touch
   server.tool(
     'touch',
-    'Perform precise touch down/up events at specific coordinates for advanced gesture control.',
+    "Perform touch down/up events at specific coordinates. Use describe_ui for precise coordinates (don't guess from screenshots).",
     {
       simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
       x: z.number().int('X coordinate must be an integer'),
@@ -640,9 +695,15 @@ export function registerAxeTools(server: McpServer): void {
       try {
         await executeAxeCommand(commandArgs, simulatorUuid, 'touch');
         log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-        return createTextResponse(
-          `Touch event (${actionText}) at (${x}, ${y}) executed successfully.`,
-        );
+
+        const warning = getCoordinateWarning(simulatorUuid);
+        const message = `Touch event (${actionText}) at (${x}, ${y}) executed successfully.`;
+
+        if (warning) {
+          return createTextResponse(`${message}\n\n${warning}`);
+        }
+
+        return createTextResponse(message);
       } catch (error) {
         log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
         if (error instanceof DependencyError) {
