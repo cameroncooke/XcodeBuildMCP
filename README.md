@@ -12,6 +12,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 - [Why?](#why)
 - [Features](#features)
   - [Xcode project management](#xcode-project-management)
+  - [Swift Package Manager](#swift-package-manager)
   - [Simulator management](#simulator-management)
   - [App utilities](#app-utilities)
 - [Getting started](#getting-started)
@@ -63,6 +64,13 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - **Clean Operations**: Clean build products using xcodebuild's native clean action
 - **Incremental build support**: Lightning fast builds using incremental build support (experimental, opt-in required)
 - **Project Scaffolding**: Create new iOS and macOS projects from modern templates with workspace + SPM package architecture, customizable bundle identifiers, deployment targets, and device families
+
+### Swift Package Manager
+- **Build Packages**: Build Swift packages with configuration and architecture options
+- **Run Tests**: Execute Swift package test suites with filtering and parallel execution
+- **Run Executables**: Execute package binaries with timeout handling and background execution support
+- **Process Management**: List and stop long-running executables started with Swift Package tools
+- **Clean Artifacts**: Remove build artifacts and derived data for fresh builds
 
 ### Simulator management
 - **Simulator Control**: List, boot, and open iOS simulators 

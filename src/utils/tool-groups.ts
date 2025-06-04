@@ -23,6 +23,9 @@ export enum ToolGroup {
   // macOS application development workflow
   MACOS_WORKFLOW = 'XCODEBUILDMCP_GROUP_MACOS_WORKFLOW',
 
+  // Swift Package Manager workflow
+  SWIFT_PACKAGE_WORKFLOW = 'XCODEBUILDMCP_GROUP_SWIFT_PACKAGE_WORKFLOW',
+
   // Simulator device management
   SIMULATOR_MANAGEMENT = 'XCODEBUILDMCP_GROUP_SIMULATOR_MANAGEMENT',
 
