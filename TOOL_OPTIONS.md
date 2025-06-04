@@ -58,6 +58,9 @@ To enable specific tools rather than entire groups, use the following environmen
 - **XCODEBUILDMCP_TOOL_CLEAN_WORKSPACE=true** - Clean build products for an Xcode workspace.
 - **XCODEBUILDMCP_TOOL_CLEAN_PROJECT=true** - Clean build products for an Xcode project.
 
+#### Swift Package Build
+- **XCODEBUILDMCP_TOOL_BUILD_SWIFT_PACKAGE=true** - Build a Swift package using `swift build`.
+
 #### macOS Build & Run
 - **XCODEBUILDMCP_TOOL_MACOS_BUILD_WORKSPACE=true** - Build a macOS application from a workspace.
 - **XCODEBUILDMCP_TOOL_MACOS_BUILD_PROJECT=true** - Build a macOS application from a project.
