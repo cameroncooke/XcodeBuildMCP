@@ -1,24 +1,17 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import path from 'node:path';
-import { registerTool } from './common.js';
+import {
+  registerTool,
+  swiftConfigurationSchema,
+  swiftArchitecturesSchema,
+  parseAsLibrarySchema,
+} from './common.js';
 import { executeCommand } from '../utils/command.js';
-import { createTextResponse, validateRequiredParam } from '../utils/validation.js';
+import { validateRequiredParam } from '../utils/validation.js';
 import { ToolResponse } from '../types/common.js';
 import { createErrorResponse } from '../utils/errors.js';
 import { log } from '../utils/logger.js';
-
-// Parameter schemas
-const configurationSchema = z
-  .enum(['debug', 'release'])
-  .optional()
-  .describe("Build configuration: 'debug' (default) or 'release'");
-
-const archSchema = z
-  .enum(['arm64', 'x86_64'])
-  .array()
-  .optional()
-  .describe('Architectures to build for (e.g. arm64, x86_64)');
 
 export function registerBuildSwiftPackageTool(server: McpServer): void {
   registerTool(
@@ -28,18 +21,15 @@ export function registerBuildSwiftPackageTool(server: McpServer): void {
     {
       packagePath: z.string().describe('Path to the Swift package root (Required)'),
       targetName: z.string().optional().describe('Optional target to build'),
-      configuration: configurationSchema,
-      archs: archSchema,
-      parseAsLibrary: z
-        .boolean()
-        .optional()
-        .describe('Add -parse-as-library flag for @main support (default: false)'),
+      configuration: swiftConfigurationSchema,
+      architectures: swiftArchitecturesSchema,
+      parseAsLibrary: parseAsLibrarySchema,
     },
     async (params: {
       packagePath: string;
       targetName?: string;
       configuration?: 'debug' | 'release';
-      archs?: ('arm64' | 'x86_64')[];
+      architectures?: ('arm64' | 'x86_64')[];
       parseAsLibrary?: boolean;
     }): Promise<ToolResponse> => {
       const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
@@ -50,16 +40,14 @@ export function registerBuildSwiftPackageTool(server: McpServer): void {
 
       if (params.configuration && params.configuration.toLowerCase() === 'release') {
         args.push('-c', 'release');
-      } else if (params.configuration && params.configuration.toLowerCase() !== 'debug') {
-        return createTextResponse("Invalid configuration. Use 'debug' or 'release'.", true);
       }
 
       if (params.targetName) {
         args.push('--target', params.targetName);
       }
 
-      if (params.archs) {
-        for (const arch of params.archs) {
+      if (params.architectures) {
+        for (const arch of params.architectures) {
           args.push('--arch', arch);
         }
       }

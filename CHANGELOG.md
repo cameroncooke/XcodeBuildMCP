@@ -7,7 +7,7 @@
   - `swift_package_clean`
   - `swift_package_test`
   - `swift_package_run`
-  - `swift_package_list_processes`
+  - `swift_package_list`
   - `swift_package_stop`
 
 ## [v1.6.1] - 2025-06-03

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import path from 'node:path';
 import { spawn, ChildProcess } from 'node:child_process';
-import { registerTool } from './common.js';
+import { registerTool, swiftConfigurationSchema, parseAsLibrarySchema } from './common.js';
 import { executeCommand } from '../utils/command.js';
 import { createTextResponse, validateRequiredParam } from '../utils/validation.js';
 import { ToolResponse } from '../types/common.js';
@@ -14,12 +14,6 @@ const activeProcesses = new Map<
   number,
   { process: ChildProcess; startedAt: Date; packagePath: string; executableName?: string }
 >();
-
-// Parameter schemas
-const configurationSchema = z
-  .enum(['debug', 'release'])
-  .optional()
-  .describe("Build configuration: 'debug' (default) or 'release'");
 
 export function registerRunSwiftPackageTool(server: McpServer): void {
   registerTool(
@@ -33,16 +27,13 @@ export function registerRunSwiftPackageTool(server: McpServer): void {
         .optional()
         .describe('Name of executable to run (defaults to package name)'),
       arguments: z.array(z.string()).optional().describe('Arguments to pass to the executable'),
-      configuration: configurationSchema,
+      configuration: swiftConfigurationSchema,
       timeout: z.number().optional().describe('Timeout in seconds (default: 30, max: 300)'),
       background: z
         .boolean()
         .optional()
         .describe('Run in background and return immediately (default: false)'),
-      parseAsLibrary: z
-        .boolean()
-        .optional()
-        .describe('Add -parse-as-library flag for @main support (default: false)'),
+      parseAsLibrary: parseAsLibrarySchema,
     },
     async (params: {
       packagePath: string;
@@ -223,7 +214,7 @@ export function registerRunSwiftPackageTool(server: McpServer): void {
 
 // Helper tool to stop background processes
 // Helper tool to list active processes
-export function registerListSwiftPackageProcessesTool(server: McpServer): void {
+export function registerListSwiftPackageTool(server: McpServer): void {
   registerTool(
     server,
     'swift_package_list',
