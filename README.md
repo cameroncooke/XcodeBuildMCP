@@ -110,7 +110,6 @@ For more information about AXe and other installation methods, see the [AXe repo
 
 For a quick install, you can use the following links:
 
-- [![Install in Cursor](mcp-install-dark.png)](cursor://anysphere.cursor-deeplink/mcp/install?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsInhjb2RlYnVpbGRtY3BAbGF0ZXN0Il19)
 - [<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D)
 - [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D&quality=insiders)
 
