@@ -59,6 +59,9 @@ import {
 // Import bundle ID tools
 import { registerGetMacOSBundleIdTool, registerGetiOSBundleIdTool } from '../tools/bundleId.js';
 
+// Import swift package build tool
+import { registerBuildSwiftPackageTool } from '../tools/build-swift-package.js';
+
 // Import clean tool
 import { registerCleanWorkspaceTool, registerCleanProjectTool } from '../tools/clean.js';
 
@@ -144,6 +147,13 @@ const toolRegistrations = [
       ToolGroup.IOS_DEVICE_WORKFLOW,
     ],
     envVar: 'XCODEBUILDMCP_TOOL_CLEAN_PROJECT',
+  },
+
+  // Swift Package build tool
+  {
+    register: registerBuildSwiftPackageTool,
+    groups: [ToolGroup.MACOS_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_BUILD_SWIFT_PACKAGE',
   },
 
   // macOS build tools
