@@ -1,18 +1,12 @@
 import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import path from 'node:path';
-import { registerTool } from './common.js';
+import { registerTool, swiftConfigurationSchema, parseAsLibrarySchema } from './common.js';
 import { executeCommand } from '../utils/command.js';
 import { createTextResponse, validateRequiredParam } from '../utils/validation.js';
 import { ToolResponse } from '../types/common.js';
 import { createErrorResponse } from '../utils/errors.js';
 import { log } from '../utils/logger.js';
-
-// Parameter schemas
-const configurationSchema = z
-  .enum(['debug', 'release'])
-  .optional()
-  .describe("Build configuration: 'debug' (default) or 'release'");
 
 export function registerTestSwiftPackageTool(server: McpServer): void {
   registerTool(
@@ -23,13 +17,10 @@ export function registerTestSwiftPackageTool(server: McpServer): void {
       packagePath: z.string().describe('Path to the Swift package root (Required)'),
       testProduct: z.string().optional().describe('Optional specific test product to run'),
       filter: z.string().optional().describe('Filter tests by name (regex pattern)'),
-      configuration: configurationSchema,
+      configuration: swiftConfigurationSchema,
       parallel: z.boolean().optional().describe('Run tests in parallel (default: true)'),
       showCodecov: z.boolean().optional().describe('Show code coverage (default: false)'),
-      parseAsLibrary: z
-        .boolean()
-        .optional()
-        .describe('Add -parse-as-library flag for @main support (default: false)'),
+      parseAsLibrary: parseAsLibrarySchema,
     },
     async (params: {
       packagePath: string;

@@ -65,7 +65,7 @@ import { registerTestSwiftPackageTool } from '../tools/test-swift-package.js';
 import {
   registerRunSwiftPackageTool,
   registerStopSwiftPackageTool,
-  registerListSwiftPackageProcessesTool,
+  registerListSwiftPackageTool,
   registerCleanSwiftPackageTool,
 } from '../tools/run-swift-package.js';
 
@@ -180,7 +180,7 @@ const toolRegistrations = [
     isWriteTool: true,
   },
   {
-    register: registerListSwiftPackageProcessesTool,
+    register: registerListSwiftPackageTool,
     groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
     envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_LIST',
   },
