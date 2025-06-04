@@ -18,9 +18,10 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [UI Automation](#ui-automation)
-  - [Configure MCP client](#configure-mcp-client)
+  - [Configure your MCP client](#configure-your-mcp-client)
+    - [Quick install](#quick-install)
+    - [Manual installation](#manual-installation)
     - [Alternative installation method using mise](#alternative-installation-method-using-mise)
-    - [One click to install in VS Code](#one-click-to-install-in-vs-code)
 - [Incremental build support](#incremental-build-support)
 - [Troubleshooting](#troubleshooting)
   - [Diagnostic Tool](#diagnostic-tool)
@@ -103,7 +104,17 @@ brew install axe
 
 For more information about AXe and other installation methods, see the [AXe repository](https://github.com/cameroncooke/axe).
 
-### Configure MCP client
+### Configure your MCP client
+
+#### Quick install
+
+For a quick install, you can use the following links:
+
+- [![Install in Cursor](mcp-install-dark.png)](cursor://anysphere.cursor-deeplink/mcp/install?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsInhjb2RlYnVpbGRtY3BAbGF0ZXN0Il19)
+- [<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D)
+- [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D&quality=insiders)
+
+#### Manual installation
 
 Configure your MCP client (Windsurf, Cursor, Claude Desktop, Claude Code etc.) to use the XcodeBuildMCP server by ammending your client application's MCP configuration.
 
@@ -155,36 +166,6 @@ Then configure your MCP client to use mise to install XcodeBuildMCP:
 
 > [!IMPORTANT]
 > Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
-
-#### One click to install in VS Code
-
-<!-- Note: update the version number in the URL to match the latest release version.
-
-To generate 
-
-```
-let obj = {
-  "name": "XcodeBuildMCP",
-  "command": "npx",
-  "args": [ "-y", "xcodebuildmcp@latest"]
-}
-
-const linkVSCode = `vscode:mcp/install?${encodeURIComponent(JSON.stringify(obj))}`;
-const linkInsiders = `vscode-insiders:mcp/install?${encodeURIComponent(JSON.stringify(obj))}`;
-
-console.log("VS Code Link:");
-console.log(linkVSCode);
-console.log("\nVS Code Insiders Link:");
-console.log(linkInsiders);
-
-console.log("\nMarkdown for VS Code:");
-console.log(`[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](${linkVSCode})`);
-
-console.log("\nMarkdown for VS Code Insiders:");
-console.log(`[<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](${linkInsiders})`); 
-``` -->
-
-[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D) [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D&quality=insiders)
 
 ## Incremental build support
 
