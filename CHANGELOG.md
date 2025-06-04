@@ -1,6 +1,19 @@
 # Changelog
 
-## [Unreleased]
+## [v1.7.0] - 2025-06-04
+- Added support for Swift Package Manager (SPM)
+- New tools for Swift Package Manager:
+  - `swift_package_build`
+  - `swift_package_clean`
+  - `swift_package_test`
+  - `swift_package_run`
+  - `swift_package_list_processes`
+  - `swift_package_stop`
+
+## [v1.6.1] - 2025-06-03
+- Improve UI tool hints
+
+## [v1.6.0] - 2025-06-03
 - Moved project templates to external GitHub repositories for independent versioning
 - Added support for downloading templates from GitHub releases
 - Added local template override support via environment variables

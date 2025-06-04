@@ -31,6 +31,8 @@ These groups organise tools based on common developer workflows, making it easie
   - _e.g., Building and deploying to physical iOS devices._
 - **XCODEBUILDMCP_GROUP_MACOS_WORKFLOW=true** - macOS application development workflow tools
   - _e.g., Building, running, debugging macOS applications._
+- **XCODEBUILDMCP_GROUP_SWIFT_PACKAGE_WORKFLOW=true** - Swift Package Manager development workflow tools
+  - _e.g., Building, testing, and running Swift packages._
 - **XCODEBUILDMCP_GROUP_SIMULATOR_MANAGEMENT=true** - Simulator device management tools
   - _e.g., Managing simulator lifecycle (boot, open, set appearance)._
 - **XCODEBUILDMCP_GROUP_APP_DEPLOYMENT=true** - Application deployment tools
@@ -58,8 +60,13 @@ To enable specific tools rather than entire groups, use the following environmen
 - **XCODEBUILDMCP_TOOL_CLEAN_WORKSPACE=true** - Clean build products for an Xcode workspace.
 - **XCODEBUILDMCP_TOOL_CLEAN_PROJECT=true** - Clean build products for an Xcode project.
 
-#### Swift Package Build
-- **XCODEBUILDMCP_TOOL_BUILD_SWIFT_PACKAGE=true** - Build a Swift package using `swift build`.
+#### Swift Package Tools
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_BUILD=true** - Build a Swift package using `swift build`.
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_TEST=true** - Run tests for a Swift package using `swift test`.
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_RUN=true** - Run an executable target from a Swift package using `swift run`.
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_STOP=true** - Stop a running Swift package executable by PID.
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_LIST=true** - List currently running Swift package processes.
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_CLEAN=true** - Clean Swift package build artifacts and derived data.
 
 #### macOS Build & Run
 - **XCODEBUILDMCP_TOOL_MACOS_BUILD_WORKSPACE=true** - Build a macOS application from a workspace.

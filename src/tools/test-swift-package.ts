@@ -14,22 +14,18 @@ const configurationSchema = z
   .optional()
   .describe("Build configuration: 'debug' (default) or 'release'");
 
-const archSchema = z
-  .enum(['arm64', 'x86_64'])
-  .array()
-  .optional()
-  .describe('Architectures to build for (e.g. arm64, x86_64)');
-
-export function registerBuildSwiftPackageTool(server: McpServer): void {
+export function registerTestSwiftPackageTool(server: McpServer): void {
   registerTool(
     server,
-    'swift_package_build',
-    'Builds a Swift Package with swift build',
+    'swift_package_test',
+    'Runs tests for a Swift Package with swift test',
     {
       packagePath: z.string().describe('Path to the Swift package root (Required)'),
-      targetName: z.string().optional().describe('Optional target to build'),
+      testProduct: z.string().optional().describe('Optional specific test product to run'),
+      filter: z.string().optional().describe('Filter tests by name (regex pattern)'),
       configuration: configurationSchema,
-      archs: archSchema,
+      parallel: z.boolean().optional().describe('Run tests in parallel (default: true)'),
+      showCodecov: z.boolean().optional().describe('Show code coverage (default: false)'),
       parseAsLibrary: z
         .boolean()
         .optional()
@@ -37,16 +33,18 @@ export function registerBuildSwiftPackageTool(server: McpServer): void {
     },
     async (params: {
       packagePath: string;
-      targetName?: string;
+      testProduct?: string;
+      filter?: string;
       configuration?: 'debug' | 'release';
-      archs?: ('arm64' | 'x86_64')[];
+      parallel?: boolean;
+      showCodecov?: boolean;
       parseAsLibrary?: boolean;
     }): Promise<ToolResponse> => {
       const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
       if (!pkgValidation.isValid) return pkgValidation.errorResponse!;
 
       const resolvedPath = path.resolve(params.packagePath);
-      const args: string[] = ['build', '--package-path', resolvedPath];
+      const args: string[] = ['test', '--package-path', resolvedPath];
 
       if (params.configuration && params.configuration.toLowerCase() === 'release') {
         args.push('-c', 'release');
@@ -54,14 +52,20 @@ export function registerBuildSwiftPackageTool(server: McpServer): void {
         return createTextResponse("Invalid configuration. Use 'debug' or 'release'.", true);
       }
 
-      if (params.targetName) {
-        args.push('--target', params.targetName);
+      if (params.testProduct) {
+        args.push('--test-product', params.testProduct);
       }
 
-      if (params.archs) {
-        for (const arch of params.archs) {
-          args.push('--arch', arch);
-        }
+      if (params.filter) {
+        args.push('--filter', params.filter);
+      }
+
+      if (params.parallel === false) {
+        args.push('--no-parallel');
+      }
+
+      if (params.showCodecov) {
+        args.push('--show-code-coverage');
       }
 
       if (params.parseAsLibrary) {
@@ -70,26 +74,26 @@ export function registerBuildSwiftPackageTool(server: McpServer): void {
 
       log('info', `Running swift ${args.join(' ')}`);
       try {
-        const result = await executeCommand(['swift', ...args], 'Swift Package Build');
+        const result = await executeCommand(['swift', ...args], 'Swift Package Test');
         if (!result.success) {
           const errorMessage = result.error || result.output || 'Unknown error';
-          return createErrorResponse('Swift package build failed', errorMessage, 'BuildError');
+          return createErrorResponse('Swift package tests failed', errorMessage, 'TestError');
         }
 
         return {
           content: [
-            { type: 'text', text: '✅ Swift package build succeeded.' },
+            { type: 'text', text: '✅ Swift package tests completed.' },
             {
               type: 'text',
-              text: '💡 Next: Run tests with swift_package_test or execute with swift_package_run',
+              text: '💡 Next: Execute your app with swift_package_run if tests passed',
             },
             { type: 'text', text: result.output },
           ],
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        log('error', `Swift package build failed: ${message}`);
-        return createErrorResponse('Failed to execute swift build', message, 'SystemError');
+        log('error', `Swift package test failed: ${message}`);
+        return createErrorResponse('Failed to execute swift test', message, 'SystemError');
       }
     },
   );

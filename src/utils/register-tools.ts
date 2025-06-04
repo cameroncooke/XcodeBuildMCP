@@ -59,8 +59,15 @@ import {
 // Import bundle ID tools
 import { registerGetMacOSBundleIdTool, registerGetiOSBundleIdTool } from '../tools/bundleId.js';
 
-// Import swift package build tool
+// Import swift package tools
 import { registerBuildSwiftPackageTool } from '../tools/build-swift-package.js';
+import { registerTestSwiftPackageTool } from '../tools/test-swift-package.js';
+import {
+  registerRunSwiftPackageTool,
+  registerStopSwiftPackageTool,
+  registerListSwiftPackageProcessesTool,
+  registerCleanSwiftPackageTool,
+} from '../tools/run-swift-package.js';
 
 // Import clean tool
 import { registerCleanWorkspaceTool, registerCleanProjectTool } from '../tools/clean.js';
@@ -149,11 +156,38 @@ const toolRegistrations = [
     envVar: 'XCODEBUILDMCP_TOOL_CLEAN_PROJECT',
   },
 
-  // Swift Package build tool
+  // Swift Package tools
   {
     register: registerBuildSwiftPackageTool,
-    groups: [ToolGroup.MACOS_WORKFLOW],
-    envVar: 'XCODEBUILDMCP_TOOL_BUILD_SWIFT_PACKAGE',
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_BUILD',
+  },
+  {
+    register: registerTestSwiftPackageTool,
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_TEST',
+  },
+  {
+    register: registerRunSwiftPackageTool,
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_RUN',
+    isWriteTool: true,
+  },
+  {
+    register: registerStopSwiftPackageTool,
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_STOP',
+    isWriteTool: true,
+  },
+  {
+    register: registerListSwiftPackageProcessesTool,
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_LIST',
+  },
+  {
+    register: registerCleanSwiftPackageTool,
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_CLEAN',
   },
 
   // macOS build tools
