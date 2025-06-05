@@ -10,8 +10,8 @@
   },
   "scripts": {
     "prebuild": "node -e \"const fs = require('fs'); const pkg = require('./package.json'); fs.writeFileSync('src/version.ts', \\`export const version = '\\${pkg.version}';\\nexport const templateVersion = '\\${pkg.templateVersion}';\\n\\`)\"",
-    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755') && require('fs').chmodSync('build/diagnostic-cli.js', '755')\"",
-    "build:watch": "tsc --watch",
+    "build": "npm run prebuild && tsup",
+    "build:watch": "npm run prebuild && tsup --watch",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
     "format": "prettier --write 'src/**/*.{js,ts}'",
@@ -61,6 +61,7 @@
     "eslint-plugin-prettier": "^5.2.5",
     "prettier": "^3.5.3",
     "ts-node": "^10.9.2",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.28.0",
     "xcode": "^3.0.1"

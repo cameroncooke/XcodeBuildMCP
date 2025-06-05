@@ -109,7 +109,7 @@ You are an AI assistant helping with the XcodeBuildMCP project - a Model Context
 ## Build & Development
 
 ### Scripts
-- `npm run build`: Compile TypeScript and set executable permissions
+- `npm run build`: Build with tsup (fast bundler) and set executable permissions
 - `npm run build:watch`: Watch mode for development
 - `npm run lint`: Check code style
 - `npm run format`: Format code
@@ -180,7 +180,7 @@ The XcodeBuildMCP server is available within this development environment as "Xc
 **Testing Process for Changes:**
 1. `npm run lint` - Check for linting issues
 2. `npm run format` - Format code consistently  
-3. `npm run build` - Compile TypeScript and update tools
+3. `npm run build` - Build with tsup and update tools
 4. Tools automatically become updated and available for immediate testing
 
 ### Required Testing
