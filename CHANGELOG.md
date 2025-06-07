@@ -1,5 +1,17 @@
 # Changelog
 
+## [v1.8.0] - 2025-06-07
+- Added support for running tests on macOS, iOS simulators, and iOS devices
+- New tools for testing:
+  - `test_macos_workspace`
+  - `test_macos_project`
+  - `test_ios_simulator_name_workspace`
+  - `test_ios_simulator_name_project`
+  - `test_ios_simulator_id_workspace`
+  - `test_ios_simulator_id_project`
+  - `test_ios_device_workspace`
+  - `test_ios_device_project`
+
 ## [v1.7.0] - 2025-06-04
 - Added support for Swift Package Manager (SPM)
 - New tools for Swift Package Manager:
