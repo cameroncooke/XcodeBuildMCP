@@ -41,6 +41,8 @@ These groups organise tools based on common developer workflows, making it easie
   - _e.g., Log capture, debugging information._
 - **XCODEBUILDMCP_GROUP_UI_TESTING=true** - UI testing and automation tools
   - _e.g., Tools for interacting with UI elements via AXe._
+- **XCODEBUILDMCP_GROUP_TESTING=true** - Testing tools
+  - _e.g., Tools for running tests on macOS, iOS simulators, and iOS devices._
 
 ## Enabling Individual Tools
 
@@ -131,6 +133,22 @@ To enable specific tools rather than entire groups, use the following environmen
 
 #### Diagnostics
 - **XCODEBUILDMCP_DEBUG=true** - Enable diagnostic tool for XcodeBuildMCP server.
+
+## Test Tools
+
+### macOS Test Tools
+- `XCODEBUILDMCP_TOOL_TEST_MACOS_WORKSPACE`: Enable testing macOS apps from workspaces
+- `XCODEBUILDMCP_TOOL_TEST_MACOS_PROJECT`: Enable testing macOS apps from project files
+
+### iOS Simulator Test Tools
+- `XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_NAME_WORKSPACE`: Enable testing iOS apps in named simulators from workspaces
+- `XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_NAME_PROJECT`: Enable testing iOS apps in named simulators from project files
+- `XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_ID_WORKSPACE`: Enable testing iOS apps in simulators by UUID from workspaces
+- `XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_ID_PROJECT`: Enable testing iOS apps in simulators by UUID from project files
+
+### iOS Device Test Tools
+- `XCODEBUILDMCP_TOOL_TEST_IOS_DEVICE_WORKSPACE`: Enable testing iOS apps on physical devices from workspaces
+- `XCODEBUILDMCP_TOOL_TEST_IOS_DEVICE_PROJECT`: Enable testing iOS apps on physical devices from project files
 
 ## Recommended Tool Combinations for Common Use Cases
 

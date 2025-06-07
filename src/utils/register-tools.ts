@@ -102,6 +102,22 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 // Import tool group utilities
 import { ToolGroup, registerIfEnabled } from './tool-groups.js';
 
+// Import test tools
+import {
+  registerMacOSTestWorkspaceTool,
+  registerMacOSTestProjectTool,
+} from '../tools/test_macos.js';
+import {
+  registerIOSSimulatorTestByNameWorkspaceTool,
+  registerIOSSimulatorTestByNameProjectTool,
+  registerIOSSimulatorTestByIdWorkspaceTool,
+  registerIOSSimulatorTestByIdProjectTool,
+} from '../tools/test_ios_simulator.js';
+import {
+  registerIOSDeviceTestWorkspaceTool,
+  registerIOSDeviceTestProjectTool,
+} from '../tools/test_ios_device.js';
+
 // Define tool registrations with their workflow-based groups
 const toolRegistrations = [
   // Project Discovery and Information tools
@@ -164,7 +180,7 @@ const toolRegistrations = [
   },
   {
     register: registerTestSwiftPackageTool,
-    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW, ToolGroup.TESTING],
     envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_TEST',
   },
   {
@@ -428,6 +444,48 @@ const toolRegistrations = [
     register: registerScaffoldTools,
     groups: [ToolGroup.PROJECT_DISCOVERY],
     envVar: 'XCODEBUILDMCP_TOOL_SCAFFOLD_PROJECT',
+  },
+
+  // Test tools
+  {
+    register: registerMacOSTestWorkspaceTool,
+    groups: [ToolGroup.MACOS_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_MACOS_WORKSPACE',
+  },
+  {
+    register: registerMacOSTestProjectTool,
+    groups: [ToolGroup.MACOS_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_MACOS_PROJECT',
+  },
+  {
+    register: registerIOSSimulatorTestByNameWorkspaceTool,
+    groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_NAME_WORKSPACE',
+  },
+  {
+    register: registerIOSSimulatorTestByNameProjectTool,
+    groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_NAME_PROJECT',
+  },
+  {
+    register: registerIOSSimulatorTestByIdWorkspaceTool,
+    groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_ID_WORKSPACE',
+  },
+  {
+    register: registerIOSSimulatorTestByIdProjectTool,
+    groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_ID_PROJECT',
+  },
+  {
+    register: registerIOSDeviceTestWorkspaceTool,
+    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_DEVICE_WORKSPACE',
+  },
+  {
+    register: registerIOSDeviceTestProjectTool,
+    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_DEVICE_PROJECT',
   },
 ];
 
