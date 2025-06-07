@@ -37,6 +37,9 @@ export enum ToolGroup {
 
   // UI testing and automation
   UI_TESTING = 'XCODEBUILDMCP_GROUP_UI_TESTING',
+
+  // Testing tools (unit tests, UI tests)
+  TESTING = 'XCODEBUILDMCP_GROUP_TESTING',
 }
 
 // Map tool registration functions to their respective groups and individual env var names

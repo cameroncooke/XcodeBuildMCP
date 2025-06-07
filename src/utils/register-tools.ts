@@ -21,6 +21,14 @@ import {
 // Import iOS device build tools
 import { registerIOSDeviceBuildTools } from '../tools/build_ios_device.js';
 
+// Import test tools
+import { registerIOSSimulatorTestTools } from '../tools/test_ios_simulator.js';
+import { registerIOSDeviceTestTools } from '../tools/test_ios_device.js';
+import { registerMacOSTestTools } from '../tools/test_macos.js';
+
+// Import device discovery tools
+import { registerListIOSDevicesTool } from '../tools/device.js';
+
 // Import app path tools
 import {
   registerGetMacOSAppPathWorkspaceTool,
@@ -124,6 +132,11 @@ const toolRegistrations = [
     register: registerListSimulatorsTool,
     groups: [ToolGroup.SIMULATOR_MANAGEMENT, ToolGroup.PROJECT_DISCOVERY],
     envVar: 'XCODEBUILDMCP_TOOL_LIST_SIMULATORS',
+  },
+  {
+    register: registerListIOSDevicesTool,
+    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.PROJECT_DISCOVERY],
+    envVar: 'XCODEBUILDMCP_TOOL_LIST_IOS_DEVICES',
   },
   {
     register: registerShowBuildSettingsWorkspaceTool,
@@ -259,6 +272,23 @@ const toolRegistrations = [
     register: registerIOSDeviceBuildTools,
     groups: [ToolGroup.IOS_DEVICE_WORKFLOW],
     envVar: 'XCODEBUILDMCP_TOOL_IOS_DEVICE_BUILD_TOOLS',
+  },
+
+  // Test tools
+  {
+    register: registerIOSSimulatorTestTools,
+    groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_TEST_TOOLS',
+  },
+  {
+    register: registerIOSDeviceTestTools,
+    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_IOS_DEVICE_TEST_TOOLS',
+  },
+  {
+    register: registerMacOSTestTools,
+    groups: [ToolGroup.MACOS_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_MACOS_TEST_TOOLS',
   },
 
   // App path tools
