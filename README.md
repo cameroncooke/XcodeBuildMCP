@@ -2,10 +2,9 @@
 
 A Model Context Protocol (MCP) server that provides Xcode-related tools for integration with AI assistants and other MCP clients.
 
-[![CI](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml) [![CodeQL](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql)
+[![npm version](https://badge.fury.io/js/xcodebuildmcp.svg)](https://badge.fury.io/js/xcodebuildmcp) [![CI](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml) [![CodeQL](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql)
 [![Licence: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/e0f4ab6d-e867-4c6e-90cd-77363faaafcc)
-[![smithery badge](https://smithery.ai/badge/@cameroncooke/XcodeBuildMCP)](https://smithery.ai/server/@cameroncooke/XcodeBuildMCP)
 
 ## Table of contents
 
@@ -13,20 +12,22 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 - [Why?](#why)
 - [Features](#features)
   - [Xcode project management](#xcode-project-management)
+  - [Swift Package Manager](#swift-package-manager)
   - [Simulator management](#simulator-management)
   - [App utilities](#app-utilities)
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [Installing via Smithery](#installing-via-smithery)
-  - [One-line setup with mise](#one-line-setup-with-mise)
-  - [Configure MCP clients](#configure-mcp-clients)
-    - [One click to install in VS Code](#one-click-to-install-in-vs-code)
-  - [Enabling UI Automation (beta)](#enabling-ui-automation-beta)
+  - [UI Automation](#ui-automation)
+  - [Configure your MCP client](#configure-your-mcp-client)
+    - [Quick install](#quick-install)
+    - [Manual installation](#manual-installation)
+    - [Alternative installation method using mise](#alternative-installation-method-using-mise)
+    - [Installing via Smithery](#installing-via-smithery)
 - [Incremental build support](#incremental-build-support)
 - [Troubleshooting](#troubleshooting)
   - [Diagnostic Tool](#diagnostic-tool)
-    - [Using with mise](#using-with-mise)
     - [Using with npx](#using-with-npx)
+    - [Using with mise](#using-with-mise)
   - [MCP Server Logs](#mcp-server-logs)
 - [Privacy](#privacy)
   - [What is sent to Sentry?](#what-is-sent-to-sentry)
@@ -64,6 +65,14 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - **Project Information**: Tools to list schemes and show build settings for Xcode projects and workspaces
 - **Clean Operations**: Clean build products using xcodebuild's native clean action
 - **Incremental build support**: Lightning fast builds using incremental build support (experimental, opt-in required)
+- **Project Scaffolding**: Create new iOS and macOS projects from modern templates with workspace + SPM package architecture, customizable bundle identifiers, deployment targets, and device families
+
+### Swift Package Manager
+- **Build Packages**: Build Swift packages with configuration and architecture options
+- **Run Tests**: Execute Swift package test suites with filtering and parallel execution
+- **Run Executables**: Execute package binaries with timeout handling and background execution support
+- **Process Management**: List and stop long-running executables started with Swift Package tools
+- **Clean Artifacts**: Remove build artifacts and derived data for fresh builds
 
 ### Simulator management
 - **Simulator Control**: List, boot, and open iOS simulators 
@@ -82,19 +91,51 @@ The XcodeBuildMCP server provides the following tool capabilities:
 
 - macOS 14.5 or later
 - Xcode 16.x or later
-- mise
+- Node 18.x or later
+- AXe 1.0.0 or later (optional, required for UI automation)
+  
+### UI Automation
 
-### Installing via Smithery
-
-To install XcodeBuild MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@cameroncooke/XcodeBuildMCP):
+For UI automation features (tap, swipe, type etc.), you'll need to install AXe:
 
 ```bash
-npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client claude
+brew tap cameroncooke/axe
+brew install axe
 ```
 
-### One-line setup with mise
+For more information about AXe and other installation methods, see the [AXe repository](https://github.com/cameroncooke/axe).
 
-To install mise:
+### Configure your MCP client
+
+#### Quick install
+
+For a quick install, you can use the following links:
+
+- [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAbGF0ZXN0In0%3D)
+- [<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D)
+- [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D&quality=insiders)
+
+#### Manual installation
+
+Configure your MCP client (Windsurf, Cursor, Claude Desktop, Claude Code etc.) to use the XcodeBuildMCP server by ammending your client application's MCP configuration.
+
+```json
+{
+  "mcpServers": {
+    "XcodeBuildMCP": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "xcodebuildmcp@latest"
+      ]
+    }
+  }
+}
+```
+#### Alternative installation method using mise
+
+Alternatively, you can use XcodeBuildMCP without a specific installation of Node.js by using `mise` to install it:
+
 ```bash
 # macOS (Homebrew)
 brew install mise
@@ -103,11 +144,7 @@ brew install mise
 # See https://mise.jdx.dev/getting-started.html
 ```
 
-For more information about mise, visit the [official documentation](https://mise.jdx.dev/).
-
-### Configure MCP clients
-
-Configure your MCP client (Windsurf, Cursor, Claude Desktop, etc.) to use the XcodeBuildMCP server by ammending your client application's MCP configuration, changing the version number to match the version you wish to use:
+Then configure your MCP client to use mise to install XcodeBuildMCP:
 
 ```json
 {
@@ -116,7 +153,7 @@ Configure your MCP client (Windsurf, Cursor, Claude Desktop, etc.) to use the Xc
       "command": "mise",
       "args": [
         "x",
-        "npm:xcodebuildmcp@1.4.0",
+        "npm:xcodebuildmcp@1.8.0",
         "--",
         "xcodebuildmcp"
       ]
@@ -128,49 +165,16 @@ Configure your MCP client (Windsurf, Cursor, Claude Desktop, etc.) to use the Xc
 > [!NOTE]
 > When using mise avoid using the @latest tag as mise will cache the package and may not update to the latest version automatically, instead prefer an explicit version number.
 
-> [!IMPORTANT]
-> Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
+#### Installing via Smithery
 
-#### One click to install in VS Code
-
-<!-- Note: update the version number in the URL to match the latest release version.
-
-To generate 
-
-```
-let obj = {
-  "name": "XcodeBuildMCP",
-  "command": "mise",
-  "args": [ "x", "npm:xcodebuildmcp@1.4.0", "--", "xcodebuildmcp"]
-}
-
-// For Insiders, use `vscode-insiders` instead of `code`
-const link = encodeURIComponent(`vscode:mcp/install?${(JSON.stringify(obj))}`);
-``` -->
-
-[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect?url=vscode%3Amcp%2Finstall%3F%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22mise%22%2C%22args%22%3A%5B%22x%22%2C%22npm%3Axcodebuildmcp%401.4.0%22%2C%22--%22%2C%22xcodebuildmcp%22%5D%7D) [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Finstall%3F%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22command%22%3A%22mise%22%2C%22args%22%3A%5B%22x%22%2C%22npm%3Axcodebuildmcp%401.4.0%22%2C%22--%22%2C%22xcodebuildmcp%22%5D%7D)
-
-
-### Enabling UI Automation (beta)
-
-For UI automation features (tap, swipe, screenshot, etc.), you'll need to install Facebook's idb_companion:
+To install XcodeBuildMCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@cameroncooke/XcodeBuildMCP):
 
 ```bash
-brew tap facebook/fb
-brew install idb-companion
-```
-
-The idb client is also required but XcodeBuildMCP attempts to install it for you. If you find that the UI automation features are still not available you can install the client manually using the following command (assumes you have Python installed):
-
-```bash
-pipx install fb-idb==1.1.7
+npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client claude
 ```
 
 > [!IMPORTANT]
-> Please note that UI automation features are currently in beta so there might be some rough edges. If you encounter any issues, please report them in the [issue tracker](https://github.com/cameroncooke/XcodeBuildMCP/issues).
-
-> [!NOTE]
-> Displaying images in tool responses and embedding them in chat context may not be supported by all MCP Clients; it's currently known to be supported in Cursor.
+> Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
 
 ## Incremental build support
 
@@ -179,16 +183,14 @@ XcodeBuildMCP includes experimental support for incremental builds. This feature
 To enable incremental builds, set the `INCREMENTAL_BUILDS_ENABLED` environment variable to `true`:
 
 Example MCP client configuration:
-```bash
+```json
 {
   "mcpServers": {
     "XcodeBuildMCP": {
-      "command": "mise",
+      "command": "npx",
       "args": [
-        "x",
-        "npm:xcodebuildmcp@1.4.0",
-        "--",
-        "xcodebuildmcp"
+        "-y",
+        "xcodebuildmcp@latest"
       ],
       "env": {
         "INCREMENTAL_BUILDS_ENABLED": "true"
@@ -209,25 +211,25 @@ If you encounter issues with XcodeBuildMCP, the diagnostic tool can help identif
 
 The diagnostic tool is a standalone utility that checks your system configuration and reports on the status of all dependencies required by XcodeBuildMCP. It's particularly useful when reporting issues.
 
-#### Using with mise
-
-```bash
-# Run the diagnostic tool using mise
-mise x npm:xcodebuildmcp@1.4.0 -- xcodebuildmcp-diagnostic
-```
-
 #### Using with npx
 
 ```bash
 # Run the diagnostic tool using npx
-npx xcodebuildmcp@1.4.0 xcodebuildmcp-diagnostic
+npx xcodebuildmcp@1.8.0 xcodebuildmcp-diagnostic
+```
+
+#### Using with mise
+
+```bash
+# Run the diagnostic tool using mise
+mise x npm:xcodebuildmcp@1.8.0 -- xcodebuildmcp-diagnostic
 ```
 
 The diagnostic tool will output comprehensive information about:
 
 - System and Node.js environment
 - Xcode installation and configuration
-- Required dependencies (xcodebuild, idb, etc.)
+- Required dependencies (xcodebuild, AXe, etc.)
 - Environment variables affecting XcodeBuildMCP
 - Feature availability status
 
@@ -256,16 +258,14 @@ This project uses [Sentry](https://sentry.io/) for error monitoring and diagnost
 - If you do not wish to send error logs to Sentry, you can opt out by setting the environment variable `SENTRY_DISABLED=true`.
 
 Example MCP client configuration:
-```bash
+```json
 {
   "mcpServers": {
     "XcodeBuildMCP": {
-      "command": "mise",
+      "command": "npx",
       "args": [
-        "x",
-        "npm:xcodebuildmcp@1.4.0",
-        "--",
-        "xcodebuildmcp"
+        "-y",
+        "xcodebuildmcp@latest"
       ],
       "env": {
         "SENTRY_DISABLED": "true"
@@ -281,16 +281,14 @@ By default all tools are enabled but for some clients it may be useful to only e
 
 Once you have enabled one or more tools or groups of tools all other tools will be disabled. For example, to enable only the simulator related tools, you can set the environment variable to `XCODEBUILDMCP_GROUP_IOS_SIMULATOR_WORKFLOW=true` this will only expose tools for building, running and debugging on simulators
 
-```bash
+```json
 {
   "mcpServers": {
     "XcodeBuildMCP": {
-      "command": "mise",
+      "command": "npx",
       "args": [
-        "x",
-        "npm:xcodebuildmcp@1.4.0",
-        "--",
-        "xcodebuildmcp"
+        "-y",
+        "xcodebuildmcp@latest"
       ],
       "env": {
         "XCODEBUILDMCP_GROUP_IOS_SIMULATOR_WORKFLOW": "true"

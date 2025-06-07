@@ -59,6 +59,16 @@ import {
 // Import bundle ID tools
 import { registerGetMacOSBundleIdTool, registerGetiOSBundleIdTool } from '../tools/bundleId.js';
 
+// Import swift package tools
+import { registerBuildSwiftPackageTool } from '../tools/build-swift-package.js';
+import { registerTestSwiftPackageTool } from '../tools/test-swift-package.js';
+import {
+  registerRunSwiftPackageTool,
+  registerStopSwiftPackageTool,
+  registerListSwiftPackageTool,
+  registerCleanSwiftPackageTool,
+} from '../tools/run-swift-package.js';
+
 // Import clean tool
 import { registerCleanWorkspaceTool, registerCleanProjectTool } from '../tools/clean.js';
 
@@ -74,20 +84,39 @@ import {
   registerStopAndGetSimulatorLogTool,
 } from '../tools/log.js';
 
-// Import idb tools
-import { registerIdbTools } from '../tools/idb.js';
+// Import axe tools
+import { registerAxeTools } from '../tools/axe.js';
+
+// Import screenshot tool
+import { registerScreenshotTool } from '../tools/screenshot.js';
 
 // Import diagnostic tool
 import { registerDiagnosticTool } from '../tools/diagnostic.js';
 
-// Import idb setup utility
-import { setupIdb } from '../utils/idb-setup.js';
+// Import scaffold tool
+import { registerScaffoldTools } from '../tools/scaffold.js';
 
 // Import MCP server
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Import tool group utilities
 import { ToolGroup, registerIfEnabled } from './tool-groups.js';
+
+// Import test tools
+import {
+  registerMacOSTestWorkspaceTool,
+  registerMacOSTestProjectTool,
+} from '../tools/test_macos.js';
+import {
+  registerIOSSimulatorTestByNameWorkspaceTool,
+  registerIOSSimulatorTestByNameProjectTool,
+  registerIOSSimulatorTestByIdWorkspaceTool,
+  registerIOSSimulatorTestByIdProjectTool,
+} from '../tools/test_ios_simulator.js';
+import {
+  registerIOSDeviceTestWorkspaceTool,
+  registerIOSDeviceTestProjectTool,
+} from '../tools/test_ios_device.js';
 
 // Define tool registrations with their workflow-based groups
 const toolRegistrations = [
@@ -141,6 +170,40 @@ const toolRegistrations = [
       ToolGroup.IOS_DEVICE_WORKFLOW,
     ],
     envVar: 'XCODEBUILDMCP_TOOL_CLEAN_PROJECT',
+  },
+
+  // Swift Package tools
+  {
+    register: registerBuildSwiftPackageTool,
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_BUILD',
+  },
+  {
+    register: registerTestSwiftPackageTool,
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_TEST',
+  },
+  {
+    register: registerRunSwiftPackageTool,
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_RUN',
+    isWriteTool: true,
+  },
+  {
+    register: registerStopSwiftPackageTool,
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_STOP',
+    isWriteTool: true,
+  },
+  {
+    register: registerListSwiftPackageTool,
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_LIST',
+  },
+  {
+    register: registerCleanSwiftPackageTool,
+    groups: [ToolGroup.SWIFT_PACKAGE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_CLEAN',
   },
 
   // macOS build tools
@@ -368,12 +431,67 @@ const toolRegistrations = [
     groups: [ToolGroup.UI_TESTING],
     envVar: 'XCODEBUILDMCP_TOOL_UI_AUTOMATION_TOOLS',
   },
+
+  // Screenshot tool
+  {
+    register: registerScreenshotTool,
+    groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.UI_TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_SCREENSHOT',
+  },
+
+  // Scaffold tool
+  {
+    register: registerScaffoldTools,
+    groups: [ToolGroup.PROJECT_DISCOVERY],
+    envVar: 'XCODEBUILDMCP_TOOL_SCAFFOLD_PROJECT',
+  },
+
+  // Test tools
+  {
+    register: registerMacOSTestWorkspaceTool,
+    groups: [ToolGroup.MACOS_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_MACOS_WORKSPACE',
+  },
+  {
+    register: registerMacOSTestProjectTool,
+    groups: [ToolGroup.MACOS_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_MACOS_PROJECT',
+  },
+  {
+    register: registerIOSSimulatorTestByNameWorkspaceTool,
+    groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_NAME_WORKSPACE',
+  },
+  {
+    register: registerIOSSimulatorTestByNameProjectTool,
+    groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_NAME_PROJECT',
+  },
+  {
+    register: registerIOSSimulatorTestByIdWorkspaceTool,
+    groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_ID_WORKSPACE',
+  },
+  {
+    register: registerIOSSimulatorTestByIdProjectTool,
+    groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_ID_PROJECT',
+  },
+  {
+    register: registerIOSDeviceTestWorkspaceTool,
+    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_DEVICE_WORKSPACE',
+  },
+  {
+    register: registerIOSDeviceTestProjectTool,
+    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.TESTING],
+    envVar: 'XCODEBUILDMCP_TOOL_TEST_IOS_DEVICE_PROJECT',
+  },
 ];
 
 // Registers the UI automation tools (will be split into individual tools in the future)
 function registerUIAutomationTools(server: McpServer): void {
-  setupIdb();
-  registerIdbTools(server);
+  registerAxeTools(server);
 }
 
 // Diagnostic tool

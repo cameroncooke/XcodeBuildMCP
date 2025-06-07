@@ -7,7 +7,7 @@
  *
  * Responsibilities:
  * - Reporting on Node.js and system environment
- * - Checking for required dependencies (xcodebuild, idb, etc.)
+ * - Checking for required dependencies (xcodebuild, axe, etc.)
  * - Reporting on environment variables that affect server behavior
  * - Providing detailed information for debugging and troubleshooting
  */
@@ -18,7 +18,7 @@ import { ToolResponse } from '../types/common.js';
 import { log } from '../utils/logger.js';
 import { execSync } from 'child_process';
 import { version } from '../version.js';
-import { areIdbToolsAvailable } from '../utils/idb-setup.js';
+import { areAxeToolsAvailable } from '../utils/axe-setup.js';
 import { isXcodemakeEnabled, isXcodemakeAvailable, doesMakefileExist } from '../utils/xcodemake.js';
 import * as os from 'os';
 import { ToolGroup, isSelectiveToolsEnabled, listEnabledGroups } from '../utils/tool-groups.js';
@@ -45,11 +45,7 @@ export function checkBinaryAvailability(binary: string): { available: boolean; v
 
   // Define version commands for specific binaries
   const versionCommands: Record<string, string> = {
-    idb_companion: 'idb_companion --version',
-    python3: 'python3 --version',
-    python: 'python --version',
-    pip3: 'pip3 --version',
-    pip: 'pip --version',
+    axe: 'axe --version',
     mise: 'mise --version',
   };
 
@@ -112,13 +108,11 @@ export function getEnvironmentVariables(): Record<string, string | undefined> {
   const relevantVars = [
     'XCODEBUILDMCP_DEBUG',
     'INCREMENTAL_BUILDS_ENABLED',
-    'XCODEBUILDMCP_RUNNING_UNDER_MISE',
     'PATH',
     'DEVELOPER_DIR',
     'HOME',
     'USER',
     'TMPDIR',
-    'PYTHONPATH',
     'NODE_ENV',
     'SENTRY_DISABLED',
   ];
@@ -219,7 +213,7 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
   log('info', `${LOG_PREFIX}: Running diagnostic tool`);
 
   // Check for required binaries
-  const requiredBinaries = ['idb', 'idb_companion', 'python3', 'pip3', 'xcodemake', 'mise'];
+  const requiredBinaries = ['axe', 'xcodemake', 'mise'];
 
   const binaryStatus: Record<string, { available: boolean; version?: string }> = {};
 
@@ -239,8 +233,8 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
   // Get Node.js information
   const nodeInfo = getNodeInfo();
 
-  // Check for idb tools availability
-  const idbAvailable = areIdbToolsAvailable();
+  // Check for axe tools availability
+  const axeAvailable = areAxeToolsAvailable();
 
   // Get tool groups information
   const toolGroupsInfo = getToolGroupsInfo();
@@ -263,10 +257,9 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
     dependencies: binaryStatus,
     environmentVariables: envVars,
     features: {
-      idb: {
-        available: idbAvailable,
-        uiAutomationSupported:
-          idbAvailable && binaryStatus['idb'].available && binaryStatus['idb_companion'].available,
+      axe: {
+        available: axeAvailable,
+        uiAutomationSupported: axeAvailable && binaryStatus['axe'].available,
       },
       xcodemake: {
         enabled: xcodemakeEnabled,
@@ -320,9 +313,9 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
     `\`\`\``,
 
     `\n## Feature Status`,
-    `\n### UI Automation (idb)`,
-    `- Available: ${diagnosticInfo.features.idb.available ? '✅ Yes' : '❌ No'}`,
-    `- UI Automation Supported: ${diagnosticInfo.features.idb.uiAutomationSupported ? '✅ Yes' : '❌ No'}`,
+    `\n### UI Automation (axe)`,
+    `- Available: ${diagnosticInfo.features.axe.available ? '✅ Yes' : '❌ No'}`,
+    `- UI Automation Supported: ${diagnosticInfo.features.axe.uiAutomationSupported ? '✅ Yes' : '❌ No'}`,
 
     `\n### Incremental Builds`,
     `- Enabled: ${diagnosticInfo.features.xcodemake.enabled ? '✅ Yes' : '❌ No'}`,
@@ -353,14 +346,14 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
 
     `\n## Tool Availability Summary`,
     `- Build Tools: ${!('error' in diagnosticInfo.xcode) ? '\u2705 Available' : '\u274c Not available'}`,
-    `- UI Automation Tools: ${diagnosticInfo.features.idb.uiAutomationSupported ? '\u2705 Available' : '\u274c Not available'}`,
+    `- UI Automation Tools: ${diagnosticInfo.features.axe.uiAutomationSupported ? '\u2705 Available' : '\u274c Not available'}`,
     `- Incremental Build Support: ${diagnosticInfo.features.xcodemake.available && diagnosticInfo.features.xcodemake.enabled ? '\u2705 Available & Enabled' : diagnosticInfo.features.xcodemake.available ? '\u2705 Available but Disabled' : '\u274c Not available'}`,
 
     `\n## Sentry`,
     `- Sentry enabled: ${diagnosticInfo.environmentVariables.SENTRY_DISABLED !== 'true' ? '✅ Yes' : '❌ No'}`,
 
     `\n## Troubleshooting Tips`,
-    `- If UI automation tools are not available, install idb: \`pipx install fb-idb\``,
+    `- If UI automation tools are not available, install axe: \`brew tap cameroncooke/axe && brew install axe\``,
     `- If incremental build support is not available, you can download the tool from https://github.com/cameroncooke/xcodemake. Make sure it's executable and available in your PATH`,
     `- To enable xcodemake, set environment variable: \`export INCREMENTAL_BUILDS_ENABLED=1\``,
     `- For mise integration, follow instructions in the README.md file`,

@@ -31,6 +31,8 @@ These groups organise tools based on common developer workflows, making it easie
   - _e.g., Building and deploying to physical iOS devices._
 - **XCODEBUILDMCP_GROUP_MACOS_WORKFLOW=true** - macOS application development workflow tools
   - _e.g., Building, running, debugging macOS applications._
+- **XCODEBUILDMCP_GROUP_SWIFT_PACKAGE_WORKFLOW=true** - Swift Package Manager development workflow tools
+  - _e.g., Building, testing, and running Swift packages._
 - **XCODEBUILDMCP_GROUP_SIMULATOR_MANAGEMENT=true** - Simulator device management tools
   - _e.g., Managing simulator lifecycle (boot, open, set appearance)._
 - **XCODEBUILDMCP_GROUP_APP_DEPLOYMENT=true** - Application deployment tools
@@ -38,7 +40,9 @@ These groups organise tools based on common developer workflows, making it easie
 - **XCODEBUILDMCP_GROUP_DIAGNOSTICS=true** - Logging and diagnostics tools
   - _e.g., Log capture, debugging information._
 - **XCODEBUILDMCP_GROUP_UI_TESTING=true** - UI testing and automation tools
-  - _e.g., Tools for interacting with UI elements, typically via IDB._
+  - _e.g., Tools for interacting with UI elements via AXe._
+- **XCODEBUILDMCP_GROUP_TESTING=true** - Testing tools
+  - _e.g., Tools for running tests on macOS, iOS simulators, and iOS devices._
 
 ## Enabling Individual Tools
 
@@ -57,6 +61,14 @@ To enable specific tools rather than entire groups, use the following environmen
 #### Clean
 - **XCODEBUILDMCP_TOOL_CLEAN_WORKSPACE=true** - Clean build products for an Xcode workspace.
 - **XCODEBUILDMCP_TOOL_CLEAN_PROJECT=true** - Clean build products for an Xcode project.
+
+#### Swift Package Tools
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_BUILD=true** - Build a Swift package using `swift build`.
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_TEST=true** - Run tests for a Swift package using `swift test`.
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_RUN=true** - Run an executable target from a Swift package using `swift run`.
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_STOP=true** - Stop a running Swift package executable by PID.
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_LIST=true** - List currently running Swift package processes.
+- **XCODEBUILDMCP_TOOL_SWIFT_PACKAGE_CLEAN=true** - Clean Swift package build artifacts and derived data.
 
 #### macOS Build & Run
 - **XCODEBUILDMCP_TOOL_MACOS_BUILD_WORKSPACE=true** - Build a macOS application from a workspace.
@@ -112,11 +124,31 @@ To enable specific tools rather than entire groups, use the following environmen
 - **XCODEBUILDMCP_TOOL_START_SIMULATOR_LOG_CAPTURE=true** - Start capturing logs from a simulator.
 - **XCODEBUILDMCP_TOOL_STOP_AND_GET_SIMULATOR_LOG=true** - Stop capturing logs and retrieve them.
 
-#### UI Automation (IDB)
-- **XCODEBUILDMCP_TOOL_UI_AUTOMATION_TOOLS=true** - Enable UI automation tools (e.g., tap, swipe - requires IDB).
+#### UI Automation (AXe)
+- **XCODEBUILDMCP_TOOL_UI_AUTOMATION_TOOLS=true** - Enable UI automation tools (e.g., tap, swipe - requires AXe).
+- **XCODEBUILDMCP_TOOL_SCREENSHOT=true** - Capture screenshots from iOS simulators.
+
+#### Project Scaffolding
+- **XCODEBUILDMCP_TOOL_SCAFFOLD_PROJECT=true** - Scaffold new iOS/macOS projects from templates.
 
 #### Diagnostics
 - **XCODEBUILDMCP_DEBUG=true** - Enable diagnostic tool for XcodeBuildMCP server.
+
+## Test Tools
+
+### macOS Test Tools
+- `XCODEBUILDMCP_TOOL_TEST_MACOS_WORKSPACE`: Enable testing macOS apps from workspaces
+- `XCODEBUILDMCP_TOOL_TEST_MACOS_PROJECT`: Enable testing macOS apps from project files
+
+### iOS Simulator Test Tools
+- `XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_NAME_WORKSPACE`: Enable testing iOS apps in named simulators from workspaces
+- `XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_NAME_PROJECT`: Enable testing iOS apps in named simulators from project files
+- `XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_ID_WORKSPACE`: Enable testing iOS apps in simulators by UUID from workspaces
+- `XCODEBUILDMCP_TOOL_TEST_IOS_SIMULATOR_ID_PROJECT`: Enable testing iOS apps in simulators by UUID from project files
+
+### iOS Device Test Tools
+- `XCODEBUILDMCP_TOOL_TEST_IOS_DEVICE_WORKSPACE`: Enable testing iOS apps on physical devices from workspaces
+- `XCODEBUILDMCP_TOOL_TEST_IOS_DEVICE_PROJECT`: Enable testing iOS apps on physical devices from project files
 
 ## Recommended Tool Combinations for Common Use Cases
 
@@ -192,12 +224,10 @@ Here is a fully worked example of how to configure Cursor/Windsurf to use specif
 {
   "mcpServers": {
     "XcodeBuildMCP": {
-      "command": "mise",
+      "command": "npx",
       "args": [
-        "x",
-        "npm:xcodebuildmcp@1.4.0",
-        "--",
-        "xcodebuildmcp"
+        "-y",
+        "xcodebuildmcp@latest"
       ],
       "env": {
         "XCODEBUILDMCP_GROUP_PROJECT_DISCOVERY": "true",

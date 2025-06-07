@@ -1,0 +1,237 @@
+# XcodeBuildMCP Rules
+
+You are an AI assistant helping with the XcodeBuildMCP project - a Model Context Protocol (MCP) server that provides Xcode-related tools for AI assistants and MCP clients.
+
+## Project Overview
+
+- **Project**: XcodeBuildMCP - MCP server for Xcode operations
+- **Tech Stack**: TypeScript, Node.js (ES modules), MCP SDK
+- **Purpose**: Standardized interface for AI agents to interact with Xcode projects
+- **Target Platforms**: macOS, iOS Simulator, iOS Device
+
+## Key Technologies & Dependencies
+
+- **Runtime**: Node.js 18+ with ES modules (`type: "module"`)
+- **Language**: TypeScript with strict configuration
+- **MCP SDK**: `@modelcontextprotocol/sdk` for protocol implementation
+- **Error Monitoring**: Sentry for production error tracking
+- **External Tools**: xcodebuild, AXe (UI automation), iOS Simulator
+- **Package Management**: npm, supports mise for environment management
+
+## Build Commands
+
+- Build: `npm run build`
+- Lint: `npm run lint`
+- Fix lint issues: `npm run lint:fix`
+- Format code: `npm run format`
+- Check formatting: `npm run format:check`
+- Run diagnostics: `npm run diagnostic`
+- Watch mode for development: `npm run build:watch`
+- Launch MCP Inspector for testing: `npm run inspect`
+
+## Code Style & Standards
+
+### TypeScript Configuration
+- Target: ES2022 with Node16 module resolution
+- Strict type checking enabled
+- Source maps enabled for debugging
+- Output directory: `./build`
+- Explicit function return types required
+- No console.log (console.error allowed for MCP logging)
+- Unused variables prefixed with underscore
+
+### Code Style Guidelines
+- TypeScript with strict typing enabled
+- ES Modules (`import`/`export`) syntax
+- Prefer explicit imports over wildcard imports
+- Group imports: Node.js modules → third-party → local modules
+- Name files in kebab-case, variables/functions in camelCase, classes in PascalCase
+- Prefer async/await over Promises
+- Comment complex logic but avoid redundant comments
+- Error handling should use typed errors from utils/errors.ts
+
+### Formatting & Linting
+- **ESLint**: Use `npm run lint` and `npm run lint:fix`
+- **Prettier**: Use `npm run format` and `npm run format:check`
+- **Pre-commit**: Always run linting and formatting checks
+- Follow existing code patterns and naming conventions
+
+## Architecture Patterns
+
+### Tool Structure
+- Each tool is a separate module in `src/tools/`
+- Tools follow MCP tool schema with proper parameter validation
+- Use Zod for runtime parameter validation
+- Implement proper error handling with descriptive messages
+
+### Tool Registration
+- Tools are registered in `src/utils/register-tools.ts`
+- Use the `registerTool` helper from `src/tools/common.ts`
+- Tool registration is managed by the `ToolsetManager` in `src/utils/tool-groups.ts`
+- Tool enablement is controlled by `--toolsets` and `--dynamic-toolsets` command-line flags
+- When adding a new tool, define its registration function, add it to the `allToolRegistrations` list in `register-tools.ts`, and assign it to relevant `ToolGroup`(s) and a unique `toolKey`. Mark it with `isWriteTool: true` if it modifies state or files
+
+### Error Handling
+- Use structured error responses with context
+- Provide actionable error messages for users
+- Log errors appropriately (Sentry integration available)
+- Handle both synchronous and asynchronous errors
+
+### Async Operations
+- All xcodebuild operations are asynchronous
+- Use proper async/await patterns
+- Handle process spawning and cleanup correctly
+- Implement timeouts for long-running operations
+
+## Development Guidelines
+
+### Adding New Tools
+1. Create tool file in `src/tools/` directory
+2. Define Zod schema for parameters
+3. Implement tool logic with proper error handling
+4. Add tool to tool registry in main server file
+5. Update TOOL_OPTIONS.md if adding configuration options
+6. Test with automated tool calls (preferred) or MCP Inspector if human testing is required
+
+### Testing Approach
+- Build project: `npm run build`
+- Prefer automated testing via direct tool calls over MCP Inspector
+- Use MCP Inspector (`npm run inspect`) only when developer/user testing is needed on behalf of the agent
+- Verify across different MCP clients (VS Code, Claude Desktop, Cursor)
+- Test error scenarios and edge cases
+
+### Code Quality
+- **Type Safety**: Leverage TypeScript's strict mode fully
+- **Parameter Validation**: Always validate tool parameters with Zod
+- **Error Messages**: Provide clear, actionable error messages
+- **Logging**: Use appropriate log levels and structured logging
+
+## Build & Development
+
+### Scripts
+- `npm run build`: Build with tsup (fast bundler) and set executable permissions
+- `npm run build:watch`: Watch mode for development
+- `npm run lint`: Check code style
+- `npm run format`: Format code
+- `npm run inspect`: Launch MCP Inspector for testing
+
+### Local Development
+- Use VS Code with MCP extension for best development experience
+- Configure local server in `.vscode/mcp.json`
+- Use debugger with `F5` for step-through debugging
+- Enable debug mode with `XCODEBUILDMCP_DEBUG=true`
+
+## Platform-Specific Considerations
+
+### macOS Integration
+- Respect macOS security permissions and sandboxing
+- Handle different Xcode installation paths
+- Support both Intel and Apple Silicon architectures
+
+### iOS Simulator
+- Properly manage simulator lifecycle (boot, install, launch)
+- Handle simulator state changes gracefully
+- Support multiple iOS versions and device types
+
+### Xcode Projects
+- Support both `.xcodeproj` and `.xcworkspace` files
+- Handle complex build configurations
+- Respect incremental build capabilities
+
+## Documentation
+
+### Code Documentation
+- Document complex algorithms and business logic
+- Include JSDoc comments for public APIs
+- Explain non-obvious parameter requirements
+- Document error conditions and recovery strategies
+
+### User-Facing Documentation
+- Keep README.md updated with new features
+- Update TOOL_OPTIONS.md for configuration changes
+- Include examples for complex usage patterns
+
+## Security & Privacy
+
+### Data Handling
+- Never log sensitive information (API keys, credentials)
+- Respect user privacy preferences (Sentry opt-out)
+- Handle file paths securely
+- Validate all external inputs
+
+### Error Reporting
+- Sentry integration for production error monitoring
+- Allow users to opt-out with `SENTRY_DISABLED=true`
+- Sanitize error messages before reporting
+
+## Performance Considerations
+
+### Resource Management
+- Properly clean up spawned processes
+- Handle memory usage for large projects
+- Implement appropriate timeouts
+- Manage temporary files and directories
+
+## Testing & Validation
+
+### Development Testing Workflow
+The XcodeBuildMCP server is available within this development environment as "XcodeBuildMCP" or "xcode-mcp-server-dev" (or similar variations) and exposes all tools for testing.
+
+**Testing Process for Changes:**
+1. `npm run lint` - Check for linting issues
+2. `npm run format` - Format code consistently  
+3. `npm run build` - Build with tsup and update tools
+4. Tools automatically become updated and available for immediate testing
+
+### Required Testing
+- Build and run the project locally
+- Automated testing via tool calling is preferred over MCP Inspector
+- Use MCP Inspector (`npm run inspect`) only when end-user testing is needed (requires human intervention)
+- Test error scenarios and edge cases
+
+### Example Projects for Testing
+- Use the example iOS and macOS projects in this workspace (`example_projects/`) to test different tool calls
+- These projects provide real Xcode projects for validating build, simulator, and app deployment functionality
+- Example projects can be updated with new options/screens/configurations to aid specific testing scenarios
+- Test both `.xcodeproj` and `.xcworkspace` project types
+
+### CI/CD Considerations
+- All changes must pass linting and formatting checks
+- No need to maintain backward compatibility unless tool requires significant breaking changes
+
+## Common Tasks
+
+### Adding a New Tool
+1. Define tool schema with Zod validation
+2. Implement tool logic with error handling
+3. Add to tool registry
+4. Test with MCP Inspector
+5. Update documentation
+6. Add to CHANGELOG.md
+
+### Updating Dependencies
+1. Update package.json
+2. Run `npm install`
+3. Test build and functionality
+4. Update any breaking changes
+5. Document changes in CHANGELOG.md
+
+### Release Process
+1. Update version in package.json
+2. Update CHANGELOG.md
+3. Run full test suite
+4. Build and verify package
+5. Create release with proper tags
+
+## Environment Variables
+
+### Development
+- `XCODEBUILDMCP_DEBUG=true`: Enable debug mode
+- `INCREMENTAL_BUILDS_ENABLED=true`: Enable experimental incremental builds
+- `SENTRY_DISABLED=true`: Disable error reporting
+
+### Tool Selection
+- Use `XCODEBUILDMCP_TOOL_*` and `XCODEBUILDMCP_GROUP_*` for selective tool registration
+- See TOOL_OPTIONS.md for complete list
+
+Remember: Always prioritize user experience, maintain backward compatibility (where applicable), and follow the existing code patterns and conventions in the project. 

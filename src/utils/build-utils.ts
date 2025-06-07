@@ -18,7 +18,8 @@
  */
 
 import { log } from './logger.js';
-import { executeXcodeCommand, XcodePlatform, constructDestinationString } from './xcode.js';
+import { XcodePlatform, constructDestinationString } from './xcode.js';
+import { executeCommand } from './command.js';
 import { ToolResponse, SharedBuildParams, PlatformBuildOptions } from '../types/common.js';
 import { createTextResponse } from './validation.js';
 import {
@@ -39,7 +40,7 @@ import path from 'path';
  * @param buildAction The xcodebuild action to perform (e.g., 'build', 'clean', 'test')
  * @returns Promise resolving to tool response
  */
-export async function executeXcodeBuild(
+export async function executeXcodeBuildCommand(
   params: SharedBuildParams,
   platformOptions: PlatformBuildOptions,
   preferXcodebuild: boolean = false,
@@ -206,7 +207,7 @@ export async function executeXcodeBuild(
       }
     } else {
       // Use standard xcodebuild
-      result = await executeXcodeCommand(command, platformOptions.logPrefix);
+      result = await executeCommand(command, platformOptions.logPrefix);
     }
 
     // Grep warnings and errors from stdout (build output)

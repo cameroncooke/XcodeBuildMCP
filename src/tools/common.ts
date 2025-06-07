@@ -81,6 +81,25 @@ export const platformSimulatorSchema = z
   .describe('The target simulator platform (Required)');
 
 /**
+ * Swift Package Manager specific schemas
+ */
+export const swiftConfigurationSchema = z
+  .enum(['debug', 'release'])
+  .optional()
+  .describe("Build configuration: 'debug' (default) or 'release'");
+
+export const swiftArchitecturesSchema = z
+  .enum(['arm64', 'x86_64'])
+  .array()
+  .optional()
+  .describe('Architectures to build for (e.g. arm64, x86_64)');
+
+export const parseAsLibrarySchema = z
+  .boolean()
+  .optional()
+  .describe('Add -parse-as-library flag for @main support (default: false)');
+
+/**
  * Base parameters for workspace tools
  */
 export type BaseWorkspaceParams = {

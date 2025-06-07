@@ -13,18 +13,12 @@ In addition to the prerequisites mentioned in the [Getting started](README.md/#g
 
 #### Optional: Enabling UI Automation
 
-When running locally, you'll need to install Facebook's idb tools:
+When running locally, you'll need to install AXe for UI automation:
 
 ```bash
-# Install idb_companion (required for UI automation)
-brew tap facebook/fb
-brew install idb-companion
-```
-
-Install fb-idb Python package:
-
-```bash
-pip install fb-idb==1.1.7
+# Install axe (required for UI automation)
+brew tap cameroncooke/axe
+brew install axe
 ```
 
 ### Installation
@@ -106,6 +100,70 @@ node build/diagnostic-cli.js
 1. Fork the repository and create a new branch
 2. Follow the TypeScript best practices and existing code style
 3. Add proper parameter validation and error handling
+
+### Working with Project Templates
+
+XcodeBuildMCP uses external template repositories for the iOS and macOS project scaffolding features. These templates are maintained separately to allow independent versioning and updates.
+
+#### Template Repositories
+
+- **iOS Template**: [XcodeBuildMCP-iOS-Template](https://github.com/cameroncooke/XcodeBuildMCP-iOS-Template)
+- **macOS Template**: [XcodeBuildMCP-macOS-Template](https://github.com/cameroncooke/XcodeBuildMCP-macOS-Template)
+
+#### Local Template Development
+
+When developing or testing changes to the templates:
+
+1. Clone the template repository you want to work on:
+   ```bash
+   git clone https://github.com/cameroncooke/XcodeBuildMCP-iOS-Template.git
+   git clone https://github.com/cameroncooke/XcodeBuildMCP-macOS-Template.git
+   ```
+
+2. Set the appropriate environment variable to use your local template:
+   ```bash
+   # For iOS template development
+   export XCODEBUILD_MCP_IOS_TEMPLATE_PATH=/path/to/XcodeBuildMCP-iOS-Template
+   
+   # For macOS template development
+   export XCODEBUILD_MCP_MACOS_TEMPLATE_PATH=/path/to/XcodeBuildMCP-macOS-Template
+   ```
+
+3. When using MCP clients, add these environment variables to your MCP configuration:
+   ```json
+   {
+     "mcpServers": {
+       "XcodeBuildMCP": {
+         "command": "node",
+         "args": ["/path_to/XcodeBuildMCP/build/index.js"],
+         "env": {
+           "XCODEBUILD_MCP_IOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-iOS-Template",
+           "XCODEBUILD_MCP_MACOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-macOS-Template"
+         }
+       }
+     }
+   }
+   ```
+
+4. The scaffold tools will use your local templates instead of downloading from GitHub releases.
+
+#### Template Versioning
+
+- Templates are versioned independently from XcodeBuildMCP
+- The default template version is specified in `package.json` under `templateVersion`
+- You can override the template version with `XCODEBUILD_MCP_TEMPLATE_VERSION` environment variable
+- To update the default template version:
+  1. Update `templateVersion` in `package.json`
+  2. Run `npm run build` to regenerate version.ts
+  3. Create a new XcodeBuildMCP release
+
+#### Testing Template Changes
+
+1. Make changes to your local template
+2. Test scaffolding with your changes using the local override
+3. Verify the scaffolded project builds and runs correctly
+4. Once satisfied, create a PR in the template repository
+5. After merging, create a new release in the template repository using the release script
 
 ## Testing
 

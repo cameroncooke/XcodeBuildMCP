@@ -14,10 +14,11 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { log } from '../utils/logger.js';
-import { XcodePlatform, executeXcodeCommand } from '../utils/xcode.js';
+import { XcodePlatform } from '../utils/xcode.js';
+import { executeCommand } from '../utils/command.js';
 import { validateRequiredParam, createTextResponse } from '../utils/validation.js';
 import { ToolResponse } from '../types/common.js';
-import { executeXcodeBuild } from '../utils/build-utils.js';
+import { executeXcodeBuildCommand } from '../utils/build-utils.js';
 import {
   registerTool,
   workspacePathSchema,
@@ -52,7 +53,7 @@ async function _handleIOSSimulatorBuildLogic(params: {
 }): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
-  return executeXcodeBuild(
+  return executeXcodeBuildCommand(
     {
       ...params,
     },
@@ -134,7 +135,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(params: {
     }
 
     // Execute the command directly
-    const result = await executeXcodeCommand(command, 'Get App Path');
+    const result = await executeCommand(command, 'Get App Path');
 
     // If there was an error with the command execution, return it
     if (!result.success) {

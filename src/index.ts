@@ -22,7 +22,7 @@ import { createServer, startServer } from './server/server.js';
 // Import utilities
 import { log } from './utils/logger.js';
 
-// Import idb setup utility
+// Import version
 import { version } from './version.js';
 import { registerTools } from './utils/register-tools.js';
 

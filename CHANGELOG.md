@@ -1,5 +1,42 @@
 # Changelog
 
+## [v1.8.0] - 2025-06-07
+- Added support for running tests on macOS, iOS simulators, and iOS devices
+- New tools for testing:
+  - `test_macos_workspace`
+  - `test_macos_project`
+  - `test_ios_simulator_name_workspace`
+  - `test_ios_simulator_name_project`
+  - `test_ios_simulator_id_workspace`
+  - `test_ios_simulator_id_project`
+  - `test_ios_device_workspace`
+  - `test_ios_device_project`
+
+## [v1.7.0] - 2025-06-04
+- Added support for Swift Package Manager (SPM)
+- New tools for Swift Package Manager:
+  - `swift_package_build`
+  - `swift_package_clean`
+  - `swift_package_test`
+  - `swift_package_run`
+  - `swift_package_list`
+  - `swift_package_stop`
+
+## [v1.6.1] - 2025-06-03
+- Improve UI tool hints
+
+## [v1.6.0] - 2025-06-03
+- Moved project templates to external GitHub repositories for independent versioning
+- Added support for downloading templates from GitHub releases
+- Added local template override support via environment variables
+- Added `scaffold_ios_project` and `scaffold_macos_project` tools for creating new projects
+- Centralized template version management in package.json for easier updates
+
+## [v1.5.0] - 2025-06-01
+- UI automation is no longer in beta!
+- Added support for AXe UI automation
+- Revised default installation instructions to prefer npx instead of mise
+
 ## [v1.4.0] - 2025-05-11
 - Merge the incremental build beta branch into main
 - Add preferXcodebuild argument to build tools with improved error handling allowing the agent to force the use of xcodebuild over xcodemake for complex projects. It also adds a hint when incremental builds fail due to non-compiler errors, enabling the agent to automatically switch to xcodebuild for a recovery build attempt, improving reliability.

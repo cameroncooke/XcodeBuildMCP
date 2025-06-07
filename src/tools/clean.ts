@@ -17,7 +17,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { log } from '../utils/logger.js';
 import { XcodePlatform } from '../utils/xcode.js';
 import { ToolResponse } from '../types/common.js';
-import { executeXcodeBuild } from '../utils/build-utils.js';
+import { executeXcodeBuildCommand } from '../utils/build-utils.js';
 
 // --- Private Helper Function ---
 
@@ -35,7 +35,7 @@ async function _handleCleanLogic(params: {
   log('info', 'Starting xcodebuild clean request (internal)');
 
   // For clean operations, we need to provide a default platform and configuration
-  return executeXcodeBuild(
+  return executeXcodeBuildCommand(
     {
       ...params,
       scheme: params.scheme || '', // Empty string if not provided
