@@ -22,6 +22,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
     - [Quick install](#quick-install)
     - [Manual installation](#manual-installation)
     - [Alternative installation method using mise](#alternative-installation-method-using-mise)
+    - [Installing via Smithery](#installing-via-smithery)
 - [Incremental build support](#incremental-build-support)
 - [Troubleshooting](#troubleshooting)
   - [Diagnostic Tool](#diagnostic-tool)
@@ -163,6 +164,14 @@ Then configure your MCP client to use mise to install XcodeBuildMCP:
 
 > [!NOTE]
 > When using mise avoid using the @latest tag as mise will cache the package and may not update to the latest version automatically, instead prefer an explicit version number.
+
+#### Installing via Smithery
+
+To install XcodeBuildMCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@cameroncooke/XcodeBuildMCP):
+
+```bash
+npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client claude
+```
 
 > [!IMPORTANT]
 > Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
