@@ -11,6 +11,7 @@
  * - Registering all platform-specific tool modules
  * - Configuring server options and logging
  * - Handling server lifecycle events
+ * - Registering resources, prompts, and sampling capabilities
  */
 
 // Import Sentry instrumentation
@@ -29,11 +30,20 @@ import { registerTools } from './utils/register-tools.js';
 // Import xcodemake utilities
 import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
 
+// Import new MCP capabilities
+import { registerResources } from './resources/index.js';
+import { registerPrompts } from './prompts/index.js';
+import { registerSampling } from './sampling/index.js';
+import { loadCapabilitiesConfig } from './config/index.js';
+
 /**
  * Main function to start the server
  */
 async function main(): Promise<void> {
   try {
+    // Load capabilities configuration
+    const capabilitiesConfig = loadCapabilitiesConfig();
+
     // Check if xcodemake is enabled and available
     if (isXcodemakeEnabled()) {
       log('info', 'xcodemake is enabled, checking if available...');
@@ -50,11 +60,28 @@ async function main(): Promise<void> {
       log('debug', 'xcodemake is disabled, using standard xcodebuild');
     }
 
-    // Create the server
-    const server = createServer();
+    // Create the server with capabilities configuration
+    const server = createServer(capabilitiesConfig);
 
-    // Register tools
-    registerTools(server);
+    // Register tools (always available for backward compatibility)
+    if (capabilitiesConfig.tools) {
+      registerTools(server);
+    }
+
+    // Register resources if enabled
+    if (capabilitiesConfig.resources) {
+      registerResources(server);
+    }
+
+    // Register prompts if enabled
+    if (capabilitiesConfig.prompts) {
+      registerPrompts(server);
+    }
+
+    // Register sampling if enabled
+    if (capabilitiesConfig.sampling) {
+      registerSampling(server);
+    }
 
     // Start the server
     await startServer(server);

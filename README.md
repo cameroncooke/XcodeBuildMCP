@@ -1,6 +1,6 @@
 <img src="banner.png" alt="XcodeBuild MCP" width="600"/>
 
-A Model Context Protocol (MCP) server that provides Xcode-related tools for integration with AI assistants and other MCP clients.
+A Model Context Protocol (MCP) server that provides comprehensive Xcode integration for AI assistants and other MCP clients, including tools, resources, prompts, and autonomous capabilities.
 
 [![npm version](https://badge.fury.io/js/xcodebuildmcp.svg)](https://badge.fury.io/js/xcodebuildmcp) [![CI](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml) [![CodeQL](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql)
 [![Licence: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -11,10 +11,10 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 - [Overview](#overview)
 - [Why?](#why)
 - [Features](#features)
-  - [Xcode project management](#xcode-project-management)
-  - [Swift Package Manager](#swift-package-manager)
-  - [Simulator management](#simulator-management)
-  - [App utilities](#app-utilities)
+  - [🛠️ Tools (Xcode Operations)](#️-tools-xcode-operations)
+  - [📁 Resources (Project Context)](#-resources-project-context)
+  - [📝 Prompts (Workflow Templates)](#-prompts-workflow-templates)
+  - [🤖 Sampling (Autonomous Operations)](#-sampling-autonomous-operations)
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [UI Automation](#ui-automation)
@@ -23,7 +23,10 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
     - [Manual installation](#manual-installation)
     - [Alternative installation method using mise](#alternative-installation-method-using-mise)
     - [Installing via Smithery](#installing-via-smithery)
-- [Incremental build support](#incremental-build-support)
+- [Configuration](#configuration)
+  - [Capability Configuration](#capability-configuration)
+  - [Incremental build support](#incremental-build-support)
+- [Documentation](#documentation)
 - [Troubleshooting](#troubleshooting)
   - [Diagnostic Tool](#diagnostic-tool)
     - [Using with npx](#using-with-npx)
@@ -42,7 +45,14 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 
 ## Overview
 
-This project implements an MCP server that exposes Xcode operations as tools that can be invoked by AI agents via the MCP protocol. It enables programmatic interaction with Xcode projects through a standardised interface, optimised for agent-driven development workflows.
+This project implements a comprehensive MCP server that provides multiple types of Xcode integration:
+
+- **🛠️ Tools:** Execute Xcode operations (build, test, deploy, etc.)
+- **📁 Resources:** Access project context and metadata
+- **📝 Prompts:** Structured workflows for common development tasks
+- **🤖 Sampling:** Autonomous operations and intelligent assistance (future)
+
+The server enables programmatic interaction with Xcode projects through a standardised interface, optimised for agent-driven development workflows with full backward compatibility.
 
 ![xcodebuildmcp2](https://github.com/user-attachments/assets/8961d5db-f7ed-4e60-bbb8-48bfd0bc1353)
 <caption>Using Cursor to build, install, and launch an app on the iOS simulator while capturing logs at run-time.</caption>
@@ -59,7 +69,7 @@ Critically, this MCP enables AI agents to independently validate code changes by
 
 The XcodeBuildMCP server provides the following tool capabilities:
 
-### Xcode project management
+### 🛠️ Tools (Xcode Operations)
 - **Discover Projects**: Xcode projects and workspaces discovery
 - **Build Operations**: Platform-specific build tools for macOS, iOS simulator, and iOS device targets
 - **Project Information**: Tools to list schemes and show build settings for Xcode projects and workspaces
@@ -67,23 +77,18 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - **Incremental build support**: Lightning fast builds using incremental build support (experimental, opt-in required)
 - **Project Scaffolding**: Create new iOS and macOS projects from modern templates with workspace + SPM package architecture, customizable bundle identifiers, deployment targets, and device families
 
-### Swift Package Manager
-- **Build Packages**: Build Swift packages with configuration and architecture options
-- **Run Tests**: Execute Swift package test suites with filtering and parallel execution
-- **Run Executables**: Execute package binaries with timeout handling and background execution support
-- **Process Management**: List and stop long-running executables started with Swift Package tools
-- **Clean Artifacts**: Remove build artifacts and derived data for fresh builds
+### 📁 Resources (Project Context)
+- **Project Metadata**: Access project metadata and dependencies
+- **Build History**: View build history and artifacts
+- **Environment Variables**: Manage and view environment variables
 
-### Simulator management
-- **Simulator Control**: List, boot, and open iOS simulators 
-- **App Deployment**: Install and launch apps on iOS simulators
-- **Log Capture**: Capture run-time logs from a simulator
-- **UI Automation**: Interact with simulator UI elements (beta)
-- **Screenshot**: Capture screenshots from a simulator (beta)
+### 📝 Prompts (Workflow Templates)
+- **Structured Workflows**: Define and execute structured workflows for common development tasks
+- **Customizable Prompts**: Create and customize prompts for specific use cases
 
-### App utilities
-- **Bundle ID Extraction**: Extract bundle identifiers from iOS and macOS app bundles
-- **App Launching**: Launch built applications on both simulators and macOS
+### 🤖 Sampling (Autonomous Operations)
+- **Autonomous Validation**: Validate code changes autonomously
+- **Intelligent Assistance**: Provide intelligent assistance and recommendations
 
 ## Getting started
 
@@ -176,7 +181,29 @@ npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client claude
 > [!IMPORTANT]
 > Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
 
-## Incremental build support
+## Configuration
+
+### Capability Configuration
+
+XcodeBuildMCP supports multiple MCP capabilities that can be enabled or disabled based on your needs and client support:
+
+```bash
+# Enable/disable specific capabilities (default values shown)
+export XCODEBUILDMCP_ENABLE_TOOLS=true      # Xcode operation tools
+export XCODEBUILDMCP_ENABLE_RESOURCES=true  # Project context resources
+export XCODEBUILDMCP_ENABLE_PROMPTS=true    # Workflow prompt templates
+export XCODEBUILDMCP_ENABLE_SAMPLING=false  # Autonomous operations (requires client support)
+```
+
+**Backward Compatibility:** Tools are always enabled by default to ensure compatibility with existing MCP clients. Most clients currently only support tools, but newer clients may support additional capabilities.
+
+**Client Support:**
+- **Tools:** Supported by all MCP clients
+- **Resources:** Supported by advanced MCP clients
+- **Prompts:** Supported by advanced MCP clients  
+- **Sampling:** Requires explicit client support (future feature)
+
+### Incremental build support
 
 XcodeBuildMCP includes experimental support for incremental builds. This feature is disabled by default and can be enabled by setting the `INCREMENTAL_BUILDS_ENABLED` environment variable to `true`:
 
@@ -202,6 +229,43 @@ Example MCP client configuration:
 
 > [!IMPORTANT]
 > Please note that incremental builds support is currently highly experimental and your mileage may vary. Please report any issues you encounter to the [issue tracker](https://github.com/cameroncooke/XcodeBuildMCP/issues).
+
+## Documentation
+
+Comprehensive documentation is available for each capability:
+
+- **[📁 Resources Documentation](docs/resources.md)** - Learn about accessing project context, build settings, and simulator information
+- **[📝 Prompts Documentation](docs/prompts.md)** - Explore workflow templates for debugging, CI/CD, performance optimization, and more
+- **[🤖 Sampling Documentation](docs/sampling.md)** - Understand autonomous operations and future capabilities
+
+### Quick Examples
+
+**Using Resources:**
+```typescript
+// Get project information
+const projectInfo = await client.readResource('xcode://project/info');
+
+// Access build settings for a scheme
+const buildSettings = await client.readResource('xcode://build/settings/MyApp');
+
+// Check simulator status
+const simulators = await client.readResource('xcode://simulator/booted');
+```
+
+**Using Prompts:**
+```typescript
+// Debug a build failure
+const debugPrompt = await client.getPrompt('debug-build-failure', {
+  error_message: "Undefined symbol: _OBJC_CLASS_$_MyClass",
+  scheme: "MyApp"
+});
+
+// Set up CI/CD
+const cicdPrompt = await client.getPrompt('setup-github-actions', {
+  project_type: "ios",
+  distribution_method: "app-store"
+});
+```
 
 ## Troubleshooting
 
