@@ -84,6 +84,9 @@ import {
   registerStopAndGetSimulatorLogTool,
 } from '../tools/log.js';
 
+// Import device log capture tools
+import { registerDeviceLogTools } from '../tools/device_log.js';
+
 // Import axe tools
 import { registerAxeTools } from '../tools/axe.js';
 
@@ -423,6 +426,13 @@ const toolRegistrations = [
     register: registerStopAndGetSimulatorLogTool,
     groups: [ToolGroup.DIAGNOSTICS, ToolGroup.IOS_SIMULATOR_WORKFLOW],
     envVar: 'XCODEBUILDMCP_TOOL_STOP_AND_GET_SIMULATOR_LOG',
+  },
+
+  // Device log capture tools
+  {
+    register: registerDeviceLogTools,
+    groups: [ToolGroup.DIAGNOSTICS, ToolGroup.IOS_DEVICE_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_DEVICE_LOG_TOOLS',
   },
 
   // UI automation tools
