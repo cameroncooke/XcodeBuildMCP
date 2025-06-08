@@ -64,7 +64,9 @@ export async function startDeviceLogCapture(params: {
     await fs.promises.writeFile(logFilePath, '');
     const logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
 
-    logStream.write(`\n--- Device log capture for bundle ID: ${bundleId} on device: ${deviceUuid} ---\n`);
+    logStream.write(
+      `\n--- Device log capture for bundle ID: ${bundleId} on device: ${deviceUuid} ---\n`,
+    );
 
     // Use devicectl to launch the app with console output capture
     const deviceLogProcess = spawn('xcrun', [
@@ -82,11 +84,17 @@ export async function startDeviceLogCapture(params: {
     deviceLogProcess.stderr.pipe(logStream);
 
     deviceLogProcess.on('close', (code) => {
-      log('info', `Device log capture process for session ${logSessionId} exited with code ${code}.`);
+      log(
+        'info',
+        `Device log capture process for session ${logSessionId} exited with code ${code}.`,
+      );
     });
 
     deviceLogProcess.on('error', (error) => {
-      log('error', `Device log capture process error for session ${logSessionId}: ${error.message}`);
+      log(
+        'error',
+        `Device log capture process error for session ${logSessionId}: ${error.message}`,
+      );
     });
 
     activeDeviceLogSessions.set(logSessionId, {
@@ -120,17 +128,17 @@ export async function stopDeviceLogCapture(
   try {
     log('info', `Attempting to stop device log capture session: ${logSessionId}`);
     const logFilePath = session.logFilePath;
-    
+
     if (!session.process.killed && session.process.exitCode === null) {
       session.process.kill('SIGTERM');
     }
-    
+
     activeDeviceLogSessions.delete(logSessionId);
     log(
       'info',
       `Device log capture session ${logSessionId} stopped. Log file retained at: ${logFilePath}`,
     );
-    
+
     await fs.promises.access(logFilePath, fs.constants.R_OK);
     const fileContent = await fs.promises.readFile(logFilePath, 'utf-8');
     log('info', `Successfully read device log content from ${logFilePath}`);
@@ -196,9 +204,7 @@ export function registerListDevicesTool(server: McpServer): void {
 
       if (!result.success) {
         return {
-          content: [
-            createTextContent(`Failed to list devices: ${result.error}`),
-          ],
+          content: [createTextContent(`Failed to list devices: ${result.error}`)],
           isError: true,
         };
       }
@@ -207,7 +213,11 @@ export function registerListDevicesTool(server: McpServer): void {
         const devicesData = JSON.parse(result.output);
         let responseText = 'Available iOS Devices:\n\n';
 
-        if (devicesData.result && devicesData.result.devices && devicesData.result.devices.length > 0) {
+        if (
+          devicesData.result &&
+          devicesData.result.devices &&
+          devicesData.result.devices.length > 0
+        ) {
           for (const device of devicesData.result.devices) {
             responseText += `📱 ${device.deviceProperties?.name || 'Unknown Device'}\n`;
             responseText += `   UUID: ${device.identifier}\n`;
@@ -231,7 +241,9 @@ export function registerListDevicesTool(server: McpServer): void {
         log('error', `Failed to parse device list JSON: ${parseError}`);
         return {
           content: [
-            createTextContent(`Failed to parse device list: ${parseError instanceof Error ? parseError.message : String(parseError)}`),
+            createTextContent(
+              `Failed to parse device list: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+            ),
           ],
           isError: true,
         };
@@ -240,9 +252,7 @@ export function registerListDevicesTool(server: McpServer): void {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log('error', `Error during list devices operation: ${errorMessage}`);
       return {
-        content: [
-          createTextContent(`❌ List devices operation failed: ${errorMessage}`),
-        ],
+        content: [createTextContent(`❌ List devices operation failed: ${errorMessage}`)],
         isError: true,
       };
     }
@@ -266,14 +276,13 @@ export function registerStartDeviceLogCaptureTool(server: McpServer): void {
   const schema = {
     deviceUuid: z
       .string()
-      .describe('UUID of the iOS device to capture logs from (obtained from list_devices or Xcode).'),
+      .describe(
+        'UUID of the iOS device to capture logs from (obtained from list_devices or Xcode).',
+      ),
     bundleId: z.string().describe('Bundle identifier of the app to launch and capture logs for.'),
   };
 
-  async function handler(params: {
-    deviceUuid: string;
-    bundleId: string;
-  }): Promise<ToolResponse> {
+  async function handler(params: { deviceUuid: string; bundleId: string }): Promise<ToolResponse> {
     const deviceValidation = validateRequiredParam('deviceUuid', params.deviceUuid);
     if (!deviceValidation.isValid) {
       return deviceValidation.errorResponse!;
@@ -328,7 +337,9 @@ export function registerStopAndGetDeviceLogTool(server: McpServer): void {
     if (error) {
       return {
         content: [
-          createTextContent(`Error stopping device log capture session ${params.logSessionId}: ${error}`),
+          createTextContent(
+            `Error stopping device log capture session ${params.logSessionId}: ${error}`,
+          ),
         ],
         isError: true,
       };
