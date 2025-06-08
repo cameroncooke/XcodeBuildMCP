@@ -104,10 +104,6 @@ import { ToolGroup, registerIfEnabled } from './tool-groups.js';
 
 // Import test tools
 import {
-  registerMacOSTestWorkspaceTool,
-  registerMacOSTestProjectTool,
-} from '../tools/test_macos.js';
-import {
   registerIOSSimulatorTestByNameWorkspaceTool,
   registerIOSSimulatorTestByNameProjectTool,
   registerIOSSimulatorTestByIdWorkspaceTool,
@@ -117,6 +113,13 @@ import {
   registerIOSDeviceTestWorkspaceTool,
   registerIOSDeviceTestProjectTool,
 } from '../tools/test_ios_device.js';
+import {
+  registerMacOSTestWorkspaceTool,
+  registerMacOSTestProjectTool,
+} from '../tools/test_macos.js';
+
+// Import device discovery tools
+import { registerListDevicesTool } from '../tools/device.js';
 
 // Define tool registrations with their workflow-based groups
 const toolRegistrations = [
@@ -140,6 +143,11 @@ const toolRegistrations = [
     register: registerListSimulatorsTool,
     groups: [ToolGroup.SIMULATOR_MANAGEMENT, ToolGroup.PROJECT_DISCOVERY],
     envVar: 'XCODEBUILDMCP_TOOL_LIST_SIMULATORS',
+  },
+  {
+    register: registerListDevicesTool,
+    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.PROJECT_DISCOVERY],
+    envVar: 'XCODEBUILDMCP_TOOL_LIST_DEVICES',
   },
   {
     register: registerShowBuildSettingsWorkspaceTool,
