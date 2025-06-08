@@ -20,14 +20,13 @@ import { registerAutonomousDebugging } from './autonomous.js';
 export function registerSampling(server: McpServer): void {
   try {
     log('info', 'Registering Xcode sampling capabilities...');
-    
+
     // Register autonomous debugging capabilities
     registerAutonomousDebugging(server);
-    
+
     log('info', 'Successfully registered Xcode sampling capabilities');
   } catch (error) {
     log('error', `Failed to register sampling capabilities: ${error}`);
     throw error;
   }
 }
-

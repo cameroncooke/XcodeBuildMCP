@@ -27,20 +27,19 @@ import { registerSimulatorResources } from './simulator.js';
 export function registerResources(server: McpServer): void {
   try {
     log('info', 'Registering Xcode resources...');
-    
+
     // Register project-related resources
     registerProjectResources(server);
-    
+
     // Register build-related resources
     registerBuildResources(server);
-    
+
     // Register simulator-related resources
     registerSimulatorResources(server);
-    
+
     log('info', 'Successfully registered all Xcode resources');
   } catch (error) {
     log('error', `Failed to register resources: ${error}`);
     throw error;
   }
 }
-

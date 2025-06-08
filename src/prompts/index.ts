@@ -28,26 +28,25 @@ import { registerProjectSetupPrompts } from './project-setup.js';
 export function registerPrompts(server: McpServer): void {
   try {
     log('info', 'Registering Xcode workflow prompts...');
-    
+
     // Register debugging prompts
     registerDebuggingPrompts(server);
-    
+
     // Register CI/CD prompts
     registerCICDPrompts(server);
-    
+
     // Register performance prompts
     registerPerformancePrompts(server);
-    
+
     // Register testing prompts
     registerTestingPrompts(server);
-    
+
     // Register project setup prompts
     registerProjectSetupPrompts(server);
-    
+
     log('info', 'Successfully registered all Xcode workflow prompts');
   } catch (error) {
     log('error', `Failed to register prompts: ${error}`);
     throw error;
   }
 }
-

@@ -11,14 +11,16 @@ export function registerProjectSetupPrompts(server: McpServer): void {
     'setup-new-project',
     'Guide through new Xcode project setup and configuration',
     {
-      project_type: z.enum(['ios', 'macos', 'watchos', 'tvos', 'multiplatform']).describe('Type of project to create'),
+      project_type: z
+        .enum(['ios', 'macos', 'watchos', 'tvos', 'multiplatform'])
+        .describe('Type of project to create'),
       app_category: z.string().optional().describe('App category or purpose'),
       team_size: z.string().optional().describe('Development team size'),
-      requirements: z.string().optional().describe('Specific project requirements')
+      requirements: z.string().optional().describe('Specific project requirements'),
     },
     async (args) => {
       const { project_type, app_category, team_size, requirements } = args;
-      
+
       let prompt = `# New Xcode Project Setup Guide
 
 ## Project Configuration
@@ -66,9 +68,9 @@ Provide comprehensive project setup guidance:
 Provide step-by-step implementation with best practices.`;
 
       return {
-        messages: [{ role: 'user', content: { type: 'text', text: prompt } }]
+        messages: [{ role: 'user', content: { type: 'text', text: prompt } }],
       };
-    }
+    },
   );
 
   server.prompt(
@@ -76,12 +78,15 @@ Provide step-by-step implementation with best practices.`;
     'Guide through legacy Xcode project modernization',
     {
       current_setup: z.string().describe('Current project setup and configuration'),
-      target_improvements: z.string().optional().describe('Desired improvements or modernization goals'),
-      constraints: z.string().optional().describe('Migration constraints or limitations')
+      target_improvements: z
+        .string()
+        .optional()
+        .describe('Desired improvements or modernization goals'),
+      constraints: z.string().optional().describe('Migration constraints or limitations'),
     },
     async (args) => {
       const { current_setup, target_improvements, constraints } = args;
-      
+
       let prompt = `# Legacy Xcode Project Modernization
 
 ## Current State
@@ -128,11 +133,10 @@ Provide systematic project modernization guidance:
 Focus on practical, incremental improvements with minimal disruption.`;
 
       return {
-        messages: [{ role: 'user', content: { type: 'text', text: prompt } }]
+        messages: [{ role: 'user', content: { type: 'text', text: prompt } }],
       };
-    }
+    },
   );
 
   log('info', 'Registered project setup prompts: setup-new-project, migrate-legacy-project');
 }
-

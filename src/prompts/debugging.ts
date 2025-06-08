@@ -21,11 +21,14 @@ export function registerDebuggingPrompts(server: McpServer): void {
       error_message: z.string().describe('The build error message or log excerpt'),
       scheme: z.string().optional().describe('The build scheme that failed (optional)'),
       target: z.string().optional().describe('The specific target that failed (optional)'),
-      recent_changes: z.string().optional().describe('Recent code or configuration changes (optional)')
+      recent_changes: z
+        .string()
+        .optional()
+        .describe('Recent code or configuration changes (optional)'),
     },
     async (args) => {
       const { error_message, scheme, target, recent_changes } = args;
-      
+
       let prompt = `# Xcode Build Failure Analysis
 
 ## Error Information
@@ -34,11 +37,11 @@ export function registerDebuggingPrompts(server: McpServer): void {
       if (scheme) {
         prompt += `\n**Scheme:** ${scheme}`;
       }
-      
+
       if (target) {
         prompt += `\n**Target:** ${target}`;
       }
-      
+
       if (recent_changes) {
         prompt += `\n**Recent Changes:** ${recent_changes}`;
       }
@@ -80,12 +83,12 @@ Please analyze this Xcode build failure and provide:
             role: 'user',
             content: {
               type: 'text',
-              text: prompt
-            }
-          }
-        ]
+              text: prompt,
+            },
+          },
+        ],
       };
-    }
+    },
   );
 
   // Runtime crash analysis prompt
@@ -97,11 +100,11 @@ Please analyze this Xcode build failure and provide:
       app_version: z.string().optional().describe('App version where crash occurred'),
       ios_version: z.string().optional().describe('iOS/macOS version where crash occurred'),
       reproduction_steps: z.string().optional().describe('Steps to reproduce the crash'),
-      device_info: z.string().optional().describe('Device model and specifications')
+      device_info: z.string().optional().describe('Device model and specifications'),
     },
     async (args) => {
       const { crash_log, app_version, ios_version, reproduction_steps, device_info } = args;
-      
+
       let prompt = `# iOS/macOS App Crash Analysis
 
 ## Crash Information
@@ -113,15 +116,15 @@ ${crash_log}
       if (app_version) {
         prompt += `\n**App Version:** ${app_version}`;
       }
-      
+
       if (ios_version) {
         prompt += `\n**OS Version:** ${ios_version}`;
       }
-      
+
       if (device_info) {
         prompt += `\n**Device:** ${device_info}`;
       }
-      
+
       if (reproduction_steps) {
         prompt += `\n**Reproduction Steps:**\n${reproduction_steps}`;
       }
@@ -168,12 +171,12 @@ Please analyze this crash and provide:
             role: 'user',
             content: {
               type: 'text',
-              text: prompt
-            }
-          }
-        ]
+              text: prompt,
+            },
+          },
+        ],
       };
-    }
+    },
   );
 
   // Simulator issues prompt
@@ -184,11 +187,14 @@ Please analyze this crash and provide:
       issue_description: z.string().describe('Description of the simulator issue'),
       simulator_version: z.string().optional().describe('iOS Simulator version'),
       xcode_version: z.string().optional().describe('Xcode version'),
-      error_messages: z.string().optional().describe('Any error messages from simulator or console')
+      error_messages: z
+        .string()
+        .optional()
+        .describe('Any error messages from simulator or console'),
     },
     async (args) => {
       const { issue_description, simulator_version, xcode_version, error_messages } = args;
-      
+
       let prompt = `# iOS Simulator Troubleshooting
 
 ## Issue Description
@@ -197,11 +203,11 @@ ${issue_description}`;
       if (simulator_version) {
         prompt += `\n**Simulator Version:** ${simulator_version}`;
       }
-      
+
       if (xcode_version) {
         prompt += `\n**Xcode Version:** ${xcode_version}`;
       }
-      
+
       if (error_messages) {
         prompt += `\n**Error Messages:**\n\`\`\`\n${error_messages}\n\`\`\``;
       }
@@ -248,14 +254,16 @@ Please provide comprehensive troubleshooting guidance:
             role: 'user',
             content: {
               type: 'text',
-              text: prompt
-            }
-          }
-        ]
+              text: prompt,
+            },
+          },
+        ],
       };
-    }
+    },
   );
 
-  log('info', 'Registered debugging prompts: debug-build-failure, debug-runtime-crash, debug-simulator-issues');
+  log(
+    'info',
+    'Registered debugging prompts: debug-build-failure, debug-runtime-crash, debug-simulator-issues',
+  );
 }
-

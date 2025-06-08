@@ -21,13 +21,28 @@ export function registerCICDPrompts(server: McpServer): void {
     {
       project_type: z.enum(['ios', 'macos', 'multiplatform']).describe('Type of Xcode project'),
       deployment_target: z.string().optional().describe('Minimum iOS/macOS deployment target'),
-      testing_requirements: z.string().optional().describe('Testing requirements (unit tests, UI tests, etc.)'),
-      distribution_method: z.enum(['app-store', 'enterprise', 'adhoc', 'development']).optional().describe('App distribution method'),
-      additional_requirements: z.string().optional().describe('Additional CI/CD requirements or constraints')
+      testing_requirements: z
+        .string()
+        .optional()
+        .describe('Testing requirements (unit tests, UI tests, etc.)'),
+      distribution_method: z
+        .enum(['app-store', 'enterprise', 'adhoc', 'development'])
+        .optional()
+        .describe('App distribution method'),
+      additional_requirements: z
+        .string()
+        .optional()
+        .describe('Additional CI/CD requirements or constraints'),
     },
     async (args) => {
-      const { project_type, deployment_target, testing_requirements, distribution_method, additional_requirements } = args;
-      
+      const {
+        project_type,
+        deployment_target,
+        testing_requirements,
+        distribution_method,
+        additional_requirements,
+      } = args;
+
       let prompt = `# GitHub Actions CI/CD Setup for Xcode Project
 
 ## Project Configuration
@@ -36,15 +51,15 @@ export function registerCICDPrompts(server: McpServer): void {
       if (deployment_target) {
         prompt += `\n**Deployment Target:** ${deployment_target}`;
       }
-      
+
       if (testing_requirements) {
         prompt += `\n**Testing Requirements:** ${testing_requirements}`;
       }
-      
+
       if (distribution_method) {
         prompt += `\n**Distribution Method:** ${distribution_method}`;
       }
-      
+
       if (additional_requirements) {
         prompt += `\n**Additional Requirements:** ${additional_requirements}`;
       }
@@ -102,12 +117,12 @@ Please provide a comprehensive GitHub Actions CI/CD setup:
             role: 'user',
             content: {
               type: 'text',
-              text: prompt
-            }
-          }
-        ]
+              text: prompt,
+            },
+          },
+        ],
       };
-    }
+    },
   );
 
   // Xcode Cloud setup prompt
@@ -118,11 +133,11 @@ Please provide a comprehensive GitHub Actions CI/CD setup:
       project_name: z.string().describe('Name of the Xcode project'),
       team_size: z.string().optional().describe('Development team size'),
       workflow_requirements: z.string().optional().describe('Specific workflow requirements'),
-      integration_needs: z.string().optional().describe('Third-party integrations needed')
+      integration_needs: z.string().optional().describe('Third-party integrations needed'),
     },
     async (args) => {
       const { project_name, team_size, workflow_requirements, integration_needs } = args;
-      
+
       let prompt = `# Xcode Cloud Configuration Guide
 
 ## Project Information
@@ -131,11 +146,11 @@ Please provide a comprehensive GitHub Actions CI/CD setup:
       if (team_size) {
         prompt += `\n**Team Size:** ${team_size}`;
       }
-      
+
       if (workflow_requirements) {
         prompt += `\n**Workflow Requirements:** ${workflow_requirements}`;
       }
-      
+
       if (integration_needs) {
         prompt += `\n**Integration Needs:** ${integration_needs}`;
       }
@@ -193,12 +208,12 @@ Please provide comprehensive Xcode Cloud setup guidance:
             role: 'user',
             content: {
               type: 'text',
-              text: prompt
-            }
-          }
-        ]
+              text: prompt,
+            },
+          },
+        ],
       };
-    }
+    },
   );
 
   // CI/CD troubleshooting prompt
@@ -206,14 +221,19 @@ Please provide comprehensive Xcode Cloud setup guidance:
     'troubleshoot-cicd',
     'Diagnose and fix CI/CD pipeline issues for Xcode projects',
     {
-      platform: z.enum(['github-actions', 'xcode-cloud', 'jenkins', 'gitlab-ci', 'other']).describe('CI/CD platform being used'),
+      platform: z
+        .enum(['github-actions', 'xcode-cloud', 'jenkins', 'gitlab-ci', 'other'])
+        .describe('CI/CD platform being used'),
       error_description: z.string().describe('Description of the CI/CD issue or failure'),
       build_logs: z.string().optional().describe('Relevant build logs or error messages'),
-      recent_changes: z.string().optional().describe('Recent changes to project or CI configuration')
+      recent_changes: z
+        .string()
+        .optional()
+        .describe('Recent changes to project or CI configuration'),
     },
     async (args) => {
       const { platform, error_description, build_logs, recent_changes } = args;
-      
+
       let prompt = `# CI/CD Pipeline Troubleshooting
 
 ## Issue Information
@@ -223,7 +243,7 @@ Please provide comprehensive Xcode Cloud setup guidance:
       if (build_logs) {
         prompt += `\n**Build Logs:**\n\`\`\`\n${build_logs}\n\`\`\``;
       }
-      
+
       if (recent_changes) {
         prompt += `\n**Recent Changes:** ${recent_changes}`;
       }
@@ -281,14 +301,16 @@ Please provide systematic troubleshooting guidance:
             role: 'user',
             content: {
               type: 'text',
-              text: prompt
-            }
-          }
-        ]
+              text: prompt,
+            },
+          },
+        ],
       };
-    }
+    },
   );
 
-  log('info', 'Registered CI/CD prompts: setup-github-actions, setup-xcode-cloud, troubleshoot-cicd');
+  log(
+    'info',
+    'Registered CI/CD prompts: setup-github-actions, setup-xcode-cloud, troubleshoot-cicd',
+  );
 }
-

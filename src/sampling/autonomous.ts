@@ -10,29 +10,28 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { execSync } from 'child_process';
 import { log } from '../utils/logger.js';
 
 /**
  * Register autonomous debugging and analysis capabilities
  */
-export function registerAutonomousDebugging(server: McpServer): void {
+export function registerAutonomousDebugging(_server: McpServer): void {
   // Note: Sampling implementation would require the MCP SDK to support
   // server-initiated sampling requests. This is a placeholder for when
   // that functionality becomes available.
-  
+
   // For now, we'll set up the infrastructure and log that sampling
   // capabilities are prepared but not yet active.
-  
+
   log('info', 'Autonomous debugging capabilities prepared (requires client sampling support)');
-  
+
   // Future implementation would include:
   // - Automated build failure analysis and suggested fixes
   // - Intelligent error pattern recognition and resolution
   // - Proactive performance optimization suggestions
   // - Automated test failure diagnosis and repair
   // - Smart dependency conflict resolution
-  
+
   // Example of what autonomous debugging might look like:
   /*
   server.requestSampling({
@@ -57,4 +56,3 @@ export function registerAutonomousDebugging(server: McpServer): void {
   });
   */
 }
-

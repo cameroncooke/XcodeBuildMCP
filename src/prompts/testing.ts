@@ -13,11 +13,11 @@ export function registerTestingPrompts(server: McpServer): void {
     {
       project_type: z.enum(['ios', 'macos', 'multiplatform']).describe('Type of project'),
       app_complexity: z.string().optional().describe('App complexity and features'),
-      testing_goals: z.string().optional().describe('Testing objectives and requirements')
+      testing_goals: z.string().optional().describe('Testing objectives and requirements'),
     },
     async (args) => {
       const { project_type, app_complexity, testing_goals } = args;
-      
+
       let prompt = `# Comprehensive Testing Strategy Design
 
 ## Project Information
@@ -58,9 +58,9 @@ Design a comprehensive testing strategy including:
 Provide actionable implementation guidance with specific examples.`;
 
       return {
-        messages: [{ role: 'user', content: { type: 'text', text: prompt } }]
+        messages: [{ role: 'user', content: { type: 'text', text: prompt } }],
       };
-    }
+    },
   );
 
   server.prompt(
@@ -69,11 +69,14 @@ Provide actionable implementation guidance with specific examples.`;
     {
       test_failure_description: z.string().describe('Description of test failures'),
       test_logs: z.string().optional().describe('Test failure logs or output'),
-      test_type: z.enum(['unit', 'integration', 'ui', 'performance']).optional().describe('Type of failing tests')
+      test_type: z
+        .enum(['unit', 'integration', 'ui', 'performance'])
+        .optional()
+        .describe('Type of failing tests'),
     },
     async (args) => {
       const { test_failure_description, test_logs, test_type } = args;
-      
+
       let prompt = `# Test Failure Diagnosis and Resolution
 
 ## Failure Information
@@ -110,11 +113,10 @@ Provide systematic test failure resolution:
 Focus on both immediate fixes and long-term test health improvements.`;
 
       return {
-        messages: [{ role: 'user', content: { type: 'text', text: prompt } }]
+        messages: [{ role: 'user', content: { type: 'text', text: prompt } }],
       };
-    }
+    },
   );
 
   log('info', 'Registered testing prompts: setup-testing-strategy, debug-test-failures');
 }
-

@@ -13,11 +13,11 @@ export function registerPerformancePrompts(server: McpServer): void {
     {
       build_time: z.string().describe('Current build time or performance metrics'),
       project_size: z.string().optional().describe('Project size and complexity'),
-      bottlenecks: z.string().optional().describe('Known performance bottlenecks')
+      bottlenecks: z.string().optional().describe('Known performance bottlenecks'),
     },
     async (args) => {
       const { build_time, project_size, bottlenecks } = args;
-      
+
       let prompt = `# Xcode Build Performance Optimization
 
 ## Current Performance
@@ -54,9 +54,9 @@ Provide comprehensive build performance optimization strategies:
 Focus on actionable improvements with measurable impact.`;
 
       return {
-        messages: [{ role: 'user', content: { type: 'text', text: prompt } }]
+        messages: [{ role: 'user', content: { type: 'text', text: prompt } }],
       };
-    }
+    },
   );
 
   server.prompt(
@@ -65,11 +65,11 @@ Focus on actionable improvements with measurable impact.`;
     {
       performance_issue: z.string().describe('Description of performance issue'),
       profiling_data: z.string().optional().describe('Instruments or profiling data'),
-      target_metrics: z.string().optional().describe('Target performance metrics')
+      target_metrics: z.string().optional().describe('Target performance metrics'),
     },
     async (args) => {
       const { performance_issue, profiling_data, target_metrics } = args;
-      
+
       let prompt = `# App Performance Analysis and Optimization
 
 ## Performance Issue
@@ -106,11 +106,13 @@ Provide comprehensive app performance optimization guidance:
 Focus on measurable improvements and sustainable optimization practices.`;
 
       return {
-        messages: [{ role: 'user', content: { type: 'text', text: prompt } }]
+        messages: [{ role: 'user', content: { type: 'text', text: prompt } }],
       };
-    }
+    },
   );
 
-  log('info', 'Registered performance prompts: optimize-build-performance, analyze-app-performance');
+  log(
+    'info',
+    'Registered performance prompts: optimize-build-performance, analyze-app-performance',
+  );
 }
-

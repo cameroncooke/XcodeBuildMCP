@@ -73,4 +73,3 @@ Note: Sampling capabilities require client support and explicit user consent.
 Most MCP clients currently only support tools, so other capabilities may not be available.
 `;
 }
-

@@ -44,33 +44,33 @@ const DEFAULT_CAPABILITIES: ServerCapabilitiesConfig = {
  */
 export function createServer(capabilitiesConfig?: ServerCapabilitiesConfig): McpServer {
   const config = { ...DEFAULT_CAPABILITIES, ...capabilitiesConfig };
-  
+
   // Build capabilities object based on configuration
   const capabilities: any = {};
-  
+
   if (config.tools) {
     capabilities.tools = {
       listChanged: true,
     };
   }
-  
+
   if (config.resources) {
     capabilities.resources = {
       subscribe: true,
       listChanged: true,
     };
   }
-  
+
   if (config.prompts) {
     capabilities.prompts = {
       listChanged: true,
     };
   }
-  
+
   if (config.sampling) {
     capabilities.sampling = {};
   }
-  
+
   // Always include logging capability
   capabilities.logging = {};
 
