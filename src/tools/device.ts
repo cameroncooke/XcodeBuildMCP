@@ -10,7 +10,6 @@
  * - Providing device information for testing and deployment workflows
  */
 
-import { z } from 'zod';
 import { log } from '../utils/logger.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { executeCommand } from '../utils/command.js';
@@ -31,13 +30,19 @@ export function registerListDevicesTool(server: McpServer): void {
 
       try {
         // Try modern devicectl first (iOS 17+, Xcode 15+)
-        let result = await executeCommand(['xcrun', 'devicectl', 'list', 'devices'], 'List Apple Devices (devicectl)');
+        let result = await executeCommand(
+          ['xcrun', 'devicectl', 'list', 'devices'],
+          'List Apple Devices (devicectl)',
+        );
         let useDevicectl = result.success;
 
         if (!result.success) {
           log('info', 'devicectl failed, trying xctrace fallback');
           // Fallback to xctrace for older Xcode versions
-          result = await executeCommand(['xcrun', 'xctrace', 'list', 'devices'], 'List Apple Devices (xctrace)');
+          result = await executeCommand(
+            ['xcrun', 'xctrace', 'list', 'devices'],
+            'List Apple Devices (xctrace)',
+          );
           useDevicectl = false;
         }
 
@@ -71,10 +76,10 @@ export function registerListDevicesTool(server: McpServer): void {
 
           for (const line of lines) {
             const trimmedLine = line.trim();
-            
+
             // Skip empty lines
             if (!trimmedLine) continue;
-            
+
             // Skip header lines and separator lines
             if (trimmedLine.includes('Name') && trimmedLine.includes('Identifier')) {
               headerFound = true;
@@ -83,23 +88,24 @@ export function registerListDevicesTool(server: McpServer): void {
             if (trimmedLine.match(/^-+\s+-+\s+-+/)) {
               continue;
             }
-            
+
             // Only process device lines after we've seen the header
             if (!headerFound) continue;
-            
+
             // Parse tabular format - split by multiple spaces to separate columns
             const columns = trimmedLine.split(/\s{2,}/);
             if (columns.length >= 4) {
-              const [name, hostname, identifier, state, ...modelParts] = columns;
+              const [name, _hostname, identifier, state, ...modelParts] = columns;
               const model = modelParts.join(' ');
-              
+
               // Only include devices that are connected or available
               if (state && (state.includes('connected') || state.includes('available'))) {
                 // Filter out non-development devices (HomePods, etc.)
-                if (!model.toLowerCase().includes('homepod') && 
-                    !model.toLowerCase().includes('homeaccessory') &&
-                    !model.toLowerCase().includes('vmac')) {
-                  
+                if (
+                  !model.toLowerCase().includes('homepod') &&
+                  !model.toLowerCase().includes('homeaccessory') &&
+                  !model.toLowerCase().includes('vmac')
+                ) {
                   // Determine platform based on model
                   let platform = 'Unknown';
                   if (model.toLowerCase().includes('iphone')) {
@@ -108,20 +114,23 @@ export function registerListDevicesTool(server: McpServer): void {
                     platform = 'iPadOS';
                   } else if (model.toLowerCase().includes('watch')) {
                     platform = 'watchOS';
-                  } else if (model.toLowerCase().includes('appletv') || model.toLowerCase().includes('apple tv')) {
+                  } else if (
+                    model.toLowerCase().includes('appletv') ||
+                    model.toLowerCase().includes('apple tv')
+                  ) {
                     platform = 'tvOS';
                   } else if (model.toLowerCase().includes('vision')) {
                     platform = 'visionOS';
                   } else {
                     platform = 'Apple Device';
                   }
-                  
+
                   devices.push({
                     name: name.trim(),
                     identifier: identifier.trim(),
                     platform: platform,
                     state: state.trim(),
-                    version: model.trim()
+                    version: model.trim(),
                   });
                 }
               }
@@ -130,31 +139,38 @@ export function registerListDevicesTool(server: McpServer): void {
         } else {
           // Parse xctrace output
           const lines = result.output.split('\n');
-          
+
           for (const line of lines) {
             const trimmedLine = line.trim();
-            
+
             // Skip headers and empty lines
-            if (!trimmedLine || trimmedLine.includes('== Devices ==') || trimmedLine.includes('== Simulators ==')) {
+            if (
+              !trimmedLine ||
+              trimmedLine.includes('== Devices ==') ||
+              trimmedLine.includes('== Simulators ==')
+            ) {
               continue;
             }
-            
+
             // Skip simulators (this tool is for physical devices only)
-            if (trimmedLine.toLowerCase().includes('simulator') || trimmedLine.includes('iOS Simulator')) {
+            if (
+              trimmedLine.toLowerCase().includes('simulator') ||
+              trimmedLine.includes('iOS Simulator')
+            ) {
               continue;
             }
-            
+
             // Parse device line format from xctrace
             // Typical format: "Device Name (iOS Version) [Device ID]" or variations
             const deviceMatch = trimmedLine.match(/^(.+?)\s*\(([^)]+)\)\s*(?:\[([A-F0-9-]+)\])?/);
             if (deviceMatch) {
               const [, name, versionInfo, identifier] = deviceMatch;
-              
+
               // Skip if it's clearly a simulator (this tool is for physical devices only)
               if (name.toLowerCase().includes('simulator')) {
                 continue;
               }
-              
+
               // Determine platform based on version info and name
               let platform = 'Unknown';
               if (versionInfo.includes('iOS') || name.toLowerCase().includes('iphone')) {
@@ -165,26 +181,30 @@ export function registerListDevicesTool(server: McpServer): void {
                 platform = 'watchOS';
               } else if (versionInfo.includes('tvOS') || name.toLowerCase().includes('appletv')) {
                 platform = 'tvOS';
-              } else if (versionInfo.includes('visionOS') || name.toLowerCase().includes('vision')) {
+              } else if (
+                versionInfo.includes('visionOS') ||
+                name.toLowerCase().includes('vision')
+              ) {
                 platform = 'visionOS';
               } else {
                 platform = 'Apple Device';
               }
-              
+
               devices.push({
                 name: name.trim(),
                 identifier: identifier || 'Unknown',
                 platform: platform,
                 version: versionInfo,
-                state: 'Connected'
+                state: 'Connected',
               });
             }
           }
         }
 
         // Filter out duplicates and format response
-        const uniqueDevices = devices.filter((device, index, self) => 
-          index === self.findIndex(d => d.identifier === device.identifier)
+        const uniqueDevices = devices.filter(
+          (device, index, self) =>
+            index === self.findIndex((d) => d.identifier === device.identifier),
         );
 
         if (uniqueDevices.length === 0) {
@@ -197,11 +217,17 @@ export function registerListDevicesTool(server: McpServer): void {
           responseText += 'For simulators, use the list_sims tool instead.\n';
         } else {
           // Group devices by availability status
-          const availableDevices = uniqueDevices.filter(d => 
-            d.state && (d.state.toLowerCase().includes('available') || d.state.toLowerCase().includes('paired'))
+          const availableDevices = uniqueDevices.filter(
+            (d) =>
+              d.state &&
+              (d.state.toLowerCase().includes('available') ||
+                d.state.toLowerCase().includes('paired')),
           );
-          const unavailableDevices = uniqueDevices.filter(d => 
-            !d.state || (!d.state.toLowerCase().includes('available') && !d.state.toLowerCase().includes('paired'))
+          const unavailableDevices = uniqueDevices.filter(
+            (d) =>
+              !d.state ||
+              (!d.state.toLowerCase().includes('available') &&
+                !d.state.toLowerCase().includes('paired')),
           );
 
           if (availableDevices.length > 0) {
@@ -222,18 +248,26 @@ export function registerListDevicesTool(server: McpServer): void {
         }
 
         // Add next steps
-        const availableDevicesExist = uniqueDevices.some(d => 
-          d.state && (d.state.toLowerCase().includes('available') || d.state.toLowerCase().includes('paired'))
+        const availableDevicesExist = uniqueDevices.some(
+          (d) =>
+            d.state &&
+            (d.state.toLowerCase().includes('available') ||
+              d.state.toLowerCase().includes('paired')),
         );
-        
+
         if (availableDevicesExist) {
           responseText += 'Next Steps:\n';
-          responseText += "1. Run tests on available iOS device: test_ios_dev_ws({ workspacePath: 'PATH', scheme: 'SCHEME', deviceId: 'DEVICE_ID_FROM_AVAILABLE_DEVICES' })\n";
-          responseText += "2. Build for iOS device: build_ios_dev_ws({ workspacePath: 'PATH', scheme: 'SCHEME' })\n";
-          responseText += "3. Get iOS app path: get_ios_dev_app_path_ws({ workspacePath: 'PATH', scheme: 'SCHEME' })\n";
-          responseText += "Note: Testing tools are currently available for iOS devices. Support for other platforms may be added in the future.\n";
+          responseText +=
+            "1. Run tests on available iOS device: test_ios_dev_ws({ workspacePath: 'PATH', scheme: 'SCHEME', deviceId: 'DEVICE_ID_FROM_AVAILABLE_DEVICES' })\n";
+          responseText +=
+            "2. Build for iOS device: build_ios_dev_ws({ workspacePath: 'PATH', scheme: 'SCHEME' })\n";
+          responseText +=
+            "3. Get iOS app path: get_ios_dev_app_path_ws({ workspacePath: 'PATH', scheme: 'SCHEME' })\n";
+          responseText +=
+            'Note: Testing tools are currently available for iOS devices. Support for other platforms may be added in the future.\n';
         } else if (uniqueDevices.length > 0) {
-          responseText += 'Note: No devices are currently available for testing. Make sure devices are unlocked, trusted, and properly connected.\n';
+          responseText +=
+            'Note: No devices are currently available for testing. Make sure devices are unlocked, trusted, and properly connected.\n';
         }
 
         return {
@@ -260,4 +294,3 @@ export function registerListDevicesTool(server: McpServer): void {
     },
   );
 }
-
