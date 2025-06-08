@@ -38,7 +38,7 @@ import {
 } from '../tools/test_macos.js';
 
 // Import device discovery tools
-import { registerListIOSDevicesTool } from '../tools/device.js';
+import { registerListDevicesTool } from '../tools/device.js';
 
 // Import app path tools
 import {
@@ -145,9 +145,9 @@ const toolRegistrations = [
     envVar: 'XCODEBUILDMCP_TOOL_LIST_SIMULATORS',
   },
   {
-    register: registerListIOSDevicesTool,
+    register: registerListDevicesTool,
     groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.PROJECT_DISCOVERY],
-    envVar: 'XCODEBUILDMCP_TOOL_LIST_IOS_DEVICES',
+    envVar: 'XCODEBUILDMCP_TOOL_LIST_DEVICES',
   },
   {
     register: registerShowBuildSettingsWorkspaceTool,

@@ -1,11 +1,11 @@
 /**
- * iOS Device Tools - Functions for working with physical iOS devices
+ * Device Tools - Functions for working with physical Apple devices
  *
- * This module provides tools for discovering and interacting with physical iOS devices
+ * This module provides tools for discovering and interacting with physical Apple devices
  * through xcrun devicectl and xcrun xctrace commands.
  *
  * Responsibilities:
- * - Listing connected iOS devices with their UUIDs, names, and properties
+ * - Listing connected Apple devices (iPhone, iPad, Apple Watch, Apple TV, Vision Pro) with their UUIDs, names, and properties
  * - Supporting both modern devicectl and legacy xctrace commands for compatibility
  * - Providing device information for testing and deployment workflows
  */
@@ -18,26 +18,26 @@ import { ToolResponse } from '../types/common.js';
 import { registerTool } from './common.js';
 
 /**
- * Lists available iOS devices with their UUIDs and properties
+ * Lists available Apple devices with their UUIDs and properties
  */
-export function registerListIOSDevicesTool(server: McpServer): void {
+export function registerListDevicesTool(server: McpServer): void {
   registerTool(
     server,
-    'list_ios_devices',
-    'Lists connected physical iOS devices with their UUIDs, names, and connection status. Use this to discover physical devices for testing.',
+    'list_devices',
+    'Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.',
     {},
     async (): Promise<ToolResponse> => {
-      log('info', 'Starting iOS device discovery');
+      log('info', 'Starting Apple device discovery');
 
       try {
         // Try modern devicectl first (iOS 17+, Xcode 15+)
-        let result = await executeCommand(['xcrun', 'devicectl', 'list', 'devices'], 'List iOS Devices (devicectl)');
+        let result = await executeCommand(['xcrun', 'devicectl', 'list', 'devices'], 'List Apple Devices (devicectl)');
         let useDevicectl = result.success;
 
         if (!result.success) {
           log('info', 'devicectl failed, trying xctrace fallback');
           // Fallback to xctrace for older Xcode versions
-          result = await executeCommand(['xcrun', 'xctrace', 'list', 'devices'], 'List iOS Devices (xctrace)');
+          result = await executeCommand(['xcrun', 'xctrace', 'list', 'devices'], 'List Apple Devices (xctrace)');
           useDevicectl = false;
         }
 
@@ -46,7 +46,7 @@ export function registerListIOSDevicesTool(server: McpServer): void {
             content: [
               {
                 type: 'text',
-                text: `Failed to list iOS devices: ${result.error}\n\nMake sure Xcode is installed and devices are connected and trusted.`,
+                text: `Failed to list Apple devices: ${result.error}\n\nMake sure Xcode is installed and devices are connected and trusted.`,
               },
             ],
             isError: true,
@@ -54,7 +54,7 @@ export function registerListIOSDevicesTool(server: McpServer): void {
         }
 
         // Parse the output based on which command was used
-        let responseText = 'Connected iOS Devices:\n\n';
+        let responseText = 'Connected Apple Devices:\n\n';
         const devices: Array<{
           name: string;
           identifier: string;
@@ -95,15 +95,31 @@ export function registerListIOSDevicesTool(server: McpServer): void {
               
               // Only include devices that are connected or available
               if (state && (state.includes('connected') || state.includes('available'))) {
-                // Filter out non-iOS devices (HomePods, etc.)
+                // Filter out non-development devices (HomePods, etc.)
                 if (!model.toLowerCase().includes('homepod') && 
                     !model.toLowerCase().includes('homeaccessory') &&
                     !model.toLowerCase().includes('vmac')) {
                   
+                  // Determine platform based on model
+                  let platform = 'Unknown';
+                  if (model.toLowerCase().includes('iphone')) {
+                    platform = 'iOS';
+                  } else if (model.toLowerCase().includes('ipad')) {
+                    platform = 'iPadOS';
+                  } else if (model.toLowerCase().includes('watch')) {
+                    platform = 'watchOS';
+                  } else if (model.toLowerCase().includes('appletv') || model.toLowerCase().includes('apple tv')) {
+                    platform = 'tvOS';
+                  } else if (model.toLowerCase().includes('vision')) {
+                    platform = 'visionOS';
+                  } else {
+                    platform = 'Apple Device';
+                  }
+                  
                   devices.push({
                     name: name.trim(),
                     identifier: identifier.trim(),
-                    platform: 'iOS',
+                    platform: platform,
                     state: state.trim(),
                     version: model.trim()
                   });
@@ -139,10 +155,26 @@ export function registerListIOSDevicesTool(server: McpServer): void {
                 continue;
               }
               
+              // Determine platform based on version info and name
+              let platform = 'Unknown';
+              if (versionInfo.includes('iOS') || name.toLowerCase().includes('iphone')) {
+                platform = 'iOS';
+              } else if (name.toLowerCase().includes('ipad')) {
+                platform = 'iPadOS';
+              } else if (versionInfo.includes('watchOS') || name.toLowerCase().includes('watch')) {
+                platform = 'watchOS';
+              } else if (versionInfo.includes('tvOS') || name.toLowerCase().includes('appletv')) {
+                platform = 'tvOS';
+              } else if (versionInfo.includes('visionOS') || name.toLowerCase().includes('vision')) {
+                platform = 'visionOS';
+              } else {
+                platform = 'Apple Device';
+              }
+              
               devices.push({
                 name: name.trim(),
                 identifier: identifier || 'Unknown',
-                platform: versionInfo.includes('iOS') ? 'iOS' : 'Unknown',
+                platform: platform,
                 version: versionInfo,
                 state: 'Connected'
               });
@@ -156,9 +188,9 @@ export function registerListIOSDevicesTool(server: McpServer): void {
         );
 
         if (uniqueDevices.length === 0) {
-          responseText += 'No physical iOS devices found.\n\n';
+          responseText += 'No physical Apple devices found.\n\n';
           responseText += 'Make sure:\n';
-          responseText += '1. iOS devices are connected via USB\n';
+          responseText += '1. Apple devices are connected via USB\n';
           responseText += '2. Devices are unlocked and trusted\n';
           responseText += '3. "Trust this computer" has been accepted on the device\n';
           responseText += '4. Xcode is properly installed\n\n';
@@ -175,7 +207,7 @@ export function registerListIOSDevicesTool(server: McpServer): void {
           if (availableDevices.length > 0) {
             responseText += 'Available Devices:\n';
             for (const device of availableDevices) {
-              responseText += `- ${device.name} (${device.identifier})\n`;
+              responseText += `- ${device.name} (${device.identifier}) - ${device.platform}\n`;
             }
             responseText += '\n';
           }
@@ -183,7 +215,7 @@ export function registerListIOSDevicesTool(server: McpServer): void {
           if (unavailableDevices.length > 0) {
             responseText += 'Unavailable Devices:\n';
             for (const device of unavailableDevices) {
-              responseText += `- ${device.name} (${device.identifier})\n`;
+              responseText += `- ${device.name} (${device.identifier}) - ${device.platform}\n`;
             }
             responseText += '\n';
           }
@@ -196,9 +228,10 @@ export function registerListIOSDevicesTool(server: McpServer): void {
         
         if (availableDevicesExist) {
           responseText += 'Next Steps:\n';
-          responseText += "1. Run tests on available device: test_ios_dev_ws({ workspacePath: 'PATH', scheme: 'SCHEME', deviceId: 'DEVICE_ID_FROM_AVAILABLE_DEVICES' })\n";
-          responseText += "2. Build for device: build_ios_dev_ws({ workspacePath: 'PATH', scheme: 'SCHEME' })\n";
-          responseText += "3. Get app path: get_ios_dev_app_path_ws({ workspacePath: 'PATH', scheme: 'SCHEME' })\n";
+          responseText += "1. Run tests on available iOS device: test_ios_dev_ws({ workspacePath: 'PATH', scheme: 'SCHEME', deviceId: 'DEVICE_ID_FROM_AVAILABLE_DEVICES' })\n";
+          responseText += "2. Build for iOS device: build_ios_dev_ws({ workspacePath: 'PATH', scheme: 'SCHEME' })\n";
+          responseText += "3. Get iOS app path: get_ios_dev_app_path_ws({ workspacePath: 'PATH', scheme: 'SCHEME' })\n";
+          responseText += "Note: Testing tools are currently available for iOS devices. Support for other platforms may be added in the future.\n";
         } else if (uniqueDevices.length > 0) {
           responseText += 'Note: No devices are currently available for testing. Make sure devices are unlocked, trusted, and properly connected.\n';
         }
@@ -213,12 +246,12 @@ export function registerListIOSDevicesTool(server: McpServer): void {
         };
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        log('error', `Error listing iOS devices: ${errorMessage}`);
+        log('error', `Error listing Apple devices: ${errorMessage}`);
         return {
           content: [
             {
               type: 'text',
-              text: `Failed to list iOS devices: ${errorMessage}`,
+              text: `Failed to list Apple devices: ${errorMessage}`,
             },
           ],
           isError: true,
