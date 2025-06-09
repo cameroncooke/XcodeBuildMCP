@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.9.0] - 2025-06-09
+- Added support for hardware devices over USB and Wi-Fi
+- New tools for Apple device deployment:
+  - `install_app_device`
+  - `launch_app_device`
+- Updated all simulator and device tools to be platform-agnostic, supporting all Apple platforms (iOS, iPadOS, watchOS, tvOS, visionOS)
+- Changed `get_ios_bundle_id` to `get_app_bundle_id` with support for all Apple platforms
+
 ## [v1.8.0] - 2025-06-07
 - Added support for running tests on macOS, iOS simulators, and iOS devices
 - New tools for testing:
