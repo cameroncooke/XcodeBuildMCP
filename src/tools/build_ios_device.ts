@@ -1,12 +1,13 @@
 /**
- * iOS Device Build Tools - Tools for building iOS applications for physical devices
+ * Device Build Tools - Tools for building applications for physical Apple devices
  *
- * This module provides specialized tools for building iOS applications targeting physical
- * devices using xcodebuild. It supports both workspace and project-based builds.
+ * This module provides specialized tools for building applications targeting physical
+ * Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) using xcodebuild.
+ * It supports both workspace and project-based builds.
  *
  * Responsibilities:
- * - Building iOS applications for physical devices from project files
- * - Building iOS applications for physical devices from workspaces
+ * - Building applications for physical Apple devices from project files
+ * - Building applications for physical Apple devices from workspaces
  * - Handling build configuration and derived data paths
  * - Providing platform-specific destination parameters
  */
@@ -31,14 +32,14 @@ import {
 // --- Tool Registration Functions ---
 
 /**
- * Registers the build_ios_dev_ws tool.
+ * Registers the build_dev_ws tool.
  */
-export function registerIOSDeviceBuildWorkspaceTool(server: McpServer): void {
+export function registerDeviceBuildWorkspaceTool(server: McpServer): void {
   type Params = BaseWorkspaceParams;
   registerTool<Params>(
     server,
-    'build_ios_dev_ws',
-    "Builds an iOS app from a workspace for a physical device. IMPORTANT: Requires workspacePath and scheme. Example: build_ios_dev_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
+    'build_dev_ws',
+    "Builds an app from a workspace for a physical Apple device. IMPORTANT: Requires workspacePath and scheme. Example: build_dev_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
     {
       workspacePath: workspacePathSchema,
       scheme: schemeSchema,
@@ -71,14 +72,14 @@ export function registerIOSDeviceBuildWorkspaceTool(server: McpServer): void {
 }
 
 /**
- * Registers the build_ios_dev_proj tool.
+ * Registers the build_dev_proj tool.
  */
-export function registerIOSDeviceBuildProjectTool(server: McpServer): void {
+export function registerDeviceBuildProjectTool(server: McpServer): void {
   type Params = BaseProjectParams;
   registerTool<Params>(
     server,
-    'build_ios_dev_proj',
-    "Builds an iOS app from a project file for a physical device. IMPORTANT: Requires projectPath and scheme. Example: build_ios_dev_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+    'build_dev_proj',
+    "Builds an app from a project file for a physical Apple device. IMPORTANT: Requires projectPath and scheme. Example: build_dev_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
     {
       projectPath: projectPathSchema,
       scheme: schemeSchema,
@@ -110,8 +111,8 @@ export function registerIOSDeviceBuildProjectTool(server: McpServer): void {
   );
 }
 
-// Register both iOS device build tools
-export function registerIOSDeviceBuildTools(server: McpServer): void {
-  registerIOSDeviceBuildWorkspaceTool(server);
-  registerIOSDeviceBuildProjectTool(server);
+// Register both device build tools
+export function registerDeviceBuildTools(server: McpServer): void {
+  registerDeviceBuildWorkspaceTool(server);
+  registerDeviceBuildProjectTool(server);
 }

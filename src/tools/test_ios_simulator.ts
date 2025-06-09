@@ -1,12 +1,13 @@
 /**
- * iOS Simulator Test Tools - Tools for running tests on iOS applications in simulators
+ * Simulator Test Tools - Tools for running tests on applications in Apple simulators
  *
- * This module provides specialized tools for running tests on iOS applications in simulators
- * using xcodebuild. It supports both workspace and project-based test runs with simulator targeting
- * by name or UUID, and includes xcresult parsing for human-readable test summaries.
+ * This module provides specialized tools for running tests on applications in Apple simulators
+ * (iOS, watchOS, tvOS, visionOS) using xcodebuild. It supports both workspace and project-based
+ * test runs with simulator targeting by name or UUID, and includes xcresult parsing for
+ * human-readable test summaries.
  *
  * Responsibilities:
- * - Running tests on iOS applications in simulators from project files and workspaces
+ * - Running tests on applications in Apple simulators from project files and workspaces
  * - Supporting simulator targeting by name or UUID
  * - Parsing xcresult bundles into human-readable format
  * - Handling test configuration and derived data paths
@@ -34,7 +35,7 @@ import {
 /**
  * Registers the iOS simulator test workspace tool (by name)
  */
-export function registerIOSSimulatorTestByNameWorkspaceTool(server: McpServer): void {
+export function registerSimulatorTestByNameWorkspaceTool(server: McpServer): void {
   type Params = {
     workspacePath: string;
     scheme: string;
@@ -48,8 +49,8 @@ export function registerIOSSimulatorTestByNameWorkspaceTool(server: McpServer): 
 
   registerTool<Params>(
     server,
-    'test_ios_sim_name_ws',
-    'Runs tests for an iOS workspace on a simulator by name using xcodebuild test and parses xcresult output.',
+    'test_sim_name_ws',
+    'Runs tests for a workspace on a simulator by name using xcodebuild test and parses xcresult output.',
     {
       workspacePath: workspacePathSchema,
       scheme: schemeSchema,
@@ -74,7 +75,7 @@ export function registerIOSSimulatorTestByNameWorkspaceTool(server: McpServer): 
 /**
  * Registers the iOS simulator test project tool (by name)
  */
-export function registerIOSSimulatorTestByNameProjectTool(server: McpServer): void {
+export function registerSimulatorTestByNameProjectTool(server: McpServer): void {
   type Params = {
     projectPath: string;
     scheme: string;
@@ -88,8 +89,8 @@ export function registerIOSSimulatorTestByNameProjectTool(server: McpServer): vo
 
   registerTool<Params>(
     server,
-    'test_ios_sim_name_proj',
-    'Runs tests for an iOS project on a simulator by name using xcodebuild test and parses xcresult output.',
+    'test_sim_name_proj',
+    'Runs tests for a project on a simulator by name using xcodebuild test and parses xcresult output.',
     {
       projectPath: projectPathSchema,
       scheme: schemeSchema,
@@ -114,7 +115,7 @@ export function registerIOSSimulatorTestByNameProjectTool(server: McpServer): vo
 /**
  * Registers the iOS simulator test workspace tool (by ID)
  */
-export function registerIOSSimulatorTestByIdWorkspaceTool(server: McpServer): void {
+export function registerSimulatorTestByIdWorkspaceTool(server: McpServer): void {
   type Params = {
     workspacePath: string;
     scheme: string;
@@ -128,8 +129,8 @@ export function registerIOSSimulatorTestByIdWorkspaceTool(server: McpServer): vo
 
   registerTool<Params>(
     server,
-    'test_ios_sim_id_ws',
-    'Runs tests for an iOS workspace on a simulator by UUID using xcodebuild test and parses xcresult output.',
+    'test_sim_id_ws',
+    'Runs tests for a workspace on a simulator by UUID using xcodebuild test and parses xcresult output.',
     {
       workspacePath: workspacePathSchema,
       scheme: schemeSchema,
@@ -154,7 +155,7 @@ export function registerIOSSimulatorTestByIdWorkspaceTool(server: McpServer): vo
 /**
  * Registers the iOS simulator test project tool (by ID)
  */
-export function registerIOSSimulatorTestByIdProjectTool(server: McpServer): void {
+export function registerSimulatorTestByIdProjectTool(server: McpServer): void {
   type Params = {
     projectPath: string;
     scheme: string;
@@ -168,8 +169,8 @@ export function registerIOSSimulatorTestByIdProjectTool(server: McpServer): void
 
   registerTool<Params>(
     server,
-    'test_ios_sim_id_proj',
-    'Runs tests for an iOS project on a simulator by UUID using xcodebuild test and parses xcresult output.',
+    'test_sim_id_proj',
+    'Runs tests for a project on a simulator by UUID using xcodebuild test and parses xcresult output.',
     {
       projectPath: projectPathSchema,
       scheme: schemeSchema,

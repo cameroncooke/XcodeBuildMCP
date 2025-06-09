@@ -149,6 +149,7 @@ export async function handleTestLogic(params: {
   configuration: string;
   simulatorName?: string;
   simulatorId?: string;
+  deviceId?: string;
   useLatestOS?: boolean;
   derivedDataPath?: string;
   extraArgs?: string[];
@@ -178,6 +179,7 @@ export async function handleTestLogic(params: {
         platform: params.platform,
         simulatorName: params.simulatorName,
         simulatorId: params.simulatorId,
+        deviceId: params.deviceId,
         useLatestOS: params.useLatestOS,
         logPrefix: 'Test Run',
       },

@@ -90,7 +90,7 @@ export function registerGetMacOSBundleIdTool(server: McpServer): void {
           content: [
             {
               type: 'text',
-              text: `Error extracting iOS bundle ID: ${errorMessage}`,
+              text: `Error extracting macOS bundle ID: ${errorMessage}`,
             },
             {
               type: 'text',
@@ -104,17 +104,17 @@ export function registerGetMacOSBundleIdTool(server: McpServer): void {
 }
 
 /**
- * Extracts the bundle identifier from an iOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_ios_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_ios_bundle_id.
+ * Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, watchOS, tvOS, visionOS). IMPORTANT: You MUST provide the appPath parameter. Example: get_app_bundle_id({ appPath: '/path/to/your/app.app' })
  */
-export function registerGetiOSBundleIdTool(server: McpServer): void {
+export function registerGetAppBundleIdTool(server: McpServer): void {
   server.tool(
-    'get_ios_bundle_id',
-    "Extracts the bundle identifier from an iOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_ios_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_ios_bundle_id.",
+    'get_app_bundle_id',
+    "Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, iPadOS, watchOS, tvOS, visionOS). IMPORTANT: You MUST provide the appPath parameter. Example: get_app_bundle_id({ appPath: '/path/to/your/app.app' })",
     {
       appPath: z
         .string()
         .describe(
-          'Path to the iOS .app bundle to extract bundle ID from (full path to the .app directory)',
+          'Path to the .app bundle to extract bundle ID from (full path to the .app directory)',
         ),
     },
     async (params): Promise<ToolResponse> => {
@@ -128,7 +128,7 @@ export function registerGetiOSBundleIdTool(server: McpServer): void {
         return appPathExistsValidation.errorResponse!;
       }
 
-      log('info', `Starting bundle ID extraction for iOS app: ${params.appPath}`);
+      log('info', `Starting bundle ID extraction for app: ${params.appPath}`);
 
       try {
         let bundleId;
@@ -151,34 +151,37 @@ export function registerGetiOSBundleIdTool(server: McpServer): void {
           }
         }
 
-        log('info', `Extracted iOS bundle ID: ${bundleId}`);
+        log('info', `Extracted app bundle ID: ${bundleId}`);
 
         return {
           content: [
             {
               type: 'text',
-              text: ` Bundle ID for iOS app: ${bundleId}`,
+              text: ` Bundle ID: ${bundleId}`,
             },
             {
               type: 'text',
               text: `Next Steps:
-- Launch in simulator: launch_app_in_simulator({ simulatorUuid: "YOUR_SIMULATOR_UUID", bundleId: "${bundleId}" })`,
+- Install in simulator: install_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", appPath: "${params.appPath}" })
+- Launch in simulator: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "${bundleId}" })
+- Or install on device: install_app_device({ deviceId: "DEVICE_UDID", appPath: "${params.appPath}" })
+- Or launch on device: launch_app_device({ deviceId: "DEVICE_UDID", bundleId: "${bundleId}" })`,
             },
           ],
         };
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        log('error', `Error extracting iOS bundle ID: ${errorMessage}`);
+        log('error', `Error extracting app bundle ID: ${errorMessage}`);
 
         return {
           content: [
             {
               type: 'text',
-              text: `Error extracting iOS bundle ID: ${errorMessage}`,
+              text: `Error extracting app bundle ID: ${errorMessage}`,
             },
             {
               type: 'text',
-              text: `Make sure the path points to a valid iOS app bundle (.app directory).`,
+              text: `Make sure the path points to a valid app bundle (.app directory).`,
             },
           ],
         };

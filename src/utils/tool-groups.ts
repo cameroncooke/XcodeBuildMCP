@@ -29,6 +29,9 @@ export enum ToolGroup {
   // Simulator device management
   SIMULATOR_MANAGEMENT = 'XCODEBUILDMCP_GROUP_SIMULATOR_MANAGEMENT',
 
+  // Physical device management
+  DEVICE_MANAGEMENT = 'XCODEBUILDMCP_GROUP_DEVICE_MANAGEMENT',
+
   // Application deployment tools
   APP_DEPLOYMENT = 'XCODEBUILDMCP_GROUP_APP_DEPLOYMENT',
 
