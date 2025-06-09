@@ -91,6 +91,7 @@ export interface PlatformBuildOptions {
   platform: XcodePlatform;
   simulatorName?: string;
   simulatorId?: string;
+  deviceId?: string;
   useLatestOS?: boolean;
   arch?: string;
   logPrefix: string;

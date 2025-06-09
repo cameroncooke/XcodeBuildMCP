@@ -14,6 +14,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
   - [Xcode project management](#xcode-project-management)
   - [Swift Package Manager](#swift-package-manager)
   - [Simulator management](#simulator-management)
+  - [Device management](#device-management)
   - [App utilities](#app-utilities)
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
@@ -24,6 +25,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
     - [Alternative installation method using mise](#alternative-installation-method-using-mise)
     - [Installing via Smithery](#installing-via-smithery)
 - [Incremental build support](#incremental-build-support)
+- [Code Signing for Device Deployment](#code-signing-for-device-deployment)
 - [Troubleshooting](#troubleshooting)
   - [Diagnostic Tool](#diagnostic-tool)
     - [Using with npx](#using-with-npx)
@@ -75,15 +77,25 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - **Clean Artifacts**: Remove build artifacts and derived data for fresh builds
 
 ### Simulator management
-- **Simulator Control**: List, boot, and open iOS simulators 
-- **App Deployment**: Install and launch apps on iOS simulators
+- **Simulator Control**: List, boot, and open simulators 
+- **App Deployment**: Install and launch apps on simulators
 - **Log Capture**: Capture run-time logs from a simulator
 - **UI Automation**: Interact with simulator UI elements (beta)
 - **Screenshot**: Capture screenshots from a simulator (beta)
 
+### Device management
+- **Device Discovery**: List connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro)
+- **App Deployment**: Build, install, and launch apps on physical Apple devices across all platforms
+- **Testing**: Run test suites on physical devices with detailed results and cross-platform support
+- **Log Capture**: Capture console output from apps running on physical Apple devices
+- **Wireless Connectivity**: Connect to physical devices over Wi-Fi
+
 ### App utilities
-- **Bundle ID Extraction**: Extract bundle identifiers from iOS and macOS app bundles
-- **App Launching**: Launch built applications on both simulators and macOS
+- **Bundle ID Extraction**: Extract bundle identifiers from app bundles across all Apple platforms
+- **App Launching**: Launch built applications on simulators, physical devices, and macOS
+- 
+> [!IMPORTANT]
+> Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
 
 ## Getting started
 
@@ -93,7 +105,7 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - Xcode 16.x or later
 - Node 18.x or later
 - AXe 1.0.0 or later (optional, required for UI automation)
-  
+
 ### UI Automation
 
 For UI automation features (tap, swipe, type etc.), you'll need to install AXe:
@@ -132,6 +144,7 @@ Configure your MCP client (Windsurf, Cursor, Claude Desktop, Claude Code etc.) t
   }
 }
 ```
+
 #### Alternative installation method using mise
 
 Alternatively, you can use XcodeBuildMCP without a specific installation of Node.js by using `mise` to install it:
@@ -173,9 +186,6 @@ To install XcodeBuildMCP Server for Claude Desktop automatically via [Smithery](
 npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client claude
 ```
 
-> [!IMPORTANT]
-> Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
-
 ## Incremental build support
 
 XcodeBuildMCP includes experimental support for incremental builds. This feature is disabled by default and can be enabled by setting the `INCREMENTAL_BUILDS_ENABLED` environment variable to `true`:
@@ -202,6 +212,18 @@ Example MCP client configuration:
 
 > [!IMPORTANT]
 > Please note that incremental builds support is currently highly experimental and your mileage may vary. Please report any issues you encounter to the [issue tracker](https://github.com/cameroncooke/XcodeBuildMCP/issues).
+
+## Code Signing for Device Deployment
+
+For device deployment features to work, code signing must be properly configured in Xcode **before** using XcodeBuildMCP device tools:
+
+1. Open your project in Xcode
+2. Select your project target
+3. Go to "Signing & Capabilities" tab
+4. Configure "Automatically manage signing" and select your development team
+5. Ensure a valid provisioning profile is selected
+
+> **Note**: XcodeBuildMCP cannot configure code signing automatically. This initial setup must be done once in Xcode, after which the MCP device tools can build, install, and test apps on physical devices.
 
 ## Troubleshooting
 

@@ -148,16 +148,29 @@ async function _handleGetAppPathLogic(params: {
       nextStepsText = `Next Steps:
 1. Get bundle ID: get_macos_bundle_id({ appPath: "${appPath}" })
 2. Launch the app: launch_macos_app({ appPath: "${appPath}" })`;
-    } else if (params.platform === XcodePlatform.iOSSimulator) {
+    } else if (isSimulatorPlatform) {
       nextStepsText = `Next Steps:
-1. Get bundle ID: get_ios_bundle_id({ appPath: "${appPath}" })
+1. Get bundle ID: get_app_bundle_id({ appPath: "${appPath}" })
 2. Boot simulator: boot_simulator({ simulatorUuid: "SIMULATOR_UUID" })
 3. Install app: install_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", appPath: "${appPath}" })
 4. Launch app: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`;
-    } else if (params.platform === XcodePlatform.iOS) {
+    } else if (
+      [
+        XcodePlatform.iOS,
+        XcodePlatform.watchOS,
+        XcodePlatform.tvOS,
+        XcodePlatform.visionOS,
+      ].includes(params.platform)
+    ) {
       nextStepsText = `Next Steps:
-1. Get bundle ID: get_ios_bundle_id({ appPath: "${appPath}" })
-2. Use Xcode to install the app on your connected iOS device`;
+1. Get bundle ID: get_app_bundle_id({ appPath: "${appPath}" })
+2. Install app on device: install_app_device({ deviceId: "DEVICE_UDID", appPath: "${appPath}" })
+3. Launch app on device: launch_app_device({ deviceId: "DEVICE_UDID", bundleId: "BUNDLE_ID" })`;
+    } else {
+      // For other platforms
+      nextStepsText = `Next Steps:
+1. The app has been built for ${params.platform}
+2. Use platform-specific deployment tools to install and run the app`;
     }
 
     return {
@@ -248,18 +261,22 @@ export function registerGetMacOSAppPathProjectTool(server: McpServer): void {
 }
 
 /**
- * Registers the get_ios_dev_app_path_ws tool
+ * Registers the get_device_app_path_ws tool
  */
-export function registerGetiOSDeviceAppPathWorkspaceTool(server: McpServer): void {
-  type Params = BaseWorkspaceParams & { configuration?: string };
+export function registerGetDeviceAppPathWorkspaceTool(server: McpServer): void {
+  type Params = BaseWorkspaceParams & { configuration?: string; platform?: string };
   registerTool<Params>(
     server,
-    'get_ios_dev_app_path_ws',
-    "Gets the app bundle path for an iOS physical device application using a workspace. IMPORTANT: Requires workspacePath and scheme. Example: get_ios_dev_app_path_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme' })",
+    'get_device_app_path_ws',
+    "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using a workspace. IMPORTANT: Requires workspacePath and scheme. Example: get_device_app_path_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme' })",
     {
       workspacePath: workspacePathSchema,
       scheme: schemeSchema,
       configuration: configurationSchema,
+      platform: z
+        .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
+        .optional()
+        .describe('Target platform (defaults to iOS)'),
     },
     async (params: Params) => {
       const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
@@ -268,10 +285,17 @@ export function registerGetiOSDeviceAppPathWorkspaceTool(server: McpServer): voi
       const schemeValidation = validateRequiredParam('scheme', params.scheme);
       if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
+      const platformMap: Record<string, XcodePlatform> = {
+        iOS: XcodePlatform.iOS,
+        watchOS: XcodePlatform.watchOS,
+        tvOS: XcodePlatform.tvOS,
+        visionOS: XcodePlatform.visionOS,
+      };
+
       return _handleGetAppPathLogic({
         ...params,
         configuration: params.configuration ?? 'Debug',
-        platform: XcodePlatform.iOS,
+        platform: platformMap[params.platform ?? 'iOS'],
         useLatestOS: true,
       });
     },
@@ -279,18 +303,22 @@ export function registerGetiOSDeviceAppPathWorkspaceTool(server: McpServer): voi
 }
 
 /**
- * Registers the get_ios_dev_app_path_proj tool
+ * Registers the get_device_app_path_proj tool
  */
-export function registerGetiOSDeviceAppPathProjectTool(server: McpServer): void {
-  type Params = BaseProjectParams & { configuration?: string };
+export function registerGetDeviceAppPathProjectTool(server: McpServer): void {
+  type Params = BaseProjectParams & { configuration?: string; platform?: string };
   registerTool<Params>(
     server,
-    'get_ios_dev_app_path_proj',
-    "Gets the app bundle path for an iOS physical device application using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_ios_dev_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
+    'get_device_app_path_proj',
+    "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_device_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
     {
       projectPath: projectPathSchema,
       scheme: schemeSchema,
       configuration: configurationSchema,
+      platform: z
+        .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
+        .optional()
+        .describe('Target platform (defaults to iOS)'),
     },
     async (params: Params) => {
       const projectValidation = validateRequiredParam('projectPath', params.projectPath);
@@ -299,10 +327,17 @@ export function registerGetiOSDeviceAppPathProjectTool(server: McpServer): void 
       const schemeValidation = validateRequiredParam('scheme', params.scheme);
       if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
+      const platformMap: Record<string, XcodePlatform> = {
+        iOS: XcodePlatform.iOS,
+        watchOS: XcodePlatform.watchOS,
+        tvOS: XcodePlatform.tvOS,
+        visionOS: XcodePlatform.visionOS,
+      };
+
       return _handleGetAppPathLogic({
         ...params,
         configuration: params.configuration ?? 'Debug',
-        platform: XcodePlatform.iOS,
+        platform: platformMap[params.platform ?? 'iOS'],
         useLatestOS: true,
       });
     },

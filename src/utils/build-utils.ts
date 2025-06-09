@@ -146,13 +146,29 @@ export async function executeXcodeBuildCommand(
         platformOptions.arch,
       );
     } else if (platformOptions.platform === XcodePlatform.iOS) {
-      destinationString = 'generic/platform=iOS';
+      if (platformOptions.deviceId) {
+        destinationString = `platform=iOS,id=${platformOptions.deviceId}`;
+      } else {
+        destinationString = 'generic/platform=iOS';
+      }
     } else if (platformOptions.platform === XcodePlatform.watchOS) {
-      destinationString = 'generic/platform=watchOS';
+      if (platformOptions.deviceId) {
+        destinationString = `platform=watchOS,id=${platformOptions.deviceId}`;
+      } else {
+        destinationString = 'generic/platform=watchOS';
+      }
     } else if (platformOptions.platform === XcodePlatform.tvOS) {
-      destinationString = 'generic/platform=tvOS';
+      if (platformOptions.deviceId) {
+        destinationString = `platform=tvOS,id=${platformOptions.deviceId}`;
+      } else {
+        destinationString = 'generic/platform=tvOS';
+      }
     } else if (platformOptions.platform === XcodePlatform.visionOS) {
-      destinationString = 'generic/platform=visionOS';
+      if (platformOptions.deviceId) {
+        destinationString = `platform=visionOS,id=${platformOptions.deviceId}`;
+      } else {
+        destinationString = 'generic/platform=visionOS';
+      }
     } else {
       return createTextResponse(`Unsupported platform: ${platformOptions.platform}`, true);
     }

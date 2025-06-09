@@ -6,31 +6,31 @@ import {
   registerMacOSBuildAndRunProjectTool,
 } from '../tools/build_macos.js';
 
-// Import iOS simulator build tools
+// Import simulator build tools
 import {
-  registerIOSSimulatorBuildByNameWorkspaceTool,
-  registerIOSSimulatorBuildByNameProjectTool,
-  registerIOSSimulatorBuildByIdWorkspaceTool,
-  registerIOSSimulatorBuildByIdProjectTool,
-  registerIOSSimulatorBuildAndRunByNameWorkspaceTool,
-  registerIOSSimulatorBuildAndRunByNameProjectTool,
-  registerIOSSimulatorBuildAndRunByIdWorkspaceTool,
-  registerIOSSimulatorBuildAndRunByIdProjectTool,
+  registerSimulatorBuildByNameWorkspaceTool,
+  registerSimulatorBuildByNameProjectTool,
+  registerSimulatorBuildByIdWorkspaceTool,
+  registerSimulatorBuildByIdProjectTool,
+  registerSimulatorBuildAndRunByNameWorkspaceTool,
+  registerSimulatorBuildAndRunByNameProjectTool,
+  registerSimulatorBuildAndRunByIdWorkspaceTool,
+  registerSimulatorBuildAndRunByIdProjectTool,
 } from '../tools/build_ios_simulator.js';
 
-// Import iOS device build tools
-import { registerIOSDeviceBuildTools } from '../tools/build_ios_device.js';
+// Import device build tools
+import { registerDeviceBuildTools } from '../tools/build_ios_device.js';
 
-// Import test tools  
+// Import simulator test tools
 import {
-  registerIOSSimulatorTestByNameWorkspaceTool,
-  registerIOSSimulatorTestByNameProjectTool,
-  registerIOSSimulatorTestByIdWorkspaceTool,
-  registerIOSSimulatorTestByIdProjectTool,
+  registerSimulatorTestByNameWorkspaceTool,
+  registerSimulatorTestByNameProjectTool,
+  registerSimulatorTestByIdWorkspaceTool,
+  registerSimulatorTestByIdProjectTool,
 } from '../tools/test_ios_simulator.js';
 import {
-  registerIOSDeviceTestWorkspaceTool,
-  registerIOSDeviceTestProjectTool,
+  registerAppleDeviceTestWorkspaceTool,
+  registerAppleDeviceTestProjectTool,
 } from '../tools/test_ios_device.js';
 import {
   registerMacOSTestWorkspaceTool,
@@ -38,14 +38,18 @@ import {
 } from '../tools/test_macos.js';
 
 // Import device discovery tools
-import { registerListDevicesTool } from '../tools/device.js';
+import {
+  registerListDevicesTool,
+  registerInstallAppDeviceTool,
+  registerLaunchAppDeviceTool,
+} from '../tools/device.js';
 
 // Import app path tools
 import {
   registerGetMacOSAppPathWorkspaceTool,
   registerGetMacOSAppPathProjectTool,
-  registerGetiOSDeviceAppPathWorkspaceTool,
-  registerGetiOSDeviceAppPathProjectTool,
+  registerGetDeviceAppPathWorkspaceTool,
+  registerGetDeviceAppPathProjectTool,
   registerGetSimulatorAppPathByNameWorkspaceTool,
   registerGetSimulatorAppPathByNameProjectTool,
   registerGetSimulatorAppPathByIdWorkspaceTool,
@@ -76,7 +80,7 @@ import {
 } from '../tools/simulator.js';
 
 // Import bundle ID tools
-import { registerGetMacOSBundleIdTool, registerGetiOSBundleIdTool } from '../tools/bundleId.js';
+import { registerGetMacOSBundleIdTool, registerGetAppBundleIdTool } from '../tools/bundleId.js';
 
 // Import swift package tools
 import { registerBuildSwiftPackageTool } from '../tools/build-swift-package.js';
@@ -102,6 +106,12 @@ import {
   registerStartSimulatorLogCaptureTool,
   registerStopAndGetSimulatorLogTool,
 } from '../tools/log.js';
+
+// Import device log capture tools
+import {
+  registerStartDeviceLogCaptureTool,
+  registerStopDeviceLogCaptureTool,
+} from '../tools/device_log.js';
 
 // Import axe tools
 import { registerAxeTools } from '../tools/axe.js';
@@ -146,7 +156,7 @@ const toolRegistrations = [
   },
   {
     register: registerListDevicesTool,
-    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.PROJECT_DISCOVERY],
+    groups: [ToolGroup.DEVICE_MANAGEMENT, ToolGroup.PROJECT_DISCOVERY],
     envVar: 'XCODEBUILDMCP_TOOL_LIST_DEVICES',
   },
   {
@@ -238,83 +248,83 @@ const toolRegistrations = [
 
   // iOS Simulator build tools
   {
-    register: registerIOSSimulatorBuildByNameWorkspaceTool,
+    register: registerSimulatorBuildByNameWorkspaceTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_BUILD_BY_NAME_WORKSPACE',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_BUILD_BY_NAME_WORKSPACE',
   },
   {
-    register: registerIOSSimulatorBuildByNameProjectTool,
+    register: registerSimulatorBuildByNameProjectTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_BUILD_BY_NAME_PROJECT',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_BUILD_BY_NAME_PROJECT',
   },
   {
-    register: registerIOSSimulatorBuildByIdWorkspaceTool,
+    register: registerSimulatorBuildByIdWorkspaceTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_BUILD_BY_ID_WORKSPACE',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_BUILD_BY_ID_WORKSPACE',
   },
   {
-    register: registerIOSSimulatorBuildByIdProjectTool,
+    register: registerSimulatorBuildByIdProjectTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_BUILD_BY_ID_PROJECT',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_BUILD_BY_ID_PROJECT',
   },
   {
-    register: registerIOSSimulatorBuildAndRunByNameWorkspaceTool,
+    register: registerSimulatorBuildAndRunByNameWorkspaceTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.APP_DEPLOYMENT],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_BUILD_AND_RUN_BY_NAME_WORKSPACE',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_BUILD_AND_RUN_BY_NAME_WORKSPACE',
   },
   {
-    register: registerIOSSimulatorBuildAndRunByNameProjectTool,
+    register: registerSimulatorBuildAndRunByNameProjectTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.APP_DEPLOYMENT],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_BUILD_AND_RUN_BY_NAME_PROJECT',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_BUILD_AND_RUN_BY_NAME_PROJECT',
   },
   {
-    register: registerIOSSimulatorBuildAndRunByIdWorkspaceTool,
+    register: registerSimulatorBuildAndRunByIdWorkspaceTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.APP_DEPLOYMENT],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_BUILD_AND_RUN_BY_ID_WORKSPACE',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_BUILD_AND_RUN_BY_ID_WORKSPACE',
   },
   {
-    register: registerIOSSimulatorBuildAndRunByIdProjectTool,
+    register: registerSimulatorBuildAndRunByIdProjectTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.APP_DEPLOYMENT],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_BUILD_AND_RUN_BY_ID_PROJECT',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_BUILD_AND_RUN_BY_ID_PROJECT',
   },
 
   // iOS Device build tools
   {
-    register: registerIOSDeviceBuildTools,
+    register: registerDeviceBuildTools,
     groups: [ToolGroup.IOS_DEVICE_WORKFLOW],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_DEVICE_BUILD_TOOLS',
+    envVar: 'XCODEBUILDMCP_TOOL_DEVICE_BUILD_TOOLS',
   },
 
   // Test tools
   {
-    register: registerIOSSimulatorTestByNameWorkspaceTool,
+    register: registerSimulatorTestByNameWorkspaceTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_TEST_BY_NAME_WORKSPACE',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_TEST_BY_NAME_WORKSPACE',
   },
   {
-    register: registerIOSSimulatorTestByNameProjectTool,
+    register: registerSimulatorTestByNameProjectTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_TEST_BY_NAME_PROJECT',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_TEST_BY_NAME_PROJECT',
   },
   {
-    register: registerIOSSimulatorTestByIdWorkspaceTool,
+    register: registerSimulatorTestByIdWorkspaceTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_TEST_BY_ID_WORKSPACE',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_TEST_BY_ID_WORKSPACE',
   },
   {
-    register: registerIOSSimulatorTestByIdProjectTool,
+    register: registerSimulatorTestByIdProjectTool,
     groups: [ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.TESTING],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_SIMULATOR_TEST_BY_ID_PROJECT',
+    envVar: 'XCODEBUILDMCP_TOOL_SIMULATOR_TEST_BY_ID_PROJECT',
   },
   {
-    register: registerIOSDeviceTestWorkspaceTool,
-    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.TESTING],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_DEVICE_TEST_WORKSPACE',
+    register: registerAppleDeviceTestWorkspaceTool,
+    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.TESTING, ToolGroup.DEVICE_MANAGEMENT],
+    envVar: 'XCODEBUILDMCP_TOOL_DEVICE_TEST_WORKSPACE',
   },
   {
-    register: registerIOSDeviceTestProjectTool,
-    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.TESTING],
-    envVar: 'XCODEBUILDMCP_TOOL_IOS_DEVICE_TEST_PROJECT',
+    register: registerAppleDeviceTestProjectTool,
+    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.TESTING, ToolGroup.DEVICE_MANAGEMENT],
+    envVar: 'XCODEBUILDMCP_TOOL_DEVICE_TEST_PROJECT',
   },
   {
     register: registerMacOSTestWorkspaceTool,
@@ -339,14 +349,24 @@ const toolRegistrations = [
     envVar: 'XCODEBUILDMCP_TOOL_GET_MACOS_APP_PATH_PROJECT',
   },
   {
-    register: registerGetiOSDeviceAppPathWorkspaceTool,
-    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.APP_DEPLOYMENT, ToolGroup.PROJECT_DISCOVERY],
-    envVar: 'XCODEBUILDMCP_TOOL_GET_IOS_DEVICE_APP_PATH_WORKSPACE',
+    register: registerGetDeviceAppPathWorkspaceTool,
+    groups: [
+      ToolGroup.IOS_DEVICE_WORKFLOW,
+      ToolGroup.APP_DEPLOYMENT,
+      ToolGroup.PROJECT_DISCOVERY,
+      ToolGroup.DEVICE_MANAGEMENT,
+    ],
+    envVar: 'XCODEBUILDMCP_TOOL_GET_DEVICE_APP_PATH_WORKSPACE',
   },
   {
-    register: registerGetiOSDeviceAppPathProjectTool,
-    groups: [ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.APP_DEPLOYMENT, ToolGroup.PROJECT_DISCOVERY],
-    envVar: 'XCODEBUILDMCP_TOOL_GET_IOS_DEVICE_APP_PATH_PROJECT',
+    register: registerGetDeviceAppPathProjectTool,
+    groups: [
+      ToolGroup.IOS_DEVICE_WORKFLOW,
+      ToolGroup.APP_DEPLOYMENT,
+      ToolGroup.PROJECT_DISCOVERY,
+      ToolGroup.DEVICE_MANAGEMENT,
+    ],
+    envVar: 'XCODEBUILDMCP_TOOL_GET_DEVICE_APP_PATH_PROJECT',
   },
   {
     register: registerGetSimulatorAppPathByNameWorkspaceTool,
@@ -438,6 +458,17 @@ const toolRegistrations = [
     groups: [ToolGroup.APP_DEPLOYMENT, ToolGroup.IOS_SIMULATOR_WORKFLOW, ToolGroup.DIAGNOSTICS],
     envVar: 'XCODEBUILDMCP_TOOL_LAUNCH_APP_WITH_LOGS_IN_SIMULATOR',
   },
+  {
+    register: registerInstallAppDeviceTool,
+    groups: [ToolGroup.APP_DEPLOYMENT, ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.DEVICE_MANAGEMENT],
+    envVar: 'XCODEBUILDMCP_TOOL_INSTALL_APP_DEVICE',
+    isWriteTool: true,
+  },
+  {
+    register: registerLaunchAppDeviceTool,
+    groups: [ToolGroup.APP_DEPLOYMENT, ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.DEVICE_MANAGEMENT],
+    envVar: 'XCODEBUILDMCP_TOOL_LAUNCH_APP_DEVICE',
+  },
 
   // Bundle ID tools
   {
@@ -446,14 +477,16 @@ const toolRegistrations = [
     envVar: 'XCODEBUILDMCP_TOOL_GET_MACOS_BUNDLE_ID',
   },
   {
-    register: registerGetiOSBundleIdTool,
+    register: registerGetAppBundleIdTool,
     groups: [
       ToolGroup.IOS_SIMULATOR_WORKFLOW,
       ToolGroup.IOS_DEVICE_WORKFLOW,
       ToolGroup.APP_DEPLOYMENT,
       ToolGroup.PROJECT_DISCOVERY,
+      ToolGroup.SIMULATOR_MANAGEMENT,
+      ToolGroup.DEVICE_MANAGEMENT,
     ],
-    envVar: 'XCODEBUILDMCP_TOOL_GET_IOS_BUNDLE_ID',
+    envVar: 'XCODEBUILDMCP_TOOL_GET_APP_BUNDLE_ID',
   },
 
   // Launch tools
@@ -473,6 +506,18 @@ const toolRegistrations = [
     register: registerStopAndGetSimulatorLogTool,
     groups: [ToolGroup.DIAGNOSTICS, ToolGroup.IOS_SIMULATOR_WORKFLOW],
     envVar: 'XCODEBUILDMCP_TOOL_STOP_AND_GET_SIMULATOR_LOG',
+  },
+
+  // Device log capture tools
+  {
+    register: registerStartDeviceLogCaptureTool,
+    groups: [ToolGroup.DIAGNOSTICS, ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.DEVICE_MANAGEMENT],
+    envVar: 'XCODEBUILDMCP_TOOL_START_DEVICE_LOG_CAPTURE',
+  },
+  {
+    register: registerStopDeviceLogCaptureTool,
+    groups: [ToolGroup.DIAGNOSTICS, ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.DEVICE_MANAGEMENT],
+    envVar: 'XCODEBUILDMCP_TOOL_STOP_DEVICE_LOG_CAPTURE',
   },
 
   // UI automation tools
