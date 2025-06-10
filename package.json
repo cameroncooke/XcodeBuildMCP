@@ -1,6 +1,6 @@
 {
   "name": "xcodebuildmcp",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "templateVersion": "v1.0.2",
   "main": "build/index.js",
   "type": "module",
