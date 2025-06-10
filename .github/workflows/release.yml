@@ -54,13 +54,14 @@ jobs:
             echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
             echo "IS_TEST=true" >> $GITHUB_OUTPUT
             echo "📝 Test version: $VERSION"
+            # Update package.json version for test releases only
+            npm version $VERSION --no-git-tag-version
           else
             VERSION=${GITHUB_REF#refs/tags/v}
             echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
             echo "IS_TEST=false" >> $GITHUB_OUTPUT
             echo "🚀 Release version: $VERSION"
-            # Update package.json version for production releases
-            npm version $VERSION --no-git-tag-version
+            # For tag-based releases, package.json was already updated by release script
           fi
 
       - name: Create package
