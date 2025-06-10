@@ -42,6 +42,7 @@ import {
   registerListDevicesTool,
   registerInstallAppDeviceTool,
   registerLaunchAppDeviceTool,
+  registerStopAppDeviceTool,
 } from '../tools/device.js';
 
 // Import app path tools
@@ -72,6 +73,7 @@ import {
   registerInstallAppInSimulatorTool,
   registerLaunchAppInSimulatorTool,
   registerLaunchAppWithLogsInSimulatorTool,
+  registerStopAppInSimulatorTool,
   registerSetSimulatorAppearanceTool,
   registerSetSimulatorLocationTool,
   registerResetSimulatorLocationTool,
@@ -96,7 +98,7 @@ import {
 import { registerCleanWorkspaceTool, registerCleanProjectTool } from '../tools/clean.js';
 
 // Import launch tools
-import { registerLaunchMacOSAppTool } from '../tools/launch.js';
+import { registerLaunchMacOSAppTool, registerStopMacOSAppTool } from '../tools/launch.js';
 
 // Import project/workspace discovery tool
 import { registerDiscoverProjectsTool } from '../tools/discover_projects.js';
@@ -459,6 +461,12 @@ const toolRegistrations = [
     envVar: 'XCODEBUILDMCP_TOOL_LAUNCH_APP_WITH_LOGS_IN_SIMULATOR',
   },
   {
+    register: registerStopAppInSimulatorTool,
+    groups: [ToolGroup.APP_DEPLOYMENT, ToolGroup.IOS_SIMULATOR_WORKFLOW],
+    envVar: 'XCODEBUILDMCP_TOOL_STOP_APP_IN_SIMULATOR',
+    isWriteTool: true,
+  },
+  {
     register: registerInstallAppDeviceTool,
     groups: [ToolGroup.APP_DEPLOYMENT, ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.DEVICE_MANAGEMENT],
     envVar: 'XCODEBUILDMCP_TOOL_INSTALL_APP_DEVICE',
@@ -468,6 +476,12 @@ const toolRegistrations = [
     register: registerLaunchAppDeviceTool,
     groups: [ToolGroup.APP_DEPLOYMENT, ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.DEVICE_MANAGEMENT],
     envVar: 'XCODEBUILDMCP_TOOL_LAUNCH_APP_DEVICE',
+  },
+  {
+    register: registerStopAppDeviceTool,
+    groups: [ToolGroup.APP_DEPLOYMENT, ToolGroup.IOS_DEVICE_WORKFLOW, ToolGroup.DEVICE_MANAGEMENT],
+    envVar: 'XCODEBUILDMCP_TOOL_STOP_APP_DEVICE',
+    isWriteTool: true,
   },
 
   // Bundle ID tools
@@ -494,6 +508,12 @@ const toolRegistrations = [
     register: registerLaunchMacOSAppTool,
     groups: [ToolGroup.MACOS_WORKFLOW, ToolGroup.APP_DEPLOYMENT],
     envVar: 'XCODEBUILDMCP_TOOL_LAUNCH_MACOS_APP',
+  },
+  {
+    register: registerStopMacOSAppTool,
+    groups: [ToolGroup.MACOS_WORKFLOW, ToolGroup.APP_DEPLOYMENT],
+    envVar: 'XCODEBUILDMCP_TOOL_STOP_MACOS_APP',
+    isWriteTool: true,
   },
 
   // Log capture tools
