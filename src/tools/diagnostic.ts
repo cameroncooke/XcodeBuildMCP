@@ -18,7 +18,7 @@ import { ToolResponse } from '../types/common.js';
 import { log } from '../utils/logger.js';
 import { execSync } from 'child_process';
 import { version } from '../version.js';
-import { areAxeToolsAvailable } from '../utils/axe-setup.js';
+import { areAxeToolsAvailable } from '../utils/axe-helpers.js';
 import { isXcodemakeEnabled, isXcodemakeAvailable, doesMakefileExist } from '../utils/xcodemake.js';
 import * as os from 'os';
 import { ToolGroup, isSelectiveToolsEnabled, listEnabledGroups } from '../utils/tool-groups.js';
@@ -259,7 +259,7 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
     features: {
       axe: {
         available: axeAvailable,
-        uiAutomationSupported: axeAvailable && binaryStatus['axe'].available,
+        uiAutomationSupported: axeAvailable,
       },
       xcodemake: {
         enabled: xcodemakeEnabled,

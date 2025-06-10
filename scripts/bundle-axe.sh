@@ -43,6 +43,10 @@ if [ -d "$AXE_LOCAL_DIR" ] && [ -f "$AXE_LOCAL_DIR/Package.swift" ]; then
     echo "📦 Copying AXe binary..."
     cp ".build/release/axe" "$BUNDLED_DIR/"
     
+    # Fix rpath to find frameworks in Frameworks/ subdirectory
+    echo "🔧 Configuring AXe binary rpath for bundled frameworks..."
+    install_name_tool -add_rpath "@executable_path/Frameworks" "$BUNDLED_DIR/axe"
+    
     # Create Frameworks directory and copy frameworks
     echo "📦 Copying frameworks..."
     mkdir -p "$BUNDLED_DIR/Frameworks"

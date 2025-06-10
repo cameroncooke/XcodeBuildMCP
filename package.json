@@ -11,7 +11,7 @@
   "scripts": {
     "build": "node -e \"const fs = require('fs'); const pkg = require('./package.json'); fs.writeFileSync('src/version.ts', \\`export const version = '\\${pkg.version}';\\nexport const templateVersion = '\\${pkg.templateVersion}';\\n\\`)\" && tsup",
     "build:watch": "npm run build && tsup --watch",
-    "bundle:axe": "scripts/build-axe.sh",
+    "bundle:axe": "scripts/bundle-axe.sh",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
     "format": "prettier --write 'src/**/*.{js,ts}'",

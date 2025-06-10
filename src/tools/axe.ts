@@ -16,8 +16,8 @@ import {
   createAxeNotAvailableResponse,
   getAxePath,
   getBundledAxeEnvironment,
-} from '../utils/axe-setup.js';
-import { areAxeToolsAvailable } from '../utils/axe-setup.js';
+} from '../utils/axe-helpers.js';
+import { areAxeToolsAvailable } from '../utils/axe-helpers.js';
 const LOG_PREFIX = '[AXe]';
 
 // Session tracking for describe_ui warnings
