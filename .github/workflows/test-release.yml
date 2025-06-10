@@ -1,0 +1,82 @@
+name: Test Release (Dry Run)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Test version (e.g., 1.9.1-test)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  test-release:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Swift (ensure latest)
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9"
+
+      - name: Build AXe artifacts
+        run: npm run build:axe
+
+      - name: Verify AXe bundle
+        run: |
+          echo "Verifying bundled AXe artifacts..."
+          ls -la bundled/
+          ls -la bundled/Frameworks/
+          # Test the bundled binary
+          DYLD_FRAMEWORK_PATH="./bundled/Frameworks" ./bundled/axe --version
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run format check
+        run: npm run format:check
+
+      - name: Test version update (dry run)
+        run: |
+          echo "Would update version to: ${{ github.event.inputs.version }}"
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version --dry-run
+
+      - name: Create package tarball (test)
+        run: |
+          echo "Creating test package..."
+          npm pack --dry-run
+          npm pack
+          ls -la *.tgz
+
+      - name: Test NPM publish (dry run)
+        run: |
+          echo "Testing NPM publish (dry run)..."
+          npm publish --dry-run --access public
+
+      - name: Summary
+        run: |
+          echo "🎉 Test release workflow completed successfully!"
+          echo "Version: ${{ github.event.inputs.version }}"
+          echo "Package size:"
+          ls -lh *.tgz
+          echo ""
+          echo "This was a dry run - no actual release was created."
