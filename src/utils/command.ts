@@ -27,12 +27,14 @@ export interface CommandResponse {
  * @param command An array of command and arguments
  * @param logPrefix Prefix for logging
  * @param useShell Whether to use shell execution (true) or direct execution (false)
+ * @param env Additional environment variables
  * @returns Promise resolving to command response with the process
  */
 export async function executeCommand(
   command: string[],
   logPrefix?: string,
   useShell: boolean = true,
+  env?: Record<string, string>,
 ): Promise<CommandResponse> {
   // Properly escape arguments for shell
   let escapedCommand = command;
@@ -62,34 +64,40 @@ export async function executeCommand(
     const executable = escapedCommand[0];
     const args = escapedCommand.slice(1);
 
-    const process = spawn(executable, args, {
+    const spawnOptions: any = {
       stdio: ['ignore', 'pipe', 'pipe'], // ignore stdin, pipe stdout/stderr
-    });
+    };
+
+    if (env) {
+      spawnOptions.env = { ...process.env, ...env };
+    }
+
+    const childProcess = spawn(executable, args, spawnOptions);
 
     let stdout = '';
     let stderr = '';
 
-    process.stdout.on('data', (data) => {
+    childProcess.stdout.on('data', (data) => {
       stdout += data.toString();
     });
 
-    process.stderr.on('data', (data) => {
+    childProcess.stderr.on('data', (data) => {
       stderr += data.toString();
     });
 
-    process.on('close', (code) => {
+    childProcess.on('close', (code) => {
       const success = code === 0;
       const response: CommandResponse = {
         success,
         output: stdout,
         error: success ? undefined : stderr,
-        process,
+        process: childProcess,
       };
 
       resolve(response);
     });
 
-    process.on('error', (err) => {
+    childProcess.on('error', (err) => {
       reject(err);
     });
   });
