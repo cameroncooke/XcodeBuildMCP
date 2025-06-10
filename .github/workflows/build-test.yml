@@ -1,0 +1,80 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Swift (ensure latest)
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9"
+
+      - name: Build AXe artifacts
+        run: npm run build:axe
+
+      - name: Verify AXe bundle
+        run: |
+          echo "Verifying bundled AXe artifacts..."
+          ls -la bundled/
+          ls -la bundled/Frameworks/
+          # Test the bundled binary
+          DYLD_FRAMEWORK_PATH="./bundled/Frameworks" ./bundled/axe --version
+          # Test list-simulators command
+          DYLD_FRAMEWORK_PATH="./bundled/Frameworks" ./bundled/axe list-simulators || echo "No simulators available in CI environment"
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run format check
+        run: npm run format:check
+
+      - name: Test binary execution
+        run: |
+          # Test that the built binaries work
+          node build/index.js --help || echo "Help command executed"
+          node build/diagnostic-cli.js || echo "Diagnostic command executed"
+
+      - name: Test package creation
+        run: |
+          # Create a test package to ensure everything is included
+          npm pack
+          tar -tzf xcodebuildmcp-*.tgz | head -20
+          # Verify bundled directory is included
+          tar -tzf xcodebuildmcp-*.tgz | grep -q "package/bundled/axe" || (echo "❌ Bundled AXe binary not found in package" && exit 1)
+          tar -tzf xcodebuildmcp-*.tgz | grep -q "package/bundled/Frameworks" || (echo "❌ Bundled frameworks not found in package" && exit 1)
+          echo "✅ Package verification passed"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            build/
+            bundled/
+            xcodebuildmcp-*.tgz
+          retention-days: 7

@@ -1,0 +1,149 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.9.1)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Swift (ensure latest)
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9"
+
+      - name: Build AXe artifacts
+        run: npm run build:axe
+
+      - name: Verify AXe bundle
+        run: |
+          echo "Verifying bundled AXe artifacts..."
+          ls -la bundled/
+          ls -la bundled/Frameworks/
+          # Test the bundled binary
+          DYLD_FRAMEWORK_PATH="./bundled/Frameworks" ./bundled/axe --version
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run format check
+        run: npm run format:check
+
+      - name: Update version (if manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git commit -m "chore: bump version to ${{ github.event.inputs.version }}"
+          git tag v${{ github.event.inputs.version }}
+          git push origin main --tags
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create package tarball
+        run: npm pack
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          name: Release v${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## Release v${{ steps.get_version.outputs.VERSION }}
+            
+            ### Features
+            - Bundled AXe binary and frameworks for zero-setup UI automation
+            - No manual installation required - works out of the box
+            
+            ### Installation
+            ```bash
+            npm install -g xcodebuildmcp@${{ steps.get_version.outputs.VERSION }}
+            ```
+            
+            Or use with npx:
+            ```bash
+            npx xcodebuildmcp@${{ steps.get_version.outputs.VERSION }}
+            ```
+            
+            ### What's Included
+            - Latest AXe binary built from [cameroncooke/axe](https://github.com/cameroncooke/axe)
+            - All required frameworks (FBControlCore, FBDeviceControl, FBSimulatorControl, XCTestBootstrap)
+            - Full XcodeBuildMCP functionality with UI automation support
+          files: |
+            xcodebuildmcp-${{ steps.get_version.outputs.VERSION }}.tgz
+          draft: false
+          prerelease: false
+
+      - name: Publish to NPM
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Update release with NPM link
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## Release v${{ steps.get_version.outputs.VERSION }}
+            
+            ### Features
+            - Bundled AXe binary and frameworks for zero-setup UI automation
+            - No manual installation required - works out of the box
+            
+            ### Installation
+            ```bash
+            npm install -g xcodebuildmcp@${{ steps.get_version.outputs.VERSION }}
+            ```
+            
+            Or use with npx:
+            ```bash
+            npx xcodebuildmcp@${{ steps.get_version.outputs.VERSION }}
+            ```
+            
+            📦 **NPM Package**: https://www.npmjs.com/package/xcodebuildmcp/v/${{ steps.get_version.outputs.VERSION }}
+            
+            ### What's Included
+            - Latest AXe binary built from [cameroncooke/axe](https://github.com/cameroncooke/axe)
+            - All required frameworks (FBControlCore, FBDeviceControl, FBSimulatorControl, XCTestBootstrap)
+            - Full XcodeBuildMCP functionality with UI automation support
+          append_body: false
