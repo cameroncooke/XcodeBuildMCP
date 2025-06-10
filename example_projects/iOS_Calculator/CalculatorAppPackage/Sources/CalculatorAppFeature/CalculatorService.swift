@@ -143,6 +143,23 @@ public final class CalculatorService {
         isNewCalculation = true
     }
     
+    public func deleteLastDigit() {
+        guard !hasError else { clear(); return }
+        
+        if shouldResetDisplay || isNewCalculation {
+            display = "0"
+            shouldResetDisplay = false
+            isNewCalculation = false
+        } else if display.count > 1 {
+            display.removeLast()
+            if display == "-" { display = "0" }
+        } else {
+            display = "0"
+        }
+        currentNumber = Double(display) ?? 0
+        updateExpressionDisplay()
+    }
+    
     // MARK: - Private Helpers
     private func setError(_ message: String) {
         hasError = true

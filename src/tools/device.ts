@@ -49,11 +49,16 @@ interface DeviceCtlDevice {
     name?: string;
     osVersionNumber?: string;
     platformIdentifier?: string;
+    developerModeStatus?: string;
   };
   hardwareProperties?: {
     cpuArchitecture?: string;
     platform?: string;
     productType?: string;
+    udid?: string;
+    cpuType?: {
+      name?: string;
+    };
   };
   visibilityClass?: string;
 }
@@ -129,17 +134,23 @@ export function registerListDevicesTool(server: McpServer): void {
                 const transportType = device.connectionProperties?.transportType || '';
 
                 let state = 'Unknown';
-                if (pairingState === 'paired' && tunnelState === 'connected') {
-                  state = 'Available';
-                } else if (pairingState === 'paired') {
-                  state = 'Paired (not connected)';
+                // Consider a device available if it's paired, regardless of tunnel state
+                // This allows WiFi-connected devices to be used even if tunnelState isn't "connected"
+                if (pairingState === 'paired') {
+                  if (tunnelState === 'connected') {
+                    state = 'Available';
+                  } else {
+                    // Device is paired but tunnel state may be different for WiFi connections
+                    // Still mark as available since devicectl commands can work with paired devices
+                    state = 'Available (WiFi)';
+                  }
                 } else {
                   state = 'Unpaired';
                 }
 
                 devices.push({
                   name: device.deviceProperties?.name || 'Unknown Device',
-                  identifier: device.hardwareProperties?.udid || device.identifier,
+                  identifier: device.identifier,
                   platform: platform,
                   model:
                     device.deviceProperties?.marketingName ||
@@ -217,7 +228,8 @@ export function registerListDevicesTool(server: McpServer): void {
         } else {
           // Group devices by availability status
           const availableDevices = uniqueDevices.filter(
-            (d) => d.state === 'Available' || d.state === 'Connected',
+            (d) =>
+              d.state === 'Available' || d.state === 'Available (WiFi)' || d.state === 'Connected',
           );
           const pairedDevices = uniqueDevices.filter((d) => d.state === 'Paired (not connected)');
           const unpairedDevices = uniqueDevices.filter((d) => d.state === 'Unpaired');
@@ -265,7 +277,8 @@ export function registerListDevicesTool(server: McpServer): void {
 
         // Add next steps
         const availableDevicesExist = uniqueDevices.some(
-          (d) => d.state === 'Available' || d.state === 'Connected',
+          (d) =>
+            d.state === 'Available' || d.state === 'Available (WiFi)' || d.state === 'Connected',
         );
 
         if (availableDevicesExist) {
@@ -398,8 +411,23 @@ export function registerLaunchAppDeviceTool(server: McpServer): void {
       log('info', `Launching app ${bundleId} on device ${deviceId}`);
 
       try {
+        // Use JSON output to capture process ID
+        const tempJsonPath = join(tmpdir(), `launch-${Date.now()}.json`);
+
         const result = await executeCommand(
-          ['xcrun', 'devicectl', 'device', 'process', 'launch', '--device', deviceId, bundleId],
+          [
+            'xcrun',
+            'devicectl',
+            'device',
+            'process',
+            'launch',
+            '--device',
+            deviceId,
+            '--json-output',
+            tempJsonPath,
+            '--terminate-existing',
+            bundleId,
+          ],
           'Launch app on device',
         );
 
@@ -415,11 +443,33 @@ export function registerLaunchAppDeviceTool(server: McpServer): void {
           };
         }
 
+        // Parse JSON to extract process ID
+        let processId: number | undefined;
+        try {
+          const jsonContent = await fs.readFile(tempJsonPath, 'utf8');
+          const launchData = JSON.parse(jsonContent);
+          processId = launchData.result?.process?.processIdentifier;
+
+          // Clean up temp file
+          await fs.unlink(tempJsonPath).catch(() => {});
+        } catch (error) {
+          log('warn', `Failed to parse launch JSON output: ${error}`);
+        }
+
+        let responseText = `✅ App launched successfully\n\n${result.output}`;
+
+        if (processId) {
+          responseText += `\n\nProcess ID: ${processId}`;
+          responseText += `\n\nNext Steps:`;
+          responseText += `\n1. Interact with your app on the device`;
+          responseText += `\n2. Stop the app: stop_app_device({ deviceId: "${deviceId}", processId: ${processId} })`;
+        }
+
         return {
           content: [
             {
               type: 'text',
-              text: `✅ App launched successfully\n\n${result.output}`,
+              text: responseText,
             },
           ],
         };
@@ -431,6 +481,78 @@ export function registerLaunchAppDeviceTool(server: McpServer): void {
             {
               type: 'text',
               text: `Failed to launch app on device: ${errorMessage}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+}
+
+/**
+ * Stops an app running on a physical Apple device
+ */
+const processIdSchema = z.number().describe('Process ID (PID) of the app to stop');
+
+export function registerStopAppDeviceTool(server: McpServer): void {
+  registerTool(
+    server,
+    'stop_app_device',
+    'Stops an app running on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and processId.',
+    {
+      deviceId: deviceIdSchema,
+      processId: processIdSchema,
+    },
+    async (args): Promise<ToolResponse> => {
+      const { deviceId, processId } = args;
+
+      log('info', `Stopping app with PID ${processId} on device ${deviceId}`);
+
+      try {
+        const result = await executeCommand(
+          [
+            'xcrun',
+            'devicectl',
+            'device',
+            'process',
+            'terminate',
+            '--device',
+            deviceId,
+            '--pid',
+            processId.toString(),
+          ],
+          'Stop app on device',
+        );
+
+        if (!result.success) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Failed to stop app: ${result.error}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `✅ App stopped successfully\n\n${result.output}`,
+            },
+          ],
+        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        log('error', `Error stopping app on device: ${errorMessage}`);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Failed to stop app on device: ${errorMessage}`,
             },
           ],
           isError: true,

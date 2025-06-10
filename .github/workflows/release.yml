@@ -1,0 +1,124 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Test version (e.g., 1.9.1-test)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Bundle AXe artifacts
+        run: npm run bundle:axe
+
+      - name: Build TypeScript
+        run: npm run build
+
+      - name: Get version from tag or input
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+            echo "IS_TEST=true" >> $GITHUB_OUTPUT
+            echo "📝 Test version: $VERSION"
+          else
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+            echo "IS_TEST=false" >> $GITHUB_OUTPUT
+            echo "🚀 Release version: $VERSION"
+            # Update package.json version for production releases
+            npm version $VERSION --no-git-tag-version
+          fi
+
+      - name: Create package
+        run: npm pack
+
+      - name: Test publish (dry run for manual triggers)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "🧪 Testing package creation (dry run)"
+          npm publish --dry-run --access public
+
+      - name: Publish to NPM (production releases only)
+        if: github.event_name == 'push'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release (production releases only)
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          name: Release v${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## Release v${{ steps.get_version.outputs.VERSION }}
+            
+            ### Features
+            - Bundled AXe binary and frameworks for zero-setup UI automation
+            - No manual installation required - works out of the box
+            
+            ### Installation
+            ```bash
+            npm install -g xcodebuildmcp@${{ steps.get_version.outputs.VERSION }}
+            ```
+            
+            Or use with npx:
+            ```bash
+            npx xcodebuildmcp@${{ steps.get_version.outputs.VERSION }}
+            ```
+            
+            📦 **NPM Package**: https://www.npmjs.com/package/xcodebuildmcp/v/${{ steps.get_version.outputs.VERSION }}
+            
+            ### What's Included
+            - Latest AXe binary from [cameroncooke/axe](https://github.com/cameroncooke/axe)
+            - All required frameworks (FBControlCore, FBDeviceControl, FBSimulatorControl, XCTestBootstrap)
+            - Full XcodeBuildMCP functionality with UI automation support
+          files: |
+            xcodebuildmcp-${{ steps.get_version.outputs.VERSION }}.tgz
+          draft: false
+          prerelease: false
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.get_version.outputs.IS_TEST }}" = "true" ]; then
+            echo "🧪 Test completed for version: ${{ steps.get_version.outputs.VERSION }}"
+            echo "Ready for production release!"
+          else
+            echo "🎉 Production release completed!"
+            echo "Version: ${{ steps.get_version.outputs.VERSION }}"
+            echo "📦 NPM: https://www.npmjs.com/package/xcodebuildmcp/v/${{ steps.get_version.outputs.VERSION }}"
+          fi

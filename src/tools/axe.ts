@@ -12,10 +12,12 @@ import { log } from '../utils/logger.js';
 import { createTextResponse, validateRequiredParam } from '../utils/validation.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../utils/errors.js';
 import { executeCommand } from '../utils/command.js';
-import { createAxeNotAvailableResponse } from '../utils/axe-setup.js';
+import {
+  createAxeNotAvailableResponse,
+  getAxePath,
+  getBundledAxeEnvironment,
+} from '../utils/axe-setup.js';
 import { areAxeToolsAvailable } from '../utils/axe-setup.js';
-
-const AXE_COMMAND = 'axe';
 const LOG_PREFIX = '[AXe]';
 
 // Session tracking for describe_ui warnings
@@ -54,14 +56,28 @@ async function executeAxeCommand(
   simulatorUuid: string,
   commandName: string,
 ): Promise<string> {
+  // Get the appropriate axe binary path
+  const axeBinary = getAxePath();
+  if (!axeBinary) {
+    throw new DependencyError('AXe binary not found');
+  }
+
   // Add --udid parameter to all commands
   const fullArgs = [...commandArgs, '--udid', simulatorUuid];
 
-  // Construct the full command array with AXE_COMMAND as the first element
-  const fullCommand = [AXE_COMMAND, ...fullArgs];
+  // Construct the full command array with the axe binary as the first element
+  const fullCommand = [axeBinary, ...fullArgs];
 
   try {
-    const result = await executeCommand(fullCommand, `${LOG_PREFIX}: ${commandName}`, false);
+    // Determine environment variables for bundled AXe
+    const axeEnv = axeBinary !== 'axe' ? getBundledAxeEnvironment() : undefined;
+
+    const result = await executeCommand(
+      fullCommand,
+      `${LOG_PREFIX}: ${commandName}`,
+      false,
+      axeEnv,
+    );
 
     if (!result.success) {
       throw new AxeError(

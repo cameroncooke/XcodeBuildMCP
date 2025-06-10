@@ -9,3 +9,7 @@ struct CalculatorApp: App {
         }
     }
 }
+
+#Preview {
+    ContentView()
+}

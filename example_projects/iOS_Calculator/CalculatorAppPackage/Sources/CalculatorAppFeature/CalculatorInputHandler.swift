@@ -31,4 +31,8 @@ struct CalculatorInputHandler {
             break // Ignore unknown inputs
         }
     }
+    
+    func deleteLastDigit() {
+        service.deleteLastDigit()
+    }
 }

@@ -5,13 +5,13 @@
   "main": "build/index.js",
   "type": "module",
   "bin": {
-    "xcodebuildmcp": "./build/index.js",
-    "xcodebuildmcp-diagnostic": "./build/diagnostic-cli.js"
+    "xcodebuildmcp": "build/index.js",
+    "xcodebuildmcp-diagnostic": "build/diagnostic-cli.js"
   },
   "scripts": {
-    "prebuild": "node -e \"const fs = require('fs'); const pkg = require('./package.json'); fs.writeFileSync('src/version.ts', \\`export const version = '\\${pkg.version}';\\nexport const templateVersion = '\\${pkg.templateVersion}';\\n\\`)\"",
-    "build": "npm run prebuild && tsup",
-    "build:watch": "npm run prebuild && tsup --watch",
+    "build": "node -e \"const fs = require('fs'); const pkg = require('./package.json'); fs.writeFileSync('src/version.ts', \\`export const version = '\\${pkg.version}';\\nexport const templateVersion = '\\${pkg.templateVersion}';\\n\\`)\" && tsup",
+    "build:watch": "npm run build && tsup --watch",
+    "bundle:axe": "scripts/build-axe.sh",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
     "format": "prettier --write 'src/**/*.{js,ts}'",
@@ -20,7 +20,8 @@
     "diagnostic": "node build/diagnostic-cli.js"
   },
   "files": [
-    "build"
+    "build",
+    "bundled"
   ],
   "keywords": [
     "xcodebuild",

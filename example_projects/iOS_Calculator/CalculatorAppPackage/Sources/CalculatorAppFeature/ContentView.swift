@@ -20,7 +20,10 @@ public struct ContentView: View {
                     // Display Section
                     CalculatorDisplay(
                         expressionDisplay: calculatorService.expressionDisplay,
-                        display: calculatorService.display
+                        display: calculatorService.display,
+                        onDeleteLastDigit: {
+                            inputHandler.deleteLastDigit()
+                        }
                     )
                     
                     // Button Grid
