@@ -98,3 +98,6 @@ CLAUDE.md
 Makefile
 buildServer.json
 
+# Bundled AXe artifacts (generated during build)
+bundled/
+

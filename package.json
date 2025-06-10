@@ -12,15 +12,19 @@
     "prebuild": "node -e \"const fs = require('fs'); const pkg = require('./package.json'); fs.writeFileSync('src/version.ts', \\`export const version = '\\${pkg.version}';\\nexport const templateVersion = '\\${pkg.templateVersion}';\\n\\`)\"",
     "build": "npm run prebuild && tsup",
     "build:watch": "npm run prebuild && tsup --watch",
+    "build:axe": "scripts/build-axe.sh",
+    "build:release": "npm run build:axe && npm run build",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
     "format": "prettier --write 'src/**/*.{js,ts}'",
     "format:check": "prettier --check 'src/**/*.{js,ts}'",
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
-    "diagnostic": "node build/diagnostic-cli.js"
+    "diagnostic": "node build/diagnostic-cli.js",
+    "prepare": "npm run build:release"
   },
   "files": [
-    "build"
+    "build",
+    "bundled"
   ],
   "keywords": [
     "xcodebuild",
