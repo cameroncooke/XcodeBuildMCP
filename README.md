@@ -18,7 +18,6 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
   - [App utilities](#app-utilities)
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [UI Automation](#ui-automation)
   - [Configure your MCP client](#configure-your-mcp-client)
     - [Quick install](#quick-install)
     - [Manual installation](#manual-installation)
@@ -78,21 +77,24 @@ The XcodeBuildMCP server provides the following tool capabilities:
 
 ### Simulator management
 - **Simulator Control**: List, boot, and open simulators 
-- **App Deployment**: Install and launch apps on simulators
+- **App Lifecycle**: Complete app management - install, launch, and stop apps on simulators
 - **Log Capture**: Capture run-time logs from a simulator
-- **UI Automation**: Interact with simulator UI elements (beta)
-- **Screenshot**: Capture screenshots from a simulator (beta)
+- **UI Automation**: Interact with simulator UI elements
+- **Screenshot**: Capture screenshots from a simulator
 
 ### Device management
-- **Device Discovery**: List connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro)
-- **App Deployment**: Build, install, and launch apps on physical Apple devices across all platforms
+- **Device Discovery**: List connected physical Apple devices over USB or Wi-Fi
+- **App Lifecycle**: Complete app management - build, install, launch, and stop apps on physical devices
 - **Testing**: Run test suites on physical devices with detailed results and cross-platform support
 - **Log Capture**: Capture console output from apps running on physical Apple devices
-- **Wireless Connectivity**: Connect to physical devices over Wi-Fi
+- **Wireless Connectivity**: Support for devices connected over Wi-Fi networks
 
 ### App utilities
 - **Bundle ID Extraction**: Extract bundle identifiers from app bundles across all Apple platforms
-- **App Launching**: Launch built applications on simulators, physical devices, and macOS
+- **App Lifecycle Management**: Complete app lifecycle control across all platforms
+  - Launch apps on simulators, physical devices, and macOS
+  - Stop running apps with process ID or bundle ID management
+  - Process monitoring and control for comprehensive app management
 - 
 > [!IMPORTANT]
 > Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
@@ -104,18 +106,6 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - macOS 14.5 or later
 - Xcode 16.x or later
 - Node 18.x or later
-- AXe 1.0.0 or later (optional, required for UI automation)
-
-### UI Automation
-
-For UI automation features (tap, swipe, type etc.), you'll need to install AXe:
-
-```bash
-brew tap cameroncooke/axe
-brew install axe
-```
-
-For more information about AXe and other installation methods, see the [AXe repository](https://github.com/cameroncooke/axe).
 
 ### Configure your MCP client
 

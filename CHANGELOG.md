@@ -1,5 +1,21 @@
 # Changelog
 
+## [v1.10.0] - 2025-06-10
+### Added
+- **App Lifecycle Management**: New tools for stopping running applications
+  - `stop_app_device`: Stop apps running on physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro)
+  - `stop_app_sim`: Stop apps running on iOS/watchOS/tvOS/visionOS simulators
+  - `stop_mac_app`: Stop macOS applications by name or process ID
+- **Enhanced Launch Tools**: Device launch tools now return process IDs for better app management
+- **Bundled AXe Distribution**: AXe binary and frameworks now included in npm package for zero-setup UI automation
+
+### Fixed
+- **WiFi Device Detection**: Improved detection of Apple devices connected over WiFi networks
+- **Device Connectivity**: Better handling of paired devices with different connection states
+
+### Improved
+- **Simplified Installation**: No separate AXe installation required - everything works out of the box
+
 ## [v1.9.0] - 2025-06-09
 - Added support for hardware devices over USB and Wi-Fi
 - New tools for Apple device deployment:
