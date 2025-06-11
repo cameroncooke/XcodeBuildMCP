@@ -399,15 +399,23 @@ async function scaffoldProject(params: ScaffoldProjectParams): Promise<string> {
     );
   }
 
-  // Create output directory
-  const projectPath = join(outputPath, customizeNames ? projectName : 'MyProject');
+  // Use outputPath directly as the destination
+  const projectPath = outputPath;
 
-  if (existsSync(projectPath)) {
-    throw new ValidationError(`Project directory already exists at ${projectPath}`);
+  // Check if the output directory already has Xcode project files
+  const xcworkspaceExists = existsSync(
+    join(projectPath, `${customizeNames ? projectName : 'MyProject'}.xcworkspace`),
+  );
+  const xcodeprojExists = existsSync(
+    join(projectPath, `${customizeNames ? projectName : 'MyProject'}.xcodeproj`),
+  );
+
+  if (xcworkspaceExists || xcodeprojExists) {
+    throw new ValidationError(`Xcode project files already exist in ${projectPath}`);
   }
 
   try {
-    // Process the template
+    // Process the template directly into the output path
     await processDirectory(templatePath, projectPath, params);
 
     return projectPath;
@@ -433,9 +441,9 @@ export function registerScaffoldTools(server: McpServer): void {
           success: true,
           projectPath,
           platform: 'iOS',
-          message: `Successfully scaffolded iOS project "${params.projectName}" at ${projectPath}`,
+          message: `Successfully scaffolded iOS project "${params.projectName}" in ${projectPath}`,
           nextSteps: [
-            `Open the project: open ${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace`,
+            `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
             `Build for simulator: build_ios_sim_name_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}" --simulator-name "iPhone 16"`,
             `Build and run on simulator: build_run_ios_sim_name_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}" --simulator-name "iPhone 16"`,
           ],
@@ -489,9 +497,9 @@ export function registerScaffoldTools(server: McpServer): void {
           success: true,
           projectPath,
           platform: 'macOS',
-          message: `Successfully scaffolded macOS project "${params.projectName}" at ${projectPath}`,
+          message: `Successfully scaffolded macOS project "${params.projectName}" in ${projectPath}`,
           nextSteps: [
-            `Open the project: open ${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace`,
+            `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
             `Build for macOS: build_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
             `Run and run on macOS: build_run_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
           ],
