@@ -216,6 +216,12 @@ function updateXCConfigFile(content: string, params: ScaffoldProjectParams): str
         );
       }
     }
+
+    // Update entitlements path for iOS
+    result = result.replace(
+      /CODE_SIGN_ENTITLEMENTS = .+/g,
+      `CODE_SIGN_ENTITLEMENTS = Config/${params.projectName}.entitlements`,
+    );
   } else if (params.platform === 'macOS') {
     const macosParams = params as ScaffoldmacOSProjectParams & { platform: 'macOS' };
 
@@ -230,12 +236,18 @@ function updateXCConfigFile(content: string, params: ScaffoldProjectParams): str
     // Update entitlements path for macOS
     result = result.replace(
       /CODE_SIGN_ENTITLEMENTS = .+/g,
-      `CODE_SIGN_ENTITLEMENTS = ${params.projectName}/${params.projectName}.entitlements`,
+      `CODE_SIGN_ENTITLEMENTS = Config/${params.projectName}.entitlements`,
     );
   }
 
   // Update test bundle identifier and target name
   result = result.replace(/TEST_TARGET_NAME = .+/g, `TEST_TARGET_NAME = ${params.projectName}`);
+
+  // Update comments that reference MyProject in entitlements paths
+  result = result.replace(
+    /Config\/MyProject\.entitlements/g,
+    `Config/${params.projectName}.entitlements`,
+  );
 
   return result;
 }
