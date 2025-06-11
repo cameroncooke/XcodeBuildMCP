@@ -155,6 +155,20 @@ export type BaseAppPathSimulatorIdParams = BaseSimulatorIdParams & {
 };
 
 /**
+ * Extended tool handler with progress notification support
+ */
+export type ToolHandlerWithProgress<T extends object> = (
+  params: T,
+  context: {
+    sendNotification?: (notification: {
+      method: string;
+      params: Record<string, unknown>;
+    }) => Promise<void>;
+    _meta?: Record<string, unknown>;
+  },
+) => Promise<ToolResponse>;
+
+/**
  * Helper function to register a tool with the MCP server
  */
 export function registerTool<T extends object>(
@@ -173,6 +187,30 @@ export function registerTool<T extends object>(
     // This confines the type assertion to one place
     const typedParams = args as T;
     return handler(typedParams);
+  };
+
+  server.tool(name, description, schema, wrappedHandler);
+}
+
+/**
+ * Helper function to register a tool with progress notification support
+ */
+export function registerToolWithProgress<T extends object>(
+  server: McpServer,
+  name: string,
+  description: string,
+  schema: Record<string, z.ZodType>,
+  handler: ToolHandlerWithProgress<T>,
+): void {
+  // Create a wrapper handler that matches the signature expected by server.tool
+  const wrappedHandler = (
+    args: Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    extra: any, // Using any to work around the type mismatch - the actual runtime has sendNotification
+  ): Promise<ToolResponse> => {
+    // Assert the type *before* calling the original handler
+    const typedParams = args as T;
+    return handler(typedParams, extra);
   };
 
   server.tool(name, description, schema, wrappedHandler);

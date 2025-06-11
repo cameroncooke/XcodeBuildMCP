@@ -31,6 +31,7 @@ import {
   simulatorIdSchema,
   useLatestOSSchema,
   preferXcodebuildSchema,
+  registerToolWithProgress,
 } from './common.js';
 import { execSync } from 'child_process';
 
@@ -39,19 +40,41 @@ import { execSync } from 'child_process';
 /**
  * Internal logic for building Simulator apps.
  */
-async function _handleSimulatorBuildLogic(params: {
-  workspacePath?: string;
-  projectPath?: string;
-  scheme: string;
-  configuration: string;
-  simulatorName?: string;
-  simulatorId?: string;
-  useLatestOS: boolean;
-  derivedDataPath?: string;
-  extraArgs?: string[];
-  preferXcodebuild?: boolean;
-}): Promise<ToolResponse> {
+async function _handleSimulatorBuildLogic(
+  params: {
+    workspacePath?: string;
+    projectPath?: string;
+    scheme: string;
+    configuration: string;
+    simulatorName?: string;
+    simulatorId?: string;
+    useLatestOS: boolean;
+    derivedDataPath?: string;
+    extraArgs?: string[];
+    preferXcodebuild?: boolean;
+  },
+  context?: {
+    sendNotification?: (notification: {
+      method: string;
+      params: Record<string, unknown>;
+    }) => Promise<void>;
+    _meta?: Record<string, unknown>;
+  },
+): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
+
+  // Send initial progress notification
+  if (context?.sendNotification && context._meta?.progressToken) {
+    await context.sendNotification({
+      method: 'notifications/progress',
+      params: {
+        progressToken: context._meta.progressToken,
+        progress: 0,
+        total: 100,
+        message: 'Starting iOS Simulator build...',
+      },
+    });
+  }
 
   return executeXcodeBuildCommand(
     {
@@ -66,35 +89,69 @@ async function _handleSimulatorBuildLogic(params: {
     },
     params.preferXcodebuild,
     'build',
+    context, // Pass context for progress notifications
   );
 }
 
 /**
  * Internal logic for building and running iOS Simulator apps.
  */
-async function _handleIOSSimulatorBuildAndRunLogic(params: {
-  workspacePath?: string;
-  projectPath?: string;
-  scheme: string;
-  configuration: string;
-  simulatorName?: string;
-  simulatorId?: string;
-  useLatestOS: boolean;
-  derivedDataPath?: string;
-  extraArgs?: string[];
-  preferXcodebuild?: boolean;
-}): Promise<ToolResponse> {
+async function _handleIOSSimulatorBuildAndRunLogic(
+  params: {
+    workspacePath?: string;
+    projectPath?: string;
+    scheme: string;
+    configuration: string;
+    simulatorName?: string;
+    simulatorId?: string;
+    useLatestOS: boolean;
+    derivedDataPath?: string;
+    extraArgs?: string[];
+    preferXcodebuild?: boolean;
+  },
+  context?: {
+    sendNotification?: (notification: {
+      method: string;
+      params: Record<string, unknown>;
+    }) => Promise<void>;
+    _meta?: Record<string, unknown>;
+  },
+): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build and run for scheme ${params.scheme} (internal)`);
+
+  // Send initial progress notification
+  if (context?.sendNotification && context._meta?.progressToken) {
+    await context.sendNotification({
+      method: 'notifications/progress',
+      params: {
+        progressToken: context._meta.progressToken,
+        progress: 0,
+        total: 100,
+        message: 'Starting iOS Simulator build and run...',
+      },
+    });
+  }
 
   try {
     // --- Build Step ---
-    const buildResult = await _handleSimulatorBuildLogic(params);
+    const buildResult = await _handleSimulatorBuildLogic(params, context);
 
     if (buildResult.isError) {
       return buildResult; // Return the build error
     }
 
     // --- Get App Path Step ---
+    if (context?.sendNotification && context._meta?.progressToken) {
+      await context.sendNotification({
+        method: 'notifications/progress',
+        params: {
+          progressToken: context._meta.progressToken,
+          progress: 50,
+          total: 100,
+          message: 'Getting app path...',
+        },
+      });
+    }
     // Create the command array for xcodebuild with -showBuildSettings option
     const command = ['xcodebuild', '-showBuildSettings'];
 
@@ -161,6 +218,18 @@ async function _handleIOSSimulatorBuildAndRunLogic(params: {
     log('info', `App bundle path for run: ${appBundlePath}`);
 
     // --- Find/Boot Simulator Step ---
+    if (context?.sendNotification && context._meta?.progressToken) {
+      await context.sendNotification({
+        method: 'notifications/progress',
+        params: {
+          progressToken: context._meta.progressToken,
+          progress: 60,
+          total: 100,
+          message: 'Setting up simulator...',
+        },
+      });
+    }
+
     let simulatorUuid = params.simulatorId;
     if (!simulatorUuid && params.simulatorName) {
       try {
@@ -253,6 +322,18 @@ async function _handleIOSSimulatorBuildAndRunLogic(params: {
     }
 
     // --- Install App Step ---
+    if (context?.sendNotification && context._meta?.progressToken) {
+      await context.sendNotification({
+        method: 'notifications/progress',
+        params: {
+          progressToken: context._meta.progressToken,
+          progress: 80,
+          total: 100,
+          message: 'Installing app on simulator...',
+        },
+      });
+    }
+
     try {
       log('info', `Installing app at path: ${appBundlePath} to simulator: ${simulatorUuid}`);
       execSync(`xcrun simctl install "${simulatorUuid}" "${appBundlePath}"`);
@@ -303,6 +384,18 @@ async function _handleIOSSimulatorBuildAndRunLogic(params: {
     }
 
     // --- Launch App Step ---
+    if (context?.sendNotification && context._meta?.progressToken) {
+      await context.sendNotification({
+        method: 'notifications/progress',
+        params: {
+          progressToken: context._meta.progressToken,
+          progress: 95,
+          total: 100,
+          message: 'Launching app...',
+        },
+      });
+    }
+
     try {
       log('info', `Launching app with bundle ID: ${bundleId} on simulator: ${simulatorUuid}`);
       execSync(`xcrun simctl launch "${simulatorUuid}" "${bundleId}"`);
@@ -316,6 +409,18 @@ async function _handleIOSSimulatorBuildAndRunLogic(params: {
     }
 
     // --- Success ---
+    if (context?.sendNotification && context._meta?.progressToken) {
+      await context.sendNotification({
+        method: 'notifications/progress',
+        params: {
+          progressToken: context._meta.progressToken,
+          progress: 100,
+          total: 100,
+          message: 'App launched successfully!',
+        },
+      });
+    }
+
     log('info', '✅ iOS simulator build & run succeeded.');
 
     const target = params.simulatorId
@@ -571,7 +676,7 @@ export function registerSimulatorBuildAndRunByNameWorkspaceTool(server: McpServe
     preferXcodebuild?: boolean;
   };
 
-  registerTool<Params>(
+  registerToolWithProgress<Params>(
     server,
     'build_run_sim_name_ws',
     "Builds and runs an app from a workspace on a simulator specified by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_run_sim_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
@@ -585,7 +690,7 @@ export function registerSimulatorBuildAndRunByNameWorkspaceTool(server: McpServe
       useLatestOS: useLatestOSSchema,
       preferXcodebuild: preferXcodebuildSchema,
     },
-    async (params: Params) => {
+    async (params: Params, context) => {
       // Validate required parameters
       const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
       if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
@@ -597,12 +702,15 @@ export function registerSimulatorBuildAndRunByNameWorkspaceTool(server: McpServe
       if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
       // Provide defaults
-      return _handleIOSSimulatorBuildAndRunLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
+      return _handleIOSSimulatorBuildAndRunLogic(
+        {
+          ...params,
+          configuration: params.configuration ?? 'Debug',
+          useLatestOS: params.useLatestOS ?? true,
+          preferXcodebuild: params.preferXcodebuild ?? false,
+        },
+        context,
+      );
     },
   );
 }
@@ -622,7 +730,7 @@ export function registerSimulatorBuildAndRunByNameProjectTool(server: McpServer)
     preferXcodebuild?: boolean;
   };
 
-  registerTool<Params>(
+  registerToolWithProgress<Params>(
     server,
     'build_run_sim_name_proj',
     "Builds and runs an app from a project file on a simulator specified by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_run_sim_name_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
@@ -636,7 +744,7 @@ export function registerSimulatorBuildAndRunByNameProjectTool(server: McpServer)
       useLatestOS: useLatestOSSchema,
       preferXcodebuild: preferXcodebuildSchema,
     },
-    async (params: Params) => {
+    async (params: Params, context) => {
       // Validate required parameters
       const projectValidation = validateRequiredParam('projectPath', params.projectPath);
       if (!projectValidation.isValid) return projectValidation.errorResponse!;
@@ -648,12 +756,15 @@ export function registerSimulatorBuildAndRunByNameProjectTool(server: McpServer)
       if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
       // Provide defaults
-      return _handleIOSSimulatorBuildAndRunLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
+      return _handleIOSSimulatorBuildAndRunLogic(
+        {
+          ...params,
+          configuration: params.configuration ?? 'Debug',
+          useLatestOS: params.useLatestOS ?? true,
+          preferXcodebuild: params.preferXcodebuild ?? false,
+        },
+        context,
+      );
     },
   );
 }
@@ -673,7 +784,7 @@ export function registerSimulatorBuildAndRunByIdWorkspaceTool(server: McpServer)
     preferXcodebuild?: boolean;
   };
 
-  registerTool<Params>(
+  registerToolWithProgress<Params>(
     server,
     'build_run_sim_id_ws',
     "Builds and runs an app from a workspace on a simulator specified by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_run_sim_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
@@ -687,7 +798,7 @@ export function registerSimulatorBuildAndRunByIdWorkspaceTool(server: McpServer)
       useLatestOS: useLatestOSSchema,
       preferXcodebuild: preferXcodebuildSchema,
     },
-    async (params: Params) => {
+    async (params: Params, context) => {
       // Validate required parameters
       const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
       if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
@@ -699,12 +810,15 @@ export function registerSimulatorBuildAndRunByIdWorkspaceTool(server: McpServer)
       if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
 
       // Provide defaults
-      return _handleIOSSimulatorBuildAndRunLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true, // May be ignored
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
+      return _handleIOSSimulatorBuildAndRunLogic(
+        {
+          ...params,
+          configuration: params.configuration ?? 'Debug',
+          useLatestOS: params.useLatestOS ?? true, // May be ignored
+          preferXcodebuild: params.preferXcodebuild ?? false,
+        },
+        context,
+      );
     },
   );
 }
@@ -724,7 +838,7 @@ export function registerSimulatorBuildAndRunByIdProjectTool(server: McpServer): 
     preferXcodebuild?: boolean;
   };
 
-  registerTool<Params>(
+  registerToolWithProgress<Params>(
     server,
     'build_run_sim_id_proj',
     "Builds and runs an app from a project file on a simulator specified by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: build_run_sim_id_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
@@ -738,7 +852,7 @@ export function registerSimulatorBuildAndRunByIdProjectTool(server: McpServer): 
       useLatestOS: useLatestOSSchema,
       preferXcodebuild: preferXcodebuildSchema,
     },
-    async (params: Params) => {
+    async (params: Params, context) => {
       // Validate required parameters
       const projectValidation = validateRequiredParam('projectPath', params.projectPath);
       if (!projectValidation.isValid) return projectValidation.errorResponse!;
@@ -750,12 +864,15 @@ export function registerSimulatorBuildAndRunByIdProjectTool(server: McpServer): 
       if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
 
       // Provide defaults
-      return _handleIOSSimulatorBuildAndRunLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true, // May be ignored
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
+      return _handleIOSSimulatorBuildAndRunLogic(
+        {
+          ...params,
+          configuration: params.configuration ?? 'Debug',
+          useLatestOS: params.useLatestOS ?? true, // May be ignored
+          preferXcodebuild: params.preferXcodebuild ?? false,
+        },
+        context,
+      );
     },
   );
 }

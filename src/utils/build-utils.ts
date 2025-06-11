@@ -38,6 +38,7 @@ import path from 'path';
  * @param platformOptions Platform-specific options
  * @param preferXcodebuild Whether to prefer xcodebuild over xcodemake, useful for if xcodemake is failing
  * @param buildAction The xcodebuild action to perform (e.g., 'build', 'clean', 'test')
+ * @param context Optional context for progress notifications
  * @returns Promise resolving to tool response
  */
 export async function executeXcodeBuildCommand(
@@ -45,6 +46,13 @@ export async function executeXcodeBuildCommand(
   platformOptions: PlatformBuildOptions,
   preferXcodebuild: boolean = false,
   buildAction: string = 'build',
+  context?: {
+    sendNotification?: (notification: {
+      method: string;
+      params: Record<string, unknown>;
+    }) => Promise<void>;
+    _meta?: Record<string, unknown>;
+  },
 ): Promise<ToolResponse> {
   // Collect warnings, errors, and stderr messages from the build output
   const buildMessages: { type: 'text'; text: string }[] = [];
@@ -60,6 +68,19 @@ export async function executeXcodeBuildCommand(
   }
 
   log('info', `Starting ${platformOptions.logPrefix} ${buildAction} for scheme ${params.scheme}`);
+
+  // Send initial setup progress
+  if (context?.sendNotification && context._meta?.progressToken) {
+    await context.sendNotification({
+      method: 'notifications/progress',
+      params: {
+        progressToken: context._meta.progressToken,
+        progress: 10,
+        total: 100,
+        message: 'Setting up build environment...',
+      },
+    });
+  }
 
   // Check if xcodemake is enabled and available
   const isXcodemakeEnabledFlag = isXcodemakeEnabled();
@@ -90,6 +111,19 @@ export async function executeXcodeBuildCommand(
         text: 'ℹ️ xcodemake is enabled and available, using it for incremental builds.',
       });
     }
+  }
+
+  // Send command preparation progress
+  if (context?.sendNotification && context._meta?.progressToken) {
+    await context.sendNotification({
+      method: 'notifications/progress',
+      params: {
+        progressToken: context._meta.progressToken,
+        progress: 20,
+        total: 100,
+        message: 'Preparing build command...',
+      },
+    });
   }
 
   try {
@@ -185,6 +219,19 @@ export async function executeXcodeBuildCommand(
 
     command.push(buildAction);
 
+    // Send build execution progress
+    if (context?.sendNotification && context._meta?.progressToken) {
+      await context.sendNotification({
+        method: 'notifications/progress',
+        params: {
+          progressToken: context._meta.progressToken,
+          progress: 30,
+          total: 100,
+          message: 'Executing build command...',
+        },
+      });
+    }
+
     // Execute the command using xcodemake or xcodebuild
     let result;
     if (
@@ -207,6 +254,20 @@ export async function executeXcodeBuildCommand(
           type: 'text',
           text: 'ℹ️ Using make for incremental build',
         });
+
+        // Send incremental build progress
+        if (context?.sendNotification && context._meta?.progressToken) {
+          await context.sendNotification({
+            method: 'notifications/progress',
+            params: {
+              progressToken: context._meta.progressToken,
+              progress: 50,
+              total: 100,
+              message: 'Running incremental build with make...',
+            },
+          });
+        }
+
         result = await executeMakeCommand(projectDir, platformOptions.logPrefix);
       } else {
         // Generate Makefile using xcodemake
@@ -214,6 +275,20 @@ export async function executeXcodeBuildCommand(
           type: 'text',
           text: 'ℹ️ Generating Makefile with xcodemake (first build may take longer)',
         });
+
+        // Send Makefile generation progress
+        if (context?.sendNotification && context._meta?.progressToken) {
+          await context.sendNotification({
+            method: 'notifications/progress',
+            params: {
+              progressToken: context._meta.progressToken,
+              progress: 50,
+              total: 100,
+              message: 'Generating Makefile with xcodemake...',
+            },
+          });
+        }
+
         // Remove 'xcodebuild' from the command array before passing to executeXcodemakeCommand
         result = await executeXcodemakeCommand(
           projectDir,
@@ -223,7 +298,32 @@ export async function executeXcodeBuildCommand(
       }
     } else {
       // Use standard xcodebuild
+      if (context?.sendNotification && context._meta?.progressToken) {
+        await context.sendNotification({
+          method: 'notifications/progress',
+          params: {
+            progressToken: context._meta.progressToken,
+            progress: 50,
+            total: 100,
+            message: 'Running xcodebuild...',
+          },
+        });
+      }
+
       result = await executeCommand(command, platformOptions.logPrefix);
+    }
+
+    // Send post-build processing progress
+    if (context?.sendNotification && context._meta?.progressToken) {
+      await context.sendNotification({
+        method: 'notifications/progress',
+        params: {
+          progressToken: context._meta.progressToken,
+          progress: 80,
+          total: 100,
+          message: 'Processing build results...',
+        },
+      });
     }
 
     // Grep warnings and errors from stdout (build output)
@@ -275,6 +375,19 @@ export async function executeXcodeBuildCommand(
     }
 
     log('info', `✅ ${platformOptions.logPrefix} ${buildAction} succeeded.`);
+
+    // Send completion progress
+    if (context?.sendNotification && context._meta?.progressToken) {
+      await context.sendNotification({
+        method: 'notifications/progress',
+        params: {
+          progressToken: context._meta.progressToken,
+          progress: 100,
+          total: 100,
+          message: `${platformOptions.logPrefix} ${buildAction} completed successfully`,
+        },
+      });
+    }
 
     // Create additional info based on platform and action
     let additionalInfo = '';
