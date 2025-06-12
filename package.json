@@ -1,7 +1,8 @@
 {
   "name": "xcodebuildmcp",
   "version": "1.10.1",
-  "templateVersion": "v1.0.3",
+  "iOSTemplateVersion": "v1.0.6",
+  "macOSTemplateVersion": "v1.0.4",
   "main": "build/index.js",
   "type": "module",
   "bin": {
@@ -9,7 +10,7 @@
     "xcodebuildmcp-diagnostic": "build/diagnostic-cli.js"
   },
   "scripts": {
-    "build": "node -e \"const fs = require('fs'); const pkg = require('./package.json'); fs.writeFileSync('src/version.ts', \\`export const version = '\\${pkg.version}';\\nexport const templateVersion = '\\${pkg.templateVersion}';\\n\\`)\" && tsup",
+    "build": "node -e \"const fs = require('fs'); const pkg = require('./package.json'); fs.writeFileSync('src/version.ts', \\`export const version = '\\${pkg.version}';\\nexport const iOSTemplateVersion = '\\${pkg.iOSTemplateVersion}';\\nexport const macOSTemplateVersion = '\\${pkg.macOSTemplateVersion}';\\n\\`)\" && tsup",
     "build:watch": "npm run build && tsup --watch",
     "bundle:axe": "scripts/bundle-axe.sh",
     "lint": "eslint 'src/**/*.{js,ts}'",

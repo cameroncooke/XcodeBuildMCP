@@ -123,10 +123,10 @@ When developing or testing changes to the templates:
 2. Set the appropriate environment variable to use your local template:
    ```bash
    # For iOS template development
-   export XCODEBUILD_MCP_IOS_TEMPLATE_PATH=/path/to/XcodeBuildMCP-iOS-Template
+   export XCODEBUILDMCP_IOS_TEMPLATE_PATH=/path/to/XcodeBuildMCP-iOS-Template
    
    # For macOS template development
-   export XCODEBUILD_MCP_MACOS_TEMPLATE_PATH=/path/to/XcodeBuildMCP-macOS-Template
+   export XCODEBUILDMCP_MACOS_TEMPLATE_PATH=/path/to/XcodeBuildMCP-macOS-Template
    ```
 
 3. When using MCP clients, add these environment variables to your MCP configuration:
@@ -137,8 +137,8 @@ When developing or testing changes to the templates:
          "command": "node",
          "args": ["/path_to/XcodeBuildMCP/build/index.js"],
          "env": {
-           "XCODEBUILD_MCP_IOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-iOS-Template",
-           "XCODEBUILD_MCP_MACOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-macOS-Template"
+           "XCODEBUILDMCP_IOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-iOS-Template",
+           "XCODEBUILDMCP_MACOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-macOS-Template"
          }
        }
      }

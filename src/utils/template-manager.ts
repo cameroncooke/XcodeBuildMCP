@@ -5,7 +5,7 @@ import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 import { spawn } from 'child_process';
 import { log } from './logger.js';
-import { templateVersion } from '../version.js';
+import { iOSTemplateVersion, macOSTemplateVersion } from '../version.js';
 
 /**
  * Template manager for downloading and managing project templates
@@ -22,9 +22,7 @@ export class TemplateManager {
   static async getTemplatePath(platform: 'iOS' | 'macOS'): Promise<string> {
     // Check for local override
     const envVar =
-      platform === 'iOS'
-        ? 'XCODEBUILD_MCP_IOS_TEMPLATE_PATH'
-        : 'XCODEBUILD_MCP_MACOS_TEMPLATE_PATH';
+      platform === 'iOS' ? 'XCODEBUILDMCP_IOS_TEMPLATE_PATH' : 'XCODEBUILDMCP_MACOS_TEMPLATE_PATH';
 
     const localPath = process.env[envVar];
     if (localPath && existsSync(localPath)) {
@@ -46,7 +44,13 @@ export class TemplateManager {
    */
   private static async downloadTemplate(platform: 'iOS' | 'macOS'): Promise<string> {
     const repo = platform === 'iOS' ? this.IOS_TEMPLATE_REPO : this.MACOS_TEMPLATE_REPO;
-    const version = process.env.XCODEBUILD_MCP_TEMPLATE_VERSION || templateVersion;
+    const defaultVersion = platform === 'iOS' ? iOSTemplateVersion : macOSTemplateVersion;
+    const envVarName =
+      platform === 'iOS'
+        ? 'XCODEBUILD_MCP_IOS_TEMPLATE_VERSION'
+        : 'XCODEBUILD_MCP_MACOS_TEMPLATE_VERSION';
+    const version =
+      process.env[envVarName] || process.env.XCODEBUILD_MCP_TEMPLATE_VERSION || defaultVersion;
 
     // Create temp directory for download
     const tempDir = join(tmpdir(), `xcodebuild-mcp-template-${randomUUID()}`);
