@@ -156,7 +156,7 @@ Then configure your MCP client to use mise to install XcodeBuildMCP:
       "command": "mise",
       "args": [
         "x",
-        "npm:xcodebuildmcp@1.10.0",
+        "npm:xcodebuildmcp@1.10.1",
         "--",
         "xcodebuildmcp"
       ]
@@ -227,14 +227,14 @@ The diagnostic tool is a standalone utility that checks your system configuratio
 
 ```bash
 # Run the diagnostic tool using npx
-npx xcodebuildmcp@1.10.0 xcodebuildmcp-diagnostic
+npx xcodebuildmcp@1.10.1 xcodebuildmcp-diagnostic
 ```
 
 #### Using with mise
 
 ```bash
 # Run the diagnostic tool using mise
-mise x npm:xcodebuildmcp@1.10.0 -- xcodebuildmcp-diagnostic
+mise x npm:xcodebuildmcp@1.10.1 -- xcodebuildmcp-diagnostic
 ```
 
 The diagnostic tool will output comprehensive information about:
