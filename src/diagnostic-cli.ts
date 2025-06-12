@@ -27,7 +27,8 @@ async function runDiagnostic(): Promise<void> {
     if (result.content && result.content.length > 0) {
       const textContent = result.content.find((item: { type: string }) => item.type === 'text');
       if (textContent && 'text' in textContent) {
-        console.error(textContent.text);
+        // eslint-disable-next-line no-console
+        console.log(textContent.text);
       } else {
         console.error('Error: Unexpected diagnostic result format');
       }

@@ -27,8 +27,6 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 - [Code Signing for Device Deployment](#code-signing-for-device-deployment)
 - [Troubleshooting](#troubleshooting)
   - [Diagnostic Tool](#diagnostic-tool)
-    - [Using with npx](#using-with-npx)
-    - [Using with mise](#using-with-mise)
   - [MCP Server Logs](#mcp-server-logs)
 - [Privacy](#privacy)
   - [What is sent to Sentry?](#what-is-sent-to-sentry)
@@ -223,18 +221,9 @@ If you encounter issues with XcodeBuildMCP, the diagnostic tool can help identif
 
 The diagnostic tool is a standalone utility that checks your system configuration and reports on the status of all dependencies required by XcodeBuildMCP. It's particularly useful when reporting issues.
 
-#### Using with npx
-
 ```bash
 # Run the diagnostic tool using npx
-npx xcodebuildmcp@1.10.1 xcodebuildmcp-diagnostic
-```
-
-#### Using with mise
-
-```bash
-# Run the diagnostic tool using mise
-mise x npm:xcodebuildmcp@1.10.1 -- xcodebuildmcp-diagnostic
+npx --package xcodebuildmcp@latest xcodebuildmcp-diagnostic
 ```
 
 The diagnostic tool will output comprehensive information about:
