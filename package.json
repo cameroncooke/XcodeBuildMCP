@@ -1,7 +1,7 @@
 {
   "name": "xcodebuildmcp",
   "version": "1.10.2",
-  "iOSTemplateVersion": "v1.0.6",
+  "iOSTemplateVersion": "v1.0.7",
   "macOSTemplateVersion": "v1.0.4",
   "main": "build/index.js",
   "type": "module",

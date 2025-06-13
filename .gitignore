@@ -92,7 +92,6 @@ xcuserdata/
 
 # Claude Config File
 **/.claude/settings.local.json
-CLAUDE.md
 
 # incremental builds
 Makefile
