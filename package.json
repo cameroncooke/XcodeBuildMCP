@@ -18,7 +18,11 @@
     "format": "prettier --write 'src/**/*.{js,ts}'",
     "format:check": "prettier --check 'src/**/*.{js,ts}'",
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
-    "diagnostic": "node build/diagnostic-cli.js"
+    "diagnostic": "node build/diagnostic-cli.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "files": [
     "build",
@@ -48,6 +52,7 @@
     "@modelcontextprotocol/sdk": "^1.6.1",
     "@sentry/cli": "^2.43.1",
     "@sentry/node": "^9.15.0",
+    "reloaderoo": "^1.0.1",
     "uuid": "^11.1.0",
     "zod": "^3.24.2"
   },
@@ -58,14 +63,18 @@
     "@types/node": "^22.13.6",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "eslint": "^9.23.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.5",
+    "playwright": "^1.53.0",
     "prettier": "^3.5.3",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.28.0",
+    "vitest": "^3.2.4",
     "xcode": "^3.0.1"
   }
 }
