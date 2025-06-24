@@ -17,6 +17,7 @@
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
     "format": "prettier --write 'src/**/*.{js,ts}'",
     "format:check": "prettier --check 'src/**/*.{js,ts}'",
+    "typecheck": "npx tsc --noEmit",
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
     "diagnostic": "node build/diagnostic-cli.js",
     "test": "vitest run",

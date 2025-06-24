@@ -125,8 +125,8 @@ When adding a new tool:
 - `src/tools/test_macos.test.ts` - Handler logic reimplementation instead of actual testing
 
 **Additional Issues**:
-- `src/tools/launch.ts` - Missing `isError: true` on failures (inconsistent error handling)
-- `src/tools/build_macos.test.ts` - Incorrect mocks for `get_mac_bundle_id` (readFile vs execSync)
+- `src/tools/launch.test.ts` - Missing `isError: true` validation in tests (inconsistent error handling validation)
+- `src/tools/build_macos.test.ts` - Fixed: Now correctly tests actual macOS build tool registration functions
 
 **Remediation Strategy**: Use systematic sub-agent delegation to refactor all violating tests to follow correct patterns.
 
@@ -575,6 +575,66 @@ if (errorCondition) {
 - [ ] All success scenarios set `isError: false` 
 - [ ] Error messages are descriptive and actionable
 - [ ] Consistent error response format across all tools
+
+### Coverage Enforcement Standards
+
+**MANDATORY**: All test files must achieve minimum coverage requirements:
+
+#### Coverage Requirements
+- **Minimum Coverage**: 40% overall test coverage required
+- **Tool Function Coverage**: 100% coverage for all tool registration functions
+- **Test-to-Production Mapping**: Each test file must test the exact corresponding production file
+- **Coverage Validation**: Must run coverage tools after all test development
+
+#### Pre-Commit Coverage Validation
+```bash
+# MANDATORY: Run coverage analysis before any commit
+npm run test:coverage
+
+# Verify minimum 40% coverage requirement
+# Tool functions must have 100% coverage
+```
+
+#### Coverage Enforcement Rules
+1. **File Mapping**: `src/tools/[name].test.ts` must test `src/tools/[name].ts`
+2. **Function Coverage**: All exported tool registration functions must be tested
+3. **Coverage Gates**: CI pipeline must enforce minimum coverage thresholds
+4. **Regular Audits**: Coverage reports must be reviewed for all test changes
+
+### Systematic Test Validation Pipeline
+
+**MANDATORY**: Before any test development completion, run full validation:
+
+#### Validation Commands (ALL MUST PASS)
+```bash
+# 1. MANDATORY: Linting (0 errors required)
+npm run lint
+
+# 2. MANDATORY: Code formatting (all files formatted)
+npm run format
+
+# 3. MANDATORY: Build compilation (must compile successfully)  
+npm run build
+
+# 4. MANDATORY: Test execution (all tests must pass)
+npm test
+
+# 5. MANDATORY: Coverage analysis (40% minimum)
+npm run test:coverage
+```
+
+#### Validation Enforcement
+- **Zero Tolerance**: Any command failure blocks commit
+- **Coverage Gates**: Below 40% coverage blocks commit
+- **Tool Function Coverage**: Below 100% tool function coverage blocks commit
+- **Documentation Updates**: CLAUDE.md must be updated for new requirements
+
+#### Quality Assurance Checklist
+- [ ] Each test file tests exact production file of same name
+- [ ] All tool registration functions have 100% test coverage
+- [ ] Overall project maintains minimum 40% coverage
+- [ ] All validation commands pass without errors
+- [ ] Test patterns follow CLAUDE.md engineering standards exactly
 
 ### Hallucinated Tool Removal Guidelines
 

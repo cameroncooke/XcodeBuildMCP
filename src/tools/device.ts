@@ -166,8 +166,8 @@ export function registerListDevicesTool(server: McpServer): void {
               }
             }
           }
-        } catch (error) {
-          log('info', 'devicectl with JSON failed, trying xctrace fallback', error);
+        } catch {
+          log('info', 'devicectl with JSON failed, trying xctrace fallback');
         } finally {
           // Clean up temp file
           try {
@@ -342,7 +342,7 @@ export function registerInstallAppDeviceTool(server: McpServer): void {
       appPath: appPathSchema,
     },
     async (args): Promise<ToolResponse> => {
-      const { deviceId, appPath } = args;
+      const { deviceId, appPath } = args as { deviceId: string; appPath: string };
 
       log('info', `Installing app on device ${deviceId}`);
 
@@ -406,7 +406,7 @@ export function registerLaunchAppDeviceTool(server: McpServer): void {
       bundleId: bundleIdSchema,
     },
     async (args): Promise<ToolResponse> => {
-      const { deviceId, bundleId } = args;
+      const { deviceId, bundleId } = args as { deviceId: string; bundleId: string };
 
       log('info', `Launching app ${bundleId} on device ${deviceId}`);
 
@@ -505,7 +505,7 @@ export function registerStopAppDeviceTool(server: McpServer): void {
       processId: processIdSchema,
     },
     async (args): Promise<ToolResponse> => {
-      const { deviceId, processId } = args;
+      const { deviceId, processId } = args as { deviceId: string; processId: number };
 
       log('info', `Stopping app with PID ${processId} on device ${deviceId}`);
 
