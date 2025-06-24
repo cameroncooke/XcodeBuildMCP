@@ -2,20 +2,17 @@
  * Clean Tools Tests - Comprehensive test coverage for clean build products tools
  *
  * This test file provides complete coverage for the clean.ts tools:
- * - clean_ws: Clean build products for workspace
- * - clean_proj: Clean build products for project
+ * - cleanWorkspace: Clean build products for workspace
+ * - cleanProject: Clean build products for project
  *
  * Tests follow the canonical testing patterns from CLAUDE.md with deterministic
  * response validation and comprehensive parameter testing.
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { spawn, ChildProcess } from 'child_process';
-import { callToolHandler } from '../../tests-vitest/helpers/vitest-tool-helpers.js';
-import { z } from 'zod';
-import { XcodePlatform } from '../utils/xcode.js';
+import { cleanWorkspace, cleanProject } from './clean.js';
 import { executeXcodeBuildCommand } from '../utils/build-utils.js';
-import { createTextResponse } from '../utils/validation.js';
+import { XcodePlatform } from '../utils/xcode.js';
 
 // Mock child_process to prevent real command execution
 vi.mock('child_process', () => ({ spawn: vi.fn() }));
@@ -36,12 +33,10 @@ vi.mock('../utils/logger.js', () => ({
 }));
 
 describe('clean tests', () => {
-  let mockExecuteXcodeBuildCommand: MockedFunction<any>;
+  let mockExecuteXcodeBuildCommand: MockedFunction<typeof executeXcodeBuildCommand>;
 
-  beforeEach(async () => {
-    // Import and setup the mocked executeXcodeBuildCommand function
-    const buildUtilsModule = await import('../utils/build-utils.js');
-    mockExecuteXcodeBuildCommand = buildUtilsModule.executeXcodeBuildCommand as MockedFunction<any>;
+  beforeEach(() => {
+    mockExecuteXcodeBuildCommand = vi.mocked(executeXcodeBuildCommand);
 
     // Default success behavior for executeXcodeBuildCommand
     mockExecuteXcodeBuildCommand.mockResolvedValue({
@@ -57,131 +52,32 @@ describe('clean tests', () => {
     vi.clearAllMocks();
   });
 
-  // Helper function to replicate _handleCleanLogic behavior
-  async function handleCleanLogic(params: {
-    workspacePath?: string;
-    projectPath?: string;
-    scheme?: string;
-    configuration?: string;
-    derivedDataPath?: string;
-    extraArgs?: string[];
-  }) {
-    // For clean operations, we need to provide a default platform and configuration
-    return executeXcodeBuildCommand(
-      {
-        ...params,
-        scheme: params.scheme || '', // Empty string if not provided
-        configuration: params.configuration || 'Debug', // Default to Debug if not provided
-      },
-      {
-        platform: XcodePlatform.macOS, // Default to macOS, but this doesn't matter much for clean
-        logPrefix: 'Clean',
-      },
-      false,
-      'clean', // Specify 'clean' as the build action
-    );
-  }
-
-  // Tool schema definitions for testing
-  const cleanWorkspaceSchema = z.object({
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().optional().describe('Optional: The scheme to clean'),
-    configuration: z
-      .string()
-      .optional()
-      .describe('Optional: Build configuration to clean (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Optional: Path where derived data might be located'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-  });
-
-  const cleanProjectSchema = z.object({
-    projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
-    scheme: z.string().optional().describe('Optional: The scheme to clean'),
-    configuration: z
-      .string()
-      .optional()
-      .describe('Optional: Build configuration to clean (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Optional: Path where derived data might be located'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-  });
-
-  // Mock tool definitions for testing
-  const cleanWorkspaceTool = {
-    name: 'clean_ws',
-    description:
-      "Cleans build products for a specific workspace using xcodebuild. IMPORTANT: Requires workspacePath. Scheme/Configuration are optional. Example: clean_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
-    groups: ['CLEAN'],
-    schema: cleanWorkspaceSchema,
-    handler: async (params: any) => {
-      // Validate required parameters - check for empty strings too
-      if (!params.workspacePath || params.workspacePath.trim() === '') {
-        return createTextResponse(
-          "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          true,
-        );
-      }
-
-      return handleCleanLogic(params);
-    },
-  };
-
-  const cleanProjectTool = {
-    name: 'clean_proj',
-    description:
-      "Cleans build products for a specific project file using xcodebuild. IMPORTANT: Requires projectPath. Scheme/Configuration are optional. Example: clean_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-    groups: ['CLEAN'],
-    schema: cleanProjectSchema,
-    handler: async (params: any) => {
-      // Validate required parameters - check for empty strings too
-      if (!params.projectPath || params.projectPath.trim() === '') {
-        return createTextResponse(
-          "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-          true,
-        );
-      }
-
-      return handleCleanLogic(params);
-    },
-  };
-
-  describe('clean_ws parameter validation', () => {
+  describe('cleanWorkspace parameter validation', () => {
     it('should reject missing workspacePath parameter', async () => {
-      const result = await callToolHandler(cleanWorkspaceTool, {});
-      expect(result.content).toEqual([
-        {
-          type: 'text',
-          text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-        },
-      ]);
-      expect(result.isError).toBe(true);
+      await expect(cleanWorkspace({})).rejects.toThrow();
     });
 
-    it('should reject empty workspacePath parameter', async () => {
-      const result = await callToolHandler(cleanWorkspaceTool, { workspacePath: '' });
-      expect(result.content).toEqual([
-        {
-          type: 'text',
-          text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-        },
-      ]);
-      expect(result.isError).toBe(true);
+    it('should reject undefined workspacePath parameter', async () => {
+      await expect(cleanWorkspace({ workspacePath: undefined as any })).rejects.toThrow();
+    });
+
+    it('should reject null workspacePath parameter', async () => {
+      await expect(cleanWorkspace({ workspacePath: null as any })).rejects.toThrow();
+    });
+
+    it('should reject non-string workspacePath parameter', async () => {
+      await expect(cleanWorkspace({ workspacePath: 123 as any })).rejects.toThrow();
     });
 
     it('should accept valid workspacePath without optional parameters', async () => {
-      const result = await callToolHandler(cleanWorkspaceTool, {
+      const result = await cleanWorkspace({
         workspacePath: '/path/to/MyProject.xcworkspace',
       });
       expect(result.isError).toBe(false);
     });
 
     it('should accept all optional parameters', async () => {
-      const result = await callToolHandler(cleanWorkspaceTool, {
+      const result = await cleanWorkspace({
         workspacePath: '/path/to/MyProject.xcworkspace',
         scheme: 'MyScheme',
         configuration: 'Release',
@@ -192,38 +88,32 @@ describe('clean tests', () => {
     });
   });
 
-  describe('clean_proj parameter validation', () => {
+  describe('cleanProject parameter validation', () => {
     it('should reject missing projectPath parameter', async () => {
-      const result = await callToolHandler(cleanProjectTool, {});
-      expect(result.content).toEqual([
-        {
-          type: 'text',
-          text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-        },
-      ]);
-      expect(result.isError).toBe(true);
+      await expect(cleanProject({})).rejects.toThrow();
     });
 
-    it('should reject empty projectPath parameter', async () => {
-      const result = await callToolHandler(cleanProjectTool, { projectPath: '' });
-      expect(result.content).toEqual([
-        {
-          type: 'text',
-          text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-        },
-      ]);
-      expect(result.isError).toBe(true);
+    it('should reject undefined projectPath parameter', async () => {
+      await expect(cleanProject({ projectPath: undefined as any })).rejects.toThrow();
+    });
+
+    it('should reject null projectPath parameter', async () => {
+      await expect(cleanProject({ projectPath: null as any })).rejects.toThrow();
+    });
+
+    it('should reject non-string projectPath parameter', async () => {
+      await expect(cleanProject({ projectPath: 123 as any })).rejects.toThrow();
     });
 
     it('should accept valid projectPath without optional parameters', async () => {
-      const result = await callToolHandler(cleanProjectTool, {
+      const result = await cleanProject({
         projectPath: '/path/to/MyProject.xcodeproj',
       });
       expect(result.isError).toBe(false);
     });
 
     it('should accept all optional parameters', async () => {
-      const result = await callToolHandler(cleanProjectTool, {
+      const result = await cleanProject({
         projectPath: '/path/to/MyProject.xcodeproj',
         scheme: 'MyScheme',
         configuration: 'Release',
@@ -234,13 +124,11 @@ describe('clean tests', () => {
     });
   });
 
-  describe('clean_ws success scenarios', () => {
+  describe('cleanWorkspace success scenarios', () => {
     it('should clean workspace successfully with minimal parameters', async () => {
-      const params = {
+      const result = await cleanWorkspace({
         workspacePath: '/path/to/MyProject.xcworkspace',
-      };
-
-      const result = await callToolHandler(cleanWorkspaceTool, params);
+      });
 
       expect(result.content).toEqual([
         { type: 'text', text: '✅ Clean succeeded for scheme MyScheme.' },
@@ -263,15 +151,13 @@ describe('clean tests', () => {
     });
 
     it('should clean workspace successfully with all parameters', async () => {
-      const params = {
+      const result = await cleanWorkspace({
         workspacePath: '/path/to/MyProject.xcworkspace',
         scheme: 'MyScheme',
         configuration: 'Release',
         derivedDataPath: '/path/to/derived/data',
         extraArgs: ['--verbose'],
-      };
-
-      const result = await callToolHandler(cleanWorkspaceTool, params);
+      });
 
       expect(result.content).toEqual([
         { type: 'text', text: '✅ Clean succeeded for scheme MyScheme.' },
@@ -302,12 +188,10 @@ describe('clean tests', () => {
         isError: true,
       });
 
-      const params = {
+      const result = await cleanWorkspace({
         workspacePath: '/path/to/MyProject.xcworkspace',
         scheme: 'MyScheme',
-      };
-
-      const result = await callToolHandler(cleanWorkspaceTool, params);
+      });
 
       expect(result.content).toEqual([
         { type: 'text', text: '❌ Clean failed for scheme MyScheme.' },
@@ -316,13 +200,11 @@ describe('clean tests', () => {
     });
   });
 
-  describe('clean_proj success scenarios', () => {
+  describe('cleanProject success scenarios', () => {
     it('should clean project successfully with minimal parameters', async () => {
-      const params = {
+      const result = await cleanProject({
         projectPath: '/path/to/MyProject.xcodeproj',
-      };
-
-      const result = await callToolHandler(cleanProjectTool, params);
+      });
 
       expect(result.content).toEqual([
         { type: 'text', text: '✅ Clean succeeded for scheme MyScheme.' },
@@ -345,15 +227,13 @@ describe('clean tests', () => {
     });
 
     it('should clean project successfully with all parameters', async () => {
-      const params = {
+      const result = await cleanProject({
         projectPath: '/path/to/MyProject.xcodeproj',
         scheme: 'MyScheme',
         configuration: 'Release',
         derivedDataPath: '/path/to/derived/data',
         extraArgs: ['--verbose'],
-      };
-
-      const result = await callToolHandler(cleanProjectTool, params);
+      });
 
       expect(result.content).toEqual([
         { type: 'text', text: '✅ Clean succeeded for scheme MyScheme.' },
@@ -384,12 +264,10 @@ describe('clean tests', () => {
         isError: true,
       });
 
-      const params = {
+      const result = await cleanProject({
         projectPath: '/path/to/MyProject.xcodeproj',
         scheme: 'MyScheme',
-      };
-
-      const result = await callToolHandler(cleanProjectTool, params);
+      });
 
       expect(result.content).toEqual([
         { type: 'text', text: '❌ Clean failed for scheme MyScheme.' },
@@ -403,42 +281,30 @@ describe('clean tests', () => {
       // Mock executeXcodeBuildCommand to throw an error
       mockExecuteXcodeBuildCommand.mockRejectedValue(new Error('Build utils execution failed'));
 
-      const params = {
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
-      };
-
-      const result = await callToolHandler(cleanWorkspaceTool, params);
-
-      expect(result.content).toEqual([
-        { type: 'text', text: 'Tool execution error: Build utils execution failed' },
-      ]);
-      expect(result.isError).toBe(true);
+      await expect(
+        cleanWorkspace({
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        }),
+      ).rejects.toThrow('Build utils execution failed');
     });
 
     it('should handle executeXcodeBuildCommand throwing an exception for project', async () => {
       // Mock executeXcodeBuildCommand to throw an error
       mockExecuteXcodeBuildCommand.mockRejectedValue(new Error('Build utils execution failed'));
 
-      const params = {
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'MyScheme',
-      };
-
-      const result = await callToolHandler(cleanProjectTool, params);
-
-      expect(result.content).toEqual([
-        { type: 'text', text: 'Tool execution error: Build utils execution failed' },
-      ]);
-      expect(result.isError).toBe(true);
+      await expect(
+        cleanProject({
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+        }),
+      ).rejects.toThrow('Build utils execution failed');
     });
 
     it('should handle default scheme and configuration correctly for workspace', async () => {
-      const params = {
+      await cleanWorkspace({
         workspacePath: '/path/to/MyProject.xcworkspace',
-      };
-
-      await callToolHandler(cleanWorkspaceTool, params);
+      });
 
       // Verify that empty scheme and Debug configuration are used as defaults
       expect(mockExecuteXcodeBuildCommand).toHaveBeenCalledWith(
@@ -457,11 +323,9 @@ describe('clean tests', () => {
     });
 
     it('should handle default scheme and configuration correctly for project', async () => {
-      const params = {
+      await cleanProject({
         projectPath: '/path/to/MyProject.xcodeproj',
-      };
-
-      await callToolHandler(cleanProjectTool, params);
+      });
 
       // Verify that empty scheme and Debug configuration are used as defaults
       expect(mockExecuteXcodeBuildCommand).toHaveBeenCalledWith(

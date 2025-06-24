@@ -73,6 +73,7 @@ export function registerBuildSwiftPackageTool(server: McpServer): void {
             },
             { type: 'text', text: result.output },
           ],
+          isError: false,
         };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

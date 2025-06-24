@@ -211,7 +211,7 @@ describe('Launch Tools (Canonical)', () => {
 
         const result = await callToolHandler(launchMacAppTool, params);
 
-        expect(result.isError || false).toBe(false); // Note: Tool doesn't set isError for exec failures
+        expect(result.isError).toBe(true);
         expect(result.content).toEqual([
           { type: 'text', text: '❌ Launch macOS app operation failed: No such file or directory' },
         ]);
@@ -427,6 +427,7 @@ describe('Launch Tools (Canonical)', () => {
 
       const result = await callToolHandler(launchMacAppTool, params);
 
+      expect(result.isError).toBe(true);
       expect(result.content).toEqual([
         { type: 'text', text: '❌ Launch macOS app operation failed: Command not found' },
       ]);

@@ -70,6 +70,7 @@ async function _handleShowBuildSettingsLogic(params: {
           text: result.output || 'Build settings retrieved successfully.',
         },
       ],
+      isError: false,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -142,6 +143,7 @@ async function _handleListSchemesLogic(params: {
           text: nextStepsText,
         },
       ],
+      isError: false,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

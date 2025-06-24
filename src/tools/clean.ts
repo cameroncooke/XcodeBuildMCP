@@ -18,8 +18,41 @@ import { log } from '../utils/logger.js';
 import { XcodePlatform } from '../utils/xcode.js';
 import { ToolResponse } from '../types/common.js';
 import { executeXcodeBuildCommand } from '../utils/build-utils.js';
+import { validateRequiredParam } from '../utils/validation.js';
 
-// --- Private Helper Function ---
+/**
+ * Schema for clean workspace tool parameters
+ */
+export const CleanWorkspaceSchema = z.object({
+  workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
+  scheme: z.string().optional().describe('Optional: The scheme to clean'),
+  configuration: z
+    .string()
+    .optional()
+    .describe('Optional: Build configuration to clean (Debug, Release, etc.)'),
+  derivedDataPath: z
+    .string()
+    .optional()
+    .describe('Optional: Path where derived data might be located'),
+  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+});
+
+/**
+ * Schema for clean project tool parameters
+ */
+export const CleanProjectSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
+  scheme: z.string().optional().describe('Optional: The scheme to clean'),
+  configuration: z
+    .string()
+    .optional()
+    .describe('Optional: Build configuration to clean (Debug, Release, etc.)'),
+  derivedDataPath: z
+    .string()
+    .optional()
+    .describe('Optional: Path where derived data might be located'),
+  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+});
 
 /**
  * Internal logic for cleaning build products.
@@ -50,26 +83,46 @@ async function _handleCleanLogic(params: {
   );
 }
 
+/**
+ * Cleans build products for a workspace
+ */
+export async function cleanWorkspace(
+  params: z.infer<typeof CleanWorkspaceSchema>,
+): Promise<ToolResponse> {
+  const validated = CleanWorkspaceSchema.parse(params);
+
+  const workspacePathValidation = validateRequiredParam('workspacePath', validated.workspacePath);
+  if (!workspacePathValidation.isValid) {
+    return workspacePathValidation.errorResponse!;
+  }
+
+  return _handleCleanLogic(validated);
+}
+
+/**
+ * Cleans build products for a project
+ */
+export async function cleanProject(
+  params: z.infer<typeof CleanProjectSchema>,
+): Promise<ToolResponse> {
+  const validated = CleanProjectSchema.parse(params);
+
+  const projectPathValidation = validateRequiredParam('projectPath', validated.projectPath);
+  if (!projectPathValidation.isValid) {
+    return projectPathValidation.errorResponse!;
+  }
+
+  return _handleCleanLogic(validated);
+}
+
 // --- Public Tool Definitions ---
 
 export function registerCleanWorkspaceTool(server: McpServer): void {
   server.tool(
     'clean_ws',
     "Cleans build products for a specific workspace using xcodebuild. IMPORTANT: Requires workspacePath. Scheme/Configuration are optional. Example: clean_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
-    {
-      workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-      scheme: z.string().optional().describe('Optional: The scheme to clean'),
-      configuration: z
-        .string()
-        .optional()
-        .describe('Optional: Build configuration to clean (Debug, Release, etc.)'),
-      derivedDataPath: z
-        .string()
-        .optional()
-        .describe('Optional: Path where derived data might be located'),
-      extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    },
-    (params) => _handleCleanLogic(params),
+    CleanWorkspaceSchema.shape,
+    cleanWorkspace,
   );
 }
 
@@ -77,19 +130,7 @@ export function registerCleanProjectTool(server: McpServer): void {
   server.tool(
     'clean_proj',
     "Cleans build products for a specific project file using xcodebuild. IMPORTANT: Requires projectPath. Scheme/Configuration are optional. Example: clean_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-    {
-      projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
-      scheme: z.string().optional().describe('Optional: The scheme to clean'),
-      configuration: z
-        .string()
-        .optional()
-        .describe('Optional: Build configuration to clean (Debug, Release, etc.)'),
-      derivedDataPath: z
-        .string()
-        .optional()
-        .describe('Optional: Path where derived data might be located'),
-      extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    },
-    (params) => _handleCleanLogic(params),
+    CleanProjectSchema.shape,
+    cleanProject,
   );
 }

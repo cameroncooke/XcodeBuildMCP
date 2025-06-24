@@ -1,21 +1,22 @@
 /**
- * Vitest test for discover_projs tool
+ * Discover Projects Tests - Comprehensive test coverage for project discovery tools
  *
- * Tests the project discovery functionality including parameter validation,
- * directory scanning, file system operations, and response formatting.
+ * This test file provides complete coverage for the discover_projects.ts tools:
+ * - discoverProjects: Find Xcode projects and workspaces in a directory
  *
- * Canonical tool location: src/tools/discover_projects.ts
+ * Tests follow the canonical testing patterns from CLAUDE.md with deterministic
+ * response validation and comprehensive parameter testing.
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { callToolHandler } from '../../tests-vitest/helpers/vitest-tool-helpers.js';
-import { z } from 'zod';
-import path from 'path';
+import { discoverProjects } from './discover_projects.js';
 
 // Mock fs/promises for file operations
-vi.mock('fs/promises', () => ({
-  readdir: vi.fn(),
-  stat: vi.fn(),
+vi.mock('node:fs/promises', () => ({
+  default: {
+    readdir: vi.fn(),
+    stat: vi.fn(),
+  },
 }));
 
 // Mock logger to prevent real logging during tests
@@ -23,148 +24,15 @@ vi.mock('../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
-// Import mocked functions
-import { readdir, stat } from 'fs/promises';
-const mockReaddir = readdir as MockedFunction<typeof readdir>;
-const mockStat = stat as MockedFunction<typeof stat>;
+describe('discover_projects tests', () => {
+  let mockReaddir: MockedFunction<any>;
+  let mockStat: MockedFunction<any>;
 
-// Create mock tool schema similar to the canonical implementation
-const mockSchema = z.object({
-  workspaceRoot: z.string().describe('The absolute path of the workspace root to scan within.'),
-  scanPath: z
-    .string()
-    .optional()
-    .describe('Optional: Path relative to workspace root to scan. Defaults to workspace root.'),
-  maxDepth: z
-    .number()
-    .int()
-    .nonnegative()
-    .optional()
-    .default(5)
-    .describe('Optional: Maximum directory depth to scan.'),
-});
-
-// Create a mock tool that mimics the discover_projs behavior
-const mockTool = {
-  name: 'discover_projs',
-  description:
-    'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
-  schema: mockSchema,
-  groups: ['PROJECT_DISCOVERY'],
-  handler: async (params: any) => {
-    // Mock implementation that mimics the canonical tool behavior
-    const { workspaceRoot, scanPath = '.', maxDepth = 5 } = params;
-
-    try {
-      // Calculate the actual scan path
-      const actualScanPath = scanPath === '.' ? workspaceRoot : path.join(workspaceRoot, scanPath);
-
-      // Check if scan path exists and is a directory
-      const statResult = await mockStat(actualScanPath);
-      if (!statResult.isDirectory()) {
-        throw new Error(`Scan path is not a directory: ${actualScanPath}`);
-      }
-
-      // Simulate scanning for projects
-      const results = { projects: [] as string[], workspaces: [] as string[] };
-
-      // Standard directories to skip during scanning
-      const standardDirsToSkip = new Set([
-        'build',
-        'Build',
-        'DerivedData',
-        'Pods',
-        'Carthage',
-        '.git',
-        '.svn',
-        '.hg',
-        'node_modules',
-        '.DS_Store',
-      ]);
-
-      // Mock project discovery logic
-      const entries = await mockReaddir(actualScanPath, { withFileTypes: true });
-
-      for (const entry of entries) {
-        // Skip symbolic links
-        if (entry.isSymbolicLink()) {
-          continue;
-        }
-
-        // Skip standard directories that should be ignored
-        if (standardDirsToSkip.has(entry.name)) {
-          continue;
-        }
-
-        if (entry.name.endsWith('.xcodeproj')) {
-          results.projects.push(path.join(actualScanPath, entry.name));
-        } else if (entry.name.endsWith('.xcworkspace')) {
-          results.workspaces.push(path.join(actualScanPath, entry.name));
-        }
-      }
-
-      results.projects.sort();
-      results.workspaces.sort();
-
-      const content = [
-        {
-          type: 'text',
-          text: `Discovery finished. Found ${results.projects.length} projects and ${results.workspaces.length} workspaces.`,
-        },
-      ];
-
-      if (results.projects.length > 0) {
-        content.push({
-          type: 'text',
-          text: `Projects found:\n - ${results.projects.join('\n - ')}`,
-        });
-      }
-
-      if (results.workspaces.length > 0) {
-        content.push({
-          type: 'text',
-          text: `Workspaces found:\n - ${results.workspaces.join('\n - ')}`,
-        });
-      }
-
-      return {
-        content,
-        projects: results.projects,
-        workspaces: results.workspaces,
-        isError: false,
-      };
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Failed to access scan path: ${workspaceRoot}/${scanPath}. Error: ${error instanceof Error ? error.message : String(error)}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-  },
-};
-
-const validParams = {
-  workspaceRoot: '/test/workspace',
-  scanPath: 'src',
-  maxDepth: 3,
-};
-
-const minimalParams = {
-  workspaceRoot: '/test/workspace',
-};
-
-const missingRequiredParams = {
-  // Missing workspaceRoot
-  scanPath: 'src',
-};
-
-describe('discover_projs tool', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+  beforeEach(async () => {
+    // Get the mocked fs module
+    const fs = await import('node:fs/promises');
+    mockReaddir = vi.mocked(fs.default.readdir);
+    mockStat = vi.mocked(fs.default.stat);
 
     // Setup default successful stat responses (directory exists)
     mockStat.mockResolvedValue({
@@ -173,24 +41,31 @@ describe('discover_projs tool', () => {
 
     // Setup default readdir response
     mockReaddir.mockResolvedValue([]);
+
+    vi.clearAllMocks();
   });
 
-  describe('parameter validation', () => {
-    it('should reject missing workspaceRoot', async () => {
-      const result = await callToolHandler(mockTool, missingRequiredParams);
+  describe('discoverProjects parameter validation', () => {
+    it('should reject missing workspaceRoot parameter', async () => {
+      await expect(discoverProjects({})).rejects.toThrow();
+    });
 
-      expect(result.isError).toBe(true);
-      expect(result.content).toEqual([
-        {
-          type: 'text',
-          text: "Required parameter 'workspaceRoot' is missing. Please provide a value for this parameter.",
-        },
-      ]);
-      expect(mockReaddir).not.toHaveBeenCalled();
+    it('should reject undefined workspaceRoot parameter', async () => {
+      await expect(discoverProjects({ workspaceRoot: undefined as any })).rejects.toThrow();
+    });
+
+    it('should reject null workspaceRoot parameter', async () => {
+      await expect(discoverProjects({ workspaceRoot: null as any })).rejects.toThrow();
+    });
+
+    it('should reject non-string workspaceRoot parameter', async () => {
+      await expect(discoverProjects({ workspaceRoot: 123 as any })).rejects.toThrow();
     });
 
     it('should accept valid minimal parameters', async () => {
-      const result = await callToolHandler(mockTool, minimalParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+      });
 
       expect(result.isError).toBe(false);
       expect(mockStat).toHaveBeenCalled();
@@ -198,43 +73,33 @@ describe('discover_projs tool', () => {
     });
 
     it('should accept valid full parameters', async () => {
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+        maxDepth: 3,
+      });
 
       expect(result.isError).toBe(false);
       expect(mockStat).toHaveBeenCalled();
       expect(mockReaddir).toHaveBeenCalled();
     });
 
-    it('should validate parameter types', async () => {
-      const params = {
-        workspaceRoot: 123, // Should be string
-        maxDepth: 'invalid', // Should be number
-      };
-
-      const result = await callToolHandler(mockTool, params);
-
-      expect(result.isError).toBe(true);
-      expect(mockReaddir).not.toHaveBeenCalled();
-    });
-
     it('should validate maxDepth is non-negative', async () => {
-      const params = {
-        workspaceRoot: '/test/workspace',
-        maxDepth: -1,
-      };
-
-      const result = await callToolHandler(mockTool, params);
-
-      expect(result.isError).toBe(true);
-      expect(result.content).toEqual([
-        { type: 'text', text: 'MaxDepth must be greater than or equal to 0' },
-      ]);
+      await expect(
+        discoverProjects({
+          workspaceRoot: '/test/workspace',
+          maxDepth: -1,
+        }),
+      ).rejects.toThrow();
     });
   });
 
   describe('file system operations', () => {
     it('should stat the scan path to verify it exists', async () => {
-      await callToolHandler(mockTool, validParams);
+      await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(mockStat).toHaveBeenCalledWith('/test/workspace/src');
     });
@@ -242,7 +107,10 @@ describe('discover_projs tool', () => {
     it('should handle non-existent scan path', async () => {
       mockStat.mockRejectedValue(new Error('ENOENT: no such file or directory'));
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Failed to access scan path');
@@ -254,7 +122,10 @@ describe('discover_projs tool', () => {
         isDirectory: () => false,
       } as any);
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Scan path is not a directory');
@@ -262,7 +133,10 @@ describe('discover_projs tool', () => {
     });
 
     it('should read directory contents during scan', async () => {
-      await callToolHandler(mockTool, validParams);
+      await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(mockReaddir).toHaveBeenCalledWith('/test/workspace/src', { withFileTypes: true });
     });
@@ -270,11 +144,15 @@ describe('discover_projs tool', () => {
     it('should handle directory read errors gracefully', async () => {
       mockReaddir.mockRejectedValue(new Error('Permission denied'));
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Failed to access scan path');
-      expect(result.content[0].text).toContain('Permission denied');
+      expect(result.isError).toBe(false); // The tool continues despite read errors
+      expect(result.content[0].text).toContain(
+        'Discovery finished. Found 0 projects and 0 workspaces.',
+      );
     });
   });
 
@@ -293,7 +171,10 @@ describe('discover_projs tool', () => {
         },
       ] as any);
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toContain('Found 1 projects and 0 workspaces');
@@ -310,7 +191,10 @@ describe('discover_projs tool', () => {
         },
       ] as any);
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toContain('Found 0 projects and 1 workspaces');
@@ -332,7 +216,10 @@ describe('discover_projs tool', () => {
         },
       ] as any);
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toContain('Found 1 projects and 1 workspaces');
@@ -356,7 +243,10 @@ describe('discover_projs tool', () => {
         },
       ] as any);
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toContain('Found 1 projects and 0 workspaces');
@@ -398,7 +288,10 @@ describe('discover_projs tool', () => {
         },
       ] as any);
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toContain('Found 1 projects and 0 workspaces');
@@ -410,7 +303,10 @@ describe('discover_projs tool', () => {
     it('should return success response with no projects found', async () => {
       mockReaddir.mockResolvedValue([]);
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(result.isError).toBe(false);
       expect(result.content).toEqual([
@@ -434,7 +330,10 @@ describe('discover_projs tool', () => {
         },
       ] as any);
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(result.isError).toBe(false);
       expect(result.projects).toEqual(['/test/workspace/src/App.xcodeproj']);
@@ -465,7 +364,10 @@ describe('discover_projs tool', () => {
         },
       ] as any);
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(result.isError).toBe(false);
       expect(result.projects).toEqual([
@@ -481,14 +383,16 @@ describe('discover_projs tool', () => {
 
   describe('path handling', () => {
     it('should default to workspace root when scanPath is not provided', async () => {
-      await callToolHandler(mockTool, minimalParams);
+      await discoverProjects({
+        workspaceRoot: '/test/workspace',
+      });
 
       expect(mockStat).toHaveBeenCalledWith('/test/workspace');
       expect(mockReaddir).toHaveBeenCalledWith('/test/workspace', { withFileTypes: true });
     });
 
     it('should resolve relative scanPath against workspace root', async () => {
-      await callToolHandler(mockTool, {
+      await discoverProjects({
         workspaceRoot: '/test/workspace',
         scanPath: 'subdir/nested',
       });
@@ -500,7 +404,7 @@ describe('discover_projs tool', () => {
     });
 
     it('should handle absolute paths in workspace root properly', async () => {
-      await callToolHandler(mockTool, {
+      await discoverProjects({
         workspaceRoot: '/Users/developer/MyProject',
         scanPath: 'Sources',
       });
@@ -509,35 +413,14 @@ describe('discover_projs tool', () => {
     });
   });
 
-  describe('tool metadata', () => {
-    it('should have correct tool metadata', () => {
-      expect(mockTool.name).toBe('discover_projs');
-      expect(mockTool.description).toContain('Scans a directory');
-      expect(mockTool.description).toContain('Xcode project');
-      expect(mockTool.description).toContain('workspace');
-    });
-  });
-
   describe('error scenarios', () => {
-    it('should handle unexpected errors during discovery', async () => {
-      // Mock handler to throw an unexpected error
-      const originalHandler = mockTool.handler;
-      mockTool.handler = vi.fn().mockRejectedValue(new Error('Unexpected discovery error'));
-
-      const result = await callToolHandler(mockTool, validParams);
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Tool execution error');
-      expect(result.content[0].text).toContain('Unexpected discovery error');
-
-      // Restore original handler
-      mockTool.handler = originalHandler;
-    });
-
     it('should handle filesystem permission errors', async () => {
       mockStat.mockRejectedValue(Object.assign(new Error('Permission denied'), { code: 'EACCES' }));
 
-      const result = await callToolHandler(mockTool, validParams);
+      const result = await discoverProjects({
+        workspaceRoot: '/test/workspace',
+        scanPath: 'src',
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Failed to access scan path');

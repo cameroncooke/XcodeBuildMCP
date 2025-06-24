@@ -226,8 +226,6 @@ async function _handleIOSSimulatorBuildAndRunLogic(params: {
       if (!isBooted) {
         log('info', `Booting simulator ${simulatorUuid}`);
         execSync(`xcrun simctl boot "${simulatorUuid}"`);
-        // Wait a moment for the simulator to fully boot
-        await new Promise((resolve) => setTimeout(resolve, 2000));
       } else {
         log('info', `Simulator ${simulatorUuid} is already booted`);
       }
@@ -244,8 +242,6 @@ async function _handleIOSSimulatorBuildAndRunLogic(params: {
     try {
       log('info', 'Opening Simulator app');
       execSync('open -a Simulator');
-      // Give the Simulator app time to open
-      await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log('warning', `Warning: Could not open Simulator app: ${errorMessage}`);
@@ -256,8 +252,6 @@ async function _handleIOSSimulatorBuildAndRunLogic(params: {
     try {
       log('info', `Installing app at path: ${appBundlePath} to simulator: ${simulatorUuid}`);
       execSync(`xcrun simctl install "${simulatorUuid}" "${appBundlePath}"`);
-      // Wait a moment for installation to complete
-      await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log('error', `Error installing app: ${errorMessage}`);
@@ -342,6 +336,7 @@ Next Steps:
 When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
         },
       ],
+      isError: false,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

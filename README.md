@@ -41,7 +41,15 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 
 ## Overview
 
-This project implements an MCP server that exposes Xcode operations as tools that can be invoked by AI agents via the MCP protocol. It enables programmatic interaction with Xcode projects through a standardised interface, optimised for agent-driven development workflows.
+XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operations as tools for AI assistants and other MCP clients. Built with a modular, tool-based architecture, it provides 81 fine-grained tools organized into workflow-based groups, enabling programmatic interaction with Xcode projects, simulators, devices, and Swift packages through a standardized interface.
+
+### Architecture Highlights
+
+- **Layered Design**: Clean separation between transport, tool registration, implementation, and utility layers
+- **Tool Granularity**: 81 specialized tools for precise control over Xcode operations
+- **Flexible Enablement**: Environment-based tool selection at group or individual level
+- **Type Safety**: Comprehensive Zod schema validation for all tool parameters
+- **Extensible**: Easy addition of new tools through declarative registration system
 
 ![xcodebuildmcp2](https://github.com/user-attachments/assets/8961d5db-f7ed-4e60-bbb8-48bfd0bc1353)
 <caption>Using Cursor to build, install, and launch an app on the iOS simulator while capturing logs at run-time.</caption>
@@ -276,6 +284,54 @@ Example MCP client configuration:
 }
 ```
 
+## Architecture
+
+XcodeBuildMCP follows a modular, layered architecture designed for extensibility and maintainability:
+
+```
+┌────────────────────────────────────────────────────────────┐
+│            MCP Client (AI Assistant, CLI, Editor)          │
+└────────────────────────┬───────────────────────────────────┘
+                         │ MCP Protocol (stdio)
+┌────────────────────────▼───────────────────────────────────┐
+│                   MCP Server (index.ts)                     │
+├─────────────────────────────────────────────────────────────┤
+│              Tool Registration & Feature Toggle Layer       │
+│         (register-tools.ts, tool-groups.ts)                │
+├─────────────────────────────────────────────────────────────┤
+│                      Tool Implementation Layer              │
+│  ┌─────────────┬──────────────┬────────────────────────┐  │
+│  │ Build Tools │ Test Tools   │ Management Tools       │  │
+│  │ Simulator   │ Device Tools │ UI Automation          │  │
+│  │ Swift Pkg   │ Diagnostics  │ Project Discovery      │  │
+│  └─────────────┴──────────────┴────────────────────────┘  │
+├─────────────────────────────────────────────────────────────┤
+│                   Shared Utilities Layer                    │
+│  (command.ts, build-utils.ts, validation.ts, logger.ts)    │
+├─────────────────────────────────────────────────────────────┤
+│               External Dependencies                         │
+│  (xcodebuild, xcrun, simctl, xcodemake, AXe)              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Key Components
+
+- **Entry Point** (`src/index.ts`): Server initialization and lifecycle management
+- **Tool Registration** (`src/utils/register-tools.ts`): Declarative tool catalog with metadata
+- **Tool Groups** (`src/utils/tool-groups.ts`): Workflow-based tool organization
+- **Tool Implementation** (`src/tools/*.ts`): Individual tool logic with Zod validation
+- **Utilities** (`src/utils/*.ts`): Shared functionality for command execution, error handling
+- **Type System** (`src/types/common.ts`): Core interfaces and enums
+
+### Testing Infrastructure
+
+- **Framework**: Vitest with TypeScript support
+- **Coverage**: 407 tests across 26 test files
+- **Pattern**: Import production code, mock only external dependencies
+- **Validation**: Deterministic response validation for all tools
+
+For detailed architectural documentation, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Selective tool registration
 
 By default all tools are enabled but for some clients it may be useful to only enable specific tools to reduce the amount of context that is sent to the client. This can be achieved by setting specific environment variables in your clients MCP configuration.
@@ -313,11 +369,28 @@ You can find a list of available tools and detailed instructions on how to enabl
 ### Building and running iOS app in Claude Desktop
 https://github.com/user-attachments/assets/e3c08d75-8be6-4857-b4d0-9350b26ef086
 
+## Documentation
+
+XcodeBuildMCP includes comprehensive documentation to help you understand and extend the project:
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Detailed architectural overview, design principles, and component details
+- **[TOOLS.md](TOOLS.md)** - Complete documentation of all 81 available tools
+- **[TOOL_OPTIONS.md](TOOL_OPTIONS.md)** - Tool configuration and selective enablement guide
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development setup, testing standards, and contribution guidelines
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
+
+For AI assistants and automated tools:
+- **[CLAUDE.md](CLAUDE.md)** - Guidelines for AI assistants working with this codebase
+
 ## Contributing
 
 Contributions are welcome! Here's how you can help improve XcodeBuildMCP.
 
-See our [CONTRIBUTING](CONTRIBUTING.md) document for more information on how to configure your local environment and contribute to the project.
+See our [CONTRIBUTING](CONTRIBUTING.md) document for detailed contribution guidelines, including:
+- Development setup instructions
+- Mandatory testing principles
+- Code quality standards
+- Pre-commit checklist
 
 ## Licence
 
