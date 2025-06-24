@@ -215,7 +215,7 @@ export function registerStartDeviceLogCaptureTool(server: McpServer): void {
       bundleId: bundleIdSchema,
     },
     async (args): Promise<ToolResponse> => {
-      const { deviceId, bundleId } = args;
+      const { deviceId, bundleId } = args as { deviceId: string; bundleId: string };
 
       const { sessionId, error } = await startDeviceLogCapture({
         deviceUuid: deviceId,
@@ -262,7 +262,7 @@ export function registerStopDeviceLogCaptureTool(server: McpServer): void {
       logSessionId: logSessionIdSchema,
     },
     async (args): Promise<ToolResponse> => {
-      const { logSessionId } = args;
+      const { logSessionId } = args as { logSessionId: string };
 
       const { logContent, error } = await stopDeviceLogCapture(logSessionId);
 

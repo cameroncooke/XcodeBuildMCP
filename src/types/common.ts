@@ -70,6 +70,7 @@ export interface CommandResponse {
   success: boolean;
   output: string;
   error?: string;
+  process?: unknown; // ChildProcess from node:child_process
 }
 
 /**

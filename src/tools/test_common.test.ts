@@ -302,7 +302,7 @@ describe('test_common utilities tests', () => {
         scheme: 'MyScheme',
         configuration: 'Debug',
         simulatorName: 'iPhone 15',
-        platform: XcodePlatform.IOS_SIMULATOR,
+        platform: XcodePlatform.iOSSimulator,
       };
 
       const result = await handleTestLogic(params);
@@ -316,7 +316,7 @@ describe('test_common utilities tests', () => {
           extraArgs: expect.arrayContaining(['-resultBundlePath']),
         }),
         expect.objectContaining({
-          platform: XcodePlatform.IOS_SIMULATOR,
+          platform: XcodePlatform.iOSSimulator,
           simulatorName: 'iPhone 15',
           logPrefix: 'Test Run',
         }),
@@ -353,7 +353,7 @@ describe('test_common utilities tests', () => {
         scheme: 'MyScheme',
         configuration: 'Release',
         deviceId: 'device-uuid-123',
-        platform: XcodePlatform.IOS_DEVICE,
+        platform: XcodePlatform.iOS,
       };
 
       const result = await handleTestLogic(params);
@@ -365,7 +365,7 @@ describe('test_common utilities tests', () => {
           configuration: 'Release',
         }),
         expect.objectContaining({
-          platform: XcodePlatform.IOS_DEVICE,
+          platform: XcodePlatform.iOS,
           deviceId: 'device-uuid-123',
         }),
         undefined,
@@ -389,7 +389,7 @@ describe('test_common utilities tests', () => {
         configuration: 'Debug',
         extraArgs: ['-parallel-testing-enabled', 'YES'],
         preferXcodebuild: true,
-        platform: XcodePlatform.MACOS,
+        platform: XcodePlatform.macOS,
       };
 
       const result = await handleTestLogic(params);
@@ -403,7 +403,7 @@ describe('test_common utilities tests', () => {
           ]),
         }),
         expect.objectContaining({
-          platform: XcodePlatform.MACOS,
+          platform: XcodePlatform.macOS,
         }),
         true,
         'test',
@@ -424,7 +424,7 @@ describe('test_common utilities tests', () => {
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',
         configuration: 'Debug',
-        platform: XcodePlatform.IOS_SIMULATOR,
+        platform: XcodePlatform.iOSSimulator,
       };
 
       const result = await handleTestLogic(params);
@@ -451,7 +451,7 @@ describe('test_common utilities tests', () => {
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',
         configuration: 'Debug',
-        platform: XcodePlatform.IOS_SIMULATOR,
+        platform: XcodePlatform.iOSSimulator,
       };
 
       const result = await handleTestLogic(params);
@@ -474,7 +474,7 @@ describe('test_common utilities tests', () => {
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',
         configuration: 'Debug',
-        platform: XcodePlatform.IOS_SIMULATOR,
+        platform: XcodePlatform.iOSSimulator,
       };
 
       const result = await handleTestLogic(params);
@@ -510,7 +510,7 @@ describe('test_common utilities tests', () => {
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',
         configuration: 'Debug',
-        platform: XcodePlatform.IOS_SIMULATOR,
+        platform: XcodePlatform.iOSSimulator,
       };
 
       const result = await handleTestLogic(params);
@@ -538,7 +538,7 @@ describe('test_common utilities tests', () => {
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',
         configuration: 'Debug',
-        platform: XcodePlatform.IOS_SIMULATOR,
+        platform: XcodePlatform.iOSSimulator,
       };
 
       await handleTestLogic(params);
@@ -564,7 +564,7 @@ describe('test_common utilities tests', () => {
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',
         configuration: 'Debug',
-        platform: XcodePlatform.IOS_SIMULATOR,
+        platform: XcodePlatform.iOSSimulator,
       };
 
       const result = await handleTestLogic(params);
@@ -597,7 +597,7 @@ describe('test_common utilities tests', () => {
         derivedDataPath: '/custom/derived/data',
         extraArgs: ['-test-timeouts-enabled', 'YES'],
         preferXcodebuild: false,
-        platform: XcodePlatform.IOS_SIMULATOR,
+        platform: XcodePlatform.iOSSimulator,
       };
 
       const result = await handleTestLogic(params);
@@ -611,7 +611,7 @@ describe('test_common utilities tests', () => {
           extraArgs: expect.arrayContaining(['-test-timeouts-enabled', 'YES', '-resultBundlePath']),
         }),
         expect.objectContaining({
-          platform: XcodePlatform.IOS_SIMULATOR,
+          platform: XcodePlatform.iOSSimulator,
           simulatorName: 'iPhone 15',
           simulatorId: 'sim-uuid-123',
           deviceId: 'device-uuid-123',
@@ -673,7 +673,7 @@ describe('test_common utilities tests', () => {
         configuration: 'Debug',
         simulatorName: 'iPhone 15 Pro',
         useLatestOS: true,
-        platform: XcodePlatform.IOS_SIMULATOR,
+        platform: XcodePlatform.iOSSimulator,
       };
 
       const result = await handleTestLogic(params);
@@ -717,7 +717,7 @@ describe('test_common utilities tests', () => {
         scheme: 'MyMacApp',
         configuration: 'Release',
         derivedDataPath: '/tmp/DerivedData',
-        platform: XcodePlatform.MACOS,
+        platform: XcodePlatform.macOS,
       };
 
       const result = await handleTestLogic(params);
@@ -781,7 +781,7 @@ describe('test_common utilities tests', () => {
         scheme: 'FailingApp',
         configuration: 'Debug',
         deviceId: 'iphone-14-uuid',
-        platform: XcodePlatform.IOS_DEVICE,
+        platform: XcodePlatform.iOS,
       };
 
       const result = await handleTestLogic(params);

@@ -77,11 +77,11 @@ export async function executeCommand(
     let stdout = '';
     let stderr = '';
 
-    childProcess.stdout.on('data', (data) => {
+    childProcess.stdout?.on('data', (data) => {
       stdout += data.toString();
     });
 
-    childProcess.stderr.on('data', (data) => {
+    childProcess.stderr?.on('data', (data) => {
       stderr += data.toString();
     });
 
