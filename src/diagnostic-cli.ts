@@ -18,7 +18,7 @@ async function runDiagnostic(): Promise<void> {
     console.error(`Running XcodeBuildMCP Diagnostic Tool (v${version})...`);
     console.error('Collecting system information and checking dependencies...\n');
 
-    const { runDiagnosticTool } = await import('./tools/diagnostic.js');
+    const { runDiagnosticTool } = await import('./tools/diagnostic/index.js');
 
     // Run the diagnostic tool
     const result = await runDiagnosticTool();

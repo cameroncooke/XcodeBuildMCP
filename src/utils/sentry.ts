@@ -11,7 +11,7 @@ import {
   getXcodeInfo,
   getEnvironmentVariables,
   checkBinaryAvailability,
-} from '../tools/diagnostic.js';
+} from '../tools/diagnostic/index.js';
 
 Sentry.init({
   dsn: 'https://798607831167c7b9fe2f2912f5d3c665@o4509258288332800.ingest.de.sentry.io/4509258293837904',
