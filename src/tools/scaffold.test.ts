@@ -1,14 +1,14 @@
 /**
  * Vitest test for scaffold tools
- * 
+ *
  * Tests both scaffold_ios_project and scaffold_macos_project tools including
  * parameter validation, file operations, template processing, and response formatting.
- * 
+ *
  * Canonical tool location: src/tools/scaffold.ts
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { callToolHandler } from '../../helpers/vitest-tool-helpers.js';
+import { callToolHandler } from '../../tests-vitest/helpers/vitest-tool-helpers.js';
 import { z } from 'zod';
 
 // Mock fs and fs/promises for file operations
@@ -24,8 +24,13 @@ vi.mock('fs/promises', () => ({
   readdir: vi.fn(),
 }));
 
+// Mock logger to prevent real logging during tests
+vi.mock('../utils/logger.js', () => ({
+  log: vi.fn(),
+}));
+
 // Mock TemplateManager to prevent network calls
-vi.mock('../../../src/utils/template-manager.js', () => ({
+vi.mock('../utils/template-manager.js', () => ({
   TemplateManager: {
     getTemplatePath: vi.fn(),
     cleanup: vi.fn(),
@@ -35,7 +40,7 @@ vi.mock('../../../src/utils/template-manager.js', () => ({
 // Import mocked functions
 import { existsSync } from 'fs';
 import { mkdir, cp, readFile, writeFile, readdir } from 'fs/promises';
-import { TemplateManager } from '../../../src/utils/template-manager.js';
+import { TemplateManager } from '../utils/template-manager.js';
 
 const mockExistsSync = existsSync as MockedFunction<typeof existsSync>;
 const mockMkdir = mkdir as MockedFunction<typeof mkdir>;
@@ -55,9 +60,19 @@ const iosSchema = z.object({
   currentProjectVersion: z.string().optional().describe('Current project version'),
   deploymentTarget: z.string().optional().describe('iOS deployment target'),
   targetedDeviceFamily: z.string().optional().describe('Targeted device families'),
-  supportedOrientations: z.array(z.string()).optional().describe('Supported orientations for iPhone'),
-  supportedOrientationsIpad: z.array(z.string()).optional().describe('Supported orientations for iPad'),
-  customizeNames: z.boolean().optional().default(true).describe('Whether to customize the project name throughout the template'),
+  supportedOrientations: z
+    .array(z.string())
+    .optional()
+    .describe('Supported orientations for iPhone'),
+  supportedOrientationsIpad: z
+    .array(z.string())
+    .optional()
+    .describe('Supported orientations for iPad'),
+  customizeNames: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Whether to customize the project name throughout the template'),
 });
 
 const macosSchema = z.object({
@@ -68,82 +83,97 @@ const macosSchema = z.object({
   marketingVersion: z.string().optional().describe('Marketing version'),
   currentProjectVersion: z.string().optional().describe('Current project version'),
   deploymentTarget: z.string().optional().describe('macOS deployment target'),
-  customizeNames: z.boolean().optional().default(true).describe('Whether to customize the project name throughout the template'),
+  customizeNames: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Whether to customize the project name throughout the template'),
 });
 
 // Create mock tools that mimic the scaffold behavior
 const mockIOSTool = {
   name: 'scaffold_ios_project',
-  description: 'Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.',
+  description:
+    'Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.',
   schema: iosSchema,
   groups: ['PROJECT_SCAFFOLDING'],
   handler: async (params: any) => {
     const { projectName, outputPath, bundleIdentifier, customizeNames = true } = params;
-    
+
     try {
       // Get template path
       const templatePath = await mockTemplateManager.getTemplatePath('iOS');
-      
+
       // Check if project files already exist
       const workspaceExists = mockExistsSync(`${outputPath}/${projectName}.xcworkspace`);
       const projectExists = mockExistsSync(`${outputPath}/${projectName}.xcodeproj`);
-      
+
       if (workspaceExists || projectExists) {
         return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify({
-              success: false,
-              error: `Project files already exist at ${outputPath}. Please choose a different location or remove existing files.`,
-              projectPath: outputPath,
-              platform: 'iOS'
-            })
-          }],
-          isError: false
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                success: false,
+                error: `Project files already exist at ${outputPath}. Please choose a different location or remove existing files.`,
+                projectPath: outputPath,
+                platform: 'iOS',
+              }),
+            },
+          ],
+          isError: false,
         };
       }
-      
+
       // Simulate scaffolding process
       const entries = await mockReaddir(templatePath, { withFileTypes: true });
-      
+
       // Process template files
       for (const entry of entries) {
-        if (entry.name.startsWith('.') || 
-            entry.name === '.git' || 
-            entry.name === 'xcuserdata' ||
-            entry.name.endsWith('.xcuserstate') ||
-            entry.name === '.DS_Store') {
+        if (
+          entry.name.startsWith('.') ||
+          entry.name === '.git' ||
+          entry.name === 'xcuserdata' ||
+          entry.name.endsWith('.xcuserstate') ||
+          entry.name === '.DS_Store'
+        ) {
           continue;
         }
-        
+
         if (entry.isFile()) {
           if (entry.name.endsWith('.xcconfig')) {
             // Process xcconfig files specially
             const content = await mockReadFile(`${templatePath}/${entry.name}`, 'utf8');
             let processedContent = content;
-            
+
             if (bundleIdentifier && content.includes('PRODUCT_BUNDLE_IDENTIFIER')) {
-              processedContent = processedContent.replace(/PRODUCT_BUNDLE_IDENTIFIER = .+/, `PRODUCT_BUNDLE_IDENTIFIER = ${bundleIdentifier}`);
+              processedContent = processedContent.replace(
+                /PRODUCT_BUNDLE_IDENTIFIER = .+/,
+                `PRODUCT_BUNDLE_IDENTIFIER = ${bundleIdentifier}`,
+              );
             }
-            
+
             await mockWriteFile(`${outputPath}/${projectName}/${entry.name}`, processedContent);
           } else if (entry.name.endsWith('.png') || entry.name.endsWith('.jpg')) {
             // Copy binary files
-            await mockCp(`${templatePath}/${entry.name}`, `${outputPath}/${projectName}/${entry.name}`);
+            await mockCp(
+              `${templatePath}/${entry.name}`,
+              `${outputPath}/${projectName}/${entry.name}`,
+            );
           } else {
             // Process text files with placeholder replacement
             const content = await mockReadFile(`${templatePath}/${entry.name}`, 'utf8');
             let processedContent = content;
-            
+
             if (customizeNames) {
               processedContent = processedContent.replace(/MyProject/g, projectName);
             }
-            
+
             await mockWriteFile(`${outputPath}/${projectName}/${entry.name}`, processedContent);
           }
         }
       }
-      
+
       const response = {
         success: true,
         message: `Successfully scaffolded iOS project '${projectName}' at ${outputPath}`,
@@ -152,25 +182,25 @@ const mockIOSTool = {
         nextSteps: [
           `cd ${outputPath}/${projectName}`,
           'open *.xcworkspace',
-          'Use build_ios_sim_name_ws to build for iPhone 16 simulator'
-        ]
+          'Use build_ios_sim_name_ws to build for iPhone 16 simulator',
+        ],
       };
-      
+
       return {
         content: [{ type: 'text', text: JSON.stringify(response) }],
-        isError: false
+        isError: false,
       };
     } catch (error) {
       const response = {
         success: false,
         error: error instanceof Error ? error.message : String(error),
         projectPath: outputPath,
-        platform: 'iOS'
+        platform: 'iOS',
       };
-      
+
       return {
         content: [{ type: 'text', text: JSON.stringify(response) }],
-        isError: false
+        isError: false,
       };
     }
   },
@@ -178,73 +208,81 @@ const mockIOSTool = {
 
 const mockMacOSTool = {
   name: 'scaffold_macos_project',
-  description: 'Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.',
+  description:
+    'Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.',
   schema: macosSchema,
   groups: ['PROJECT_SCAFFOLDING'],
   handler: async (params: any) => {
     const { projectName, outputPath, bundleIdentifier, customizeNames = true } = params;
-    
+
     try {
       // Get template path
       const templatePath = await mockTemplateManager.getTemplatePath('macOS');
-      
+
       // Check if project files already exist
       const workspaceExists = mockExistsSync(`${outputPath}/${projectName}.xcworkspace`);
       const projectExists = mockExistsSync(`${outputPath}/${projectName}.xcodeproj`);
-      
+
       if (workspaceExists || projectExists) {
         return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify({
-              success: false,
-              error: `Project files already exist at ${outputPath}. Please choose a different location or remove existing files.`,
-              projectPath: outputPath,
-              platform: 'macOS'
-            })
-          }],
-          isError: false
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                success: false,
+                error: `Project files already exist at ${outputPath}. Please choose a different location or remove existing files.`,
+                projectPath: outputPath,
+                platform: 'macOS',
+              }),
+            },
+          ],
+          isError: false,
         };
       }
-      
+
       // Simulate scaffolding process
       const entries = await mockReaddir(templatePath, { withFileTypes: true });
-      
+
       // Process template files
       for (const entry of entries) {
-        if (entry.name.startsWith('.') || 
-            entry.name === '.git' || 
-            entry.name === 'xcuserdata' ||
-            entry.name.endsWith('.xcuserstate') ||
-            entry.name === '.DS_Store') {
+        if (
+          entry.name.startsWith('.') ||
+          entry.name === '.git' ||
+          entry.name === 'xcuserdata' ||
+          entry.name.endsWith('.xcuserstate') ||
+          entry.name === '.DS_Store'
+        ) {
           continue;
         }
-        
+
         if (entry.isFile()) {
           if (entry.name.endsWith('.xcconfig')) {
             // Process xcconfig files specially
             const content = await mockReadFile(`${templatePath}/${entry.name}`, 'utf8');
             let processedContent = content;
-            
+
             if (bundleIdentifier && content.includes('PRODUCT_BUNDLE_IDENTIFIER')) {
-              processedContent = processedContent.replace(/PRODUCT_BUNDLE_IDENTIFIER = .+/, `PRODUCT_BUNDLE_IDENTIFIER = ${bundleIdentifier}`);
+              processedContent = processedContent.replace(
+                /PRODUCT_BUNDLE_IDENTIFIER = .+/,
+                `PRODUCT_BUNDLE_IDENTIFIER = ${bundleIdentifier}`,
+              );
             }
-            
+
             await mockWriteFile(`${outputPath}/${projectName}/${entry.name}`, processedContent);
           } else {
             // Process text files with placeholder replacement
             const content = await mockReadFile(`${templatePath}/${entry.name}`, 'utf8');
             let processedContent = content;
-            
+
             if (customizeNames) {
               processedContent = processedContent.replace(/MyProject/g, projectName);
             }
-            
+
             await mockWriteFile(`${outputPath}/${projectName}/${entry.name}`, processedContent);
           }
         }
       }
-      
+
       const response = {
         success: true,
         message: `Successfully scaffolded macOS project '${projectName}' at ${outputPath}`,
@@ -253,25 +291,25 @@ const mockMacOSTool = {
         nextSteps: [
           `cd ${outputPath}/${projectName}`,
           'open *.xcworkspace',
-          'Use build_mac_ws to build for macOS'
-        ]
+          'Use build_mac_ws to build for macOS',
+        ],
       };
-      
+
       return {
         content: [{ type: 'text', text: JSON.stringify(response) }],
-        isError: false
+        isError: false,
       };
     } catch (error) {
       const response = {
         success: false,
         error: error instanceof Error ? error.message : String(error),
         projectPath: outputPath,
-        platform: 'macOS'
+        platform: 'macOS',
       };
-      
+
       return {
         content: [{ type: 'text', text: JSON.stringify(response) }],
-        isError: false
+        isError: false,
       };
     }
   },
@@ -311,20 +349,20 @@ const missingRequiredParams = {
 describe('scaffold tools', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock TemplateManager to return mock template paths
     mockTemplateManager.getTemplatePath.mockImplementation((platform: string) => {
       return Promise.resolve(`/tmp/test-templates/${platform.toLowerCase()}`);
     });
     mockTemplateManager.cleanup.mockResolvedValue();
-    
+
     // Setup default mock implementations for file operations
     mockExistsSync.mockReturnValue(false); // No existing projects
     mockMkdir.mockResolvedValue(undefined);
     mockCp.mockResolvedValue();
     mockReadFile.mockResolvedValue('template content with MyProject placeholder');
     mockWriteFile.mockResolvedValue();
-    
+
     // Mock readdir to return template files
     mockReaddir.mockResolvedValue([
       { name: 'MyProject.xcworkspace', isDirectory: () => true, isFile: () => false } as any,
@@ -343,7 +381,10 @@ describe('scaffold tools', () => {
 
         expect(result.isError).toBe(true);
         expect(result.content).toEqual([
-          { type: 'text', text: "Required parameter 'projectName' is missing. Please provide a value for this parameter." }
+          {
+            type: 'text',
+            text: "Required parameter 'projectName' is missing. Please provide a value for this parameter.",
+          },
         ]);
         expect(mockMkdir).not.toHaveBeenCalled();
       });
@@ -358,7 +399,10 @@ describe('scaffold tools', () => {
 
         expect(result.isError).toBe(true);
         expect(result.content).toEqual([
-          { type: 'text', text: "Required parameter 'projectName' is missing. Please provide a value for this parameter." }
+          {
+            type: 'text',
+            text: "Required parameter 'projectName' is missing. Please provide a value for this parameter.",
+          },
         ]);
       });
 
@@ -405,7 +449,7 @@ describe('scaffold tools', () => {
         expect(result.isError).toBe(false); // Tool handles errors internally
         const responseText = result.content[0].text;
         const responseData = JSON.parse(responseText);
-        
+
         expect(responseData.success).toBe(false);
         expect(responseData.error).toContain('already exist');
         expect(responseData.error).toContain('/tmp/test-projects');
@@ -414,7 +458,9 @@ describe('scaffold tools', () => {
       it('should read template directory structure', async () => {
         await callToolHandler(mockIOSTool, validIOSParams);
 
-        expect(mockReaddir).toHaveBeenCalledWith('/tmp/test-templates/ios', { withFileTypes: true });
+        expect(mockReaddir).toHaveBeenCalledWith('/tmp/test-templates/ios', {
+          withFileTypes: true,
+        });
       });
 
       it('should process text files with placeholder replacement', async () => {
@@ -424,10 +470,10 @@ describe('scaffold tools', () => {
 
         expect(mockReadFile).toHaveBeenCalled();
         expect(mockWriteFile).toHaveBeenCalled();
-        
+
         // Verify placeholder replacement occurred in writeFile calls
-        const writeCall = mockWriteFile.mock.calls.find(call => 
-          typeof call[1] === 'string' && call[1].includes('TestIOSApp')
+        const writeCall = mockWriteFile.mock.calls.find(
+          (call) => typeof call[1] === 'string' && call[1].includes('TestIOSApp'),
         );
         expect(writeCall).toBeDefined();
       });
@@ -437,11 +483,11 @@ describe('scaffold tools', () => {
         mockReaddir.mockResolvedValue([
           { name: 'Shared.xcconfig', isDirectory: () => false, isFile: () => true } as any,
         ]);
-        
+
         mockReadFile.mockResolvedValue(
           'PRODUCT_BUNDLE_IDENTIFIER = com.example.myproject\n' +
-          'IPHONEOS_DEPLOYMENT_TARGET = 14.0\n' +
-          'TARGETED_DEVICE_FAMILY = 1\n'
+            'IPHONEOS_DEPLOYMENT_TARGET = 14.0\n' +
+            'TARGETED_DEVICE_FAMILY = 1\n',
         );
 
         await callToolHandler(mockIOSTool, validIOSParams);
@@ -476,7 +522,7 @@ describe('scaffold tools', () => {
         expect(result.isError).toBe(false);
         const responseText = result.content[0].text;
         const responseData = JSON.parse(responseText);
-        
+
         expect(responseData.success).toBe(true);
         expect(responseData.projectPath).toBe('/tmp/test-projects');
         expect(responseData.platform).toBe('iOS');
@@ -489,7 +535,7 @@ describe('scaffold tools', () => {
         expect(result.isError).toBe(false);
         const responseText = result.content[0].text;
         const responseData = JSON.parse(responseText);
-        
+
         expect(responseData.nextSteps).toBeDefined();
         expect(responseData.nextSteps.join(' ')).toContain('build_ios_sim_name_ws');
         expect(responseData.nextSteps.join(' ')).toContain('iPhone 16');
@@ -503,7 +549,7 @@ describe('scaffold tools', () => {
         expect(result.isError).toBe(false); // Tool handles errors internally
         const responseText = result.content[0].text;
         const responseData = JSON.parse(responseText);
-        
+
         expect(responseData.success).toBe(false);
         expect(responseData.error).toContain('Template not found');
       });
@@ -517,7 +563,10 @@ describe('scaffold tools', () => {
 
         expect(result.isError).toBe(true);
         expect(result.content).toEqual([
-          { type: 'text', text: "Required parameter 'projectName' is missing. Please provide a value for this parameter." }
+          {
+            type: 'text',
+            text: "Required parameter 'projectName' is missing. Please provide a value for this parameter.",
+          },
         ]);
       });
 
@@ -541,10 +590,10 @@ describe('scaffold tools', () => {
         mockReaddir.mockResolvedValue([
           { name: 'Shared.xcconfig', isDirectory: () => false, isFile: () => true } as any,
         ]);
-        
+
         mockReadFile.mockResolvedValue(
           'PRODUCT_BUNDLE_IDENTIFIER = com.example.myproject\n' +
-          'MACOSX_DEPLOYMENT_TARGET = 11.0\n'
+            'MACOSX_DEPLOYMENT_TARGET = 11.0\n',
         );
 
         await callToolHandler(mockMacOSTool, validMacOSParams);
@@ -563,7 +612,7 @@ describe('scaffold tools', () => {
         expect(result.isError).toBe(false);
         const responseText = result.content[0].text;
         const responseData = JSON.parse(responseText);
-        
+
         expect(responseData.success).toBe(true);
         expect(responseData.projectPath).toBe('/tmp/test-projects');
         expect(responseData.platform).toBe('macOS');
@@ -576,7 +625,7 @@ describe('scaffold tools', () => {
         expect(result.isError).toBe(false);
         const responseText = result.content[0].text;
         const responseData = JSON.parse(responseText);
-        
+
         expect(responseData.nextSteps).toBeDefined();
         expect(responseData.nextSteps.join(' ')).toContain('build_mac_ws');
         expect(responseData.nextSteps.join(' ')).not.toContain('iPhone');
@@ -607,7 +656,7 @@ describe('scaffold tools', () => {
       expect(result.isError).toBe(false); // Tool handles errors internally
       const responseText = result.content[0].text;
       const responseData = JSON.parse(responseText);
-      
+
       expect(responseData.success).toBe(false);
       expect(responseData.error).toContain('Network error');
     });
@@ -620,7 +669,7 @@ describe('scaffold tools', () => {
       expect(result.isError).toBe(false); // Tool handles errors internally
       const responseText = result.content[0].text;
       const responseData = JSON.parse(responseText);
-      
+
       expect(responseData.success).toBe(false);
       expect(responseData.error).toContain('Permission denied');
     });
@@ -633,7 +682,7 @@ describe('scaffold tools', () => {
       expect(result.isError).toBe(false); // Tool handles errors internally
       const responseText = result.content[0].text;
       const responseData = JSON.parse(responseText);
-      
+
       expect(responseData.success).toBe(false);
       expect(responseData.error).toContain('Cannot create directory');
     });
@@ -645,11 +694,11 @@ describe('scaffold tools', () => {
         ...validIOSParams,
         bundleIdentifier: 'com.custom.identifier',
       };
-      
+
       mockReaddir.mockResolvedValue([
         { name: 'Shared.xcconfig', isDirectory: () => false, isFile: () => true } as any,
       ]);
-      
+
       mockReadFile.mockResolvedValue('PRODUCT_BUNDLE_IDENTIFIER = com.example.default');
 
       await callToolHandler(mockIOSTool, params);
@@ -664,11 +713,11 @@ describe('scaffold tools', () => {
         ...validMacOSParams,
         deploymentTarget: '12.0',
       };
-      
+
       mockReaddir.mockResolvedValue([
         { name: 'Shared.xcconfig', isDirectory: () => false, isFile: () => true } as any,
       ]);
-      
+
       mockReadFile.mockResolvedValue('MACOSX_DEPLOYMENT_TARGET = 11.0');
 
       await callToolHandler(mockMacOSTool, params);
@@ -683,14 +732,14 @@ describe('scaffold tools', () => {
         ...validIOSParams,
         customizeNames: false,
       };
-      
+
       mockReadFile.mockResolvedValue('Content with MyProject placeholder');
 
       await callToolHandler(mockIOSTool, params);
 
       // Content should not be modified when customizeNames is false
-      const writeCall = mockWriteFile.mock.calls.find(call => 
-        typeof call[1] === 'string' && call[1].includes('MyProject')
+      const writeCall = mockWriteFile.mock.calls.find(
+        (call) => typeof call[1] === 'string' && call[1].includes('MyProject'),
       );
       expect(writeCall).toBeDefined();
     });

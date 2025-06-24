@@ -1,14 +1,14 @@
 /**
  * Vitest test for discover_projs tool
- * 
+ *
  * Tests the project discovery functionality including parameter validation,
  * directory scanning, file system operations, and response formatting.
- * 
+ *
  * Canonical tool location: src/tools/discover_projects.ts
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { callToolHandler } from '../../helpers/vitest-tool-helpers.js';
+import { callToolHandler } from '../../tests-vitest/helpers/vitest-tool-helpers.js';
 import { z } from 'zod';
 import path from 'path';
 
@@ -16,6 +16,11 @@ import path from 'path';
 vi.mock('fs/promises', () => ({
   readdir: vi.fn(),
   stat: vi.fn(),
+}));
+
+// Mock logger to prevent real logging during tests
+vi.mock('../utils/logger.js', () => ({
+  log: vi.fn(),
 }));
 
 // Import mocked functions
@@ -26,75 +31,102 @@ const mockStat = stat as MockedFunction<typeof stat>;
 // Create mock tool schema similar to the canonical implementation
 const mockSchema = z.object({
   workspaceRoot: z.string().describe('The absolute path of the workspace root to scan within.'),
-  scanPath: z.string().optional().describe('Optional: Path relative to workspace root to scan. Defaults to workspace root.'),
-  maxDepth: z.number().int().nonnegative().optional().default(5).describe('Optional: Maximum directory depth to scan.'),
+  scanPath: z
+    .string()
+    .optional()
+    .describe('Optional: Path relative to workspace root to scan. Defaults to workspace root.'),
+  maxDepth: z
+    .number()
+    .int()
+    .nonnegative()
+    .optional()
+    .default(5)
+    .describe('Optional: Maximum directory depth to scan.'),
 });
 
 // Create a mock tool that mimics the discover_projs behavior
 const mockTool = {
   name: 'discover_projs',
-  description: 'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
+  description:
+    'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
   schema: mockSchema,
   groups: ['PROJECT_DISCOVERY'],
   handler: async (params: any) => {
     // Mock implementation that mimics the canonical tool behavior
     const { workspaceRoot, scanPath = '.', maxDepth = 5 } = params;
-    
+
     try {
       // Calculate the actual scan path
       const actualScanPath = scanPath === '.' ? workspaceRoot : path.join(workspaceRoot, scanPath);
-      
+
       // Check if scan path exists and is a directory
       const statResult = await mockStat(actualScanPath);
       if (!statResult.isDirectory()) {
         throw new Error(`Scan path is not a directory: ${actualScanPath}`);
       }
-      
+
       // Simulate scanning for projects
       const results = { projects: [] as string[], workspaces: [] as string[] };
-      
+
       // Standard directories to skip during scanning
       const standardDirsToSkip = new Set([
-        'build', 'Build', 'DerivedData', 'Pods', 'Carthage',
-        '.git', '.svn', '.hg', 'node_modules', '.DS_Store'
+        'build',
+        'Build',
+        'DerivedData',
+        'Pods',
+        'Carthage',
+        '.git',
+        '.svn',
+        '.hg',
+        'node_modules',
+        '.DS_Store',
       ]);
-      
+
       // Mock project discovery logic
       const entries = await mockReaddir(actualScanPath, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         // Skip symbolic links
         if (entry.isSymbolicLink()) {
           continue;
         }
-        
+
         // Skip standard directories that should be ignored
         if (standardDirsToSkip.has(entry.name)) {
           continue;
         }
-        
+
         if (entry.name.endsWith('.xcodeproj')) {
           results.projects.push(path.join(actualScanPath, entry.name));
         } else if (entry.name.endsWith('.xcworkspace')) {
           results.workspaces.push(path.join(actualScanPath, entry.name));
         }
       }
-      
+
       results.projects.sort();
       results.workspaces.sort();
-      
+
       const content = [
-        { type: 'text', text: `Discovery finished. Found ${results.projects.length} projects and ${results.workspaces.length} workspaces.` }
+        {
+          type: 'text',
+          text: `Discovery finished. Found ${results.projects.length} projects and ${results.workspaces.length} workspaces.`,
+        },
       ];
-      
+
       if (results.projects.length > 0) {
-        content.push({ type: 'text', text: `Projects found:\n - ${results.projects.join('\n - ')}` });
+        content.push({
+          type: 'text',
+          text: `Projects found:\n - ${results.projects.join('\n - ')}`,
+        });
       }
-      
+
       if (results.workspaces.length > 0) {
-        content.push({ type: 'text', text: `Workspaces found:\n - ${results.workspaces.join('\n - ')}` });
+        content.push({
+          type: 'text',
+          text: `Workspaces found:\n - ${results.workspaces.join('\n - ')}`,
+        });
       }
-      
+
       return {
         content,
         projects: results.projects,
@@ -103,7 +135,12 @@ const mockTool = {
       };
     } catch (error) {
       return {
-        content: [{ type: 'text', text: `Failed to access scan path: ${workspaceRoot}/${scanPath}. Error: ${error instanceof Error ? error.message : String(error)}` }],
+        content: [
+          {
+            type: 'text',
+            text: `Failed to access scan path: ${workspaceRoot}/${scanPath}. Error: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
         isError: true,
       };
     }
@@ -128,12 +165,12 @@ const missingRequiredParams = {
 describe('discover_projs tool', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup default successful stat responses (directory exists)
     mockStat.mockResolvedValue({
       isDirectory: () => true,
     } as any);
-    
+
     // Setup default readdir response
     mockReaddir.mockResolvedValue([]);
   });
@@ -144,7 +181,10 @@ describe('discover_projs tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content).toEqual([
-        { type: 'text', text: "Required parameter 'workspaceRoot' is missing. Please provide a value for this parameter." }
+        {
+          type: 'text',
+          text: "Required parameter 'workspaceRoot' is missing. Please provide a value for this parameter.",
+        },
       ]);
       expect(mockReaddir).not.toHaveBeenCalled();
     });
@@ -187,7 +227,7 @@ describe('discover_projs tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content).toEqual([
-        { type: 'text', text: 'MaxDepth must be greater than or equal to 0' }
+        { type: 'text', text: 'MaxDepth must be greater than or equal to 0' },
       ]);
     });
   });
@@ -374,7 +414,7 @@ describe('discover_projs tool', () => {
 
       expect(result.isError).toBe(false);
       expect(result.content).toEqual([
-        { type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' }
+        { type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' },
       ]);
       expect(result.projects).toEqual([]);
       expect(result.workspaces).toEqual([]);
@@ -430,11 +470,11 @@ describe('discover_projs tool', () => {
       expect(result.isError).toBe(false);
       expect(result.projects).toEqual([
         '/test/workspace/src/AApp.xcodeproj',
-        '/test/workspace/src/ZApp.xcodeproj'
+        '/test/workspace/src/ZApp.xcodeproj',
       ]);
       expect(result.workspaces).toEqual([
         '/test/workspace/src/AWorkspace.xcworkspace',
-        '/test/workspace/src/ZWorkspace.xcworkspace'
+        '/test/workspace/src/ZWorkspace.xcworkspace',
       ]);
     });
   });
@@ -454,7 +494,9 @@ describe('discover_projs tool', () => {
       });
 
       expect(mockStat).toHaveBeenCalledWith('/test/workspace/subdir/nested');
-      expect(mockReaddir).toHaveBeenCalledWith('/test/workspace/subdir/nested', { withFileTypes: true });
+      expect(mockReaddir).toHaveBeenCalledWith('/test/workspace/subdir/nested', {
+        withFileTypes: true,
+      });
     });
 
     it('should handle absolute paths in workspace root properly', async () => {
@@ -487,7 +529,7 @@ describe('discover_projs tool', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Tool execution error');
       expect(result.content[0].text).toContain('Unexpected discovery error');
-      
+
       // Restore original handler
       mockTool.handler = originalHandler;
     });
