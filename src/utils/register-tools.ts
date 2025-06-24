@@ -4,7 +4,7 @@ import {
   registerMacOSBuildProjectTool,
   registerMacOSBuildAndRunWorkspaceTool,
   registerMacOSBuildAndRunProjectTool,
-} from '../tools/build_macos.js';
+} from '../tools/build-macos/index.js';
 
 // Import simulator build tools
 import {
@@ -16,10 +16,10 @@ import {
   registerSimulatorBuildAndRunByNameProjectTool,
   registerSimulatorBuildAndRunByIdWorkspaceTool,
   registerSimulatorBuildAndRunByIdProjectTool,
-} from '../tools/build_ios_simulator.js';
+} from '../tools/build-ios-simulator/index.js';
 
 // Import device build tools
-import { registerDeviceBuildTools } from '../tools/build_ios_device.js';
+import { registerDeviceBuildTools } from '../tools/build-ios-device/index.js';
 
 // Import simulator test tools
 import {
@@ -27,15 +27,15 @@ import {
   registerSimulatorTestByNameProjectTool,
   registerSimulatorTestByIdWorkspaceTool,
   registerSimulatorTestByIdProjectTool,
-} from '../tools/test_ios_simulator.js';
+} from '../tools/test-ios-simulator/index.js';
 import {
   registerAppleDeviceTestWorkspaceTool,
   registerAppleDeviceTestProjectTool,
-} from '../tools/test_ios_device.js';
+} from '../tools/test-ios-device/index.js';
 import {
   registerMacOSTestWorkspaceTool,
   registerMacOSTestProjectTool,
-} from '../tools/test_macos.js';
+} from '../tools/test-macos/index.js';
 
 // Import device discovery tools
 import {
@@ -43,7 +43,7 @@ import {
   registerInstallAppDeviceTool,
   registerLaunchAppDeviceTool,
   registerStopAppDeviceTool,
-} from '../tools/device.js';
+} from '../tools/device/index.js';
 
 // Import app path tools
 import {
@@ -55,7 +55,7 @@ import {
   registerGetSimulatorAppPathByNameProjectTool,
   registerGetSimulatorAppPathByIdWorkspaceTool,
   registerGetSimulatorAppPathByIdProjectTool,
-} from '../tools/app_path.js';
+} from '../tools/app-path/index.js';
 
 // Import build settings and scheme tools
 import {
@@ -63,7 +63,7 @@ import {
   registerShowBuildSettingsProjectTool,
   registerListSchemesWorkspaceTool,
   registerListSchemesProjectTool,
-} from '../tools/build_settings.js';
+} from '../tools/build-settings/index.js';
 
 // Import simulator tools
 import {
@@ -79,53 +79,56 @@ import {
   registerResetSimulatorLocationTool,
   registerSetNetworkConditionTool,
   registerResetNetworkConditionTool,
-} from '../tools/simulator.js';
+} from '../tools/simulator/index.js';
 
 // Import bundle ID tools
-import { registerGetMacOSBundleIdTool, registerGetAppBundleIdTool } from '../tools/bundleId.js';
+import {
+  registerGetMacOSBundleIdTool,
+  registerGetAppBundleIdTool,
+} from '../tools/bundle-id/index.js';
 
 // Import swift package tools
-import { registerBuildSwiftPackageTool } from '../tools/build-swift-package.js';
-import { registerTestSwiftPackageTool } from '../tools/test-swift-package.js';
+import { registerBuildSwiftPackageTool } from '../tools/build-swift-package/index.js';
+import { registerTestSwiftPackageTool } from '../tools/test-swift-package/index.js';
 import {
   registerRunSwiftPackageTool,
   registerStopSwiftPackageTool,
   registerListSwiftPackageTool,
   registerCleanSwiftPackageTool,
-} from '../tools/run-swift-package.js';
+} from '../tools/run-swift-package/index.js';
 
 // Import clean tool
-import { registerCleanWorkspaceTool, registerCleanProjectTool } from '../tools/clean.js';
+import { registerCleanWorkspaceTool, registerCleanProjectTool } from '../tools/clean/index.js';
 
 // Import launch tools
-import { registerLaunchMacOSAppTool, registerStopMacOSAppTool } from '../tools/launch.js';
+import { registerLaunchMacOSAppTool, registerStopMacOSAppTool } from '../tools/launch/index.js';
 
 // Import project/workspace discovery tool
-import { registerDiscoverProjectsTool } from '../tools/discover_projects.js';
+import { registerDiscoverProjectsTool } from '../tools/discover-projects/index.js';
 
 // Import log capture tools
 import {
   registerStartSimulatorLogCaptureTool,
   registerStopAndGetSimulatorLogTool,
-} from '../tools/log.js';
+} from '../tools/log/index.js';
 
 // Import device log capture tools
 import {
   registerStartDeviceLogCaptureTool,
   registerStopDeviceLogCaptureTool,
-} from '../tools/device_log.js';
+} from '../tools/device-log/index.js';
 
 // Import axe tools
-import { registerAxeTools } from '../tools/axe.js';
+import { registerAxeTools } from '../tools/axe/index.js';
 
 // Import screenshot tool
-import { registerScreenshotTool } from '../tools/screenshot.js';
+import { registerScreenshotTool } from '../tools/screenshot/index.js';
 
 // Import diagnostic tool
-import { registerDiagnosticTool } from '../tools/diagnostic.js';
+import { registerDiagnosticTool } from '../tools/diagnostic/index.js';
 
 // Import scaffold tool
-import { registerScaffoldTools } from '../tools/scaffold.js';
+import { registerScaffoldTools } from '../tools/scaffold/index.js';
 
 // Import MCP server
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
