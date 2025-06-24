@@ -85,6 +85,7 @@ export function registerLaunchMacOSAppTool(server: McpServer): void {
               text: `❌ Launch macOS app operation failed: ${errorMessage}`,
             },
           ],
+          isError: true,
         };
       }
     },

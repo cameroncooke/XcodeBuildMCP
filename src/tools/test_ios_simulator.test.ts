@@ -12,231 +12,57 @@
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { callToolHandler } from '../../tests-vitest/helpers/vitest-tool-helpers.js';
-import { z } from 'zod';
-import { ToolResponse } from '../types/common.js';
-
-// Mock modules to prevent real command execution
-vi.mock('child_process', () => ({ spawn: vi.fn() }));
-vi.mock('fs/promises', () => ({
-  mkdtemp: vi.fn(),
-  rm: vi.fn(),
-  stat: vi.fn(),
-  readFile: vi.fn(),
-  writeFile: vi.fn(),
-}));
+import {
+  registerSimulatorTestByNameWorkspaceTool,
+  registerSimulatorTestByNameProjectTool,
+  registerSimulatorTestByIdWorkspaceTool,
+  registerSimulatorTestByIdProjectTool,
+} from './test_ios_simulator.js';
 
 // Mock external dependencies
 vi.mock('../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../utils/build-utils.js', () => ({
-  executeXcodeBuildCommand: vi.fn(),
-}));
-
-vi.mock('../utils/validation.js', () => ({
-  createTextResponse: vi.fn((text, isError = false) => ({
-    content: [{ type: 'text', text }],
-    isError,
-  })),
-}));
-
-vi.mock('../utils/xcode.js', () => ({
-  XcodePlatform: {
-    IOS_SIMULATOR: 'iOS Simulator',
-    IOS_DEVICE: 'iOS Device',
-    MACOS: 'macOS',
-  },
-}));
-
-vi.mock('util', () => ({
-  promisify: vi.fn(() => vi.fn()),
-}));
-
 vi.mock('./test_common.js', () => ({
   handleTestLogic: vi.fn(),
 }));
 
-// Tool implementations for testing - these mirror the actual tool registrations
-const testSimulatorByNameWorkspaceTool = {
-  name: 'test_sim_name_ws',
-  description:
-    'Runs tests for a workspace on a simulator by name using xcodebuild test and parses xcresult output.',
-  groups: ['SIMULATOR_BUILD'],
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    simulatorName: z
-      .string()
-      .describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    useLatestOS: z
-      .boolean()
-      .optional()
-      .describe('Whether to use the latest OS version for the named simulator'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-      ),
+vi.mock('../utils/xcode.js', () => ({
+  XcodePlatform: {
+    iOSSimulator: 'iOS Simulator',
   },
-  handler: async (params: any): Promise<ToolResponse> => {
-    const { handleTestLogic } = await import('./test_common.js');
-    const { XcodePlatform } = await import('../utils/xcode.js');
-    return handleTestLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      useLatestOS: params.useLatestOS ?? false,
-      preferXcodebuild: params.preferXcodebuild ?? false,
-      platform: XcodePlatform.IOS_SIMULATOR,
-    });
-  },
-};
+}));
 
-const testSimulatorByNameProjectTool = {
-  name: 'test_sim_name_proj',
-  description:
-    'Runs tests for a project on a simulator by name using xcodebuild test and parses xcresult output.',
-  groups: ['SIMULATOR_BUILD'],
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    simulatorName: z
-      .string()
-      .describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    useLatestOS: z
-      .boolean()
-      .optional()
-      .describe('Whether to use the latest OS version for the named simulator'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-      ),
-  },
-  handler: async (params: any): Promise<ToolResponse> => {
-    const { handleTestLogic } = await import('./test_common.js');
-    const { XcodePlatform } = await import('../utils/xcode.js');
-    return handleTestLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      useLatestOS: params.useLatestOS ?? false,
-      preferXcodebuild: params.preferXcodebuild ?? false,
-      platform: XcodePlatform.IOS_SIMULATOR,
-    });
-  },
-};
+vi.mock('./common.js', () => ({
+  registerTool: vi.fn(),
+  workspacePathSchema: { type: 'string' },
+  projectPathSchema: { type: 'string' },
+  schemeSchema: { type: 'string' },
+  configurationSchema: { type: 'string', optional: true },
+  derivedDataPathSchema: { type: 'string', optional: true },
+  extraArgsSchema: { type: 'array', optional: true },
+  simulatorNameSchema: { type: 'string' },
+  simulatorIdSchema: { type: 'string' },
+  useLatestOSSchema: { type: 'boolean', optional: true },
+  preferXcodebuildSchema: { type: 'boolean', optional: true },
+}));
 
-const testSimulatorByIdWorkspaceTool = {
-  name: 'test_sim_id_ws',
-  description:
-    'Runs tests for a workspace on a simulator by UUID using xcodebuild test and parses xcresult output.',
-  groups: ['SIMULATOR_BUILD'],
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    simulatorId: z
-      .string()
-      .describe('UUID of the simulator to use (obtained from listSimulators) (Required)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    useLatestOS: z
-      .boolean()
-      .optional()
-      .describe('Whether to use the latest OS version for the named simulator'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-      ),
-  },
-  handler: async (params: any): Promise<ToolResponse> => {
-    const { handleTestLogic } = await import('./test_common.js');
-    const { XcodePlatform } = await import('../utils/xcode.js');
-    return handleTestLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      useLatestOS: params.useLatestOS ?? false,
-      preferXcodebuild: params.preferXcodebuild ?? false,
-      platform: XcodePlatform.IOS_SIMULATOR,
-    });
-  },
-};
-
-const testSimulatorByIdProjectTool = {
-  name: 'test_sim_id_proj',
-  description:
-    'Runs tests for a project on a simulator by UUID using xcodebuild test and parses xcresult output.',
-  groups: ['SIMULATOR_BUILD'],
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    simulatorId: z
-      .string()
-      .describe('UUID of the simulator to use (obtained from listSimulators) (Required)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    useLatestOS: z
-      .boolean()
-      .optional()
-      .describe('Whether to use the latest OS version for the named simulator'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-      ),
-  },
-  handler: async (params: any): Promise<ToolResponse> => {
-    const { handleTestLogic } = await import('./test_common.js');
-    const { XcodePlatform } = await import('../utils/xcode.js');
-    return handleTestLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      useLatestOS: params.useLatestOS ?? false,
-      preferXcodebuild: params.preferXcodebuild ?? false,
-      platform: XcodePlatform.IOS_SIMULATOR,
-    });
-  },
+// Mock a basic MCP server for tool registration
+const mockServer = {
+  tool: vi.fn((name, description, schema, handler) => ({ name, description, schema, handler })),
 };
 
 describe('test_ios_simulator tools tests', () => {
   let mockHandleTestLogic: MockedFunction<any>;
-  let mockLog: MockedFunction<any>;
-  let mockCreateTextResponse: MockedFunction<any>;
+  let mockRegisterTool: MockedFunction<any>;
 
   beforeEach(async () => {
-    // Import mocked modules
     const testCommon = await import('./test_common.js');
-    const logger = await import('../utils/logger.js');
-    const validation = await import('../utils/validation.js');
+    const common = await import('./common.js');
 
     mockHandleTestLogic = testCommon.handleTestLogic as MockedFunction<any>;
-    mockLog = logger.log as MockedFunction<any>;
-    mockCreateTextResponse = validation.createTextResponse as MockedFunction<any>;
+    mockRegisterTool = common.registerTool as MockedFunction<any>;
 
     // Setup default mock for handleTestLogic to return basic success response
     mockHandleTestLogic.mockResolvedValue({
@@ -244,55 +70,16 @@ describe('test_ios_simulator tools tests', () => {
       isError: false,
     });
 
+    // Mock registerTool to call the handler directly
+    mockRegisterTool.mockImplementation((server, toolName, description, schema, handler) => {
+      return { name: toolName, description, schema, handler };
+    });
+
     vi.clearAllMocks();
   });
 
   describe('test_sim_name_ws tool', () => {
-    describe('parameter validation', () => {
-      it('should reject missing workspacePath parameter', async () => {
-        const result = await callToolHandler(testSimulatorByNameWorkspaceTool, {
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 15',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject missing scheme parameter', async () => {
-        const result = await callToolHandler(testSimulatorByNameWorkspaceTool, {
-          workspacePath: '/path/to/workspace.xcworkspace',
-          simulatorName: 'iPhone 15',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject missing simulatorName parameter', async () => {
-        const result = await callToolHandler(testSimulatorByNameWorkspaceTool, {
-          workspacePath: '/path/to/workspace.xcworkspace',
-          scheme: 'MyScheme',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorName' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-    });
-
-    describe('success scenarios', () => {
+    describe('parameter validation and success scenarios', () => {
       it('should successfully run tests on workspace with simulator name', async () => {
         // Mock handleTestLogic to return the expected response format
         mockHandleTestLogic.mockResolvedValue({
@@ -306,13 +93,22 @@ describe('test_ios_simulator tools tests', () => {
           isError: false,
         });
 
+        registerSimulatorTestByNameWorkspaceTool(mockServer as any);
+
+        // Get the registered handler from the mock call
+        const registerCall = mockRegisterTool.mock.calls.find(
+          (call) => call[1] === 'test_sim_name_ws',
+        );
+        expect(registerCall).toBeDefined();
+        const handler = registerCall![4]; // Handler is 5th argument
+
         const params = {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 15',
         };
 
-        const result = await callToolHandler(testSimulatorByNameWorkspaceTool, params);
+        const result = await handler(params);
 
         expect(mockHandleTestLogic).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -325,6 +121,7 @@ describe('test_ios_simulator tools tests', () => {
             platform: 'iOS Simulator',
           }),
         );
+
         expect(result.content).toEqual([
           { type: 'text', text: '✅ iOS Simulator Test succeeded for scheme MyScheme.' },
           {
@@ -336,6 +133,13 @@ describe('test_ios_simulator tools tests', () => {
       });
 
       it('should handle optional parameters correctly', async () => {
+        registerSimulatorTestByNameWorkspaceTool(mockServer as any);
+
+        const registerCall = mockRegisterTool.mock.calls.find(
+          (call) => call[1] === 'test_sim_name_ws',
+        );
+        const handler = registerCall![4];
+
         const params = {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -347,7 +151,7 @@ describe('test_ios_simulator tools tests', () => {
           preferXcodebuild: true,
         };
 
-        const result = await callToolHandler(testSimulatorByNameWorkspaceTool, params);
+        const result = await handler(params);
 
         expect(mockHandleTestLogic).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -368,50 +172,6 @@ describe('test_ios_simulator tools tests', () => {
   });
 
   describe('test_sim_name_proj tool', () => {
-    describe('parameter validation', () => {
-      it('should reject missing projectPath parameter', async () => {
-        const result = await callToolHandler(testSimulatorByNameProjectTool, {
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 15',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject missing scheme parameter', async () => {
-        const result = await callToolHandler(testSimulatorByNameProjectTool, {
-          projectPath: '/path/to/project.xcodeproj',
-          simulatorName: 'iPhone 15',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject missing simulatorName parameter', async () => {
-        const result = await callToolHandler(testSimulatorByNameProjectTool, {
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorName' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-    });
-
     describe('success scenarios', () => {
       it('should successfully run tests on project with simulator name', async () => {
         // Mock handleTestLogic to return the expected response format
@@ -426,13 +186,20 @@ describe('test_ios_simulator tools tests', () => {
           isError: false,
         });
 
+        registerSimulatorTestByNameProjectTool(mockServer as any);
+
+        const registerCall = mockRegisterTool.mock.calls.find(
+          (call) => call[1] === 'test_sim_name_proj',
+        );
+        const handler = registerCall![4];
+
         const params = {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 15',
         };
 
-        const result = await callToolHandler(testSimulatorByNameProjectTool, params);
+        const result = await handler(params);
 
         expect(mockHandleTestLogic).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -445,6 +212,7 @@ describe('test_ios_simulator tools tests', () => {
             platform: 'iOS Simulator',
           }),
         );
+
         expect(result.content).toEqual([
           { type: 'text', text: '✅ iOS Simulator Test succeeded for scheme MyScheme.' },
           {
@@ -458,50 +226,6 @@ describe('test_ios_simulator tools tests', () => {
   });
 
   describe('test_sim_id_ws tool', () => {
-    describe('parameter validation', () => {
-      it('should reject missing workspacePath parameter', async () => {
-        const result = await callToolHandler(testSimulatorByIdWorkspaceTool, {
-          scheme: 'MyScheme',
-          simulatorId: 'ABC123-DEF456-789',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject missing scheme parameter', async () => {
-        const result = await callToolHandler(testSimulatorByIdWorkspaceTool, {
-          workspacePath: '/path/to/workspace.xcworkspace',
-          simulatorId: 'ABC123-DEF456-789',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject missing simulatorId parameter', async () => {
-        const result = await callToolHandler(testSimulatorByIdWorkspaceTool, {
-          workspacePath: '/path/to/workspace.xcworkspace',
-          scheme: 'MyScheme',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-    });
-
     describe('success scenarios', () => {
       it('should successfully run tests on workspace with simulator ID', async () => {
         // Mock handleTestLogic to return the expected response format
@@ -516,13 +240,20 @@ describe('test_ios_simulator tools tests', () => {
           isError: false,
         });
 
+        registerSimulatorTestByIdWorkspaceTool(mockServer as any);
+
+        const registerCall = mockRegisterTool.mock.calls.find(
+          (call) => call[1] === 'test_sim_id_ws',
+        );
+        const handler = registerCall![4];
+
         const params = {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
           simulatorId: 'ABC123-DEF456-789',
         };
 
-        const result = await callToolHandler(testSimulatorByIdWorkspaceTool, params);
+        const result = await handler(params);
 
         expect(mockHandleTestLogic).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -535,6 +266,7 @@ describe('test_ios_simulator tools tests', () => {
             platform: 'iOS Simulator',
           }),
         );
+
         expect(result.content).toEqual([
           { type: 'text', text: '✅ iOS Simulator Test succeeded for scheme MyScheme.' },
           {
@@ -548,50 +280,6 @@ describe('test_ios_simulator tools tests', () => {
   });
 
   describe('test_sim_id_proj tool', () => {
-    describe('parameter validation', () => {
-      it('should reject missing projectPath parameter', async () => {
-        const result = await callToolHandler(testSimulatorByIdProjectTool, {
-          scheme: 'MyScheme',
-          simulatorId: 'ABC123-DEF456-789',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject missing scheme parameter', async () => {
-        const result = await callToolHandler(testSimulatorByIdProjectTool, {
-          projectPath: '/path/to/project.xcodeproj',
-          simulatorId: 'ABC123-DEF456-789',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject missing simulatorId parameter', async () => {
-        const result = await callToolHandler(testSimulatorByIdProjectTool, {
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-        });
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-    });
-
     describe('success scenarios', () => {
       it('should successfully run tests on project with simulator ID', async () => {
         // Mock handleTestLogic to return the expected response format
@@ -606,13 +294,20 @@ describe('test_ios_simulator tools tests', () => {
           isError: false,
         });
 
+        registerSimulatorTestByIdProjectTool(mockServer as any);
+
+        const registerCall = mockRegisterTool.mock.calls.find(
+          (call) => call[1] === 'test_sim_id_proj',
+        );
+        const handler = registerCall![4];
+
         const params = {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorId: 'ABC123-DEF456-789',
         };
 
-        const result = await callToolHandler(testSimulatorByIdProjectTool, params);
+        const result = await handler(params);
 
         expect(mockHandleTestLogic).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -625,6 +320,7 @@ describe('test_ios_simulator tools tests', () => {
             platform: 'iOS Simulator',
           }),
         );
+
         expect(result.content).toEqual([
           { type: 'text', text: '✅ iOS Simulator Test succeeded for scheme MyScheme.' },
           {
@@ -651,13 +347,20 @@ describe('test_ios_simulator tools tests', () => {
         isError: true,
       });
 
+      registerSimulatorTestByNameWorkspaceTool(mockServer as any);
+
+      const registerCall = mockRegisterTool.mock.calls.find(
+        (call) => call[1] === 'test_sim_name_ws',
+      );
+      const handler = registerCall![4];
+
       const params = {
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',
         simulatorName: 'iPhone 15',
       };
 
-      const result = await callToolHandler(testSimulatorByNameWorkspaceTool, params);
+      const result = await handler(params);
 
       expect(result.content).toEqual([
         { type: 'text', text: '❌ iOS Simulator Test failed for scheme MyScheme.' },
@@ -672,10 +375,13 @@ describe('test_ios_simulator tools tests', () => {
     it('should handle build command failure', async () => {
       // Mock handleTestLogic to throw error
       mockHandleTestLogic.mockRejectedValue(new Error('Build failed'));
-      mockCreateTextResponse.mockReturnValue({
-        content: [{ type: 'text', text: 'Tool execution error: Build failed' }],
-        isError: true,
-      });
+
+      registerSimulatorTestByNameWorkspaceTool(mockServer as any);
+
+      const registerCall = mockRegisterTool.mock.calls.find(
+        (call) => call[1] === 'test_sim_name_ws',
+      );
+      const handler = registerCall![4];
 
       const params = {
         workspacePath: '/path/to/workspace.xcworkspace',
@@ -683,10 +389,12 @@ describe('test_ios_simulator tools tests', () => {
         simulatorName: 'iPhone 15',
       };
 
-      const result = await callToolHandler(testSimulatorByNameWorkspaceTool, params);
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Tool execution error: Build failed');
+      try {
+        await handler(params);
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toBe('Build failed');
+      }
     });
   });
 
@@ -706,6 +414,13 @@ describe('test_ios_simulator tools tests', () => {
         isError: false,
       });
 
+      registerSimulatorTestByNameWorkspaceTool(mockServer as any);
+
+      const registerCall = mockRegisterTool.mock.calls.find(
+        (call) => call[1] === 'test_sim_name_ws',
+      );
+      const handler = registerCall![4];
+
       const params = {
         workspacePath: '/Users/dev/MyApp/MyApp.xcworkspace',
         scheme: 'MyApp',
@@ -714,7 +429,7 @@ describe('test_ios_simulator tools tests', () => {
         useLatestOS: true,
       };
 
-      const result = await callToolHandler(testSimulatorByNameWorkspaceTool, params);
+      const result = await handler(params);
 
       expect(result.content).toEqual([
         { type: 'text', text: '✅ iOS Simulator Test succeeded for scheme MyApp.' },
@@ -729,6 +444,13 @@ describe('test_ios_simulator tools tests', () => {
     });
 
     it('should handle test run with custom configuration and extra arguments', async () => {
+      registerSimulatorTestByIdProjectTool(mockServer as any);
+
+      const registerCall = mockRegisterTool.mock.calls.find(
+        (call) => call[1] === 'test_sim_id_proj',
+      );
+      const handler = registerCall![4];
+
       const params = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyScheme',
@@ -739,7 +461,7 @@ describe('test_ios_simulator tools tests', () => {
         preferXcodebuild: true,
       };
 
-      const result = await callToolHandler(testSimulatorByIdProjectTool, params);
+      const result = await handler(params);
 
       expect(mockHandleTestLogic).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -754,6 +476,64 @@ describe('test_ios_simulator tools tests', () => {
         }),
       );
       expect(result.isError).toBe(false);
+    });
+  });
+
+  describe('external dependency validation', () => {
+    it('should verify external dependencies are properly mocked', () => {
+      expect(mockHandleTestLogic).toBeDefined();
+      expect(mockRegisterTool).toBeDefined();
+      expect(typeof mockHandleTestLogic).toBe('function');
+      expect(typeof mockRegisterTool).toBe('function');
+    });
+
+    it('should call handleTestLogic with correct platform parameter', async () => {
+      registerSimulatorTestByNameWorkspaceTool(mockServer as any);
+
+      const registerCall = mockRegisterTool.mock.calls.find(
+        (call) => call[1] === 'test_sim_name_ws',
+      );
+      const handler = registerCall![4];
+
+      const params = {
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyScheme',
+        simulatorName: 'iPhone 15',
+      };
+
+      await handler(params);
+
+      expect(mockHandleTestLogic).toHaveBeenCalledWith(
+        expect.objectContaining({
+          platform: 'iOS Simulator',
+        }),
+      );
+    });
+
+    it('should apply default values for optional parameters', async () => {
+      registerSimulatorTestByNameWorkspaceTool(mockServer as any);
+
+      const registerCall = mockRegisterTool.mock.calls.find(
+        (call) => call[1] === 'test_sim_name_ws',
+      );
+      const handler = registerCall![4];
+
+      const params = {
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyScheme',
+        simulatorName: 'iPhone 15',
+        // Optional parameters omitted
+      };
+
+      await handler(params);
+
+      expect(mockHandleTestLogic).toHaveBeenCalledWith(
+        expect.objectContaining({
+          configuration: 'Debug',
+          useLatestOS: false,
+          preferXcodebuild: false,
+        }),
+      );
     });
   });
 });

@@ -19,17 +19,32 @@ import { ToolResponse } from '../types/common.js';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { createTextContent } from './common.js';
+import { validateRequiredParam } from '../utils/validation.js';
 
 // Constants
 const DEFAULT_MAX_DEPTH = 5;
 const SKIPPED_DIRS = new Set(['build', 'DerivedData', 'Pods', '.git', 'node_modules']);
 
+/**
+ * Schema for discover projects tool parameters
+ */
+export const DiscoverProjectsSchema = z.object({
+  workspaceRoot: z.string().describe('The absolute path of the workspace root to scan within.'),
+  scanPath: z
+    .string()
+    .optional()
+    .describe('Optional: Path relative to workspace root to scan. Defaults to workspace root.'),
+  maxDepth: z
+    .number()
+    .int()
+    .nonnegative()
+    .optional()
+    .default(DEFAULT_MAX_DEPTH)
+    .describe(`Optional: Maximum directory depth to scan. Defaults to ${DEFAULT_MAX_DEPTH}.`),
+});
+
 // Type definition for parameters
-type DiscoverProjectsParams = {
-  scanPath?: string;
-  maxDepth: number;
-  workspaceRoot: string;
-};
+type DiscoverProjectsParams = z.infer<typeof DiscoverProjectsSchema>;
 
 // --- Private Helper Function ---
 
@@ -241,40 +256,29 @@ async function _handleDiscoveryLogic(params: DiscoverProjectsParams): Promise<To
   };
 }
 
+/**
+ * Discovers Xcode projects and workspaces in a directory
+ */
+export async function discoverProjects(
+  params: z.infer<typeof DiscoverProjectsSchema>,
+): Promise<ToolResponse> {
+  const validated = DiscoverProjectsSchema.parse(params);
+
+  const workspaceRootValidation = validateRequiredParam('workspaceRoot', validated.workspaceRoot);
+  if (!workspaceRootValidation.isValid) {
+    return workspaceRootValidation.errorResponse!;
+  }
+
+  return _handleDiscoveryLogic(validated);
+}
+
 // --- Public Tool Definition ---
 
 export function registerDiscoverProjectsTool(server: McpServer): void {
   server.tool(
     'discover_projs',
     'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
-    {
-      workspaceRoot: z.string().describe('The absolute path of the workspace root to scan within.'),
-      scanPath: z
-        .string()
-        .optional()
-        .describe('Optional: Path relative to workspace root to scan. Defaults to workspace root.'),
-      maxDepth: z.number().int().nonnegative().optional().default(DEFAULT_MAX_DEPTH).describe(
-        `Optional: Maximum directory depth to scan. Defaults to ${DEFAULT_MAX_DEPTH}.`, // Removed mention of -1
-      ),
-    },
-    async (params) => {
-      try {
-        return await _handleDiscoveryLogic(params as DiscoverProjectsParams);
-      } catch (error: unknown) {
-        let errorMessage = '';
-        if (error instanceof Error) {
-          errorMessage = `An unexpected error occurred during project discovery: ${error.message}`;
-          log('error', `${errorMessage}\n${error.stack ?? ''}`);
-        } else {
-          const errorString = String(error);
-          log('error', `Caught non-Error value during project discovery: ${errorString}`);
-          errorMessage = `An unexpected non-error value was thrown: ${errorString}`;
-        }
-        return {
-          content: [createTextContent(errorMessage)],
-          isError: true,
-        };
-      }
-    },
+    DiscoverProjectsSchema.shape,
+    discoverProjects,
   );
 }

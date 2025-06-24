@@ -86,6 +86,137 @@ When adding a new tool:
 
 ## Testing
 
+### MANDATORY Testing Principles
+
+**🚨 ENGINEERING VIOLATION WARNING 🚨**
+
+**NEVER TEST TEST CODE** - This makes zero sense and is a massive engineering violation. Tests that reimplement tool logic are testing the wrong thing and provide false confidence.
+
+**MANDATORY PRINCIPLES - NO EXCEPTIONS**:
+
+1. **✅ ALWAYS TEST PRODUCTION CODE**: Import and test actual tool functions from `src/tools/`
+2. **✅ ALWAYS MOCK EXTERNAL DEPENDENCIES**: Mock file system, child processes, network calls - never real implementation logic  
+3. **✅ ALWAYS TEST ALL LOGIC PATHS**: Complete coverage of production tool function behavior
+4. **✅ ALWAYS VALIDATE INPUT/OUTPUT**: Test parameter validation and response formats against production code
+
+**❌ ENGINEERING VIOLATIONS - NEVER DO THIS**:
+- Creating mock tool handlers that reimplement business logic
+- Testing test code instead of production code
+- Reimplementing tool validation or response logic in tests
+- Any test that doesn't import the actual production tool function
+
+### Current Test Debt (MUST BE FIXED)
+
+**CRITICAL**: Multiple test files currently violate testing principles by reimplementing tool logic instead of testing production code. These represent technical debt that must be systematically remediated:
+
+**Files with Test Violations**:
+- `src/tools/build_ios_simulator.test.ts` - Reimplements build logic instead of testing actual tools
+- `src/tools/build_settings.test.ts` - Mock implementations instead of production code testing
+- `src/tools/build-swift-package.test.ts` - Test handlers with business logic 
+- `src/tools/bundleId.test.ts` - Reimplemented validation logic in tests
+- `src/tools/clean.test.ts` - Mock tool objects instead of actual tool imports
+- `src/tools/discover_projects.test.ts` - Test-specific logic instead of production testing
+- `src/tools/log.test.ts` - Handler reimplementations instead of actual tool testing
+- `src/tools/run-swift-package.test.ts` - Mock business logic instead of production code
+- `src/tools/scaffold.test.ts` - Reimplemented scaffolding logic in test handlers
+- `src/tools/screenshot.test.ts` - Mock implementations instead of actual tool testing
+- `src/tools/simulator.test.ts` - Test handlers with reimplemented tool logic
+- `src/tools/test_ios_simulator.test.ts` - Mock tool objects instead of production imports
+- `src/tools/test_macos.test.ts` - Handler logic reimplementation instead of actual testing
+
+**Additional Issues**:
+- `src/tools/launch.ts` - Missing `isError: true` on failures (inconsistent error handling)
+- `src/tools/build_macos.test.ts` - Incorrect mocks for `get_mac_bundle_id` (readFile vs execSync)
+
+**Remediation Strategy**: Use systematic sub-agent delegation to refactor all violating tests to follow correct patterns.
+
+### Sub-Agent Delegation for Test Refactoring
+
+**MANDATORY PROCESS**: When systematic test refactoring is required (multiple files, large-scale changes), ALWAYS use sub-agent delegation as follows:
+
+#### When to Use Sub-Agents
+- **Multiple file refactoring** (3+ test files need changes)
+- **Systematic pattern violations** (test files reimplementing business logic)
+- **Large-scale test updates** (updating test patterns across many files)
+- **Parallel work efficiency** (when multiple independent changes can be done simultaneously)
+
+#### Sub-Agent Assignment Structure
+
+**Each Sub-Agent Receives**:
+1. **Specific file assignments** - exact list of files to refactor
+2. **Clear success criteria** - what constitutes completion
+3. **Quality standards** - must follow CLAUDE.md testing principles
+4. **Autonomous instructions** - no user feedback requests allowed
+5. **Example patterns** - correct test structure to follow
+
+**Example Sub-Agent Assignment**:
+```
+ASSIGNMENT: Test Refactoring - Build Tools Group
+FILES: 
+- src/tools/build_ios_simulator.test.ts
+- src/tools/build_settings.test.ts
+- src/tools/build-swift-package.test.ts
+
+SUCCESS CRITERIA:
+✅ Import actual production functions (not mock implementations)
+✅ Mock external dependencies only (child_process, fs, network)
+✅ Test actual tool function behavior with real parameter validation
+✅ Use exact response validation with .toEqual()
+✅ Ensure isError: true on all failure scenarios
+✅ All tests pass with npm test
+
+AUTONOMOUS: Work independently, no user feedback requests
+QUALITY: Follow CLAUDE.md testing principles exactly
+DEADLINE: Complete all files in single session
+```
+
+#### Parallel Execution Strategy
+
+**Phase 1: Analysis & Planning**
+- Launch 1-2 agents to analyze test violations and create detailed assignments
+- Generate specific file groupings for optimal parallel processing
+- Create success criteria and quality checklists
+
+**Phase 2: Systematic Refactoring** 
+- Launch 4-6 agents in parallel for maximum efficiency
+- Each agent handles 2-4 related files (e.g., iOS tools, Swift Package tools)
+- Agents work autonomously following exact patterns
+- No cross-dependencies between agent assignments
+
+**Phase 3: Validation & Cleanup**
+- Launch 1-2 agents to run comprehensive test validation
+- Verify all tests pass, no regressions introduced
+- Confirm all quality standards met across all refactored files
+
+#### Quality Control Standards
+
+**Pre-Assignment Validation**:
+- Verify agent understands CLAUDE.md testing principles
+- Confirm agent can identify engineering violations in current tests
+- Ensure agent knows correct import and mocking patterns
+
+**Post-Completion Validation**:
+- All tests must pass: `npm test`
+- No linting errors: `npm run lint`
+- Code properly formatted: `npm run format`
+- Build successful: `npm run build`
+
+**Success Metrics**:
+- 100% of assigned files refactored to correct patterns
+- Zero test files with mock business logic implementations
+- All production tool functions properly imported and tested
+- Complete external dependency mocking (no real command execution)
+
+#### No User Feedback Policy
+
+**CRITICAL**: Sub-agents must work autonomously without requesting user feedback:
+- ✅ **Autonomous decision making** on technical implementation details
+- ✅ **Self-sufficient problem solving** using CLAUDE.md as reference
+- ✅ **Independent quality validation** before marking work complete
+- ❌ **No requests for clarification** once assignment is clear
+- ❌ **No status updates during work** - deliver completed results only
+- ❌ **No "should I..." questions** - follow CLAUDE.md principles exactly
+
 ### Test Infrastructure (Operational)
 
 **MIGRATION COMPLETE**: This canonical implementation now has comprehensive test infrastructure migrated from the failed plugin architecture. All 285 tests covering 81 tools are operational and provide complete test coverage.
@@ -156,11 +287,15 @@ expect(result.isError).toBe(false);
 - Every tool must have error handling tests
 - Command generation must be validated without execution
 
-**Mock Patterns**:
+**CORRECT Test Patterns - ALWAYS FOLLOW THIS**:
 ```typescript
-// Node.js API mocking (don't execute real commands)
+// ✅ CORRECT: Import actual production tool function
+import { actualToolFunction } from '../../../src/tools/my-tool-file.js';
+
+// ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
-  spawn: vi.fn(() => mockChildProcess)
+  spawn: vi.fn(() => mockChildProcess),
+  execSync: vi.fn()
 }));
 
 vi.mock('fs/promises', () => ({
@@ -168,6 +303,44 @@ vi.mock('fs/promises', () => ({
   writeFile: vi.fn(), 
   unlink: vi.fn()
 }));
+
+// ✅ CORRECT: Mock logger to prevent real logging
+vi.mock('../utils/logger.js', () => ({
+  log: vi.fn()
+}));
+
+// ✅ CORRECT: Test the actual production function
+describe('my-tool tests', () => {
+  it('should test actual production code', async () => {
+    // Setup mocks for external dependencies
+    const mockExecSync = vi.mocked(execSync);
+    mockExecSync.mockReturnValue('SUCCESS OUTPUT');
+    
+    // Call actual production function
+    const result = await actualToolFunction({ param: 'value' });
+    
+    // Validate actual production response
+    expect(result.content).toEqual([
+      { type: 'text', text: '✅ Tool operation succeeded.' }
+    ]);
+    expect(result.isError).toBe(false);
+  });
+});
+```
+
+**❌ WRONG Pattern - NEVER DO THIS**:
+```typescript
+// ❌ WRONG: Creating mock tool with reimplemented logic
+const mockTool = {
+  handler: async (params: any) => {
+    // ❌ This is reimplementing business logic in tests!
+    if (!params.required) {
+      return { content: [{ type: 'text', text: 'Error' }], isError: true };
+    }
+    // ❌ This is testing test code, not production code!
+    return { content: [{ type: 'text', text: 'Success' }], isError: false };
+  }
+};
 ```
 
 ### Test Migration Summary (COMPLETED)
@@ -190,73 +363,218 @@ vi.mock('fs/promises', () => ({
 
 ### Adding Tests for New Tools
 
-When adding a new tool, create corresponding test with this pattern:
+**MANDATORY**: When adding a new tool, create corresponding test that TESTS PRODUCTION CODE:
+
 ```typescript
-// tests-vitest/src/tools/[tool-file].test.ts
+// src/tools/[tool-file].test.ts  
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { spawn, ChildProcess } from 'child_process';
-import { callToolHandler } from '../../helpers/vitest-tool-helpers.js';
-import { myNewTool } from '../../../src/tools/my-tool-file.js';
+import { execSync } from 'child_process';
+import { myNewToolFunction } from './my-tool-file.js';  // ✅ Import actual production function
 
-vi.mock('child_process', () => ({ spawn: vi.fn() }));
+// ✅ Mock external dependencies only
+vi.mock('child_process', () => ({ 
+  execSync: vi.fn()
+}));
 
-describe('[tool-name] tests', () => {
-  let mockSpawn: MockedFunction<any>;
-  let mockChildProcess: Partial<ChildProcess>;
+vi.mock('fs/promises', () => ({
+  readFile: vi.fn(),
+  writeFile: vi.fn()
+}));
 
-  beforeEach(async () => {
-    const { spawn: nodeSpawn } = await import('node:child_process');
-    mockSpawn = nodeSpawn as MockedFunction<any>;
-    
-    mockChildProcess = {
-      stdout: { on: vi.fn((event, callback) => {
-        if (event === 'data') callback('SUCCESS OUTPUT');
-      }) } as any,
-      stderr: { on: vi.fn() } as any,
-      on: vi.fn((event, callback) => {
-        if (event === 'close') callback(0);
-      })
-    };
-    
-    mockSpawn.mockReturnValue(mockChildProcess as ChildProcess);
+// ✅ Mock logger to prevent real logging
+vi.mock('../utils/logger.js', () => ({
+  log: vi.fn()
+}));
+
+describe('myNewTool tests', () => {
+  let mockExecSync: MockedFunction<typeof execSync>;
+
+  beforeEach(() => {
+    mockExecSync = vi.mocked(execSync);
     vi.clearAllMocks();
   });
 
   describe('parameter validation', () => {
     it('should reject missing required parameters', async () => {
-      const result = await callToolHandler(myNewTool, {});
-      expect(result.content).toEqual([
-        { type: 'text', text: "Required parameter 'paramName' is missing. Please provide a value for this parameter." }
-      ]);
-      expect(result.isError).toBe(true);
+      // ✅ Test actual production function parameter validation
+      await expect(myNewToolFunction({})).rejects.toThrow();
+    });
+
+    it('should accept valid parameters', async () => {
+      mockExecSync.mockReturnValue('SUCCESS');
+      
+      // ✅ Test actual production function with valid params
+      const result = await myNewToolFunction({ paramName: 'validValue' });
+      expect(result.isError).toBe(false);
     });
   });
 
   describe('success scenarios', () => {
     it('should return deterministic success response', async () => {
-      const params = { paramName: 'validValue' };
-      const result = await callToolHandler(myNewTool, params);
+      // ✅ Mock external dependency behavior
+      mockExecSync.mockReturnValue('BUILD SUCCEEDED');
       
-      // CRITICAL: Use exact response validation (no .toContain())
+      // ✅ Call actual production function
+      const result = await myNewToolFunction({ paramName: 'validValue' });
+      
+      // ✅ Validate actual production response format
       expect(result.content).toEqual([
         { type: 'text', text: '✅ Tool operation succeeded.' },
-        { type: 'text', text: 'Output: SUCCESS OUTPUT' }
+        { type: 'text', text: 'Output: BUILD SUCCEEDED' }
       ]);
       expect(result.isError).toBe(false);
       
-      // Verify command generation
-      expect(mockSpawn).toHaveBeenCalledWith('expected-command', expect.any(Array), expect.any(Object));
+      // ✅ Verify actual production function called external dependency correctly
+      expect(mockExecSync).toHaveBeenCalledWith('expected-command', expect.any(Object));
+    });
+  });
+
+  describe('error scenarios', () => {
+    it('should handle command failures correctly', async () => {
+      // ✅ Mock external dependency failure
+      mockExecSync.mockImplementation(() => {
+        throw new Error('Command failed');
+      });
+      
+      // ✅ Test actual production function error handling
+      const result = await myNewToolFunction({ paramName: 'validValue' });
+      
+      // ✅ Validate actual production error response
+      expect(result.isError).toBe(true);  // ✅ MUST be true on failures
+      expect(result.content[0].text).toContain('Command failed');
     });
   });
 });
 ```
 
-**Critical Requirements**:
-- Use `callToolHandler()` for consistent tool testing  
-- Mock Node.js APIs to prevent real command execution
-- Validate complete response structure with `.toEqual()` (never `.toContain()`)
-- Test parameter validation, success cases, and error handling
-- Verify command generation without execution
+**MANDATORY Requirements**:
+- ✅ Import actual production tool function from `src/tools/`
+- ✅ Mock external dependencies (child_process, fs, network) only
+- ✅ Test actual production function behavior, not test implementations
+- ✅ Validate exact response structure with `.toEqual()` (never `.toContain()`)
+- ✅ Test all logic paths: parameter validation, success cases, error handling
+- ✅ Verify external dependency calls without executing real commands
+- ✅ Ensure `isError: true` is set on all failure scenarios
+
+### Test Violation Detection
+
+**MANDATORY**: Use these criteria to identify tests that violate engineering principles:
+
+#### Red Flags - Immediate Engineering Violations
+
+**🚨 Test Files with Mock Tool Implementations**:
+```typescript
+// ❌ RED FLAG: Mock tool with business logic
+const mockTool = {
+  handler: async (params: any) => {
+    // ❌ This is reimplementing production logic in tests!
+    if (!params.workspacePath) {
+      return { content: [{ type: 'text', text: 'Error' }], isError: true };
+    }
+    return { content: [{ type: 'text', text: 'Success' }], isError: false };
+  }
+};
+```
+
+**🚨 Tests NOT Importing Production Code**:
+```typescript
+// ❌ RED FLAG: No import of actual tool function
+// Missing: import { actualToolFunction } from './tool.js';
+// Instead has: Mock implementations in test file
+```
+
+**🚨 Test Handlers with Business Logic**:
+```typescript
+// ❌ RED FLAG: Business logic in test handler
+handler: async (params: any): Promise<ToolResponse> => {
+  // Validate required parameters ← ❌ This should be in production code!
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+  // ... more business logic ← ❌ Engineering violation!
+}
+```
+
+#### Validation Checklist
+
+**✅ CORRECT Test Structure**:
+- [ ] Imports actual production tool function from `src/tools/`
+- [ ] Mocks external dependencies only (child_process, fs, network, logger)
+- [ ] Calls actual production function in test cases
+- [ ] No business logic reimplementation in test file
+- [ ] Uses exact response validation with `.toEqual()`
+- [ ] Tests all production code paths (validation, success, error)
+
+**❌ VIOLATION Indicators**:
+- [ ] Mock tool objects with handler functions
+- [ ] Reimplemented parameter validation in tests
+- [ ] Business logic duplicated from production code
+- [ ] Tests that don't call actual production functions
+- [ ] Missing imports of production tool functions
+- [ ] Test-specific logic that mirrors production logic
+
+#### File Audit Process
+
+**Step 1: Check Imports**
+```bash
+# ✅ Should see imports of actual tool functions
+grep -n "import.*from.*\.\/.*\.js" src/tools/*.test.ts
+
+# ❌ Red flag if no production imports found
+```
+
+**Step 2: Check for Mock Tools**
+```bash
+# ❌ Red flag: Mock tools with handlers
+grep -n "handler.*async.*params" src/tools/*.test.ts
+```
+
+**Step 3: Check for Business Logic**
+```bash
+# ❌ Red flag: Validation logic in tests
+grep -n "validateRequiredParam\|validation.*isValid" src/tools/*.test.ts
+```
+
+**Step 4: Verify Production Function Calls**
+```bash
+# ✅ Should see actual function calls in tests
+grep -n "await.*Tool.*(" src/tools/*.test.ts
+```
+
+#### Immediate Action Required
+
+**If ANY Red Flags Found**:
+1. **STOP** - Do not continue with test as-is
+2. **Refactor** - Import actual production function
+3. **Remove** - Delete all mock business logic
+4. **Remock** - Mock external dependencies only
+5. **Retest** - Verify tests still pass with production code
+6. **Validate** - Ensure complete logic path coverage
+
+### Error Handling Standards
+
+**MANDATORY**: All tool functions must consistently implement error handling:
+
+#### Required Error Response Pattern
+```typescript
+// ✅ CORRECT: All failures must set isError: true
+if (errorCondition) {
+  return {
+    content: [{ type: 'text', text: 'Error message describing the failure' }],
+    isError: true  // ← MANDATORY on all failures
+  };
+}
+```
+
+#### Common Violations
+- **Missing `isError: true`**: Functions that return error responses without setting error flag
+- **Inconsistent error formats**: Different error response structures across tools
+- **Silent failures**: Functions that fail but return success responses
+
+#### Validation Requirements
+- [ ] All error scenarios set `isError: true`
+- [ ] All success scenarios set `isError: false` 
+- [ ] Error messages are descriptive and actionable
+- [ ] Consistent error response format across all tools
 
 ### Hallucinated Tool Removal Guidelines
 
@@ -325,13 +643,63 @@ describe('[tool-name] tests', () => {
 
 ## Contributing Guidelines
 
-1. Follow existing code patterns and structure
-2. Use TypeScript strictly - no `any` types
-3. Add proper error handling and logging
-4. Update documentation for new features
+### Code Quality Requirements
+
+1. **Follow existing code patterns and structure**
+2. **Use TypeScript strictly** - no `any` types, proper typing throughout
+3. **Add proper error handling and logging** - all failures must set `isError: true`
+4. **Update documentation for new features**
 5. **Update TOOLS.md** when adding, modifying, or removing tools
-6. Test with example projects before submitting
-7. Run lint and format checks before committing
+6. **Test with example projects before submitting**
+
+### MANDATORY Pre-Commit Commands
+
+**CRITICAL**: You MUST run these commands before any commit and ensure they all pass:
+
+```bash
+# 1. MANDATORY: Run linting (must pass with 0 errors)
+npm run lint
+
+# 2. MANDATORY: Run formatting (must format all files)
+npm run format
+
+# 3. MANDATORY: Run build (must compile successfully)
+npm run build
+
+# 4. MANDATORY: Run tests (all tests must pass)
+npm test
+```
+
+**NO EXCEPTIONS**: Code that fails any of these commands cannot be committed.
+
+### Testing Requirements
+
+**ENGINEERING VIOLATION ENFORCEMENT**:
+
+- **❌ NEVER** create tests that reimplement production logic
+- **❌ NEVER** create mock tool handlers with business logic
+- **❌ NEVER** test test code instead of production code
+- **✅ ALWAYS** import actual production tool functions
+- **✅ ALWAYS** mock external dependencies only (child_process, fs, network)
+- **✅ ALWAYS** test all logic paths in production functions
+- **✅ ALWAYS** use exact response validation with `.toEqual()`
+- **✅ ALWAYS** ensure `isError: true` on all failure scenarios
+
+**Pre-Submit Validation**:
+- [ ] All tests import actual production functions from `src/tools/`
+- [ ] No mock business logic implementations in test files
+- [ ] External dependencies properly mocked (child_process, fs, logger)
+- [ ] Complete logic path coverage for all tool functions
+- [ ] Exact response format validation in all test assertions
+
+### Sub-Agent Work Standards
+
+**When using sub-agents for systematic changes**:
+- Provide specific file assignments and success criteria
+- Require autonomous work (no user feedback requests)
+- Enforce CLAUDE.md testing principles exactly
+- Validate all quality standards before completion
+- Ensure parallel execution for maximum efficiency
 
 ## Tool Documentation
 

@@ -95,6 +95,89 @@ Alternatively, you can run the diagnostic tool directly:
 node build/diagnostic-cli.js
 ```
 
+## Architecture and Code Standards
+
+Before making changes, please familiarize yourself with:
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Comprehensive architectural overview
+- [CLAUDE.md](CLAUDE.md) - AI assistant guidelines and testing principles
+- [TOOLS.md](TOOLS.md) - Complete tool documentation
+- [TOOL_OPTIONS.md](TOOL_OPTIONS.md) - Tool configuration options
+
+### Code Quality Requirements
+
+1. **Follow existing code patterns and structure**
+2. **Use TypeScript strictly** - no `any` types, proper typing throughout
+3. **Add proper error handling and logging** - all failures must set `isError: true`
+4. **Update documentation for new features**
+5. **Test with example projects before submitting**
+
+### Testing Standards
+
+**MANDATORY TESTING PRINCIPLES - NO EXCEPTIONS**:
+
+1. **✅ ALWAYS TEST PRODUCTION CODE**
+   - Import and test actual tool functions from `src/tools/`
+   - Never create mock implementations with business logic
+
+2. **✅ ALWAYS MOCK EXTERNAL DEPENDENCIES ONLY**
+   - Mock only: `child_process`, `fs`, network calls, logger
+   - Never mock tool logic or validation
+
+3. **✅ ALWAYS TEST ALL LOGIC PATHS**
+   - Parameter validation (success and failure)
+   - Command execution paths
+   - Error handling scenarios
+
+4. **✅ ALWAYS VALIDATE INPUT/OUTPUT**
+   - Use exact response validation with `.toEqual()`
+   - Verify complete response structure
+   - Ensure `isError: true` on all failures
+
+Example test structure:
+```typescript
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { actualToolFunction } from './tool-file.js';
+
+// Mock only external dependencies
+vi.mock('child_process', () => ({
+  execSync: vi.fn()
+}));
+
+describe('Tool Name', () => {
+  it('should test actual production code', async () => {
+    const mockExecSync = vi.mocked(execSync);
+    mockExecSync.mockReturnValue('SUCCESS');
+    
+    const result = await actualToolFunction({ param: 'value' });
+    
+    expect(result).toEqual({
+      content: [{ type: 'text', text: 'Expected output' }],
+      isError: false
+    });
+  });
+});
+```
+
+### Pre-Commit Checklist
+
+**MANDATORY**: Run these commands before any commit and ensure they all pass:
+
+```bash
+# 1. Run linting (must pass with 0 errors)
+npm run lint
+
+# 2. Run formatting (must format all files)
+npm run format
+
+# 3. Run build (must compile successfully)
+npm run build
+
+# 4. Run tests (all tests must pass)
+npm test
+```
+
+**NO EXCEPTIONS**: Code that fails any of these commands cannot be committed.
+
 ## Making changes
 
 1. Fork the repository and create a new branch

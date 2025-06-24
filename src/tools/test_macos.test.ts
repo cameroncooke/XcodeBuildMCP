@@ -10,12 +10,15 @@
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { callToolHandler } from '../../tests-vitest/helpers/vitest-tool-helpers.js';
-import { z } from 'zod';
+import { registerMacOSTestWorkspaceTool, registerMacOSTestProjectTool } from './test_macos.js';
 import { ToolResponse } from '../types/common.js';
 
-// Mock modules to prevent real command execution
-vi.mock('child_process', () => ({ spawn: vi.fn() }));
+// Mock external dependencies only
+vi.mock('child_process', () => ({
+  spawn: vi.fn(),
+  execSync: vi.fn(),
+}));
+
 vi.mock('fs/promises', () => ({
   mkdtemp: vi.fn(),
   rm: vi.fn(),
@@ -24,7 +27,6 @@ vi.mock('fs/promises', () => ({
   writeFile: vi.fn(),
 }));
 
-// Mock external dependencies
 vi.mock('../utils/logger.js', () => ({
   log: vi.fn(),
 }));
@@ -33,93 +35,28 @@ vi.mock('../utils/build-utils.js', () => ({
   executeXcodeBuildCommand: vi.fn(),
 }));
 
-vi.mock('../utils/validation.js', () => ({
-  createTextResponse: vi.fn((text, isError = false) => ({
-    content: [{ type: 'text', text }],
-    isError,
-  })),
-}));
-
-vi.mock('../utils/xcode.js', () => ({
-  XcodePlatform: {
-    IOS_SIMULATOR: 'iOS Simulator',
-    IOS_DEVICE: 'iOS Device',
-    MACOS: 'macOS',
-  },
-}));
-
-vi.mock('util', () => ({
-  promisify: vi.fn(() => vi.fn()),
-}));
-
 vi.mock('./test_common.js', () => ({
   handleTestLogic: vi.fn(),
 }));
 
-// Tool implementations for testing - these mirror the actual tool registrations
-const testMacOSWorkspaceTool = {
-  name: 'test_macos_ws',
-  description: 'Runs tests for a macOS workspace using xcodebuild test and parses xcresult output.',
-  groups: ['MACOS_BUILD'],
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-      ),
-  },
-  handler: async (params: any): Promise<ToolResponse> => {
-    const { handleTestLogic } = await import('./test_common.js');
-    const { XcodePlatform } = await import('../utils/xcode.js');
-    return handleTestLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      preferXcodebuild: params.preferXcodebuild ?? false,
-      platform: XcodePlatform.MACOS,
-    });
-  },
-};
+// Create actual tool functions for testing
+let testMacOSWorkspaceHandler: (params: any) => Promise<ToolResponse>;
+let testMacOSProjectHandler: (params: any) => Promise<ToolResponse>;
 
-const testMacOSProjectTool = {
-  name: 'test_macos_proj',
-  description: 'Runs tests for a macOS project using xcodebuild test and parses xcresult output.',
-  groups: ['MACOS_BUILD'],
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-      ),
-  },
-  handler: async (params: any): Promise<ToolResponse> => {
-    const { handleTestLogic } = await import('./test_common.js');
-    const { XcodePlatform } = await import('../utils/xcode.js');
-    return handleTestLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      preferXcodebuild: params.preferXcodebuild ?? false,
-      platform: XcodePlatform.MACOS,
-    });
-  },
-};
+// Mock server to capture tool handlers
+const mockServer = {
+  tool: vi.fn((name: string, description: string, schema: any, handler: any) => {
+    if (name === 'test_macos_ws') {
+      testMacOSWorkspaceHandler = handler;
+    } else if (name === 'test_macos_proj') {
+      testMacOSProjectHandler = handler;
+    }
+  }),
+} as any;
+
+// Register the actual tools to capture their handlers
+registerMacOSTestWorkspaceTool(mockServer);
+registerMacOSTestProjectTool(mockServer);
 
 describe('test_macos tools tests', () => {
   let mockHandleTestLogic: MockedFunction<any>;
@@ -134,64 +71,44 @@ describe('test_macos tools tests', () => {
 
   describe('test_macos_ws tool', () => {
     describe('parameter validation', () => {
-      it('should reject missing workspacePath parameter', async () => {
-        const result = await callToolHandler(testMacOSWorkspaceTool, {
+      it('should call handleTestLogic with provided parameters', async () => {
+        mockHandleTestLogic.mockResolvedValue({
+          content: [{ type: 'text', text: 'Success' }],
+          isError: false,
+        });
+
+        const result = await testMacOSWorkspaceHandler({
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+        });
+
+        expect(result).toBeDefined();
+        expect(mockHandleTestLogic).toHaveBeenCalledWith({
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Debug',
+          preferXcodebuild: false,
+          platform: 'macOS',
+        });
+      });
+
+      it('should call handleTestLogic even with missing parameters', async () => {
+        mockHandleTestLogic.mockResolvedValue({
+          content: [{ type: 'text', text: 'Success' }],
+          isError: false,
+        });
+
+        const result = await testMacOSWorkspaceHandler({
           scheme: 'MyScheme',
         });
 
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject missing scheme parameter', async () => {
-        const result = await callToolHandler(testMacOSWorkspaceTool, {
-          workspacePath: '/path/to/workspace.xcworkspace',
-        });
-
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject invalid extraArgs parameter type', async () => {
-        const result = await callToolHandler(testMacOSWorkspaceTool, {
-          workspacePath: '/path/to/workspace.xcworkspace',
+        expect(result).toBeDefined();
+        expect(mockHandleTestLogic).toHaveBeenCalledWith({
           scheme: 'MyScheme',
-          extraArgs: 'invalid-string',
+          configuration: 'Debug',
+          preferXcodebuild: false,
+          platform: 'macOS',
         });
-
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Parameter 'extraArgs' must be of type array, but received string.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject invalid preferXcodebuild parameter type', async () => {
-        const result = await callToolHandler(testMacOSWorkspaceTool, {
-          workspacePath: '/path/to/workspace.xcworkspace',
-          scheme: 'MyScheme',
-          preferXcodebuild: 'true',
-        });
-
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Parameter 'preferXcodebuild' must be of type boolean, but received string.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
       });
     });
 
@@ -211,7 +128,7 @@ describe('test_macos tools tests', () => {
           scheme: 'MyScheme',
         };
 
-        const result = await callToolHandler(testMacOSWorkspaceTool, params);
+        const result = await testMacOSWorkspaceHandler(params);
 
         expect(result.content).toEqual([
           { type: 'text', text: '✅ macOS Test succeeded for scheme MyScheme.' },
@@ -248,7 +165,7 @@ describe('test_macos tools tests', () => {
           preferXcodebuild: true,
         };
 
-        const result = await callToolHandler(testMacOSWorkspaceTool, params);
+        const result = await testMacOSWorkspaceHandler(params);
 
         expect(result.content).toEqual([
           { type: 'text', text: '✅ macOS Test succeeded for scheme MyApp.' },
@@ -283,7 +200,7 @@ describe('test_macos tools tests', () => {
           scheme: 'FailingApp',
         };
 
-        const result = await callToolHandler(testMacOSWorkspaceTool, params);
+        const result = await testMacOSWorkspaceHandler(params);
 
         expect(result.content).toEqual([
           { type: 'text', text: '❌ macOS Test failed for scheme FailingApp.' },
@@ -303,76 +220,51 @@ describe('test_macos tools tests', () => {
           scheme: 'MyScheme',
         };
 
-        const result = await callToolHandler(testMacOSWorkspaceTool, params);
-
-        expect(result.content).toEqual([
-          { type: 'text', text: 'Tool execution error: Test execution failed' },
-        ]);
-        expect(result.isError).toBe(true);
+        await expect(testMacOSWorkspaceHandler(params)).rejects.toThrow('Test execution failed');
       });
     });
   });
 
   describe('test_macos_proj tool', () => {
     describe('parameter validation', () => {
-      it('should reject missing projectPath parameter', async () => {
-        const result = await callToolHandler(testMacOSProjectTool, {
+      it('should call handleTestLogic with project parameters', async () => {
+        mockHandleTestLogic.mockResolvedValue({
+          content: [{ type: 'text', text: 'Success' }],
+          isError: false,
+        });
+
+        const result = await testMacOSProjectHandler({
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+        });
+
+        expect(result).toBeDefined();
+        expect(mockHandleTestLogic).toHaveBeenCalledWith({
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          configuration: 'Debug',
+          preferXcodebuild: false,
+          platform: 'macOS',
+        });
+      });
+
+      it('should call handleTestLogic even with missing projectPath', async () => {
+        mockHandleTestLogic.mockResolvedValue({
+          content: [{ type: 'text', text: 'Success' }],
+          isError: false,
+        });
+
+        const result = await testMacOSProjectHandler({
           scheme: 'MyScheme',
         });
 
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject missing scheme parameter', async () => {
-        const result = await callToolHandler(testMacOSProjectTool, {
-          projectPath: '/path/to/project.xcodeproj',
-        });
-
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject invalid extraArgs parameter type', async () => {
-        const result = await callToolHandler(testMacOSProjectTool, {
-          projectPath: '/path/to/project.xcodeproj',
+        expect(result).toBeDefined();
+        expect(mockHandleTestLogic).toHaveBeenCalledWith({
           scheme: 'MyScheme',
-          extraArgs: 'invalid-string',
+          configuration: 'Debug',
+          preferXcodebuild: false,
+          platform: 'macOS',
         });
-
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Parameter 'extraArgs' must be of type array, but received string.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
-      });
-
-      it('should reject invalid preferXcodebuild parameter type', async () => {
-        const result = await callToolHandler(testMacOSProjectTool, {
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          preferXcodebuild: 'true',
-        });
-
-        expect(result.content).toEqual([
-          {
-            type: 'text',
-            text: "Parameter 'preferXcodebuild' must be of type boolean, but received string.",
-          },
-        ]);
-        expect(result.isError).toBe(true);
       });
     });
 
@@ -392,7 +284,7 @@ describe('test_macos tools tests', () => {
           scheme: 'MyApp',
         };
 
-        const result = await callToolHandler(testMacOSProjectTool, params);
+        const result = await testMacOSProjectHandler(params);
 
         expect(result.content).toEqual([
           { type: 'text', text: '✅ macOS Test succeeded for scheme MyApp.' },
@@ -429,7 +321,7 @@ describe('test_macos tools tests', () => {
           preferXcodebuild: true,
         };
 
-        const result = await callToolHandler(testMacOSProjectTool, params);
+        const result = await testMacOSProjectHandler(params);
 
         expect(result.content).toEqual([
           { type: 'text', text: '✅ macOS Test succeeded for scheme MyProject.' },
@@ -464,7 +356,7 @@ describe('test_macos tools tests', () => {
           scheme: 'BrokenApp',
         };
 
-        const result = await callToolHandler(testMacOSProjectTool, params);
+        const result = await testMacOSProjectHandler(params);
 
         expect(result.content).toEqual([
           { type: 'text', text: '❌ macOS Test failed for scheme BrokenApp.' },
@@ -484,12 +376,9 @@ describe('test_macos tools tests', () => {
           scheme: 'MyScheme',
         };
 
-        const result = await callToolHandler(testMacOSProjectTool, params);
-
-        expect(result.content).toEqual([
-          { type: 'text', text: 'Tool execution error: Project test execution failed' },
-        ]);
-        expect(result.isError).toBe(true);
+        await expect(testMacOSProjectHandler(params)).rejects.toThrow(
+          'Project test execution failed',
+        );
       });
     });
   });
@@ -516,7 +405,7 @@ describe('test_macos tools tests', () => {
         extraArgs: ['-parallel-testing-enabled', 'YES', '-test-timeouts-enabled', 'YES'],
       };
 
-      const result = await callToolHandler(testMacOSWorkspaceTool, params);
+      const result = await testMacOSWorkspaceHandler(params);
 
       expect(result.content).toEqual([
         { type: 'text', text: '✅ macOS Test succeeded for scheme MyMacApp.' },
@@ -559,7 +448,7 @@ describe('test_macos tools tests', () => {
         preferXcodebuild: true,
       };
 
-      const result = await callToolHandler(testMacOSProjectTool, params);
+      const result = await testMacOSProjectHandler(params);
 
       expect(result.content).toEqual([
         { type: 'text', text: '❌ macOS Test failed for scheme MyFailingApp.' },

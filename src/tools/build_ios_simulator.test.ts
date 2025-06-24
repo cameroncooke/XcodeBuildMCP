@@ -5,15 +5,14 @@
  * - build_sim_name_ws, build_sim_id_ws, build_sim_name_proj, build_sim_id_proj
  * - build_run_sim_name_ws, build_run_sim_id_ws, build_run_sim_name_proj, build_run_sim_id_proj
  *
- * Consolidated from split project and workspace test files to achieve 1:1 tool-to-test mapping.
- * Migrated from plugin architecture to canonical implementation.
+ * Refactored to test actual production functions instead of mock implementations.
+ * Follows CLAUDE.md testing principles exactly.
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { spawn, ChildProcess } from 'child_process';
-import { callToolHandler } from '../../tests-vitest/helpers/vitest-tool-helpers.js';
+import { execSync } from 'child_process';
 
-// Import the actual tools from build_ios_simulator.ts
+// ✅ Import actual production helper functions (private functions can't be imported, so we'll test via exports)
 import {
   registerSimulatorBuildByNameWorkspaceTool,
   registerSimulatorBuildByIdWorkspaceTool,
@@ -25,26 +24,7 @@ import {
   registerSimulatorBuildAndRunByIdProjectTool,
 } from './build_ios_simulator.js';
 
-// Import schemas and utilities
-import { z } from 'zod';
-import {
-  workspacePathSchema,
-  projectPathSchema,
-  schemeSchema,
-  simulatorNameSchema,
-  simulatorIdSchema,
-  configurationSchema,
-  derivedDataPathSchema,
-  extraArgsSchema,
-  useLatestOSSchema,
-  preferXcodebuildSchema,
-} from './common.js';
-import { validateRequiredParam, createTextResponse } from '../utils/validation.js';
-import { executeXcodeBuildCommand } from '../utils/build-utils.js';
-import { XcodePlatform } from '../utils/xcode.js';
-import { ToolResponse } from '../types/common.js';
-
-// Mock Node.js APIs to prevent real command execution
+// ✅ Mock external dependencies only
 vi.mock('child_process', () => ({
   spawn: vi.fn(),
   execSync: vi.fn(),
@@ -58,445 +38,90 @@ vi.mock('fs/promises', () => ({
   rm: vi.fn(() => Promise.resolve()),
 }));
 
-// Mock logger to prevent real logging during tests
+// ✅ Mock logger to prevent real logging during tests
 vi.mock('../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
-// Create test tool wrappers that match the canonical implementation
+// ✅ Mock build utilities
+vi.mock('../utils/build-utils.js', () => ({
+  executeXcodeBuildCommand: vi.fn(),
+}));
 
-// Build Simulator Name Workspace Tool
-const buildSimNameWsTool = {
-  name: 'build_sim_name_ws',
-  description:
-    "Builds an app from a workspace for a specific simulator by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_sim_name_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-  groups: ['IOS_SIMULATOR'],
-  schema: z.object({
-    workspacePath: workspacePathSchema,
-    scheme: schemeSchema,
-    simulatorName: simulatorNameSchema,
-    configuration: configurationSchema,
-    derivedDataPath: derivedDataPathSchema,
-    extraArgs: extraArgsSchema,
-    useLatestOS: useLatestOSSchema,
-    preferXcodebuild: preferXcodebuildSchema,
-  }),
-  handler: async (params: any): Promise<ToolResponse> => {
-    // Validate required parameters
-    const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+// ✅ Mock command execution utility
+vi.mock('../utils/command.js', () => ({
+  executeCommand: vi.fn(),
+}));
 
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+// ✅ Helper function to create mock server for testing tool registration
+function createMockServer() {
+  const tools = new Map();
+  return {
+    setRequestHandler: vi.fn(),
+    tool: vi.fn((name: string, description: string, schema: any, handler: any) => {
+      tools.set(name, { name, description, schema, handler });
+    }),
+    tools,
+  } as any;
+}
 
-    const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-    if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
-    const result = await executeXcodeBuildCommand(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      },
-      {
-        platform: XcodePlatform.iOSSimulator,
-        simulatorName: params.simulatorName,
-        useLatestOS: params.useLatestOS ?? true,
-        logPrefix: 'iOS Simulator Build',
-      },
-      params.preferXcodebuild ?? false,
-      'build',
-    );
-
-    return {
-      ...result,
-      isError: result.isError ?? false,
-    };
-  },
-};
-
-// Build Simulator ID Workspace Tool
-const buildSimIdWsTool = {
-  name: 'build_sim_id_ws',
-  description:
-    "Builds an app from a workspace for a specific simulator by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_sim_id_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
-  groups: ['IOS_SIMULATOR'],
-  schema: z.object({
-    workspacePath: workspacePathSchema,
-    scheme: schemeSchema,
-    simulatorId: simulatorIdSchema,
-    configuration: configurationSchema,
-    derivedDataPath: derivedDataPathSchema,
-    extraArgs: extraArgsSchema,
-    useLatestOS: useLatestOSSchema,
-    preferXcodebuild: preferXcodebuildSchema,
-  }),
-  handler: async (params: any): Promise<ToolResponse> => {
-    const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-    const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-    if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
-    const result = await executeXcodeBuildCommand(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      },
-      {
-        platform: XcodePlatform.iOSSimulator,
-        simulatorId: params.simulatorId,
-        useLatestOS: params.useLatestOS ?? true,
-        logPrefix: 'iOS Simulator Build',
-      },
-      params.preferXcodebuild ?? false,
-      'build',
-    );
-
-    return {
-      ...result,
-      isError: result.isError ?? false,
-    };
-  },
-};
-
-// Build Simulator Name Project Tool
-const buildSimNameProjTool = {
-  name: 'build_sim_name_proj',
-  description:
-    "Builds an app from a project file for a specific simulator by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_sim_name_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-  groups: ['IOS_SIMULATOR'],
-  schema: z.object({
-    projectPath: projectPathSchema,
-    scheme: schemeSchema,
-    simulatorName: simulatorNameSchema,
-    configuration: configurationSchema,
-    derivedDataPath: derivedDataPathSchema,
-    extraArgs: extraArgsSchema,
-    useLatestOS: useLatestOSSchema,
-    preferXcodebuild: preferXcodebuildSchema,
-  }),
-  handler: async (params: any): Promise<ToolResponse> => {
-    const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-    if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-    const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-    if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
-    const result = await executeXcodeBuildCommand(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      },
-      {
-        platform: XcodePlatform.iOSSimulator,
-        simulatorName: params.simulatorName,
-        useLatestOS: params.useLatestOS ?? true,
-        logPrefix: 'iOS Simulator Build',
-      },
-      params.preferXcodebuild ?? false,
-      'build',
-    );
-
-    return {
-      ...result,
-      isError: result.isError ?? false,
-    };
-  },
-};
-
-// Build Simulator ID Project Tool
-const buildSimIdProjTool = {
-  name: 'build_sim_id_proj',
-  description:
-    "Builds an app from a project file for a specific simulator by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: build_sim_id_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
-  groups: ['IOS_SIMULATOR'],
-  schema: z.object({
-    projectPath: projectPathSchema,
-    scheme: schemeSchema,
-    simulatorId: simulatorIdSchema,
-    configuration: configurationSchema,
-    derivedDataPath: derivedDataPathSchema,
-    extraArgs: extraArgsSchema,
-    useLatestOS: useLatestOSSchema,
-    preferXcodebuild: preferXcodebuildSchema,
-  }),
-  handler: async (params: any): Promise<ToolResponse> => {
-    const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-    if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-    const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-    if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
-    const result = await executeXcodeBuildCommand(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      },
-      {
-        platform: XcodePlatform.iOSSimulator,
-        simulatorId: params.simulatorId,
-        useLatestOS: params.useLatestOS ?? true,
-        logPrefix: 'iOS Simulator Build',
-      },
-      params.preferXcodebuild ?? false,
-      'build',
-    );
-
-    return {
-      ...result,
-      isError: result.isError ?? false,
-    };
-  },
-};
-
-// Build and Run tools - simplified for testing (they have complex multi-step logic)
-const buildRunSimNameWsTool = {
-  name: 'build_run_sim_name_ws',
-  description:
-    "Builds and runs an app from a workspace on a simulator specified by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_run_sim_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-  groups: ['IOS_SIMULATOR'],
-  schema: z.object({
-    workspacePath: workspacePathSchema,
-    scheme: schemeSchema,
-    simulatorName: simulatorNameSchema,
-    configuration: configurationSchema,
-    derivedDataPath: derivedDataPathSchema,
-    extraArgs: extraArgsSchema,
-    useLatestOS: useLatestOSSchema,
-    preferXcodebuild: preferXcodebuildSchema,
-  }),
-  handler: async (params: any): Promise<ToolResponse> => {
-    const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-    const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-    if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
-    // Simplified success response for testing
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `✅ iOS simulator build and run succeeded for scheme ${params.scheme} targeting simulator name '${params.simulatorName}'.
-          
-The app (com.example.MyApp) is now running in the iOS Simulator. 
-If you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.
-
-Next Steps:
-- Option 1: Capture structured logs only (app continues running):
-  start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'com.example.MyApp' })
-- Option 2: Capture both console and structured logs (app will restart):
-  start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'com.example.MyApp', captureConsole: true })
-- Option 3: Launch app with logs in one step (for a fresh start):
-  launch_app_with_logs_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'com.example.MyApp' })
-
-When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
-        },
-      ],
-      isError: false,
-    };
-  },
-};
-
-const buildRunSimIdWsTool = {
-  name: 'build_run_sim_id_ws',
-  description:
-    "Builds and runs an app from a workspace on a simulator specified by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_run_sim_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
-  groups: ['IOS_SIMULATOR'],
-  schema: z.object({
-    workspacePath: workspacePathSchema,
-    scheme: schemeSchema,
-    simulatorId: simulatorIdSchema,
-    configuration: configurationSchema,
-    derivedDataPath: derivedDataPathSchema,
-    extraArgs: extraArgsSchema,
-    useLatestOS: useLatestOSSchema,
-    preferXcodebuild: preferXcodebuildSchema,
-  }),
-  handler: async (params: any): Promise<ToolResponse> => {
-    const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-    const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-    if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `✅ iOS simulator build and run succeeded for scheme ${params.scheme} targeting simulator UUID ${params.simulatorId}.
-          
-The app (com.example.MyApp) is now running in the iOS Simulator. 
-If you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.
-
-Next Steps:
-- Option 1: Capture structured logs only (app continues running):
-  start_simulator_log_capture({ simulatorUuid: '${params.simulatorId}', bundleId: 'com.example.MyApp' })
-- Option 2: Capture both console and structured logs (app will restart):
-  start_simulator_log_capture({ simulatorUuid: '${params.simulatorId}', bundleId: 'com.example.MyApp', captureConsole: true })
-- Option 3: Launch app with logs in one step (for a fresh start):
-  launch_app_with_logs_in_simulator({ simulatorUuid: '${params.simulatorId}', bundleId: 'com.example.MyApp' })
-
-When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
-        },
-      ],
-      isError: false,
-    };
-  },
-};
-
-const buildRunSimNameProjTool = {
-  name: 'build_run_sim_name_proj',
-  description:
-    "Builds and runs an app from a project file on a simulator specified by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_run_sim_name_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-  groups: ['IOS_SIMULATOR'],
-  schema: z.object({
-    projectPath: projectPathSchema,
-    scheme: schemeSchema,
-    simulatorName: simulatorNameSchema,
-    configuration: configurationSchema,
-    derivedDataPath: derivedDataPathSchema,
-    extraArgs: extraArgsSchema,
-    useLatestOS: useLatestOSSchema,
-    preferXcodebuild: preferXcodebuildSchema,
-  }),
-  handler: async (params: any): Promise<ToolResponse> => {
-    const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-    if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-    const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-    if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `✅ iOS simulator build and run succeeded for scheme ${params.scheme} targeting simulator name '${params.simulatorName}'.
-          
-The app (com.example.MyApp) is now running in the iOS Simulator. 
-If you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.
-
-Next Steps:
-- Option 1: Capture structured logs only (app continues running):
-  start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'com.example.MyApp' })
-- Option 2: Capture both console and structured logs (app will restart):
-  start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'com.example.MyApp', captureConsole: true })
-- Option 3: Launch app with logs in one step (for a fresh start):
-  launch_app_with_logs_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'com.example.MyApp' })
-
-When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
-        },
-      ],
-      isError: false,
-    };
-  },
-};
-
-const buildRunSimIdProjTool = {
-  name: 'build_run_sim_id_proj',
-  description:
-    "Builds and runs an app from a project file on a simulator specified by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: build_run_sim_id_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
-  groups: ['IOS_SIMULATOR'],
-  schema: z.object({
-    projectPath: projectPathSchema,
-    scheme: schemeSchema,
-    simulatorId: simulatorIdSchema,
-    configuration: configurationSchema,
-    derivedDataPath: derivedDataPathSchema,
-    extraArgs: extraArgsSchema,
-    useLatestOS: useLatestOSSchema,
-    preferXcodebuild: preferXcodebuildSchema,
-  }),
-  handler: async (params: any): Promise<ToolResponse> => {
-    const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-    if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-    const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-    if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `✅ iOS simulator build and run succeeded for scheme ${params.scheme} targeting simulator UUID ${params.simulatorId}.
-          
-The app (com.example.MyApp) is now running in the iOS Simulator. 
-If you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.
-
-Next Steps:
-- Option 1: Capture structured logs only (app continues running):
-  start_simulator_log_capture({ simulatorUuid: '${params.simulatorId}', bundleId: 'com.example.MyApp' })
-- Option 2: Capture both console and structured logs (app will restart):
-  start_simulator_log_capture({ simulatorUuid: '${params.simulatorId}', bundleId: 'com.example.MyApp', captureConsole: true })
-- Option 3: Launch app with logs in one step (for a fresh start):
-  launch_app_with_logs_in_simulator({ simulatorUuid: '${params.simulatorId}', bundleId: 'com.example.MyApp' })
-
-When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
-        },
-      ],
-      isError: false,
-    };
-  },
-};
+// ✅ Helper function to extract registered tool handler
+function getRegisteredTool(registerFunction: any, toolName: string) {
+  const mockServer = createMockServer();
+  registerFunction(mockServer);
+  return mockServer.tools.get(toolName);
+}
 
 describe('iOS Simulator Build Tools', () => {
-  let mockSpawn: MockedFunction<any>;
-  let mockChildProcess: Partial<ChildProcess>;
+  let mockExecuteXcodeBuildCommand: MockedFunction<any>;
+  let mockExecuteCommand: MockedFunction<any>;
+  let mockExecSync: MockedFunction<any>;
 
   beforeEach(async () => {
-    const { spawn: nodeSpawn } = await import('node:child_process');
-    mockSpawn = nodeSpawn as MockedFunction<any>;
+    // ✅ Mock external dependencies
+    const buildUtils = await import('../utils/build-utils.js');
+    mockExecuteXcodeBuildCommand = buildUtils.executeXcodeBuildCommand as MockedFunction<any>;
 
-    mockChildProcess = {
-      stdout: {
-        on: vi.fn((event, callback) => {
-          if (event === 'data') callback('BUILD SUCCEEDED\n\n** BUILD SUCCEEDED **');
-        }),
-      } as any,
-      stderr: { on: vi.fn() } as any,
-      on: vi.fn((event, callback) => {
-        if (event === 'close') callback(0);
-      }),
-    };
+    const commandUtils = await import('../utils/command.js');
+    mockExecuteCommand = commandUtils.executeCommand as MockedFunction<any>;
 
-    mockSpawn.mockReturnValue(mockChildProcess as ChildProcess);
+    mockExecSync = vi.mocked(execSync);
+
+    // ✅ Default success behavior
+    mockExecuteXcodeBuildCommand.mockResolvedValue({
+      content: [
+        { type: 'text', text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.' },
+        {
+          type: 'text',
+          text: "Next Steps:\n1. Get App Path: get_simulator_app_path_by_name_workspace({ simulatorName: 'iPhone 16', scheme: 'MyScheme' })\n2. Get Bundle ID: get_ios_bundle_id({ appPath: 'APP_PATH_FROM_STEP_1' })\n3. Choose one of the following options:\n   - Option 1: Launch app normally:\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 2: Launch app with logs (captures both console and structured logs):\n     launch_app_with_logs_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 3: Launch app normally, then capture structured logs only:\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 4: Launch app normally, then capture all logs (will restart app):\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID', captureConsole: true })\n\nWhen done capturing logs, use: stop_and_get_simulator_log({ logSessionId: 'SESSION_ID' })",
+        },
+      ],
+      isError: false,
+    });
+
+    // ✅ Mock successful command responses for build and run tools
+    mockExecuteCommand.mockResolvedValue({
+      success: true,
+      output: 'CODESIGNING_FOLDER_PATH = /path/to/app.app',
+      error: '',
+    });
+
+    mockExecSync.mockReturnValue('com.example.MyApp');
+
     vi.clearAllMocks();
   });
 
-  // Build tools tests
+  // ✅ Test actual production tool functions
   describe('build_sim_name_ws tool', () => {
+    let buildTool: any;
+
+    beforeEach(() => {
+      buildTool = getRegisteredTool(registerSimulatorBuildByNameWorkspaceTool, 'build_sim_name_ws');
+    });
+
     describe('parameter validation', () => {
       it('should reject missing workspacePath', async () => {
-        const result = await callToolHandler(buildSimNameWsTool, {
+        const result = await buildTool.handler({
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         });
@@ -511,7 +136,7 @@ describe('iOS Simulator Build Tools', () => {
       });
 
       it('should reject missing scheme', async () => {
-        const result = await callToolHandler(buildSimNameWsTool, {
+        const result = await buildTool.handler({
           workspacePath: '/path/to/Project.xcworkspace',
           simulatorName: 'iPhone 16',
         });
@@ -526,7 +151,7 @@ describe('iOS Simulator Build Tools', () => {
       });
 
       it('should reject missing simulatorName', async () => {
-        const result = await callToolHandler(buildSimNameWsTool, {
+        const result = await buildTool.handler({
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
         });
@@ -549,7 +174,7 @@ describe('iOS Simulator Build Tools', () => {
           simulatorName: 'iPhone 16',
         };
 
-        const result = await callToolHandler(buildSimNameWsTool, params);
+        const result = await buildTool.handler(params);
 
         expect(result.content).toEqual([
           { type: 'text', text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.' },
@@ -560,20 +185,39 @@ describe('iOS Simulator Build Tools', () => {
         ]);
         expect(result.isError).toBe(false);
 
-        // Verify command generation
-        expect(mockSpawn).toHaveBeenCalledWith(
-          'sh',
-          expect.arrayContaining(['-c']),
-          expect.any(Object),
+        // ✅ Verify actual production function called external dependency correctly
+        expect(mockExecuteXcodeBuildCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            workspacePath: '/path/to/Project.xcworkspace',
+            scheme: 'MyScheme',
+            simulatorName: 'iPhone 16',
+            configuration: 'Debug',
+            useLatestOS: true,
+            preferXcodebuild: false,
+          }),
+          expect.objectContaining({
+            platform: 'iOS Simulator',
+            simulatorName: 'iPhone 16',
+            useLatestOS: true,
+            logPrefix: 'iOS Simulator Build',
+          }),
+          false,
+          'build',
         );
       });
     });
   });
 
   describe('build_sim_id_ws tool', () => {
+    let buildTool: any;
+
+    beforeEach(() => {
+      buildTool = getRegisteredTool(registerSimulatorBuildByIdWorkspaceTool, 'build_sim_id_ws');
+    });
+
     describe('parameter validation', () => {
       it('should reject missing required parameters', async () => {
-        const result = await callToolHandler(buildSimIdWsTool, {});
+        const result = await buildTool.handler({});
 
         expect(result.content).toEqual([
           {
@@ -587,13 +231,25 @@ describe('iOS Simulator Build Tools', () => {
 
     describe('success scenarios', () => {
       it('should return deterministic success response', async () => {
+        // ✅ Update mock for ID-based response
+        mockExecuteXcodeBuildCommand.mockResolvedValue({
+          content: [
+            { type: 'text', text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.' },
+            {
+              type: 'text',
+              text: "Next Steps:\n1. Get App Path: get_simulator_app_path_by_id_workspace({ simulatorId: 'B8F5B8E7-1234-4567-8901-123456789ABC', scheme: 'MyScheme' })\n2. Get Bundle ID: get_ios_bundle_id({ appPath: 'APP_PATH_FROM_STEP_1' })\n3. Choose one of the following options:\n   - Option 1: Launch app normally:\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 2: Launch app with logs (captures both console and structured logs):\n     launch_app_with_logs_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 3: Launch app normally, then capture structured logs only:\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 4: Launch app normally, then capture all logs (will restart app):\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID', captureConsole: true })\n\nWhen done capturing logs, use: stop_and_get_simulator_log({ logSessionId: 'SESSION_ID' })",
+            },
+          ],
+          isError: false,
+        });
+
         const params = {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
           simulatorId: 'B8F5B8E7-1234-4567-8901-123456789ABC',
         };
 
-        const result = await callToolHandler(buildSimIdWsTool, params);
+        const result = await buildTool.handler(params);
 
         expect(result.content).toEqual([
           { type: 'text', text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.' },
@@ -608,9 +264,15 @@ describe('iOS Simulator Build Tools', () => {
   });
 
   describe('build_sim_name_proj tool', () => {
+    let buildTool: any;
+
+    beforeEach(() => {
+      buildTool = getRegisteredTool(registerSimulatorBuildByNameProjectTool, 'build_sim_name_proj');
+    });
+
     describe('parameter validation', () => {
       it('should reject missing required parameters', async () => {
-        const result = await callToolHandler(buildSimNameProjTool, {});
+        const result = await buildTool.handler({});
 
         expect(result.content).toEqual([
           {
@@ -624,13 +286,25 @@ describe('iOS Simulator Build Tools', () => {
 
     describe('success scenarios', () => {
       it('should return deterministic success response', async () => {
+        // ✅ Update mock for project-based response
+        mockExecuteXcodeBuildCommand.mockResolvedValue({
+          content: [
+            { type: 'text', text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.' },
+            {
+              type: 'text',
+              text: "Next Steps:\n1. Get App Path: get_simulator_app_path_by_name_project({ simulatorName: 'iPhone 16', scheme: 'MyScheme' })\n2. Get Bundle ID: get_ios_bundle_id({ appPath: 'APP_PATH_FROM_STEP_1' })\n3. Choose one of the following options:\n   - Option 1: Launch app normally:\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 2: Launch app with logs (captures both console and structured logs):\n     launch_app_with_logs_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 3: Launch app normally, then capture structured logs only:\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 4: Launch app normally, then capture all logs (will restart app):\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID', captureConsole: true })\n\nWhen done capturing logs, use: stop_and_get_simulator_log({ logSessionId: 'SESSION_ID' })",
+            },
+          ],
+          isError: false,
+        });
+
         const params = {
           projectPath: '/path/to/Project.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         };
 
-        const result = await callToolHandler(buildSimNameProjTool, params);
+        const result = await buildTool.handler(params);
 
         expect(result.content).toEqual([
           { type: 'text', text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.' },
@@ -645,9 +319,15 @@ describe('iOS Simulator Build Tools', () => {
   });
 
   describe('build_sim_id_proj tool', () => {
+    let buildTool: any;
+
+    beforeEach(() => {
+      buildTool = getRegisteredTool(registerSimulatorBuildByIdProjectTool, 'build_sim_id_proj');
+    });
+
     describe('parameter validation', () => {
       it('should reject missing projectPath', async () => {
-        const result = await callToolHandler(buildSimIdProjTool, {
+        const result = await buildTool.handler({
           scheme: 'MyScheme',
           simulatorId: 'B8F5B8E7-1234-4567-8901-123456789ABC',
         });
@@ -662,7 +342,7 @@ describe('iOS Simulator Build Tools', () => {
       });
 
       it('should reject missing scheme', async () => {
-        const result = await callToolHandler(buildSimIdProjTool, {
+        const result = await buildTool.handler({
           projectPath: '/path/to/Project.xcodeproj',
           simulatorId: 'B8F5B8E7-1234-4567-8901-123456789ABC',
         });
@@ -677,7 +357,7 @@ describe('iOS Simulator Build Tools', () => {
       });
 
       it('should reject missing simulatorId', async () => {
-        const result = await callToolHandler(buildSimIdProjTool, {
+        const result = await buildTool.handler({
           projectPath: '/path/to/Project.xcodeproj',
           scheme: 'MyScheme',
         });
@@ -694,13 +374,25 @@ describe('iOS Simulator Build Tools', () => {
 
     describe('success scenarios', () => {
       it('should return deterministic success response', async () => {
+        // ✅ Update mock for project ID-based response
+        mockExecuteXcodeBuildCommand.mockResolvedValue({
+          content: [
+            { type: 'text', text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.' },
+            {
+              type: 'text',
+              text: "Next Steps:\n1. Get App Path: get_simulator_app_path_by_id_project({ simulatorId: 'B8F5B8E7-1234-4567-8901-123456789ABC', scheme: 'MyScheme' })\n2. Get Bundle ID: get_ios_bundle_id({ appPath: 'APP_PATH_FROM_STEP_1' })\n3. Choose one of the following options:\n   - Option 1: Launch app normally:\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 2: Launch app with logs (captures both console and structured logs):\n     launch_app_with_logs_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 3: Launch app normally, then capture structured logs only:\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n   - Option 4: Launch app normally, then capture all logs (will restart app):\n     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })\n     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID', captureConsole: true })\n\nWhen done capturing logs, use: stop_and_get_simulator_log({ logSessionId: 'SESSION_ID' })",
+            },
+          ],
+          isError: false,
+        });
+
         const params = {
           projectPath: '/path/to/Project.xcodeproj',
           scheme: 'MyScheme',
           simulatorId: 'B8F5B8E7-1234-4567-8901-123456789ABC',
         };
 
-        const result = await callToolHandler(buildSimIdProjTool, params);
+        const result = await buildTool.handler(params);
 
         expect(result.content).toEqual([
           { type: 'text', text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.' },
@@ -710,22 +402,24 @@ describe('iOS Simulator Build Tools', () => {
           },
         ]);
         expect(result.isError).toBe(false);
-
-        // Verify command generation
-        expect(mockSpawn).toHaveBeenCalledWith(
-          'sh',
-          expect.arrayContaining(['-c']),
-          expect.any(Object),
-        );
       });
     });
   });
 
-  // Build and Run tools tests
+  // ✅ Build and Run tools tests - testing complex multi-step logic
   describe('build_run_sim_name_ws tool', () => {
+    let buildRunTool: any;
+
+    beforeEach(() => {
+      buildRunTool = getRegisteredTool(
+        registerSimulatorBuildAndRunByNameWorkspaceTool,
+        'build_run_sim_name_ws',
+      );
+    });
+
     describe('parameter validation', () => {
       it('should reject missing required parameters', async () => {
-        const result = await callToolHandler(buildRunSimNameWsTool, {});
+        const result = await buildRunTool.handler({});
 
         expect(result.content).toEqual([
           {
@@ -739,13 +433,43 @@ describe('iOS Simulator Build Tools', () => {
 
     describe('success scenarios', () => {
       it('should return deterministic success response', async () => {
+        // ✅ Mock the build phase
+        mockExecuteXcodeBuildCommand.mockResolvedValue({
+          content: [{ type: 'text', text: '✅ iOS Simulator Build succeeded.' }],
+          isError: false,
+        });
+
+        // ✅ Mock getting app path from build settings
+        mockExecuteCommand.mockResolvedValue({
+          success: true,
+          output: 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app',
+          error: '',
+        });
+
+        // ✅ Mock all execSync calls in the correct order
+        mockExecSync
+          // 1. Find simulator by name
+          .mockReturnValueOnce(
+            '{ "devices": { "runtime": [{ "name": "iPhone 16", "udid": "test-uuid", "isAvailable": true }] } }',
+          )
+          // 2. Check simulator state
+          .mockReturnValueOnce('    iPhone 16 (test-uuid) (Booted)')
+          // 3. Open Simulator app (handled as non-failing)
+          .mockReturnValueOnce('')
+          // 4. Install app on simulator
+          .mockReturnValueOnce('')
+          // 5. Extract bundle ID with PlistBuddy
+          .mockReturnValueOnce('com.example.MyApp')
+          // 6. Launch app on simulator
+          .mockReturnValueOnce('');
+
         const params = {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         };
 
-        const result = await callToolHandler(buildRunSimNameWsTool, params);
+        const result = await buildRunTool.handler(params);
 
         expect(result.isError).toBe(false);
         expect(result.content[0].text).toContain(
@@ -754,15 +478,23 @@ describe('iOS Simulator Build Tools', () => {
         expect(result.content[0].text).toContain(
           'The app (com.example.MyApp) is now running in the iOS Simulator',
         );
-        expect(result.content[0].text).toContain('Next Steps:');
       });
     });
   });
 
   describe('build_run_sim_id_ws tool', () => {
+    let buildRunTool: any;
+
+    beforeEach(() => {
+      buildRunTool = getRegisteredTool(
+        registerSimulatorBuildAndRunByIdWorkspaceTool,
+        'build_run_sim_id_ws',
+      );
+    });
+
     describe('parameter validation', () => {
       it('should reject missing required parameters', async () => {
-        const result = await callToolHandler(buildRunSimIdWsTool, {});
+        const result = await buildRunTool.handler({});
 
         expect(result.content).toEqual([
           {
@@ -776,29 +508,64 @@ describe('iOS Simulator Build Tools', () => {
 
     describe('success scenarios', () => {
       it('should return deterministic success response', async () => {
+        // ✅ Mock the build phase
+        mockExecuteXcodeBuildCommand.mockResolvedValue({
+          content: [{ type: 'text', text: '✅ iOS Simulator Build succeeded.' }],
+          isError: false,
+        });
+
+        // ✅ Mock getting app path from build settings
+        mockExecuteCommand.mockResolvedValue({
+          success: true,
+          output: 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app',
+          error: '',
+        });
+
+        // ✅ Mock all execSync calls in the correct order for UUID-based simulator
+        mockExecSync
+          // 1. Check simulator state (UUID provided directly, skip lookup)
+          .mockReturnValueOnce('    Test Simulator (test-uuid) (Booted)')
+          // 2. Open Simulator app
+          .mockReturnValueOnce('')
+          // 3. Install app on simulator
+          .mockReturnValueOnce('')
+          // 4. Extract bundle ID with PlistBuddy
+          .mockReturnValueOnce('com.example.MyApp')
+          // 5. Launch app on simulator
+          .mockReturnValueOnce('');
+
         const params = {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
-          simulatorId: 'B8F5B8E7-1234-4567-8901-123456789ABC',
+          simulatorId: 'test-uuid',
         };
 
-        const result = await callToolHandler(buildRunSimIdWsTool, params);
+        const result = await buildRunTool.handler(params);
 
         expect(result.isError).toBe(false);
         expect(result.content[0].text).toContain(
-          '✅ iOS simulator build and run succeeded for scheme MyScheme targeting simulator UUID B8F5B8E7-1234-4567-8901-123456789ABC',
+          '✅ iOS simulator build and run succeeded for scheme MyScheme targeting simulator UUID test-uuid',
         );
         expect(result.content[0].text).toContain(
-          "start_simulator_log_capture({ simulatorUuid: 'B8F5B8E7-1234-4567-8901-123456789ABC'",
+          'The app (com.example.MyApp) is now running in the iOS Simulator',
         );
       });
     });
   });
 
   describe('build_run_sim_name_proj tool', () => {
+    let buildRunTool: any;
+
+    beforeEach(() => {
+      buildRunTool = getRegisteredTool(
+        registerSimulatorBuildAndRunByNameProjectTool,
+        'build_run_sim_name_proj',
+      );
+    });
+
     describe('parameter validation', () => {
       it('should reject missing required parameters', async () => {
-        const result = await callToolHandler(buildRunSimNameProjTool, {});
+        const result = await buildRunTool.handler({});
 
         expect(result.content).toEqual([
           {
@@ -812,26 +579,68 @@ describe('iOS Simulator Build Tools', () => {
 
     describe('success scenarios', () => {
       it('should return deterministic success response', async () => {
+        // ✅ Mock the build phase
+        mockExecuteXcodeBuildCommand.mockResolvedValue({
+          content: [{ type: 'text', text: '✅ iOS Simulator Build succeeded.' }],
+          isError: false,
+        });
+
+        // ✅ Mock getting app path from build settings
+        mockExecuteCommand.mockResolvedValue({
+          success: true,
+          output: 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app',
+          error: '',
+        });
+
+        // ✅ Mock all execSync calls in the correct order
+        mockExecSync
+          // 1. Find simulator by name
+          .mockReturnValueOnce(
+            '{ "devices": { "runtime": [{ "name": "iPhone 16", "udid": "test-uuid", "isAvailable": true }] } }',
+          )
+          // 2. Check simulator state
+          .mockReturnValueOnce('    iPhone 16 (test-uuid) (Booted)')
+          // 3. Open Simulator app
+          .mockReturnValueOnce('')
+          // 4. Install app on simulator
+          .mockReturnValueOnce('')
+          // 5. Extract bundle ID with PlistBuddy
+          .mockReturnValueOnce('com.example.MyApp')
+          // 6. Launch app on simulator
+          .mockReturnValueOnce('');
+
         const params = {
           projectPath: '/path/to/Project.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         };
 
-        const result = await callToolHandler(buildRunSimNameProjTool, params);
+        const result = await buildRunTool.handler(params);
 
         expect(result.isError).toBe(false);
         expect(result.content[0].text).toContain(
           "✅ iOS simulator build and run succeeded for scheme MyScheme targeting simulator name 'iPhone 16'",
+        );
+        expect(result.content[0].text).toContain(
+          'The app (com.example.MyApp) is now running in the iOS Simulator',
         );
       });
     });
   });
 
   describe('build_run_sim_id_proj tool', () => {
+    let buildRunTool: any;
+
+    beforeEach(() => {
+      buildRunTool = getRegisteredTool(
+        registerSimulatorBuildAndRunByIdProjectTool,
+        'build_run_sim_id_proj',
+      );
+    });
+
     describe('parameter validation', () => {
       it('should reject missing required parameters', async () => {
-        const result = await callToolHandler(buildRunSimIdProjTool, {});
+        const result = await buildRunTool.handler({});
 
         expect(result.content).toEqual([
           {
@@ -845,61 +654,107 @@ describe('iOS Simulator Build Tools', () => {
 
     describe('success scenarios', () => {
       it('should return deterministic success response', async () => {
+        // ✅ Mock the build phase
+        mockExecuteXcodeBuildCommand.mockResolvedValue({
+          content: [{ type: 'text', text: '✅ iOS Simulator Build succeeded.' }],
+          isError: false,
+        });
+
+        // ✅ Mock getting app path from build settings
+        mockExecuteCommand.mockResolvedValue({
+          success: true,
+          output: 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app',
+          error: '',
+        });
+
+        // ✅ Mock all execSync calls in the correct order for UUID-based simulator
+        mockExecSync
+          // 1. Check simulator state (UUID provided directly)
+          .mockReturnValueOnce('    Test Simulator (test-uuid) (Booted)')
+          // 2. Open Simulator app
+          .mockReturnValueOnce('')
+          // 3. Install app on simulator
+          .mockReturnValueOnce('')
+          // 4. Extract bundle ID with PlistBuddy
+          .mockReturnValueOnce('com.example.MyApp')
+          // 5. Launch app on simulator
+          .mockReturnValueOnce('');
+
         const params = {
           projectPath: '/path/to/Project.xcodeproj',
           scheme: 'MyScheme',
-          simulatorId: 'B8F5B8E7-1234-4567-8901-123456789ABC',
+          simulatorId: 'test-uuid',
         };
 
-        const result = await callToolHandler(buildRunSimIdProjTool, params);
+        const result = await buildRunTool.handler(params);
 
         expect(result.isError).toBe(false);
         expect(result.content[0].text).toContain(
-          '✅ iOS simulator build and run succeeded for scheme MyScheme targeting simulator UUID B8F5B8E7-1234-4567-8901-123456789ABC',
+          '✅ iOS simulator build and run succeeded for scheme MyScheme targeting simulator UUID test-uuid',
         );
         expect(result.content[0].text).toContain(
-          "start_simulator_log_capture({ simulatorUuid: 'B8F5B8E7-1234-4567-8901-123456789ABC'",
+          'The app (com.example.MyApp) is now running in the iOS Simulator',
         );
       });
     });
   });
 
-  // Tool metadata verification
-  describe('tool metadata', () => {
-    it('should have correct tool metadata for all tools', () => {
-      const tools = [
-        buildSimNameWsTool,
-        buildSimIdWsTool,
-        buildSimNameProjTool,
-        buildSimIdProjTool,
-        buildRunSimNameWsTool,
-        buildRunSimIdWsTool,
-        buildRunSimNameProjTool,
-        buildRunSimIdProjTool,
+  // ✅ Error handling tests
+  describe('error handling', () => {
+    it('should handle build failures correctly', async () => {
+      mockExecuteXcodeBuildCommand.mockResolvedValue({
+        content: [{ type: 'text', text: 'Build failed with error' }],
+        isError: true,
+      });
+
+      const buildTool = getRegisteredTool(
+        registerSimulatorBuildByNameWorkspaceTool,
+        'build_sim_name_ws',
+      );
+      const result = await buildTool.handler({
+        workspacePath: '/path/to/Project.xcworkspace',
+        scheme: 'MyScheme',
+        simulatorName: 'iPhone 16',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content).toEqual([{ type: 'text', text: 'Build failed with error' }]);
+    });
+  });
+
+  // ✅ Tool registration verification
+  describe('tool registration', () => {
+    it('should register all 8 tools with correct names', () => {
+      const expectedTools = [
+        'build_sim_name_ws',
+        'build_sim_id_ws',
+        'build_sim_name_proj',
+        'build_sim_id_proj',
+        'build_run_sim_name_ws',
+        'build_run_sim_id_ws',
+        'build_run_sim_name_proj',
+        'build_run_sim_id_proj',
       ];
 
-      // Verify we have exactly 8 tools as specified
-      expect(tools).toHaveLength(8);
+      const mockServer = createMockServer();
 
-      // Verify each tool has required metadata
-      tools.forEach((tool) => {
-        expect(tool.name).toBeDefined();
-        expect(tool.description).toBeDefined();
-        expect(tool.groups).toContain('IOS_SIMULATOR');
-        expect(tool.schema).toBeDefined();
-        expect(tool.handler).toBeInstanceOf(Function);
+      // ✅ Register all tools
+      registerSimulatorBuildByNameWorkspaceTool(mockServer);
+      registerSimulatorBuildByIdWorkspaceTool(mockServer);
+      registerSimulatorBuildByNameProjectTool(mockServer);
+      registerSimulatorBuildByIdProjectTool(mockServer);
+      registerSimulatorBuildAndRunByNameWorkspaceTool(mockServer);
+      registerSimulatorBuildAndRunByIdWorkspaceTool(mockServer);
+      registerSimulatorBuildAndRunByNameProjectTool(mockServer);
+      registerSimulatorBuildAndRunByIdProjectTool(mockServer);
+
+      // ✅ Verify exactly 8 tools registered
+      expect(mockServer.tools.size).toBe(8);
+
+      // ✅ Verify correct tool names
+      expectedTools.forEach((toolName) => {
+        expect(mockServer.tools.has(toolName)).toBe(true);
       });
-    });
-
-    it('should have correct tool names', () => {
-      expect(buildSimNameWsTool.name).toBe('build_sim_name_ws');
-      expect(buildSimIdWsTool.name).toBe('build_sim_id_ws');
-      expect(buildSimNameProjTool.name).toBe('build_sim_name_proj');
-      expect(buildSimIdProjTool.name).toBe('build_sim_id_proj');
-      expect(buildRunSimNameWsTool.name).toBe('build_run_sim_name_ws');
-      expect(buildRunSimIdWsTool.name).toBe('build_run_sim_id_ws');
-      expect(buildRunSimNameProjTool.name).toBe('build_run_sim_name_proj');
-      expect(buildRunSimIdProjTool.name).toBe('build_run_sim_id_proj');
     });
   });
 });
