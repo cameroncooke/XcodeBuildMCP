@@ -64,7 +64,7 @@ export async function executeCommand(
     const executable = escapedCommand[0];
     const args = escapedCommand.slice(1);
 
-    const spawnOptions: any = {
+    const spawnOptions: Parameters<typeof spawn>[2] = {
       stdio: ['ignore', 'pipe', 'pipe'], // ignore stdin, pipe stdout/stderr
     };
 

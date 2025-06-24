@@ -1,15 +1,15 @@
 /**
  * Vitest tests for UI Testing Tools (AXe-based)
- * 
+ *
  * Tests all UI automation tools from src/tools/axe.ts:
  * - describe_ui, tap, long_press, swipe, type_text, key_press, button, key_sequence, touch, gesture
- * 
+ *
  * Migrated from plugin architecture tests to canonical tool imports
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { spawn, ChildProcess } from 'child_process';
-import { callToolHandler } from '../../helpers/vitest-tool-helpers.js';
+import { callToolHandler } from '../../tests-vitest/helpers/vitest-tool-helpers.js';
 
 // Mock child_process for command execution
 vi.mock('child_process', () => ({
@@ -24,7 +24,7 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock axe helpers
-vi.mock('../../../src/utils/axe-helpers.js', () => ({
+vi.mock('../utils/axe-helpers.js', () => ({
   areAxeToolsAvailable: vi.fn(() => true),
   createAxeNotAvailableResponse: vi.fn(() => ({
     content: [{ type: 'text', text: 'AXe tools not available' }],
@@ -35,17 +35,17 @@ vi.mock('../../../src/utils/axe-helpers.js', () => ({
 }));
 
 // Mock command execution
-vi.mock('../../../src/utils/command.js', () => ({
+vi.mock('../utils/command.js', () => ({
   executeCommand: vi.fn(),
 }));
 
 // Mock logger
-vi.mock('../../../src/utils/logger.js', () => ({
+vi.mock('../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
 // Mock validation utilities
-vi.mock('../../../src/utils/validation.js', () => ({
+vi.mock('../utils/validation.js', () => ({
   createTextResponse: vi.fn((text: string) => ({
     content: [{ type: 'text', text }],
   })),
@@ -54,7 +54,12 @@ vi.mock('../../../src/utils/validation.js', () => ({
       return {
         isValid: false,
         errorResponse: {
-          content: [{ type: 'text', text: `Required parameter '${name}' is missing. Please provide a value for this parameter.` }],
+          content: [
+            {
+              type: 'text',
+              text: `Required parameter '${name}' is missing. Please provide a value for this parameter.`,
+            },
+          ],
           isError: true,
         },
       };
@@ -64,9 +69,9 @@ vi.mock('../../../src/utils/validation.js', () => ({
 }));
 
 // Import the tool registration function
-import { registerAxeTools } from '../../../src/tools/axe.js';
-import { executeCommand } from '../../../src/utils/command.js';
-import { areAxeToolsAvailable } from '../../../src/utils/axe-helpers.js';
+import { registerAxeTools } from './axe.js';
+import { executeCommand } from '../utils/command.js';
+import { areAxeToolsAvailable } from '../utils/axe-helpers.js';
 
 // Create mock server for tool registration
 const mockServer = {
@@ -74,7 +79,9 @@ const mockServer = {
 } as any;
 
 const mockExecuteCommand = executeCommand as MockedFunction<typeof executeCommand>;
-const mockAreAxeToolsAvailable = areAxeToolsAvailable as MockedFunction<typeof areAxeToolsAvailable>;
+const mockAreAxeToolsAvailable = areAxeToolsAvailable as MockedFunction<
+  typeof areAxeToolsAvailable
+>;
 
 // Test fixtures
 const validSimulatorUuid = 'B8F5B8E7-1234-4567-8901-123456789ABC';
@@ -99,10 +106,10 @@ describe('AXe UI Testing Tools', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     registeredTools.clear();
-    
+
     // Reset axe tools availability to true by default
     mockAreAxeToolsAvailable.mockReturnValue(true);
-    
+
     // Set default successful command execution
     mockExecuteCommand.mockResolvedValue({
       success: true,
@@ -111,15 +118,17 @@ describe('AXe UI Testing Tools', () => {
     });
 
     // Mock the server.tool method to capture tool registrations
-    mockServer.tool.mockImplementation((name: string, description: string, schema: any, handler: any) => {
-      registeredTools.set(name, {
-        name,
-        description,
-        schema,
-        handler,
-        groups: ['UI_TESTING'], // Mark as UI testing tool for validation helper
-      });
-    });
+    mockServer.tool.mockImplementation(
+      (name: string, description: string, schema: any, handler: any) => {
+        registeredTools.set(name, {
+          name,
+          description,
+          schema,
+          handler,
+          groups: ['UI_TESTING'], // Mark as UI testing tool for validation helper
+        });
+      },
+    );
 
     // Register the tools
     registerAxeTools(mockServer);
@@ -145,7 +154,9 @@ describe('AXe UI Testing Tools', () => {
       const result = await callToolHandler(tool, params);
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe('Invalid Simulator UUID format. Expected format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX');
+      expect(result.content[0].text).toBe(
+        'Invalid Simulator UUID format. Expected format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',
+      );
     });
 
     it('should return UI hierarchy successfully', async () => {
@@ -159,7 +170,10 @@ describe('AXe UI Testing Tools', () => {
       expect(result.content).toEqual([
         {
           type: 'text',
-          text: 'Accessibility hierarchy retrieved successfully:\n```json\n' + JSON.stringify(mockUIHierarchy) + '\n```',
+          text:
+            'Accessibility hierarchy retrieved successfully:\n```json\n' +
+            JSON.stringify(mockUIHierarchy) +
+            '\n```',
         },
         {
           type: 'text',
@@ -294,7 +308,9 @@ describe('AXe UI Testing Tools', () => {
       const result = await callToolHandler(tool, params);
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toBe('Long press at (100, 200) for 1500ms simulated successfully.');
+      expect(result.content[0].text).toBe(
+        'Long press at (100, 200) for 1500ms simulated successfully.',
+      );
     });
 
     it('should validate positive duration', async () => {
@@ -350,7 +366,9 @@ describe('AXe UI Testing Tools', () => {
       const result = await callToolHandler(tool, params);
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toBe('Swipe from (100, 200) to (300, 400) simulated successfully.');
+      expect(result.content[0].text).toBe(
+        'Swipe from (100, 200) to (300, 400) simulated successfully.',
+      );
     });
 
     it('should handle optional parameters', async () => {
@@ -377,7 +395,9 @@ describe('AXe UI Testing Tools', () => {
       const result = await callToolHandler(tool, params);
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toBe('Swipe from (100, 200) to (300, 400) duration=2s simulated successfully.');
+      expect(result.content[0].text).toBe(
+        'Swipe from (100, 200) to (300, 400) duration=2s simulated successfully.',
+      );
     });
   });
 
@@ -607,7 +627,9 @@ describe('AXe UI Testing Tools', () => {
       const result = await callToolHandler(tool, params);
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toBe('Touch event (touch down) at (100, 200) executed successfully.');
+      expect(result.content[0].text).toBe(
+        'Touch event (touch down) at (100, 200) executed successfully.',
+      );
     });
 
     it('should execute touch up successfully', async () => {
@@ -629,7 +651,9 @@ describe('AXe UI Testing Tools', () => {
       const result = await callToolHandler(tool, params);
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toBe('Touch event (touch up) at (100, 200) executed successfully.');
+      expect(result.content[0].text).toBe(
+        'Touch event (touch up) at (100, 200) executed successfully.',
+      );
     });
 
     it('should execute touch down+up successfully', async () => {
@@ -652,7 +676,9 @@ describe('AXe UI Testing Tools', () => {
       const result = await callToolHandler(tool, params);
 
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toBe('Touch event (touch down+up) at (100, 200) executed successfully.');
+      expect(result.content[0].text).toBe(
+        'Touch event (touch down+up) at (100, 200) executed successfully.',
+      );
     });
 
     it('should require at least one of down or up', async () => {
@@ -805,7 +831,7 @@ describe('AXe UI Testing Tools', () => {
         'gesture',
       ];
 
-      expectedTools.forEach(toolName => {
+      expectedTools.forEach((toolName) => {
         expect(registeredTools.has(toolName)).toBe(true);
       });
 

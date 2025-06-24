@@ -1,11 +1,11 @@
 /**
  * Vitest tests for macOS Build Tools
- * 
+ *
  * Migrated from plugin architecture to canonical implementation.
  * Tests all macOS-related tools:
  * - build_mac_ws, build_mac_proj, build_run_mac_ws, build_run_mac_proj (from build_macos.ts)
  * - test_macos_ws, test_macos_proj (from test_macos.ts)
- * - get_mac_app_path_ws, get_mac_app_path_proj (from app_path.ts) 
+ * - get_mac_app_path_ws, get_mac_app_path_proj (from app_path.ts)
  * - get_mac_bundle_id (from bundleId.ts)
  * - launch_mac_app, stop_mac_app (from launch.ts)
  * - clean_ws (from clean.ts)
@@ -15,87 +15,88 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { spawn, exec, ChildProcess } from 'child_process';
 import { readFile } from 'fs/promises';
-import { callToolHandler, type ToolMeta } from '../../helpers/vitest-tool-helpers.js';
+import { callToolHandler, type ToolMeta } from '../../tests-vitest/helpers/vitest-tool-helpers.js';
 import { z } from 'zod';
 
 // Import canonical tool functions
-import { 
+import {
   registerMacOSBuildWorkspaceTool,
   registerMacOSBuildProjectTool,
   registerMacOSBuildAndRunWorkspaceTool,
-  registerMacOSBuildAndRunProjectTool
-} from '../../../src/tools/build_macos.js';
+  registerMacOSBuildAndRunProjectTool,
+} from './build_macos.js';
 
-import {
-  registerMacOSTestWorkspaceTool,
-  registerMacOSTestProjectTool
-} from '../../../src/tools/test_macos.js';
+import { registerMacOSTestWorkspaceTool, registerMacOSTestProjectTool } from './test_macos.js';
 
 import {
   registerGetMacOSAppPathWorkspaceTool,
-  registerGetMacOSAppPathProjectTool
-} from '../../../src/tools/app_path.js';
+  registerGetMacOSAppPathProjectTool,
+} from './app_path.js';
 
-import {
-  registerGetMacOSBundleIdTool
-} from '../../../src/tools/bundleId.js';
+import { registerGetMacOSBundleIdTool } from './bundleId.js';
 
-import {
-  registerLaunchMacOSAppTool,
-  registerStopMacOSAppTool
-} from '../../../src/tools/launch.js';
+import { registerLaunchMacOSAppTool, registerStopMacOSAppTool } from './launch.js';
 
-import {
-  registerCleanWorkspaceTool
-} from '../../../src/tools/clean.js';
+import { registerCleanWorkspaceTool } from './clean.js';
 
 import {
   registerListSchemesWorkspaceTool,
-  registerShowBuildSettingsWorkspaceTool
-} from '../../../src/tools/build_settings.js';
+  registerShowBuildSettingsWorkspaceTool,
+} from './build_settings.js';
 
 // Mock Node.js APIs directly
 vi.mock('child_process', () => ({
   spawn: vi.fn(),
   exec: vi.fn(),
-  execSync: vi.fn(() => 'com.example.MyApp')
+  execSync: vi.fn(() => 'com.example.MyApp'),
 }));
 
 vi.mock('fs/promises', () => ({
   readFile: vi.fn(),
   writeFile: vi.fn(),
   unlink: vi.fn(),
-  mkdtemp: vi.fn()
+  mkdtemp: vi.fn(),
 }));
 
 vi.mock('fs', () => ({
-  existsSync: vi.fn(() => true)
+  existsSync: vi.fn(() => true),
 }));
 
 vi.mock('os', () => ({
-  tmpdir: vi.fn(() => '/tmp')
+  tmpdir: vi.fn(() => '/tmp'),
+}));
+
+// Mock logger to prevent real logging during tests
+vi.mock('../utils/logger.js', () => ({
+  log: vi.fn(),
 }));
 
 // Tool wrapper utility to create ToolMeta from canonical registration functions
-function createToolWrapper(name: string, description: string, groups: string[], registerFn: any, schema: z.ZodType): ToolMeta<z.ZodType> {
+function createToolWrapper(
+  name: string,
+  description: string,
+  groups: string[],
+  registerFn: any,
+  schema: z.ZodType,
+): ToolMeta<z.ZodType> {
   let capturedHandler: any = null;
-  
+
   // Mock server to capture the registered tool
   const mockServer = {
     tool: (toolName: string, toolDescription: string, toolSchema: any, handler: any) => {
       if (toolName === name) {
         capturedHandler = handler;
       }
-    }
+    },
   };
-  
+
   // Register the tool to capture its handler
   registerFn(mockServer);
-  
+
   if (!capturedHandler) {
     throw new Error(`Failed to capture handler for tool: ${name}`);
   }
-  
+
   return {
     name,
     description,
@@ -103,7 +104,7 @@ function createToolWrapper(name: string, description: string, groups: string[], 
     schema,
     handler: async (params: any) => {
       return await capturedHandler(params, {});
-    }
+    },
   };
 }
 
@@ -115,7 +116,7 @@ const workspaceSchema = z.object({
   derivedDataPath: z.string().optional(),
   arch: z.enum(['arm64', 'x86_64']).optional(),
   extraArgs: z.array(z.string()).optional(),
-  preferXcodebuild: z.boolean().optional()
+  preferXcodebuild: z.boolean().optional(),
 });
 
 const projectSchema = z.object({
@@ -125,21 +126,21 @@ const projectSchema = z.object({
   derivedDataPath: z.string().optional(),
   arch: z.enum(['arm64', 'x86_64']).optional(),
   extraArgs: z.array(z.string()).optional(),
-  preferXcodebuild: z.boolean().optional()
+  preferXcodebuild: z.boolean().optional(),
 });
 
 const appPathSchema = z.object({
-  appPath: z.string()
+  appPath: z.string(),
 });
 
 const appPathWithArgsSchema = z.object({
   appPath: z.string(),
-  args: z.array(z.string()).optional()
+  args: z.array(z.string()).optional(),
 });
 
 const stopMacAppSchema = z.object({
   appName: z.string().optional(),
-  processId: z.number().optional()
+  processId: z.number().optional(),
 });
 
 const cleanWorkspaceSchema = z.object({
@@ -147,20 +148,20 @@ const cleanWorkspaceSchema = z.object({
   scheme: z.string().optional(),
   configuration: z.string().optional(),
   derivedDataPath: z.string().optional(),
-  extraArgs: z.array(z.string()).optional()
+  extraArgs: z.array(z.string()).optional(),
 });
 
 const listSchemesWorkspaceSchema = z.object({
-  workspacePath: z.string()
+  workspacePath: z.string(),
 });
 
 // Create tool wrappers for all macOS tools
 const buildMacWsTool = createToolWrapper(
-  'build_mac_ws', 
+  'build_mac_ws',
   'Builds a macOS app using xcodebuild from a workspace.',
   ['MACOS_WORKSPACE'],
   registerMacOSBuildWorkspaceTool,
-  workspaceSchema
+  workspaceSchema,
 );
 
 const buildMacProjTool = createToolWrapper(
@@ -168,7 +169,7 @@ const buildMacProjTool = createToolWrapper(
   'Builds a macOS app using xcodebuild from a project file.',
   ['MACOS_PROJECT'],
   registerMacOSBuildProjectTool,
-  projectSchema
+  projectSchema,
 );
 
 const buildRunMacWsTool = createToolWrapper(
@@ -176,7 +177,7 @@ const buildRunMacWsTool = createToolWrapper(
   'Builds and runs a macOS app from a workspace in one step.',
   ['MACOS_WORKSPACE'],
   registerMacOSBuildAndRunWorkspaceTool,
-  workspaceSchema
+  workspaceSchema,
 );
 
 const buildRunMacProjTool = createToolWrapper(
@@ -184,7 +185,7 @@ const buildRunMacProjTool = createToolWrapper(
   'Builds and runs a macOS app from a project file in one step.',
   ['MACOS_PROJECT'],
   registerMacOSBuildAndRunProjectTool,
-  projectSchema
+  projectSchema,
 );
 
 const testMacosWsTool = createToolWrapper(
@@ -192,7 +193,7 @@ const testMacosWsTool = createToolWrapper(
   'Runs tests for a macOS workspace using xcodebuild test and parses xcresult output.',
   ['MACOS_WORKSPACE'],
   registerMacOSTestWorkspaceTool,
-  workspaceSchema
+  workspaceSchema,
 );
 
 const testMacosProjTool = createToolWrapper(
@@ -200,7 +201,7 @@ const testMacosProjTool = createToolWrapper(
   'Runs tests for a macOS project using xcodebuild test and parses xcresult output.',
   ['MACOS_PROJECT'],
   registerMacOSTestProjectTool,
-  projectSchema
+  projectSchema,
 );
 
 const getMacAppPathWsTool = createToolWrapper(
@@ -208,7 +209,7 @@ const getMacAppPathWsTool = createToolWrapper(
   'Gets the app bundle path for a macOS application using a workspace.',
   ['MACOS_WORKSPACE'],
   registerGetMacOSAppPathWorkspaceTool,
-  workspaceSchema
+  workspaceSchema,
 );
 
 const getMacAppPathProjTool = createToolWrapper(
@@ -216,7 +217,7 @@ const getMacAppPathProjTool = createToolWrapper(
   'Gets the app bundle path for a macOS application using a project file.',
   ['MACOS_PROJECT'],
   registerGetMacOSAppPathProjectTool,
-  projectSchema
+  projectSchema,
 );
 
 const getMacBundleIdTool = createToolWrapper(
@@ -224,7 +225,7 @@ const getMacBundleIdTool = createToolWrapper(
   'Extracts the bundle identifier from a macOS app bundle (.app).',
   ['MACOS'],
   registerGetMacOSBundleIdTool,
-  appPathSchema
+  appPathSchema,
 );
 
 const launchMacAppTool = createToolWrapper(
@@ -232,7 +233,7 @@ const launchMacAppTool = createToolWrapper(
   'Launches a macOS application.',
   ['MACOS'],
   registerLaunchMacOSAppTool,
-  appPathWithArgsSchema
+  appPathWithArgsSchema,
 );
 
 const stopMacAppTool = createToolWrapper(
@@ -240,7 +241,7 @@ const stopMacAppTool = createToolWrapper(
   'Stops a running macOS application.',
   ['MACOS'],
   registerStopMacOSAppTool,
-  stopMacAppSchema
+  stopMacAppSchema,
 );
 
 const cleanWsTool = createToolWrapper(
@@ -248,7 +249,7 @@ const cleanWsTool = createToolWrapper(
   'Cleans build products for a specific workspace using xcodebuild.',
   ['WORKSPACE'],
   registerCleanWorkspaceTool,
-  cleanWorkspaceSchema
+  cleanWorkspaceSchema,
 );
 
 const listSchemsWsTool = createToolWrapper(
@@ -256,7 +257,7 @@ const listSchemsWsTool = createToolWrapper(
   'Lists available schemes in the workspace.',
   ['WORKSPACE'],
   registerListSchemesWorkspaceTool,
-  listSchemesWorkspaceSchema
+  listSchemesWorkspaceSchema,
 );
 
 const showBuildSetWsTool = createToolWrapper(
@@ -264,7 +265,7 @@ const showBuildSetWsTool = createToolWrapper(
   'Shows build settings from a workspace using xcodebuild.',
   ['WORKSPACE'],
   registerShowBuildSettingsWorkspaceTool,
-  workspaceSchema
+  workspaceSchema,
 );
 
 describe('macOS Build Tools (Canonical)', () => {
@@ -277,7 +278,7 @@ describe('macOS Build Tools (Canonical)', () => {
     mockSpawn = spawn as MockedFunction<any>;
     mockExec = exec as MockedFunction<any>;
     mockReadFile = readFile as MockedFunction<any>;
-    
+
     // Mock mkdtemp to return a test directory
     const mockMkdtemp = vi.fn().mockResolvedValue('/tmp/xcresult-test-123');
     vi.doMock('fs/promises', () => ({
@@ -285,7 +286,7 @@ describe('macOS Build Tools (Canonical)', () => {
       writeFile: vi.fn(),
       unlink: vi.fn(),
       mkdtemp: mockMkdtemp,
-      rm: vi.fn()
+      rm: vi.fn(),
     }));
 
     // Create mock child process with successful build output
@@ -311,25 +312,30 @@ Ld /DerivedData/Build/Products/Debug/MyScheme.app/Contents/MacOS/MyScheme normal
 
 ** BUILD SUCCEEDED **`);
           }
-        })
+        }),
       } as any,
       stderr: {
-        on: vi.fn()
+        on: vi.fn(),
       } as any,
       on: vi.fn((event, callback) => {
         if (event === 'close') {
           callback(0); // Successful exit code
         }
-      })
+      }),
     };
 
     mockSpawn.mockReturnValue(mockChildProcess as ChildProcess);
-    
+
     // Mock exec to resolve successfully (for launch tools)
-    mockExec.mockImplementation((command: string, callback: (error: Error | null, stdout: string, stderr: string) => void) => {
-      callback(null, '', '');
-    });
-    
+    mockExec.mockImplementation(
+      (
+        command: string,
+        callback: (error: Error | null, stdout: string, stderr: string) => void,
+      ) => {
+        callback(null, '', '');
+      },
+    );
+
     vi.clearAllMocks();
   });
 
@@ -342,7 +348,10 @@ Ld /DerivedData/Build/Products/Debug/MyScheme.app/Contents/MacOS/MyScheme normal
 
         expect(result.isError).toBe(true);
         expect(result.content).toEqual([
-          { type: 'text', text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter." }
+          {
+            type: 'text',
+            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
+          },
         ]);
         expect(mockSpawn).not.toHaveBeenCalled();
       });
@@ -354,7 +363,10 @@ Ld /DerivedData/Build/Products/Debug/MyScheme.app/Contents/MacOS/MyScheme normal
 
         expect(result.isError).toBe(true);
         expect(result.content).toEqual([
-          { type: 'text', text: "Required parameter 'scheme' is missing. Please provide a value for this parameter." }
+          {
+            type: 'text',
+            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
+          },
         ]);
         expect(mockSpawn).not.toHaveBeenCalled();
       });
@@ -401,7 +413,10 @@ Ld /DerivedData/Build/Products/Debug/MyScheme.app/Contents/MacOS/MyScheme normal
         expect(result.isError || false).toBe(false);
         expect(result.content).toEqual([
           { type: 'text', text: '✅ macOS Build build succeeded for scheme MyScheme.' },
-          { type: 'text', text: 'Next Steps:\n1. Get App Path: get_macos_app_path_workspace\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app' }
+          {
+            type: 'text',
+            text: 'Next Steps:\n1. Get App Path: get_macos_app_path_workspace\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+          },
         ]);
       });
 
@@ -410,7 +425,7 @@ Ld /DerivedData/Build/Products/Debug/MyScheme.app/Contents/MacOS/MyScheme normal
         const failedChildProcess = {
           ...mockChildProcess,
           stdout: {
-            on: vi.fn()
+            on: vi.fn(),
           } as any,
           stderr: {
             on: vi.fn((event, callback) => {
@@ -418,15 +433,15 @@ Ld /DerivedData/Build/Products/Debug/MyScheme.app/Contents/MacOS/MyScheme normal
                 callback(`xcodebuild: error: The workspace 'Project' does not contain a scheme named 'InvalidScheme'.
 The "-list" option can be used to find the names of the schemes in the workspace.`);
               }
-            })
+            }),
           } as any,
           on: vi.fn((event, callback) => {
             if (event === 'close') {
               callback(65); // Failed exit code
             }
-          })
+          }),
         };
-        
+
         mockSpawn.mockReturnValue(failedChildProcess as ChildProcess);
 
         const params = {
@@ -438,9 +453,15 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
         expect(result.isError).toBe(true);
         expect(result.content).toEqual([
-          { type: 'text', text: '❌ [stderr] xcodebuild: error: The workspace \'Project\' does not contain a scheme named \'InvalidScheme\'.' },
-          { type: 'text', text: '❌ [stderr] The "-list" option can be used to find the names of the schemes in the workspace.' },
-          { type: 'text', text: '❌ macOS Build build failed for scheme MyScheme.' }
+          {
+            type: 'text',
+            text: "❌ [stderr] xcodebuild: error: The workspace 'Project' does not contain a scheme named 'InvalidScheme'.",
+          },
+          {
+            type: 'text',
+            text: '❌ [stderr] The "-list" option can be used to find the names of the schemes in the workspace.',
+          },
+          { type: 'text', text: '❌ macOS Build build failed for scheme MyScheme.' },
         ]);
       });
     });
@@ -455,7 +476,10 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
         expect(result.isError).toBe(true);
         expect(result.content).toEqual([
-          { type: 'text', text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter." }
+          {
+            type: 'text',
+            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
+          },
         ]);
         expect(mockSpawn).not.toHaveBeenCalled();
       });
@@ -487,8 +511,14 @@ The "-list" option can be used to find the names of the schemes in the workspace
         expect(result.isError || false).toBe(false);
         expect(result.content).toEqual([
           { type: 'text', text: '✅ macOS Build build succeeded for scheme MyScheme.' },
-          { type: 'text', text: 'Next Steps:\n1. Get App Path: get_macos_app_path_workspace\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app' },
-          { type: 'text', text: '✅ macOS build and run succeeded for scheme MyScheme. App launched: /DerivedData/Build/Products/Debug/MyScheme.app' }
+          {
+            type: 'text',
+            text: 'Next Steps:\n1. Get App Path: get_macos_app_path_workspace\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+          },
+          {
+            type: 'text',
+            text: '✅ macOS build and run succeeded for scheme MyScheme. App launched: /DerivedData/Build/Products/Debug/MyScheme.app',
+          },
         ]);
         expect(mockSpawn).toHaveBeenCalled();
       });
@@ -497,22 +527,22 @@ The "-list" option can be used to find the names of the schemes in the workspace
         // Mock failed build
         const failedChildProcess = {
           stdout: {
-            on: vi.fn()
+            on: vi.fn(),
           } as any,
           stderr: {
             on: vi.fn((event, callback) => {
               if (event === 'data') {
                 callback('xcodebuild: error: Build failed');
               }
-            })
+            }),
           } as any,
           on: vi.fn((event, callback) => {
             if (event === 'close') {
               callback(65); // Failed exit code
             }
-          })
+          }),
         };
-        
+
         mockSpawn.mockReturnValue(failedChildProcess as ChildProcess);
 
         const params = {
@@ -525,7 +555,7 @@ The "-list" option can be used to find the names of the schemes in the workspace
         expect(result.isError).toBe(true);
         expect(result.content).toEqual([
           { type: 'text', text: '❌ [stderr] xcodebuild: error: Build failed' },
-          { type: 'text', text: '❌ macOS Build build failed for scheme MyScheme.' }
+          { type: 'text', text: '❌ macOS Build build failed for scheme MyScheme.' },
         ]);
       });
     });
@@ -543,8 +573,14 @@ The "-list" option can be used to find the names of the schemes in the workspace
       expect(result.isError || false).toBe(false);
       expect(result.content).toEqual([
         { type: 'text', text: '✅ macOS Build build succeeded for scheme MyScheme.' },
-        { type: 'text', text: 'Next Steps:\n1. Get App Path: get_macos_app_path_project\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app' },
-        { type: 'text', text: '✅ macOS build and run succeeded for scheme MyScheme. App launched: /DerivedData/Build/Products/Debug/MyScheme.app' }
+        {
+          type: 'text',
+          text: 'Next Steps:\n1. Get App Path: get_macos_app_path_project\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+        },
+        {
+          type: 'text',
+          text: '✅ macOS build and run succeeded for scheme MyScheme. App launched: /DerivedData/Build/Products/Debug/MyScheme.app',
+        },
       ]);
     });
   });
@@ -557,7 +593,10 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
       expect(result.isError).toBe(true);
       expect(result.content).toEqual([
-        { type: 'text', text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter." }
+        {
+          type: 'text',
+          text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
+        },
       ]);
     });
   });
@@ -570,7 +609,10 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
       expect(result.isError).toBe(true);
       expect(result.content).toEqual([
-        { type: 'text', text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter." }
+        {
+          type: 'text',
+          text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
+        },
       ]);
     });
   });
@@ -586,10 +628,16 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
       expect(result.isError || false).toBe(false);
       expect(result.content).toEqual([
-        { type: 'text', text: '✅ App path retrieved successfully: /DerivedData/Build/Products/Debug/MyScheme.app' },
-        { type: 'text', text: `Next Steps:
+        {
+          type: 'text',
+          text: '✅ App path retrieved successfully: /DerivedData/Build/Products/Debug/MyScheme.app',
+        },
+        {
+          type: 'text',
+          text: `Next Steps:
 1. Get bundle ID: get_macos_bundle_id({ appPath: "/DerivedData/Build/Products/Debug/MyScheme.app" })
-2. Launch the app: launch_macos_app({ appPath: "/DerivedData/Build/Products/Debug/MyScheme.app" })` }
+2. Launch the app: launch_macos_app({ appPath: "/DerivedData/Build/Products/Debug/MyScheme.app" })`,
+        },
       ]);
     });
   });
@@ -605,10 +653,16 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
       expect(result.isError || false).toBe(false);
       expect(result.content).toEqual([
-        { type: 'text', text: '✅ App path retrieved successfully: /DerivedData/Build/Products/Debug/MyScheme.app' },
-        { type: 'text', text: `Next Steps:
+        {
+          type: 'text',
+          text: '✅ App path retrieved successfully: /DerivedData/Build/Products/Debug/MyScheme.app',
+        },
+        {
+          type: 'text',
+          text: `Next Steps:
 1. Get bundle ID: get_macos_bundle_id({ appPath: "/DerivedData/Build/Products/Debug/MyScheme.app" })
-2. Launch the app: launch_macos_app({ appPath: "/DerivedData/Build/Products/Debug/MyScheme.app" })` }
+2. Launch the app: launch_macos_app({ appPath: "/DerivedData/Build/Products/Debug/MyScheme.app" })`,
+        },
       ]);
     });
   });
@@ -632,18 +686,18 @@ The "-list" option can be used to find the names of the schemes in the workspace
             if (event === 'data') {
               callback('com.example.MyApp');
             }
-          })
+          }),
         } as any,
         stderr: {
-          on: vi.fn()
+          on: vi.fn(),
         } as any,
         on: vi.fn((event, callback) => {
           if (event === 'close') {
             callback(0);
           }
-        })
+        }),
       };
-      
+
       mockSpawn.mockReturnValue(defaultsChildProcess as ChildProcess);
 
       const params = {
@@ -655,8 +709,11 @@ The "-list" option can be used to find the names of the schemes in the workspace
       expect(result.isError || false).toBe(false);
       expect(result.content).toEqual([
         { type: 'text', text: ' Bundle ID for macOS app: com.example.MyApp' },
-        { type: 'text', text: `Next Steps:
-- Launch the app: launch_macos_app({ appPath: "/path/to/MyApp.app" })` }
+        {
+          type: 'text',
+          text: `Next Steps:
+- Launch the app: launch_macos_app({ appPath: "/path/to/MyApp.app" })`,
+        },
       ]);
     });
 
@@ -667,7 +724,10 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
       expect(result.isError).toBe(true);
       expect(result.content).toEqual([
-        { type: 'text', text: "Required parameter 'appPath' is missing. Please provide a value for this parameter." }
+        {
+          type: 'text',
+          text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+        },
       ]);
     });
   });
@@ -682,21 +742,21 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
       expect(result.isError || false).toBe(false);
       expect(result.content).toEqual([
-        { type: 'text', text: '✅ macOS app launched successfully: /path/to/MyApp.app' }
+        { type: 'text', text: '✅ macOS app launched successfully: /path/to/MyApp.app' },
       ]);
     });
 
     it('should launch app with arguments', async () => {
       const params = {
         appPath: '/path/to/MyApp.app',
-        args: ['--verbose', '--debug']
+        args: ['--verbose', '--debug'],
       };
 
       const result = await callToolHandler(launchMacAppTool, params);
 
       expect(result.isError || false).toBe(false);
       expect(result.content).toEqual([
-        { type: 'text', text: '✅ macOS app launched successfully: /path/to/MyApp.app' }
+        { type: 'text', text: '✅ macOS app launched successfully: /path/to/MyApp.app' },
       ]);
     });
   });
@@ -711,7 +771,7 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
       expect(result.isError || false).toBe(false);
       expect(result.content).toEqual([
-        { type: 'text', text: '✅ macOS app stopped successfully: MyApp' }
+        { type: 'text', text: '✅ macOS app stopped successfully: MyApp' },
       ]);
     });
 
@@ -724,7 +784,7 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
       expect(result.isError || false).toBe(false);
       expect(result.content).toEqual([
-        { type: 'text', text: '✅ macOS app stopped successfully: PID 1234' }
+        { type: 'text', text: '✅ macOS app stopped successfully: PID 1234' },
       ]);
     });
 
@@ -735,7 +795,7 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
       expect(result.isError).toBe(true);
       expect(result.content).toEqual([
-        { type: 'text', text: 'Either appName or processId must be provided.' }
+        { type: 'text', text: 'Either appName or processId must be provided.' },
       ]);
     });
   });
@@ -750,14 +810,14 @@ The "-list" option can be used to find the names of the schemes in the workspace
 
       expect(result.isError || false).toBe(false);
       expect(result.content).toEqual([
-        { type: 'text', text: '✅ Clean clean succeeded for scheme .' }
+        { type: 'text', text: '✅ Clean clean succeeded for scheme .' },
       ]);
     });
 
     it('should clean workspace with scheme', async () => {
       const params = {
         workspacePath: '/path/to/Project.xcworkspace',
-        scheme: 'MyScheme'
+        scheme: 'MyScheme',
       };
 
       const result = await callToolHandler(cleanWsTool, params);
@@ -784,18 +844,18 @@ The "-list" option can be used to find the names of the schemes in the workspace
         Debug
         Release`);
             }
-          })
+          }),
         } as any,
         stderr: {
-          on: vi.fn()
+          on: vi.fn(),
         } as any,
         on: vi.fn((event, callback) => {
           if (event === 'close') {
             callback(0);
           }
-        })
+        }),
       };
-      
+
       mockSpawn.mockReturnValue(listSchemesChildProcess as ChildProcess);
 
       const params = {
@@ -808,10 +868,13 @@ The "-list" option can be used to find the names of the schemes in the workspace
       expect(result.content).toEqual([
         { type: 'text', text: '✅ Available schemes:' },
         { type: 'text', text: 'MyScheme\nMySchemeTests\nAnotherScheme' },
-        { type: 'text', text: `Next Steps:
+        {
+          type: 'text',
+          text: `Next Steps:
 1. Build the app: macos_build_workspace({ workspacePath: "/path/to/Project.xcworkspace", scheme: "MyScheme" })
    or for iOS: ios_simulator_build_by_name_workspace({ workspacePath: "/path/to/Project.xcworkspace", scheme: "MyScheme", simulatorName: "iPhone 16" })
-2. Show build settings: show_build_set_ws({ workspacePath: "/path/to/Project.xcworkspace", scheme: "MyScheme" })` }
+2. Show build settings: show_build_set_ws({ workspacePath: "/path/to/Project.xcworkspace", scheme: "MyScheme" })`,
+        },
       ]);
     });
   });
@@ -829,23 +892,23 @@ The "-list" option can be used to find the names of the schemes in the workspace
     CONFIGURATION_BUILD_DIR = /DerivedData/Build/Products/Debug
     FULL_PRODUCT_NAME = MyScheme.app`);
             }
-          })
+          }),
         } as any,
         stderr: {
-          on: vi.fn()
+          on: vi.fn(),
         } as any,
         on: vi.fn((event, callback) => {
           if (event === 'close') {
             callback(0);
           }
-        })
+        }),
       };
-      
+
       mockSpawn.mockReturnValue(buildSettingsChildProcess as ChildProcess);
 
       const params = {
         workspacePath: '/path/to/Project.xcworkspace',
-        scheme: 'MyScheme'
+        scheme: 'MyScheme',
       };
 
       const result = await callToolHandler(showBuildSetWsTool, params);
@@ -853,11 +916,14 @@ The "-list" option can be used to find the names of the schemes in the workspace
       expect(result.isError || false).toBe(false);
       expect(result.content).toEqual([
         { type: 'text', text: '✅ Build settings for scheme MyScheme:' },
-        { type: 'text', text: `Build settings for action build and target MyScheme:
+        {
+          type: 'text',
+          text: `Build settings for action build and target MyScheme:
     ARCHS = arm64
     BUILD_DIR = /DerivedData/Build/Products
     CONFIGURATION_BUILD_DIR = /DerivedData/Build/Products/Debug
-    FULL_PRODUCT_NAME = MyScheme.app` }
+    FULL_PRODUCT_NAME = MyScheme.app`,
+        },
       ]);
     });
   });
@@ -866,19 +932,51 @@ The "-list" option can be used to find the names of the schemes in the workspace
     it('should have correct metadata for all tools', () => {
       const tools = [
         { tool: buildMacWsTool, expectedName: 'build_mac_ws', expectedGroups: ['MACOS_WORKSPACE'] },
-        { tool: buildMacProjTool, expectedName: 'build_mac_proj', expectedGroups: ['MACOS_PROJECT'] },
-        { tool: buildRunMacWsTool, expectedName: 'build_run_mac_ws', expectedGroups: ['MACOS_WORKSPACE'] },
-        { tool: buildRunMacProjTool, expectedName: 'build_run_mac_proj', expectedGroups: ['MACOS_PROJECT'] },
-        { tool: testMacosWsTool, expectedName: 'test_macos_ws', expectedGroups: ['MACOS_WORKSPACE'] },
-        { tool: testMacosProjTool, expectedName: 'test_macos_proj', expectedGroups: ['MACOS_PROJECT'] },
-        { tool: getMacAppPathWsTool, expectedName: 'get_mac_app_path_ws', expectedGroups: ['MACOS_WORKSPACE'] },
-        { tool: getMacAppPathProjTool, expectedName: 'get_mac_app_path_proj', expectedGroups: ['MACOS_PROJECT'] },
+        {
+          tool: buildMacProjTool,
+          expectedName: 'build_mac_proj',
+          expectedGroups: ['MACOS_PROJECT'],
+        },
+        {
+          tool: buildRunMacWsTool,
+          expectedName: 'build_run_mac_ws',
+          expectedGroups: ['MACOS_WORKSPACE'],
+        },
+        {
+          tool: buildRunMacProjTool,
+          expectedName: 'build_run_mac_proj',
+          expectedGroups: ['MACOS_PROJECT'],
+        },
+        {
+          tool: testMacosWsTool,
+          expectedName: 'test_macos_ws',
+          expectedGroups: ['MACOS_WORKSPACE'],
+        },
+        {
+          tool: testMacosProjTool,
+          expectedName: 'test_macos_proj',
+          expectedGroups: ['MACOS_PROJECT'],
+        },
+        {
+          tool: getMacAppPathWsTool,
+          expectedName: 'get_mac_app_path_ws',
+          expectedGroups: ['MACOS_WORKSPACE'],
+        },
+        {
+          tool: getMacAppPathProjTool,
+          expectedName: 'get_mac_app_path_proj',
+          expectedGroups: ['MACOS_PROJECT'],
+        },
         { tool: getMacBundleIdTool, expectedName: 'get_mac_bundle_id', expectedGroups: ['MACOS'] },
         { tool: launchMacAppTool, expectedName: 'launch_mac_app', expectedGroups: ['MACOS'] },
         { tool: stopMacAppTool, expectedName: 'stop_mac_app', expectedGroups: ['MACOS'] },
         { tool: cleanWsTool, expectedName: 'clean_ws', expectedGroups: ['WORKSPACE'] },
         { tool: listSchemsWsTool, expectedName: 'list_schems_ws', expectedGroups: ['WORKSPACE'] },
-        { tool: showBuildSetWsTool, expectedName: 'show_build_set_ws', expectedGroups: ['WORKSPACE'] }
+        {
+          tool: showBuildSetWsTool,
+          expectedName: 'show_build_set_ws',
+          expectedGroups: ['WORKSPACE'],
+        },
       ];
 
       tools.forEach(({ tool, expectedName, expectedGroups }) => {
