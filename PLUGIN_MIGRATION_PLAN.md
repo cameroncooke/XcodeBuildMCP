@@ -18,6 +18,19 @@ Total effort: **\~4 working days**.
 
 ---
 
+## Live Testing Workflow
+
+**Throughout this migration, we'll use the XcodeBuildMCP server running in this session for immediate validation:**
+
+1. **After each code change**: Run `npm run build`
+2. **Restart the MCP server**: Use your MCP client's reload/restart server option
+3. **Test immediately**: Use the `mcp_XcodeBuildMCP_*` tools available in this session
+4. **Verify with diagnostic**: Run `mcp_XcodeBuildMCP_diagnostic` to check tool counts and plugin system status
+
+This approach provides immediate feedback and catches regressions before running the full test suite.
+
+---
+
 ## Core Principles
 
 | # | Principle                            | Enforcement                                                                              |
@@ -176,6 +189,12 @@ MCP_LEGACY_MODE=false npm test || echo "expected failure: 1 missing tool"
 npm run build && npm run lint
 ```
 
+**Live Testing with XcodeBuildMCP Session:**
+1. Build the project: `npm run build`
+2. **Restart MCP server** (use reload/restart option in your MCP client)
+3. Test with diagnostic tool: Use `mcp_XcodeBuildMCP_diagnostic` to verify server loads
+4. Validate tool count and functionality through live MCP session
+
 **Create baseline document:** `migration-baseline.md` (see [migration-baseline.md](migration-baseline.md))
 
 Tag **`pre-plugin-baseline`**.
@@ -237,10 +256,19 @@ MCP_LEGACY_MODE=false npm test      # expect 404/404 green
 npm run build && npm run lint
 ```
 
+**Live Testing with XcodeBuildMCP Session:**
+1. Build: `npm run build`
+2. **Restart MCP server** 
+3. Test migrated tool: `mcp_XcodeBuildMCP_swift_package_build` should be available
+4. Run diagnostic: `mcp_XcodeBuildMCP_diagnostic` should show plugin system status
+5. Verify tool count remains 82 total
+
 *Rollback drill (prove safety):*
 
 ```bash
 git revert v1.11.0-beta.1   # one command should restore monolith state
+npm run build               # rebuild after revert
+# Restart MCP server
 npm test                    # green again
 ```
 
@@ -418,7 +446,17 @@ node scripts/migrate-to-plugin.js
 git add plugins src/tools-shared
 git commit -m "Bulk migrate remaining tools to plugins"
 git tag v1.11.0-beta.2
+npm run build
 ```
+
+**Live Testing with XcodeBuildMCP Session:**
+1. **Restart MCP server** after build
+2. Run diagnostic: `mcp_XcodeBuildMCP_diagnostic` - should show all 82 tools
+3. Test sample tools from different plugin groups:
+   - `mcp_XcodeBuildMCP_list_sims` (shared tool)
+   - `mcp_XcodeBuildMCP_build_sim_name_ws` (workflow-specific tool)
+   - `mcp_XcodeBuildMCP_swift_package_build` (swift-package workflow)
+4. Verify plugin system shows "Total Tools: 82" and correct group distributions
 
 ### 3.4 Clean Up Legacy Registrar
 
@@ -498,6 +536,16 @@ node build/index.js --dynamic &
 echo '{"tool":"discover_tools","params":{"task_description":"build macos"}}' | mcp-client
 # Expect comma-separated list of build_* tools
 ```
+
+**Live Testing with XcodeBuildMCP Session:**
+1. Build: `npm run build`
+2. **Restart MCP server**
+3. Test static mode (default): All 82 tools should be available
+4. Test `mcp_XcodeBuildMCP_discover_tools` with task descriptions:
+   - "build ios app" → should return iOS-related tools
+   - "test swift package" → should return Swift Package tools
+   - "debug simulator" → should return simulator and debugging tools
+5. Verify dynamic discovery works as expected
 
 CI now single job (`npm run validate`).
 
