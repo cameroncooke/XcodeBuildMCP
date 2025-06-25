@@ -25,6 +25,7 @@ import { log } from './utils/logger.js';
 // Import version
 import { version } from './version.js';
 import { registerTools } from './utils/register-tools.js';
+import { loadPlugins } from './core/plugin-registry.js';
 
 // Import xcodemake utilities
 import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
@@ -54,7 +55,14 @@ async function main(): Promise<void> {
     const server = createServer();
 
     // Register tools
-    registerTools(server);
+    if (process.env.MCP_LEGACY_MODE === 'true') {
+      registerTools(server); // old path
+    } else {
+      const plugins = await loadPlugins(); // new path
+      for (const p of plugins.values()) {
+        server.tool(p.name, p.description || '', p.schema, p.handler);
+      }
+    }
 
     // Start the server
     await startServer(server);
