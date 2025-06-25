@@ -15,7 +15,11 @@ export async function loadPlugins(
   root = new URL('../plugins/', import.meta.url),
 ): Promise<Map<string, PluginMeta>> {
   const plugins = new Map<string, PluginMeta>();
-  const files = globSync('**/*.ts', { cwd: root.pathname, absolute: true, ignore: IGNORE_GLOBS });
+  const files = globSync('**/*.{js,ts}', {
+    cwd: root.pathname,
+    absolute: true,
+    ignore: IGNORE_GLOBS,
+  });
 
   for (const file of files) {
     const mod = await import(pathToFileURL(file).href);
