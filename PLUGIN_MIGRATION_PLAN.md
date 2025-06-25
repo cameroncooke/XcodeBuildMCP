@@ -176,6 +176,8 @@ MCP_LEGACY_MODE=false npm test || echo "expected failure: 1 missing tool"
 npm run build && npm run lint
 ```
 
+**Create baseline document:** `migration-baseline.md` (see [migration-baseline.md](migration-baseline.md))
+
 Tag **`pre-plugin-baseline`**.
 
 ---
@@ -538,7 +540,7 @@ npx autocannon -d 60 -c 100 -m POST \
 
 * **Technical**
 
-  * [ ] 81 plugins present; loader count equals snapshot.
+  * [ ] 81 plugins present (82 including diagnostic); loader count equals snapshot.
   * [ ] **404/404** tests pass continuously.
   * [ ] Response snapshots unchanged (`scripts/snapshot-diff.js` returns empty).
   * [ ] Cold-start CPU/RSS within ±10 % and **QPS** within ±5 %.
