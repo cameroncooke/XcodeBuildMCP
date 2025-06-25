@@ -13,7 +13,7 @@
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { readFile, unlink } from 'fs/promises';
-import { registerScreenshotTool } from './screenshot.js';
+import { registerScreenshotTool } from './index.js';
 
 // Mock external dependencies only
 vi.mock('fs/promises', () => ({
@@ -26,17 +26,17 @@ vi.mock('os', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
 // Mock validation utilities
-vi.mock('../utils/validation.js', () => ({
+vi.mock('../../utils/validation.js', () => ({
   validateRequiredParam: vi.fn(),
 }));
 
 // Mock error utilities
-vi.mock('../utils/errors.js', () => ({
+vi.mock('../../utils/errors.js', () => ({
   SystemError: class SystemError extends Error {
     constructor(
       message: string,
@@ -50,7 +50,7 @@ vi.mock('../utils/errors.js', () => ({
 }));
 
 // Mock command execution
-vi.mock('../utils/command.js', () => ({
+vi.mock('../../utils/command.js', () => ({
   executeCommand: vi.fn(),
 }));
 

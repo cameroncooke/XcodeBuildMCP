@@ -35,7 +35,7 @@ import {
   registerSetNetworkConditionTool,
   registerResetNetworkConditionTool,
   registerStopAppInSimulatorTool,
-} from './simulator.js';
+} from './index.js';
 
 // Mock external dependencies
 vi.mock('child_process', () => ({
@@ -46,19 +46,19 @@ vi.mock('fs', () => ({
   existsSync: vi.fn(),
 }));
 
-vi.mock('../utils/command.js', () => ({
+vi.mock('../../utils/command.js', () => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../utils/log_capture.js', () => ({
+vi.mock('../../utils/log_capture.js', () => ({
   startLogCapture: vi.fn(),
 }));
 
-vi.mock('../utils/validation.js', () => ({
+vi.mock('../../utils/validation.js', () => ({
   validateRequiredParam: vi.fn(),
   validateFileExists: vi.fn(),
 }));
@@ -86,9 +86,9 @@ describe('simulator tools tests', () => {
   let mockExistsSync: MockedFunction<any>;
 
   beforeEach(async () => {
-    const command = await import('../utils/command.js');
-    const validation = await import('../utils/validation.js');
-    const logCapture = await import('../utils/log_capture.js');
+    const command = await import('../../utils/command.js');
+    const validation = await import('../../utils/validation.js');
+    const logCapture = await import('../../utils/log_capture.js');
 
     mockExecuteCommand = command.executeCommand as MockedFunction<any>;
     mockValidateRequiredParam = validation.validateRequiredParam as MockedFunction<any>;

@@ -19,7 +19,7 @@ import {
   registerShowBuildSettingsProjectTool,
   registerListSchemesWorkspaceTool,
   registerListSchemesProjectTool,
-} from './build_settings.js';
+} from './index.js';
 
 // ✅ Mock external dependencies only
 vi.mock('child_process', () => ({ spawn: vi.fn() }));
@@ -29,12 +29,12 @@ vi.mock('fs', () => ({
 }));
 
 // ✅ Mock the command execution utility
-vi.mock('../utils/command.js', () => ({
+vi.mock('../../utils/command.js', () => ({
   executeCommand: vi.fn(),
 }));
 
 // ✅ Mock the logger to prevent logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
@@ -62,7 +62,7 @@ describe('build_settings tests', () => {
 
   beforeEach(async () => {
     // ✅ Import and setup the mocked executeCommand function
-    const commandModule = await import('../utils/command.js');
+    const commandModule = await import('../../utils/command.js');
     mockExecuteCommand = commandModule.executeCommand as MockedFunction<any>;
 
     // ✅ Default success behavior for executeCommand

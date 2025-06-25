@@ -15,7 +15,10 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 
 // ✅ CORRECT: Import actual production functions
-import { registerStartSimulatorLogCaptureTool, registerStopAndGetSimulatorLogTool } from './log.js';
+import {
+  registerStartSimulatorLogCaptureTool,
+  registerStopAndGetSimulatorLogTool,
+} from './index.js';
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -48,23 +51,23 @@ vi.mock('uuid', () => ({
 }));
 
 // ✅ CORRECT: Mock logger to prevent real logging
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock log capture utilities
-vi.mock('../utils/log_capture.js', () => ({
+vi.mock('../../utils/log_capture.js', () => ({
   startLogCapture: vi.fn(),
   stopLogCapture: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock validation utilities
-vi.mock('../utils/validation.js', () => ({
+vi.mock('../../utils/validation.js', () => ({
   validateRequiredParam: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock common tools utilities
-vi.mock('./common.js', () => ({
+vi.mock('../common/index.js', () => ({
   registerTool: vi.fn(),
   createTextContent: vi.fn(),
 }));
@@ -102,16 +105,16 @@ describe('log tests', () => {
     mockUuid = await import('uuid');
 
     // Import and setup mocked log capture
-    const logCaptureModule = await import('../utils/log_capture.js');
+    const logCaptureModule = await import('../../utils/log_capture.js');
     mockStartLogCapture = logCaptureModule.startLogCapture as MockedFunction<any>;
     mockStopLogCapture = logCaptureModule.stopLogCapture as MockedFunction<any>;
 
     // Import and setup mocked validation
-    const validationModule = await import('../utils/validation.js');
+    const validationModule = await import('../../utils/validation.js');
     mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
 
     // Import and setup mocked common tools
-    const commonModule = await import('./common.js');
+    const commonModule = await import('../common/index.js');
     mockRegisterTool = commonModule.registerTool as MockedFunction<any>;
     mockCreateTextContent = commonModule.createTextContent as MockedFunction<any>;
 

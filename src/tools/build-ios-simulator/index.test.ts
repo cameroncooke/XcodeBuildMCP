@@ -22,7 +22,7 @@ import {
   registerSimulatorBuildAndRunByIdWorkspaceTool,
   registerSimulatorBuildAndRunByNameProjectTool,
   registerSimulatorBuildAndRunByIdProjectTool,
-} from './build_ios_simulator.js';
+} from './index.js';
 
 // ✅ Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -39,17 +39,17 @@ vi.mock('fs/promises', () => ({
 }));
 
 // ✅ Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
 // ✅ Mock build utilities
-vi.mock('../utils/build-utils.js', () => ({
+vi.mock('../../utils/build-utils.js', () => ({
   executeXcodeBuildCommand: vi.fn(),
 }));
 
 // ✅ Mock command execution utility
-vi.mock('../utils/command.js', () => ({
+vi.mock('../../utils/command.js', () => ({
   executeCommand: vi.fn(),
 }));
 
@@ -79,10 +79,10 @@ describe('iOS Simulator Build Tools', () => {
 
   beforeEach(async () => {
     // ✅ Mock external dependencies
-    const buildUtils = await import('../utils/build-utils.js');
+    const buildUtils = await import('../../utils/build-utils.js');
     mockExecuteXcodeBuildCommand = buildUtils.executeXcodeBuildCommand as MockedFunction<any>;
 
-    const commandUtils = await import('../utils/command.js');
+    const commandUtils = await import('../../utils/command.js');
     mockExecuteCommand = commandUtils.executeCommand as MockedFunction<any>;
 
     mockExecSync = vi.mocked(execSync);

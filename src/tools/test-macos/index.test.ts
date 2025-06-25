@@ -10,7 +10,7 @@
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { registerMacOSTestWorkspaceTool, registerMacOSTestProjectTool } from './test_macos.js';
+import { registerMacOSTestWorkspaceTool, registerMacOSTestProjectTool } from './index.js';
 import { ToolResponse } from '../../types/common.js';
 
 // Mock external dependencies only
@@ -27,15 +27,15 @@ vi.mock('fs/promises', () => ({
   writeFile: vi.fn(),
 }));
 
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../utils/build-utils.js', () => ({
+vi.mock('../../utils/build-utils.js', () => ({
   executeXcodeBuildCommand: vi.fn(),
 }));
 
-vi.mock('./test_common.js', () => ({
+vi.mock('../test-common/index.js', () => ({
   handleTestLogic: vi.fn(),
 }));
 
@@ -63,7 +63,7 @@ describe('test_macos tools tests', () => {
 
   beforeEach(async () => {
     // Import mocked modules
-    const testCommon = await import('./test_common.js');
+    const testCommon = await import('../test-common/index.js');
     mockHandleTestLogic = testCommon.handleTestLogic as MockedFunction<any>;
 
     vi.clearAllMocks();

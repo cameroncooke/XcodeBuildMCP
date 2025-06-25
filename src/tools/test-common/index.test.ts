@@ -12,12 +12,14 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { exec } from 'child_process';
 import { mkdtemp, rm, stat } from 'fs/promises';
-import { parseXcresultBundle, handleTestLogic } from '../test-common/index.js';
+import { parseXcresultBundle, handleTestLogic } from './index.js';
 import { XcodePlatform } from '../../utils/xcode.js';
 
 // Mock Node.js APIs to prevent real command execution
 vi.mock('child_process', () => ({
   exec: vi.fn(),
+  spawn: vi.fn(),
+  execSync: vi.fn(),
 }));
 
 vi.mock('fs/promises', () => ({
@@ -31,15 +33,15 @@ vi.mock('util', () => ({
 }));
 
 // Mock external dependencies
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../utils/build-utils.js', () => ({
+vi.mock('../../utils/build-utils.js', () => ({
   executeXcodeBuildCommand: vi.fn(),
 }));
 
-vi.mock('../utils/validation.js', () => ({
+vi.mock('../../utils/validation.js', () => ({
   createTextResponse: vi.fn((text, isError = false) => ({
     content: [{ type: 'text', text }],
     isError,
@@ -60,9 +62,9 @@ describe('test_common utilities tests', () => {
     // Import mocked modules
     const childProcess = await import('child_process');
     const fsPromises = await import('fs/promises');
-    const buildUtils = await import('../utils/build-utils.js');
-    const logger = await import('../utils/logger.js');
-    const validation = await import('../utils/validation.js');
+    const buildUtils = await import('../../utils/build-utils.js');
+    const logger = await import('../../utils/logger.js');
+    const validation = await import('../../utils/validation.js');
     const util = await import('util');
 
     // Create mock for the promisified exec function

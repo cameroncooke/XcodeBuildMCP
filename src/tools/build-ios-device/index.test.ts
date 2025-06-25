@@ -33,28 +33,25 @@ import { spawn, ChildProcess } from 'child_process';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 
 // Import canonical tool registration functions
-import {
-  registerDeviceBuildWorkspaceTool,
-  registerDeviceBuildProjectTool,
-} from './build_ios_device.js';
+import { registerDeviceBuildWorkspaceTool, registerDeviceBuildProjectTool } from './index.js';
 import {
   registerAppleDeviceTestWorkspaceTool,
   registerAppleDeviceTestProjectTool,
-} from './test_ios_device.js';
+} from '../test-ios-device/index.js';
 import {
   registerGetDeviceAppPathWorkspaceTool,
   registerGetDeviceAppPathProjectTool,
-} from './app_path.js';
+} from '../app-path/index.js';
 import {
   registerListDevicesTool,
   registerInstallAppDeviceTool,
   registerLaunchAppDeviceTool,
   registerStopAppDeviceTool,
-} from './device.js';
+} from '../device/index.js';
 import {
   registerStartDeviceLogCaptureTool,
   registerStopDeviceLogCaptureTool,
-} from './device_log.js';
+} from '../device-log/index.js';
 
 // Mock Node.js APIs
 vi.mock('child_process', () => ({
@@ -85,12 +82,12 @@ vi.mock('fs', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
 // Mock log capture manager
-vi.mock('../utils/log-capture-manager.js', () => ({
+vi.mock('../../utils/log-capture-manager.js', () => ({
   LogCaptureManager: {
     getInstance: vi.fn(() => ({
       startCapture: vi.fn((id, childProcess) => {

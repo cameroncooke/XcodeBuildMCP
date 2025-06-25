@@ -17,24 +17,24 @@ import {
   registerSimulatorTestByNameProjectTool,
   registerSimulatorTestByIdWorkspaceTool,
   registerSimulatorTestByIdProjectTool,
-} from './test_ios_simulator.js';
+} from './index.js';
 
 // Mock external dependencies
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('./test_common.js', () => ({
+vi.mock('../test-common/index.js', () => ({
   handleTestLogic: vi.fn(),
 }));
 
-vi.mock('../utils/xcode.js', () => ({
+vi.mock('../../utils/xcode.js', () => ({
   XcodePlatform: {
     iOSSimulator: 'iOS Simulator',
   },
 }));
 
-vi.mock('./common.js', () => ({
+vi.mock('../common/index.js', () => ({
   registerTool: vi.fn(),
   workspacePathSchema: { type: 'string' },
   projectPathSchema: { type: 'string' },
@@ -58,8 +58,8 @@ describe('test_ios_simulator tools tests', () => {
   let mockRegisterTool: MockedFunction<any>;
 
   beforeEach(async () => {
-    const testCommon = await import('./test_common.js');
-    const common = await import('./common.js');
+    const testCommon = await import('../test-common/index.js');
+    const common = await import('../common/index.js');
 
     mockHandleTestLogic = testCommon.handleTestLogic as MockedFunction<any>;
     mockRegisterTool = common.registerTool as MockedFunction<any>;
