@@ -9,7 +9,7 @@
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { discoverProjects } from './discover_projects.js';
+import { discoverProjects } from './index.js';
 
 // Mock fs/promises for file operations
 vi.mock('node:fs/promises', () => ({
@@ -20,7 +20,7 @@ vi.mock('node:fs/promises', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 

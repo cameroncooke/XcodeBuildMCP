@@ -10,7 +10,7 @@
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { registerDiagnosticTool } from './diagnostic.js';
+import { registerDiagnosticTool } from './index.js';
 
 // Mock modules to prevent real command execution
 vi.mock('child_process', () => ({
@@ -18,7 +18,7 @@ vi.mock('child_process', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
@@ -68,24 +68,24 @@ Object.defineProperty(global, 'process', {
 });
 
 // Mock axe-helpers
-vi.mock('../utils/axe-helpers.js', () => ({
+vi.mock('../../utils/axe-helpers.js', () => ({
   areAxeToolsAvailable: vi.fn(() => true),
 }));
 
 // Mock xcodemake
-vi.mock('../utils/xcodemake.js', () => ({
+vi.mock('../../utils/xcodemake.js', () => ({
   isXcodemakeEnabled: vi.fn(() => true),
   isXcodemakeAvailable: vi.fn(() => Promise.resolve(true)),
   doesMakefileExist: vi.fn(() => true),
 }));
 
 // Mock version
-vi.mock('../version.js', () => ({
+vi.mock('../../version.js', () => ({
   version: '1.10.4-test',
 }));
 
 // Mock tool-groups
-vi.mock('../utils/tool-groups.js', () => ({
+vi.mock('../../utils/tool-groups.js', () => ({
   ToolGroup: {
     XCODEBUILDMCP_GROUP_PROJECT_DISCOVERY: 'XCODEBUILDMCP_GROUP_PROJECT_DISCOVERY',
     XCODEBUILDMCP_GROUP_BUILD_IOS_SIM: 'XCODEBUILDMCP_GROUP_BUILD_IOS_SIM',
@@ -124,7 +124,7 @@ describe('diagnostic tool tests', () => {
 
     // Import mocked modules
     const childProcess = await import('child_process');
-    const logger = await import('../utils/logger.js');
+    const logger = await import('../../utils/logger.js');
 
     mockExecSync = childProcess.execSync as MockedFunction<any>;
     mockLog = logger.log as MockedFunction<any>;

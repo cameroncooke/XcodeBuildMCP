@@ -21,7 +21,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 // Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 

@@ -13,7 +13,7 @@ import { exec } from 'child_process';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 
 // Import canonical tool functions
-import { registerLaunchMacOSAppTool, registerStopMacOSAppTool } from './launch.js';
+import { registerLaunchMacOSAppTool, registerStopMacOSAppTool } from './index.js';
 
 // Mock Node.js APIs directly
 vi.mock('child_process', () => ({
@@ -25,7 +25,7 @@ vi.mock('fs', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 

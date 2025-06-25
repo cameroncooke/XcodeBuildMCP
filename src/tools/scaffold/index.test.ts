@@ -10,7 +10,7 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { existsSync } from 'fs';
 import { mkdir, cp, readFile, writeFile, readdir } from 'fs/promises';
-import { registerScaffoldTools } from './scaffold.js';
+import { registerScaffoldTools } from './index.js';
 
 // Mock external dependencies only
 vi.mock('fs', () => ({
@@ -26,12 +26,12 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
 // Mock TemplateManager to prevent network calls
-vi.mock('../utils/template-manager.js', () => ({
+vi.mock('../../utils/template-manager.js', () => ({
   TemplateManager: {
     getTemplatePath: vi.fn(),
     cleanup: vi.fn(),
@@ -39,7 +39,7 @@ vi.mock('../utils/template-manager.js', () => ({
 }));
 
 // Mock common tool registration
-vi.mock('./common.js', () => ({
+vi.mock('../common/index.js', () => ({
   registerTool: vi.fn(),
 }));
 

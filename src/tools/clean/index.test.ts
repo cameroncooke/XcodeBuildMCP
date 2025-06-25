@@ -10,7 +10,7 @@
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { cleanWorkspace, cleanProject } from './clean.js';
+import { cleanWorkspace, cleanProject } from './index.js';
 import { executeXcodeBuildCommand } from '../../utils/build-utils.js';
 import { XcodePlatform } from '../../utils/xcode.js';
 
@@ -23,12 +23,12 @@ vi.mock('fs', () => ({
 }));
 
 // Mock the build utilities
-vi.mock('../utils/build-utils.js', () => ({
+vi.mock('../../utils/build-utils.js', () => ({
   executeXcodeBuildCommand: vi.fn(),
 }));
 
 // Mock the logger to prevent logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 

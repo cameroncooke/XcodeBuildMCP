@@ -12,7 +12,7 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
-import { getMacOSBundleId, getAppBundleId } from './bundleId.js';
+import { getMacOSBundleId, getAppBundleId } from './index.js';
 
 // Mock child_process to prevent real command execution
 vi.mock('child_process', () => ({
@@ -25,7 +25,7 @@ vi.mock('fs', () => ({
 }));
 
 // Mock the logger to prevent logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 

@@ -10,7 +10,7 @@ import { spawn, ChildProcess } from 'child_process';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 
 // Import production registration function
-import { registerTestSwiftPackageTool } from './test-swift-package.js';
+import { registerTestSwiftPackageTool } from './index.js';
 
 // Mock Node.js APIs directly
 vi.mock('child_process', () => ({
@@ -29,12 +29,12 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
 // Mock the executeCommand function from canonical implementation
-vi.mock('../utils/command.js', () => ({
+vi.mock('../../utils/command.js', () => ({
   executeCommand: vi.fn(),
 }));
 
@@ -68,7 +68,7 @@ describe('swift_package_test tool', () => {
     mockSpawn = nodeSpawn as MockedFunction<any>;
 
     // Mock executeCommand
-    const { executeCommand } = await import('../utils/command.js');
+    const { executeCommand } = await import('../../utils/command.js');
     mockExecuteCommand = executeCommand as MockedFunction<any>;
     mockExecuteCommand.mockResolvedValue({
       success: true,

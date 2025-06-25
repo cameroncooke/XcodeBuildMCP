@@ -21,7 +21,7 @@ import {
   registerMacOSBuildProjectTool,
   registerMacOSBuildAndRunWorkspaceTool,
   registerMacOSBuildAndRunProjectTool,
-} from './build_macos.js';
+} from './index.js';
 
 // Mock Node.js APIs
 vi.mock('child_process', () => ({
@@ -39,7 +39,7 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 

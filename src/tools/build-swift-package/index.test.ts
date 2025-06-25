@@ -9,7 +9,7 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 
 // ✅ Import actual production function
-import { registerBuildSwiftPackageTool } from './build-swift-package.js';
+import { registerBuildSwiftPackageTool } from './index.js';
 
 // ✅ Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -27,17 +27,17 @@ vi.mock('fs/promises', () => ({
 }));
 
 // ✅ Mock the executeCommand function
-vi.mock('../utils/command.js', () => ({
+vi.mock('../../utils/command.js', () => ({
   executeCommand: vi.fn(),
 }));
 
 // ✅ Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
 // ✅ Mock error utilities
-vi.mock('../utils/errors.js', () => ({
+vi.mock('../../utils/errors.js', () => ({
   createErrorResponse: vi.fn(),
 }));
 
@@ -66,7 +66,7 @@ describe('swift_package_build tool', () => {
 
   beforeEach(async () => {
     // ✅ Mock external dependencies
-    const { executeCommand } = await import('../utils/command.js');
+    const { executeCommand } = await import('../../utils/command.js');
     mockExecuteCommand = executeCommand as MockedFunction<any>;
     mockExecuteCommand.mockResolvedValue({
       success: true,
@@ -74,7 +74,7 @@ describe('swift_package_build tool', () => {
       error: '',
     });
 
-    const { createErrorResponse } = await import('../utils/errors.js');
+    const { createErrorResponse } = await import('../../utils/errors.js');
     mockCreateErrorResponse = createErrorResponse as MockedFunction<any>;
     mockCreateErrorResponse.mockReturnValue({
       content: [{ type: 'text', text: 'Error message' }],

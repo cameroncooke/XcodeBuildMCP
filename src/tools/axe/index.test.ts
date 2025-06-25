@@ -10,11 +10,11 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 
 // Mock external dependencies only
-vi.mock('../utils/command.js', () => ({
+vi.mock('../../utils/command.js', () => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('../utils/axe-helpers.js', () => ({
+vi.mock('../../utils/axe-helpers.js', () => ({
   areAxeToolsAvailable: vi.fn(() => true),
   createAxeNotAvailableResponse: vi.fn(() => ({
     content: [{ type: 'text', text: 'AXe tools not available' }],
@@ -24,18 +24,18 @@ vi.mock('../utils/axe-helpers.js', () => ({
   getBundledAxeEnvironment: vi.fn(() => ({})),
 }));
 
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../utils/validation.js', () => ({
+vi.mock('../../utils/validation.js', () => ({
   createTextResponse: vi.fn((text: string) => ({
     content: [{ type: 'text', text }],
   })),
   validateRequiredParam: vi.fn(),
 }));
 
-vi.mock('../utils/errors.js', () => ({
+vi.mock('../../utils/errors.js', () => ({
   DependencyError: class DependencyError extends Error {
     constructor(message: string) {
       super(message);
@@ -69,7 +69,7 @@ vi.mock('../utils/errors.js', () => ({
 }));
 
 // Import production code
-import { registerAxeTools } from './axe.js';
+import { registerAxeTools } from './index.js';
 import { executeCommand } from '../../utils/command.js';
 import { areAxeToolsAvailable } from '../../utils/axe-helpers.js';
 import { validateRequiredParam } from '../../utils/validation.js';

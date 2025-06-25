@@ -16,7 +16,7 @@ import { registerTool, createTextContent } from '../common/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 // Mock logger to prevent real logging during tests
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 

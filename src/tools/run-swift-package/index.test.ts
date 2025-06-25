@@ -18,7 +18,7 @@ import {
   registerStopSwiftPackageTool,
   registerListSwiftPackageTool,
   registerCleanSwiftPackageTool,
-} from './run-swift-package.js';
+} from './index.js';
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -37,28 +37,28 @@ vi.mock('fs/promises', () => ({
 }));
 
 // ✅ CORRECT: Mock executeCommand utility
-vi.mock('../utils/command.js', () => ({
+vi.mock('../../utils/command.js', () => ({
   executeCommand: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock logger to prevent real logging
-vi.mock('../utils/logger.js', () => ({
+vi.mock('../../utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock validation utilities
-vi.mock('../utils/validation.js', () => ({
+vi.mock('../../utils/validation.js', () => ({
   createTextResponse: vi.fn(),
   validateRequiredParam: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock error utilities
-vi.mock('../utils/errors.js', () => ({
+vi.mock('../../utils/errors.js', () => ({
   createErrorResponse: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock common tools utilities
-vi.mock('./common.js', () => ({
+vi.mock('../common/index.js', () => ({
   registerTool: vi.fn(),
   swiftConfigurationSchema: {
     optional: () => ({ describe: () => ({}) }),
@@ -84,7 +84,7 @@ describe('Run Swift Package Manager tools (Canonical)', () => {
     mockSpawn = nodeSpawn as MockedFunction<any>;
 
     // Mock executeCommand
-    const { executeCommand } = await import('../utils/command.js');
+    const { executeCommand } = await import('../../utils/command.js');
     mockExecuteCommand = executeCommand as MockedFunction<any>;
     mockExecuteCommand.mockResolvedValue({
       success: true,
@@ -93,16 +93,16 @@ describe('Run Swift Package Manager tools (Canonical)', () => {
     });
 
     // Mock validation utilities
-    const validationModule = await import('../utils/validation.js');
+    const validationModule = await import('../../utils/validation.js');
     mockCreateTextResponse = validationModule.createTextResponse as MockedFunction<any>;
     mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
 
     // Mock error utilities
-    const errorModule = await import('../utils/errors.js');
+    const errorModule = await import('../../utils/errors.js');
     mockCreateErrorResponse = errorModule.createErrorResponse as MockedFunction<any>;
 
     // Mock common tools
-    const commonModule = await import('./common.js');
+    const commonModule = await import('../common/index.js');
     mockRegisterTool = commonModule.registerTool as MockedFunction<any>;
 
     // Create mock child process with typical Swift build output
