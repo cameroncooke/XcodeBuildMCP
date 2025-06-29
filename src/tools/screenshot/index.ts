@@ -18,91 +18,103 @@ import { executeCommand } from '../../utils/command.js';
 
 const LOG_PREFIX = '[Screenshot]';
 
+// Extracted exports for plugin migration
+export const screenshotToolName = 'screenshot';
+export const screenshotToolDescription =
+  "Captures screenshot for visual verification. For UI coordinates, use describe_ui instead (don't determine coordinates from screenshots).";
+export const screenshotToolSchema = {
+  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+};
+export const screenshotToolHandler = async (params: any): Promise<ToolResponse> => {
+  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
+
+  const { simulatorUuid } = params;
+  const tempDir = os.tmpdir();
+  const screenshotFilename = `screenshot_${uuidv4()}.png`;
+  const screenshotPath = path.join(tempDir, screenshotFilename);
+  // Use xcrun simctl to take screenshot
+  const commandArgs = ['xcrun', 'simctl', 'io', simulatorUuid, 'screenshot', screenshotPath];
+
+  log(
+    'info',
+    `${LOG_PREFIX}/${screenshotToolName}: Starting capture to ${screenshotPath} on ${simulatorUuid}`,
+  );
+
+  try {
+    // Execute the screenshot command
+    const result = await executeCommand(commandArgs, `${LOG_PREFIX}: screenshot`, false);
+
+    if (!result.success) {
+      throw new SystemError(`Failed to capture screenshot: ${result.error || result.output}`);
+    }
+
+    log('info', `${LOG_PREFIX}/${screenshotToolName}: Success for ${simulatorUuid}`);
+
+    try {
+      // Read the image file into memory
+      const imageBuffer = await fs.readFile(screenshotPath);
+
+      // Encode the image as a Base64 string
+      const base64Image = imageBuffer.toString('base64');
+
+      log('info', `${LOG_PREFIX}/${screenshotToolName}: Successfully encoded image as Base64`);
+
+      // Clean up the temporary file
+      await fs.unlink(screenshotPath).catch((err) => {
+        log(
+          'warning',
+          `${LOG_PREFIX}/${screenshotToolName}: Failed to delete temporary file: ${err}`,
+        );
+      });
+
+      // Return the image directly in the tool response
+      return {
+        content: [
+          {
+            type: 'image',
+            data: base64Image,
+            mimeType: 'image/png',
+          },
+        ],
+      };
+    } catch (fileError) {
+      log(
+        'error',
+        `${LOG_PREFIX}/${screenshotToolName}: Failed to process image file: ${fileError}`,
+      );
+      return createErrorResponse(
+        `Screenshot captured but failed to process image file: ${fileError instanceof Error ? fileError.message : String(fileError)}`,
+        undefined,
+        'FileProcessingError',
+      );
+    }
+  } catch (_error) {
+    log('error', `${LOG_PREFIX}/${screenshotToolName}: Failed - ${_error}`);
+    if (_error instanceof SystemError) {
+      return createErrorResponse(
+        `System error executing screenshot: ${_error.message}`,
+        _error.originalError?.stack,
+        _error.name,
+      );
+    }
+    return createErrorResponse(
+      `An unexpected error occurred: ${_error instanceof Error ? _error.message : String(_error)}`,
+      undefined,
+      'UnexpectedError',
+    );
+  }
+};
+
 /**
  * Registers the screenshot tool with the dispatcher.
  * @param server The McpServer instance.
  */
 export function registerScreenshotTool(server: McpServer): void {
   server.tool(
-    'screenshot',
-    "Captures screenshot for visual verification. For UI coordinates, use describe_ui instead (don't determine coordinates from screenshots).",
-    {
-      simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
-    },
-    async (params): Promise<ToolResponse> => {
-      const toolName = 'screenshot';
-      const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-      if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
-
-      const { simulatorUuid } = params;
-      const tempDir = os.tmpdir();
-      const screenshotFilename = `screenshot_${uuidv4()}.png`;
-      const screenshotPath = path.join(tempDir, screenshotFilename);
-      // Use xcrun simctl to take screenshot
-      const commandArgs = ['xcrun', 'simctl', 'io', simulatorUuid, 'screenshot', screenshotPath];
-
-      log(
-        'info',
-        `${LOG_PREFIX}/${toolName}: Starting capture to ${screenshotPath} on ${simulatorUuid}`,
-      );
-
-      try {
-        // Execute the screenshot command
-        const result = await executeCommand(commandArgs, `${LOG_PREFIX}: screenshot`, false);
-
-        if (!result.success) {
-          throw new SystemError(`Failed to capture screenshot: ${result.error || result.output}`);
-        }
-
-        log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-
-        try {
-          // Read the image file into memory
-          const imageBuffer = await fs.readFile(screenshotPath);
-
-          // Encode the image as a Base64 string
-          const base64Image = imageBuffer.toString('base64');
-
-          log('info', `${LOG_PREFIX}/${toolName}: Successfully encoded image as Base64`);
-
-          // Clean up the temporary file
-          await fs.unlink(screenshotPath).catch((err) => {
-            log('warning', `${LOG_PREFIX}/${toolName}: Failed to delete temporary file: ${err}`);
-          });
-
-          // Return the image directly in the tool response
-          return {
-            content: [
-              {
-                type: 'image',
-                data: base64Image,
-                mimeType: 'image/png',
-              },
-            ],
-          };
-        } catch (fileError) {
-          log('error', `${LOG_PREFIX}/${toolName}: Failed to process image file: ${fileError}`);
-          return createErrorResponse(
-            `Screenshot captured but failed to process image file: ${fileError instanceof Error ? fileError.message : String(fileError)}`,
-            undefined,
-            'FileProcessingError',
-          );
-        }
-      } catch (_error) {
-        log('error', `${LOG_PREFIX}/${toolName}: Failed - ${_error}`);
-        if (_error instanceof SystemError) {
-          return createErrorResponse(
-            `System error executing screenshot: ${_error.message}`,
-            _error.originalError?.stack,
-            _error.name,
-          );
-        }
-        return createErrorResponse(
-          `An unexpected error occurred: ${_error instanceof Error ? _error.message : String(_error)}`,
-          undefined,
-          'UnexpectedError',
-        );
-      }
-    },
+    screenshotToolName,
+    screenshotToolDescription,
+    screenshotToolSchema,
+    screenshotToolHandler,
   );
 }
