@@ -115,22 +115,39 @@ export async function cleanProject(
   return _handleCleanLogic(validated);
 }
 
+// --- Tool Components for clean_ws ---
+export const cleanWsToolName = 'clean_ws';
+export const cleanWsToolDescription =
+  "Cleans build products for a specific workspace using xcodebuild. IMPORTANT: Requires workspacePath. Scheme/Configuration are optional. Example: clean_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })";
+export const cleanWsToolSchema = CleanWorkspaceSchema.shape;
+export async function cleanWsToolHandler(
+  params: z.infer<typeof CleanWorkspaceSchema>,
+): Promise<ToolResponse> {
+  return cleanWorkspace(params);
+}
+
+// --- Tool Components for clean_proj ---
+export const cleanProjToolName = 'clean_proj';
+export const cleanProjToolDescription =
+  "Cleans build products for a specific project file using xcodebuild. IMPORTANT: Requires projectPath. Scheme/Configuration are optional. Example: clean_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })";
+export const cleanProjToolSchema = CleanProjectSchema.shape;
+export async function cleanProjToolHandler(
+  params: z.infer<typeof CleanProjectSchema>,
+): Promise<ToolResponse> {
+  return cleanProject(params);
+}
+
 // --- Public Tool Definitions ---
 
 export function registerCleanWorkspaceTool(server: McpServer): void {
-  server.tool(
-    'clean_ws',
-    "Cleans build products for a specific workspace using xcodebuild. IMPORTANT: Requires workspacePath. Scheme/Configuration are optional. Example: clean_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
-    CleanWorkspaceSchema.shape,
-    cleanWorkspace,
-  );
+  server.tool(cleanWsToolName, cleanWsToolDescription, cleanWsToolSchema, cleanWsToolHandler);
 }
 
 export function registerCleanProjectTool(server: McpServer): void {
   server.tool(
-    'clean_proj',
-    "Cleans build products for a specific project file using xcodebuild. IMPORTANT: Requires projectPath. Scheme/Configuration are optional. Example: clean_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-    CleanProjectSchema.shape,
-    cleanProject,
+    cleanProjToolName,
+    cleanProjToolDescription,
+    cleanProjToolSchema,
+    cleanProjToolHandler,
   );
 }

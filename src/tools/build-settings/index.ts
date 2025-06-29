@@ -152,6 +152,78 @@ async function _handleListSchemesLogic(params: {
   }
 }
 
+// --- Exported Tool Components for Plugin Architecture ---
+
+/**
+ * Tool name for show build settings workspace tool
+ */
+export const showBuildSetWsToolName = 'show_build_set_ws';
+
+/**
+ * Tool description for show build settings workspace tool
+ */
+export const showBuildSetWsToolDescription =
+  "Shows build settings from a workspace using xcodebuild. IMPORTANT: Requires workspacePath and scheme. Example: show_build_set_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })";
+
+/**
+ * Tool schema for show build settings workspace tool
+ */
+export const showBuildSetWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+};
+
+/**
+ * Tool handler for show build settings workspace tool
+ */
+export const showBuildSetWsToolHandler = async (
+  params: BaseWorkspaceParams,
+): Promise<ToolResponse> => {
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  return _handleShowBuildSettingsLogic(params);
+};
+
+/**
+ * Tool name for show build settings project tool
+ */
+export const showBuildSetProjToolName = 'show_build_set_proj';
+
+/**
+ * Tool description for show build settings project tool
+ */
+export const showBuildSetProjToolDescription =
+  "Shows build settings from a project file using xcodebuild. IMPORTANT: Requires projectPath and scheme. Example: show_build_set_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })";
+
+/**
+ * Tool schema for show build settings project tool
+ */
+export const showBuildSetProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+};
+
+/**
+ * Tool handler for show build settings project tool
+ */
+export const showBuildSetProjToolHandler = async (
+  params: BaseProjectParams,
+): Promise<ToolResponse> => {
+  // Validate required parameters
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  return _handleShowBuildSettingsLogic(params);
+};
+
 // --- Public Tool Definitions ---
 
 /**
@@ -160,22 +232,10 @@ async function _handleListSchemesLogic(params: {
 export function registerShowBuildSettingsWorkspaceTool(server: McpServer): void {
   registerTool<BaseWorkspaceParams>(
     server,
-    'show_build_set_ws',
-    "Shows build settings from a workspace using xcodebuild. IMPORTANT: Requires workspacePath and scheme. Example: show_build_set_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-    },
-    async (params: BaseWorkspaceParams) => {
-      // Validate required parameters
-      const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-      if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      return _handleShowBuildSettingsLogic(params);
-    },
+    showBuildSetWsToolName,
+    showBuildSetWsToolDescription,
+    showBuildSetWsToolSchema,
+    showBuildSetWsToolHandler,
   );
 }
 
@@ -185,24 +245,43 @@ export function registerShowBuildSettingsWorkspaceTool(server: McpServer): void 
 export function registerShowBuildSettingsProjectTool(server: McpServer): void {
   registerTool<BaseProjectParams>(
     server,
-    'show_build_set_proj',
-    "Shows build settings from a project file using xcodebuild. IMPORTANT: Requires projectPath and scheme. Example: show_build_set_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-    },
-    async (params: BaseProjectParams) => {
-      // Validate required parameters
-      const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-      if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      return _handleShowBuildSettingsLogic(params);
-    },
+    showBuildSetProjToolName,
+    showBuildSetProjToolDescription,
+    showBuildSetProjToolSchema,
+    showBuildSetProjToolHandler,
   );
 }
+
+/**
+ * Tool name for list schemes workspace tool
+ */
+export const listSchemsWsToolName = 'list_schems_ws';
+
+/**
+ * Tool description for list schemes workspace tool
+ */
+export const listSchemsWsToolDescription =
+  "Lists available schemes in the workspace. IMPORTANT: Requires workspacePath. Example: list_schems_ws({ workspacePath: '/path/to/MyProject.xcworkspace' })";
+
+/**
+ * Tool schema for list schemes workspace tool
+ */
+export const listSchemsWsToolSchema = {
+  workspacePath: workspacePathSchema,
+};
+
+/**
+ * Tool handler for list schemes workspace tool
+ */
+export const listSchemsWsToolHandler = async (
+  params: BaseWorkspaceParams,
+): Promise<ToolResponse> => {
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  return _handleListSchemesLogic(params);
+};
 
 /**
  * Registers the list schemes workspace tool
@@ -210,20 +289,43 @@ export function registerShowBuildSettingsProjectTool(server: McpServer): void {
 export function registerListSchemesWorkspaceTool(server: McpServer): void {
   registerTool<BaseWorkspaceParams>(
     server,
-    'list_schems_ws',
-    "Lists available schemes in the workspace. IMPORTANT: Requires workspacePath. Example: list_schems_ws({ workspacePath: '/path/to/MyProject.xcworkspace' })",
-    {
-      workspacePath: workspacePathSchema,
-    },
-    async (params: BaseWorkspaceParams) => {
-      // Validate required parameters
-      const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-      if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-      return _handleListSchemesLogic(params);
-    },
+    listSchemsWsToolName,
+    listSchemsWsToolDescription,
+    listSchemsWsToolSchema,
+    listSchemsWsToolHandler,
   );
 }
+
+/**
+ * Tool name for list schemes project tool
+ */
+export const listSchemsProjToolName = 'list_schems_proj';
+
+/**
+ * Tool description for list schemes project tool
+ */
+export const listSchemsProjToolDescription =
+  "Lists available schemes in the project file. IMPORTANT: Requires projectPath. Example: list_schems_proj({ projectPath: '/path/to/MyProject.xcodeproj' })";
+
+/**
+ * Tool schema for list schemes project tool
+ */
+export const listSchemsProjToolSchema = {
+  projectPath: projectPathSchema,
+};
+
+/**
+ * Tool handler for list schemes project tool
+ */
+export const listSchemsProjToolHandler = async (
+  params: BaseProjectParams,
+): Promise<ToolResponse> => {
+  // Validate required parameters
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  return _handleListSchemesLogic(params);
+};
 
 /**
  * Registers the list schemes project tool
@@ -231,17 +333,9 @@ export function registerListSchemesWorkspaceTool(server: McpServer): void {
 export function registerListSchemesProjectTool(server: McpServer): void {
   registerTool<BaseProjectParams>(
     server,
-    'list_schems_proj',
-    "Lists available schemes in the project file. IMPORTANT: Requires projectPath. Example: list_schems_proj({ projectPath: '/path/to/MyProject.xcodeproj' })",
-    {
-      projectPath: projectPathSchema,
-    },
-    async (params: BaseProjectParams) => {
-      // Validate required parameters
-      const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-      if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-      return _handleListSchemesLogic(params);
-    },
+    listSchemsProjToolName,
+    listSchemsProjToolDescription,
+    listSchemsProjToolSchema,
+    listSchemsProjToolHandler,
   );
 }

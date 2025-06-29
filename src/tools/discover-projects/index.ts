@@ -272,13 +272,21 @@ export async function discoverProjects(
   return _handleDiscoveryLogic(validated);
 }
 
+// --- Extracted Exports for Plugin Migration ---
+
+export const discoverProjsToolName = 'discover_projs';
+export const discoverProjsToolDescription =
+  'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.';
+export const discoverProjsToolSchema = DiscoverProjectsSchema;
+export const discoverProjsToolHandler = discoverProjects;
+
 // --- Public Tool Definition ---
 
 export function registerDiscoverProjectsTool(server: McpServer): void {
   server.tool(
-    'discover_projs',
-    'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
-    DiscoverProjectsSchema.shape,
-    discoverProjects,
+    discoverProjsToolName,
+    discoverProjsToolDescription,
+    discoverProjsToolSchema.shape,
+    discoverProjsToolHandler,
   );
 }
