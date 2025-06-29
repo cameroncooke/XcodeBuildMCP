@@ -29,6 +29,72 @@ import {
   preferXcodebuildSchema,
 } from '../common/index.js';
 
+// --- Extracted Exports for build_dev_ws ---
+export const buildDevWsName = 'build_dev_ws';
+export const buildDevWsDescription =
+  "Builds an app from a workspace for a physical Apple device. IMPORTANT: Requires workspacePath and scheme. Example: build_dev_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })";
+export const buildDevWsSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export const buildDevWsHandler = async (params: BaseWorkspaceParams) => {
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  return executeXcodeBuildCommand(
+    {
+      ...params,
+      configuration: params.configuration ?? 'Debug', // Default config
+    },
+    {
+      platform: XcodePlatform.iOS,
+      logPrefix: 'iOS Device Build',
+    },
+    params.preferXcodebuild,
+    'build',
+  );
+};
+
+// --- Extracted Exports for build_dev_proj ---
+export const buildDevProjName = 'build_dev_proj';
+export const buildDevProjDescription =
+  "Builds an app from a project file for a physical Apple device. IMPORTANT: Requires projectPath and scheme. Example: build_dev_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })";
+export const buildDevProjSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export const buildDevProjHandler = async (params: BaseProjectParams) => {
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  return executeXcodeBuildCommand(
+    {
+      ...params,
+      configuration: params.configuration ?? 'Debug', // Default config
+    },
+    {
+      platform: XcodePlatform.iOS,
+      logPrefix: 'iOS Device Build',
+    },
+    params.preferXcodebuild,
+    'build',
+  );
+};
+
 // --- Tool Registration Functions ---
 
 /**
@@ -38,36 +104,10 @@ export function registerDeviceBuildWorkspaceTool(server: McpServer): void {
   type Params = BaseWorkspaceParams;
   registerTool<Params>(
     server,
-    'build_dev_ws',
-    "Builds an app from a workspace for a physical Apple device. IMPORTANT: Requires workspacePath and scheme. Example: build_dev_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params: Params) => {
-      const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-      if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      return executeXcodeBuildCommand(
-        {
-          ...params,
-          configuration: params.configuration ?? 'Debug', // Default config
-        },
-        {
-          platform: XcodePlatform.iOS,
-          logPrefix: 'iOS Device Build',
-        },
-        params.preferXcodebuild,
-        'build',
-      );
-    },
+    buildDevWsName,
+    buildDevWsDescription,
+    buildDevWsSchema,
+    buildDevWsHandler,
   );
 }
 
@@ -78,36 +118,10 @@ export function registerDeviceBuildProjectTool(server: McpServer): void {
   type Params = BaseProjectParams;
   registerTool<Params>(
     server,
-    'build_dev_proj',
-    "Builds an app from a project file for a physical Apple device. IMPORTANT: Requires projectPath and scheme. Example: build_dev_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params: Params) => {
-      const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-      if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      return executeXcodeBuildCommand(
-        {
-          ...params,
-          configuration: params.configuration ?? 'Debug', // Default config
-        },
-        {
-          platform: XcodePlatform.iOS,
-          logPrefix: 'iOS Device Build',
-        },
-        params.preferXcodebuild,
-        'build',
-      );
-    },
+    buildDevProjName,
+    buildDevProjDescription,
+    buildDevProjSchema,
+    buildDevProjHandler,
   );
 }
 
