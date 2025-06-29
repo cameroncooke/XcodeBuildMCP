@@ -25,6 +25,70 @@ import {
   preferXcodebuildSchema,
 } from '../common/index.js';
 
+// --- Extracted Tool Components ---
+
+export const testMacOSWsToolName = 'test_macos_ws';
+
+export const testMacOSWsToolDescription =
+  'Runs tests for a macOS workspace using xcodebuild test and parses xcresult output.';
+
+export const testMacOSWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+
+export async function testMacOSWsToolHandler(params: {
+  workspacePath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+}) {
+  return handleTestLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    preferXcodebuild: params.preferXcodebuild ?? false,
+    platform: XcodePlatform.macOS,
+  });
+}
+
+// --- Extracted Tool Components for test_macos_proj ---
+
+export const testMacOSProjToolName = 'test_macos_proj';
+
+export const testMacOSProjToolDescription =
+  'Runs tests for a macOS project using xcodebuild test and parses xcresult output.';
+
+export const testMacOSProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+
+export async function testMacOSProjToolHandler(params: {
+  projectPath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+}) {
+  return handleTestLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    preferXcodebuild: params.preferXcodebuild ?? false,
+    platform: XcodePlatform.macOS,
+  });
+}
+
 // --- Public Tool Definitions ---
 
 /**
@@ -42,23 +106,10 @@ export function registerMacOSTestWorkspaceTool(server: McpServer): void {
 
   registerTool<Params>(
     server,
-    'test_macos_ws',
-    'Runs tests for a macOS workspace using xcodebuild test and parses xcresult output.',
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params) =>
-      handleTestLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
-        platform: XcodePlatform.macOS,
-      }),
+    testMacOSWsToolName,
+    testMacOSWsToolDescription,
+    testMacOSWsToolSchema,
+    testMacOSWsToolHandler,
   );
 }
 
@@ -77,22 +128,9 @@ export function registerMacOSTestProjectTool(server: McpServer): void {
 
   registerTool<Params>(
     server,
-    'test_macos_proj',
-    'Runs tests for a macOS project using xcodebuild test and parses xcresult output.',
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params) =>
-      handleTestLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
-        platform: XcodePlatform.macOS,
-      }),
+    testMacOSProjToolName,
+    testMacOSProjToolDescription,
+    testMacOSProjToolSchema,
+    testMacOSProjToolHandler,
   );
 }
