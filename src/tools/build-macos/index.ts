@@ -217,6 +217,37 @@ async function _handleMacOSBuildAndRunLogic(params: {
 
 // --- Public Tool Definitions ---
 
+// Extracted exports for build_mac_ws tool
+export const buildMacWsToolName = 'build_mac_ws';
+
+export const buildMacWsToolDescription = 'Builds a macOS app using xcodebuild from a workspace.';
+
+export const buildMacWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  arch: archSchema,
+  extraArgs: extraArgsSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+
+export async function buildMacWsToolHandler(params: {
+  workspacePath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  arch?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  return _handleMacOSBuildLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
+}
+
 // Register macOS build workspace tool
 export function registerMacOSBuildWorkspaceTool(server: McpServer): void {
   type WorkspaceParams = {
@@ -231,24 +262,43 @@ export function registerMacOSBuildWorkspaceTool(server: McpServer): void {
 
   registerTool<WorkspaceParams>(
     server,
-    'build_mac_ws',
-    'Builds a macOS app using xcodebuild from a workspace.',
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      arch: archSchema,
-      extraArgs: extraArgsSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params) =>
-      _handleMacOSBuildLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      }),
+    buildMacWsToolName,
+    buildMacWsToolDescription,
+    buildMacWsToolSchema,
+    buildMacWsToolHandler,
   );
+}
+
+// Extracted exports for build_mac_proj tool
+export const buildMacProjToolName = 'build_mac_proj';
+
+export const buildMacProjToolDescription =
+  'Builds a macOS app using xcodebuild from a project file.';
+
+export const buildMacProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  arch: archSchema,
+  extraArgs: extraArgsSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+
+export async function buildMacProjToolHandler(params: {
+  projectPath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  arch?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  return _handleMacOSBuildLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
 }
 
 // Register macOS build project tool
@@ -265,24 +315,43 @@ export function registerMacOSBuildProjectTool(server: McpServer): void {
 
   registerTool<ProjectParams>(
     server,
-    'build_mac_proj',
-    'Builds a macOS app using xcodebuild from a project file.',
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      arch: archSchema,
-      extraArgs: extraArgsSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params) =>
-      _handleMacOSBuildLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      }),
+    buildMacProjToolName,
+    buildMacProjToolDescription,
+    buildMacProjToolSchema,
+    buildMacProjToolHandler,
   );
+}
+
+// Extracted exports for build_run_mac_ws tool
+export const buildRunMacWsToolName = 'build_run_mac_ws';
+
+export const buildRunMacWsToolDescription =
+  'Builds and runs a macOS app from a workspace in one step.';
+
+export const buildRunMacWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  arch: archSchema,
+  extraArgs: extraArgsSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+
+export async function buildRunMacWsToolHandler(params: {
+  workspacePath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  arch?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  return _handleMacOSBuildAndRunLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
 }
 
 // Register macOS build and run workspace tool
@@ -299,23 +368,43 @@ export function registerMacOSBuildAndRunWorkspaceTool(server: McpServer): void {
 
   registerTool<WorkspaceParams>(
     server,
-    'build_run_mac_ws',
-    'Builds and runs a macOS app from a workspace in one step.',
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params) =>
-      _handleMacOSBuildAndRunLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      }),
+    buildRunMacWsToolName,
+    buildRunMacWsToolDescription,
+    buildRunMacWsToolSchema,
+    buildRunMacWsToolHandler,
   );
+}
+
+// Extracted exports for build_run_mac_proj tool
+export const buildRunMacProjToolName = 'build_run_mac_proj';
+
+export const buildRunMacProjToolDescription =
+  'Builds and runs a macOS app from a project file in one step.';
+
+export const buildRunMacProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  arch: archSchema,
+  extraArgs: extraArgsSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+
+export async function buildRunMacProjToolHandler(params: {
+  projectPath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  arch?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  return _handleMacOSBuildAndRunLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
 }
 
 // Register macOS build and run project tool
@@ -332,21 +421,9 @@ export function registerMacOSBuildAndRunProjectTool(server: McpServer): void {
 
   registerTool<ProjectParams>(
     server,
-    'build_run_mac_proj',
-    'Builds and runs a macOS app from a project file in one step.',
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params) =>
-      _handleMacOSBuildAndRunLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      }),
+    buildRunMacProjToolName,
+    buildRunMacProjToolDescription,
+    buildRunMacProjToolSchema,
+    buildRunMacProjToolHandler,
   );
 }
