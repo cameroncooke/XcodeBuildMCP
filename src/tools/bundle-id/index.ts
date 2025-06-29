@@ -198,26 +198,40 @@ export async function getAppBundleId(
   }
 }
 
+// Surgical edits for plugin migration - get_mac_bundle_id
+export const getMacBundleIdToolName = 'get_mac_bundle_id';
+export const getMacBundleIdToolDescription =
+  "Extracts the bundle identifier from a macOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_mac_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_macos_bundle_id.";
+export const getMacBundleIdToolSchema = GetMacOSBundleIdSchema;
+export const getMacBundleIdToolHandler = getMacOSBundleId;
+
 /**
  * Extracts the bundle identifier from a macOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_mac_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_macos_bundle_id.
  */
 export function registerGetMacOSBundleIdTool(server: McpServer): void {
   server.tool(
-    'get_mac_bundle_id',
-    "Extracts the bundle identifier from a macOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_mac_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_macos_bundle_id.",
-    GetMacOSBundleIdSchema.shape,
-    getMacOSBundleId,
+    getMacBundleIdToolName,
+    getMacBundleIdToolDescription,
+    getMacBundleIdToolSchema.shape,
+    getMacBundleIdToolHandler,
   );
 }
+
+// Surgical edits for plugin migration
+export const getAppBundleIdToolName = 'get_app_bundle_id';
+export const getAppBundleIdToolDescription =
+  "Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, iPadOS, watchOS, tvOS, visionOS). IMPORTANT: You MUST provide the appPath parameter. Example: get_app_bundle_id({ appPath: '/path/to/your/app.app' })";
+export const getAppBundleIdToolSchema = GetAppBundleIdSchema;
+export const getAppBundleIdToolHandler = getAppBundleId;
 
 /**
  * Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, watchOS, tvOS, visionOS). IMPORTANT: You MUST provide the appPath parameter. Example: get_app_bundle_id({ appPath: '/path/to/your/app.app' })
  */
 export function registerGetAppBundleIdTool(server: McpServer): void {
   server.tool(
-    'get_app_bundle_id',
-    "Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, iPadOS, watchOS, tvOS, visionOS). IMPORTANT: You MUST provide the appPath parameter. Example: get_app_bundle_id({ appPath: '/path/to/your/app.app' })",
-    GetAppBundleIdSchema.shape,
-    getAppBundleId,
+    getAppBundleIdToolName,
+    getAppBundleIdToolDescription,
+    getAppBundleIdToolSchema.shape,
+    getAppBundleIdToolHandler,
   );
 }
