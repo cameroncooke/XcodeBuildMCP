@@ -437,116 +437,140 @@ async function scaffoldProject(params: ScaffoldProjectParams): Promise<string> {
   }
 }
 
+// iOS scaffold tool exports
+export const scaffoldIosProjectToolName = 'scaffold_ios_project';
+
+export const scaffoldIosProjectToolDescription =
+  'Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.';
+
+export const scaffoldIosProjectToolSchema = ScaffoldiOSProjectSchema.shape;
+
+export async function scaffoldIosProjectToolHandler(
+  params: ScaffoldiOSProjectParams,
+): Promise<any> {
+  try {
+    const projectParams: ScaffoldProjectParams = { ...params, platform: 'iOS' };
+    const projectPath = await scaffoldProject(projectParams);
+
+    const response = {
+      success: true,
+      projectPath,
+      platform: 'iOS',
+      message: `Successfully scaffolded iOS project "${params.projectName}" in ${projectPath}`,
+      nextSteps: [
+        `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
+        `Build for simulator: build_ios_sim_name_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}" --simulator-name "iPhone 16"`,
+        `Build and run on simulator: build_run_ios_sim_name_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}" --simulator-name "iPhone 16"`,
+      ],
+    };
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(response, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    log(
+      'error',
+      `Failed to scaffold iOS project: ${error instanceof Error ? error.message : String(error)}`,
+    );
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error occurred',
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    };
+  }
+}
+
+// macOS scaffold tool exports
+export const scaffoldMacosProjectToolName = 'scaffold_macos_project';
+
+export const scaffoldMacosProjectToolDescription =
+  'Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.';
+
+export const scaffoldMacosProjectToolSchema = ScaffoldmacOSProjectSchema.shape;
+
+export async function scaffoldMacosProjectToolHandler(
+  params: ScaffoldmacOSProjectParams,
+): Promise<any> {
+  try {
+    const projectParams: ScaffoldProjectParams = { ...params, platform: 'macOS' };
+    const projectPath = await scaffoldProject(projectParams);
+
+    const response = {
+      success: true,
+      projectPath,
+      platform: 'macOS',
+      message: `Successfully scaffolded macOS project "${params.projectName}" in ${projectPath}`,
+      nextSteps: [
+        `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
+        `Build for macOS: build_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
+        `Run and run on macOS: build_run_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
+      ],
+    };
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(response, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    log(
+      'error',
+      `Failed to scaffold macOS project: ${error instanceof Error ? error.message : String(error)}`,
+    );
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error occurred',
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    };
+  }
+}
+
 export function registerScaffoldTools(server: McpServer): void {
   // iOS scaffold tool
   registerTool<ScaffoldiOSProjectParams>(
     server,
-    'scaffold_ios_project',
-    'Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.',
-    ScaffoldiOSProjectSchema.shape,
-    async (params) => {
-      try {
-        const projectParams: ScaffoldProjectParams = { ...params, platform: 'iOS' };
-        const projectPath = await scaffoldProject(projectParams);
-
-        const response = {
-          success: true,
-          projectPath,
-          platform: 'iOS',
-          message: `Successfully scaffolded iOS project "${params.projectName}" in ${projectPath}`,
-          nextSteps: [
-            `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
-            `Build for simulator: build_ios_sim_name_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}" --simulator-name "iPhone 16"`,
-            `Build and run on simulator: build_run_ios_sim_name_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}" --simulator-name "iPhone 16"`,
-          ],
-        };
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(response, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        log(
-          'error',
-          `Failed to scaffold iOS project: ${error instanceof Error ? error.message : String(error)}`,
-        );
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(
-                {
-                  success: false,
-                  error: error instanceof Error ? error.message : 'Unknown error occurred',
-                },
-                null,
-                2,
-              ),
-            },
-          ],
-        };
-      }
-    },
+    scaffoldIosProjectToolName,
+    scaffoldIosProjectToolDescription,
+    scaffoldIosProjectToolSchema,
+    scaffoldIosProjectToolHandler,
   );
 
   // macOS scaffold tool
   registerTool<ScaffoldmacOSProjectParams>(
     server,
-    'scaffold_macos_project',
-    'Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.',
-    ScaffoldmacOSProjectSchema.shape,
-    async (params) => {
-      try {
-        const projectParams: ScaffoldProjectParams = { ...params, platform: 'macOS' };
-        const projectPath = await scaffoldProject(projectParams);
-
-        const response = {
-          success: true,
-          projectPath,
-          platform: 'macOS',
-          message: `Successfully scaffolded macOS project "${params.projectName}" in ${projectPath}`,
-          nextSteps: [
-            `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
-            `Build for macOS: build_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
-            `Run and run on macOS: build_run_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
-          ],
-        };
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(response, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        log(
-          'error',
-          `Failed to scaffold macOS project: ${error instanceof Error ? error.message : String(error)}`,
-        );
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(
-                {
-                  success: false,
-                  error: error instanceof Error ? error.message : 'Unknown error occurred',
-                },
-                null,
-                2,
-              ),
-            },
-          ],
-        };
-      }
-    },
+    scaffoldMacosProjectToolName,
+    scaffoldMacosProjectToolDescription,
+    scaffoldMacosProjectToolSchema,
+    scaffoldMacosProjectToolHandler,
   );
 }

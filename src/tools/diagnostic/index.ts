@@ -378,6 +378,17 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
   };
 }
 
+// Extracted exports for plugin migration
+export const diagnosticToolName = 'diagnostic';
+export const diagnosticToolDescription =
+  'Provides comprehensive information about the MCP server environment, available dependencies, and configuration status.';
+export const diagnosticToolSchema = {
+  enabled: z.boolean().optional().describe('Optional: dummy parameter to satisfy MCP protocol'),
+};
+export async function diagnosticToolHandler(): Promise<ToolResponse> {
+  return runDiagnosticTool();
+}
+
 /**
  * Registers the diagnostic tool with the dispatcher.
  * This tool is only registered when the XCODEBUILDMCP_DEBUG environment variable is set.
@@ -385,13 +396,9 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
  */
 export function registerDiagnosticTool(server: McpServer): void {
   server.tool(
-    'diagnostic',
-    'Provides comprehensive information about the MCP server environment, available dependencies, and configuration status.',
-    {
-      enabled: z.boolean().optional().describe('Optional: dummy parameter to satisfy MCP protocol'),
-    },
-    async (): Promise<ToolResponse> => {
-      return runDiagnosticTool();
-    },
+    diagnosticToolName,
+    diagnosticToolDescription,
+    diagnosticToolSchema,
+    diagnosticToolHandler,
   );
 }
