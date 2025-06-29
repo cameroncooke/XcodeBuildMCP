@@ -194,6 +194,37 @@ async function _handleGetAppPathLogic(params: {
 
 // --- Public Tool Definitions ---
 
+// Extracted exports for get_mac_app_path_ws tool
+export const getMacAppPathWsToolName = 'get_mac_app_path_ws';
+
+export const getMacAppPathWsToolDescription =
+  "Gets the app bundle path for a macOS application using a workspace. IMPORTANT: Requires workspacePath and scheme. Example: get_mac_app_path_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme' })";
+
+export const getMacAppPathWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  arch: archSchema,
+};
+
+export async function getMacAppPathWsToolHandler(
+  params: BaseWorkspaceParams & { configuration?: string; arch?: string },
+): Promise<ToolResponse> {
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  return _handleGetAppPathLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    platform: XcodePlatform.macOS,
+    useLatestOS: true,
+    arch: params.arch, // Pass the architecture parameter
+  });
+}
+
 /**
  * Registers the get_mac_app_path_ws tool
  */
@@ -201,30 +232,42 @@ export function registerGetMacOSAppPathWorkspaceTool(server: McpServer): void {
   type Params = BaseWorkspaceParams & { configuration?: string; arch?: string };
   registerTool<Params>(
     server,
-    'get_mac_app_path_ws',
-    "Gets the app bundle path for a macOS application using a workspace. IMPORTANT: Requires workspacePath and scheme. Example: get_mac_app_path_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme' })",
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      arch: archSchema,
-    },
-    async (params: Params) => {
-      const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-      if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      return _handleGetAppPathLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        platform: XcodePlatform.macOS,
-        useLatestOS: true,
-        arch: params.arch, // Pass the architecture parameter
-      });
-    },
+    getMacAppPathWsToolName,
+    getMacAppPathWsToolDescription,
+    getMacAppPathWsToolSchema,
+    getMacAppPathWsToolHandler,
   );
+}
+
+// Extracted exports for get_mac_app_path_proj tool
+export const getMacAppPathProjToolName = 'get_mac_app_path_proj';
+
+export const getMacAppPathProjToolDescription =
+  "Gets the app bundle path for a macOS application using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_mac_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })";
+
+export const getMacAppPathProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  arch: archSchema,
+};
+
+export async function getMacAppPathProjToolHandler(
+  params: BaseProjectParams & { configuration?: string; arch?: string },
+): Promise<ToolResponse> {
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  return _handleGetAppPathLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    platform: XcodePlatform.macOS,
+    useLatestOS: true,
+    arch: params.arch,
+  });
 }
 
 /**
@@ -234,30 +277,51 @@ export function registerGetMacOSAppPathProjectTool(server: McpServer): void {
   type Params = BaseProjectParams & { configuration?: string; arch?: string };
   registerTool<Params>(
     server,
-    'get_mac_app_path_proj',
-    "Gets the app bundle path for a macOS application using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_mac_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      arch: archSchema,
-    },
-    async (params: Params) => {
-      const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-      if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      return _handleGetAppPathLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        platform: XcodePlatform.macOS,
-        useLatestOS: true,
-        arch: params.arch,
-      });
-    },
+    getMacAppPathProjToolName,
+    getMacAppPathProjToolDescription,
+    getMacAppPathProjToolSchema,
+    getMacAppPathProjToolHandler,
   );
+}
+
+// Extracted exports for get_device_app_path_ws tool
+export const getDeviceAppPathWsToolName = 'get_device_app_path_ws';
+
+export const getDeviceAppPathWsToolDescription =
+  "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using a workspace. IMPORTANT: Requires workspacePath and scheme. Example: get_device_app_path_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme' })";
+
+export const getDeviceAppPathWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  platform: z
+    .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
+    .optional()
+    .describe('Target platform (defaults to iOS)'),
+};
+
+export async function getDeviceAppPathWsToolHandler(
+  params: BaseWorkspaceParams & { configuration?: string; platform?: string },
+): Promise<ToolResponse> {
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const platformMap: Record<string, XcodePlatform> = {
+    iOS: XcodePlatform.iOS,
+    watchOS: XcodePlatform.watchOS,
+    tvOS: XcodePlatform.tvOS,
+    visionOS: XcodePlatform.visionOS,
+  };
+
+  return _handleGetAppPathLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    platform: platformMap[params.platform ?? 'iOS'],
+    useLatestOS: true,
+  });
 }
 
 /**
@@ -267,39 +331,51 @@ export function registerGetDeviceAppPathWorkspaceTool(server: McpServer): void {
   type Params = BaseWorkspaceParams & { configuration?: string; platform?: string };
   registerTool<Params>(
     server,
-    'get_device_app_path_ws',
-    "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using a workspace. IMPORTANT: Requires workspacePath and scheme. Example: get_device_app_path_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme' })",
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      platform: z
-        .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
-        .optional()
-        .describe('Target platform (defaults to iOS)'),
-    },
-    async (params: Params) => {
-      const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-      if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const platformMap: Record<string, XcodePlatform> = {
-        iOS: XcodePlatform.iOS,
-        watchOS: XcodePlatform.watchOS,
-        tvOS: XcodePlatform.tvOS,
-        visionOS: XcodePlatform.visionOS,
-      };
-
-      return _handleGetAppPathLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        platform: platformMap[params.platform ?? 'iOS'],
-        useLatestOS: true,
-      });
-    },
+    getDeviceAppPathWsToolName,
+    getDeviceAppPathWsToolDescription,
+    getDeviceAppPathWsToolSchema,
+    getDeviceAppPathWsToolHandler,
   );
+}
+
+// Extracted exports for get_device_app_path_proj tool
+export const getDeviceAppPathProjToolName = 'get_device_app_path_proj';
+
+export const getDeviceAppPathProjToolDescription =
+  "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_device_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })";
+
+export const getDeviceAppPathProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  configuration: configurationSchema,
+  platform: z
+    .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
+    .optional()
+    .describe('Target platform (defaults to iOS)'),
+};
+
+export async function getDeviceAppPathProjToolHandler(
+  params: BaseProjectParams & { configuration?: string; platform?: string },
+): Promise<ToolResponse> {
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const platformMap: Record<string, XcodePlatform> = {
+    iOS: XcodePlatform.iOS,
+    watchOS: XcodePlatform.watchOS,
+    tvOS: XcodePlatform.tvOS,
+    visionOS: XcodePlatform.visionOS,
+  };
+
+  return _handleGetAppPathLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    platform: platformMap[params.platform ?? 'iOS'],
+    useLatestOS: true,
+  });
 }
 
 /**
@@ -309,39 +385,48 @@ export function registerGetDeviceAppPathProjectTool(server: McpServer): void {
   type Params = BaseProjectParams & { configuration?: string; platform?: string };
   registerTool<Params>(
     server,
-    'get_device_app_path_proj',
-    "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_device_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      configuration: configurationSchema,
-      platform: z
-        .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
-        .optional()
-        .describe('Target platform (defaults to iOS)'),
-    },
-    async (params: Params) => {
-      const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-      if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const platformMap: Record<string, XcodePlatform> = {
-        iOS: XcodePlatform.iOS,
-        watchOS: XcodePlatform.watchOS,
-        tvOS: XcodePlatform.tvOS,
-        visionOS: XcodePlatform.visionOS,
-      };
-
-      return _handleGetAppPathLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        platform: platformMap[params.platform ?? 'iOS'],
-        useLatestOS: true,
-      });
-    },
+    getDeviceAppPathProjToolName,
+    getDeviceAppPathProjToolDescription,
+    getDeviceAppPathProjToolSchema,
+    getDeviceAppPathProjToolHandler,
   );
+}
+
+// Extracted exports for get_sim_app_path_name_ws tool
+export const getSimAppPathNameWsToolName = 'get_sim_app_path_name_ws';
+
+export const getSimAppPathNameWsToolDescription =
+  "Gets the app bundle path for a simulator by name using a workspace. IMPORTANT: Requires workspacePath, scheme, platform, and simulatorName. Example: get_sim_app_path_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })";
+
+export const getSimAppPathNameWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  platform: platformSimulatorSchema,
+  simulatorName: simulatorNameSchema,
+  configuration: configurationSchema,
+  useLatestOS: useLatestOSSchema,
+};
+
+export async function getSimAppPathNameWsToolHandler(
+  params: BaseWorkspaceParams & BaseAppPathSimulatorNameParams,
+): Promise<ToolResponse> {
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const platformValidation = validateRequiredParam('platform', params.platform);
+  if (!platformValidation.isValid) return platformValidation.errorResponse!;
+
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
+
+  return _handleGetAppPathLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+  });
 }
 
 /**
@@ -351,36 +436,48 @@ export function registerGetSimulatorAppPathByNameWorkspaceTool(server: McpServer
   type Params = BaseWorkspaceParams & BaseAppPathSimulatorNameParams;
   registerTool<Params>(
     server,
-    'get_sim_app_path_name_ws',
-    "Gets the app bundle path for a simulator by name using a workspace. IMPORTANT: Requires workspacePath, scheme, platform, and simulatorName. Example: get_sim_app_path_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      platform: platformSimulatorSchema,
-      simulatorName: simulatorNameSchema,
-      configuration: configurationSchema,
-      useLatestOS: useLatestOSSchema,
-    },
-    async (params: Params) => {
-      const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-      if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const platformValidation = validateRequiredParam('platform', params.platform);
-      if (!platformValidation.isValid) return platformValidation.errorResponse!;
-
-      const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-      if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
-      return _handleGetAppPathLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-      });
-    },
+    getSimAppPathNameWsToolName,
+    getSimAppPathNameWsToolDescription,
+    getSimAppPathNameWsToolSchema,
+    getSimAppPathNameWsToolHandler,
   );
+}
+
+// Extracted exports for get_sim_app_path_name_proj tool
+export const getSimAppPathNameProjToolName = 'get_sim_app_path_name_proj';
+
+export const getSimAppPathNameProjToolDescription =
+  "Gets the app bundle path for a simulator by name using a project file. IMPORTANT: Requires projectPath, scheme, platform, and simulatorName. Example: get_sim_app_path_name_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })";
+
+export const getSimAppPathNameProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  platform: platformSimulatorSchema,
+  simulatorName: simulatorNameSchema,
+  configuration: configurationSchema,
+  useLatestOS: useLatestOSSchema,
+};
+
+export async function getSimAppPathNameProjToolHandler(
+  params: BaseProjectParams & BaseAppPathSimulatorNameParams,
+): Promise<ToolResponse> {
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const platformValidation = validateRequiredParam('platform', params.platform);
+  if (!platformValidation.isValid) return platformValidation.errorResponse!;
+
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
+
+  return _handleGetAppPathLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+  });
 }
 
 /**
@@ -390,36 +487,48 @@ export function registerGetSimulatorAppPathByNameProjectTool(server: McpServer):
   type Params = BaseProjectParams & BaseAppPathSimulatorNameParams;
   registerTool<Params>(
     server,
-    'get_sim_app_path_name_proj',
-    "Gets the app bundle path for a simulator by name using a project file. IMPORTANT: Requires projectPath, scheme, platform, and simulatorName. Example: get_sim_app_path_name_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      platform: platformSimulatorSchema,
-      simulatorName: simulatorNameSchema,
-      configuration: configurationSchema,
-      useLatestOS: useLatestOSSchema,
-    },
-    async (params: Params) => {
-      const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-      if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const platformValidation = validateRequiredParam('platform', params.platform);
-      if (!platformValidation.isValid) return platformValidation.errorResponse!;
-
-      const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-      if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
-      return _handleGetAppPathLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-      });
-    },
+    getSimAppPathNameProjToolName,
+    getSimAppPathNameProjToolDescription,
+    getSimAppPathNameProjToolSchema,
+    getSimAppPathNameProjToolHandler,
   );
+}
+
+// Extracted exports for get_sim_app_path_id_ws tool
+export const getSimAppPathIdWsToolName = 'get_sim_app_path_id_ws';
+
+export const getSimAppPathIdWsToolDescription =
+  "Gets the app bundle path for a simulator by UUID using a workspace. IMPORTANT: Requires workspacePath, scheme, platform, and simulatorId. Example: get_sim_app_path_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorId: 'SIMULATOR_UUID' })";
+
+export const getSimAppPathIdWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  platform: platformSimulatorSchema,
+  simulatorId: simulatorIdSchema,
+  configuration: configurationSchema,
+  useLatestOS: useLatestOSSchema,
+};
+
+export async function getSimAppPathIdWsToolHandler(
+  params: BaseWorkspaceParams & BaseAppPathSimulatorIdParams,
+): Promise<ToolResponse> {
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const platformValidation = validateRequiredParam('platform', params.platform);
+  if (!platformValidation.isValid) return platformValidation.errorResponse!;
+
+  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
+  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
+
+  return _handleGetAppPathLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+  });
 }
 
 /**
@@ -429,36 +538,48 @@ export function registerGetSimulatorAppPathByIdWorkspaceTool(server: McpServer):
   type Params = BaseWorkspaceParams & BaseAppPathSimulatorIdParams;
   registerTool<Params>(
     server,
-    'get_sim_app_path_id_ws',
-    "Gets the app bundle path for a simulator by UUID using a workspace. IMPORTANT: Requires workspacePath, scheme, platform, and simulatorId. Example: get_sim_app_path_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorId: 'SIMULATOR_UUID' })",
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      platform: platformSimulatorSchema,
-      simulatorId: simulatorIdSchema,
-      configuration: configurationSchema,
-      useLatestOS: useLatestOSSchema,
-    },
-    async (params: Params) => {
-      const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-      if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const platformValidation = validateRequiredParam('platform', params.platform);
-      if (!platformValidation.isValid) return platformValidation.errorResponse!;
-
-      const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-      if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
-      return _handleGetAppPathLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-      });
-    },
+    getSimAppPathIdWsToolName,
+    getSimAppPathIdWsToolDescription,
+    getSimAppPathIdWsToolSchema,
+    getSimAppPathIdWsToolHandler,
   );
+}
+
+// Extracted exports for get_sim_app_path_id_proj tool
+export const getSimAppPathIdProjToolName = 'get_sim_app_path_id_proj';
+
+export const getSimAppPathIdProjToolDescription =
+  "Gets the app bundle path for a simulator by UUID using a project file. IMPORTANT: Requires projectPath, scheme, platform, and simulatorId. Example: get_sim_app_path_id_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorId: 'SIMULATOR_UUID' })";
+
+export const getSimAppPathIdProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  platform: platformSimulatorSchema,
+  simulatorId: simulatorIdSchema,
+  configuration: configurationSchema,
+  useLatestOS: useLatestOSSchema,
+};
+
+export async function getSimAppPathIdProjToolHandler(
+  params: BaseProjectParams & BaseAppPathSimulatorIdParams,
+): Promise<ToolResponse> {
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const platformValidation = validateRequiredParam('platform', params.platform);
+  if (!platformValidation.isValid) return platformValidation.errorResponse!;
+
+  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
+  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
+
+  return _handleGetAppPathLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+  });
 }
 
 /**
@@ -468,34 +589,9 @@ export function registerGetSimulatorAppPathByIdProjectTool(server: McpServer): v
   type Params = BaseProjectParams & BaseAppPathSimulatorIdParams;
   registerTool<Params>(
     server,
-    'get_sim_app_path_id_proj',
-    "Gets the app bundle path for a simulator by UUID using a project file. IMPORTANT: Requires projectPath, scheme, platform, and simulatorId. Example: get_sim_app_path_id_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorId: 'SIMULATOR_UUID' })",
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      platform: platformSimulatorSchema,
-      simulatorId: simulatorIdSchema,
-      configuration: configurationSchema,
-      useLatestOS: useLatestOSSchema,
-    },
-    async (params: Params) => {
-      const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-      if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const platformValidation = validateRequiredParam('platform', params.platform);
-      if (!platformValidation.isValid) return platformValidation.errorResponse!;
-
-      const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-      if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
-      return _handleGetAppPathLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-      });
-    },
+    getSimAppPathIdProjToolName,
+    getSimAppPathIdProjToolDescription,
+    getSimAppPathIdProjToolSchema,
+    getSimAppPathIdProjToolHandler,
   );
 }
