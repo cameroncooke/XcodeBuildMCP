@@ -200,6 +200,47 @@ const bundleIdSchema = z
   .string()
   .describe('Bundle identifier of the app to launch and capture logs for.');
 
+// Exported tool components for start_device_log_cap
+export const startDeviceLogCapToolName = 'start_device_log_cap';
+
+export const startDeviceLogCapToolDescription =
+  'Starts capturing logs from a specified Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) by launching the app with console output. Returns a session ID.';
+
+export const startDeviceLogCapToolSchema = z.object({
+  deviceId: deviceIdSchema,
+  bundleId: bundleIdSchema,
+});
+
+export const startDeviceLogCapToolHandler = async (args: unknown): Promise<ToolResponse> => {
+  const { deviceId, bundleId } = args as { deviceId: string; bundleId: string };
+
+  const { sessionId, error } = await startDeviceLogCapture({
+    deviceUuid: deviceId,
+    bundleId: bundleId,
+  });
+
+  if (error) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Failed to start device log capture: ${error}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `✅ Device log capture started successfully\n\nSession ID: ${sessionId}\n\nNote: The app has been launched on the device with console output capture enabled.\n\nNext Steps:\n1. Interact with your app on the device\n2. Use stop_device_log_cap({ logSessionId: '${sessionId}' }) to stop capture and retrieve logs`,
+      },
+    ],
+  };
+};
+
 /**
  * Registers the tool to start capturing logs from an iOS device.
  *
@@ -208,45 +249,51 @@ const bundleIdSchema = z
 export function registerStartDeviceLogCaptureTool(server: McpServer): void {
   registerTool(
     server,
-    'start_device_log_cap',
-    'Starts capturing logs from a specified Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) by launching the app with console output. Returns a session ID.',
-    {
-      deviceId: deviceIdSchema,
-      bundleId: bundleIdSchema,
-    },
-    async (args): Promise<ToolResponse> => {
-      const { deviceId, bundleId } = args as { deviceId: string; bundleId: string };
-
-      const { sessionId, error } = await startDeviceLogCapture({
-        deviceUuid: deviceId,
-        bundleId: bundleId,
-      });
-
-      if (error) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to start device log capture: ${error}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `✅ Device log capture started successfully\n\nSession ID: ${sessionId}\n\nNote: The app has been launched on the device with console output capture enabled.\n\nNext Steps:\n1. Interact with your app on the device\n2. Use stop_device_log_cap({ logSessionId: '${sessionId}' }) to stop capture and retrieve logs`,
-          },
-        ],
-      };
-    },
+    startDeviceLogCapToolName,
+    startDeviceLogCapToolDescription,
+    startDeviceLogCapToolSchema.shape,
+    startDeviceLogCapToolHandler,
   );
 }
 
 const logSessionIdSchema = z.string().describe('The session ID returned by start_device_log_cap.');
+
+// Exported tool components for stop_device_log_cap
+export const stopDeviceLogCapToolName = 'stop_device_log_cap';
+
+export const stopDeviceLogCapToolDescription =
+  'Stops an active Apple device log capture session and returns the captured logs.';
+
+export const stopDeviceLogCapToolSchema = z.object({
+  logSessionId: logSessionIdSchema,
+});
+
+export const stopDeviceLogCapToolHandler = async (args: unknown): Promise<ToolResponse> => {
+  const { logSessionId } = args as { logSessionId: string };
+
+  const { logContent, error } = await stopDeviceLogCapture(logSessionId);
+
+  if (error) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Failed to stop device log capture session ${logSessionId}: ${error}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `✅ Device log capture session stopped successfully\n\nSession ID: ${logSessionId}\n\n--- Captured Logs ---\n${logContent}`,
+      },
+    ],
+  };
+};
 
 /**
  * Registers the tool to stop device log capture and retrieve the content in one operation.
@@ -256,36 +303,9 @@ const logSessionIdSchema = z.string().describe('The session ID returned by start
 export function registerStopDeviceLogCaptureTool(server: McpServer): void {
   registerTool(
     server,
-    'stop_device_log_cap',
-    'Stops an active Apple device log capture session and returns the captured logs.',
-    {
-      logSessionId: logSessionIdSchema,
-    },
-    async (args): Promise<ToolResponse> => {
-      const { logSessionId } = args as { logSessionId: string };
-
-      const { logContent, error } = await stopDeviceLogCapture(logSessionId);
-
-      if (error) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to stop device log capture session ${logSessionId}: ${error}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `✅ Device log capture session stopped successfully\n\nSession ID: ${logSessionId}\n\n--- Captured Logs ---\n${logContent}`,
-          },
-        ],
-      };
-    },
+    stopDeviceLogCapToolName,
+    stopDeviceLogCapToolDescription,
+    stopDeviceLogCapToolSchema.shape,
+    stopDeviceLogCapToolHandler,
   );
 }
