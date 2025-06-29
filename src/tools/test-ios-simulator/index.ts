@@ -32,6 +32,38 @@ import {
 
 // --- Public Tool Definitions ---
 
+// Exported components for test_sim_name_ws
+export const testSimNameWsName = 'test_sim_name_ws';
+export const testSimNameWsDescription =
+  'Runs tests for a workspace on a simulator by name using xcodebuild test and parses xcresult output.';
+export const testSimNameWsSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  simulatorName: simulatorNameSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export const testSimNameWsHandler = async (params: {
+  workspacePath: string;
+  scheme: string;
+  simulatorName: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}) =>
+  handleTestLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? false,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+    platform: XcodePlatform.iOSSimulator,
+  });
+
 /**
  * Registers the iOS simulator test workspace tool (by name)
  */
@@ -49,28 +81,44 @@ export function registerSimulatorTestByNameWorkspaceTool(server: McpServer): voi
 
   registerTool<Params>(
     server,
-    'test_sim_name_ws',
-    'Runs tests for a workspace on a simulator by name using xcodebuild test and parses xcresult output.',
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      simulatorName: simulatorNameSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params) =>
-      handleTestLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? false,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-        platform: XcodePlatform.iOSSimulator,
-      }),
+    testSimNameWsName,
+    testSimNameWsDescription,
+    testSimNameWsSchema,
+    testSimNameWsHandler,
   );
 }
+
+// Exported components for test_sim_name_proj
+export const testSimNameProjName = 'test_sim_name_proj';
+export const testSimNameProjDescription =
+  'Runs tests for a project on a simulator by name using xcodebuild test and parses xcresult output.';
+export const testSimNameProjSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  simulatorName: simulatorNameSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export const testSimNameProjHandler = async (params: {
+  projectPath: string;
+  scheme: string;
+  simulatorName: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}) =>
+  handleTestLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? false,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+    platform: XcodePlatform.iOSSimulator,
+  });
 
 /**
  * Registers the iOS simulator test project tool (by name)
@@ -89,28 +137,44 @@ export function registerSimulatorTestByNameProjectTool(server: McpServer): void 
 
   registerTool<Params>(
     server,
-    'test_sim_name_proj',
-    'Runs tests for a project on a simulator by name using xcodebuild test and parses xcresult output.',
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      simulatorName: simulatorNameSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params) =>
-      handleTestLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? false,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-        platform: XcodePlatform.iOSSimulator,
-      }),
+    testSimNameProjName,
+    testSimNameProjDescription,
+    testSimNameProjSchema,
+    testSimNameProjHandler,
   );
 }
+
+// Exported components for test_sim_id_ws
+export const testSimIdWsName = 'test_sim_id_ws';
+export const testSimIdWsDescription =
+  'Runs tests for a workspace on a simulator by UUID using xcodebuild test and parses xcresult output.';
+export const testSimIdWsSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  simulatorId: simulatorIdSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export const testSimIdWsHandler = async (params: {
+  workspacePath: string;
+  scheme: string;
+  simulatorId: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}) =>
+  handleTestLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? false,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+    platform: XcodePlatform.iOSSimulator,
+  });
 
 /**
  * Registers the iOS simulator test workspace tool (by ID)
@@ -129,28 +193,44 @@ export function registerSimulatorTestByIdWorkspaceTool(server: McpServer): void 
 
   registerTool<Params>(
     server,
-    'test_sim_id_ws',
-    'Runs tests for a workspace on a simulator by UUID using xcodebuild test and parses xcresult output.',
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      simulatorId: simulatorIdSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params) =>
-      handleTestLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? false,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-        platform: XcodePlatform.iOSSimulator,
-      }),
+    testSimIdWsName,
+    testSimIdWsDescription,
+    testSimIdWsSchema,
+    testSimIdWsHandler,
   );
 }
+
+// Exported components for test_sim_id_proj
+export const testSimIdProjName = 'test_sim_id_proj';
+export const testSimIdProjDescription =
+  'Runs tests for a project on a simulator by UUID using xcodebuild test and parses xcresult output.';
+export const testSimIdProjSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  simulatorId: simulatorIdSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export const testSimIdProjHandler = async (params: {
+  projectPath: string;
+  scheme: string;
+  simulatorId: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}) =>
+  handleTestLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? false,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+    platform: XcodePlatform.iOSSimulator,
+  });
 
 /**
  * Registers the iOS simulator test project tool (by ID)
@@ -169,25 +249,9 @@ export function registerSimulatorTestByIdProjectTool(server: McpServer): void {
 
   registerTool<Params>(
     server,
-    'test_sim_id_proj',
-    'Runs tests for a project on a simulator by UUID using xcodebuild test and parses xcresult output.',
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      simulatorId: simulatorIdSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params) =>
-      handleTestLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? false,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-        platform: XcodePlatform.iOSSimulator,
-      }),
+    testSimIdProjName,
+    testSimIdProjDescription,
+    testSimIdProjSchema,
+    testSimIdProjHandler,
   );
 }
