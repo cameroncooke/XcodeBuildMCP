@@ -10,6 +10,7 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 
 // ✅ Import actual production function
 import { registerBuildSwiftPackageTool } from './index.js';
+import swiftPackageBuild from '../../../plugins/swift-package/swift_package_build.js';
 
 // ✅ Mock external dependencies only
 vi.mock('child_process', () => ({
