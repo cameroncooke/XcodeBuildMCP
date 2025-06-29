@@ -347,6 +347,264 @@ When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })
 
 // --- Public Tool Definitions ---
 
+// Exported components for build_sim_name_proj tool
+export const buildSimNameProjToolName = 'build_sim_name_proj';
+export const buildSimNameProjToolDescription =
+  "Builds an app from a project file for a specific simulator by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_sim_name_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })";
+export const buildSimNameProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  simulatorName: simulatorNameSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export async function buildSimNameProjToolHandler(params: {
+  projectPath: string;
+  scheme: string;
+  simulatorName: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  // Validate required parameters
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
+
+  // Provide defaults
+  return _handleSimulatorBuildLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
+}
+
+// Exported components for build_sim_id_ws tool
+export const buildSimIdWsToolName = 'build_sim_id_ws';
+export const buildSimIdWsToolDescription =
+  "Builds an app from a workspace for a specific simulator by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_sim_id_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })";
+export const buildSimIdWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  simulatorId: simulatorIdSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export async function buildSimIdWsToolHandler(params: {
+  workspacePath: string;
+  scheme: string;
+  simulatorId: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
+  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
+
+  // Provide defaults
+  return _handleSimulatorBuildLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true, // May be ignored by xcodebuild
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
+}
+
+// Exported components for build_sim_name_ws tool
+export const buildSimNameWsToolName = 'build_sim_name_ws';
+export const buildSimNameWsToolDescription =
+  "Builds an app from a workspace for a specific simulator by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_sim_name_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })";
+export const buildSimNameWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  simulatorName: simulatorNameSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export async function buildSimNameWsToolHandler(params: {
+  workspacePath: string;
+  scheme: string;
+  simulatorName: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
+
+  // Provide defaults
+  return _handleSimulatorBuildLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
+}
+
+// Exported components for build_sim_id_proj tool
+export const buildSimIdProjToolName = 'build_sim_id_proj';
+export const buildSimIdProjToolDescription =
+  "Builds an app from a project file for a specific simulator by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: build_sim_id_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })";
+export const buildSimIdProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  simulatorId: simulatorIdSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export async function buildSimIdProjToolHandler(params: {
+  projectPath: string;
+  scheme: string;
+  simulatorId: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  // Validate required parameters
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
+  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
+
+  // Provide defaults
+  return _handleSimulatorBuildLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true, // May be ignored by xcodebuild
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
+}
+
+// Exported components for build_run_sim_name_ws tool
+export const buildRunSimNameWsToolName = 'build_run_sim_name_ws';
+export const buildRunSimNameWsToolDescription =
+  "Builds and runs an app from a workspace on a simulator specified by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_run_sim_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })";
+export const buildRunSimNameWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  simulatorName: simulatorNameSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export async function buildRunSimNameWsToolHandler(params: {
+  workspacePath: string;
+  scheme: string;
+  simulatorName: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
+
+  // Provide defaults
+  return _handleIOSSimulatorBuildAndRunLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
+}
+
+// Exported components for build_run_sim_name_proj tool
+export const buildRunSimNameProjToolName = 'build_run_sim_name_proj';
+export const buildRunSimNameProjToolDescription =
+  "Builds and runs an app from a project file on a simulator specified by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_run_sim_name_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })";
+export const buildRunSimNameProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  simulatorName: simulatorNameSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export async function buildRunSimNameProjToolHandler(params: {
+  projectPath: string;
+  scheme: string;
+  simulatorName: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  // Validate required parameters
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
+
+  // Provide defaults
+  return _handleIOSSimulatorBuildAndRunLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
+}
+
 /**
  * Registers the iOS Simulator build by name workspace tool
  */
@@ -364,37 +622,10 @@ export function registerSimulatorBuildByNameWorkspaceTool(server: McpServer): vo
 
   registerTool<Params>(
     server,
-    'build_sim_name_ws',
-    "Builds an app from a workspace for a specific simulator by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_sim_name_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      simulatorName: simulatorNameSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params: Params) => {
-      // Validate required parameters
-      const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-      if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-      if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
-      // Provide defaults
-      return _handleSimulatorBuildLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
-    },
+    buildSimNameWsToolName,
+    buildSimNameWsToolDescription,
+    buildSimNameWsToolSchema,
+    buildSimNameWsToolHandler,
   );
 }
 
@@ -415,37 +646,10 @@ export function registerSimulatorBuildByNameProjectTool(server: McpServer): void
 
   registerTool<Params>(
     server,
-    'build_sim_name_proj',
-    "Builds an app from a project file for a specific simulator by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_sim_name_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      simulatorName: simulatorNameSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params: Params) => {
-      // Validate required parameters
-      const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-      if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-      if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
-      // Provide defaults
-      return _handleSimulatorBuildLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
-    },
+    buildSimNameProjToolName,
+    buildSimNameProjToolDescription,
+    buildSimNameProjToolSchema,
+    buildSimNameProjToolHandler,
   );
 }
 
@@ -466,37 +670,10 @@ export function registerSimulatorBuildByIdWorkspaceTool(server: McpServer): void
 
   registerTool<Params>(
     server,
-    'build_sim_id_ws',
-    "Builds an app from a workspace for a specific simulator by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_sim_id_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      simulatorId: simulatorIdSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params: Params) => {
-      // Validate required parameters
-      const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-      if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-      if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
-      // Provide defaults
-      return _handleSimulatorBuildLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true, // May be ignored by xcodebuild
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
-    },
+    buildSimIdWsToolName,
+    buildSimIdWsToolDescription,
+    buildSimIdWsToolSchema,
+    buildSimIdWsToolHandler,
   );
 }
 
@@ -517,37 +694,10 @@ export function registerSimulatorBuildByIdProjectTool(server: McpServer): void {
 
   registerTool<Params>(
     server,
-    'build_sim_id_proj',
-    "Builds an app from a project file for a specific simulator by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: build_sim_id_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      simulatorId: simulatorIdSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params: Params) => {
-      // Validate required parameters
-      const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-      if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-      if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
-      // Provide defaults
-      return _handleSimulatorBuildLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true, // May be ignored by xcodebuild
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
-    },
+    buildSimIdProjToolName,
+    buildSimIdProjToolDescription,
+    buildSimIdProjToolSchema,
+    buildSimIdProjToolHandler,
   );
 }
 
@@ -568,37 +718,10 @@ export function registerSimulatorBuildAndRunByNameWorkspaceTool(server: McpServe
 
   registerTool<Params>(
     server,
-    'build_run_sim_name_ws',
-    "Builds and runs an app from a workspace on a simulator specified by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_run_sim_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      simulatorName: simulatorNameSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params: Params) => {
-      // Validate required parameters
-      const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-      if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-      if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
-      // Provide defaults
-      return _handleIOSSimulatorBuildAndRunLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
-    },
+    buildRunSimNameWsToolName,
+    buildRunSimNameWsToolDescription,
+    buildRunSimNameWsToolSchema,
+    buildRunSimNameWsToolHandler,
   );
 }
 
@@ -619,38 +742,97 @@ export function registerSimulatorBuildAndRunByNameProjectTool(server: McpServer)
 
   registerTool<Params>(
     server,
-    'build_run_sim_name_proj',
-    "Builds and runs an app from a project file on a simulator specified by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_run_sim_name_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      simulatorName: simulatorNameSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params: Params) => {
-      // Validate required parameters
-      const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-      if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-      if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
-      // Provide defaults
-      return _handleIOSSimulatorBuildAndRunLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
-    },
+    buildRunSimNameProjToolName,
+    buildRunSimNameProjToolDescription,
+    buildRunSimNameProjToolSchema,
+    buildRunSimNameProjToolHandler,
   );
+}
+
+// Exported components for build_run_sim_id_ws tool
+export const buildRunSimIdWsToolName = 'build_run_sim_id_ws';
+export const buildRunSimIdWsToolDescription =
+  "Builds and runs an app from a workspace on a simulator specified by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_run_sim_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })";
+export const buildRunSimIdWsToolSchema = {
+  workspacePath: workspacePathSchema,
+  scheme: schemeSchema,
+  simulatorId: simulatorIdSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export async function buildRunSimIdWsToolHandler(params: {
+  workspacePath: string;
+  scheme: string;
+  simulatorId: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
+  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
+
+  // Provide defaults
+  return _handleIOSSimulatorBuildAndRunLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true, // May be ignored
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
+}
+
+// Exported components for build_run_sim_id_proj tool
+export const buildRunSimIdProjToolName = 'build_run_sim_id_proj';
+export const buildRunSimIdProjToolDescription =
+  "Builds and runs an app from a project file on a simulator specified by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: build_run_sim_id_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })";
+export const buildRunSimIdProjToolSchema = {
+  projectPath: projectPathSchema,
+  scheme: schemeSchema,
+  simulatorId: simulatorIdSchema,
+  configuration: configurationSchema,
+  derivedDataPath: derivedDataPathSchema,
+  extraArgs: extraArgsSchema,
+  useLatestOS: useLatestOSSchema,
+  preferXcodebuild: preferXcodebuildSchema,
+};
+export async function buildRunSimIdProjToolHandler(params: {
+  projectPath: string;
+  scheme: string;
+  simulatorId: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+}): Promise<ToolResponse> {
+  // Validate required parameters
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
+  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
+
+  // Provide defaults
+  return _handleIOSSimulatorBuildAndRunLogic({
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true, // May be ignored
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  });
 }
 
 /**
@@ -670,37 +852,10 @@ export function registerSimulatorBuildAndRunByIdWorkspaceTool(server: McpServer)
 
   registerTool<Params>(
     server,
-    'build_run_sim_id_ws',
-    "Builds and runs an app from a workspace on a simulator specified by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_run_sim_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
-    {
-      workspacePath: workspacePathSchema,
-      scheme: schemeSchema,
-      simulatorId: simulatorIdSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params: Params) => {
-      // Validate required parameters
-      const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-      if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-      if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
-      // Provide defaults
-      return _handleIOSSimulatorBuildAndRunLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true, // May be ignored
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
-    },
+    buildRunSimIdWsToolName,
+    buildRunSimIdWsToolDescription,
+    buildRunSimIdWsToolSchema,
+    buildRunSimIdWsToolHandler,
   );
 }
 
@@ -721,36 +876,9 @@ export function registerSimulatorBuildAndRunByIdProjectTool(server: McpServer): 
 
   registerTool<Params>(
     server,
-    'build_run_sim_id_proj',
-    "Builds and runs an app from a project file on a simulator specified by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: build_run_sim_id_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
-    {
-      projectPath: projectPathSchema,
-      scheme: schemeSchema,
-      simulatorId: simulatorIdSchema,
-      configuration: configurationSchema,
-      derivedDataPath: derivedDataPathSchema,
-      extraArgs: extraArgsSchema,
-      useLatestOS: useLatestOSSchema,
-      preferXcodebuild: preferXcodebuildSchema,
-    },
-    async (params: Params) => {
-      // Validate required parameters
-      const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-      if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-      const schemeValidation = validateRequiredParam('scheme', params.scheme);
-      if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-      const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-      if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
-      // Provide defaults
-      return _handleIOSSimulatorBuildAndRunLogic({
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true, // May be ignored
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      });
-    },
+    buildRunSimIdProjToolName,
+    buildRunSimIdProjToolDescription,
+    buildRunSimIdProjToolSchema,
+    buildRunSimIdProjToolHandler,
   );
 }
