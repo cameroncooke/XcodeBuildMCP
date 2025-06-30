@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import plugin from './get_mac_bundle_id.js';
 import * as validation from '../../src/utils/validation.js';
-import { child_process } from 'node:child_process';
+import * as child_process from 'node:child_process';
 
 // Mock modules
 vi.mock('../../src/utils/logger.js', () => ({
