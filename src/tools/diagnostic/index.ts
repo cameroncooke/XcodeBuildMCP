@@ -25,7 +25,7 @@ import {
   doesMakefileExist,
 } from '../../utils/xcodemake.js';
 import * as os from 'os';
-import { ToolGroup, isSelectiveToolsEnabled, listEnabledGroups } from '../../utils/tool-groups.js';
+import { loadPlugins } from '../../core/plugin-registry.js';
 
 // Constants
 const LOG_PREFIX = '[Diagnostic]';
@@ -176,28 +176,39 @@ function getNodeInfo(): Record<string, string> {
 }
 
 /**
- * Get information about tool groups and their status
+ * Get information about loaded plugins and their directories
  */
-export function getToolGroupsInfo(): Record<string, unknown> {
-  const selectiveMode = isSelectiveToolsEnabled();
-  const enabledGroups = listEnabledGroups();
+export async function getPluginSystemInfo(): Promise<Record<string, unknown>> {
+  try {
+    const plugins = await loadPlugins();
 
-  const toolGroups: Record<string, { enabled: boolean; envVar: string }> = {};
+    // Group plugins by directory
+    const pluginsByDirectory: Record<string, string[]> = {};
+    let totalPlugins = 0;
 
-  // Add information about each tool group
-  for (const group of Object.values(ToolGroup)) {
-    const isEnabled = process.env[group] === 'true';
-    toolGroups[group] = {
-      enabled: isEnabled,
-      envVar: group,
+    for (const plugin of plugins.values()) {
+      totalPlugins++;
+      const pluginPath = plugin.pluginPath || 'unknown';
+      const directory = pluginPath.split('/').slice(-2, -1)[0] || 'unknown';
+
+      if (!pluginsByDirectory[directory]) {
+        pluginsByDirectory[directory] = [];
+      }
+      pluginsByDirectory[directory].push(plugin.name);
+    }
+
+    return {
+      totalPlugins,
+      pluginDirectories: Object.keys(pluginsByDirectory).length,
+      pluginsByDirectory,
+      systemMode: 'plugin-based',
+    };
+  } catch (error) {
+    return {
+      error: `Failed to load plugins: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      systemMode: 'error',
     };
   }
-
-  return {
-    selectiveMode,
-    enabledGroups,
-    groups: toolGroups,
-  };
 }
 
 /**
@@ -240,8 +251,8 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
   // Check for axe tools availability
   const axeAvailable = areAxeToolsAvailable();
 
-  // Get tool groups information
-  const toolGroupsInfo = getToolGroupsInfo();
+  // Get plugin system information
+  const pluginSystemInfo = await getPluginSystemInfo();
 
   // Get individually enabled tools
   const individuallyEnabledTools = getIndividuallyEnabledTools();
@@ -275,11 +286,7 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
         available: binaryStatus['mise'].available,
       },
     },
-    toolGroups: toolGroupsInfo as {
-      selectiveMode: boolean;
-      enabledGroups: string[];
-      groups: Record<string, { enabled: boolean; envVar: string }>;
-    },
+    pluginSystem: pluginSystemInfo,
     individuallyEnabledTools,
   };
 
@@ -330,23 +337,14 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
     `- Running under mise: ${diagnosticInfo.features.mise.running_under_mise ? '✅ Yes' : '❌ No'}`,
     `- Mise available: ${diagnosticInfo.features.mise.available ? '✅ Yes' : '❌ No'}`,
 
-    `\n### Tool Groups Status`,
-    ...(diagnosticInfo.toolGroups.selectiveMode
-      ? Object.entries(diagnosticInfo.toolGroups.groups).map(([group, info]) => {
-          // Extract the group name without the prefix for display purposes
-          const displayName = group.replace('XCODEBUILDMCP_GROUP_', '');
-          return `- ${displayName}: ${info.enabled ? '✅ Enabled' : '❌ Disabled'} (Set with ${info.envVar}=true)`;
-        })
-      : ['- All tool groups are enabled (selective mode is disabled).']),
-
-    `\n### Individually Enabled Tools`,
-    ...(diagnosticInfo.toolGroups.selectiveMode
-      ? diagnosticInfo.individuallyEnabledTools.length > 0
-        ? diagnosticInfo.individuallyEnabledTools.map(
-            (tool) => `- ${tool}: ✅ Enabled (via XCODEBUILDMCP_TOOL_${tool}=true)`,
-          )
-        : ['- No tools are individually enabled via environment variables.']
-      : ['- All tools are enabled (selective mode is disabled).']),
+    `\n### Available Tools`,
+    `- Total Plugins: ${diagnosticInfo.pluginSystem.totalPlugins || 0}`,
+    `- Plugin Directories: ${diagnosticInfo.pluginSystem.pluginDirectories || 0}`,
+    ...(diagnosticInfo.pluginSystem.pluginsByDirectory
+      ? Object.entries(diagnosticInfo.pluginSystem.pluginsByDirectory).map(
+          ([dir, tools]) => `- ${dir}: ${Array.isArray(tools) ? tools.length : 0} tools`,
+        )
+      : ['- No plugin directory information available']),
 
     `\n## Tool Availability Summary`,
     `- Build Tools: ${!('error' in diagnosticInfo.xcode) ? '\u2705 Available' : '\u274c Not available'}`,
@@ -361,11 +359,7 @@ export async function runDiagnosticTool(): Promise<ToolResponse> {
     `- If incremental build support is not available, you can download the tool from https://github.com/cameroncooke/xcodemake. Make sure it's executable and available in your PATH`,
     `- To enable xcodemake, set environment variable: \`export INCREMENTAL_BUILDS_ENABLED=1\``,
     `- For mise integration, follow instructions in the README.md file`,
-    `- To enable specific tool groups, set the appropriate environment variables (e.g., \`export XCODEBUILDMCP_GROUP_DISCOVERY=true\`)`,
-    `- If you're having issues with environment variables, make sure to use the correct prefix:`,
-    `  - Use \`XCODEBUILDMCP_GROUP_NAME=true\` to enable a tool group`,
-    `  - Use \`XCODEBUILDMCP_TOOL_NAME=true\` to enable an individual tool`,
-    `  - Common mistake: Using \`XCODEBUILDMCP_BUILD_IOS_SIM=true\` instead of \`XCODEBUILDMCP_GROUP_BUILD_IOS_SIM=true\``,
+    `- Use the 'discover_tools' tool to find relevant tools for your task`,
   ].join('\n');
 
   return {

@@ -282,11 +282,9 @@ Server Version: 1.10.4-test
 - Running under mise: ❌ No
 - Mise available: ✅ Yes
 
-### Tool Groups Status
-- All tool groups are enabled (selective mode is disabled).
-
-### Individually Enabled Tools
-- All tools are enabled (selective mode is disabled).
+### Available Tools
+- Total Plugins: 0
+- Plugin Directories: 0
 
 ## Tool Availability Summary
 - Build Tools: ✅ Available
@@ -301,11 +299,7 @@ Server Version: 1.10.4-test
 - If incremental build support is not available, you can download the tool from https://github.com/cameroncooke/xcodemake. Make sure it's executable and available in your PATH
 - To enable xcodemake, set environment variable: \`export INCREMENTAL_BUILDS_ENABLED=1\`
 - For mise integration, follow instructions in the README.md file
-- To enable specific tool groups, set the appropriate environment variables (e.g., \`export XCODEBUILDMCP_GROUP_DISCOVERY=true\`)
-- If you're having issues with environment variables, make sure to use the correct prefix:
-  - Use \`XCODEBUILDMCP_GROUP_NAME=true\` to enable a tool group
-  - Use \`XCODEBUILDMCP_TOOL_NAME=true\` to enable an individual tool
-  - Common mistake: Using \`XCODEBUILDMCP_BUILD_IOS_SIM=true\` instead of \`XCODEBUILDMCP_GROUP_BUILD_IOS_SIM=true\``;
+- Use the 'discover_tools' tool to find relevant tools for your task`;
 
       expect(result.content).toEqual([{ type: 'text', text: expectedDiagnosticReport }]);
       expect(result.isError || false).toBe(false);

@@ -8,4 +8,19 @@ export interface PluginMeta {
   handler(params: Record<string, unknown>): Promise<ToolResponse>;
 }
 
+export interface WorkflowMeta {
+  readonly name: string;
+  readonly description: string;
+  readonly platforms?: string[];
+  readonly targets?: string[];
+  readonly projectTypes?: string[];
+  readonly capabilities?: string[];
+}
+
+export interface WorkflowGroup {
+  readonly workflow: WorkflowMeta;
+  readonly tools: PluginMeta[];
+  readonly directoryName: string;
+}
+
 export const defineTool = (meta: PluginMeta): PluginMeta => meta;

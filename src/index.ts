@@ -24,7 +24,6 @@ import { log } from './utils/logger.js';
 
 // Import version
 import { version } from './version.js';
-import { registerTools } from './utils/register-tools.js';
 import { loadPlugins } from './core/plugin-registry.js';
 
 // Import xcodemake utilities
@@ -52,15 +51,47 @@ async function main(): Promise<void> {
     }
 
     // Create the server
-    const server = createServer();
+    const server = createServer() as any;
 
-    // Register tools
-    if (process.env.MCP_LEGACY_MODE === 'true') {
-      registerTools(server); // old path
+    // Make server available globally for dynamic tools
+    (globalThis as any).mcpServer = server;
+
+    // Add notification capability for dynamic tool updates
+    server.notifyToolsChanged = async (): Promise<void> => {
+      await server.server.notification({
+        method: 'notifications/tools/list_changed',
+        params: {},
+      });
+    };
+
+    // Determine operating mode
+    const isDynamicMode = process.env.XCODEBUILDMCP_DYNAMIC_TOOLS === 'true';
+
+    if (isDynamicMode) {
+      log('info', '🔍 Starting in DYNAMIC mode');
+      // In dynamic mode, only load the discover_tools initially
+      const plugins = await loadPlugins();
+      const discoverTool = plugins.get('discover_tools');
+
+      if (!discoverTool) {
+        throw new Error('discover_tools not found - required for dynamic mode');
+      }
+
+      server.tool(
+        discoverTool.name,
+        discoverTool.description || '',
+        discoverTool.schema,
+        discoverTool.handler,
+      );
+      log('info', '   Use discover_tools to enable relevant workflows on-demand');
     } else {
-      const plugins = await loadPlugins(); // new path
-      for (const p of plugins.values()) {
-        server.tool(p.name, p.description || '', p.schema, p.handler);
+      log('info', '📋 Starting in STATIC mode');
+      // In static mode, load all plugins except discover_tools
+      const plugins = await loadPlugins();
+      for (const plugin of plugins.values()) {
+        if (plugin.name !== 'discover_tools') {
+          server.tool(plugin.name, plugin.description || '', plugin.schema, plugin.handler);
+        }
       }
     }
 
@@ -79,7 +110,12 @@ async function main(): Promise<void> {
     });
 
     // Log successful startup
-    log('info', `XcodeBuildMCP server (version ${version}) started successfully`);
+    const mode = isDynamicMode ? 'Dynamic' : 'Static';
+    log('info', `XcodeBuildMCP server (version ${version}) started successfully in ${mode} mode`);
+
+    if (isDynamicMode) {
+      log('info', 'Use "discover_tools" to enable relevant tool workflows for your task');
+    }
   } catch (error) {
     console.error('Fatal error in main():', error);
     process.exit(1);
