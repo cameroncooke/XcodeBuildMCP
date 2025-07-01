@@ -355,10 +355,145 @@ export default {
 - ✅ **Zero functional regressions** confirmed
 
 ### Current State (2025-06-30)
-- **Migration Status**: Phase 3 complete, ready for Phase 4
+- **Migration Status**: Phase 3 complete, ready for Phase 6
 - **Test Status**: All 1185 tests passing
 - **Plugin Count**: 82 plugins across 12 directories
 - **Git Status**: Clean rebase with individual tool commits
-- **Next Step**: Remove legacy system and implement discover_tools
+- **Next Step**: Make plugins self-contained (remove dependencies on src/tools)
+
+The migration has been successfully completed with all tools now available through the plugin system while maintaining backward compatibility. Discovery tool has been implemented with dynamic mode support.
+
+---
+
+## Phase 6 – Plugin Self-Containment (Making Plugins Independent)
+
+### 6.1 Overview
+
+Currently, all plugins import from `src/tools/*` which was a bridge during migration. Now we need to make plugins truly self-contained by moving the actual implementation code directly into plugin files and removing the entire `src/tools` directory.
+
+### 6.2 Migration Process (Per Tool)
+
+**Step-by-Step Process:**
+
+1. **Read Source Tool File**: Use Read tool to get complete source from `src/tools/[tool-name]/index.ts`
+2. **Extract Components**: Identify literal values for name, description, schema, and handler
+3. **Copy Required Imports**: Note all imports the handler needs from utilities
+4. **Update Plugin File**: Use MultiEdit tool for surgical precision replacement
+5. **Validate**: Run existing tests to ensure zero regressions
+
+### 6.3 Migration Pattern (Pseudocode Only)
+
+```typescript
+// BEFORE: Plugin imports from tool
+import { [TOOL_NAME], [TOOL_DESC], [TOOL_SCHEMA], [TOOL_HANDLER] } from '../../src/tools/[path]';
+
+export default {
+  name: [TOOL_NAME],
+  description: [TOOL_DESC], 
+  schema: [TOOL_SCHEMA],
+  handler: [TOOL_HANDLER],
+};
+
+// AFTER: Self-contained plugin
+import { [required_imports] } from '[utils/packages]';
+
+export default {
+  name: '[literal_tool_name]',
+  description: '[literal_description]',
+  schema: {
+    [inline_schema_definition]
+  },
+  async handler(params) {
+    [complete_handler_implementation]
+  },
+};
+```
+
+### 6.4 Workflow Group Migration Order
+
+**Priority 1: Swift Package Tools (6 tools)**
+- Simple structure, good starting point
+- Clear import patterns
+- Self-contained logic
+
+**Priority 2: UI Testing Tools (11 tools)**
+- Share common axe utilities
+- Handle shared dependencies carefully
+
+**Priority 3: Simulator/Device Tools (40+ tools)**
+- Largest group with shared patterns
+- Build/test/launch tools have similar structures
+
+**Priority 4: Remaining Tools**
+- Project Discovery (7 tools)
+- Logging (4 tools) 
+- Utilities (remaining tools)
+- Diagnostics (1 tool)
+
+### 6.5 Special Considerations
+
+**Shared Schemas**: Tools importing from `src/tools/common/index.js`
+- Inline schema definitions directly in plugins
+- Remove dependency on shared schema files
+
+**Utility Imports**: Update paths for utilities
+- `../../src/utils/command.js`
+- `../../src/utils/validation.js`
+- `../../src/utils/logger.js`
+
+**Complex Tools**: Some tools have intricate logic
+- Copy implementation exactly as-is
+- Preserve all comments and logic flow
+- Maintain TypeScript types where applicable
+
+### 6.6 Validation Checkpoints
+
+**After Each Tool:**
+```bash
+npm test -- plugins/[workflow]/[tool].test.ts
+```
+
+**After Each Workflow Group:**
+```bash
+npm run build
+npm test
+grep -r "src/tools" plugins/[workflow]/  # Should return no results
+```
+
+**Final Validation:**
+```bash
+npm run lint
+npm run build  
+npm test  # All 1185+ tests must pass
+```
+
+### 6.7 Documentation Requirements
+
+**Individual Workflow Docs**: Create migration guides for each workflow
+- `docs/migration/SWIFT_PACKAGE_MIGRATION.md`
+- `docs/migration/UI_TESTING_MIGRATION.md`
+- `docs/migration/SIMULATOR_WORKSPACE_MIGRATION.md`
+- etc.
+
+**Documentation Guidelines**:
+- Use pseudocode only, no concrete examples
+- Focus on patterns and process
+- Avoid providing actual code values
+- Document special considerations per workflow
+
+### 6.8 Success Criteria
+
+- ✅ All plugins are self-contained (no imports from src/tools)
+- ✅ All 1185+ tests continue to pass
+- ✅ Zero functional regressions confirmed
+- ✅ `src/tools` directory can be safely deleted
+- ✅ Documentation updated to reflect new structure
+
+### 6.9 Risk Mitigation
+
+**Surgical Edits**: Use MultiEdit tool for precise changes
+**Source of Truth**: Always read from actual source files, never from documentation
+**Immediate Testing**: Validate after each tool migration
+**Reversible Changes**: Git commits after each workflow group
 
 The migration has been successfully completed with all tools now available through the plugin system while maintaining backward compatibility.
