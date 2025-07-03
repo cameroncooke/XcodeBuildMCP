@@ -10,7 +10,7 @@ import { version } from '../version.js';
 import { execSync } from 'child_process';
 
 // Inlined diagnostic functions to avoid circular dependencies
-function getXcodeInfo() {
+function getXcodeInfo(): { version: string; path: string; selectedXcode: string; error?: string } {
   try {
     const xcodebuildOutput = execSync('xcodebuild -version', { encoding: 'utf8' }).trim();
     const version = xcodebuildOutput.split('\n').slice(0, 2).join(' - ');
@@ -28,7 +28,7 @@ function getXcodeInfo() {
   }
 }
 
-function getEnvironmentVariables() {
+function getEnvironmentVariables(): Record<string, string> {
   const relevantVars = [
     'XCODEBUILDMCP_DEBUG',
     'INCREMENTAL_BUILDS_ENABLED',
@@ -41,7 +41,7 @@ function getEnvironmentVariables() {
     'SENTRY_DISABLED',
   ];
 
-  const envVars = {};
+  const envVars: Record<string, string> = {};
   relevantVars.forEach((varName) => {
     envVars[varName] = process.env[varName] || '';
   });
@@ -49,15 +49,15 @@ function getEnvironmentVariables() {
   return envVars;
 }
 
-function checkBinaryAvailability(binary) {
+function checkBinaryAvailability(binary: string): { available: boolean; version?: string } {
   try {
     execSync(`which ${binary}`, { stdio: 'ignore' });
   } catch {
     return { available: false };
   }
 
-  let version;
-  const versionCommands = {
+  let version: string | undefined;
+  const versionCommands: Record<string, string> = {
     axe: 'axe --version',
     mise: 'mise --version',
   };
@@ -103,17 +103,17 @@ const tags: Record<string, string> = {
 
 // Only add Xcode Info if it's available
 const xcodeInfo = getXcodeInfo();
-if ('version' in xcodeInfo) {
+if (!xcodeInfo.error) {
   tags.xcodeVersion = xcodeInfo.version;
-  tags.xcrunVersion = xcodeInfo.xcrunVersion;
+  tags.xcodePath = xcodeInfo.path;
 } else {
   tags.xcodeVersion = 'Unknown';
-  tags.xcrunVersion = 'Unknown';
+  tags.xcodePath = 'Unknown';
 }
 
 const envVars = getEnvironmentVariables();
-tags.env_XCODEBUILDMCP_DEBUG = envVars.XCODEBUILDMCP_DEBUG || 'false';
-tags.env_XCODEMAKE_ENABLED = envVars.INCREMENTAL_BUILDS_ENABLED || 'false';
+tags.env_XCODEBUILDMCP_DEBUG = envVars['XCODEBUILDMCP_DEBUG'] || 'false';
+tags.env_XCODEMAKE_ENABLED = envVars['INCREMENTAL_BUILDS_ENABLED'] || 'false';
 
 const miseAvailable = checkBinaryAvailability('mise');
 tags.miseAvailable = miseAvailable.available ? 'true' : 'false';

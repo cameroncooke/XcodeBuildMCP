@@ -20,7 +20,7 @@ async function runDiagnostic(): Promise<void> {
 
     // Import the diagnostic plugin
     const diagnosticPlugin = (await import('../plugins/diagnostics/diagnostic.js')) as any;
-    const runDiagnosticTool = diagnosticPlugin.default.handler;
+    const runDiagnosticTool = diagnosticPlugin.default?.handler;
 
     // Run the diagnostic tool (plugin handler expects params object)
     const result = await runDiagnosticTool({});

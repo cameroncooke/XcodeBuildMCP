@@ -12,10 +12,15 @@ export default defineConfig({
   outDir: 'build',
   clean: true,
   sourcemap: true,
-  dts: true,
+  dts: {
+    entry: {
+      index: 'src/index.ts',
+      // Skip DTS for diagnostic-cli due to plugin import
+    },
+  },
   splitting: false,
   shims: false,
-  external: [],
+  external: ['../plugins/diagnostics/diagnostic.js'],
   noExternal: [],
   treeshake: true,
   minify: false,
