@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
-import setSimAppearancePlugin from './set_sim_appearance.js';
+import setSimAppearancePlugin from './set_sim_appearance.ts';
 
 // Mock the executeCommand utility  
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
 // Mock the log utility
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
 // Mock validation utilities
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
 }));
 
@@ -22,7 +22,7 @@ describe('set_sim_appearance plugin', () => {
 
   beforeEach(async () => {
     // Mock executeCommand
-    const { executeCommand } = await import('../../src/utils/command.js');
+    const { executeCommand } = await import('../../src/utils/command.ts');
     mockExecuteCommand = executeCommand as MockedFunction<any>;
     mockExecuteCommand.mockResolvedValue({
       success: true,
@@ -31,7 +31,7 @@ describe('set_sim_appearance plugin', () => {
     });
 
     // Mock validation utilities
-    const validationModule = await import('../../src/utils/validation.js');
+    const validationModule = await import('../../src/utils/validation.ts');
     mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
 
     // Default mock behaviors

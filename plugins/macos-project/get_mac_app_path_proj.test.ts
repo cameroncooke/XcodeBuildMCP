@@ -6,16 +6,16 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import getMacAppPathProjPlugin from './get_mac_app_path_proj.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.ts';
+import getMacAppPathProjPlugin from './get_mac_app_path_proj.ts';
 
 // Mock the executeCommand function
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 

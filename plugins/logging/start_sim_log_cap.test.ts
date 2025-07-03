@@ -2,20 +2,20 @@
  * Tests for start_sim_log_cap plugin
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import plugin from './start_sim_log_cap.js';
+import plugin from './start_sim_log_cap.ts';
 
 // Mock the log capture utility
-vi.mock('../../src/utils/log_capture.js', () => ({
+vi.mock('../../src/utils/log_capture.ts', () => ({
   startLogCapture: vi.fn(),
 }));
 
 // Mock validation
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
 }));
 
-import { startLogCapture } from '../../src/utils/log_capture.js';
-import { validateRequiredParam } from '../../src/utils/validation.js';
+import { startLogCapture } from '../../src/utils/log_capture.ts';
+import { validateRequiredParam } from '../../src/utils/validation.ts';
 
 describe('start_sim_log_cap plugin', () => {
   beforeEach(() => {

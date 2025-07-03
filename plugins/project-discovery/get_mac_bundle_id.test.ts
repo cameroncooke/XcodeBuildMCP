@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import plugin from './get_mac_bundle_id.js';
-import * as validation from '../../src/utils/validation.js';
+import plugin from './get_mac_bundle_id.ts';
+import * as validation from '../../src/utils/validation.ts';
 import * as child_process from 'node:child_process';
 
 // Mock modules
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
   validateFileExists: vi.fn(),
 }));

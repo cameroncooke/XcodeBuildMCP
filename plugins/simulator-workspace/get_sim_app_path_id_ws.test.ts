@@ -4,14 +4,14 @@
  */
 
 import { vi, describe, it, expect } from 'vitest';
-import getSimAppPathIdWsTool from './get_sim_app_path_id_ws.js';
+import getSimAppPathIdWsTool from './get_sim_app_path_id_ws.ts';
 
 // Mock external dependencies to prevent real command execution
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
-import tool from './test_macos_proj.js';
+import tool from './test_macos_proj.ts';
 
 // Mock external dependencies
 vi.mock('child_process', () => ({
@@ -16,15 +16,15 @@ vi.mock('fs/promises', () => ({
   writeFile: vi.fn(),
 }));
 
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/build-utils.js', () => ({
+vi.mock('../../src/utils/build-utils.ts', () => ({
   executeXcodeBuildCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   createTextResponse: vi.fn(),
 }));
 
@@ -42,7 +42,7 @@ describe('test_macos_proj plugin (primary implementation)', () => {
 
   beforeEach(async () => {
     // Import mocked modules
-    const buildUtils = await import('../../src/utils/build-utils.js');
+    const buildUtils = await import('../../src/utils/build-utils.ts');
     const fsPromises = await import('fs/promises');
     const util = await import('util');
     const childProcess = await import('child_process');

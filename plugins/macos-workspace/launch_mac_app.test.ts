@@ -7,10 +7,10 @@
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { exec } from 'child_process';
-import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import type { Server } from '@modelcontextprotocol/sdk/server/index.ts';
 
 // Import plugin
-import launchMacApp from './launch_mac_app.js';
+import launchMacApp from './launch_mac_app.ts';
 
 
 // Mock Node.js APIs directly
@@ -23,7 +23,7 @@ vi.mock('fs', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../../utils/logger.js', () => ({
+vi.mock('../../utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 

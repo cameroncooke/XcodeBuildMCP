@@ -8,7 +8,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Import the re-export plugin
-import getDeviceAppPathProjTool from './get_device_app_path_proj.js';
+import getDeviceAppPathProjTool from './get_device_app_path_proj.ts';
 
 // Mock external dependencies
 vi.mock('child_process', () => ({

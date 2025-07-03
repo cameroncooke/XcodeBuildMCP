@@ -1,25 +1,25 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import swipePlugin from './swipe.js';
+import swipePlugin from './swipe.ts';
 
 // Mock dependencies
-vi.mock('../../src/utils/executeCommand.js', () => ({
+vi.mock('../../src/utils/executeCommand.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/logging.js', () => ({
+vi.mock('../../src/utils/logging.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
 }));
 
-vi.mock('../../src/utils/response.js', () => ({
+vi.mock('../../src/utils/response.ts', () => ({
   createTextResponse: vi.fn(),
   createErrorResponse: vi.fn(),
 }));
 
-vi.mock('../../src/utils/axe-helpers.js', () => ({
+vi.mock('../../src/utils/axe-helpers.ts', () => ({
   getAxePath: vi.fn(),
   getBundledAxeEnvironment: vi.fn(),
   createAxeNotAvailableResponse: vi.fn(),
@@ -222,18 +222,18 @@ describe('swipe plugin', () => {
       };
 
       // Mock the validation to pass
-      const { validateRequiredParam } = await import('../../src/utils/validation.js');
+      const { validateRequiredParam } = await import('../../src/utils/validation.ts');
       vi.mocked(validateRequiredParam).mockReturnValue({
         isValid: true,
         errorResponse: undefined,
       });
 
       // Mock axe helpers
-      const { getAxePath } = await import('../../src/utils/axe-helpers.js');
+      const { getAxePath } = await import('../../src/utils/axe-helpers.ts');
       vi.mocked(getAxePath).mockReturnValue('/path/to/axe');
 
       // Mock executeCommand
-      const { executeCommand } = await import('../../src/utils/executeCommand.js');
+      const { executeCommand } = await import('../../src/utils/executeCommand.ts');
       vi.mocked(executeCommand).mockResolvedValue({
         success: true,
         output: 'Swipe completed',
@@ -241,7 +241,7 @@ describe('swipe plugin', () => {
       });
 
       // Mock response creation
-      const { createTextResponse } = await import('../../src/utils/response.js');
+      const { createTextResponse } = await import('../../src/utils/response.ts');
       vi.mocked(createTextResponse).mockReturnValue({
         content: [{ type: 'text', text: 'Success' }],
       });
@@ -261,18 +261,18 @@ describe('swipe plugin', () => {
       };
 
       // Mock the validation to pass
-      const { validateRequiredParam } = await import('../../src/utils/validation.js');
+      const { validateRequiredParam } = await import('../../src/utils/validation.ts');
       vi.mocked(validateRequiredParam).mockReturnValue({
         isValid: true,
         errorResponse: undefined,
       });
 
       // Mock axe helpers
-      const { getAxePath } = await import('../../src/utils/axe-helpers.js');
+      const { getAxePath } = await import('../../src/utils/axe-helpers.ts');
       vi.mocked(getAxePath).mockReturnValue('/path/to/axe');
 
       // Mock executeCommand
-      const { executeCommand } = await import('../../src/utils/executeCommand.js');
+      const { executeCommand } = await import('../../src/utils/executeCommand.ts');
       vi.mocked(executeCommand).mockResolvedValue({
         success: true,
         output: 'Swipe completed',
@@ -280,7 +280,7 @@ describe('swipe plugin', () => {
       });
 
       // Mock response creation
-      const { createTextResponse } = await import('../../src/utils/response.js');
+      const { createTextResponse } = await import('../../src/utils/response.ts');
       vi.mocked(createTextResponse).mockReturnValue({
         content: [{ type: 'text', text: 'Success' }],
       });

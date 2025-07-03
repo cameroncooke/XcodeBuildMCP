@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import diagnostic from './diagnostic.js';
+import diagnostic from './diagnostic.ts';
 
 describe('diagnostic plugin', () => {
   it('should export default plugin structure', () => {

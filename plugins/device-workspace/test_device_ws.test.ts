@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import testDeviceWs from './test_device_ws.js';
+import testDeviceWs from './test_device_ws.ts';
 
 // Mock logger to prevent real logging during tests
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 

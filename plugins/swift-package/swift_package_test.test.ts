@@ -7,10 +7,10 @@
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { spawn, ChildProcess } from 'child_process';
-import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import type { Server } from '@modelcontextprotocol/sdk/server/index.ts';
 
 // Import the plugin
-import swiftPackageTest from './swift_package_test.js';
+import swiftPackageTest from './swift_package_test.ts';
 
 // Test the plugin directly - no registration function needed
 
@@ -31,12 +31,12 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
 // Mock the executeCommand function from canonical implementation
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
@@ -66,7 +66,7 @@ describe('swift_package_test tool', () => {
     mockSpawn = nodeSpawn as MockedFunction<any>;
 
     // Mock executeCommand
-    const { executeCommand } = await import('../../src/utils/command.js');
+    const { executeCommand } = await import('../../src/utils/command.ts');
     mockExecuteCommand = executeCommand as MockedFunction<any>;
     mockExecuteCommand.mockResolvedValue({
       success: true,

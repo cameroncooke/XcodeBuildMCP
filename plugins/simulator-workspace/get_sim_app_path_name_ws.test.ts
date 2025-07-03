@@ -8,7 +8,7 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 
 // Import the plugin
-import getSimAppPathNameWsTool from './get_sim_app_path_name_ws.js';
+import getSimAppPathNameWsTool from './get_sim_app_path_name_ws.ts';
 
 // Mock external dependencies
 vi.mock('child_process', () => ({
@@ -25,12 +25,12 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
 // Mock command execution utility
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
@@ -39,7 +39,7 @@ describe('get_sim_app_path_name_ws plugin', () => {
 
   beforeEach(async () => {
     // Mock external dependencies
-    const commandUtils = await import('../../src/utils/command.js');
+    const commandUtils = await import('../../src/utils/command.ts');
     mockExecuteCommand = commandUtils.executeCommand as MockedFunction<any>;
 
     // Default success behavior

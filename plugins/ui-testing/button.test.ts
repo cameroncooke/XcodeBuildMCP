@@ -1,22 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import buttonPlugin from './button.js';
+import buttonPlugin from './button.ts';
 import {
   buttonToolName,
   buttonToolDescription,
   buttonToolSchema,
   buttonToolHandler,
-} from '../../src/tools/axe/index.js';
+} from '../../src/tools/axe/index.ts';
 
 // Mock dependencies
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/axe-helpers.js', () => ({
+vi.mock('../../src/utils/axe-helpers.ts', () => ({
   getAxePath: vi.fn().mockReturnValue('/usr/local/bin/axe'),
   getBundledAxeEnvironment: vi.fn().mockReturnValue({}),
   createAxeNotAvailableResponse: vi.fn().mockReturnValue({
@@ -122,7 +122,7 @@ describe('Button Plugin', () => {
     let mockExecuteCommand: any;
 
     beforeEach(async () => {
-      const { executeCommand } = await import('../../src/utils/command.js');
+      const { executeCommand } = await import('../../src/utils/command.ts');
       mockExecuteCommand = vi.mocked(executeCommand);
     });
 

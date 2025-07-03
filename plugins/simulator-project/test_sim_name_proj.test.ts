@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import testSimNameProjPlugin from './test_sim_name_proj.js';
+import testSimNameProjPlugin from './test_sim_name_proj.ts';
 
 describe('test_sim_name_proj re-export plugin tests', () => {
   it('should properly re-export the test_sim_name_proj plugin', () => {

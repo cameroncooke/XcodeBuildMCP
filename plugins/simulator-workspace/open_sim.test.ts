@@ -7,16 +7,16 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 
 // Import the plugin
-import openSim from './open_sim.js';
+import openSim from './open_sim.ts';
 
 
 // ✅ CORRECT: Mock executeCommand utility
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock logger to prevent real logging
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
@@ -39,8 +39,8 @@ describe('open_sim tool', () => {
     vi.clearAllMocks();
 
     // Get fresh mock instances
-    const { executeCommand } = await vi.importMock('../../src/utils/command.js');
-    const { log } = await vi.importMock('../../src/utils/logger.js');
+    const { executeCommand } = await vi.importMock('../../src/utils/command.ts');
+    const { log } = await vi.importMock('../../src/utils/logger.ts');
     
     mockExecuteCommand = executeCommand as MockedFunction<any>;
     mockLog = log as MockedFunction<any>;

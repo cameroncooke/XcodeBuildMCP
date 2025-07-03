@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import plugin from './get_app_bundle_id.js';
+import plugin from './get_app_bundle_id.ts';
 
 // Mock the dependencies
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
@@ -10,14 +10,14 @@ vi.mock('child_process', () => ({
   execSync: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
   validateFileExists: vi.fn(),
 }));
 
 // Import mocked modules for use in tests
 import { execSync } from 'child_process';
-import { validateRequiredParam, validateFileExists } from '../../src/utils/validation.js';
+import { validateRequiredParam, validateFileExists } from '../../src/utils/validation.ts';
 
 describe('get_app_bundle_id plugin', () => {
   const mockExecSync = execSync as any;

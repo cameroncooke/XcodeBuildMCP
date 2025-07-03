@@ -14,7 +14,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import plugin from './key_press.js';
+import plugin from './key_press.ts';
 
 describe('key_press Plugin Migration Tests', () => {
   describe('Plugin Structure Validation', () => {

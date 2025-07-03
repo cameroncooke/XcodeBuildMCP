@@ -3,18 +3,18 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import plugin from './stop_app_sim.js';
+import plugin from './stop_app_sim.ts';
 
 // Mock dependencies
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
 }));
 
@@ -60,7 +60,7 @@ describe('stop_app_sim plugin', () => {
   });
 
   it('should return error response for missing simulatorUuid', async () => {
-    const { validateRequiredParam } = await import('../../src/utils/validation.js');
+    const { validateRequiredParam } = await import('../../src/utils/validation.ts');
     
     vi.mocked(validateRequiredParam).mockReturnValueOnce({
       isValid: false,
@@ -80,7 +80,7 @@ describe('stop_app_sim plugin', () => {
   });
 
   it('should return error response for missing bundleId', async () => {
-    const { validateRequiredParam } = await import('../../src/utils/validation.js');
+    const { validateRequiredParam } = await import('../../src/utils/validation.ts');
     
     vi.mocked(validateRequiredParam)
       .mockReturnValueOnce({ isValid: true })
@@ -102,8 +102,8 @@ describe('stop_app_sim plugin', () => {
   });
 
   it('should stop app successfully', async () => {
-    const { validateRequiredParam } = await import('../../src/utils/validation.js');
-    const { executeCommand } = await import('../../src/utils/command.js');
+    const { validateRequiredParam } = await import('../../src/utils/validation.ts');
+    const { executeCommand } = await import('../../src/utils/command.ts');
     
     vi.mocked(validateRequiredParam).mockReturnValue({ isValid: true });
     vi.mocked(executeCommand).mockResolvedValue({
@@ -134,8 +134,8 @@ describe('stop_app_sim plugin', () => {
   });
 
   it('should handle command failure', async () => {
-    const { validateRequiredParam } = await import('../../src/utils/validation.js');
-    const { executeCommand } = await import('../../src/utils/command.js');
+    const { validateRequiredParam } = await import('../../src/utils/validation.ts');
+    const { executeCommand } = await import('../../src/utils/command.ts');
     
     vi.mocked(validateRequiredParam).mockReturnValue({ isValid: true });
     vi.mocked(executeCommand).mockResolvedValue({
@@ -164,8 +164,8 @@ describe('stop_app_sim plugin', () => {
   });
 
   it('should handle unexpected errors', async () => {
-    const { validateRequiredParam } = await import('../../src/utils/validation.js');
-    const { executeCommand } = await import('../../src/utils/command.js');
+    const { validateRequiredParam } = await import('../../src/utils/validation.ts');
+    const { executeCommand } = await import('../../src/utils/command.ts');
     
     vi.mocked(validateRequiredParam).mockReturnValue({ isValid: true });
     vi.mocked(executeCommand).mockRejectedValue(new Error('Unexpected error'));

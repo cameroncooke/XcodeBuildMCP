@@ -2,11 +2,11 @@
  * Tests for start_device_log_cap plugin
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import plugin from './start_device_log_cap.js';
+import plugin from './start_device_log_cap.ts';
 
 // Mock device log utilities
-vi.mock('../../src/tools/device-log/index.js', async () => {
-  const actual = await vi.importActual('../../src/tools/device-log/index.js');
+vi.mock('../../src/tools/device-log/index.ts', async () => {
+  const actual = await vi.importActual('../../src/tools/device-log/index.ts');
   return {
     ...actual,
     startDeviceLogCapture: vi.fn().mockResolvedValue({ sessionId: 'mock-session' }),

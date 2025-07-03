@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 
 // ✅ Import the re-exported plugin
-import buildRunSimNameProjPlugin from './build_run_sim_name_proj.js';
+import buildRunSimNameProjPlugin from './build_run_sim_name_proj.ts';
 
 describe('build_run_sim_name_proj re-export plugin', () => {
   it('should export correct plugin structure via re-export', () => {

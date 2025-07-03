@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 
 // Import the re-exported plugin
-import buildSimNameWsTool from './build_sim_name_ws.js';
+import buildSimNameWsTool from './build_sim_name_ws.ts';
 
 describe('build_sim_name_ws plugin re-export', () => {
   it('should re-export the correct tool structure', () => {
@@ -22,7 +22,7 @@ describe('build_sim_name_ws plugin re-export', () => {
 
   it('should have identical structure to primary implementation', async () => {
     // Import primary implementation for comparison
-    const primaryTool = await import('../simulator-workspace/build_sim_name_ws.js');
+    const primaryTool = await import('../simulator-workspace/build_sim_name_ws.ts');
     
     expect(buildSimNameWsTool.name).toBe(primaryTool.default.name);
     expect(buildSimNameWsTool.description).toBe(primaryTool.default.description);

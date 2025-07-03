@@ -9,18 +9,18 @@
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import testSimIdProjPlugin from './test_sim_id_proj.js';
+import testSimIdProjPlugin from './test_sim_id_proj.ts';
 
 // Mock external dependencies
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/test-common.js', () => ({
+vi.mock('../../src/utils/test-common.ts', () => ({
   handleTestLogic: vi.fn(),
 }));
 
-vi.mock('../../src/utils/xcode.js', () => ({
+vi.mock('../../src/utils/xcode.ts', () => ({
   XcodePlatform: {
     iOSSimulator: 'iOS Simulator',
   },
@@ -30,7 +30,7 @@ describe('test_sim_id_proj plugin tests', () => {
   let mockHandleTestLogic: MockedFunction<any>;
 
   beforeEach(async () => {
-    const testCommon = await import('../../src/utils/test-common.js');
+    const testCommon = await import('../../src/utils/test-common.ts');
     mockHandleTestLogic = testCommon.handleTestLogic as MockedFunction<any>;
 
     // Setup default mock for handleTestLogic to return basic success response

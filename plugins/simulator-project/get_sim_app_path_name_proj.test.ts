@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import plugin from './get_sim_app_path_name_proj.js';
+import plugin from './get_sim_app_path_name_proj.ts';
 
 describe('get_sim_app_path_name_proj plugin (primary)', () => {
   it('should export the correct structure', () => {

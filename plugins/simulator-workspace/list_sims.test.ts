@@ -7,7 +7,7 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 
 // Import the plugin
-import listSims from './list_sims.js';
+import listSims from './list_sims.ts';
 
 
 // ✅ CORRECT: Mock external dependencies only
@@ -16,28 +16,28 @@ vi.mock('child_process', () => ({
 }));
 
 // ✅ CORRECT: Mock executeCommand utility
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock logger to prevent real logging
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock validation utilities
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
   validateFileExists: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock common tools utilities
-vi.mock('../../src/tools/common/index.js', () => ({
+vi.mock('../../src/tools/common/index.ts', () => ({
   createTextContent: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock log capture utilities
-vi.mock('../../src/utils/log_capture.js', () => ({
+vi.mock('../../src/utils/log_capture.ts', () => ({
   startLogCapture: vi.fn(),
 }));
 
@@ -57,7 +57,7 @@ describe('list_sims tool', () => {
 
   beforeEach(async () => {
     // Mock executeCommand
-    const { executeCommand } = await import('../../src/utils/command.js');
+    const { executeCommand } = await import('../../src/utils/command.ts');
     mockExecuteCommand = executeCommand as MockedFunction<any>;
     mockExecuteCommand.mockResolvedValue({
       success: true,

@@ -8,7 +8,7 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 
 // Import the plugin
-import getDeviceAppPathWsTool from './get_device_app_path_ws.js';
+import getDeviceAppPathWsTool from './get_device_app_path_ws.ts';
 
 // Mock external dependencies
 vi.mock('child_process', () => ({

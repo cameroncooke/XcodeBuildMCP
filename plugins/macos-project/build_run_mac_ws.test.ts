@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 
 // Import the re-exported plugin
-import buildRunMacWs from './build_run_mac_ws.js';
+import buildRunMacWs from './build_run_mac_ws.ts';
 
 describe('build_run_mac_ws Re-export Plugin', () => {
   describe('Plugin Structure', () => {

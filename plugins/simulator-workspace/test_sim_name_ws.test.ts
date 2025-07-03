@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import testSimNameWs from './test_sim_name_ws.js';
+import testSimNameWs from './test_sim_name_ws.ts';
 
 describe('test_sim_name_ws Re-export Plugin', () => {
   it('should re-export correct tool metadata', () => {

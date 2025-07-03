@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import buildDevProj from './build_dev_proj.js';
+import buildDevProj from './build_dev_proj.ts';
 
 describe('build_dev_proj plugin', () => {
   it('should have the correct tool name', () => {

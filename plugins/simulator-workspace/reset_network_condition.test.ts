@@ -3,14 +3,14 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import resetNetworkConditionPlugin from './reset_network_condition.js';
+import resetNetworkConditionPlugin from './reset_network_condition.ts';
 
 // Mock the utilities
-vi.mock('../../src/utils/simulator.js', () => ({
+vi.mock('../../src/utils/simulator.ts', () => ({
   executeSimctlCommandAndRespond: vi.fn(),
 }));
 
-vi.mock('../../src/utils/log.js', () => ({
+vi.mock('../../src/utils/log.ts', () => ({
   log: vi.fn(),
 }));
 

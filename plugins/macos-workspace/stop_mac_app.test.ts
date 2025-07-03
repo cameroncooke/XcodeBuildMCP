@@ -6,7 +6,7 @@
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { exec } from 'child_process';
-import stopMacApp from './stop_mac_app.js';
+import stopMacApp from './stop_mac_app.ts';
 
 // Mock Node.js APIs directly
 vi.mock('child_process', () => ({
@@ -18,7 +18,7 @@ vi.mock('fs', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../../utils/logger.js', () => ({
+vi.mock('../../utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 

@@ -8,7 +8,7 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 
 // Import the plugin
-import buildDevWsTool from './build_dev_ws.js';
+import buildDevWsTool from './build_dev_ws.ts';
 
 // Mock external dependencies
 vi.mock('child_process', () => ({

@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import testSimIdWsPlugin from './test_sim_id_ws.js';
+import testSimIdWsPlugin from './test_sim_id_ws.ts';
 
 describe('test_sim_id_ws re-export plugin tests', () => {
   describe('re-export structure', () => {

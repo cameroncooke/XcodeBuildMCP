@@ -1,23 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import plugin from './list_schems_ws.js';
+import plugin from './list_schems_ws.ts';
 
 // Mock the dependencies
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
   createTextResponse: vi.fn(),
 }));
 
 // Import mocked modules for use in tests
-import { executeCommand } from '../../src/utils/command.js';
-import { validateRequiredParam, createTextResponse } from '../../src/utils/validation.js';
+import { executeCommand } from '../../src/utils/command.ts';
+import { validateRequiredParam, createTextResponse } from '../../src/utils/validation.ts';
 
 describe('list_schems_ws plugin', () => {
   const mockExecuteCommand = executeCommand as any;

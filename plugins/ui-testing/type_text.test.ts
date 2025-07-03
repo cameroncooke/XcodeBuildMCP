@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import typeTextPlugin from './type_text.js';
-import { ToolResponse } from '../../src/types/common.js';
+import typeTextPlugin from './type_text.ts';
+import { ToolResponse } from '../../src/types/common.ts';
 
 describe('type_text plugin', () => {
   describe('Plugin Structure', () => {

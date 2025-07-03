@@ -5,7 +5,7 @@
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { execSync } from 'child_process';
-import buildRunSimIdProj from './build_run_sim_id_proj.js';
+import buildRunSimIdProj from './build_run_sim_id_proj.ts';
 
 // ✅ Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -22,17 +22,17 @@ vi.mock('fs/promises', () => ({
 }));
 
 // ✅ Mock logger to prevent real logging during tests
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
 // ✅ Mock build utilities
-vi.mock('../../src/utils/build-utils.js', () => ({
+vi.mock('../../src/utils/build-utils.ts', () => ({
   executeXcodeBuildCommand: vi.fn(),
 }));
 
 // ✅ Mock command execution utility
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
@@ -43,10 +43,10 @@ describe('build_run_sim_id_proj re-export plugin', () => {
 
   beforeEach(async () => {
     // ✅ Mock external dependencies
-    const buildUtils = await import('../../src/utils/build-utils.js');
+    const buildUtils = await import('../../src/utils/build-utils.ts');
     mockExecuteXcodeBuildCommand = buildUtils.executeXcodeBuildCommand as MockedFunction<any>;
 
-    const commandUtils = await import('../../src/utils/command.js');
+    const commandUtils = await import('../../src/utils/command.ts');
     mockExecuteCommand = commandUtils.executeCommand as MockedFunction<any>;
 
     mockExecSync = vi.mocked(execSync);

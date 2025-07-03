@@ -2,18 +2,18 @@
  * Plugin test for screenshot - Tests the plugin structure and integration
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import screenshotPlugin from './screenshot.js';
+import screenshotPlugin from './screenshot.ts';
 
 // Mock dependencies
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
 }));
 
@@ -31,9 +31,9 @@ vi.mock('os', () => ({
 }));
 
 // Import mocked functions for assertions
-import { executeCommand } from '../../src/utils/command.js';
-import { log } from '../../src/utils/logger.js';
-import { validateRequiredParam } from '../../src/utils/validation.js';
+import { executeCommand } from '../../src/utils/command.ts';
+import { log } from '../../src/utils/logger.ts';
+import { validateRequiredParam } from '../../src/utils/validation.ts';
 import * as fs from 'fs/promises';
 
 const mockExecuteCommand = vi.mocked(executeCommand);

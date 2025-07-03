@@ -5,12 +5,12 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { MockedFunction } from 'vitest';
-import screenshotPlugin from './screenshot.js';
-import * as commandModule from '../../src/utils/command.js';
+import screenshotPlugin from './screenshot.ts';
+import * as commandModule from '../../src/utils/command.ts';
 import * as fs from 'fs/promises';
 
 // Mock the command module
-vi.mock('../../src/utils/command.js');
+vi.mock('../../src/utils/command.ts');
 const mockExecuteCommand = commandModule.executeCommand as MockedFunction<typeof commandModule.executeCommand>;
 
 // Mock fs module

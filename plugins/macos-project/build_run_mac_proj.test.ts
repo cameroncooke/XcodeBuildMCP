@@ -12,7 +12,7 @@ import { spawn, ChildProcess } from 'child_process';
 import { exec } from 'child_process';
 
 // Import plugin
-import buildRunMacProj from './build_run_mac_proj.js';
+import buildRunMacProj from './build_run_mac_proj.ts';
 
 // Mock Node.js APIs
 vi.mock('child_process', () => ({
@@ -30,7 +30,7 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 

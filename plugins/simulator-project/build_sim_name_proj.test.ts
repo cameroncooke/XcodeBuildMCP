@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import tool from './build_sim_name_proj.js';
-import { executeXcodeBuildCommand } from '../../src/utils/build-utils.js';
+import tool from './build_sim_name_proj.ts';
+import { executeXcodeBuildCommand } from '../../src/utils/build-utils.ts';
 
 // Mock external dependencies
-vi.mock('../../src/utils/build-utils.js', () => ({
+vi.mock('../../src/utils/build-utils.ts', () => ({
   executeXcodeBuildCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 

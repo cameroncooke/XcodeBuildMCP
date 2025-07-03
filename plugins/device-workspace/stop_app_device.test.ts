@@ -7,7 +7,7 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 
 // Import the plugin
-import stopAppDevice from './stop_app_device.js';
+import stopAppDevice from './stop_app_device.ts';
 
 // Test the plugin directly - no registration function needed
 
@@ -17,17 +17,17 @@ vi.mock('child_process', () => ({
 }));
 
 // ✅ CORRECT: Mock executeCommand utility
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock logger to prevent real logging
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock validation utilities
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
   validateFileExists: vi.fn(),
 }));
@@ -56,7 +56,7 @@ describe('stop_app_device tool', () => {
 
   beforeEach(async () => {
     // Mock executeCommand
-    const { executeCommand } = await import('../../src/utils/command.js');
+    const { executeCommand } = await import('../../src/utils/command.ts');
     mockExecuteCommand = executeCommand as MockedFunction<any>;
     mockExecuteCommand.mockResolvedValue({
       success: true,

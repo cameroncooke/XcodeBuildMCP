@@ -7,7 +7,7 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 
 // Import the plugin
-import launchAppLogsSim from './launch_app_logs_sim.js';
+import launchAppLogsSim from './launch_app_logs_sim.ts';
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -15,24 +15,24 @@ vi.mock('child_process', () => ({
 }));
 
 // ✅ CORRECT: Mock executeCommand utility
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock logger to prevent real logging
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock validation utilities
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
   validateFileExists: vi.fn(),
 }));
 
 
 // ✅ CORRECT: Mock log capture utilities
-vi.mock('../../src/utils/log_capture.js', () => ({
+vi.mock('../../src/utils/log_capture.ts', () => ({
   startLogCapture: vi.fn(),
 }));
 
@@ -53,11 +53,11 @@ describe('launch_app_logs_sim tool', () => {
 
   beforeEach(async () => {
     // Mock validation utilities
-    const validationModule = await import('../../src/utils/validation.js');
+    const validationModule = await import('../../src/utils/validation.ts');
     mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
 
     // Mock log capture utilities
-    const logCaptureModule = await import('../../src/utils/log_capture.js');
+    const logCaptureModule = await import('../../src/utils/log_capture.ts');
     mockStartLogCapture = logCaptureModule.startLogCapture as MockedFunction<any>;
 
     // Default mock behaviors

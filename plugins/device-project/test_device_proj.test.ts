@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import testDeviceProj from './test_device_proj.js';
+import testDeviceProj from './test_device_proj.ts';
 
 describe('test_device_proj plugin', () => {
   it('should have correct plugin structure', () => {

@@ -9,9 +9,9 @@
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import cleanProj from './clean_proj.js';
-import { executeXcodeBuildCommand } from '../../src/utils/build-utils.js';
-import { XcodePlatform } from '../../src/utils/xcode.js';
+import cleanProj from './clean_proj.ts';
+import { executeXcodeBuildCommand } from '../../src/utils/build-utils.ts';
+import { XcodePlatform } from '../../src/utils/xcode.ts';
 
 // Mock child_process to prevent real command execution
 vi.mock('child_process', () => ({ spawn: vi.fn() }));
@@ -22,12 +22,12 @@ vi.mock('fs', () => ({
 }));
 
 // Mock the build utilities
-vi.mock('../../src/utils/build-utils.js', () => ({
+vi.mock('../../src/utils/build-utils.ts', () => ({
   executeXcodeBuildCommand: vi.fn(),
 }));
 
 // Mock the logger to prevent logging during tests
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 

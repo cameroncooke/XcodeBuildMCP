@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import discoverProjsPlugin from './discover_projs.js';
+import discoverProjsPlugin from './discover_projs.ts';
 
 // Mock dependencies
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
 }));
 
-vi.mock('../../src/tools/common/index.js', () => ({
+vi.mock('../../src/tools/common/index.ts', () => ({
   createTextContent: vi.fn(),
 }));
 

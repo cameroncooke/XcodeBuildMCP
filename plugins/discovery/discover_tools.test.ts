@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import discoverTools from './discover_tools.js';
-import * as pluginRegistry from '../../src/core/plugin-registry.js';
-import * as dynamicTools from '../../src/core/dynamic-tools.js';
-import * as logger from '../../src/utils/logger.js';
+import discoverTools from './discover_tools.ts';
+import * as pluginRegistry from '../../src/core/plugin-registry.ts';
+import * as dynamicTools from '../../src/core/dynamic-tools.ts';
+import * as logger from '../../src/utils/logger.ts';
 
 // Mock dependencies
-vi.mock('../../src/core/plugin-registry.js');
-vi.mock('../../src/core/dynamic-tools.js');
-vi.mock('../../src/utils/logger.js');
+vi.mock('../../src/core/plugin-registry.ts');
+vi.mock('../../src/core/dynamic-tools.ts');
+vi.mock('../../src/utils/logger.ts');
 
 const mockPluginRegistry = vi.mocked(pluginRegistry);
 const mockDynamicTools = vi.mocked(dynamicTools);

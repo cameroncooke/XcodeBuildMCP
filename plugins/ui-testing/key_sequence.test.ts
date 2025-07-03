@@ -14,7 +14,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import plugin from './key_sequence.js';
+import plugin from './key_sequence.ts';
 
 describe('key_sequence Plugin Migration Tests', () => {
   describe('Plugin Structure Validation', () => {

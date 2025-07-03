@@ -11,8 +11,8 @@
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import testMacOSWs from './test_macos_ws.js';
-import { ToolResponse } from '../../src/types/common.js';
+import testMacOSWs from './test_macos_ws.ts';
+import { ToolResponse } from '../../src/types/common.ts';
 
 // Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -29,15 +29,15 @@ vi.mock('fs/promises', () => ({
   writeFile: vi.fn(),
 }));
 
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/build-utils.js', () => ({
+vi.mock('../../src/utils/build-utils.ts', () => ({
   executeXcodeBuildCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   createTextResponse: vi.fn(),
 }));
 
@@ -62,7 +62,7 @@ describe('test_macos_ws plugin tests', () => {
 
   beforeEach(async () => {
     // Import mocked modules
-    const buildUtils = await import('../../src/utils/build-utils.js');
+    const buildUtils = await import('../../src/utils/build-utils.ts');
     const fsPromises = await import('fs/promises');
     const util = await import('util');
     

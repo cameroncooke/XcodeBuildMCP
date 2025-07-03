@@ -7,8 +7,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import plugin from './build_run_sim_name_ws.js';
-import primaryPlugin from '../simulator-workspace/build_run_sim_name_ws.js';
+import plugin from './build_run_sim_name_ws.ts';
+import primaryPlugin from '../simulator-workspace/build_run_sim_name_ws.ts';
 
 describe('build_run_sim_name_ws plugin (re-export)', () => {
   // ✅ Test plugin structure  

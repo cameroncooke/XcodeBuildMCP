@@ -8,7 +8,7 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 import { spawn, ChildProcess } from 'child_process';
 
 // Import the plugin
-import swiftPackageRun from './swift_package_run.js';
+import swiftPackageRun from './swift_package_run.ts';
 
 // Test the plugin directly - no registration function needed
 
@@ -29,23 +29,23 @@ vi.mock('fs/promises', () => ({
 }));
 
 // ✅ CORRECT: Mock executeCommand utility
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock logger to prevent real logging
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock validation utilities
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   createTextResponse: vi.fn(),
   validateRequiredParam: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock error utilities
-vi.mock('../../src/utils/errors.js', () => ({
+vi.mock('../../src/utils/errors.ts', () => ({
   createErrorResponse: vi.fn(),
 }));
 
@@ -76,7 +76,7 @@ describe('swift_package_run tool', () => {
     mockSpawn = nodeSpawn as MockedFunction<any>;
 
     // Mock executeCommand
-    const { executeCommand } = await import('../../src/utils/command.js');
+    const { executeCommand } = await import('../../src/utils/command.ts');
     mockExecuteCommand = executeCommand as MockedFunction<any>;
     mockExecuteCommand.mockResolvedValue({
       success: true,
@@ -85,12 +85,12 @@ describe('swift_package_run tool', () => {
     });
 
     // Mock validation utilities
-    const validationModule = await import('../../src/utils/validation.js');
+    const validationModule = await import('../../src/utils/validation.ts');
     mockCreateTextResponse = validationModule.createTextResponse as MockedFunction<any>;
     mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
 
     // Mock error utilities
-    const errorModule = await import('../../src/utils/errors.js');
+    const errorModule = await import('../../src/utils/errors.ts');
     mockCreateErrorResponse = errorModule.createErrorResponse as MockedFunction<any>;
 
     // Create mock child process with typical Swift build output

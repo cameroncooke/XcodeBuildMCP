@@ -9,7 +9,7 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { existsSync } from 'fs';
 import { mkdir, cp, readFile, writeFile, readdir } from 'fs/promises';
-import scaffoldMacosProject from './scaffold_macos_project.js';
+import scaffoldMacosProject from './scaffold_macos_project.ts';
 
 // Mock external dependencies only
 vi.mock('fs', () => ({
@@ -25,12 +25,12 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock logger to prevent real logging during tests
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
 // Mock TemplateManager to prevent network calls
-vi.mock('../../src/utils/template-manager.js', () => ({
+vi.mock('../../src/utils/template-manager.ts', () => ({
   TemplateManager: {
     getTemplatePath: vi.fn(),
     cleanup: vi.fn(),
@@ -40,7 +40,7 @@ vi.mock('../../src/utils/template-manager.js', () => ({
 // Mock removed - no longer needed for plugin testing
 
 // Import mocked functions and types
-import { TemplateManager } from '../../src/utils/template-manager.js';
+import { TemplateManager } from '../../src/utils/template-manager.ts';
 
 const mockExistsSync = existsSync as MockedFunction<typeof existsSync>;
 const mockMkdir = mkdir as MockedFunction<typeof mkdir>;

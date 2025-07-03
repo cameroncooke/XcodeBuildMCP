@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import tool from './test_macos_proj.js';
-import toolOriginal from '../macos-workspace/test_macos_proj.js';
+import tool from './test_macos_proj.ts';
+import toolOriginal from '../macos-workspace/test_macos_proj.ts';
 
 describe('test_macos_proj re-export', () => {
   it('should re-export the same plugin object', () => {

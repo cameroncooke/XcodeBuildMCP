@@ -4,19 +4,19 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
-import gesturePlugin from './gesture.js';
-import { ToolResponse } from '../../src/types/common.js';
+import gesturePlugin from './gesture.ts';
+import { ToolResponse } from '../../src/types/common.ts';
 
 // Mock the dependencies
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/axe-helpers.js', () => ({
+vi.mock('../../src/utils/axe-helpers.ts', () => ({
   areAxeToolsAvailable: vi.fn(() => true),
   getAxePath: vi.fn(() => '/usr/local/bin/axe'),
   getBundledAxeEnvironment: vi.fn(() => ({})),
@@ -26,7 +26,7 @@ vi.mock('../../src/utils/axe-helpers.js', () => ({
   })),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn((name: string, value: any) => {
     if (value === undefined || value === null || value === '') {
       return {
@@ -45,7 +45,7 @@ vi.mock('../../src/utils/validation.js', () => ({
   })),
 }));
 
-vi.mock('../../src/utils/errors.js', () => ({
+vi.mock('../../src/utils/errors.ts', () => ({
   DependencyError: class DependencyError extends Error {
     constructor(message: string) {
       super(message);
@@ -272,7 +272,7 @@ describe('Gesture Plugin', () => {
 
     it('should handle valid gesture execution', async () => {
       // Mock successful command execution
-      const { executeCommand } = await import('../../src/utils/command.js');
+      const { executeCommand } = await import('../../src/utils/command.ts');
       (executeCommand as any).mockResolvedValue({
         success: true,
         output: 'gesture completed',
@@ -290,7 +290,7 @@ describe('Gesture Plugin', () => {
 
     it('should handle gesture execution with all optional parameters', async () => {
       // Mock successful command execution
-      const { executeCommand } = await import('../../src/utils/command.js');
+      const { executeCommand } = await import('../../src/utils/command.ts');
       (executeCommand as any).mockResolvedValue({
         success: true,
         output: 'gesture completed',

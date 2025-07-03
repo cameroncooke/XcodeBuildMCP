@@ -3,18 +3,18 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import setSimulatorLocationPlugin from './set_simulator_location.js';
+import setSimulatorLocationPlugin from './set_simulator_location.ts';
 
 // Mock dependencies
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
 }));
 

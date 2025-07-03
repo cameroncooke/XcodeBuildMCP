@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import plugin from './describe_ui.js';
+import plugin from './describe_ui.ts';
 
 // Mock all dependencies
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
   createTextResponse: vi.fn(),
 }));
 
-vi.mock('../../src/utils/errors.js', () => ({
+vi.mock('../../src/utils/errors.ts', () => ({
   DependencyError: class DependencyError extends Error {},
   AxeError: class AxeError extends Error {
     constructor(message: string, command: string, output: string, simulatorUuid: string) {
@@ -32,11 +32,11 @@ vi.mock('../../src/utils/errors.js', () => ({
   createErrorResponse: vi.fn(),
 }));
 
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 
-vi.mock('../../src/utils/axe-helpers.js', () => ({
+vi.mock('../../src/utils/axe-helpers.ts', () => ({
   createAxeNotAvailableResponse: vi.fn(),
   getAxePath: vi.fn(),
   getBundledAxeEnvironment: vi.fn(),
@@ -80,9 +80,9 @@ describe('describe_ui plugin', () => {
     };
 
     it('should handle valid parameters', async () => {
-      const { validateRequiredParam } = await import('../../src/utils/validation.js');
-      const { executeCommand } = await import('../../src/utils/command.js');
-      const { getAxePath } = await import('../../src/utils/axe-helpers.js');
+      const { validateRequiredParam } = await import('../../src/utils/validation.ts');
+      const { executeCommand } = await import('../../src/utils/command.ts');
+      const { getAxePath } = await import('../../src/utils/axe-helpers.ts');
 
       vi.mocked(validateRequiredParam).mockReturnValue({ isValid: true });
       vi.mocked(getAxePath).mockReturnValue('/path/to/axe');
@@ -105,7 +105,7 @@ describe('describe_ui plugin', () => {
     });
 
     it('should handle validation errors', async () => {
-      const { validateRequiredParam } = await import('../../src/utils/validation.js');
+      const { validateRequiredParam } = await import('../../src/utils/validation.ts');
       const mockErrorResponse = { isError: true };
 
       vi.mocked(validateRequiredParam).mockReturnValue({
@@ -119,9 +119,9 @@ describe('describe_ui plugin', () => {
     });
 
     it('should handle dependency errors', async () => {
-      const { validateRequiredParam } = await import('../../src/utils/validation.js');
-      const { getAxePath } = await import('../../src/utils/axe-helpers.js');
-      const { createAxeNotAvailableResponse } = await import('../../src/utils/axe-helpers.js');
+      const { validateRequiredParam } = await import('../../src/utils/validation.ts');
+      const { getAxePath } = await import('../../src/utils/axe-helpers.ts');
+      const { createAxeNotAvailableResponse } = await import('../../src/utils/axe-helpers.ts');
 
       const mockErrorResponse = { isError: true, content: [{ type: 'text', text: 'AXe not available' }] };
 

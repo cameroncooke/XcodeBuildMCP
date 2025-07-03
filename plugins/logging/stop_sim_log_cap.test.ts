@@ -11,20 +11,20 @@
  */
 
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import stopSimLogCap from './stop_sim_log_cap.js';
+import stopSimLogCap from './stop_sim_log_cap.ts';
 
 // ✅ CORRECT: Mock log capture utilities
-vi.mock('../../src/utils/log_capture.js', () => ({
+vi.mock('../../src/utils/log_capture.ts', () => ({
   stopLogCapture: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock validation utilities
-vi.mock('../../src/utils/validation.js', () => ({
+vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
 }));
 
 // ✅ CORRECT: Mock common tools utilities
-vi.mock('../../src/tools/common/index.js', () => ({
+vi.mock('../../src/tools/common/index.ts', () => ({
   createTextContent: vi.fn(),
 }));
 
@@ -35,15 +35,15 @@ describe('stop_sim_log_cap plugin', () => {
 
   beforeEach(async () => {
     // Import and setup mocked log capture
-    const logCaptureModule = await import('../../src/utils/log_capture.js');
+    const logCaptureModule = await import('../../src/utils/log_capture.ts');
     mockStopLogCapture = logCaptureModule.stopLogCapture as MockedFunction<any>;
 
     // Import and setup mocked validation
-    const validationModule = await import('../../src/utils/validation.js');
+    const validationModule = await import('../../src/utils/validation.ts');
     mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
 
     // Import and setup mocked common tools
-    const commonModule = await import('../../src/tools/common/index.js');
+    const commonModule = await import('../../src/tools/common/index.ts');
     mockCreateTextContent = commonModule.createTextContent as MockedFunction<any>;
 
     // Default mock behavior

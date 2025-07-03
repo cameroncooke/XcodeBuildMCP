@@ -3,15 +3,15 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import getMacAppPathWs from './get_mac_app_path_ws.js';
+import getMacAppPathWs from './get_mac_app_path_ws.ts';
 
 // Mock logger to prevent real logging during tests
-vi.mock('../../src/utils/logger.js', () => ({
+vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
 }));
 
 // Mock executeCommand to prevent actual command execution
-vi.mock('../../src/utils/command.js', () => ({
+vi.mock('../../src/utils/command.ts', () => ({
   executeCommand: vi.fn(),
 }));
 

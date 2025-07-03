@@ -14,10 +14,10 @@ const IGNORE_GLOBS = [
 ];
 
 export async function loadPlugins(
-  root = new URL('../plugins/', import.meta.url),
+  root = new URL('../../plugins/', import.meta.url),
 ): Promise<Map<string, PluginMeta>> {
   const plugins = new Map<string, PluginMeta>();
-  const files = globSync('**/*.{js,ts}', {
+  const files = globSync('**/*.ts', {
     cwd: root.pathname,
     absolute: true,
     ignore: IGNORE_GLOBS,

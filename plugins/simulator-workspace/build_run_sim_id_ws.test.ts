@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import buildRunSimIdWs from './build_run_sim_id_ws.js';
+import buildRunSimIdWs from './build_run_sim_id_ws.ts';
 
 describe('build_run_sim_id_ws plugin', () => {
   it('should have the correct tool name', () => {
