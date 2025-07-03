@@ -1,15 +1,22 @@
 {
     "servers": {
-        "xcodebuildmcp-dev": {
-            "type": "stdio",
-            "command": "node",
-            "args": [
-                "--inspect=9999",
-                "${workspaceFolder}/build/index.js"
-            ],
-            "env": {
-                "XCODEBUILDMCP_DEBUG": "true"
-            }
+      "XcodeBuildMCP-Dev": {
+        "command": "npx",
+        "args": [
+          "reloaderoo@latest",
+          "--working-dir",
+          "/Users/cameroncooke/Developer/XcodeBuildMCP-main",
+          "--",
+          "node",
+          "/Users/cameroncooke/Developer/XcodeBuildMCP-main/build/index.js"
+        ],
+        "env": {
+          "XCODEBUILDMCP_DEBUG": "true",
+          "XCODEBUILDMCP_DYNAMIC_TOOLS": "false",
+          "INCREMENTAL_BUILDS_ENABLED": "true",
+          "XCODEBUILDMCP_IOS_TEMPLATE_PATH": "/Volumes/Developer/XcodeBuildMCP-iOS-Template",
+          "XCODEBUILDMCP_MACOS_TEMPLATE_PATH": "/Volumes/Developer/XcodeBuildMCP-macOS-Template"
         }
+      },
     }
 }

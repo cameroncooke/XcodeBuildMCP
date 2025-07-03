@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { handleTestLogic } from '../../src/utils/test-common.js';
-import { XcodePlatform } from '../../src/utils/xcode.js';
+import { handleTestLogic } from '../../build/utils.js';
+import { XcodePlatform } from '../../build/utils.js';
 
 export default {
   name: 'test_sim_name_proj',

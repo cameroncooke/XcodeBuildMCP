@@ -6,10 +6,10 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import { log } from '../../src/utils/logger.js';
-import { validateRequiredParam } from '../../src/utils/validation.js';
-import { SystemError, createErrorResponse } from '../../src/utils/errors.js';
-import { executeCommand } from '../../src/utils/command.js';
+import { log } from '../../build/utils.js';
+import { validateRequiredParam } from '../../build/utils.js';
+import { SystemError, createErrorResponse } from '../../build/utils.js';
+import { executeCommand } from '../../build/utils.js';
 
 const LOG_PREFIX = '[Screenshot]';
 

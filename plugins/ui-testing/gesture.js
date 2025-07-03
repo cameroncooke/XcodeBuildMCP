@@ -6,15 +6,15 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
-import { validateRequiredParam, createTextResponse } from '../../src/utils/validation.js';
-import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../src/utils/errors.js';
-import { executeCommand } from '../../src/utils/command.js';
+import { log } from '../../build/utils.js';
+import { validateRequiredParam, createTextResponse } from '../../build/utils.js';
+import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../build/utils.js';
+import { executeCommand } from '../../build/utils.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
   getBundledAxeEnvironment,
-} from '../../src/utils/axe-helpers.js';
+} from '../../build/utils.js';
 
 const LOG_PREFIX = '[AXe]';
 

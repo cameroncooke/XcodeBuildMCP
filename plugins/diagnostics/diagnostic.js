@@ -5,17 +5,17 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
+import { log } from '../../build/utils.js';
 import { execSync } from 'child_process';
-import { version } from '../../src/version.js';
-import { areAxeToolsAvailable } from '../../src/utils/axe-helpers.js';
+import { version } from '../../build/utils.js';
+import { areAxeToolsAvailable } from '../../build/utils.js';
 import {
   isXcodemakeEnabled,
   isXcodemakeAvailable,
   doesMakefileExist,
-} from '../../src/utils/xcodemake.js';
+} from '../../build/utils.js';
 import * as os from 'os';
-import { loadPlugins } from '../../src/core/plugin-registry.js';
+import { loadPlugins } from '../../build/utils.js';
 
 // Constants
 const LOG_PREFIX = '[Diagnostic]';

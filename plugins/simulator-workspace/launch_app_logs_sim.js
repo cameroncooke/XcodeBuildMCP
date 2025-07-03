@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
-import { validateRequiredParam } from '../../src/utils/validation.js';
-import { startLogCapture } from '../../src/utils/log_capture.js';
+import { log } from '../../build/utils.js';
+import { validateRequiredParam } from '../../build/utils.js';
+import { startLogCapture } from '../../build/utils.js';
 
 function createTextContent(text) {
   return {

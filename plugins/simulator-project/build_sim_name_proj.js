@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
-import { validateRequiredParam } from '../../src/utils/validation.js';
-import { executeXcodeBuildCommand } from '../../src/utils/build-utils.js';
+import { log } from '../../build/utils.js';
+import { validateRequiredParam } from '../../build/utils.js';
+import { executeXcodeBuildCommand } from '../../build/utils.js';
 
 const XcodePlatform = {
   iOSSimulator: 'iOS Simulator'

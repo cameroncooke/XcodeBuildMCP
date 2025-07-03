@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
-import { executeCommand } from '../../src/utils/command.js';
-import { validateRequiredParam } from '../../src/utils/validation.js';
+import { log } from '../../build/utils.js';
+import { executeCommand } from '../../build/utils.js';
+import { validateRequiredParam } from '../../build/utils.js';
 
 async function bootSimToolHandler(params) {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);

@@ -1,0 +1,15 @@
+// Export all utilities for plugin consumption
+export * from './logger.js';
+export * from './command.js';
+export * from './validation.js';
+export * from './errors.js';
+export * from './build-utils.js';
+export * from './xcode.js';
+export * from './axe-helpers.js';
+export * from './log_capture.js';
+export * from './template-manager.js';
+export * from './test-common.js';
+export * from './xcodemake.js';
+export * from '../version.js';
+export * from '../core/dynamic-tools.js';
+export * from '../core/plugin-registry.js';

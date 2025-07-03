@@ -6,8 +6,8 @@
 
 import { z } from 'zod';
 import { execSync } from 'child_process';
-import { log } from '../../src/utils/logger.js';
-import { validateRequiredParam, validateFileExists } from '../../src/utils/validation.js';
+import { log } from '../../build/utils.js';
+import { validateRequiredParam, validateFileExists } from '../../build/utils.js';
 
 export default {
   name: 'get_mac_bundle_id',

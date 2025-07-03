@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
-import { validateRequiredParam, validateFileExists } from '../../src/utils/validation.js';
-import { executeCommand } from '../../src/utils/command.js';
+import { log } from '../../build/utils.js';
+import { validateRequiredParam, validateFileExists } from '../../build/utils.js';
+import { executeCommand } from '../../build/utils.js';
 import { execSync } from 'child_process';
 
 export default {

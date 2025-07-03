@@ -10,7 +10,7 @@ import * as os from 'os';
 import { spawn } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
+import { log } from '../../build/utils.js';
 
 /**
  * Log file retention policy for device logs:

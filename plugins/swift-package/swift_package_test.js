@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import path from 'node:path';
-import { executeCommand } from '../../src/utils/command.js';
-import { createTextResponse, validateRequiredParam } from '../../src/utils/validation.js';
-import { createErrorResponse } from '../../src/utils/errors.js';
-import { log } from '../../src/utils/logger.js';
+import { executeCommand } from '../../build/utils.js';
+import { createTextResponse, validateRequiredParam } from '../../build/utils.js';
+import { createErrorResponse } from '../../build/utils.js';
+import { log } from '../../build/utils.js';
 
 // Inlined schemas from src/tools/common/index.ts
 const swiftConfigurationSchema = z

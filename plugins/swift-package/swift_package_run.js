@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { createTextResponse, validateRequiredParam } from '../../src/utils/validation.js';
-import { createErrorResponse } from '../../src/utils/errors.js';
-import { log } from '../../src/utils/logger.js';
+import { createTextResponse, validateRequiredParam } from '../../build/utils.js';
+import { createErrorResponse } from '../../build/utils.js';
+import { log } from '../../build/utils.js';
 
 // Store active processes so we can manage them - keyed by PID for uniqueness
 const activeProcesses = new Map();

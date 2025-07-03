@@ -5,6 +5,7 @@ export default defineConfig({
   entry: {
     index: 'src/index.ts',
     'diagnostic-cli': 'src/diagnostic-cli.ts',
+    'utils': 'src/utils/index.ts',
   },
   format: ['esm'],
   target: 'node18',

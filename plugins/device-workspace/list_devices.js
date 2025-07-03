@@ -6,8 +6,8 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
-import { executeCommand } from '../../src/utils/command.js';
+import { log } from '../../build/utils.js';
+import { executeCommand } from '../../build/utils.js';
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';

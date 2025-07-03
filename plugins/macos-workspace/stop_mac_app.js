@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
+import { log } from '../../build/utils.js';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 

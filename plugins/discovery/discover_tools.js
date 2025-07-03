@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { createTextResponse } from '../../src/utils/validation.js';
-import { log } from '../../src/utils/logger.js';
+import { createTextResponse } from '../../build/utils.js';
+import { log } from '../../build/utils.js';
 import { CreateMessageResultSchema } from '@modelcontextprotocol/sdk/types.js';
-import { loadWorkflowGroups } from '../../src/core/plugin-registry.js';
-import { enableWorkflows } from '../../src/core/dynamic-tools.js';
+import { loadWorkflowGroups } from '../../build/utils.js';
+import { enableWorkflows } from '../../build/utils.js';
 
 export default {
   name: 'discover_tools',

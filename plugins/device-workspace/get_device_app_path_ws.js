@@ -6,10 +6,10 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
-import { validateRequiredParam, createTextResponse } from '../../src/utils/validation.js';
-import { executeCommand } from '../../src/utils/command.js';
-import { constructDestinationString } from '../../src/utils/xcode.js';
+import { log } from '../../build/utils.js';
+import { validateRequiredParam, createTextResponse } from '../../build/utils.js';
+import { executeCommand } from '../../build/utils.js';
+import { constructDestinationString } from '../../build/utils.js';
 
 const XcodePlatform = {
   iOS: 'iOS',

@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { createTextResponse } from '../../src/utils/validation.js';
-import { createErrorResponse } from '../../src/utils/errors.js';
+import { createTextResponse } from '../../build/utils.js';
+import { createErrorResponse } from '../../build/utils.js';
 
 // Note: This tool shares the activeProcesses map with swift_package_run
 // Since both are in the same workflow directory, they can share state

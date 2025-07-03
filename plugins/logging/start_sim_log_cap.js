@@ -5,8 +5,8 @@
  */
 
 import { z } from 'zod';
-import { startLogCapture } from '../../src/utils/log_capture.js';
-import { validateRequiredParam } from '../../src/utils/validation.js';
+import { startLogCapture } from '../../build/utils.js';
+import { validateRequiredParam } from '../../build/utils.js';
 
 // Helper to create a standard text response content.
 function createTextContent(text) {

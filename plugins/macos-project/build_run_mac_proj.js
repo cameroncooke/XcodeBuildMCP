@@ -7,10 +7,10 @@
 import { z } from 'zod';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { log } from '../../src/utils/logger.js';
-import { executeCommand } from '../../src/utils/command.js';
-import { createTextResponse } from '../../src/utils/validation.js';
-import { executeXcodeBuildCommand } from '../../src/utils/build-utils.js';
+import { log } from '../../build/utils.js';
+import { executeCommand } from '../../build/utils.js';
+import { createTextResponse } from '../../build/utils.js';
+import { executeXcodeBuildCommand } from '../../build/utils.js';
 
 const XcodePlatform = {
   iOS: 'iOS',

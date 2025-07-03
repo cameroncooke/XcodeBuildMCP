@@ -8,9 +8,9 @@ import { z } from 'zod';
 import { existsSync } from 'fs';
 import { mkdir, cp, readFile, writeFile, readdir } from 'fs/promises';
 import { join, dirname, basename } from 'path';
-import { log } from '../../src/utils/logger.js';
-import { ValidationError } from '../../src/utils/errors.js';
-import { TemplateManager } from '../../src/utils/template-manager.js';
+import { log } from '../../build/utils.js';
+import { ValidationError } from '../../build/utils.js';
+import { TemplateManager } from '../../build/utils.js';
 
 // Common base schema for both iOS and macOS
 const BaseScaffoldSchema = z.object({

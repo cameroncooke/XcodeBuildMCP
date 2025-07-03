@@ -6,7 +6,7 @@
 
 import * as fs from 'fs';
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
+import { log } from '../../build/utils.js';
 import { activeDeviceLogSessions } from './start_device_log_cap.js';
 
 /**

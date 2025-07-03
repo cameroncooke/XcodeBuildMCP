@@ -5,9 +5,9 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
-import { executeXcodeBuildCommand } from '../../src/utils/build-utils.js';
-import { createTextResponse } from '../../src/utils/validation.js';
+import { log } from '../../build/utils.js';
+import { executeXcodeBuildCommand } from '../../build/utils.js';
+import { createTextResponse } from '../../build/utils.js';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
