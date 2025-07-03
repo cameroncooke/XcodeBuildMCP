@@ -9,8 +9,6 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 // Import the plugin
 import openSim from './open_sim.js';
 
-// Import production registration function for compatibility
-import { registerOpenSimulatorTool } from '../../src/tools/simulator/index.js';
 
 // ✅ CORRECT: Mock executeCommand utility
 vi.mock('../../src/utils/command.js', () => ({
@@ -151,10 +149,4 @@ describe('open_sim tool', () => {
     });
   });
 
-  describe('compatibility', () => {
-    it('should be compatible with production registration', () => {
-      expect(registerOpenSimulatorTool).toBeDefined();
-      expect(typeof registerOpenSimulatorTool).toBe('function');
-    });
-  });
 });

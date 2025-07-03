@@ -10,8 +10,7 @@ import { spawn, ChildProcess } from 'child_process';
 // Import the plugin
 import swiftPackageList from './swift_package_list.js';
 
-// Import production registration function for compatibility
-import { registerListSwiftPackageTool } from '../../src/tools/run-swift-package/index.js';
+// Test the plugin directly - no registration function needed
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -51,15 +50,7 @@ vi.mock('../../src/utils/errors.js', () => ({
 }));
 
 // ✅ CORRECT: Mock common tools utilities
-vi.mock('../../src/tools/common/index.js', () => ({
-  registerTool: vi.fn(),
-  swiftConfigurationSchema: {
-    optional: () => ({ describe: () => ({}) }),
-  },
-  parseAsLibrarySchema: {
-    optional: () => ({ describe: () => ({}) }),
-  },
-}));
+// Mock removed - no longer needed for plugin testing
 
 describe('swift_package_list tool', () => {
   describe('plugin structure', () => {
@@ -78,7 +69,6 @@ describe('swift_package_list tool', () => {
   let mockCreateTextResponse: MockedFunction<any>;
   let mockValidateRequiredParam: MockedFunction<any>;
   let mockCreateErrorResponse: MockedFunction<any>;
-  let mockRegisterTool: MockedFunction<any>;
   let mockServer: any;
 
   beforeEach(async () => {
@@ -104,9 +94,6 @@ describe('swift_package_list tool', () => {
     const errorModule = await import('../../src/utils/errors.js');
     mockCreateErrorResponse = errorModule.createErrorResponse as MockedFunction<any>;
 
-    // Mock common tools
-    const commonModule = await import('../../src/tools/common/index.js');
-    mockRegisterTool = commonModule.registerTool as MockedFunction<any>;
 
     // Create mock child process with typical Swift build output
     mockChildProcess = {
@@ -159,31 +146,23 @@ Build complete! (2.34s)`);
     vi.clearAllMocks();
   });
 
-  describe('registerListSwiftPackageTool', () => {
+  describe('plugin handler', () => {
     it('should register the swift package list tool correctly', () => {
       // ✅ Test actual production function
-      registerListSwiftPackageTool(mockServer);
-
-      // ✅ Verify production function called registerTool correctly
-      expect(mockRegisterTool).toHaveBeenCalledWith(
-        mockServer,
-        'swift_package_list',
-        'Lists currently running Swift Package processes',
-        expect.any(Object),
-        expect.any(Function),
-      );
+      
+      // ✅ Test plugin has correct structure for registration
+      expect(swiftPackageList.name).toBe('swift_package_list');
+      expect(swiftPackageList.description).toBeDefined();
+      expect(swiftPackageList.schema).toBeDefined();
+      expect(typeof swiftPackageList.handler).toBe('function');
     });
 
     it('should handle empty process list', async () => {
-      registerListSwiftPackageTool(mockServer);
-
-      const handlerCall = mockRegisterTool.mock.calls.find(
-        (call) => call[1] === 'swift_package_list',
-      );
-      const handler = handlerCall[4];
+      
+      // Test plugin handler directly
 
       // ✅ Test actual production handler with no processes
-      const result = await handler({});
+      const result = await swiftPackageList.handler({});
 
       expect(result.content).toEqual(
         expect.arrayContaining([

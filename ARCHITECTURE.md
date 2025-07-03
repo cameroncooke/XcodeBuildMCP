@@ -33,20 +33,20 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
 │            Presentation / Transport Layer                   │
 │  • src/server/server.ts  – MCP server creation & transport │
 │  • src/index.ts          – process entry, Sentry boot,     │
-│                            tool registration, lifecycle     │
+│                            plugin loading, lifecycle        │
 └────────────────────────────────────────────────────────────┘
 ┌────────────────────────────────────────────────────────────┐
-│         Tool Registration & Feature Toggle Layer           │
-│  • src/utils/register-tools.ts  – declarative catalog      │
-│  • src/utils/tool-groups.ts     – env-based enable logic   │
-│  • Each tool module provides `registerXTool(server)`       │
+│            Plugin Discovery & Registration Layer           │
+│  • src/core/plugin-registry.ts  – automatic plugin loading │
+│  • src/core/plugin-types.ts     – plugin type definitions  │
+│  • plugins/**/                  – self-contained plugins    │
 └────────────────────────────────────────────────────────────┘
 ┌────────────────────────────────────────────────────────────┐
-│                   Tool Implementation Layer                │
-│  • src/tools/**.ts – one file per logical capability       │
+│                   Plugin Implementation Layer              │
+│  • plugins/**/**.js – one file per tool capability         │
 │  • Common patterns:                                         │
+│      – Standardized plugin exports (name, schema, handler) │
 │      – Zod schemas for param validation                    │
-│      – Thin wrapper that invokes shared utils              │
 │      – Uniform ToolResponse payloads                       │
 └────────────────────────────────────────────────────────────┘
 ┌────────────────────────────────────────────────────────────┐
@@ -73,27 +73,33 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
 
 2. **Server Creation**
    - MCP server created with stdio transport
-   - Tool registration based on environment configuration
+   - Plugin discovery system initialized
 
-3. **Tool Registration**
-   - `registerTools` iterates through tool catalog
-   - Environment variables gate which tools are registered
-   - Tools organized by workflow-based groups
+3. **Plugin Discovery & Loading**
+   - `loadPlugins()` scans `plugins/` directory automatically
+   - Each plugin exports standardized interface (`name`, `description`, `schema`, `handler`)
+   - Plugins are self-contained with no external dependencies
+   - Dynamic vs static mode determines loading behavior
 
-4. **Request Handling**
-   - MCP client calls tool → server routes to handler
+4. **Tool Registration**
+   - Discovered plugins automatically registered with server
+   - No manual registration or configuration required
+   - Environment variables can still control dynamic tool discovery
+
+5. **Request Handling**
+   - MCP client calls tool → server routes to plugin handler
    - Zod validates parameters before execution
-   - Tool handler uses shared utilities (build, simctl, etc.)
+   - Plugin handler uses shared utilities (build, simctl, etc.)
    - Returns standardized `ToolResponse`
 
-5. **Response Streaming**
+6. **Response Streaming**
    - Server streams response back to client
    - Consistent error handling with `isError` flag
 
 ## Design Principles
 
-### 1. **Inversion of Control**
-Tools don't know about the server. They accept a server instance during registration and attach handlers, ensuring loose coupling.
+### 1. **Plugin Autonomy**
+Plugins are self-contained units that export a standardized interface. They don't know about the server implementation, ensuring loose coupling and high testability.
 
 ### 2. **Pure Functions vs Stateful Components**
 - Most utilities are stateless pure functions
@@ -102,13 +108,13 @@ Tools don't know about the server. They accept a server instance during registra
 
 ### 3. **Single Source of Truth**
 - Version from `package.json` drives all version references
-- Tool catalog in `register-tools.ts` is authoritative tool list
+- Plugin directory structure is authoritative tool source
 - Environment variables provide consistent configuration interface
 
 ### 4. **Feature Isolation**
 - Experimental features behind environment flags
 - Optional dependencies (Sentry, xcodemake) gracefully degrade
-- Tool groups enable workflow-specific configurations
+- Plugin directory structure enables workflow-specific organization
 
 ### 5. **Type Safety Throughout**
 - TypeScript strict mode enabled
@@ -143,65 +149,81 @@ MCP server wrapper providing:
 - Request/response handling
 - Error boundary implementation
 
-### Tool Registration System
+### Plugin Discovery System
 
-#### `src/utils/register-tools.ts`
-Declarative tool catalog containing:
-```typescript
-const toolRegistrations = [
-  {
-    register: registerToolFunction,     // Tool registration function
-    groups: [ToolGroup.WORKFLOW],       // Workflow groups
-    envVar: 'XCODEBUILDMCP_TOOL_NAME', // Individual toggle
-    isWriteTool: boolean               // Write permission flag
-  }
-];
-```
+#### `src/core/plugin-registry.ts`
+Automatic plugin loading system:
+- Scans `plugins/` directory structure using glob patterns
+- Dynamically imports plugin modules
+- Validates plugin interface compliance
+- Handles both default exports and named exports (for re-exports)
+- Supports workflow group metadata via `index.js` files
 
-#### `src/utils/tool-groups.ts`
-Tool group definitions and enablement logic:
-- Workflow-based groups (e.g., `IOS_SIMULATOR_WORKFLOW`)
-- Environment variable mapping
-- Selective enablement strategies
-- Write tool permission handling
+#### `src/core/plugin-types.ts`
+Plugin type definitions:
+- `PluginMeta` interface for plugin structure
+- `WorkflowMeta` interface for workflow metadata
+- `WorkflowGroup` interface for directory organization
 
-### Tool Implementation
+### Plugin Implementation
 
-Each tool module (`src/tools/*.ts`) follows this pattern:
+Each plugin (`plugins/*/*.js`) follows this standardized pattern:
 
-```typescript
+```javascript
 // 1. Import dependencies and schemas
 import { z } from 'zod';
-import { registerTool } from './common.js';
+import { log } from '../../src/utils/logger.js';
+import { executeCommand } from '../../src/utils/command.js';
 
-// 2. Define parameter schema
-const ParamsSchema = z.object({
-  requiredParam: z.string(),
-  optionalParam: z.string().optional()
-});
-
-// 3. Export registration function
-export function registerMyTool(server: McpServer): void {
-  registerTool(
-    server,
-    'tool_name',
-    'Tool description',
-    ParamsSchema,
-    async (params) => {
-      // 4. Validate parameters
-      const validated = ParamsSchema.parse(params);
-      
-      // 5. Execute tool logic
-      const result = await executeLogic(validated);
+// 2. Define and export plugin
+export default {
+  name: 'tool_name',
+  description: 'Tool description for AI agents',
+  
+  // 3. Define parameter schema
+  schema: {
+    requiredParam: z.string().describe('Description for AI'),
+    optionalParam: z.string().optional().describe('Optional parameter')
+  },
+  
+  // 4. Implement handler function
+  async handler(params) {
+    try {
+      // 5. Execute tool logic using shared utilities
+      const result = await executeCommand(['some', 'command']);
       
       // 6. Return standardized response
       return {
-        content: [{ type: 'text', text: result }],
+        content: [{ type: 'text', text: result.output }],
         isError: false
       };
+    } catch (error) {
+      return {
+        content: [{ type: 'text', text: `Error: ${error.message}` }],
+        isError: true
+      };
     }
-  );
-}
+  }
+};
+```
+
+### Plugin Directory Structure
+
+```
+plugins/
+├── device-workspace/        # Device + Workspace operations
+├── device-project/          # Device + Project operations (re-exports)
+├── simulator-workspace/     # Simulator + Workspace operations  
+├── simulator-project/       # Simulator + Project operations (re-exports)
+├── macos-workspace/         # macOS + Workspace operations
+├── macos-project/           # macOS + Project operations (re-exports)
+├── ui-testing/              # UI automation tools
+├── swift-package/           # Swift Package Manager tools
+├── project-discovery/       # Project analysis tools
+├── logging/                 # Log capture tools
+├── utilities/               # General utilities
+├── diagnostics/             # Diagnostic tools
+└── discovery/               # Dynamic tool discovery
 ```
 
 ### Utility Layer
@@ -230,9 +252,9 @@ export function registerMyTool(server: McpServer): void {
 - Integration with error tracking
 - Debug mode support
 
-## Tool Organization
+## Plugin Organization
 
-### Tool Categories (81 tools total)
+### Plugin Categories (81 tools total across 13 directories)
 
 #### Build Tools (20 tools)
 - macOS builds (workspace/project)

@@ -9,8 +9,6 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 // Import the plugin
 import launchAppSim from './launch_app_sim.js';
 
-// Import production registration function for compatibility
-import { registerLaunchAppInSimulatorTool } from '../../src/tools/simulator/index.js';
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -57,7 +55,6 @@ describe('launch_app_sim tool', () => {
 
   let mockExecuteCommand: MockedFunction<any>;
   let mockValidateRequiredParam: MockedFunction<any>;
-  let mockServer: any;
 
   beforeEach(async () => {
     // Mock executeCommand
@@ -73,11 +70,6 @@ describe('launch_app_sim tool', () => {
     const validationModule = await import('../../src/utils/validation.js');
     mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
 
-    // Mock server object with tool method
-    mockServer = {
-      tool: vi.fn(),
-    };
-
     // Default mock behaviors
     mockValidateRequiredParam.mockReturnValue({
       isValid: true,
@@ -87,28 +79,8 @@ describe('launch_app_sim tool', () => {
     vi.clearAllMocks();
   });
 
-  describe('registerLaunchAppInSimulatorTool', () => {
-    it('should register the launch app in simulator tool correctly', () => {
-      // ✅ Test actual production function
-      registerLaunchAppInSimulatorTool(mockServer);
-
-      // ✅ Verify production function called server.tool correctly
-      expect(mockServer.tool).toHaveBeenCalledWith(
-        'launch_app_sim',
-        "Launches an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and bundleId parameters.\n\nNote: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_sim({ simulatorUuid: 'YOUR_UUID_HERE', bundleId: 'com.example.MyApp' })",
-        expect.any(Object),
-        expect.any(Function),
-      );
-    });
-
+  describe('plugin handler', () => {
     it('should handle successful app launch', async () => {
-      registerLaunchAppInSimulatorTool(mockServer);
-
-      const handlerCall = mockServer.tool.mock.calls.find(
-        (call) => call[0] === 'launch_app_sim',
-      );
-      const handler = handlerCall[3];
-
       // Mock successful execution for app container check
       mockExecuteCommand
         .mockResolvedValueOnce({
@@ -123,7 +95,7 @@ describe('launch_app_sim tool', () => {
         });
 
       // ✅ Test actual production handler with successful launch
-      const result = await handler({ 
+      const result = await launchAppSim.handler({ 
         simulatorUuid: 'test-uuid-123', 
         bundleId: 'com.example.testapp' 
       });
@@ -150,13 +122,6 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should handle app launch with additional arguments', async () => {
-      registerLaunchAppInSimulatorTool(mockServer);
-
-      const handlerCall = mockServer.tool.mock.calls.find(
-        (call) => call[0] === 'launch_app_sim',
-      );
-      const handler = handlerCall[3];
-
       // Mock successful execution for app container check and launch
       mockExecuteCommand
         .mockResolvedValueOnce({
@@ -171,7 +136,7 @@ describe('launch_app_sim tool', () => {
         });
 
       // ✅ Test actual production handler with additional arguments
-      const result = await handler({ 
+      const result = await launchAppSim.handler({ 
         simulatorUuid: 'test-uuid-123', 
         bundleId: 'com.example.testapp',
         args: ['--debug', '--verbose']
@@ -194,13 +159,6 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should handle app not installed error', async () => {
-      registerLaunchAppInSimulatorTool(mockServer);
-
-      const handlerCall = mockServer.tool.mock.calls.find(
-        (call) => call[0] === 'launch_app_sim',
-      );
-      const handler = handlerCall[3];
-
       // Mock failed execution for app container check
       mockExecuteCommand.mockResolvedValue({
         success: false,
@@ -209,7 +167,7 @@ describe('launch_app_sim tool', () => {
       });
 
       // ✅ Test actual production handler with app not installed
-      const result = await handler({ 
+      const result = await launchAppSim.handler({ 
         simulatorUuid: 'test-uuid-123', 
         bundleId: 'com.example.testapp' 
       });
@@ -224,13 +182,6 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should handle app launch failure', async () => {
-      registerLaunchAppInSimulatorTool(mockServer);
-
-      const handlerCall = mockServer.tool.mock.calls.find(
-        (call) => call[0] === 'launch_app_sim',
-      );
-      const handler = handlerCall[3];
-
       // Mock successful execution for app container check but failure for launch
       mockExecuteCommand
         .mockResolvedValueOnce({
@@ -245,7 +196,7 @@ describe('launch_app_sim tool', () => {
         });
 
       // ✅ Test actual production handler with launch failure
-      const result = await handler({ 
+      const result = await launchAppSim.handler({ 
         simulatorUuid: 'test-uuid-123', 
         bundleId: 'com.example.testapp' 
       });
@@ -259,13 +210,6 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should handle validation failures for simulatorUuid', async () => {
-      registerLaunchAppInSimulatorTool(mockServer);
-
-      const handlerCall = mockServer.tool.mock.calls.find(
-        (call) => call[0] === 'launch_app_sim',
-      );
-      const handler = handlerCall[3];
-
       // Mock validation failure for simulatorUuid
       mockValidateRequiredParam.mockReturnValueOnce({
         isValid: false,
@@ -276,7 +220,7 @@ describe('launch_app_sim tool', () => {
       });
 
       // ✅ Test actual production handler with validation failure
-      const result = await handler({ 
+      const result = await launchAppSim.handler({ 
         simulatorUuid: '', 
         bundleId: 'com.example.testapp' 
       });
@@ -288,13 +232,6 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should handle validation failures for bundleId', async () => {
-      registerLaunchAppInSimulatorTool(mockServer);
-
-      const handlerCall = mockServer.tool.mock.calls.find(
-        (call) => call[0] === 'launch_app_sim',
-      );
-      const handler = handlerCall[3];
-
       // Mock validation success for simulatorUuid but failure for bundleId
       mockValidateRequiredParam
         .mockReturnValueOnce({
@@ -310,7 +247,7 @@ describe('launch_app_sim tool', () => {
         });
 
       // ✅ Test actual production handler with validation failure
-      const result = await handler({ 
+      const result = await launchAppSim.handler({ 
         simulatorUuid: 'test-uuid-123', 
         bundleId: '' 
       });
@@ -322,18 +259,11 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should handle exception during app container check', async () => {
-      registerLaunchAppInSimulatorTool(mockServer);
-
-      const handlerCall = mockServer.tool.mock.calls.find(
-        (call) => call[0] === 'launch_app_sim',
-      );
-      const handler = handlerCall[3];
-
       // Mock execution that throws an exception
       mockExecuteCommand.mockRejectedValue(new Error('Network error'));
 
       // ✅ Test actual production handler with exception during check
-      const result = await handler({ 
+      const result = await launchAppSim.handler({ 
         simulatorUuid: 'test-uuid-123', 
         bundleId: 'com.example.testapp' 
       });

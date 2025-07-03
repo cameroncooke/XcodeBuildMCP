@@ -10,8 +10,7 @@ import { spawn, ChildProcess } from 'child_process';
 // Import the plugin
 import swiftPackageClean from './swift_package_clean.js';
 
-// Import production registration function for compatibility
-import { registerCleanSwiftPackageTool } from '../../src/tools/run-swift-package/index.js';
+// Test the plugin directly - no registration function needed
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -50,16 +49,7 @@ vi.mock('../../src/utils/errors.js', () => ({
   createErrorResponse: vi.fn(),
 }));
 
-// ✅ CORRECT: Mock common tools utilities
-vi.mock('../../src/tools/common/index.js', () => ({
-  registerTool: vi.fn(),
-  swiftConfigurationSchema: {
-    optional: () => ({ describe: () => ({}) }),
-  },
-  parseAsLibrarySchema: {
-    optional: () => ({ describe: () => ({}) }),
-  },
-}));
+// Mock removed - no longer needed for plugin testing
 
 describe('swift_package_clean tool', () => {
   describe('plugin structure', () => {
@@ -78,7 +68,6 @@ describe('swift_package_clean tool', () => {
   let mockCreateTextResponse: MockedFunction<any>;
   let mockValidateRequiredParam: MockedFunction<any>;
   let mockCreateErrorResponse: MockedFunction<any>;
-  let mockRegisterTool: MockedFunction<any>;
   let mockServer: any;
 
   beforeEach(async () => {
@@ -104,9 +93,6 @@ describe('swift_package_clean tool', () => {
     const errorModule = await import('../../src/utils/errors.js');
     mockCreateErrorResponse = errorModule.createErrorResponse as MockedFunction<any>;
 
-    // Mock common tools
-    const commonModule = await import('../../src/tools/common/index.js');
-    mockRegisterTool = commonModule.registerTool as MockedFunction<any>;
 
     // Create mock child process with typical Swift build output
     mockChildProcess = {
@@ -159,28 +145,17 @@ Build complete! (2.34s)`);
     vi.clearAllMocks();
   });
 
-  describe('registerCleanSwiftPackageTool', () => {
-    it('should register the swift package clean tool correctly', () => {
-      // ✅ Test actual production function
-      registerCleanSwiftPackageTool(mockServer);
-
-      // ✅ Verify production function called registerTool correctly
-      expect(mockRegisterTool).toHaveBeenCalledWith(
-        mockServer,
-        'swift_package_clean',
-        'Cleans Swift Package build artifacts and derived data',
-        expect.any(Object),
-        expect.any(Function),
-      );
+  describe('plugin handler', () => {
+    it('should have correct plugin structure and registration info', () => {
+      // ✅ Test plugin has correct structure for registration
+      expect(swiftPackageClean.name).toBe('swift_package_clean');
+      expect(swiftPackageClean.description).toBe('Cleans Swift Package build artifacts and derived data');
+      expect(swiftPackageClean.schema).toBeDefined();
+      expect(typeof swiftPackageClean.handler).toBe('function');
     });
 
     it('should handle successful clean', async () => {
-      registerCleanSwiftPackageTool(mockServer);
-
-      const handlerCall = mockRegisterTool.mock.calls.find(
-        (call) => call[1] === 'swift_package_clean',
-      );
-      const handler = handlerCall[4];
+      // Test plugin handler directly
 
       // Mock successful execution
       mockExecuteCommand.mockResolvedValue({
@@ -189,8 +164,8 @@ Build complete! (2.34s)`);
         error: '',
       });
 
-      // ✅ Test actual production handler with successful clean
-      const result = await handler({ packagePath: '/test/package' });
+      // ✅ Test plugin handler with successful clean
+      const result = await swiftPackageClean.handler({ packagePath: '/test/package' });
 
       expect(mockExecuteCommand).toHaveBeenCalledWith(
         ['swift', 'package', '--package-path', '/test/package', 'clean'],

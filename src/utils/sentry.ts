@@ -7,11 +7,74 @@
 
 import * as Sentry from '@sentry/node';
 import { version } from '../version.js';
-import {
-  getXcodeInfo,
-  getEnvironmentVariables,
-  checkBinaryAvailability,
-} from '../tools/diagnostic/index.js';
+import { execSync } from 'child_process';
+
+// Inlined diagnostic functions to avoid circular dependencies
+function getXcodeInfo() {
+  try {
+    const xcodebuildOutput = execSync('xcodebuild -version', { encoding: 'utf8' }).trim();
+    const version = xcodebuildOutput.split('\n').slice(0, 2).join(' - ');
+    const path = execSync('xcode-select -p', { encoding: 'utf8' }).trim();
+    const selectedXcode = execSync('xcrun --find xcodebuild', { encoding: 'utf8' }).trim();
+
+    return { version, path, selectedXcode };
+  } catch (error) {
+    return {
+      version: 'Not available',
+      path: 'Not available',
+      selectedXcode: 'Not available',
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+function getEnvironmentVariables() {
+  const relevantVars = [
+    'XCODEBUILDMCP_DEBUG',
+    'INCREMENTAL_BUILDS_ENABLED',
+    'PATH',
+    'DEVELOPER_DIR',
+    'HOME',
+    'USER',
+    'TMPDIR',
+    'NODE_ENV',
+    'SENTRY_DISABLED',
+  ];
+
+  const envVars = {};
+  relevantVars.forEach((varName) => {
+    envVars[varName] = process.env[varName] || '';
+  });
+
+  return envVars;
+}
+
+function checkBinaryAvailability(binary) {
+  try {
+    execSync(`which ${binary}`, { stdio: 'ignore' });
+  } catch {
+    return { available: false };
+  }
+
+  let version;
+  const versionCommands = {
+    axe: 'axe --version',
+    mise: 'mise --version',
+  };
+
+  if (binary in versionCommands) {
+    try {
+      version = execSync(versionCommands[binary], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+    } catch {
+      // Version command failed, but binary exists
+    }
+  }
+
+  return { available: true, version };
+}
 
 Sentry.init({
   dsn: 'https://798607831167c7b9fe2f2912f5d3c665@o4509258288332800.ingest.de.sentry.io/4509258293837904',

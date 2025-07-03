@@ -38,10 +38,7 @@ vi.mock('../../src/utils/template-manager.js', () => ({
   },
 }));
 
-// Mock common tool registration
-vi.mock('../../src/tools/common/index.js', () => ({
-  registerTool: vi.fn(),
-}));
+// Mock removed - no longer needed for plugin testing
 
 // Import mocked functions and types
 import { TemplateManager } from '../../src/utils/template-manager.js';

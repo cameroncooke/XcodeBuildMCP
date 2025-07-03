@@ -15,12 +15,6 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import plugin from './key_press.js';
-import {
-  keyPressToolName,
-  keyPressToolDescription,
-  keyPressToolSchema,
-  keyPressToolHandler,
-} from '../../src/tools/axe/index.js';
 
 describe('key_press Plugin Migration Tests', () => {
   describe('Plugin Structure Validation', () => {
@@ -45,27 +39,24 @@ describe('key_press Plugin Migration Tests', () => {
 
   describe('Integration with Original Exports', () => {
     it('should use original exported tool name', () => {
-      expect(plugin.name).toBe(keyPressToolName);
-      expect(keyPressToolName).toBe('key_press');
+      expect(plugin.name).toBe('key_press');
     });
 
     it('should use original exported description', () => {
-      expect(plugin.description).toBe(keyPressToolDescription);
-      expect(keyPressToolDescription).toContain('Common keycodes');
-      expect(keyPressToolDescription).toContain('40=Return');
-      expect(keyPressToolDescription).toContain('42=Backspace');
+      expect(plugin.description).toBe('Press a single key by keycode on the simulator. Common keycodes: 40=Return, 42=Backspace, 43=Tab, 44=Space, 58-67=F1-F10.');
+      expect(plugin.description).toContain('Common keycodes');
+      expect(plugin.description).toContain('40=Return');
+      expect(plugin.description).toContain('42=Backspace');
     });
 
-    it('should use original exported schema', () => {
-      expect(plugin.schema).toBe(keyPressToolSchema);
+    it('should have correct schema properties', () => {
       expect(plugin.schema).toHaveProperty('simulatorUuid');
       expect(plugin.schema).toHaveProperty('keyCode');
       expect(plugin.schema).toHaveProperty('duration');
     });
 
-    it('should use original exported handler', () => {
-      expect(plugin.handler).toBe(keyPressToolHandler);
-      expect(typeof keyPressToolHandler).toBe('function');
+    it('should have correct handler', () => {
+      expect(typeof plugin.handler).toBe('function');
     });
   });
 
@@ -153,10 +144,6 @@ describe('key_press Plugin Migration Tests', () => {
       expect(plugin.handler.constructor.name).toBe('AsyncFunction');
     });
 
-    it('should be the same reference as exported handler', () => {
-      // Verify the plugin uses the exact same handler function reference
-      expect(plugin.handler).toBe(keyPressToolHandler);
-    });
 
     it('should accept parameters matching the schema', () => {
       // This tests the TypeScript interface alignment
@@ -174,21 +161,21 @@ describe('key_press Plugin Migration Tests', () => {
 
   describe('Migration Integrity', () => {
     it('should maintain all required exports from original implementation', () => {
-      // Verify all exported components exist and have correct types
-      expect(typeof keyPressToolName).toBe('string');
-      expect(typeof keyPressToolDescription).toBe('string');
-      expect(typeof keyPressToolSchema).toBe('object');
-      expect(typeof keyPressToolHandler).toBe('function');
+      // Verify plugin has all required components
+      expect(typeof plugin.name).toBe('string');
+      expect(typeof plugin.description).toBe('string');
+      expect(typeof plugin.schema).toBe('object');
+      expect(typeof plugin.handler).toBe('function');
     });
 
     it('should have consistent tool metadata', () => {
-      expect(keyPressToolName).toBe('key_press');
-      expect(keyPressToolDescription).toContain('Press a single key by keycode');
-      expect(keyPressToolDescription).toContain('40=Return');
-      expect(keyPressToolDescription).toContain('42=Backspace');
-      expect(keyPressToolDescription).toContain('43=Tab');
-      expect(keyPressToolDescription).toContain('44=Space');
-      expect(keyPressToolDescription).toContain('58-67=F1-F10');
+      expect(plugin.name).toBe('key_press');
+      expect(plugin.description).toContain('Press a single key by keycode');
+      expect(plugin.description).toContain('40=Return');
+      expect(plugin.description).toContain('42=Backspace');
+      expect(plugin.description).toContain('43=Tab');
+      expect(plugin.description).toContain('44=Space');
+      expect(plugin.description).toContain('58-67=F1-F10');
     });
 
     it('should maintain keyCode validation range consistency', () => {

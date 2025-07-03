@@ -50,8 +50,8 @@ describe('show_build_set_proj plugin', () => {
 
     it('should have a schema with required fields', () => {
       expect(plugin.schema).toBeDefined();
-      expect(plugin.schema.projectPath).toBeDefined();
-      expect(plugin.schema.scheme).toBeDefined();
+      expect(plugin.schema.shape.projectPath).toBeDefined();
+      expect(plugin.schema.shape.scheme).toBeDefined();
     });
 
     it('should have a handler function', () => {
@@ -79,29 +79,25 @@ describe('show_build_set_proj plugin', () => {
     });
 
     it('should return error if projectPath validation fails', async () => {
-      const errorResponse = { content: [{ type: 'text', text: 'Missing projectPath' }], isError: true };
-      mockValidateRequiredParam.mockReturnValueOnce({
-        isValid: false,
-        errorResponse,
-      });
-
-      const result = await plugin.handler({ scheme: 'MyScheme' });
-      
-      expect(result).toBe(errorResponse);
+      try {
+        await plugin.handler({ scheme: 'MyScheme' });
+        expect.fail('Should have thrown ZodError');
+      } catch (error) {
+        expect(error.name).toBe('ZodError');
+        expect(error.issues[0].path).toEqual(['projectPath']);
+        expect(error.issues[0].message).toBe('Required');
+      }
     });
 
     it('should return error if scheme validation fails', async () => {
-      const errorResponse = { content: [{ type: 'text', text: 'Missing scheme' }], isError: true };
-      mockValidateRequiredParam
-        .mockReturnValueOnce({ isValid: true }) // projectPath validation passes
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse,
-        }); // scheme validation fails
-
-      const result = await plugin.handler({ projectPath: '/path/to/project.xcodeproj' });
-      
-      expect(result).toBe(errorResponse);
+      try {
+        await plugin.handler({ projectPath: '/path/to/project.xcodeproj' });
+        expect.fail('Should have thrown ZodError');
+      } catch (error) {
+        expect(error.name).toBe('ZodError');
+        expect(error.issues[0].path).toEqual(['scheme']);
+        expect(error.issues[0].message).toBe('Required');
+      }
     });
 
     it('should execute xcodebuild command with correct parameters', async () => {

@@ -15,12 +15,6 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import plugin from './key_sequence.js';
-import {
-  keySequenceToolName,
-  keySequenceToolDescription,
-  keySequenceToolSchema,
-  keySequenceToolHandler,
-} from '../../src/tools/axe/index.js';
 
 describe('key_sequence Plugin Migration Tests', () => {
   describe('Plugin Structure Validation', () => {
@@ -45,26 +39,23 @@ describe('key_sequence Plugin Migration Tests', () => {
 
   describe('Integration with Original Exports', () => {
     it('should use original exported tool name', () => {
-      expect(plugin.name).toBe(keySequenceToolName);
-      expect(keySequenceToolName).toBe('key_sequence');
+      expect(plugin.name).toBe('key_sequence');
     });
 
     it('should use original exported description', () => {
-      expect(plugin.description).toBe(keySequenceToolDescription);
-      expect(keySequenceToolDescription).toContain('HID keycodes');
-      expect(keySequenceToolDescription).toContain('configurable delay');
+      expect(plugin.description).toBe('Press key sequence using HID keycodes on iOS simulator with configurable delay');
+      expect(plugin.description).toContain('HID keycodes');
+      expect(plugin.description).toContain('configurable delay');
     });
 
-    it('should use original exported schema', () => {
-      expect(plugin.schema).toBe(keySequenceToolSchema);
+    it('should have schema with correct properties', () => {
       expect(plugin.schema).toHaveProperty('simulatorUuid');
       expect(plugin.schema).toHaveProperty('keyCodes');
       expect(plugin.schema).toHaveProperty('delay');
     });
 
-    it('should use original exported handler', () => {
-      expect(plugin.handler).toBe(keySequenceToolHandler);
-      expect(typeof keySequenceToolHandler).toBe('function');
+    it('should have handler function', () => {
+      expect(typeof plugin.handler).toBe('function');
     });
   });
 
@@ -166,9 +157,8 @@ describe('key_sequence Plugin Migration Tests', () => {
       expect(plugin.handler.constructor.name).toBe('AsyncFunction');
     });
 
-    it('should be the same reference as exported handler', () => {
-      // Verify the plugin uses the exact same handler function reference
-      expect(plugin.handler).toBe(keySequenceToolHandler);
+    it('should have async handler function', () => {
+      expect(plugin.handler.constructor.name).toBe('AsyncFunction');
     });
 
     it('should accept parameters matching the schema', () => {
@@ -187,17 +177,17 @@ describe('key_sequence Plugin Migration Tests', () => {
 
   describe('Migration Integrity', () => {
     it('should maintain all required exports from original implementation', () => {
-      // Verify all exported components exist and have correct types
-      expect(typeof keySequenceToolName).toBe('string');
-      expect(typeof keySequenceToolDescription).toBe('string');
-      expect(typeof keySequenceToolSchema).toBe('object');
-      expect(typeof keySequenceToolHandler).toBe('function');
+      // Verify plugin has all required components
+      expect(typeof plugin.name).toBe('string');
+      expect(typeof plugin.description).toBe('string');
+      expect(typeof plugin.schema).toBe('object');
+      expect(typeof plugin.handler).toBe('function');
     });
 
     it('should have consistent tool metadata', () => {
-      expect(keySequenceToolName).toBe('key_sequence');
-      expect(keySequenceToolDescription).toContain('Press key sequence using HID keycodes');
-      expect(keySequenceToolDescription).toContain('configurable delay');
+      expect(plugin.name).toBe('key_sequence');
+      expect(plugin.description).toContain('Press key sequence using HID keycodes');
+      expect(plugin.description).toContain('configurable delay');
     });
 
     it('should maintain keyCodes array validation consistency', () => {

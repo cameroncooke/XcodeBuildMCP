@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
 import setSimAppearancePlugin from './set_sim_appearance.js';
-import { registerSetSimulatorAppearanceTool } from '../../src/tools/simulator/index.js';
 
 // Mock the executeCommand utility  
 vi.mock('../../src/utils/command.js', () => ({
@@ -20,7 +19,6 @@ vi.mock('../../src/utils/validation.js', () => ({
 describe('set_sim_appearance plugin', () => {
   let mockExecuteCommand: MockedFunction<any>;
   let mockValidateRequiredParam: MockedFunction<any>;
-  let mockServer: any;
 
   beforeEach(async () => {
     // Mock executeCommand
@@ -35,11 +33,6 @@ describe('set_sim_appearance plugin', () => {
     // Mock validation utilities
     const validationModule = await import('../../src/utils/validation.js');
     mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
-
-    // Mock server object with tool method
-    mockServer = {
-      tool: vi.fn(),
-    };
 
     // Default mock behaviors
     mockValidateRequiredParam.mockReturnValue({
@@ -97,26 +90,8 @@ describe('set_sim_appearance plugin', () => {
     expect(() => schema.mode.parse('invalid')).toThrow();
   });
 
-  describe('registerSetSimulatorAppearanceTool', () => {
-    it('should register the set simulator appearance tool correctly', () => {
-      registerSetSimulatorAppearanceTool(mockServer);
-
-      expect(mockServer.tool).toHaveBeenCalledWith(
-        'set_sim_appearance',
-        'Sets the appearance mode (dark/light) of an iOS simulator.',
-        expect.any(Object),
-        expect.any(Function),
-      );
-    });
-
+  describe('plugin handler', () => {
     it('should handle successful appearance change', async () => {
-      registerSetSimulatorAppearanceTool(mockServer);
-
-      const handlerCall = mockServer.tool.mock.calls.find(
-        (call) => call[0] === 'set_sim_appearance',
-      );
-      const handler = handlerCall[3];
-
       // Mock successful execution
       mockExecuteCommand.mockResolvedValue({
         success: true,
@@ -124,7 +99,7 @@ describe('set_sim_appearance plugin', () => {
         error: '',
       });
 
-      const result = await handler({ 
+      const result = await setSimAppearancePlugin.handler({ 
         simulatorUuid: 'test-uuid-123',
         mode: 'dark'
       });
@@ -142,13 +117,6 @@ describe('set_sim_appearance plugin', () => {
     });
 
     it('should handle appearance change failure', async () => {
-      registerSetSimulatorAppearanceTool(mockServer);
-
-      const handlerCall = mockServer.tool.mock.calls.find(
-        (call) => call[0] === 'set_sim_appearance',
-      );
-      const handler = handlerCall[3];
-
       // Mock failed execution
       mockExecuteCommand.mockResolvedValue({
         success: false,
@@ -156,7 +124,7 @@ describe('set_sim_appearance plugin', () => {
         error: 'Invalid device: invalid-uuid',
       });
 
-      const result = await handler({ 
+      const result = await setSimAppearancePlugin.handler({ 
         simulatorUuid: 'invalid-uuid',
         mode: 'light'
       });

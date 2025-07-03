@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import tapPlugin from './tap.js';
-import { tapToolName, tapToolDescription, tapToolSchema, tapToolHandler } from '../../src/tools/axe/index.js';
+// Test the plugin directly - no external imports needed
 
 // Mock dependencies
 vi.mock('../../src/utils/executeCommand.js', () => ({
@@ -36,12 +36,13 @@ describe('tap plugin', () => {
   });
 
   it('should export the correct plugin structure', () => {
-    expect(tapPlugin).toEqual({
-      name: tapToolName,
-      description: tapToolDescription,
-      schema: tapToolSchema,
-      handler: tapToolHandler,
+    expect(tapPlugin).toMatchObject({
+      name: 'tap',
+      description: "Tap at specific coordinates. Use describe_ui to get precise element coordinates (don't guess from screenshots). Supports optional timing delays.",
     });
+    expect(tapPlugin).toHaveProperty('schema');
+    expect(tapPlugin).toHaveProperty('handler');
+    expect(typeof tapPlugin.handler).toBe('function');
   });
 
   it('should have correct tool name', () => {
@@ -129,10 +130,6 @@ describe('tap plugin', () => {
   });
 
   describe('handler integration', () => {
-    it('should use the same handler as the original tool', () => {
-      expect(tapPlugin.handler).toBe(tapToolHandler);
-    });
-
     it('should be an async function', () => {
       expect(tapPlugin.handler.constructor.name).toBe('AsyncFunction');
     });
@@ -177,21 +174,22 @@ describe('tap plugin', () => {
     });
   });
 
-  describe('compatibility with original exports', () => {
-    it('should use the same name as exported constant', () => {
-      expect(tapPlugin.name).toBe(tapToolName);
+  describe('plugin structure validation', () => {
+    it('should have correct name value', () => {
+      expect(tapPlugin.name).toBe('tap');
     });
 
-    it('should use the same description as exported constant', () => {
-      expect(tapPlugin.description).toBe(tapToolDescription);
+    it('should have correct description value', () => {
+      expect(tapPlugin.description).toBe("Tap at specific coordinates. Use describe_ui to get precise element coordinates (don't guess from screenshots). Supports optional timing delays.");
     });
 
-    it('should use the same schema as exported constant', () => {
-      expect(tapPlugin.schema).toBe(tapToolSchema);
+    it('should have object schema structure', () => {
+      expect(typeof tapPlugin.schema).toBe('object');
+      expect(Object.keys(tapPlugin.schema)).toEqual(['simulatorUuid', 'x', 'y', 'preDelay', 'postDelay']);
     });
 
-    it('should use the same handler as exported constant', () => {
-      expect(tapPlugin.handler).toBe(tapToolHandler);
+    it('should have function handler type', () => {
+      expect(typeof tapPlugin.handler).toBe('function');
     });
   });
 });

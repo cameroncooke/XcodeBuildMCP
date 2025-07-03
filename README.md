@@ -41,15 +41,16 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 
 ## Overview
 
-XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operations as tools for AI assistants and other MCP clients. Built with a modular, tool-based architecture, it provides 81 fine-grained tools organized into workflow-based groups, enabling programmatic interaction with Xcode projects, simulators, devices, and Swift packages through a standardized interface.
+XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operations as tools for AI assistants and other MCP clients. Built with a modern plugin architecture, it provides 81 self-contained tools organized into workflow-based directories, enabling programmatic interaction with Xcode projects, simulators, devices, and Swift packages through a standardized interface.
 
 ### Architecture Highlights
 
-- **Layered Design**: Clean separation between transport, tool registration, implementation, and utility layers
-- **Tool Granularity**: 81 specialized tools for precise control over Xcode operations
-- **Flexible Enablement**: Environment-based tool selection at group or individual level
+- **Plugin Architecture**: Self-contained tools with automatic discovery and zero-config registration
+- **Tool Granularity**: 81 specialized tools across 13 plugin directories for precise control
+- **Dynamic Loading**: Automatic plugin discovery with flexible enablement options
+- **Workflow Organization**: Tools grouped by logical workflow patterns (simulator, device, macOS, etc.)
 - **Type Safety**: Comprehensive Zod schema validation for all tool parameters
-- **Extensible**: Easy addition of new tools through declarative registration system
+- **Extensible**: Easy addition of new tools through standardized plugin interface
 
 ![xcodebuildmcp2](https://github.com/user-attachments/assets/8961d5db-f7ed-4e60-bbb8-48bfd0bc1353)
 <caption>Using Cursor to build, install, and launch an app on the iOS simulator while capturing logs at run-time.</caption>

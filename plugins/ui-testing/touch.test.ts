@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import touchPlugin from './touch.js';
-import { touchToolName, touchToolDescription, touchToolSchema, touchToolHandler } from '../../src/tools/axe/index.js';
 
 // Mock dependencies
 vi.mock('../../src/utils/executeCommand.js', () => ({
@@ -39,12 +38,13 @@ describe('touch plugin', () => {
   });
 
   it('should export the correct plugin structure', () => {
-    expect(touchPlugin).toEqual({
-      name: touchToolName,
-      description: touchToolDescription,
-      schema: touchToolSchema,
-      handler: touchToolHandler,
+    expect(touchPlugin).toMatchObject({
+      name: 'touch',
+      description: 'Perform touch down/up events at specific coordinates. Use describe_ui for precise coordinates (don\'t guess from screenshots).',
     });
+    expect(touchPlugin).toHaveProperty('schema');
+    expect(touchPlugin).toHaveProperty('handler');
+    expect(typeof touchPlugin.handler).toBe('function');
   });
 
   it('should have correct tool name', () => {
@@ -138,10 +138,6 @@ describe('touch plugin', () => {
   });
 
   describe('handler integration', () => {
-    it('should use the same handler as the original tool', () => {
-      expect(touchPlugin.handler).toBe(touchToolHandler);
-    });
-
     it('should be an async function', () => {
       expect(touchPlugin.handler.constructor.name).toBe('AsyncFunction');
     });

@@ -1,11 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import discoverProjsPlugin from './discover_projs.js';
-import { 
-  discoverProjsToolName, 
-  discoverProjsToolDescription, 
-  discoverProjsToolSchema, 
-  discoverProjsToolHandler 
-} from '../../src/tools/discover-projects/index.js';
 
 // Mock dependencies
 vi.mock('../../src/utils/logger.js', () => ({
@@ -48,12 +42,10 @@ describe('discover_projs plugin', () => {
   });
 
   it('should export the correct plugin structure', () => {
-    expect(discoverProjsPlugin).toEqual({
-      name: discoverProjsToolName,
-      description: discoverProjsToolDescription,
-      schema: discoverProjsToolSchema,
-      handler: expect.any(Function),
-    });
+    expect(discoverProjsPlugin.name).toBe('discover_projs');
+    expect(discoverProjsPlugin.description).toBe('Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.');
+    expect(discoverProjsPlugin).toHaveProperty('schema');
+    expect(typeof discoverProjsPlugin.handler).toBe('function');
   });
 
   it('should have correct tool name', () => {
@@ -74,9 +66,8 @@ describe('discover_projs plugin', () => {
     expect(typeof discoverProjsPlugin.handler).toBe('function');
   });
 
-  it('should wrap the original handler', async () => {
-    // Test that the plugin wraps the actual handler
-    expect(discoverProjsPlugin.handler).not.toBe(discoverProjsToolHandler);
+  it('should have the correct handler', async () => {
+    // Test that the plugin has a handler function
     expect(typeof discoverProjsPlugin.handler).toBe('function');
   });
 });

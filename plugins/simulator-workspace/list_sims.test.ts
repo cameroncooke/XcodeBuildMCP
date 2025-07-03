@@ -9,8 +9,6 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 // Import the plugin
 import listSims from './list_sims.js';
 
-// Import production registration function for compatibility
-import { registerListSimulatorsTool } from '../../src/tools/simulator/index.js';
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -56,7 +54,6 @@ describe('list_sims tool', () => {
   });
 
   let mockExecuteCommand: MockedFunction<any>;
-  let mockServer: any;
 
   beforeEach(async () => {
     // Mock executeCommand
@@ -79,36 +76,11 @@ describe('list_sims tool', () => {
       error: '',
     });
 
-    // Mock server object with tool method
-    mockServer = {
-      tool: vi.fn(),
-    };
-
     vi.clearAllMocks();
   });
 
-  describe('registerListSimulatorsTool', () => {
-    it('should register the list simulators tool correctly', () => {
-      // ✅ Test actual production function
-      registerListSimulatorsTool(mockServer);
-
-      // ✅ Verify production function called server.tool correctly
-      expect(mockServer.tool).toHaveBeenCalledWith(
-        'list_sims',
-        'Lists available iOS simulators with their UUIDs. ',
-        expect.any(Object),
-        expect.any(Function),
-      );
-    });
-
+  describe('plugin handler', () => {
     it('should handle successful simulator listing', async () => {
-      registerListSimulatorsTool(mockServer);
-
-      const handlerCall = mockServer.tool.mock.calls.find(
-        (call) => call[0] === 'list_sims',
-      );
-      const handler = handlerCall[3];
-
       // Mock successful execution with simulator data
       mockExecuteCommand.mockResolvedValue({
         success: true,
@@ -128,7 +100,7 @@ describe('list_sims tool', () => {
       });
 
       // ✅ Test actual production handler with successful listing
-      const result = await handler();
+      const result = await listSims.handler();
 
       expect(mockExecuteCommand).toHaveBeenCalledWith(
         ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
@@ -145,13 +117,6 @@ describe('list_sims tool', () => {
     });
 
     it('should handle list failure', async () => {
-      registerListSimulatorsTool(mockServer);
-
-      const handlerCall = mockServer.tool.mock.calls.find(
-        (call) => call[0] === 'list_sims',
-      );
-      const handler = handlerCall[3];
-
       // Mock failed execution
       mockExecuteCommand.mockResolvedValue({
         success: false,
@@ -160,7 +125,7 @@ describe('list_sims tool', () => {
       });
 
       // ✅ Test actual production handler with list failure
-      const result = await handler();
+      const result = await listSims.handler();
 
       expect(result.content).toEqual([
         { 

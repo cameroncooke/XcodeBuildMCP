@@ -17,11 +17,11 @@ import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { log } from '../../utils/logger.js';
-import { XcodePlatform } from '../../utils/xcode.js';
-import { executeXcodeBuildCommand } from '../../utils/build-utils.js';
-import { createTextResponse } from '../../utils/validation.js';
-import { ToolResponse } from '../../types/common.js';
+import { log } from './logger.js';
+import { XcodePlatform } from './xcode.js';
+import { executeXcodeBuildCommand } from './build-utils.js';
+import { createTextResponse } from './validation.js';
+import { ToolResponse } from '../types/common.js';
 
 /**
  * Type definition for test summary structure from xcresulttool

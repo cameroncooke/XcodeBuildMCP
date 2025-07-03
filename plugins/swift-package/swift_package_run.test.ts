@@ -10,8 +10,7 @@ import { spawn, ChildProcess } from 'child_process';
 // Import the plugin
 import swiftPackageRun from './swift_package_run.js';
 
-// Import production registration function for compatibility
-import { registerRunSwiftPackageTool } from '../../src/tools/run-swift-package/index.js';
+// Test the plugin directly - no registration function needed
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -50,16 +49,7 @@ vi.mock('../../src/utils/errors.js', () => ({
   createErrorResponse: vi.fn(),
 }));
 
-// ✅ CORRECT: Mock common tools utilities
-vi.mock('../../src/tools/common/index.js', () => ({
-  registerTool: vi.fn(),
-  swiftConfigurationSchema: {
-    optional: () => ({ describe: () => ({}) }),
-  },
-  parseAsLibrarySchema: {
-    optional: () => ({ describe: () => ({}) }),
-  },
-}));
+// Mock removed - no longer needed for plugin testing
 
 describe('swift_package_run tool', () => {
   describe('plugin structure', () => {
@@ -78,7 +68,6 @@ describe('swift_package_run tool', () => {
   let mockCreateTextResponse: MockedFunction<any>;
   let mockValidateRequiredParam: MockedFunction<any>;
   let mockCreateErrorResponse: MockedFunction<any>;
-  let mockRegisterTool: MockedFunction<any>;
   let mockServer: any;
 
   beforeEach(async () => {
@@ -103,10 +92,6 @@ describe('swift_package_run tool', () => {
     // Mock error utilities
     const errorModule = await import('../../src/utils/errors.js');
     mockCreateErrorResponse = errorModule.createErrorResponse as MockedFunction<any>;
-
-    // Mock common tools
-    const commonModule = await import('../../src/tools/common/index.js');
-    mockRegisterTool = commonModule.registerTool as MockedFunction<any>;
 
     // Create mock child process with typical Swift build output
     mockChildProcess = {
@@ -159,29 +144,17 @@ Build complete! (2.34s)`);
     vi.clearAllMocks();
   });
 
-  describe('registerRunSwiftPackageTool', () => {
-    it('should register the swift package run tool correctly', () => {
-      // ✅ Test actual production function
-      registerRunSwiftPackageTool(mockServer);
-
-      // ✅ Verify production function called registerTool correctly
-      expect(mockRegisterTool).toHaveBeenCalledWith(
-        mockServer,
-        'swift_package_run',
-        'Runs an executable target from a Swift Package with swift run',
-        expect.any(Object),
-        expect.any(Function),
-      );
+  describe('plugin handler', () => {
+    it('should have correct plugin structure and registration info', () => {
+      // ✅ Test plugin has correct structure for registration
+      expect(swiftPackageRun.name).toBe('swift_package_run');
+      expect(swiftPackageRun.description).toBe('Runs an executable target from a Swift Package with swift run');
+      expect(swiftPackageRun.schema).toBeDefined();
+      expect(typeof swiftPackageRun.handler).toBe('function');
     });
 
     it('should handle successful package run in foreground', async () => {
-      registerRunSwiftPackageTool(mockServer);
-
-      // Get the handler function from the registerTool call
-      const handlerCall = mockRegisterTool.mock.calls.find(
-        (call) => call[1] === 'swift_package_run',
-      );
-      const handler = handlerCall[4];
+      // Test plugin handler directly
 
       const params = { packagePath: '/path/to/package' };
 
@@ -192,8 +165,8 @@ Build complete! (2.34s)`);
         }
       });
 
-      // ✅ Test actual production handler
-      const result = await handler(params);
+      // ✅ Test plugin handler
+      const result = await swiftPackageRun.handler(params);
 
       expect(mockValidateRequiredParam).toHaveBeenCalledWith('packagePath', params.packagePath);
       expect(mockSpawn).toHaveBeenCalledWith(
@@ -210,17 +183,12 @@ Build complete! (2.34s)`);
     });
 
     it('should handle successful package run in background', async () => {
-      registerRunSwiftPackageTool(mockServer);
-
-      const handlerCall = mockRegisterTool.mock.calls.find(
-        (call) => call[1] === 'swift_package_run',
-      );
-      const handler = handlerCall[4];
+      // Test plugin handler directly
 
       const params = { packagePath: '/path/to/package', background: true };
 
-      // ✅ Test actual production handler with background mode
-      const result = await handler(params);
+      // ✅ Test plugin handler with background mode
+      const result = await swiftPackageRun.handler(params);
 
       expect(result.content).toEqual(
         expect.arrayContaining([
@@ -234,12 +202,7 @@ Build complete! (2.34s)`);
     });
 
     it('should handle validation errors', async () => {
-      registerRunSwiftPackageTool(mockServer);
-
-      const handlerCall = mockRegisterTool.mock.calls.find(
-        (call) => call[1] === 'swift_package_run',
-      );
-      const handler = handlerCall[4];
+      // Test plugin handler directly
 
       // Mock validation failure
       mockValidateRequiredParam.mockReturnValue({
@@ -252,8 +215,8 @@ Build complete! (2.34s)`);
 
       const params = { packagePath: '' };
 
-      // ✅ Test actual production error handling
-      const result = await handler(params);
+      // ✅ Test plugin error handling
+      const result = await swiftPackageRun.handler(params);
 
       expect(result.content).toEqual([
         { type: 'text', text: "Required parameter 'packagePath' is missing." },
@@ -262,12 +225,7 @@ Build complete! (2.34s)`);
     });
 
     it('should handle spawn errors', async () => {
-      registerRunSwiftPackageTool(mockServer);
-
-      const handlerCall = mockRegisterTool.mock.calls.find(
-        (call) => call[1] === 'swift_package_run',
-      );
-      const handler = handlerCall[4];
+      // Test plugin handler directly
 
       // Mock spawn failure
       mockSpawn.mockImplementation(() => {
@@ -276,8 +234,8 @@ Build complete! (2.34s)`);
 
       const params = { packagePath: '/path/to/package' };
 
-      // ✅ Test actual production error handling
-      const result = await handler(params);
+      // ✅ Test plugin error handling
+      const result = await swiftPackageRun.handler(params);
 
       expect(mockCreateErrorResponse).toHaveBeenCalledWith(
         'Failed to execute swift run',
@@ -287,12 +245,7 @@ Build complete! (2.34s)`);
     });
 
     it('should handle executable name parameter', async () => {
-      registerRunSwiftPackageTool(mockServer);
-
-      const handlerCall = mockRegisterTool.mock.calls.find(
-        (call) => call[1] === 'swift_package_run',
-      );
-      const handler = handlerCall[4];
+      // Test plugin handler directly
 
       const params = {
         packagePath: '/path/to/package',
@@ -306,8 +259,8 @@ Build complete! (2.34s)`);
         }
       });
 
-      // ✅ Test actual production function with executable name
-      await handler(params);
+      // ✅ Test plugin function with executable name
+      await swiftPackageRun.handler(params);
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'swift',
@@ -317,12 +270,7 @@ Build complete! (2.34s)`);
     });
 
     it('should handle arguments parameter', async () => {
-      registerRunSwiftPackageTool(mockServer);
-
-      const handlerCall = mockRegisterTool.mock.calls.find(
-        (call) => call[1] === 'swift_package_run',
-      );
-      const handler = handlerCall[4];
+      // Test plugin handler directly
 
       const params = {
         packagePath: '/path/to/package',
@@ -336,8 +284,8 @@ Build complete! (2.34s)`);
         }
       });
 
-      // ✅ Test actual production function with arguments
-      await handler(params);
+      // ✅ Test plugin function with arguments
+      await swiftPackageRun.handler(params);
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'swift',
@@ -355,12 +303,7 @@ Build complete! (2.34s)`);
     });
 
     it('should handle configuration parameter', async () => {
-      registerRunSwiftPackageTool(mockServer);
-
-      const handlerCall = mockRegisterTool.mock.calls.find(
-        (call) => call[1] === 'swift_package_run',
-      );
-      const handler = handlerCall[4];
+      // Test plugin handler directly
 
       const params = {
         packagePath: '/path/to/package',
@@ -374,8 +317,8 @@ Build complete! (2.34s)`);
         }
       });
 
-      // ✅ Test actual production function with release configuration
-      await handler(params);
+      // ✅ Test plugin function with release configuration
+      await swiftPackageRun.handler(params);
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'swift',

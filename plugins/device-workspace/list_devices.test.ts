@@ -9,8 +9,7 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 // Import the plugin
 import listDevices from './list_devices.js';
 
-// Import production registration function for compatibility
-import { registerListDevicesTool } from '../../src/tools/device/index.js';
+// Test the plugin directly - no registration function needed
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -33,11 +32,7 @@ vi.mock('../../src/utils/validation.js', () => ({
   validateFileExists: vi.fn(),
 }));
 
-// ✅ CORRECT: Mock common tools utilities
-vi.mock('../../src/tools/common/index.js', () => ({
-  createTextContent: vi.fn(),
-  registerTool: vi.fn(),
-}));
+// Mock removed - no longer needed for plugin testing
 
 // ✅ CORRECT: Mock filesystem operations for JSON files
 vi.mock('fs', () => ({
@@ -80,28 +75,17 @@ describe('list_devices tool', () => {
     vi.clearAllMocks();
   });
 
-  describe('registerListDevicesTool', () => {
-    it('should register the list devices tool correctly', async () => {
-      // Mock registerTool
-      const { registerTool } = await import('../../src/tools/common/index.js');
-      const mockRegisterTool = registerTool as MockedFunction<any>;
-
-      // ✅ Test actual production function
-      registerListDevicesTool(mockServer);
-
-      // ✅ Verify production function called registerTool correctly
-      expect(mockRegisterTool).toHaveBeenCalledWith(
-        mockServer,
-        'list_devices',
-        'Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.',
-        {},
-        expect.any(Function),
-      );
+  describe('plugin handler', () => {
+    it('should have correct plugin structure and registration info', () => {
+      // ✅ Test plugin has correct structure for registration
+      expect(listDevices.name).toBe('list_devices');
+      expect(listDevices.description).toBe('Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.');
+      expect(listDevices.schema).toEqual({});
+      expect(typeof listDevices.handler).toBe('function');
     });
 
     it('should handle successful devicectl listing', async () => {
-      // Test handler directly from exports
-      const { listDevicesToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock filesystem operations
       const { promises: fs } = await import('fs');
@@ -141,8 +125,8 @@ describe('list_devices tool', () => {
         error: '',
       });
 
-      // ✅ Test actual production handler with successful listing
-      const result = await listDevicesToolHandler();
+      // ✅ Test plugin handler with successful listing
+      const result = await listDevices.handler({});
 
       expect(mockExecuteCommand).toHaveBeenCalledWith(
         expect.arrayContaining(['xcrun', 'devicectl', 'list', 'devices', '--json-output']),
@@ -159,8 +143,7 @@ describe('list_devices tool', () => {
     });
 
     it('should handle devicectl failure and fallback to xctrace', async () => {
-      // Test handler directly from exports
-      const { listDevicesToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock devicectl failure and xctrace success
       mockExecuteCommand
@@ -175,8 +158,8 @@ describe('list_devices tool', () => {
           error: '',
         });
 
-      // ✅ Test actual production handler with devicectl failure and xctrace fallback
-      const result = await listDevicesToolHandler();
+      // ✅ Test plugin handler with devicectl failure and xctrace fallback
+      const result = await listDevices.handler({});
 
       expect(mockExecuteCommand).toHaveBeenCalledWith(
         expect.arrayContaining(['xcrun', 'devicectl', 'list', 'devices', '--json-output']),
@@ -197,8 +180,7 @@ describe('list_devices tool', () => {
     });
 
     it('should handle complete failure', async () => {
-      // Test handler directly from exports
-      const { listDevicesToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock both devicectl and xctrace failure
       mockExecuteCommand.mockResolvedValue({
@@ -207,8 +189,8 @@ describe('list_devices tool', () => {
         error: 'Command failed',
       });
 
-      // ✅ Test actual production handler with complete failure
-      const result = await listDevicesToolHandler();
+      // ✅ Test plugin handler with complete failure
+      const result = await listDevices.handler({});
 
       expect(result.content).toEqual([
         { 

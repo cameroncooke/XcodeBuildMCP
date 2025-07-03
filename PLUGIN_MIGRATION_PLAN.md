@@ -371,15 +371,65 @@ The migration has been successfully completed with all tools now available throu
 
 Currently, all plugins import from `src/tools/*` which was a bridge during migration. Now we need to make plugins truly self-contained by moving the actual implementation code directly into plugin files and removing the entire `src/tools` directory.
 
-### 6.2 Migration Process (Per Tool)
+### 6.2 Template-Based Migration Process
 
-**Step-by-Step Process:**
+**Mandatory Checklist for Each Tool:**
 
-1. **Read Source Tool File**: Use Read tool to get complete source from `src/tools/[tool-name]/index.ts`
-2. **Extract Components**: Identify literal values for name, description, schema, and handler
-3. **Copy Required Imports**: Note all imports the handler needs from utilities
-4. **Update Plugin File**: Use MultiEdit tool for surgical precision replacement
-5. **Validate**: Run existing tests to ensure zero regressions
+#### Pre-Migration Research:
+```markdown
+☐ Tool: [TOOL_NAME]
+☐ Source file: src/tools/[PATH]/index.ts
+☐ Original handler function: [FUNCTION_NAME] (lines X-Y)
+☐ Original schema: [SCHEMA_NAME] (lines X-Y)
+☐ Original exports: [EXPORT_NAMES]
+☐ Dependencies: [LIST_IMPORTS]
+```
+
+#### Step 1: Read Original Components
+```bash
+# MANDATORY: Always read the original source first
+Read src/tools/[PATH]/index.ts
+# Note exact line numbers for:
+# - Schema definition
+# - Handler function  
+# - Helper functions
+# - Export statements
+```
+
+#### Step 2: Copy Schema (Surgical)
+```markdown
+☐ Read original schema definition (lines X-Y)
+☐ MultiEdit: Copy EXACT schema object
+☐ Update only import paths, never logic
+☐ Preserve all validation rules exactly
+```
+
+#### Step 3: Copy Handler (Surgical)
+```markdown
+☐ Read original handler function (lines X-Y)
+☐ MultiEdit: Copy EXACT function body
+☐ Preserve all return statements exactly
+☐ Preserve all error handling exactly
+☐ Update only import paths, never logic
+```
+
+#### Step 4: Copy Helper Functions (If Needed)
+```markdown
+☐ Identify tool-specific helper functions
+☐ Read original implementations (lines X-Y)
+☐ MultiEdit: Copy EXACT implementations
+☐ Inline into plugin file
+```
+
+#### Step 5: Validation
+```bash
+☐ npm test -- plugins/[workflow]/[tool].test.ts
+☐ All tests must pass (except identity tests)
+☐ Compare return types with original
+☐ Verify error handling behavior matches
+```
+
+**CRITICAL:** Never skip steps or "shortcut" the process. Each checkbox must be completed.
 
 ### 6.3 Migration Pattern (Pseudocode Only)
 
@@ -446,17 +496,31 @@ export default {
 - Preserve all comments and logic flow
 - Maintain TypeScript types where applicable
 
+**Test Cleanup**: Remove ONLY identity tests during migration
+- Delete tests that check `expect(plugin.handler).toBe(originalHandler)`
+- Delete tests that check `expect(plugin.schema).toBe(originalSchema)`
+- NEVER modify functional tests without explicit approval
+- If functional tests fail, fix the plugin code, not the test
+- Target 100% pass rate after cleanup
+
+**Template-Based Migration**: Use mandatory checklist
+- Follow the step-by-step template for each tool
+- Read original source code line-by-line
+- Copy exact implementations using MultiEdit
+- Never rewrite or interpret, only lift-and-shift
+
 ### 6.6 Validation Checkpoints
 
 **After Each Tool:**
 ```bash
 npm test -- plugins/[workflow]/[tool].test.ts
+# Clean up any identity test failures by removing them
 ```
 
 **After Each Workflow Group:**
 ```bash
 npm run build
-npm test
+npm test  # Should have 100% pass rate after identity test cleanup
 grep -r "src/tools" plugins/[workflow]/  # Should return no results
 ```
 
@@ -464,7 +528,7 @@ grep -r "src/tools" plugins/[workflow]/  # Should return no results
 ```bash
 npm run lint
 npm run build  
-npm test  # All 1185+ tests must pass
+npm test  # Target: 100% pass rate with only functional tests
 ```
 
 ### 6.7 Documentation Requirements
@@ -484,8 +548,9 @@ npm test  # All 1185+ tests must pass
 ### 6.8 Success Criteria
 
 - ✅ All plugins are self-contained (no imports from src/tools)
-- ✅ All 1185+ tests continue to pass
-- ✅ Zero functional regressions confirmed
+- ✅ 100% test pass rate after identity test cleanup
+- ✅ Zero functional regressions confirmed  
+- ✅ Only regression prevention tests remain
 - ✅ `src/tools` directory can be safely deleted
 - ✅ Documentation updated to reflect new structure
 
@@ -495,5 +560,18 @@ npm test  # All 1185+ tests must pass
 **Source of Truth**: Always read from actual source files, never from documentation
 **Immediate Testing**: Validate after each tool migration
 **Reversible Changes**: Git commits after each workflow group
+
+**Test Modification Policy**: NEVER modify tests without explicit approval
+- Tests that pass with exported types but fail with self-contained plugins indicate regressions
+- Only structural identity tests (.toBe() with original objects) should be removed
+- All functional test failures must be investigated and fixed in plugin code
+- ASK FIRST before modifying any test that was previously passing
+
+**Mandatory Template Usage**: Prevent regressions through process
+- Use the template-based checklist for every single tool
+- Include exact line number references in checklist
+- Verify each step before proceeding to next
+- Never skip steps or "shortcut" the process
+- Complete all checkboxes before considering tool complete
 
 The migration has been successfully completed with all tools now available through the plugin system while maintaining backward compatibility.

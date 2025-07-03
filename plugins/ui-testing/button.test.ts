@@ -38,12 +38,6 @@ describe('Button Plugin', () => {
       expect(buttonPlugin).toHaveProperty('handler');
     });
 
-    it('should use extracted components from axe/index.ts', () => {
-      expect(buttonPlugin.name).toBe(buttonToolName);
-      expect(buttonPlugin.description).toBe(buttonToolDescription);
-      expect(buttonPlugin.schema).toBe(buttonToolSchema);
-      expect(buttonPlugin.handler).toBe(buttonToolHandler);
-    });
 
     it('should have correct tool name', () => {
       expect(buttonPlugin.name).toBe('button');
@@ -132,9 +126,6 @@ describe('Button Plugin', () => {
       mockExecuteCommand = vi.mocked(executeCommand);
     });
 
-    it('should be the same handler as exported from axe/index.ts', () => {
-      expect(buttonPlugin.handler).toBe(buttonToolHandler);
-    });
 
     it('should handle basic button press successfully', async () => {
       mockExecuteCommand.mockResolvedValue({

@@ -9,8 +9,7 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 // Import the plugin
 import launchAppDevice from './launch_app_device.js';
 
-// Import production registration function for compatibility
-import { registerLaunchAppDeviceTool } from '../../src/tools/device/index.js';
+// Test the plugin directly - no registration function needed
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -33,11 +32,7 @@ vi.mock('../../src/utils/validation.js', () => ({
   validateFileExists: vi.fn(),
 }));
 
-// ✅ CORRECT: Mock common tools utilities
-vi.mock('../../src/tools/common/index.js', () => ({
-  createTextContent: vi.fn(),
-  registerTool: vi.fn(),
-}));
+// Mock removed - no longer needed for plugin testing
 
 // ✅ CORRECT: Mock filesystem operations for JSON files
 vi.mock('fs', () => ({
@@ -82,31 +77,20 @@ describe('launch_app_device tool', () => {
     vi.clearAllMocks();
   });
 
-  describe('registerLaunchAppDeviceTool', () => {
-    it('should register the launch app device tool correctly', async () => {
-      // Mock registerTool
-      const { registerTool } = await import('../../src/tools/common/index.js');
-      const mockRegisterTool = registerTool as MockedFunction<any>;
-
-      // ✅ Test actual production function
-      registerLaunchAppDeviceTool(mockServer);
-
-      // ✅ Verify production function called registerTool correctly
-      expect(mockRegisterTool).toHaveBeenCalledWith(
-        mockServer,
-        'launch_app_device',
-        'Launches an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and bundleId.',
-        expect.objectContaining({
-          deviceId: expect.any(Object),
-          bundleId: expect.any(Object),
-        }),
-        expect.any(Function),
-      );
+  describe('plugin handler', () => {
+    it('should have correct plugin structure and registration info', () => {
+      // ✅ Test plugin has correct structure for registration
+      expect(launchAppDevice.name).toBe('launch_app_device');
+      expect(launchAppDevice.description).toBe('Launches an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and bundleId.');
+      expect(launchAppDevice.schema).toEqual(expect.objectContaining({
+        deviceId: expect.any(Object),
+        bundleId: expect.any(Object),
+      }));
+      expect(typeof launchAppDevice.handler).toBe('function');
     });
 
     it('should handle successful app launch with process ID', async () => {
-      // Test handler directly from exports
-      const { launchAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock filesystem operations
       const { promises: fs } = await import('fs');
@@ -130,8 +114,8 @@ describe('launch_app_device tool', () => {
         error: '',
       });
 
-      // ✅ Test actual production handler with successful launch
-      const result = await launchAppDeviceToolHandler({
+      // ✅ Test plugin handler with successful launch
+      const result = await launchAppDevice.handler({
         deviceId: 'test-device-123',
         bundleId: 'com.example.MyApp'
       });
@@ -158,8 +142,7 @@ describe('launch_app_device tool', () => {
     });
 
     it('should handle successful app launch without process ID', async () => {
-      // Test handler directly from exports
-      const { launchAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock filesystem operations
       const { promises: fs } = await import('fs');
@@ -179,8 +162,8 @@ describe('launch_app_device tool', () => {
         error: '',
       });
 
-      // ✅ Test actual production handler with successful launch but no process ID
-      const result = await launchAppDeviceToolHandler({
+      // ✅ Test plugin handler with successful launch but no process ID
+      const result = await launchAppDevice.handler({
         deviceId: 'test-device-123',
         bundleId: 'com.example.MyApp'
       });
@@ -196,8 +179,7 @@ describe('launch_app_device tool', () => {
     });
 
     it('should handle launch failure', async () => {
-      // Test handler directly from exports
-      const { launchAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock failed devicectl execution
       mockExecuteCommand.mockResolvedValue({
@@ -206,8 +188,8 @@ describe('launch_app_device tool', () => {
         error: 'Failed to launch app: App not installed',
       });
 
-      // ✅ Test actual production handler with launch failure
-      const result = await launchAppDeviceToolHandler({
+      // ✅ Test plugin handler with launch failure
+      const result = await launchAppDevice.handler({
         deviceId: 'test-device-123',
         bundleId: 'com.example.MyApp'
       });
@@ -222,8 +204,7 @@ describe('launch_app_device tool', () => {
     });
 
     it('should handle JSON parsing errors gracefully', async () => {
-      // Test handler directly from exports
-      const { launchAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock filesystem operations
       const { promises: fs } = await import('fs');
@@ -240,8 +221,8 @@ describe('launch_app_device tool', () => {
         error: '',
       });
 
-      // ✅ Test actual production handler with JSON parsing error
-      const result = await launchAppDeviceToolHandler({
+      // ✅ Test plugin handler with JSON parsing error
+      const result = await launchAppDevice.handler({
         deviceId: 'test-device-123',
         bundleId: 'com.example.MyApp'
       });
@@ -257,14 +238,13 @@ describe('launch_app_device tool', () => {
     });
 
     it('should handle unexpected errors', async () => {
-      // Test handler directly from exports
-      const { launchAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock executeCommand to throw an error
       mockExecuteCommand.mockRejectedValue(new Error('Unexpected error'));
 
-      // ✅ Test actual production handler with unexpected error
-      const result = await launchAppDeviceToolHandler({
+      // ✅ Test plugin handler with unexpected error
+      const result = await launchAppDevice.handler({
         deviceId: 'test-device-123',
         bundleId: 'com.example.MyApp'
       });

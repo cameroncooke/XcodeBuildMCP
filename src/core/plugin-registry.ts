@@ -42,21 +42,6 @@ export async function loadPlugins(
     }
   }
 
-  // Also load shared tools directly
-  const sharedRoot = new URL('../tools-shared/', import.meta.url);
-  const sharedFiles = globSync('**/*.ts', {
-    cwd: sharedRoot.pathname,
-    absolute: true,
-    ignore: IGNORE_GLOBS,
-  });
-
-  for (const file of sharedFiles) {
-    const mod = await import(pathToFileURL(file).href);
-    if (mod.default?.name && typeof mod.default.handler === 'function') {
-      plugins.set(mod.default.name, mod.default);
-    }
-  }
-
   return plugins;
 }
 

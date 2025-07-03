@@ -9,8 +9,7 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 // Import the plugin
 import stopAppDevice from './stop_app_device.js';
 
-// Import production registration function for compatibility
-import { registerStopAppDeviceTool } from '../../src/tools/device/index.js';
+// Test the plugin directly - no registration function needed
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -33,11 +32,7 @@ vi.mock('../../src/utils/validation.js', () => ({
   validateFileExists: vi.fn(),
 }));
 
-// ✅ CORRECT: Mock common tools utilities
-vi.mock('../../src/tools/common/index.js', () => ({
-  createTextContent: vi.fn(),
-  registerTool: vi.fn(),
-}));
+// Mock removed - no longer needed for plugin testing
 
 describe('stop_app_device tool', () => {
   describe('plugin structure', () => {
@@ -77,31 +72,18 @@ describe('stop_app_device tool', () => {
     vi.clearAllMocks();
   });
 
-  describe('registerStopAppDeviceTool', () => {
-    it('should register the stop app device tool correctly', async () => {
-      // Mock registerTool
-      const { registerTool } = await import('../../src/tools/common/index.js');
-      const mockRegisterTool = registerTool as MockedFunction<any>;
-
-      // ✅ Test actual production function
-      registerStopAppDeviceTool(mockServer);
-
-      // ✅ Verify production function called registerTool correctly
-      expect(mockRegisterTool).toHaveBeenCalledWith(
-        mockServer,
-        'stop_app_device',
-        'Stops an app running on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and processId.',
-        {
-          deviceId: expect.any(Object),
-          processId: expect.any(Object),
-        },
-        expect.any(Function),
-      );
+  describe('plugin handler', () => {
+    it('should have correct plugin structure and registration info', () => {
+      // ✅ Test plugin has correct structure for registration
+      expect(stopAppDevice.name).toBe('stop_app_device');
+      expect(stopAppDevice.description).toBe('Stops an app running on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and processId.');
+      expect(stopAppDevice.schema).toHaveProperty('deviceId');
+      expect(stopAppDevice.schema).toHaveProperty('processId');
+      expect(typeof stopAppDevice.handler).toBe('function');
     });
 
     it('should handle successful app termination', async () => {
-      // Test handler directly from exports
-      const { stopAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock successful devicectl execution
       mockExecuteCommand.mockResolvedValue({
@@ -110,8 +92,8 @@ describe('stop_app_device tool', () => {
         error: '',
       });
 
-      // ✅ Test actual production handler with successful termination
-      const result = await stopAppDeviceToolHandler({
+      // ✅ Test plugin handler with successful termination
+      const result = await stopAppDevice.handler({
         deviceId: 'test-device-123',
         processId: 12345,
       });
@@ -140,8 +122,7 @@ describe('stop_app_device tool', () => {
     });
 
     it('should handle devicectl failure', async () => {
-      // Test handler directly from exports
-      const { stopAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock devicectl failure
       mockExecuteCommand.mockResolvedValue({
@@ -150,8 +131,8 @@ describe('stop_app_device tool', () => {
         error: 'Process not found',
       });
 
-      // ✅ Test actual production handler with failure
-      const result = await stopAppDeviceToolHandler({
+      // ✅ Test plugin handler with failure
+      const result = await stopAppDevice.handler({
         deviceId: 'test-device-123',
         processId: 12345,
       });
@@ -166,14 +147,13 @@ describe('stop_app_device tool', () => {
     });
 
     it('should handle unexpected errors', async () => {
-      // Test handler directly from exports
-      const { stopAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock executeCommand to throw an error
       mockExecuteCommand.mockRejectedValue(new Error('Unexpected error'));
 
-      // ✅ Test actual production handler with unexpected error
-      const result = await stopAppDeviceToolHandler({
+      // ✅ Test plugin handler with unexpected error
+      const result = await stopAppDevice.handler({
         deviceId: 'test-device-123',
         processId: 12345,
       });
@@ -188,8 +168,7 @@ describe('stop_app_device tool', () => {
     });
 
     it('should convert processId to string for command', async () => {
-      // Test handler directly from exports
-      const { stopAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock successful execution
       mockExecuteCommand.mockResolvedValue({
@@ -199,7 +178,7 @@ describe('stop_app_device tool', () => {
       });
 
       // ✅ Test with numeric processId
-      await stopAppDeviceToolHandler({
+      await stopAppDevice.handler({
         deviceId: 'test-device-123',
         processId: 9999,
       });

@@ -10,8 +10,7 @@ import { spawn, ChildProcess } from 'child_process';
 // Import the plugin
 import swiftPackageStop from './swift_package_stop.js';
 
-// Import production registration function for compatibility
-import { registerStopSwiftPackageTool } from '../../src/tools/run-swift-package/index.js';
+// Test the plugin directly - no registration function needed
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -51,15 +50,7 @@ vi.mock('../../src/utils/errors.js', () => ({
 }));
 
 // ✅ CORRECT: Mock common tools utilities
-vi.mock('../../src/tools/common/index.js', () => ({
-  registerTool: vi.fn(),
-  swiftConfigurationSchema: {
-    optional: () => ({ describe: () => ({}) }),
-  },
-  parseAsLibrarySchema: {
-    optional: () => ({ describe: () => ({}) }),
-  },
-}));
+// Mock removed - no longer needed for plugin testing
 
 describe('swift_package_stop tool', () => {
   describe('plugin structure', () => {
@@ -78,7 +69,6 @@ describe('swift_package_stop tool', () => {
   let mockCreateTextResponse: MockedFunction<any>;
   let mockValidateRequiredParam: MockedFunction<any>;
   let mockCreateErrorResponse: MockedFunction<any>;
-  let mockRegisterTool: MockedFunction<any>;
   let mockServer: any;
 
   beforeEach(async () => {
@@ -104,9 +94,6 @@ describe('swift_package_stop tool', () => {
     const errorModule = await import('../../src/utils/errors.js');
     mockCreateErrorResponse = errorModule.createErrorResponse as MockedFunction<any>;
 
-    // Mock common tools
-    const commonModule = await import('../../src/tools/common/index.js');
-    mockRegisterTool = commonModule.registerTool as MockedFunction<any>;
 
     // Create mock child process with typical Swift build output
     mockChildProcess = {
@@ -159,28 +146,20 @@ Build complete! (2.34s)`);
     vi.clearAllMocks();
   });
 
-  describe('registerStopSwiftPackageTool', () => {
+  describe('plugin handler', () => {
     it('should register the swift package stop tool correctly', () => {
       // ✅ Test actual production function
-      registerStopSwiftPackageTool(mockServer);
-
-      // ✅ Verify production function called registerTool correctly
-      expect(mockRegisterTool).toHaveBeenCalledWith(
-        mockServer,
-        'swift_package_stop',
-        'Stops a running Swift Package executable started with swift_package_run',
-        expect.any(Object),
-        expect.any(Function),
-      );
+      
+      // ✅ Test plugin has correct structure for registration
+      expect(swiftPackageStop.name).toBe('swift_package_stop');
+      expect(swiftPackageStop.description).toBeDefined();
+      expect(swiftPackageStop.schema).toBeDefined();
+      expect(typeof swiftPackageStop.handler).toBe('function');
     });
 
     it('should handle missing process', async () => {
-      registerStopSwiftPackageTool(mockServer);
-
-      const handlerCall = mockRegisterTool.mock.calls.find(
-        (call) => call[1] === 'swift_package_stop',
-      );
-      const handler = handlerCall[4];
+      
+      // Test plugin handler directly
 
       // Mock createTextResponse to return expected format
       mockCreateTextResponse.mockReturnValue({
@@ -189,7 +168,7 @@ Build complete! (2.34s)`);
       });
 
       // ✅ Test actual production handler with missing process
-      const result = await handler({ pid: 999 });
+      const result = await swiftPackageStop.handler({ pid: 999 });
 
       expect(mockCreateTextResponse).toHaveBeenCalledWith(
         '⚠️ No running process found with PID 999. Use swift_package_run to check active processes.',

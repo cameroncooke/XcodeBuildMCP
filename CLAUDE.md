@@ -177,40 +177,45 @@ Until the automated suite is implemented, the following critical user journeys s
 
 **Configuration Precedence:** The logic for enabling tools is **additive**. If a tool is enabled individually OR if any of its parent groups are enabled, it will be registered. There is no mechanism to "disable" a tool within an enabled group; for that level of control, you must enable tools individually.
 
-## 7. Plugin Architecture Migration (v2.0.0)
+## 7. Plugin Architecture (v2.0.0) ✅ COMPLETE
 
-The project is undergoing a major architectural shift from a monolithic tool registration system to a dynamic, file-system-based plugin architecture. This migration is documented extensively to ensure a smooth transition.
+The project has successfully migrated from a monolithic tool registration system to a dynamic, file-system-based plugin architecture. This migration is complete and fully operational.
 
-### 7.1. Migration Documentation
+### 7.1. Plugin Architecture Overview
 
-*   **Master Plan:** `PLUGIN_MIGRATION_PLAN.md` - The comprehensive migration strategy and test plan
-*   **Migration Template:** `docs/MIGRATION_PLAN_TEMPLATE.md` - Generic template for migrating individual tools
-*   **Shared Tools Strategy:** `docs/SHARED_TOOLS_STRATEGY.md` - How to handle tools that need to be available in multiple plugin directories
-*   **Re-export Requirements:** `docs/TOOLS_REQUIRING_REEXPORT.md` - List of 22 tools that need re-exports
-*   **Migration Status:** `docs/MIGRATION_STATUS_V2.md` - Current progress tracking
+The plugin architecture provides a modern, maintainable approach to tool organization:
 
-### 7.2. Key Migration Concepts
+*   **Dynamic Discovery:** Tools are automatically discovered from the `plugins/` directory structure
+*   **Self-Contained Plugins:** Each plugin contains all its logic without external dependencies  
+*   **Plugin Registry:** `src/core/plugin-registry.ts` handles automatic plugin loading
+*   **Workflow Groups:** Plugins are organized by logical workflow groupings
+*   **Zero Configuration:** No manual registration required - just create plugin files
 
-#### Surgical Edits Pattern
-The migration uses a "surgical edit" approach to minimize changes and maintain stability:
-1. Extract 4 exports from each tool (name, description, schema, handler)
-2. Update the registration call to use the extracted exports
-3. Create plugin wrapper that imports and re-exports these components
-4. Original logic remains untouched, ensuring zero functional changes
+### 7.2. Plugin Structure
+
+Each plugin follows a standardized structure:
+
+```javascript
+// Example: plugins/simulator-workspace/boot_sim.js
+export default {
+  name: 'boot_sim',
+  description: 'Boots an iOS simulator by UUID or name',
+  schema: {
+    simulatorId: z.string().uuid().optional(),
+    simulatorName: z.string().optional(),
+  },
+  async handler(params) {
+    // Implementation logic here
+    return { content: [...], isError: false };
+  },
+};
+```
 
 #### Re-export Pattern
-Some tools need to be available in multiple plugin directories (e.g., simulator tools in both `simulator-workspace/` and `simulator-project/`):
+Tools that are available in multiple contexts use re-exports:
 ```javascript
-// Primary implementation in simulator-workspace/
-export default {
-  name: toolName,
-  description: toolDescription,
-  schema: toolSchema,
-  handler: toolHandler,
-};
-
-// Re-export in simulator-project/
-export { default } from '../simulator-workspace/tool_name.js';
+// Re-export from primary implementation
+export { default } from '../simulator-workspace/boot_sim.js';
 ```
 
 ### 7.3. Plugin Directory Structure
@@ -233,23 +238,73 @@ plugins/
 └── discovery/               # Dynamic tool discovery (1 new tool)
 ```
 
-### 7.4. Migration Guidelines
+### 7.4. Adding New Tools
 
-1. **Work One Tool at a Time:** Never migrate multiple tools simultaneously
-2. **Test at Each Step:** Run `npm test` after each tool migration
-3. **Validate Immediately:** Ensure both original and plugin tests pass
-4. **Commit by Workflow Group:** Group related tools in commits
-5. **Maintain Zero Regressions:** All 404 original tests must continue passing
+Adding new tools is straightforward with the plugin architecture:
 
-### 7.5. Adding Tools Post-Migration
+1. **Create Plugin File:** Add a new `.js` file in the appropriate `plugins/` subdirectory
+2. **Export Plugin Object:** Export default object with `name`, `description`, `schema`, and `handler`
+3. **Add Tests:** Create corresponding `.test.ts` file alongside the plugin
+4. **Automatic Discovery:** Tools are automatically discovered - no manual registration needed
 
-Once migration is complete, adding new tools becomes simpler:
-1. Create a plugin file in the appropriate `plugins/` subdirectory
-2. Export default object with `name`, `description`, `schema`, and `handler`
-3. Add tests alongside the plugin
-4. Tools are automatically discovered - no registration needed
+**Example:**
+```javascript
+// plugins/utilities/my_new_tool.js
+export default {
+  name: 'my_new_tool',
+  description: 'Description of what this tool does',
+  schema: { /* Zod schema for parameters */ },
+  async handler(params) { /* Implementation */ },
+};
+```
 
-## 8. Deployment
+## 8. CRITICAL: Plan Adherence Protocol
+
+**⚠️ MANDATORY DIRECTIVE: NEVER DEVIATE FROM ESTABLISHED MIGRATION PLANS ⚠️**
+
+When working on this project, you MUST follow these absolute rules:
+
+### 8.1. Migration Plan Adherence
+1. **READ THE PLAN FIRST:** Always read `PLUGIN_MIGRATION_PLAN.md` completely before starting work
+2. **FOLLOW EXACTLY:** The plan is law. Never interpret, improvise, or create exceptions
+3. **NO SHORTCUTS:** Use the exact surgical edits process specified, even for complex tools
+4. **ALL MEANS ALL:** When the plan says "all plugins should be self-contained," it means ALL - no exceptions for "complex" tools
+
+### 8.2. When Confused or Encountering Problems
+1. **RE-READ THE PLAN:** Don't guess. Go back to the migration plan documentation
+2. **STICK TO SURGICAL EDITS:** Copy exact implementations, don't rewrite or "simplify"
+3. **FIX IMPLEMENTATION, NOT PLAN:** If tests fail, fix the plugin code to match expected behavior
+4. **ASK BEFORE DEVIATING:** If you think the plan needs changes, ASK explicitly before doing anything
+
+### 8.3. Forbidden Actions
+- ❌ Creating your own interpretation of what "should" be done
+- ❌ Making exceptions for "complex" tools
+- ❌ Keeping import-based patterns when plan says self-contained
+- ❌ Second-guessing the established plan
+- ❌ Abandoning migration approach due to test failures
+- ❌ **MODIFYING TEST LOGIC OR EXPECTATIONS - COMPLETE VIOLATION**
+- ❌ **CHANGING TEST BEHAVIOR TO "FIX" FAILING TESTS**
+- ❌ **ALTERING FUNCTIONAL TEST ASSERTIONS**
+
+### 8.4. Required Actions
+- ✅ Copy EXACT implementations using surgical edits
+- ✅ Make ALL plugins self-contained as specified
+- ✅ Use proper schema format: `schema: { prop: z.type() }` or `schema: Schema.shape`
+- ✅ Preserve all original logic, error handling, and behavior
+- ✅ Fix any regressions by adjusting plugin implementation
+- ✅ **TESTS ARE SACRED - IF TESTS FAIL, THE MIGRATION IS WRONG**
+- ✅ **REDO MIGRATION WHEN TESTS FAIL, DON'T MODIFY TESTS**
+
+### 8.5. Emergency Protocol
+If you find yourself wanting to deviate from the plan:
+1. STOP immediately
+2. Re-read the relevant section of PLUGIN_MIGRATION_PLAN.md
+3. Ask the user for clarification if needed
+4. DO NOT proceed until you have explicit permission to deviate
+
+**REMEMBER:** The surgical edits approach was specifically designed to handle complex tools. Complexity is not an excuse to abandon the plan.
+
+## 9. Deployment
 
 XcodeBuildMCP is distributed as an npm package.
 

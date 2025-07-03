@@ -16,7 +16,7 @@ vi.mock('../../src/utils/logger.js', () => ({
   log: vi.fn(),
 }));
 
-vi.mock('../../src/tools/test-common/index.js', () => ({
+vi.mock('../../src/utils/test-common.js', () => ({
   handleTestLogic: vi.fn(),
 }));
 
@@ -30,7 +30,7 @@ describe('test_sim_id_proj plugin tests', () => {
   let mockHandleTestLogic: MockedFunction<any>;
 
   beforeEach(async () => {
-    const testCommon = await import('../../src/tools/test-common/index.js');
+    const testCommon = await import('../../src/utils/test-common.js');
     mockHandleTestLogic = testCommon.handleTestLogic as MockedFunction<any>;
 
     // Setup default mock for handleTestLogic to return basic success response

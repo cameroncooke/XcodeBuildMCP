@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import longPressPlugin from './long_press.js';
-import { longPressToolName, longPressToolDescription, longPressToolSchema, longPressToolHandler } from '../../src/tools/axe/index.js';
 
 // Mock dependencies
 vi.mock('../../src/utils/executeCommand.js', () => ({
@@ -36,12 +35,13 @@ describe('long_press plugin', () => {
   });
 
   it('should export the correct plugin structure', () => {
-    expect(longPressPlugin).toEqual({
-      name: longPressToolName,
-      description: longPressToolDescription,
-      schema: longPressToolSchema,
-      handler: longPressToolHandler,
+    expect(longPressPlugin).toMatchObject({
+      name: 'long_press',
+      description: 'Long press at specific coordinates for given duration (ms). Use describe_ui for precise coordinates (don\'t guess from screenshots).',
     });
+    expect(longPressPlugin).toHaveProperty('schema');
+    expect(longPressPlugin).toHaveProperty('handler');
+    expect(typeof longPressPlugin.handler).toBe('function');
   });
 
   it('should have correct tool name', () => {
@@ -118,10 +118,6 @@ describe('long_press plugin', () => {
   });
 
   describe('handler integration', () => {
-    it('should use the same handler as the original tool', () => {
-      expect(longPressPlugin.handler).toBe(longPressToolHandler);
-    });
-
     it('should be an async function', () => {
       expect(longPressPlugin.handler.constructor.name).toBe('AsyncFunction');
     });
@@ -167,20 +163,21 @@ describe('long_press plugin', () => {
   });
 
   describe('compatibility with original exports', () => {
-    it('should use the same name as exported constant', () => {
-      expect(longPressPlugin.name).toBe(longPressToolName);
+    it('should have the correct name', () => {
+      expect(longPressPlugin.name).toBe('long_press');
     });
 
-    it('should use the same description as exported constant', () => {
-      expect(longPressPlugin.description).toBe(longPressToolDescription);
+    it('should have the correct description', () => {
+      expect(longPressPlugin.description).toBe('Long press at specific coordinates for given duration (ms). Use describe_ui for precise coordinates (don\'t guess from screenshots).');
     });
 
-    it('should use the same schema as exported constant', () => {
-      expect(longPressPlugin.schema).toBe(longPressToolSchema);
+    it('should have the correct schema structure', () => {
+      expect(typeof longPressPlugin.schema).toBe('object');
+      expect(Object.keys(longPressPlugin.schema)).toEqual(['simulatorUuid', 'x', 'y', 'duration']);
     });
 
-    it('should use the same handler as exported constant', () => {
-      expect(longPressPlugin.handler).toBe(longPressToolHandler);
+    it('should have the correct handler type', () => {
+      expect(typeof longPressPlugin.handler).toBe('function');
     });
   });
 });

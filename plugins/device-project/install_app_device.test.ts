@@ -9,8 +9,7 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 // Import the plugin
 import installAppDevice from './install_app_device.js';
 
-// Import production registration function for compatibility
-import { registerInstallAppDeviceTool } from '../../src/tools/device/index.js';
+// Test the plugin directly - no registration function needed
 
 // ✅ CORRECT: Mock external dependencies only
 vi.mock('child_process', () => ({
@@ -33,11 +32,7 @@ vi.mock('../../src/utils/validation.js', () => ({
   validateFileExists: vi.fn(),
 }));
 
-// ✅ CORRECT: Mock common tools utilities
-vi.mock('../../src/tools/common/index.js', () => ({
-  createTextContent: vi.fn(),
-  registerTool: vi.fn(),
-}));
+// Mock removed - no longer needed for plugin testing
 
 describe('install_app_device tool', () => {
   describe('plugin structure', () => {
@@ -77,31 +72,18 @@ describe('install_app_device tool', () => {
     vi.clearAllMocks();
   });
 
-  describe('registerInstallAppDeviceTool', () => {
-    it('should register the install app device tool correctly', async () => {
-      // Mock registerTool
-      const { registerTool } = await import('../../src/tools/common/index.js');
-      const mockRegisterTool = registerTool as MockedFunction<any>;
-
-      // ✅ Test actual production function
-      registerInstallAppDeviceTool(mockServer);
-
-      // ✅ Verify production function called registerTool correctly
-      expect(mockRegisterTool).toHaveBeenCalledWith(
-        mockServer,
-        'install_app_device',
-        'Installs an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and appPath.',
-        expect.objectContaining({
-          deviceId: expect.any(Object),
-          appPath: expect.any(Object),
-        }),
-        expect.any(Function),
-      );
+  describe('plugin handler', () => {
+    it('should have correct plugin structure and registration info', () => {
+      // ✅ Test plugin has correct structure for registration
+      expect(installAppDevice.name).toBe('install_app_device');
+      expect(installAppDevice.description).toBe('Installs an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and appPath.');
+      expect(installAppDevice.schema).toHaveProperty('deviceId');
+      expect(installAppDevice.schema).toHaveProperty('appPath');
+      expect(typeof installAppDevice.handler).toBe('function');
     });
 
     it('should handle successful app installation', async () => {
-      // Test handler directly from exports
-      const { installAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock successful devicectl execution
       mockExecuteCommand.mockResolvedValue({
@@ -110,8 +92,8 @@ describe('install_app_device tool', () => {
         error: '',
       });
 
-      // ✅ Test actual production handler with successful installation
-      const result = await installAppDeviceToolHandler({
+      // ✅ Test plugin handler with successful installation
+      const result = await installAppDevice.handler({
         deviceId: 'test-device-123',
         appPath: '/path/to/test.app'
       });
@@ -131,8 +113,7 @@ describe('install_app_device tool', () => {
     });
 
     it('should handle devicectl installation failure', async () => {
-      // Test handler directly from exports
-      const { installAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock devicectl failure
       mockExecuteCommand.mockResolvedValue({
@@ -141,8 +122,8 @@ describe('install_app_device tool', () => {
         error: 'Installation failed: App not found',
       });
 
-      // ✅ Test actual production handler with installation failure
-      const result = await installAppDeviceToolHandler({
+      // ✅ Test plugin handler with installation failure
+      const result = await installAppDevice.handler({
         deviceId: 'test-device-123',
         appPath: '/path/to/nonexistent.app'
       });
@@ -161,14 +142,13 @@ describe('install_app_device tool', () => {
     });
 
     it('should handle exceptions during installation', async () => {
-      // Test handler directly from exports
-      const { installAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock exception
       mockExecuteCommand.mockRejectedValue(new Error('Network error'));
 
-      // ✅ Test actual production handler with exception
-      const result = await installAppDeviceToolHandler({
+      // ✅ Test plugin handler with exception
+      const result = await installAppDevice.handler({
         deviceId: 'test-device-123',
         appPath: '/path/to/test.app'
       });
@@ -183,14 +163,13 @@ describe('install_app_device tool', () => {
     });
 
     it('should handle string errors', async () => {
-      // Test handler directly from exports
-      const { installAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock string error
       mockExecuteCommand.mockRejectedValue('String error');
 
-      // ✅ Test actual production handler with string error
-      const result = await installAppDeviceToolHandler({
+      // ✅ Test plugin handler with string error
+      const result = await installAppDevice.handler({
         deviceId: 'test-device-123',
         appPath: '/path/to/test.app'
       });
@@ -205,8 +184,7 @@ describe('install_app_device tool', () => {
     });
 
     it('should validate required parameters', async () => {
-      // Test handler directly from exports
-      const { installAppDeviceToolHandler } = await import('../../src/tools/device/index.js');
+      // Test plugin handler directly
 
       // Mock successful execution for parameter validation test
       mockExecuteCommand.mockResolvedValue({
@@ -216,7 +194,7 @@ describe('install_app_device tool', () => {
       });
 
       // Test with valid parameters
-      const result = await installAppDeviceToolHandler({
+      const result = await installAppDevice.handler({
         deviceId: 'valid-device-id',
         appPath: '/valid/path/to/app.app'
       });

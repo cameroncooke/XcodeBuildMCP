@@ -12,8 +12,7 @@ import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 // Import the plugin
 import swiftPackageTest from './swift_package_test.js';
 
-// Import production registration function for compatibility
-import { registerTestSwiftPackageTool } from '../../src/tools/test-swift-package/index.js';
+// Test the plugin directly - no registration function needed
 
 // Mock Node.js APIs directly
 vi.mock('child_process', () => ({
@@ -41,13 +40,7 @@ vi.mock('../../src/utils/command.js', () => ({
   executeCommand: vi.fn(),
 }));
 
-// Create mock server to capture tool registrations
-const mockServer = {
-  tool: vi.fn(),
-} as any as Server;
-
-// Store registered tools
-let registeredTools: Map<string, any> = new Map();
+// Mock removed - no longer needed for plugin testing
 
 describe('swift_package_test tool', () => {
   let mockSpawn: MockedFunction<typeof spawn>;
@@ -66,16 +59,7 @@ describe('swift_package_test tool', () => {
   });
 
   beforeEach(async () => {
-    // Clear registered tools
-    registeredTools.clear();
-
-    // Mock server.tool to capture registrations
-    mockServer.tool.mockImplementation((name, description, schema, handler) => {
-      registeredTools.set(name, { name, description, schema, handler });
-    });
-
-    // Register production tool
-    registerTestSwiftPackageTool(mockServer);
+    // Test plugin directly - no registration needed
 
     // Get the mocked function from node:child_process since that's what the tools import
     const { spawn: nodeSpawn } = await import('node:child_process');
@@ -130,11 +114,10 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
 
   describe('parameter validation', () => {
     it('should reject missing packagePath', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      expect(swiftPackageTest).toBeDefined();
 
       const params = {};
-      const result = await tool.handler(params);
+      const result = await swiftPackageTest.handler(params);
 
       expect(result.isError).toBe(true);
       expect(result.content).toEqual([
@@ -151,10 +134,10 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
         parallel: 'not_boolean',
       };
 
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
-      const result = await tool.handler(params as any);
+      const result = await swiftPackageTest.handler(params as any);
 
       expect(result.isError || false).toBe(false); // This passes because parallel is parsed as string
       expect(result.content[0].text).toContain('✅ Swift package tests completed.');
@@ -166,10 +149,10 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
         configuration: 'invalid',
       };
 
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
-      const result = await tool.handler(params as any);
+      const result = await swiftPackageTest.handler(params as any);
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("Invalid configuration. Use 'debug' or 'release'.");
@@ -181,10 +164,10 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
         showCodecov: 'not_boolean',
       };
 
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
-      const result = await tool.handler(params as any);
+      const result = await swiftPackageTest.handler(params as any);
 
       expect(result.isError || false).toBe(false); // This passes because showCodecov is parsed as string
       expect(result.content[0].text).toContain('✅ Swift package tests completed.');
@@ -196,10 +179,10 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
         parseAsLibrary: 'not_boolean',
       };
 
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
-      const result = await tool.handler(params as any);
+      const result = await swiftPackageTest.handler(params as any);
 
       expect(result.isError || false).toBe(false); // This passes because parseAsLibrary is parsed as string
       expect(result.content[0].text).toContain('✅ Swift package tests completed.');
@@ -208,11 +191,11 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
 
   describe('success scenarios', () => {
     it('should accept packagePath only', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       const params = { packagePath: '/path/to/package' };
-      const result = await tool.handler(params);
+      const result = await swiftPackageTest.handler(params);
 
       expect(result.isError || false).toBe(false);
       expect(result.content).toEqual([
@@ -229,8 +212,8 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
     });
 
     it('should accept valid parameters with all options', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       const params = {
         packagePath: '/path/to/package',
@@ -241,7 +224,7 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
         showCodecov: true,
         parseAsLibrary: true,
       };
-      const result = await tool.handler(params);
+      const result = await swiftPackageTest.handler(params);
 
       expect(result.isError || false).toBe(false);
       expect(result.content[0].text).toContain('✅ Swift package tests completed.');
@@ -249,70 +232,70 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
     });
 
     it('should accept release configuration', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       const params = {
         packagePath: '/path/to/package',
         configuration: 'release' as const,
       };
-      const result = await tool.handler(params);
+      const result = await swiftPackageTest.handler(params);
 
       expect(result.isError || false).toBe(false);
       expect(result.content[0].text).toContain('✅ Swift package tests completed.');
     });
 
     it('should handle testProduct parameter', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       const params = {
         packagePath: '/path/to/package',
         testProduct: 'MySpecificTests',
       };
-      const result = await tool.handler(params);
+      const result = await swiftPackageTest.handler(params);
 
       expect(result.isError || false).toBe(false);
       expect(result.content[0].text).toContain('✅ Swift package tests completed.');
     });
 
     it('should handle filter parameter', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       const params = {
         packagePath: '/path/to/package',
         filter: 'MySpecificTest.*',
       };
-      const result = await tool.handler(params);
+      const result = await swiftPackageTest.handler(params);
 
       expect(result.isError || false).toBe(false);
       expect(result.content[0].text).toContain('✅ Swift package tests completed.');
     });
 
     it('should handle parallel parameter', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       const params = {
         packagePath: '/path/to/package',
         parallel: true,
       };
-      const result = await tool.handler(params);
+      const result = await swiftPackageTest.handler(params);
 
       expect(result.isError || false).toBe(false);
       expect(result.content[0].text).toContain('✅ Swift package tests completed.');
     });
 
     it('should handle showCodecov parameter', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       const params = {
         packagePath: '/path/to/package',
         showCodecov: false,
       };
-      const result = await tool.handler(params);
+      const result = await swiftPackageTest.handler(params);
 
       expect(result.isError || false).toBe(false);
       expect(result.content[0].text).toContain('✅ Swift package tests completed.');
@@ -321,109 +304,109 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
 
   describe('tool metadata validation', () => {
     it('should have correct tool metadata', () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
-      expect(tool.name).toBe('swift_package_test');
-      expect(tool.description).toBe('Runs tests for a Swift Package with swift test');
-      expect(tool.schema).toBeDefined();
-      expect(typeof tool.handler).toBe('function');
+      expect(swiftPackageTest.name).toBe('swift_package_test');
+      expect(swiftPackageTest.description).toBe('Runs tests for a Swift Package with swift test');
+      expect(swiftPackageTest.schema).toBeDefined();
+      expect(typeof swiftPackageTest.handler).toBe('function');
     });
 
     it('should follow consistent naming patterns', () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       // Tool should start with swift_package_
-      expect(tool.name).toMatch(/^swift_package_[a-z_]+$/);
+      expect(swiftPackageTest.name).toMatch(/^swift_package_[a-z_]+$/);
 
       // Should have non-empty description
-      expect(tool.description.length).toBeGreaterThan(10);
+      expect(swiftPackageTest.description.length).toBeGreaterThan(10);
     });
   });
 
   describe('schema validation', () => {
     it('should have properly defined schema', () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
-      expect(tool.schema).toBeDefined();
-      expect(typeof tool.schema).toBe('object');
+      expect(swiftPackageTest.schema).toBeDefined();
+      expect(typeof swiftPackageTest.schema).toBe('object');
     });
 
     it('should validate required packagePath parameter', () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       // Schema is a record of zod schemas, check packagePath is required
-      expect(tool.schema.packagePath).toBeDefined();
-      expect(tool.schema.packagePath._def.typeName).toBe('ZodString');
+      expect(swiftPackageTest.schema.packagePath).toBeDefined();
+      expect(swiftPackageTest.schema.packagePath._def.typeName).toBe('ZodString');
     });
 
     it('should allow optional parameters to be omitted', () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       // Check that optional parameters are marked as optional
-      expect(tool.schema.testProduct._def.typeName).toBe('ZodOptional');
-      expect(tool.schema.filter._def.typeName).toBe('ZodOptional');
-      expect(tool.schema.configuration._def.typeName).toBe('ZodOptional');
+      expect(swiftPackageTest.schema.testProduct._def.typeName).toBe('ZodOptional');
+      expect(swiftPackageTest.schema.filter._def.typeName).toBe('ZodOptional');
+      expect(swiftPackageTest.schema.configuration._def.typeName).toBe('ZodOptional');
     });
 
     it('should validate all optional parameters when provided', () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       // Verify all expected schema properties exist
-      expect(tool.schema.packagePath).toBeDefined();
-      expect(tool.schema.testProduct).toBeDefined();
-      expect(tool.schema.filter).toBeDefined();
-      expect(tool.schema.configuration).toBeDefined();
-      expect(tool.schema.parallel).toBeDefined();
-      expect(tool.schema.showCodecov).toBeDefined();
-      expect(tool.schema.parseAsLibrary).toBeDefined();
+      expect(swiftPackageTest.schema.packagePath).toBeDefined();
+      expect(swiftPackageTest.schema.testProduct).toBeDefined();
+      expect(swiftPackageTest.schema.filter).toBeDefined();
+      expect(swiftPackageTest.schema.configuration).toBeDefined();
+      expect(swiftPackageTest.schema.parallel).toBeDefined();
+      expect(swiftPackageTest.schema.showCodecov).toBeDefined();
+      expect(swiftPackageTest.schema.parseAsLibrary).toBeDefined();
     });
   });
 
   describe('error handling scenarios', () => {
     it('should handle invalid packagePath type', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       const params = {
         packagePath: 123, // Should be string
       };
 
       // The production code throws a TypeError for non-string paths
-      await expect(tool.handler(params)).rejects.toThrow(
+      await expect(swiftPackageTest.handler(params)).rejects.toThrow(
         'The "paths[0]" argument must be of type string',
       );
     });
 
     it('should handle invalid testProduct type', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       const params = {
         packagePath: '/path/to/package',
         testProduct: 123, // Should be string
       };
 
-      const result = await tool.handler(params);
+      const result = await swiftPackageTest.handler(params);
       // The production code coerces types, so invalid types pass through
       expect(result.isError || false).toBe(false);
     });
 
     it('should handle invalid filter type', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       const params = {
         packagePath: '/path/to/package',
         filter: 123, // Should be string
       };
 
-      const result = await tool.handler(params);
+      const result = await swiftPackageTest.handler(params);
       // The production code coerces types, so invalid types pass through
       expect(result.isError || false).toBe(false);
     });
@@ -431,26 +414,26 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
 
   describe('canonical implementation verification', () => {
     it('should match expected swift_package_test tool name exactly', () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
-      expect(tool.name).toBe('swift_package_test');
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
+      expect(swiftPackageTest.name).toBe('swift_package_test');
     });
 
     it('should not be a hallucinated tool variant', () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       // Ensure this is not a hallucinated tool like swift_package_test_direct, etc.
-      expect(tool.name).not.toContain('_direct');
-      expect(tool.name).not.toContain('_init');
-      expect(tool.name).not.toContain('_deps');
+      expect(swiftPackageTest.name).not.toContain('_direct');
+      expect(swiftPackageTest.name).not.toContain('_init');
+      expect(swiftPackageTest.name).not.toContain('_deps');
     });
 
     it('should have exactly the expected schema properties', () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
-      const schemaKeys = Object.keys(tool.schema || {});
+      const schemaKeys = Object.keys(swiftPackageTest.schema || {});
       const expectedKeys = [
         'packagePath',
         'testProduct',
@@ -465,11 +448,11 @@ Test Suite 'All tests' passed at 2023-10-10 12:34:56.794.
     });
 
     it('should return the expected success response format', async () => {
-      const tool = registeredTools.get('swift_package_test');
-      expect(tool).toBeDefined();
+      // Test plugin directly
+      expect(swiftPackageTest).toBeDefined();
 
       const params = { packagePath: '/path/to/package' };
-      const result = await tool.handler(params);
+      const result = await swiftPackageTest.handler(params);
 
       expect(result.isError || false).toBe(false);
       expect(result.content).toHaveLength(3);

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import swipePlugin from './swipe.js';
-import { swipeToolName, swipeToolDescription, swipeToolSchema, swipeToolHandler } from '../../src/tools/axe/index.js';
 
 // Mock dependencies
 vi.mock('../../src/utils/executeCommand.js', () => ({
@@ -36,12 +35,13 @@ describe('swipe plugin', () => {
   });
 
   it('should export the correct plugin structure', () => {
-    expect(swipePlugin).toEqual({
-      name: swipeToolName,
-      description: swipeToolDescription,
-      schema: swipeToolSchema,
-      handler: swipeToolHandler,
+    expect(swipePlugin).toMatchObject({
+      name: 'swipe',
+      description: 'Swipe from one point to another. Use describe_ui for precise coordinates (don\'t guess from screenshots). Supports configurable timing.',
     });
+    expect(swipePlugin).toHaveProperty('schema');
+    expect(swipePlugin).toHaveProperty('handler');
+    expect(typeof swipePlugin.handler).toBe('function');
   });
 
   it('should have correct tool name', () => {
@@ -203,10 +203,6 @@ describe('swipe plugin', () => {
   });
 
   describe('handler integration', () => {
-    it('should use the same handler as the original tool', () => {
-      expect(swipePlugin.handler).toBe(swipeToolHandler);
-    });
-
     it('should be an async function', () => {
       expect(swipePlugin.handler.constructor.name).toBe('AsyncFunction');
     });
@@ -295,20 +291,21 @@ describe('swipe plugin', () => {
   });
 
   describe('compatibility with original exports', () => {
-    it('should use the same name as exported constant', () => {
-      expect(swipePlugin.name).toBe(swipeToolName);
+    it('should have the correct name', () => {
+      expect(swipePlugin.name).toBe('swipe');
     });
 
-    it('should use the same description as exported constant', () => {
-      expect(swipePlugin.description).toBe(swipeToolDescription);
+    it('should have the correct description', () => {
+      expect(swipePlugin.description).toBe('Swipe from one point to another. Use describe_ui for precise coordinates (don\'t guess from screenshots). Supports configurable timing.');
     });
 
-    it('should use the same schema as exported constant', () => {
-      expect(swipePlugin.schema).toBe(swipeToolSchema);
+    it('should have the correct schema structure', () => {
+      expect(typeof swipePlugin.schema).toBe('object');
+      expect(Object.keys(swipePlugin.schema)).toEqual(['simulatorUuid', 'x1', 'y1', 'x2', 'y2', 'duration', 'delta', 'preDelay', 'postDelay']);
     });
 
-    it('should use the same handler as exported constant', () => {
-      expect(swipePlugin.handler).toBe(swipeToolHandler);
+    it('should have the correct handler type', () => {
+      expect(typeof swipePlugin.handler).toBe('function');
     });
   });
 });
