@@ -1,44 +1,26 @@
-import { globSync } from 'glob';
-import { pathToFileURL } from 'node:url';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import type { PluginMeta, WorkflowGroup, WorkflowMeta } from './plugin-types.js';
 
 const IGNORE_GLOBS = [
-  '**/*.test.{ts,mts,cts}',
-  '**/*.spec.{ts,mts,cts}',
+  '**/*.test.{ts,mts,cts,js,mjs,cjs}',
+  '**/*.spec.{ts,mts,cts,js,mjs,cjs}',
   '**/__tests__/**',
   '**/__mocks__/**',
   '**/fixtures/**',
   '**/coverage/**',
 ];
 
-export async function loadPlugins(
-  root = new URL('../../plugins/', import.meta.url),
-): Promise<Map<string, PluginMeta>> {
+export async function loadPlugins(): Promise<Map<string, PluginMeta>> {
   const plugins = new Map<string, PluginMeta>();
-  const files = globSync('**/*.ts', {
-    cwd: root.pathname,
-    absolute: true,
-    ignore: IGNORE_GLOBS,
-  });
 
-  for (const file of files) {
-    const mod = await import(pathToFileURL(file).href);
+  // This will be replaced by the esbuild plugin with actual imports
+  const pluginModules = await __PLUGIN_LOADER__();
 
-    // Handle default export (single tool)
-    if (mod.default?.name && typeof mod.default.handler === 'function') {
-      plugins.set(mod.default.name, mod.default);
-    }
-
-    // Handle named exports (re-exported shared tools)
-    for (const [key, value] of Object.entries(mod)) {
-      if (key !== 'default' && value && typeof value === 'object') {
-        const tool = value as PluginMeta;
-        if (tool.name && typeof tool.handler === 'function') {
-          plugins.set(tool.name, tool);
-        }
-      }
+  for (const plugin of pluginModules) {
+    if (plugin?.name && typeof plugin.handler === 'function') {
+      plugins.set(plugin.name, plugin);
     }
   }
 
