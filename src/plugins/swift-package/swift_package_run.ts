@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 import { createTextResponse, validateRequiredParam } from '../../utils/index.js';
 import { createErrorResponse } from '../../utils/index.js';
 import { log } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 // Store active processes so we can manage them - keyed by PID for uniqueness
 const activeProcesses = new Map();
@@ -37,9 +38,7 @@ export default {
       .describe('Run in background and return immediately (default: false)'),
     parseAsLibrary: parseAsLibrarySchema,
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
     if (!pkgValidation.isValid) return pkgValidation.errorResponse;

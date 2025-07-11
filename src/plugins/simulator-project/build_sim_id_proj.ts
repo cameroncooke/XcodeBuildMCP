@@ -2,15 +2,14 @@ import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
   iOSSimulator: 'iOS Simulator',
 };
 
 // Internal logic for building Simulator apps.
-async function _handleSimulatorBuildLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleSimulatorBuildLogic(params: any): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
@@ -56,9 +55,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);

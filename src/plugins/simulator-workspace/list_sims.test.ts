@@ -1,24 +1,31 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { EventEmitter } from 'events';
 
 // Import the plugin
 import listSims from './list_sims.ts';
 
-// Mock external dependencies
-vi.mock('../../src/utils/index.js', () => ({
-  log: vi.fn(),
-  executeCommand: vi.fn(),
+// Mock only child_process at the lowest level
+vi.mock('child_process', () => ({
+  spawn: vi.fn(),
 }));
 
+// Mock child process class
+class MockChildProcess extends EventEmitter {
+  stdout = new EventEmitter();
+  stderr = new EventEmitter();
+  pid = 12345;
+}
+
 describe('list_sims tool', () => {
-  let mockLog: MockedFunction<any>;
-  let mockExecuteCommand: MockedFunction<any>;
+  let mockSpawn: any;
+  let mockProcess: MockChildProcess;
 
   beforeEach(async () => {
-    const utils = await import('../../src/utils/index.js');
-
-    mockLog = utils.log as MockedFunction<any>;
-    mockExecuteCommand = utils.executeCommand as MockedFunction<any>;
+    const { spawn } = await import('child_process');
+    mockSpawn = vi.mocked(spawn);
+    mockProcess = new MockChildProcess();
+    mockSpawn.mockReturnValue(mockProcess);
 
     vi.clearAllMocks();
   });
@@ -42,36 +49,45 @@ describe('list_sims tool', () => {
       // Valid inputs
       expect(schema.safeParse({ enabled: true }).success).toBe(true);
       expect(schema.safeParse({ enabled: false }).success).toBe(true);
+      expect(schema.safeParse({ enabled: undefined }).success).toBe(true);
+      expect(schema.safeParse({}).success).toBe(true);
 
       // Invalid inputs
       expect(schema.safeParse({ enabled: 'yes' }).success).toBe(false);
       expect(schema.safeParse({ enabled: 1 }).success).toBe(false);
       expect(schema.safeParse({ enabled: null }).success).toBe(false);
-      expect(schema.safeParse({ enabled: undefined }).success).toBe(false);
-      expect(schema.safeParse({}).success).toBe(false);
     });
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle successful simulator listing', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: true,
-        output: JSON.stringify({
-          devices: {
-            'iOS 17.0': [
-              {
-                name: 'iPhone 15',
-                udid: 'test-uuid-123',
-                isAvailable: true,
-                state: 'Shutdown',
-              },
-            ],
-          },
-        }),
-        error: '',
+      const mockOutput = JSON.stringify({
+        devices: {
+          'iOS 17.0': [
+            {
+              name: 'iPhone 15',
+              udid: 'test-uuid-123',
+              isAvailable: true,
+              state: 'Shutdown',
+            },
+          ],
+        },
       });
 
+      // Set up successful command execution
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', mockOutput);
+        mockProcess.emit('close', 0);
+      }, 0);
+
       const result = await listSims.handler({ enabled: true });
+
+      // Verify command was called correctly
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'sh',
+        ['-c', 'xcrun simctl list devices available --json'],
+        expect.any(Object),
+      );
 
       expect(result).toEqual({
         content: [
@@ -93,22 +109,24 @@ Next Steps:
     });
 
     it('should handle successful listing with booted simulator', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: true,
-        output: JSON.stringify({
-          devices: {
-            'iOS 17.0': [
-              {
-                name: 'iPhone 15',
-                udid: 'test-uuid-123',
-                isAvailable: true,
-                state: 'Booted',
-              },
-            ],
-          },
-        }),
-        error: '',
+      const mockOutput = JSON.stringify({
+        devices: {
+          'iOS 17.0': [
+            {
+              name: 'iPhone 15',
+              udid: 'test-uuid-123',
+              isAvailable: true,
+              state: 'Booted',
+            },
+          ],
+        },
       });
+
+      // Set up successful command execution
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', mockOutput);
+        mockProcess.emit('close', 0);
+      }, 0);
 
       const result = await listSims.handler({ enabled: true });
 
@@ -132,11 +150,11 @@ Next Steps:
     });
 
     it('should handle command failure', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: false,
-        output: '',
-        error: 'Command failed',
-      });
+      // Set up command failure
+      setTimeout(() => {
+        mockProcess.stderr.emit('data', 'Command failed');
+        mockProcess.emit('close', 1);
+      }, 0);
 
       const result = await listSims.handler({ enabled: true });
 
@@ -151,11 +169,11 @@ Next Steps:
     });
 
     it('should handle JSON parse failure', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: true,
-        output: 'invalid json',
-        error: '',
-      });
+      // Set up invalid JSON output
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', 'invalid json');
+        mockProcess.emit('close', 0);
+      }, 0);
 
       const result = await listSims.handler({ enabled: true });
 
@@ -170,7 +188,10 @@ Next Steps:
     });
 
     it('should handle exception with Error object', async () => {
-      mockExecuteCommand.mockRejectedValue(new Error('Command execution failed'));
+      // Set up spawn error
+      setTimeout(() => {
+        mockProcess.emit('error', new Error('Command execution failed'));
+      }, 0);
 
       const result = await listSims.handler({ enabled: true });
 
@@ -185,7 +206,10 @@ Next Steps:
     });
 
     it('should handle exception with string error', async () => {
-      mockExecuteCommand.mockRejectedValue('String error');
+      // Set up spawn error with string
+      setTimeout(() => {
+        mockProcess.emit('error', 'String error');
+      }, 0);
 
       const result = await listSims.handler({ enabled: true });
 

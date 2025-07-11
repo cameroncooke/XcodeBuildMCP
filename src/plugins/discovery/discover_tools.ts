@@ -4,6 +4,7 @@ import { log } from '../../utils/index.js';
 import { CreateMessageResultSchema } from '@modelcontextprotocol/sdk/types.js';
 import { loadWorkflowGroups } from '../../utils/index.js';
 import { enableWorkflows } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 export default {
   name: 'discover_tools',
@@ -17,9 +18,7 @@ export default {
           "For example: 'I need to build my iOS app and run it on the iPhone 15 Pro simulator.'",
       ),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const { task_description } = args;
     log('info', `Discovering tools for task: ${task_description}`);
 

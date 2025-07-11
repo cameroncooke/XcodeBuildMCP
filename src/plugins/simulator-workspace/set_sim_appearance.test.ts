@@ -2,16 +2,12 @@ import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vites
 import { z } from 'zod';
 import setSimAppearancePlugin from './set_sim_appearance.ts';
 
-vi.mock('../../src/utils/command.ts', () => ({
+vi.mock('../../utils/index.js', () => ({
   executeCommand: vi.fn(),
-}));
-
-vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
-}));
-
-vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
+  createTextResponse: vi.fn(),
+  createErrorResponse: vi.fn(),
 }));
 
 describe('set_sim_appearance plugin', () => {
@@ -19,11 +15,9 @@ describe('set_sim_appearance plugin', () => {
   let mockValidateRequiredParam: MockedFunction<any>;
 
   beforeEach(async () => {
-    const { executeCommand } = await import('../../src/utils/command.ts');
+    const { executeCommand, validateRequiredParam } = await import('../../utils/index.js');
     mockExecuteCommand = executeCommand as MockedFunction<any>;
-
-    const validationModule = await import('../../src/utils/validation.ts');
-    mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
+    mockValidateRequiredParam = validateRequiredParam as MockedFunction<any>;
 
     mockValidateRequiredParam.mockReturnValue({
       isValid: true,

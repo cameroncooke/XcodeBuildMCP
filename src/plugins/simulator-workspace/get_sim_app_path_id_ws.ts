@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { executeCommand } from '../../utils/index.js';
@@ -69,9 +70,7 @@ function constructDestinationString(
 /**
  * Internal function to handle getting app path
  */
-async function _handleGetAppPathLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleGetAppPathLogic(params: any): Promise<ToolResponse> {
   log('info', `Getting app path for scheme ${params.scheme} on platform ${params.platform}`);
 
   try {
@@ -224,9 +223,7 @@ export default {
       .optional()
       .describe('Whether to use the latest OS version for the simulator'),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
     if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;

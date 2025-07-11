@@ -3,13 +3,15 @@
 
 // Import the shared activeProcesses map from swift_package_run
 // This maintains the same behavior as the original implementation
+import { ToolResponse } from '../../types/common.js';
+
 const activeProcesses = new Map();
 
 export default {
   name: 'swift_package_list',
   description: 'Lists currently running Swift Package processes',
   schema: {},
-  async handler(): Promise<{ content: Array<{ type: string; text: string }> }> {
+  async handler(): Promise<ToolResponse> {
     const processes = Array.from(activeProcesses.entries());
 
     if (processes.length === 0) {

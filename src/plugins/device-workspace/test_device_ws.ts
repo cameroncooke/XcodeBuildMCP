@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { XcodePlatform } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
@@ -108,9 +109,7 @@ function formatTestSummary(summary: any): string {
 }
 
 // Internal logic for running tests with platform-specific handling
-async function handleTestLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function handleTestLogic(params: any): Promise<ToolResponse> {
   log(
     'info',
     `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
@@ -217,9 +216,7 @@ export default {
       .optional()
       .describe('Target platform (defaults to iOS)'),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const platformMap = {
       iOS: XcodePlatform.iOS,

@@ -4,6 +4,7 @@ import { executeCommand } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { createErrorResponse } from '../../utils/index.js';
 import { log } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 export default {
   name: 'swift_package_clean',
@@ -11,9 +12,7 @@ export default {
   schema: {
     packagePath: z.string().describe('Path to the Swift package root (Required)'),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
     if (!pkgValidation.isValid) return pkgValidation.errorResponse;

@@ -1,34 +1,29 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { EventEmitter } from 'events';
 import resetNetworkConditionPlugin from './reset_network_condition.ts';
 
-vi.mock('../../src/utils/command.ts', () => ({
-  executeCommand: vi.fn(),
+// Mock only child_process at the lowest level
+vi.mock('child_process', () => ({
+  spawn: vi.fn(),
 }));
 
-vi.mock('../../src/utils/logger.ts', () => ({
-  log: vi.fn(),
-}));
-
-vi.mock('../../src/utils/validation.ts', () => ({
-  validateRequiredParam: vi.fn(),
-}));
+// Mock child process class
+class MockChildProcess extends EventEmitter {
+  stdout = new EventEmitter();
+  stderr = new EventEmitter();
+  pid = 12345;
+}
 
 describe('reset_network_condition plugin', () => {
-  let mockExecuteCommand: MockedFunction<any>;
-  let mockValidateRequiredParam: MockedFunction<any>;
+  let mockSpawn: any;
+  let mockProcess: MockChildProcess;
 
   beforeEach(async () => {
-    const { executeCommand } = await import('../../src/utils/command.ts');
-    mockExecuteCommand = executeCommand as MockedFunction<any>;
-
-    const validationModule = await import('../../src/utils/validation.ts');
-    mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
-
-    mockValidateRequiredParam.mockReturnValue({
-      isValid: true,
-      errorResponse: null,
-    });
+    const { spawn } = await import('child_process');
+    mockSpawn = vi.mocked(spawn);
+    mockProcess = new MockChildProcess();
+    mockSpawn.mockReturnValue(mockProcess);
 
     vi.clearAllMocks();
   });
@@ -69,14 +64,22 @@ describe('reset_network_condition plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should successfully reset network condition', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: true,
-        output: 'Network condition reset successfully',
-      });
+      // Set up successful command execution
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', 'Network condition reset successfully');
+        mockProcess.emit('close', 0);
+      }, 0);
 
       const result = await resetNetworkConditionPlugin.handler({
         simulatorUuid: 'test-uuid-123',
       });
+
+      // Verify command was called correctly
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'sh',
+        ['-c', 'xcrun simctl status_bar test-uuid-123 clear'],
+        expect.any(Object),
+      );
 
       expect(result).toEqual({
         content: [
@@ -89,10 +92,11 @@ describe('reset_network_condition plugin', () => {
     });
 
     it('should handle command failure', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: false,
-        error: 'Command failed',
-      });
+      // Set up command failure
+      setTimeout(() => {
+        mockProcess.stderr.emit('data', 'Command failed');
+        mockProcess.emit('close', 1);
+      }, 0);
 
       const result = await resetNetworkConditionPlugin.handler({
         simulatorUuid: 'test-uuid-123',
@@ -109,24 +113,24 @@ describe('reset_network_condition plugin', () => {
     });
 
     it('should handle missing simulatorUuid', async () => {
-      mockValidateRequiredParam.mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [{ type: 'text', text: 'simulatorUuid is required' }],
-          isError: true,
-        },
-      });
-
-      const result = await resetNetworkConditionPlugin.handler({});
+      const result = await resetNetworkConditionPlugin.handler({ simulatorUuid: undefined });
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'simulatorUuid is required' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle exception during execution', async () => {
-      mockExecuteCommand.mockRejectedValue(new Error('Network error'));
+      // Set up spawn error
+      setTimeout(() => {
+        mockProcess.emit('error', new Error('Network error'));
+      }, 0);
 
       const result = await resetNetworkConditionPlugin.handler({
         simulatorUuid: 'test-uuid-123',
@@ -143,18 +147,20 @@ describe('reset_network_condition plugin', () => {
     });
 
     it('should call correct command', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: true,
-        output: 'Network condition reset successfully',
-      });
+      // Set up successful command execution
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', 'Network condition reset successfully');
+        mockProcess.emit('close', 0);
+      }, 0);
 
       await resetNetworkConditionPlugin.handler({
         simulatorUuid: 'test-uuid-123',
       });
 
-      expect(mockExecuteCommand).toHaveBeenCalledWith(
-        ['xcrun', 'simctl', 'status_bar', 'test-uuid-123', 'clear'],
-        'Reset Network Condition',
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'sh',
+        ['-c', 'xcrun simctl status_bar test-uuid-123 clear'],
+        expect.any(Object),
       );
     });
   });

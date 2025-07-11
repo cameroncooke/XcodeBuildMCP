@@ -1,34 +1,29 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { EventEmitter } from 'events';
 import plugin from './stop_app_sim.ts';
 
-vi.mock('../../src/utils/logger.ts', () => ({
-  log: vi.fn(),
+// Mock only child_process at the lowest level
+vi.mock('child_process', () => ({
+  spawn: vi.fn(),
 }));
 
-vi.mock('../../src/utils/command.ts', () => ({
-  executeCommand: vi.fn(),
-}));
-
-vi.mock('../../src/utils/validation.ts', () => ({
-  validateRequiredParam: vi.fn(),
-}));
+// Mock child process class
+class MockChildProcess extends EventEmitter {
+  stdout = new EventEmitter();
+  stderr = new EventEmitter();
+  pid = 12345;
+}
 
 describe('stop_app_sim plugin', () => {
-  let mockExecuteCommand: MockedFunction<any>;
-  let mockValidateRequiredParam: MockedFunction<any>;
+  let mockSpawn: any;
+  let mockProcess: MockChildProcess;
 
   beforeEach(async () => {
-    const { executeCommand } = await import('../../src/utils/command.ts');
-    mockExecuteCommand = executeCommand as MockedFunction<any>;
-
-    const validationModule = await import('../../src/utils/validation.ts');
-    mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
-
-    mockValidateRequiredParam.mockReturnValue({
-      isValid: true,
-      errorResponse: null,
-    });
+    const { spawn } = await import('child_process');
+    mockSpawn = vi.mocked(spawn);
+    mockProcess = new MockChildProcess();
+    mockSpawn.mockReturnValue(mockProcess);
 
     vi.clearAllMocks();
   });
@@ -82,16 +77,23 @@ describe('stop_app_sim plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should stop app successfully', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: true,
-        stdout: '',
-        stderr: '',
-      });
+      // Set up successful command execution
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', '');
+        mockProcess.emit('close', 0);
+      }, 0);
 
       const result = await plugin.handler({
         simulatorUuid: 'test-uuid',
         bundleId: 'com.example.App',
       });
+
+      // Verify command was called correctly
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'sh',
+        ['-c', 'xcrun simctl terminate test-uuid com.example.App'],
+        expect.any(Object),
+      );
 
       expect(result).toEqual({
         content: [
@@ -104,10 +106,11 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle command failure', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: false,
-        error: 'Simulator not found',
-      });
+      // Set up command failure
+      setTimeout(() => {
+        mockProcess.stderr.emit('data', 'Simulator not found');
+        mockProcess.emit('close', 1);
+      }, 0);
 
       const result = await plugin.handler({
         simulatorUuid: 'invalid-uuid',
@@ -126,41 +129,41 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle missing simulatorUuid', async () => {
-      mockValidateRequiredParam.mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [{ type: 'text', text: 'simulatorUuid is required' }],
-          isError: true,
-        },
+      const result = await plugin.handler({
+        simulatorUuid: undefined,
+        bundleId: 'com.example.App',
       });
 
-      const result = await plugin.handler({ bundleId: 'com.example.App' });
-
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'simulatorUuid is required' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle missing bundleId', async () => {
-      mockValidateRequiredParam.mockReturnValueOnce({ isValid: true }).mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [{ type: 'text', text: 'bundleId is required' }],
-          isError: true,
-        },
-      });
-
-      const result = await plugin.handler({ simulatorUuid: 'test-uuid' });
+      const result = await plugin.handler({ simulatorUuid: 'test-uuid', bundleId: undefined });
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'bundleId is required' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'bundleId' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle exception during execution', async () => {
-      mockExecuteCommand.mockRejectedValue(new Error('Unexpected error'));
+      // Set up spawn error
+      setTimeout(() => {
+        mockProcess.emit('error', new Error('Unexpected error'));
+      }, 0);
 
       const result = await plugin.handler({
         simulatorUuid: 'test-uuid',
@@ -179,20 +182,21 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should call correct command', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: true,
-        stdout: '',
-        stderr: '',
-      });
+      // Set up successful command execution
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', '');
+        mockProcess.emit('close', 0);
+      }, 0);
 
       await plugin.handler({
         simulatorUuid: 'test-uuid',
         bundleId: 'com.example.App',
       });
 
-      expect(mockExecuteCommand).toHaveBeenCalledWith(
-        ['xcrun', 'simctl', 'terminate', 'test-uuid', 'com.example.App'],
-        'Stop App in Simulator',
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'sh',
+        ['-c', 'xcrun simctl terminate test-uuid com.example.App'],
+        expect.any(Object),
       );
     });
   });

@@ -1,0 +1,226 @@
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
+import { EventEmitter } from 'events';
+
+// Import the plugin
+import listSims from '../list_sims.ts';
+
+// Mock only child_process at the lowest level
+vi.mock('child_process', () => ({
+  spawn: vi.fn(),
+}));
+
+// Mock child process class
+class MockChildProcess extends EventEmitter {
+  stdout = new EventEmitter();
+  stderr = new EventEmitter();
+  pid = 12345;
+}
+
+describe('list_sims tool', () => {
+  let mockSpawn: any;
+  let mockProcess: MockChildProcess;
+
+  beforeEach(async () => {
+    const { spawn } = await import('child_process');
+    mockSpawn = vi.mocked(spawn);
+    mockProcess = new MockChildProcess();
+    mockSpawn.mockReturnValue(mockProcess);
+
+    vi.clearAllMocks();
+  });
+
+  describe('Export Field Validation (Literal)', () => {
+    it('should have correct name', () => {
+      expect(listSims.name).toBe('list_sims');
+    });
+
+    it('should have correct description', () => {
+      expect(listSims.description).toBe('Lists available iOS simulators with their UUIDs. ');
+    });
+
+    it('should have handler function', () => {
+      expect(typeof listSims.handler).toBe('function');
+    });
+
+    it('should have correct schema with enabled boolean field', () => {
+      const schema = z.object(listSims.schema);
+
+      // Valid inputs
+      expect(schema.safeParse({ enabled: true }).success).toBe(true);
+      expect(schema.safeParse({ enabled: false }).success).toBe(true);
+      expect(schema.safeParse({ enabled: undefined }).success).toBe(true);
+      expect(schema.safeParse({}).success).toBe(true);
+
+      // Invalid inputs
+      expect(schema.safeParse({ enabled: 'yes' }).success).toBe(false);
+      expect(schema.safeParse({ enabled: 1 }).success).toBe(false);
+      expect(schema.safeParse({ enabled: null }).success).toBe(false);
+    });
+  });
+
+  describe('Handler Behavior (Complete Literal Returns)', () => {
+    it('should handle successful simulator listing', async () => {
+      const mockOutput = JSON.stringify({
+        devices: {
+          'iOS 17.0': [
+            {
+              name: 'iPhone 15',
+              udid: 'test-uuid-123',
+              isAvailable: true,
+              state: 'Shutdown',
+            },
+          ],
+        },
+      });
+
+      // Set up successful command execution
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', mockOutput);
+        mockProcess.emit('close', 0);
+      }, 0);
+
+      const result = await listSims.handler({ enabled: true });
+
+      // Verify command was called correctly
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'sh',
+        ['-c', 'xcrun simctl list devices available --json'],
+        expect.any(Object),
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: `Available iOS Simulators:
+
+iOS 17.0:
+- iPhone 15 (test-uuid-123)
+
+Next Steps:
+1. Boot a simulator: boot_sim({ simulatorUuid: 'UUID_FROM_ABOVE' })
+2. Open the simulator UI: open_sim({ enabled: true })
+3. Build for simulator: build_ios_sim_id_proj({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })
+4. Get app path: get_sim_app_path_id_proj({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })`,
+          },
+        ],
+      });
+    });
+
+    it('should handle successful listing with booted simulator', async () => {
+      const mockOutput = JSON.stringify({
+        devices: {
+          'iOS 17.0': [
+            {
+              name: 'iPhone 15',
+              udid: 'test-uuid-123',
+              isAvailable: true,
+              state: 'Booted',
+            },
+          ],
+        },
+      });
+
+      // Set up successful command execution
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', mockOutput);
+        mockProcess.emit('close', 0);
+      }, 0);
+
+      const result = await listSims.handler({ enabled: true });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: `Available iOS Simulators:
+
+iOS 17.0:
+- iPhone 15 (test-uuid-123) [Booted]
+
+Next Steps:
+1. Boot a simulator: boot_sim({ simulatorUuid: 'UUID_FROM_ABOVE' })
+2. Open the simulator UI: open_sim({ enabled: true })
+3. Build for simulator: build_ios_sim_id_proj({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })
+4. Get app path: get_sim_app_path_id_proj({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })`,
+          },
+        ],
+      });
+    });
+
+    it('should handle command failure', async () => {
+      // Set up command failure
+      setTimeout(() => {
+        mockProcess.stderr.emit('data', 'Command failed');
+        mockProcess.emit('close', 1);
+      }, 0);
+
+      const result = await listSims.handler({ enabled: true });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Failed to list simulators: Command failed',
+          },
+        ],
+      });
+    });
+
+    it('should handle JSON parse failure', async () => {
+      // Set up invalid JSON output
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', 'invalid json');
+        mockProcess.emit('close', 0);
+      }, 0);
+
+      const result = await listSims.handler({ enabled: true });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'invalid json',
+          },
+        ],
+      });
+    });
+
+    it('should handle exception with Error object', async () => {
+      // Set up spawn error
+      setTimeout(() => {
+        mockProcess.emit('error', new Error('Command execution failed'));
+      }, 0);
+
+      const result = await listSims.handler({ enabled: true });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Failed to list simulators: Command execution failed',
+          },
+        ],
+      });
+    });
+
+    it('should handle exception with string error', async () => {
+      // Set up spawn error with string
+      setTimeout(() => {
+        mockProcess.emit('error', 'String error');
+      }, 0);
+
+      const result = await listSims.handler({ enabled: true });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Failed to list simulators: String error',
+          },
+        ],
+      });
+    });
+  });
+});

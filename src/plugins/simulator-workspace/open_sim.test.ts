@@ -1,14 +1,19 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { EventEmitter } from 'events';
 import openSim from './open_sim.ts';
 
-vi.mock('../../src/utils/command.ts', () => ({
-  executeCommand: vi.fn(),
+// Mock only child_process at the lowest level
+vi.mock('child_process', () => ({
+  spawn: vi.fn(),
 }));
 
-vi.mock('../../src/utils/logger.ts', () => ({
-  log: vi.fn(),
-}));
+// Mock child process class
+class MockChildProcess extends EventEmitter {
+  stdout = new EventEmitter();
+  stderr = new EventEmitter();
+  pid = 12345;
+}
 
 describe('open_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -53,24 +58,30 @@ describe('open_sim tool', () => {
     });
   });
 
-  let mockExecuteCommand: MockedFunction<any>;
+  let mockSpawn: any;
+  let mockProcess: MockChildProcess;
 
   beforeEach(async () => {
-    vi.clearAllMocks();
+    const { spawn } = await import('child_process');
+    mockSpawn = vi.mocked(spawn);
+    mockProcess = new MockChildProcess();
+    mockSpawn.mockReturnValue(mockProcess);
 
-    const { executeCommand } = await vi.importMock('../../src/utils/command.ts');
-    mockExecuteCommand = executeCommand as MockedFunction<any>;
+    vi.clearAllMocks();
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should successfully open simulator', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: true,
-        stdout: '',
-        stderr: '',
-      });
+      // Set up successful command execution
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', '');
+        mockProcess.emit('close', 0);
+      }, 0);
 
       const result = await openSim.handler();
+
+      // Verify command was called correctly
+      expect(mockSpawn).toHaveBeenCalledWith('sh', ['-c', 'open -a Simulator'], expect.any(Object));
 
       expect(result).toEqual({
         content: [
@@ -96,12 +107,11 @@ describe('open_sim tool', () => {
     });
 
     it('should handle executeCommand failure', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: false,
-        error: 'Command failed',
-        stdout: '',
-        stderr: '',
-      });
+      // Set up command failure
+      setTimeout(() => {
+        mockProcess.stderr.emit('data', 'Command failed');
+        mockProcess.emit('close', 1);
+      }, 0);
 
       const result = await openSim.handler();
 
@@ -116,8 +126,10 @@ describe('open_sim tool', () => {
     });
 
     it('should handle thrown errors', async () => {
-      const testError = new Error('Test error');
-      mockExecuteCommand.mockRejectedValue(testError);
+      // Set up spawn error
+      setTimeout(() => {
+        mockProcess.emit('error', new Error('Test error'));
+      }, 0);
 
       const result = await openSim.handler();
 
@@ -132,7 +144,10 @@ describe('open_sim tool', () => {
     });
 
     it('should handle non-Error thrown objects', async () => {
-      mockExecuteCommand.mockRejectedValue('String error');
+      // Set up spawn error with string
+      setTimeout(() => {
+        mockProcess.emit('error', 'String error');
+      }, 0);
 
       const result = await openSim.handler();
 
@@ -147,18 +162,15 @@ describe('open_sim tool', () => {
     });
 
     it('should call correct command', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: true,
-        stdout: '',
-        stderr: '',
-      });
+      // Set up successful command execution
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', '');
+        mockProcess.emit('close', 0);
+      }, 0);
 
       await openSim.handler();
 
-      expect(mockExecuteCommand).toHaveBeenCalledWith(
-        ['open', '-a', 'Simulator'],
-        'Open Simulator',
-      );
+      expect(mockSpawn).toHaveBeenCalledWith('sh', ['-c', 'open -a Simulator'], expect.any(Object));
     });
   });
 });

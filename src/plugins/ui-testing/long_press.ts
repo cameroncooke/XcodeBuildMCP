@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
@@ -28,9 +29,7 @@ export default {
     y: z.number().int('Y coordinate for the long press'),
     duration: z.number().positive('Duration of the long press in milliseconds'),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const toolName = 'long_press';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -126,7 +125,7 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+): Promise<ToolResponse> {
   // Get the appropriate axe binary path
   const axeBinary = getAxePath();
   if (!axeBinary) {

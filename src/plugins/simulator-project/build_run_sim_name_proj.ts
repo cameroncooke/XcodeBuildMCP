@@ -4,15 +4,14 @@ import { executeCommand } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { execSync } from 'child_process';
+import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
   iOSSimulator: 'iOS Simulator',
 };
 
 // Internal logic for building Simulator apps.
-async function _handleSimulatorBuildLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleSimulatorBuildLogic(params: any): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
@@ -32,9 +31,7 @@ async function _handleSimulatorBuildLogic(
 }
 
 // Internal logic for building and running iOS Simulator apps.
-async function _handleIOSSimulatorBuildAndRunLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleIOSSimulatorBuildAndRunLogic(params: any): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build and run for scheme ${params.scheme} (internal)`);
 
   try {
@@ -323,9 +320,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);

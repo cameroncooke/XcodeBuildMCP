@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { ToolResponse } from '../../types/common.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 
@@ -36,14 +37,12 @@ export default {
       .describe('Additional arguments to pass to xcodebuild'),
     preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const projectValidation = validateRequiredParam('projectPath', args.projectPath);
-    if (!projectValidation.isValid) return projectValidation.errorResponse;
+    if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
     const schemeValidation = validateRequiredParam('scheme', args.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
     return executeXcodeBuildCommand(
       {

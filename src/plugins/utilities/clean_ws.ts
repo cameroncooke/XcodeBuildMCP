@@ -9,6 +9,7 @@ import { log } from '../../utils/index.js';
 import { XcodePlatform } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 const CleanWorkspaceSchema = z.object({
   workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
@@ -24,9 +25,7 @@ const CleanWorkspaceSchema = z.object({
   extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
 });
 
-async function _handleCleanLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleCleanLogic(params: any): Promise<ToolResponse> {
   log('info', 'Starting xcodebuild clean request (internal)');
 
   // For clean operations, we need to provide a default platform and configuration
@@ -45,17 +44,31 @@ async function _handleCleanLogic(
   );
 }
 
-async function cleanWorkspace(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
-  const validated = CleanWorkspaceSchema.parse(params);
+async function cleanWorkspace(params: any): Promise<ToolResponse> {
+  try {
+    const validated = CleanWorkspaceSchema.parse(params);
 
-  const workspacePathValidation = validateRequiredParam('workspacePath', validated.workspacePath);
-  if (!workspacePathValidation.isValid) {
-    return workspacePathValidation.errorResponse;
+    const workspacePathValidation = validateRequiredParam('workspacePath', validated.workspacePath);
+    if (!workspacePathValidation.isValid) {
+      return workspacePathValidation.errorResponse;
+    }
+
+    return _handleCleanLogic(validated);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const firstError = error.errors[0];
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `${firstError.message} at path '${firstError.path.join('.')}'`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    throw error;
   }
-
-  return _handleCleanLogic(validated);
 }
 
 export default {
@@ -75,9 +88,7 @@ export default {
       .describe('Optional: Path where derived data might be located'),
     extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     return cleanWorkspace(params);
   },

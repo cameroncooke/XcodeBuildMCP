@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -23,9 +24,7 @@ const XcodePlatform = {
 /**
  * Internal logic for building macOS apps.
  */
-async function _handleMacOSBuildLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleMacOSBuildLogic(params: any): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
@@ -65,9 +64,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     return _handleMacOSBuildLogic({
       ...params,

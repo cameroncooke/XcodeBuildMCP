@@ -9,11 +9,10 @@ import { log } from '../../utils/index.js';
 import { XcodePlatform } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 // Internal logic for cleaning build products.
-async function _handleCleanLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleCleanLogic(params: any): Promise<ToolResponse> {
   log('info', 'Starting xcodebuild clean request (internal)');
 
   // For clean operations, we need to provide a default platform and configuration
@@ -33,34 +32,48 @@ async function _handleCleanLogic(
 }
 
 // Cleans build products for a project
-async function cleanProject(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
-  const validated = z
-    .object({
-      projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
-      scheme: z.string().optional().describe('The scheme to clean'),
-      configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-      derivedDataPath: z
-        .string()
-        .optional()
-        .describe('Path where build products and other derived data will go'),
-      extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-      preferXcodebuild: z
-        .boolean()
-        .optional()
-        .describe(
-          'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-        ),
-    })
-    .parse(params);
+async function cleanProject(params: any): Promise<ToolResponse> {
+  try {
+    const validated = z
+      .object({
+        projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
+        scheme: z.string().optional().describe('The scheme to clean'),
+        configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+        derivedDataPath: z
+          .string()
+          .optional()
+          .describe('Path where build products and other derived data will go'),
+        extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+        preferXcodebuild: z
+          .boolean()
+          .optional()
+          .describe(
+            'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
+          ),
+      })
+      .parse(params);
 
-  const projectPathValidation = validateRequiredParam('projectPath', validated.projectPath);
-  if (!projectPathValidation.isValid) {
-    return projectPathValidation.errorResponse;
+    const projectPathValidation = validateRequiredParam('projectPath', validated.projectPath);
+    if (!projectPathValidation.isValid) {
+      return projectPathValidation.errorResponse;
+    }
+
+    return _handleCleanLogic(validated);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const firstError = error.errors[0];
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `${firstError.message} at path '${firstError.path.join('.')}'`,
+          },
+        ],
+        isError: true,
+      };
+    }
+    throw error;
   }
-
-  return _handleCleanLogic(validated);
 }
 
 export default {
@@ -83,9 +96,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     return cleanProject(params);
   },

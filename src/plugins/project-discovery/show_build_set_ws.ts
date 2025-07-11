@@ -8,13 +8,12 @@ import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { executeCommand } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 /**
  * Internal logic for showing build settings.
  */
-async function _handleShowBuildSettingsLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleShowBuildSettingsLogic(params: any): Promise<ToolResponse> {
   log('info', `Showing build settings for scheme ${params.scheme}`);
 
   try {
@@ -66,9 +65,7 @@ export default {
     workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
     scheme: z.string().describe('The scheme to use (Required)'),
   }),
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const validated = this.schema.parse(params);
 

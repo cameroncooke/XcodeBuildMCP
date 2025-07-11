@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { execSync } from 'child_process';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, validateFileExists } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 export default {
   name: 'get_mac_bundle_id',
@@ -20,9 +21,7 @@ export default {
         'Path to the macOS .app bundle to extract bundle ID from (full path to the .app directory)',
       ),
   }),
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const validated = this.schema.parse(params);
 

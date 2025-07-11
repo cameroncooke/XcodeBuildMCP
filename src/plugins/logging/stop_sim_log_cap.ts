@@ -7,15 +7,14 @@
 import { z } from 'zod';
 import { stopLogCapture } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 // Helper to create a standard text response content.
 function createTextContent(text: string): { type: string; text: string } {
   return { type: 'text', text };
 }
 
-async function stopSimLogCapToolHandler(params: {
-  logSessionId: string;
-}): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function stopSimLogCapToolHandler(params: { logSessionId: string }): Promise<ToolResponse> {
   const validationResult = validateRequiredParam('logSessionId', params.logSessionId);
   if (!validationResult.isValid) {
     return validationResult.errorResponse;

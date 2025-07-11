@@ -8,13 +8,12 @@ import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { executeCommand } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 /**
  * Internal logic for listing schemes.
  */
-async function _handleListSchemesLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleListSchemesLogic(params: any): Promise<ToolResponse> {
   log('info', 'Listing schemes');
 
   try {
@@ -88,9 +87,7 @@ export default {
   schema: z.object({
     workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
   }),
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const validated = this.schema.parse(params);
 

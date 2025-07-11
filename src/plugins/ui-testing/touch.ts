@@ -30,9 +30,7 @@ export default {
     up: z.boolean().optional(),
     delay: z.number().min(0, 'Delay must be non-negative').optional(),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const toolName = 'touch';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);

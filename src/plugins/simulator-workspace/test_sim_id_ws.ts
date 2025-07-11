@@ -4,6 +4,7 @@ import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { createTextResponse } from '../../utils/index.js';
@@ -128,9 +129,7 @@ function formatTestSummary(summary: any): string {
   return lines.join('\n');
 }
 
-async function handleTestLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function handleTestLogic(params: any): Promise<ToolResponse> {
   log(
     'info',
     `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
@@ -228,9 +227,7 @@ export default {
     useLatestOS: useLatestOSSchema,
     preferXcodebuild: preferXcodebuildSchema,
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     return handleTestLogic({
       ...params,

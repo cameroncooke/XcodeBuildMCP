@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
@@ -32,9 +33,7 @@ export default {
     preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
     postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const toolName = 'swipe';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -123,7 +122,7 @@ export default {
 const describeUITimestamps = new Map();
 const DESCRIBE_UI_WARNING_TIMEOUT = 60000; // 60 seconds
 
-function getCoordinateWarning(simulatorUuid: string): { type: string; text: string } {
+function getCoordinateWarning(simulatorUuid: string): string | null {
   const session = describeUITimestamps.get(simulatorUuid);
   if (!session) {
     return 'Warning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.';
@@ -143,7 +142,7 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+): Promise<ToolResponse> {
   // Get the appropriate axe binary path
   const axeBinary = getAxePath();
   if (!axeBinary) {

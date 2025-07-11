@@ -1,2 +1,2 @@
 // Re-export from device-workspace to avoid duplication
-export { default } from '../device-workspace/stop_app_device.ts';
+export { default } from '../device-shared/stop_app_device.ts';

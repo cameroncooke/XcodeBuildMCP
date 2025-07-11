@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
+import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { SystemError, createErrorResponse } from '../../utils/index.js';
@@ -20,9 +21,7 @@ export default {
   schema: {
     simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;

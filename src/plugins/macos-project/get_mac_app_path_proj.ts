@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { executeCommand } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -35,9 +36,7 @@ export default {
       .optional()
       .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
     if (!projectValidation.isValid) return projectValidation.errorResponse;

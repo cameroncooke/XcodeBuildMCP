@@ -5,7 +5,7 @@ import { z } from 'zod';
 import setNetworkCondition from './set_network_condition.ts';
 
 // Mock external dependencies
-vi.mock('../../src/utils/index.js', () => ({
+vi.mock('../../utils/index.js', () => ({
   log: vi.fn(),
   executeCommand: vi.fn(),
   validateRequiredParam: vi.fn(),
@@ -17,7 +17,7 @@ describe('set_network_condition tool', () => {
   let mockLog: MockedFunction<any>;
 
   beforeEach(async () => {
-    const utils = await import('../../src/utils/index.js');
+    const utils = await import('../../utils/index.js');
     mockExecuteCommand = utils.executeCommand as MockedFunction<any>;
     mockValidateRequiredParam = utils.validateRequiredParam as MockedFunction<any>;
     mockLog = utils.log as MockedFunction<any>;

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import testSimIdProj from './test_sim_id_proj.ts';
 
 // Mock external dependencies
-vi.mock('../../src/utils/index.js', () => ({
+vi.mock('../../utils/index.js', () => ({
   handleTestLogic: vi.fn(),
   XcodePlatform: {
     iOSSimulator: 'iOS Simulator',
@@ -14,7 +14,7 @@ describe('test_sim_id_proj plugin', () => {
   let mockHandleTestLogic: MockedFunction<any>;
 
   beforeEach(async () => {
-    const utils = await import('../../src/utils/index.js');
+    const utils = await import('../../utils/index.js');
     mockHandleTestLogic = utils.handleTestLogic as MockedFunction<any>;
 
     vi.clearAllMocks();

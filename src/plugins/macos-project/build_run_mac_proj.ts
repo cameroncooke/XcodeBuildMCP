@@ -11,6 +11,7 @@ import { log } from '../../utils/index.js';
 import { executeCommand } from '../../utils/index.js';
 import { createTextResponse } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -27,9 +28,7 @@ const XcodePlatform = {
 /**
  * Internal logic for building macOS apps.
  */
-async function _handleMacOSBuildLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleMacOSBuildLogic(params: any): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
@@ -104,9 +103,7 @@ async function _getAppPathFromBuildSettings(
 /**
  * Internal logic for building and running macOS apps.
  */
-async function _handleMacOSBuildAndRunLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleMacOSBuildAndRunLogic(params: any): Promise<ToolResponse> {
   log('info', 'Handling macOS build & run logic...');
 
   try {
@@ -196,9 +193,7 @@ export default {
       .optional()
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     return _handleMacOSBuildAndRunLogic({
       ...params,

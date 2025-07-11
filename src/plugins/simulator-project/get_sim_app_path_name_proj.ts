@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { executeCommand } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
   macOS: 'macOS',
@@ -74,9 +75,7 @@ function constructDestinationString(
 /**
  * Internal function to handle getting app path
  */
-async function _handleGetAppPathLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleGetAppPathLogic(params: any): Promise<ToolResponse> {
   log('info', `Getting app path for scheme ${params.scheme} on platform ${params.platform}`);
 
   try {
@@ -231,9 +230,7 @@ export default {
       .optional()
       .describe('Whether to use the latest OS version for the named simulator'),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
     if (!projectValidation.isValid) return projectValidation.errorResponse;

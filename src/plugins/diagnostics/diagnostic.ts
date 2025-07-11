@@ -12,6 +12,7 @@ import { areAxeToolsAvailable } from '../../utils/index.js';
 import { isXcodemakeEnabled, isXcodemakeAvailable, doesMakefileExist } from '../../utils/index.js';
 import * as os from 'os';
 import { loadPlugins } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 // Constants
 const LOG_PREFIX = '[Diagnostic]';
@@ -234,7 +235,7 @@ function getIndividuallyEnabledTools(): string[] {
 /**
  * Run the diagnostic tool and return the results
  */
-async function runDiagnosticTool(): Promise<{ content: Array<{ type: string; text: string }> }> {
+async function runDiagnosticTool(): Promise<ToolResponse> {
   log('info', `${LOG_PREFIX}: Running diagnostic tool`);
 
   // Check for required binaries
@@ -389,7 +390,7 @@ export default {
   schema: {
     enabled: z.boolean().optional().describe('Optional: dummy parameter to satisfy MCP protocol'),
   },
-  async handler(_args: any): Promise<{ content: Array<{ type: string; text: string }> }> {
+  async handler(_args: any): Promise<ToolResponse> {
     return runDiagnosticTool();
   },
 };

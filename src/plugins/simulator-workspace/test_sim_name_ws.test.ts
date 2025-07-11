@@ -24,13 +24,10 @@ vi.mock('path', () => ({
   join: vi.fn(),
 }));
 
-vi.mock('../../src/utils/logger.ts', () => ({
-  log: vi.fn(),
-}));
-
-vi.mock('../../src/utils/index.ts', () => ({
+vi.mock('../../utils/index.js', () => ({
   executeXcodeBuildCommand: vi.fn(),
   createTextResponse: vi.fn(),
+  createErrorResponse: vi.fn(),
   log: vi.fn(),
 }));
 

@@ -4,6 +4,7 @@ import { executeCommand } from '../../utils/index.js';
 import { createTextResponse, validateRequiredParam } from '../../utils/index.js';
 import { createErrorResponse } from '../../utils/index.js';
 import { log } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 // Inlined schemas from src/tools/common/index.ts
 const swiftConfigurationSchema = z
@@ -28,9 +29,7 @@ export default {
     showCodecov: z.boolean().optional().describe('Show code coverage (default: false)'),
     parseAsLibrary: parseAsLibrarySchema,
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
     if (!pkgValidation.isValid) return pkgValidation.errorResponse;

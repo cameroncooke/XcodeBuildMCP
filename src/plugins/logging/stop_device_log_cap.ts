@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { activeDeviceLogSessions } from './start_device_log_cap.ts';
+import { ToolResponse } from '../../types/common.js';
 
 /**
  * Stop a device log capture session and retrieve the log content.
@@ -48,7 +49,7 @@ export async function stopDeviceLogCapture(
 
 const stopDeviceLogCapToolHandler = async (args: {
   logSessionId: string;
-}): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> => {
+}): Promise<ToolResponse> => {
   const { logSessionId } = args;
 
   const { logContent, error } = await stopDeviceLogCapture(logSessionId);

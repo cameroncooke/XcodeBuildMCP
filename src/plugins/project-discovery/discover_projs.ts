@@ -10,6 +10,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 // Helper to create a standard text response content.
 function createTextContent(text: string): { type: string; text: string } {
@@ -126,9 +127,7 @@ async function _findProjectsRecursive(
 /**
  * Internal logic for discovering projects.
  */
-async function _handleDiscoveryLogic(
-  params: any,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+async function _handleDiscoveryLogic(params: any): Promise<ToolResponse> {
   const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = params;
 
   // Calculate and validate the absolute scan path
@@ -250,9 +249,7 @@ export default {
   description:
     'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
   schema: schema,
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const workspaceRootValidation = validateRequiredParam('workspaceRoot', params.workspaceRoot);
     if (!workspaceRootValidation.isValid) {

@@ -11,6 +11,7 @@ import { join, dirname, basename } from 'path';
 import { log } from '../../utils/index.js';
 import { ValidationError } from '../../utils/index.js';
 import { TemplateManager } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 // Common base schema for both iOS and macOS
 const BaseScaffoldSchema = z.object({
@@ -396,9 +397,7 @@ export default {
   description:
     'Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.',
   schema: ScaffoldiOSProjectSchema.shape,
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     try {
       const projectParams = { ...params, platform: 'iOS' };

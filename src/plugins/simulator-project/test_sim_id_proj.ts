@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { handleTestLogic } from '../../utils/index.js';
 import { XcodePlatform } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 export default {
   name: 'test_sim_id_proj',
@@ -29,9 +30,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     return handleTestLogic({
       ...params,

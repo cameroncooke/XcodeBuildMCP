@@ -6,21 +6,14 @@ vi.mock('child_process', () => ({
   execSync: vi.fn(),
 }));
 
-vi.mock('../../src/utils/command.ts', () => ({
+vi.mock('../../utils/index.js', () => ({
   executeCommand: vi.fn(),
-}));
-
-vi.mock('../../src/utils/logger.ts', () => ({
   log: vi.fn(),
-}));
-
-vi.mock('../../src/utils/validation.ts', () => ({
   validateRequiredParam: vi.fn(),
   validateFileExists: vi.fn(),
-}));
-
-vi.mock('../../src/utils/log_capture.ts', () => ({
   startLogCapture: vi.fn(),
+  createTextResponse: vi.fn(),
+  createErrorResponse: vi.fn(),
 }));
 
 describe('launch_app_logs_sim tool', () => {
@@ -77,11 +70,9 @@ describe('launch_app_logs_sim tool', () => {
   let mockStartLogCapture: MockedFunction<any>;
 
   beforeEach(async () => {
-    const validationModule = await import('../../src/utils/validation.ts');
-    mockValidateRequiredParam = validationModule.validateRequiredParam as MockedFunction<any>;
-
-    const logCaptureModule = await import('../../src/utils/log_capture.ts');
-    mockStartLogCapture = logCaptureModule.startLogCapture as MockedFunction<any>;
+    const { validateRequiredParam, startLogCapture } = await import('../../utils/index.js');
+    mockValidateRequiredParam = validateRequiredParam as MockedFunction<any>;
+    mockStartLogCapture = startLogCapture as MockedFunction<any>;
 
     mockValidateRequiredParam.mockReturnValue({
       isValid: true,

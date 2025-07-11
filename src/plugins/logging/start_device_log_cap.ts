@@ -11,6 +11,7 @@ import { spawn } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
 /**
  * Log file retention policy for device logs:
@@ -142,7 +143,7 @@ async function cleanOldDeviceLogs(): Promise<void> {
 const startDeviceLogCapToolHandler = async (args: {
   deviceId: string;
   bundleId: string;
-}): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> => {
+}): Promise<ToolResponse> => {
   const { deviceId, bundleId } = args;
 
   const { sessionId, error } = await startDeviceLogCapture({

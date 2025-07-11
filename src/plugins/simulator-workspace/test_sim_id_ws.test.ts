@@ -5,7 +5,7 @@ import { z } from 'zod';
 import testSimIdWs from './test_sim_id_ws.ts';
 
 // Mock external dependencies
-vi.mock('../../src/utils/index.js', () => ({
+vi.mock('../../utils/index.js', () => ({
   log: vi.fn(),
   executeXcodeBuildCommand: vi.fn(),
   createTextResponse: vi.fn(),
@@ -47,7 +47,7 @@ describe('test_sim_id_ws tool', () => {
   let mockExec: MockedFunction<any>;
 
   beforeEach(async () => {
-    const utils = await import('../../src/utils/index.js');
+    const utils = await import('../../utils/index.js');
     const utilModule = await import('util');
     const childProcessModule = await import('child_process');
     const fsModule = await import('fs/promises');

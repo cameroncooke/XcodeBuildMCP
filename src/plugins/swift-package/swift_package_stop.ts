@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { createTextResponse } from '../../utils/index.js';
 import { createErrorResponse } from '../../utils/index.js';
 import { getProcess, removeProcess } from './active-processes.js';
+import { ToolResponse } from '../../types/common.js';
 
 export default {
   name: 'swift_package_stop',
@@ -9,9 +10,7 @@ export default {
   schema: {
     pid: z.number().describe('Process ID (PID) of the running executable'),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const processInfo = getProcess(params.pid);
     if (!processInfo) {

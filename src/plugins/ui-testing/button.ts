@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
@@ -27,9 +28,7 @@ export default {
     buttonType: z.enum(['apple-pay', 'home', 'lock', 'side-button', 'siri']),
     duration: z.number().min(0, 'Duration must be non-negative').optional(),
   },
-  async handler(
-    args: any,
-  ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+  async handler(args: any): Promise<ToolResponse> {
     const params = args;
     const toolName = 'button';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -85,7 +84,7 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
-): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
+): Promise<ToolResponse> {
   // Get the appropriate axe binary path
   const axeBinary = getAxePath();
   if (!axeBinary) {

@@ -139,6 +139,18 @@ Tests should mock at the **lowest system level** (`child_process.spawn`) while a
 
 **DO NOT** mock high-level utilities like `executeCommand` as this prevents testing the actual plugin logic.
 
+**CRITICAL FIX APPLIED**: Tests were mocking validation utilities like `validateRequiredParam` and `createTextResponse`, which prevented testing the actual plugin validation logic. Tests must use `importOriginal` pattern to partially mock only external dependencies:
+
+```typescript
+vi.mock('../../utils/index.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    // Only mock external dependencies, not validation/response utilities
+  };
+});
+```
+
 #### Test Structure Requirements
 
 Each plugin test suite must validate:
