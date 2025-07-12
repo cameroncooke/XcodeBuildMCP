@@ -32,10 +32,7 @@ vi.mock('os', () => ({
   tmpdir: vi.fn(() => '/tmp'),
 }));
 
-// Mock logger
-vi.mock('../../utils/logger.js', () => ({
-  log: vi.fn(),
-}));
+// Note: Logger is allowed to execute normally (integration testing pattern)
 
 describe('stop_sim_log_cap plugin', () => {
   beforeEach(() => {
