@@ -2,6 +2,17 @@
 
 This document provides an overview of the `xcodebuildmcp` project architecture for developers working with the source code.
 
+## 📋 Quick Reference
+
+**IMPORTANT**: Before working with tests, read the comprehensive @TESTING.md which covers:
+- Integration testing philosophy  
+- Three-dimensional testing strategy (Input validation, Command generation, Output processing)
+- Mock strategies and patterns
+- Performance requirements
+- Coverage standards
+
+The testing guidelines are essential for understanding our no-mocks architecture and ensuring proper test implementation.
+
 ## 1. Introduction
 
 **XcodeBuildMCP** is a server that implements the **Model Context Protocol (MCP)**. It exposes command-line Apple development tools (like `xcodebuild`, `simctl`, `devicectl`, `axe`) as a structured, AI-friendly API. This allows language models and automated agents to perform complex development tasks such as building, testing, and interacting with Xcode projects, simulators, and physical devices.
