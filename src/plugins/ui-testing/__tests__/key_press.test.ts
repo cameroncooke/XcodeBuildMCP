@@ -3,31 +3,61 @@
  */
 
 import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
-import { EventEmitter } from 'events';
-
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-import { spawn } from 'child_process';
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 import { z } from 'zod';
 import keyPressPlugin from '../key_press.ts';
 
 // Mock all utilities from the index module
+vi.mock('../../utils/index.js', () => ({
+  log: vi.fn(),
+  validateRequiredParam: vi.fn(),
+  createErrorResponse: vi.fn(),
+  executeCommand: vi.fn(),
+  createAxeNotAvailableResponse: vi.fn(),
+  getAxePath: vi.fn(),
+  getBundledAxeEnvironment: vi.fn(),
+  DependencyError: class DependencyError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = 'DependencyError';
+    }
+  },
+  AxeError: class AxeError extends Error {
+    constructor(
+      message: string,
+      public commandName: string,
+      public axeOutput: string,
+      public simulatorUuid: string,
+    ) {
+      super(message);
+      this.name = 'AxeError';
+    }
+  },
+  SystemError: class SystemError extends Error {
+    constructor(
+      message: string,
+      public originalError?: Error,
+    ) {
+      super(message);
+      this.name = 'SystemError';
+    }
+  },
+}));
+
 // Import mocked functions
+import {
+  validateRequiredParam,
+  createErrorResponse,
+  executeCommand,
+  createAxeNotAvailableResponse,
+  getAxePath,
+  getBundledAxeEnvironment,
+  DependencyError,
+  AxeError,
+  SystemError,
+} from '../../../utils/index.js';
+
 describe('Key Press Plugin', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockProcess = new MockChildProcess();
-    vi.mocked(spawn).mockReturnValue(mockProcess as any);
     vi.clearAllMocks();
   });
 
@@ -111,7 +141,13 @@ describe('Key Press Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValueOnce({
+        isValid: false,
+        errorResponse: {
+          content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
+          isError: true,
+        },
+      });
 
       const result = await keyPressPlugin.handler({ keyCode: 40 });
 
@@ -122,7 +158,15 @@ describe('Key Press Plugin', () => {
     });
 
     it('should return error for missing keyCode', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
+        .mockReturnValueOnce({ isValid: true })
+        .mockReturnValueOnce({
+          isValid: false,
+          errorResponse: {
+            content: [{ type: 'text', text: 'Missing required parameter: keyCode' }],
+            isError: true,
+          },
+        });
 
       const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -135,12 +179,18 @@ describe('Key Press Plugin', () => {
     });
 
     it('should return success for valid key press execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: true,
+        output: 'key press completed',
+        error: '',
+      });
 
       const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -153,12 +203,18 @@ describe('Key Press Plugin', () => {
     });
 
     it('should return success for key press with duration', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: true,
+        output: 'key press completed',
+        error: '',
+      });
 
       const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -172,7 +228,9 @@ describe('Key Press Plugin', () => {
     });
 
     it('should handle DependencyError when axe is not available', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue(null);
       (
         createAxeNotAvailableResponse as MockedFunction<typeof createAxeNotAvailableResponse>
@@ -193,12 +251,18 @@ describe('Key Press Plugin', () => {
     });
 
     it('should handle AxeError from failed command execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'axe command failed',
+      });
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [
           {
@@ -226,12 +290,16 @@ describe('Key Press Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
+        new SystemError('System error occurred'),
+      );
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
         isError: true,
@@ -249,12 +317,16 @@ describe('Key Press Plugin', () => {
     });
 
     it('should handle unexpected Error objects', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
+        new Error('Unexpected error'),
+      );
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
         isError: true,
@@ -272,12 +344,14 @@ describe('Key Press Plugin', () => {
     });
 
     it('should handle unexpected string errors', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue('String error');
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
         isError: true,

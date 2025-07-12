@@ -22,6 +22,7 @@ vi.mock('../../utils/index.js', async (importOriginal) => {
   };
 });
 
+import { getAxePath, getBundledAxeEnvironment } from '../../../utils/index.js';
 import { spawn } from 'child_process';
 
 class MockChildProcess extends EventEmitter {
@@ -114,7 +115,13 @@ describe('Gesture Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValueOnce({
+        isValid: false,
+        errorResponse: {
+          content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
+          isError: true,
+        },
+      });
 
       const result = await gesturePlugin.handler({ preset: 'scroll-up' });
 
@@ -125,7 +132,15 @@ describe('Gesture Plugin', () => {
     });
 
     it('should return error for missing preset', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
+        .mockReturnValueOnce({ isValid: true })
+        .mockReturnValueOnce({
+          isValid: false,
+          errorResponse: {
+            content: [{ type: 'text', text: 'Missing required parameter: preset' }],
+            isError: true,
+          },
+        });
 
       const result = await gesturePlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -138,12 +153,18 @@ describe('Gesture Plugin', () => {
     });
 
     it('should return success for valid gesture execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: true,
+        output: 'gesture completed',
+        error: '',
+      });
       (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
         content: [{ type: 'text', text: "Gesture 'scroll-up' executed successfully." }],
         isError: false,
@@ -161,12 +182,18 @@ describe('Gesture Plugin', () => {
     });
 
     it('should return success for gesture execution with all optional parameters', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: true,
+        output: 'gesture completed',
+        error: '',
+      });
       (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
         content: [{ type: 'text', text: "Gesture 'swipe-from-left-edge' executed successfully." }],
         isError: false,
@@ -190,7 +217,9 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle DependencyError when axe is not available', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue(null);
       (
         createAxeNotAvailableResponse as MockedFunction<typeof createAxeNotAvailableResponse>
@@ -211,12 +240,18 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle AxeError from failed command execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'axe command failed',
+      });
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [
           {
@@ -244,12 +279,16 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
+        new SystemError('System error occurred'),
+      );
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
         isError: true,
@@ -267,12 +306,16 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle unexpected Error objects', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
+        new Error('Unexpected error'),
+      );
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
         isError: true,
@@ -290,12 +333,14 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle unexpected string errors', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue('String error');
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
         isError: true,
