@@ -4,10 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import plugin from '../start_device_log_cap.ts';
 
-// Mock logging utilities
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-}));
+// Note: Logger is allowed to execute normally (integration testing pattern)
 
 // Mock uuid
 vi.mock('uuid', () => ({
@@ -55,6 +52,7 @@ vi.mock('os', () => ({
 // Mock path
 vi.mock('path', () => ({
   join: vi.fn((...args) => args.join('/')),
+  dirname: vi.fn(() => '/test/dir'),
 }));
 
 describe('start_device_log_cap plugin', () => {
