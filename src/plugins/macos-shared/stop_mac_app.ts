@@ -16,7 +16,7 @@ export default {
       .describe('Name of the application to stop (e.g., "Calculator" or "MyApp")'),
     processId: z.number().optional().describe('Process ID (PID) of the application to stop'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     if (!params.appName && !params.processId) {
       return {

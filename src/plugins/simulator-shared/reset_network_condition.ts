@@ -6,13 +6,13 @@ import { executeCommand } from '../../utils/index.js';
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
-  params: any,
+  params: Record<string, unknown>,
   simctlSubCommand: string[],
   operationDescriptionForXcodeCommand: string,
   successMessage: string,
   failureMessagePrefix: string,
   operationLogContext: string,
-  extraValidation?: any,
+  extraValidation?: Record<string, unknown>,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
@@ -69,7 +69,7 @@ export default {
       .string()
       .describe('UUID of the simulator to use (obtained from list_simulators)'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     log('info', `Resetting simulator ${params.simulatorUuid} network condition`);
 

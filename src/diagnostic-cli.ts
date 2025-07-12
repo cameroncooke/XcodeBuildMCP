@@ -19,7 +19,9 @@ async function runDiagnostic(): Promise<void> {
     console.error('Collecting system information and checking dependencies...\n');
 
     // Import the diagnostic plugin
-    const diagnosticPlugin = (await import('../build/plugins_diagnostics_diagnostic.js')) as any;
+    const diagnosticPlugin = (await import('../build/plugins_diagnostics_diagnostic.js')) as {
+      default?: { handler?: (...args: unknown[]) => Promise<unknown> };
+    };
     const runDiagnosticTool = diagnosticPlugin.default?.handler;
 
     // Run the diagnostic tool (plugin handler expects params object)

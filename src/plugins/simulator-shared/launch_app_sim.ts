@@ -17,7 +17,7 @@ export default {
       .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
     args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simulatorUuidValidation.isValid) {

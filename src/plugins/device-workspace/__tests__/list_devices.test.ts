@@ -64,10 +64,10 @@ describe('list_devices plugin', () => {
     pid = 12345;
   }
 
-  let mockSpawn: any;
+  let mockSpawn: Record<string, unknown>;
   let mockProcess: MockChildProcess;
-  let mockReadFile: any;
-  let mockUnlink: any;
+  let mockReadFile: Record<string, unknown>;
+  let mockUnlink: Record<string, unknown>;
 
   beforeEach(async () => {
     const { spawn } = await import('child_process');

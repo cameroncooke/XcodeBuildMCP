@@ -58,7 +58,7 @@ describe('open_sim tool', () => {
     });
   });
 
-  let mockSpawn: any;
+  let mockSpawn: Record<string, unknown>;
   let mockProcess: MockChildProcess;
 
   beforeEach(async () => {

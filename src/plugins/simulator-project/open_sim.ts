@@ -1,2 +1,2 @@
-// Re-export from simulator-workspace to avoid duplication
-export { default } from '../simulator-workspace/open_sim.ts';
+// Re-export from simulator-shared to avoid duplication
+export { default } from '../simulator-shared/open_sim.js';

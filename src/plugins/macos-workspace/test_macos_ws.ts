@@ -62,7 +62,7 @@ async function parseXcresultBundle(resultBundlePath: string): Promise<string> {
 }
 
 // Format test summary JSON into human-readable text
-function formatTestSummary(summary: any): string {
+function formatTestSummary(summary: Record<string, unknown>): string {
   const lines = [];
 
   lines.push(`Test Summary: ${summary.title || 'Unknown'}`);
@@ -126,7 +126,7 @@ function formatTestSummary(summary: any): string {
 }
 
 // Internal logic for running tests with platform-specific handling
-async function handleTestLogic(params: any): Promise<ToolResponse> {
+async function handleTestLogic(params: Record<string, unknown>): Promise<ToolResponse> {
   log(
     'info',
     `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
@@ -229,7 +229,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     return handleTestLogic({
       ...params,

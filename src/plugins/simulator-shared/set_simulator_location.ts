@@ -6,13 +6,13 @@ import { executeCommand } from '../../utils/index.js';
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
-  params: any,
+  params: Record<string, unknown>,
   simctlSubCommand: string[],
   operationDescriptionForXcodeCommand: string,
   successMessage: string,
   failureMessagePrefix: string,
   operationLogContext: string,
-  extraValidation?: any,
+  extraValidation?: Record<string, unknown>,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
@@ -71,7 +71,7 @@ export default {
     latitude: z.number().describe('The latitude for the custom location.'),
     longitude: z.number().describe('The longitude for the custom location.'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const extraValidation = (): {
       content: Array<{ type: string; text: string }>;

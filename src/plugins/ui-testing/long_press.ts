@@ -29,7 +29,7 @@ export default {
     y: z.number().int('Y coordinate for the long press'),
     duration: z.number().positive('Duration of the long press in milliseconds'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const toolName = 'long_press';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);

@@ -26,7 +26,7 @@ describe('clean_proj plugin tests', () => {
     pid = 12345;
   }
 
-  let mockSpawn: any;
+  let mockSpawn: Record<string, unknown>;
 
   beforeEach(async () => {
     vi.clearAllMocks();

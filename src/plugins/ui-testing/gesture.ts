@@ -76,7 +76,7 @@ export default {
       .optional()
       .describe('Optional: Delay after completing the gesture in seconds.'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const toolName = 'gesture';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);

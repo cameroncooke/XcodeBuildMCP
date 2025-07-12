@@ -18,7 +18,7 @@ export default {
     deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
     processId: z.number().describe('Process ID (PID) of the app to stop'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const { deviceId, processId } = args;
 
     log('info', `Stopping app with PID ${processId} on device ${deviceId}`);

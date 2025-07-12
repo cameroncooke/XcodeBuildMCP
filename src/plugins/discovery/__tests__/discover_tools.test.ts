@@ -17,8 +17,8 @@ const mockLoadWorkflowGroups = vi.mocked(loadWorkflowGroups);
 const mockEnableWorkflows = vi.mocked(enableWorkflows);
 
 describe('discover_tools', () => {
-  let mockServer: any;
-  let originalGlobalThis: any;
+  let mockServer: Record<string, unknown>;
+  let originalGlobalThis: Record<string, unknown>;
 
   beforeEach(() => {
     // Save original globalThis

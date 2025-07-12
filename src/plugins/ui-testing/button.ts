@@ -28,7 +28,7 @@ export default {
     buttonType: z.enum(['apple-pay', 'home', 'lock', 'side-button', 'siri']),
     duration: z.number().min(0, 'Duration must be non-negative').optional(),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const toolName = 'button';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);

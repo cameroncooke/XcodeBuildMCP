@@ -11,7 +11,7 @@ const XcodePlatform = {
 };
 
 // Internal logic for building Simulator apps.
-async function _handleSimulatorBuildLogic(params: any): Promise<ToolResponse> {
+async function _handleSimulatorBuildLogic(params: Record<string, unknown>): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
@@ -31,7 +31,9 @@ async function _handleSimulatorBuildLogic(params: any): Promise<ToolResponse> {
 }
 
 // Internal logic for building and running iOS Simulator apps.
-async function _handleIOSSimulatorBuildAndRunLogic(params: any): Promise<ToolResponse> {
+async function _handleIOSSimulatorBuildAndRunLogic(
+  params: Record<string, unknown>,
+): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build and run for scheme ${params.scheme} (internal)`);
 
   try {
@@ -320,7 +322,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);

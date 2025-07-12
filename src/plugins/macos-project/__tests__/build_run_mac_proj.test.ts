@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
 import { EventEmitter } from 'events';
+import { spawn, exec } from 'child_process';
+import { promisify } from 'util';
 import tool from '../build_run_mac_proj.ts';
 
 // Mock child_process at the lowest level
@@ -22,14 +24,12 @@ class MockChildProcess extends EventEmitter {
 
 describe('build_run_mac_proj', () => {
   let mockProcess: MockChildProcess;
-  let mockExec: any;
-  let mockPromisify: any;
+  let mockExec: Record<string, unknown>;
+  let mockPromisify: Record<string, unknown>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockProcess = new MockChildProcess();
-    const { spawn, exec } = require('child_process');
-    const { promisify } = require('util');
 
     vi.mocked(spawn).mockReturnValue(mockProcess);
     mockExec = vi.mocked(exec);
@@ -106,7 +106,6 @@ describe('build_run_mac_proj', () => {
 
   describe('Command Generation and Response Logic', () => {
     it('should successfully build and run macOS app', async () => {
-      const { spawn } = require('child_process');
       const mockExecAsync = mockPromisify.mockReturnValue(vi.fn().mockResolvedValue({}));
 
       // Mock successful build
@@ -175,8 +174,6 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should handle build failure', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stderr.emit('data', 'error: Build failed\n');
         mockProcess.emit('close', 1);
@@ -199,8 +196,6 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should handle build settings failure', async () => {
-      const { spawn } = require('child_process');
-
       // Mock successful build
       setTimeout(() => {
         mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
@@ -241,7 +236,6 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should handle app launch failure', async () => {
-      const { spawn } = require('child_process');
       const mockExecAsync = mockPromisify.mockReturnValue(
         vi.fn().mockRejectedValue(new Error('Failed to launch')),
       );
@@ -289,8 +283,6 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should handle spawn error', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.emit('error', new Error('spawn xcodebuild ENOENT'));
       }, 0);
@@ -311,7 +303,6 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      const { spawn } = require('child_process');
       const mockExecAsync = mockPromisify.mockReturnValue(vi.fn().mockResolvedValue({}));
 
       // Mock successful build

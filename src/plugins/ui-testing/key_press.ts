@@ -21,7 +21,7 @@ export default {
     keyCode: z.number().int('HID keycode to press (0-255)').min(0).max(255),
     duration: z.number().min(0, 'Duration must be non-negative').optional(),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const toolName = 'key_press';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);

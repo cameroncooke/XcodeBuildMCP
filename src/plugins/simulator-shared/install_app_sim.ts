@@ -17,7 +17,7 @@ export default {
       .string()
       .describe('Path to the .app bundle to install (full path to the .app directory)'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simulatorUuidValidation.isValid) {

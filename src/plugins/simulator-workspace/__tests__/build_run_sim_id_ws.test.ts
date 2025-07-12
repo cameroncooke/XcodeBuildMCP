@@ -19,8 +19,8 @@ class MockChildProcess extends EventEmitter {
 }
 
 describe('build_run_sim_id_ws tool', () => {
-  let mockSpawn: any;
-  let mockExecSync: any;
+  let mockSpawn: Record<string, unknown>;
+  let mockExecSync: Record<string, unknown>;
   let mockProcess: MockChildProcess;
 
   beforeEach(async () => {

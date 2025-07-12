@@ -24,7 +24,7 @@ const XcodePlatform = {
 /**
  * Internal logic for building macOS apps.
  */
-async function _handleMacOSBuildLogic(params: any): Promise<ToolResponse> {
+async function _handleMacOSBuildLogic(params: Record<string, unknown>): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
@@ -64,7 +64,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     return _handleMacOSBuildLogic({
       ...params,

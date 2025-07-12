@@ -100,7 +100,7 @@ function deviceFamilyToNumeric(family: string): string {
 /**
  * Update Package.swift file with deployment target
  */
-function updatePackageSwiftFile(content: string, params: any): string {
+function updatePackageSwiftFile(content: string, params: Record<string, unknown>): string {
   let result = content;
 
   // Update ALL target name references in Package.swift
@@ -127,7 +127,7 @@ function updatePackageSwiftFile(content: string, params: any): string {
 /**
  * Update XCConfig file with scaffold parameters
  */
-function updateXCConfigFile(content: string, params: any): string {
+function updateXCConfigFile(content: string, params: Record<string, unknown>): string {
   let result = content;
 
   // Update project identity settings
@@ -240,7 +240,11 @@ function replacePlaceholders(
 /**
  * Process a single file, replacing placeholders if it's a text file
  */
-async function processFile(sourcePath: string, destPath: string, params: any): Promise<void> {
+async function processFile(
+  sourcePath: string,
+  destPath: string,
+  params: Record<string, unknown>,
+): Promise<void> {
   // Determine the destination file path
   let finalDestPath = destPath;
   if (params.customizeNames) {
@@ -310,7 +314,11 @@ async function processFile(sourcePath: string, destPath: string, params: any): P
 /**
  * Recursively process a directory
  */
-async function processDirectory(sourceDir: string, destDir: string, params: any): Promise<void> {
+async function processDirectory(
+  sourceDir: string,
+  destDir: string,
+  params: Record<string, unknown>,
+): Promise<void> {
   const entries = await readdir(sourceDir, { withFileTypes: true });
 
   for (const entry of entries) {
@@ -344,7 +352,7 @@ async function processDirectory(sourceDir: string, destDir: string, params: any)
 /**
  * Scaffold a new iOS or macOS project
  */
-async function scaffoldProject(params: any): Promise<string> {
+async function scaffoldProject(params: Record<string, unknown>): Promise<string> {
   const { projectName, outputPath, platform, customizeNames = true } = params;
 
   log('info', `Scaffolding project: ${projectName} (${platform}) at ${outputPath}`);
@@ -397,7 +405,7 @@ export default {
   description:
     'Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.',
   schema: ScaffoldiOSProjectSchema.shape,
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     try {
       const projectParams = { ...params, platform: 'iOS' };

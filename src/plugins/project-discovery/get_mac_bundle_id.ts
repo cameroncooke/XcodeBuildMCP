@@ -21,7 +21,7 @@ export default {
         'Path to the macOS .app bundle to extract bundle ID from (full path to the .app directory)',
       ),
   }),
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const validated = this.schema.parse(params);
 

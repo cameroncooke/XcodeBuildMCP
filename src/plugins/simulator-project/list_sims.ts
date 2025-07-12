@@ -1,2 +1,2 @@
-// Re-export from simulator-workspace to avoid duplication
-export { default } from '../simulator-workspace/list_sims.ts';
+// Re-export from simulator-shared to avoid duplication
+export { default } from '../simulator-shared/list_sims.js';

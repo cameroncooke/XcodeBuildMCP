@@ -20,7 +20,7 @@ class MockChildProcess extends EventEmitter {
 }
 
 describe('build_mac_ws plugin', () => {
-  let mockSpawn: any;
+  let mockSpawn: Record<string, unknown>;
 
   beforeEach(async () => {
     const { spawn } = await import('child_process');

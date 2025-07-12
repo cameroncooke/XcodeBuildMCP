@@ -12,7 +12,7 @@ import { validateRequiredParam } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 // Internal logic for cleaning build products.
-async function _handleCleanLogic(params: any): Promise<ToolResponse> {
+async function _handleCleanLogic(params: Record<string, unknown>): Promise<ToolResponse> {
   log('info', 'Starting xcodebuild clean request (internal)');
 
   // For clean operations, we need to provide a default platform and configuration
@@ -32,7 +32,7 @@ async function _handleCleanLogic(params: any): Promise<ToolResponse> {
 }
 
 // Cleans build products for a project
-async function cleanProject(params: any): Promise<ToolResponse> {
+async function cleanProject(params: Record<string, unknown>): Promise<ToolResponse> {
   try {
     const validated = z
       .object({
@@ -96,7 +96,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     return cleanProject(params);
   },

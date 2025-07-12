@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
 import { EventEmitter } from 'events';
+import { spawn } from 'child_process';
 import tool from '../get_mac_app_path_proj.ts';
 
 // Mock child_process at the lowest level
@@ -20,7 +21,6 @@ describe('get_mac_app_path_proj', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockProcess = new MockChildProcess();
-    const { spawn } = require('child_process');
     vi.mocked(spawn).mockReturnValue(mockProcess);
   });
 
@@ -81,8 +81,6 @@ describe('get_mac_app_path_proj', () => {
 
   describe('Command Generation and Response Logic', () => {
     it('should successfully get app path for macOS project', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stdout.emit(
           'data',
@@ -149,8 +147,6 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should handle command failure', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stderr.emit('data', 'error: Failed to get build settings');
         mockProcess.emit('close', 1);
@@ -175,8 +171,6 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should handle spawn error', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.emit('error', new Error('spawn xcodebuild ENOENT'));
       }, 0);
@@ -200,8 +194,6 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stdout.emit(
           'data',
@@ -228,8 +220,6 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should include optional parameters in command', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stdout.emit(
           'data',
@@ -259,8 +249,6 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should handle missing build settings in output', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stdout.emit('data', 'OTHER_SETTING = value');
         mockProcess.emit('close', 0);

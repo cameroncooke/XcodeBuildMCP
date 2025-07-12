@@ -27,7 +27,7 @@ export default {
     simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
     text: z.string().min(1, 'Text cannot be empty'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const toolName = 'type_text';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
 import { EventEmitter } from 'events';
+import { spawn } from 'child_process';
 import tool from '../test_macos_proj.ts';
 
 // Mock child_process at the lowest level
@@ -20,7 +21,6 @@ describe('test_macos_proj', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockProcess = new MockChildProcess();
-    const { spawn } = require('child_process');
     vi.mocked(spawn).mockReturnValue(mockProcess);
   });
 
@@ -92,8 +92,6 @@ describe('test_macos_proj', () => {
 
   describe('Command Generation and Response Logic', () => {
     it('should generate correct xcodebuild test command for minimal arguments', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stdout.emit('data', 'TEST SUCCEEDED');
         mockProcess.emit('close', 0);
@@ -121,8 +119,6 @@ describe('test_macos_proj', () => {
     });
 
     it('should generate correct xcodebuild test command with all arguments', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stdout.emit('data', 'TEST SUCCEEDED');
         mockProcess.emit('close', 0);
@@ -154,8 +150,6 @@ describe('test_macos_proj', () => {
     });
 
     it('should handle test failure with literal error response', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stderr.emit('data', 'error: Test failed\n');
         mockProcess.emit('close', 1);
@@ -178,8 +172,6 @@ describe('test_macos_proj', () => {
     });
 
     it('should handle spawn error with literal error response', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.emit('error', new Error('spawn xcodebuild ENOENT'));
       }, 0);
@@ -198,8 +190,6 @@ describe('test_macos_proj', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stdout.emit('data', 'TEST SUCCEEDED');
         mockProcess.emit('close', 0);
@@ -223,8 +213,6 @@ describe('test_macos_proj', () => {
     });
 
     it('should include test warnings and errors in output', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stdout.emit(
           'data',
@@ -250,8 +238,6 @@ describe('test_macos_proj', () => {
     });
 
     it('should handle preferXcodebuild parameter correctly', async () => {
-      const { spawn } = require('child_process');
-
       setTimeout(() => {
         mockProcess.stdout.emit('data', 'TEST SUCCEEDED');
         mockProcess.emit('close', 0);

@@ -26,9 +26,9 @@ class MockChildProcess extends EventEmitter {
 }
 
 describe('build_run_mac_ws plugin', () => {
-  let mockSpawn: any;
-  let mockExec: any;
-  let mockPromisify: any;
+  let mockSpawn: Record<string, unknown>;
+  let mockExec: Record<string, unknown>;
+  let mockPromisify: Record<string, unknown>;
 
   beforeEach(async () => {
     const { spawn, exec } = await import('child_process');

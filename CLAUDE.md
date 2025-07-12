@@ -48,10 +48,13 @@ plugins/
 ├── swift-package/           # Swift Package Manager tools
 ├── simulator-workspace/     # Simulator + Workspace workflows
 ├── simulator-project/       # Simulator + Project workflows  
+├── simulator-shared/        # Shared simulator tools
 ├── device-workspace/        # Device + Workspace workflows
 ├── device-project/          # Device + Project workflows
+├── device-shared/           # Shared device tools
 ├── macos-workspace/         # macOS + Workspace workflows
 ├── macos-project/           # macOS + Project workflows
+├── macos-shared/            # Shared macOS tools
 ├── ui-testing/              # UI automation tools
 ├── project-discovery/       # Project analysis tools
 ├── logging/                 # Log capture tools
@@ -60,7 +63,22 @@ plugins/
 └── discovery/               # Dynamic tool discovery
 ```
 
+### 3.2.1. Plugin Architecture Principles
+
+Plugin groups in `src/plugins/` and `src/utils/` represent specialized workflows for Apple platform development:
+
+- **Project vs Workspace Separation**: Each plugin group may have variants like project (`_proj`) or workspace (`_ws`) tools, distinguished by file extensions. Project and workspace tools should NEVER be mixed.
+- **DRY Implementation**: Underlying tool handlers are shared, but tool interfaces remain unique for better agent tool discovery. Internal shared functions should accept both workspace and project paths to keep code DRY (Don't Repeat Yourself).
+- **Canonical Tool Location**: Some tools are canonical and live in shared groups, e.g., `boot_sim` in `simulator-shared` is re-exported to both `simulator-project` and `simulator-workspace`.
+- **Re-export Rules**: 
+  - Re-exported tools should come from canonical workflow groups (e.g., `discover_projs` from `project-discovery`)
+  - Re-exports should not be derived from other re-exports
+  - Workspace or project group tools should only re-export from canonical groups
+  - Each tool should maintain specificity to either Xcode projects or workspaces
+
 ### 3.3. Workflow Groups
+
+Plugin workflow groups are ultimately exposed as long as they have an `index.ts` file to the MCP server as workflows - groups of tools that are linked under a particular workflow theme (e.g., building on the simulator).
 
 Each plugin directory represents a workflow group and must contain an `index.ts` file that defines the workflow metadata:
 
@@ -76,6 +94,14 @@ export const workflow = {
 };
 ```
 
+**End-to-End Workflow Design**: These workflows should be end-to-end, representing complete themes like:
+- Building apps on the simulator
+- Building apps on device 
+- UI automation
+- Project discovery
+
+Tools within a workflow should provide complete functionality without external dependencies. Workflows should include all necessary tools for a complete end-to-end process (e.g., build tools, scheme listing, installation tools). There's no point having just the build tool if you've got no way of getting the list of schemes or being able to install it on the simulator.
+
 The workflow metadata is used by:
 - **Dynamic tool discovery**: The `discover_tools` plugin uses this to recommend appropriate workflows
 - **Tool organization**: Groups related tools together logically
@@ -85,8 +111,8 @@ The workflow metadata is used by:
 
 1. **Create Plugin File:** Add a new `.ts` file in the appropriate `plugins/` subdirectory
 2. **Export Plugin Object:** Include `name`, `description`, `schema`, and `handler`
-3. **Add Tests:** Create corresponding `.test.ts` file
-4. **Update index.ts:** Ensure the workflow metadata reflects any new capabilities
+3. **Add Tests:** Create corresponding `.test.ts` file in the `__tests__/` folder
+4. **Update Workflow:** Ensure the workflow metadata in `index.ts` reflects any new capabilities
 5. **Automatic Discovery:** No manual registration needed
 
 ## 4. Development Workflow
@@ -105,215 +131,49 @@ The workflow metadata is used by:
 *   **Testing:** `npm test` - All tests must pass
 *   **Coverage:** `npm run test:coverage` - For coverage analysis
 
-**CRITICAL RULE - NEVER IGNORE**: Before claiming any work is complete, you MUST run `npm test` and verify that:
-1. **ALL TESTS PASS** - Zero failing tests
-2. **NO STDERR OUTPUT** - No log outputs, warnings, or errors during test execution
-3. **CLEAN TEST EXECUTION** - Tests run silently without any debugging output
-
-**IF TESTS FAIL OR PRODUCE OUTPUT**: You MUST fix all issues before proceeding. This is non-negotiable and overrides all other priorities. Test failures indicate broken functionality that must be addressed immediately.
+**CRITICAL RULE**: Before claiming any work is complete, you MUST run `npm test` and verify that all tests pass with clean execution (no stderr output).
 
 ### 4.3. Testing Standards
 
-All plugins must have comprehensive integration test coverage that validates both the command generation logic and response formatting logic. Tests must be **literal and deterministic** using proper mocking at the lowest system level.
+#### Test Organization
 
-#### Testing Workflow
+**Directory Structure:** Plugin groups use `__tests__/` subdirectories containing:
+- **Tool Tests:** One `.test.ts` file per plugin tool (e.g., `build_sim_proj.test.ts`)
+- **Workflow Tests:** `index.test.ts` file for canonical workflow groups testing workflow metadata
+- **Re-export Tests:** `re-exports.test.ts` file for project/workspace groups testing re-exported tools
 
-**MANDATORY**: Follow this workflow when writing or updating plugin tests:
+#### What to Test
 
-1. **Write Integration Tests**: Create tests using the patterns below
-2. **Run Code Coverage**: Execute `npm run test:coverage -- plugins/[directory]/` 
-3. **Validate Coverage**: Ensure **all plugin logic paths are covered** (aim for 95%+ coverage)
-4. **Fix Missing Coverage**: Add tests for uncovered branches, error paths, and parameter combinations
-5. **Verify Real Code Execution**: Check that tests actually execute plugin logic (not just mocks)
+Each plugin test must validate:
 
-**Coverage validates that tests are testing actual plugin code, not just mock responses.**
+1. **Plugin Structure**
+   - Export object has required fields (`name`, `description`, `schema`, `handler`)
+   - Schema validates parameters correctly
 
-#### Integration Testing Approach
+2. **Command Generation**  
+   - Different parameters produce correct CLI commands
+   - Path resolution and argument building work properly
 
-Tests should mock at the **lowest system level** (`child_process.spawn`) while allowing all plugin logic to execute:
-- Parameter validation
-- Argument building
-- Path resolution
-- Response formatting
-- Error handling
+3. **Response Handling**
+   - Success scenarios return proper response format
+   - Error scenarios return proper error responses
+   - Command failures are handled appropriately
 
-**DO NOT** mock high-level utilities like `executeCommand` as this prevents testing the actual plugin logic.
+#### Testing Approach
 
-**CRITICAL FIX APPLIED**: Tests were mocking validation utilities like `validateRequiredParam` and `createTextResponse`, which prevented testing the actual plugin validation logic. Tests must use `importOriginal` pattern to partially mock only external dependencies:
+**Mock at System Level:** Mock `child_process.spawn` while allowing all plugin logic to execute. This tests actual parameter validation, command building, and response formatting.
 
-```typescript
-vi.mock('../../utils/index.js', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    // Only mock external dependencies, not validation/response utilities
-  };
-});
-```
-
-#### Test Structure Requirements
-
-Each plugin test suite must validate:
-
-1. **Export Field Validation (Literal)**
-   - Test exact literal values for `name`, `description` 
-   - Validate `handler` is a function
-   - Test `schema` with known valid/invalid inputs using `.safeParse()`
+**Use Literal Expectations:** All test assertions must use exact literal strings to ensure tests fail when behavior changes.
 
 ```typescript
-// ✅ CORRECT: Literal value testing
-expect(tool.name).toBe('list_sims');
-expect(tool.description).toBe('Lists available iOS simulators with their UUIDs.');
-expect(typeof tool.handler).toBe('function');
-expect(tool.schema.safeParse({ enabled: true }).success).toBe(true);
-expect(tool.schema.safeParse({ enabled: 'yes' }).success).toBe(false);
+// ✅ CORRECT: Test with literal strings
+expect(mockSpawn).toHaveBeenCalledWith('sh', ['-c', 'swift build --package-path /test'], expect.any(Object));
+
+// ❌ FORBIDDEN: Dynamic or computed strings  
+expect(mockSpawn).toHaveBeenCalledWith('sh', ['-c', `swift build --package-path ${path}`], expect.any(Object));
 ```
 
-2. **Command Generation Testing**
-   - Mock `child_process.spawn` to capture what CLI commands get built
-   - Test different parameter combinations to verify correct command construction
-   - **CRITICAL**: Use literal strings in expectations, never computed strings or template literals
-
-```typescript
-// ✅ CORRECT: Command generation testing with literal strings
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
-const mockProcess = new MockChildProcess();
-mockSpawn.mockReturnValue(mockProcess);
-
-await tool.handler({ packagePath: '/test/package' });
-
-expect(mockSpawn).toHaveBeenCalledWith(
-  'sh',
-  ['-c', 'swift build --package-path /test/package'],  // ✅ Literal string
-  expect.any(Object)
-);
-
-// ❌ FORBIDDEN: Computed or template strings
-expect(mockSpawn).toHaveBeenCalledWith(
-  'sh',
-  ['-c', `swift build --package-path ${process.cwd()}/test/package`],  // ❌ Template literal
-  expect.any(Object)
-);
-```
-
-3. **Response Logic Testing**
-   - Test different command result scenarios (success, failure, error)
-   - **CRITICAL**: Assert complete response objects with literal text content
-   - **CRITICAL**: Use exact error message formats from utility functions
-
-```typescript
-// ✅ CORRECT: Response logic testing with literal content
-setTimeout(() => {
-  mockProcess.stdout.emit('data', 'Build succeeded');
-  mockProcess.emit('close', 0);
-}, 0);
-
-const result = await tool.handler({ packagePath: '/test/package' });
-
-expect(result).toEqual({
-  content: [
-    { type: 'text', text: '✅ Swift package build succeeded.' },  // ✅ Literal string
-    { type: 'text', text: 'Build succeeded' },  // ✅ Literal string
-  ],
-  isError: false,
-});
-
-// ✅ CORRECT: Error response format (from createErrorResponse)
-expect(result).toEqual({
-  content: [{
-    type: 'text',
-    text: 'Error: Swift package build failed\nDetails: Compilation error'  // ✅ Literal with actual format
-  }],
-  isError: true
-});
-
-// ❌ FORBIDDEN: Computed or simplified error messages
-expect(result).toEqual({
-  content: [{
-    type: 'text',
-    text: 'Swift package build failed: Compilation error'  // ❌ Wrong format
-  }],
-  isError: true
-});
-```
-
-#### Required Test Paths
-
-* **Validation Errors**: Invalid parameters return literal error responses
-* **Command Generation**: Different parameters produce different CLI commands
-* **Success Responses**: Successful command execution with literal output
-* **Command Failures**: Failed commands (non-zero exit codes) with error responses
-* **Process Errors**: Spawn errors with appropriate error handling
-
-#### Forbidden Test Patterns
-
-**DO NOT USE**: 
-- `expect.objectContaining()`, `expect.stringContaining()`, `expect.any()` for response content
-- Mocking `executeCommand` or other high-level utilities
-- Partial matchers for response validation
-- **Template literals or computed strings in expectations** (e.g., `${process.cwd()}/path`)
-- **Dynamic path construction in test expectations**
-- **Simplified error message formats that don't match actual utility output**
-
-**DO USE**:
-- `expect.toEqual()` with complete literal response objects
-- Mock only `child_process.spawn` at the lowest level
-- **Exact literal strings in all command and response expectations**
-- **Actual error message formats from `createErrorResponse()` and `createTextResponse()`**
-- **Literal command strings that match exact plugin output**
-
-#### Literal String Requirements
-
-**CRITICAL**: All test expectations must use literal strings to ensure tests fail when plugin behavior changes:
-
-```typescript
-// ✅ CORRECT: Literal strings
-expect(mockSpawn).toHaveBeenCalledWith('sh', ['-c', 'swift build --package-path /test/package'], expect.any(Object));
-expect(result.content[0].text).toBe('✅ Swift package build succeeded.');
-expect(result.content[0].text).toBe('Error: Build failed\nDetails: Compilation error');
-
-// ❌ FORBIDDEN: Template literals, computed strings, or dynamic construction
-expect(mockSpawn).toHaveBeenCalledWith('sh', ['-c', `swift build --package-path ${someVariable}/package`], expect.any(Object));
-expect(result.content[0].text).toBe(`${successMessage} completed.`);
-expect(result.content[0].text).toContain('Build failed');
-```
-
-#### Common Error Response Formats
-
-Tests must use the exact error formats produced by utility functions:
-
-**`createErrorResponse(message, details)`** produces:
-```typescript
-{
-  content: [{ type: 'text', text: 'Error: ${message}\nDetails: ${details}' }],
-  isError: true
-}
-```
-
-**`createTextResponse(message, true)`** produces:
-```typescript
-{
-  content: [{ type: 'text', text: '${message}' }],
-  isError: true
-}
-```
-
-**`validateRequiredParam()`** produces:
-```typescript
-{
-  content: [{ type: 'text', text: "Required parameter 'paramName' is missing. Please provide a value for this parameter." }],
-  isError: true
-}
-```
+**Test Coverage:** Aim for 95%+ coverage. Run `npm run test:coverage -- plugins/[directory]/` to validate coverage.
 
 ### 4.4. Error Handling
 

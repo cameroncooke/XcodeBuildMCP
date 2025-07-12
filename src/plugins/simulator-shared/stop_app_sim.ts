@@ -13,7 +13,7 @@ export default {
       .string()
       .describe("Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simulatorUuidValidation.isValid) {

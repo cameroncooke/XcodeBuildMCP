@@ -22,7 +22,7 @@ export default {
       .string()
       .describe('Path to the .app bundle to install (full path to the .app directory)'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const { deviceId, appPath } = args;
 
     log('info', `Installing app on device ${deviceId}`);

@@ -13,7 +13,9 @@ import { ToolResponse } from '../../types/common.js';
 /**
  * Internal logic for showing build settings.
  */
-async function _handleShowBuildSettingsLogic(params: any): Promise<ToolResponse> {
+async function _handleShowBuildSettingsLogic(
+  params: Record<string, unknown>,
+): Promise<ToolResponse> {
   log('info', `Showing build settings for scheme ${params.scheme}`);
 
   try {
@@ -65,7 +67,7 @@ export default {
     projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
     scheme: z.string().describe('Scheme name to show build settings for (Required)'),
   }),
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const validated = this.schema.parse(params);
 

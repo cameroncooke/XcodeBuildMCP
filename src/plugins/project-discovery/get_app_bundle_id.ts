@@ -22,7 +22,7 @@ export default {
         'Path to the .app bundle to extract bundle ID from (full path to the .app directory)',
       ),
   }),
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     // Parse params with schema for validation
     const validated = this.schema.parse(params);

@@ -390,7 +390,7 @@ export default {
   schema: {
     enabled: z.boolean().optional().describe('Optional: dummy parameter to satisfy MCP protocol'),
   },
-  async handler(_args: any): Promise<ToolResponse> {
+  async handler(_args: Record<string, unknown>): Promise<ToolResponse> {
     return runDiagnosticTool();
   },
 };

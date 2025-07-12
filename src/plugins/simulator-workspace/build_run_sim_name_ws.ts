@@ -11,7 +11,7 @@ const XcodePlatform = {
 };
 
 // Helper function for simulator build logic
-async function _handleSimulatorBuildLogic(params: any): Promise<ToolResponse> {
+async function _handleSimulatorBuildLogic(params: Record<string, unknown>): Promise<ToolResponse> {
   log('info', `Building ${params.workspacePath || params.projectPath} for iOS Simulator`);
 
   try {
@@ -37,7 +37,9 @@ async function _handleSimulatorBuildLogic(params: any): Promise<ToolResponse> {
 }
 
 // Helper function for iOS Simulator build and run logic (by name)
-async function _handleIOSSimulatorBuildAndRunLogic(params: any): Promise<ToolResponse> {
+async function _handleIOSSimulatorBuildAndRunLogic(
+  params: Record<string, unknown>,
+): Promise<ToolResponse> {
   log(
     'info',
     `Building and running ${params.workspacePath || params.projectPath} on iOS Simulator`,
@@ -225,7 +227,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);

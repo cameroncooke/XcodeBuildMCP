@@ -21,7 +21,7 @@ export default {
   schema: {
     simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;

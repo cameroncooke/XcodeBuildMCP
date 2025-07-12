@@ -1,2 +1,2 @@
-// Re-export from simulator-workspace to avoid duplication
-export { default } from '../simulator-workspace/set_network_condition.ts';
+// Re-export from simulator-shared to avoid duplication
+export { default } from '../simulator-shared/set_network_condition.js';

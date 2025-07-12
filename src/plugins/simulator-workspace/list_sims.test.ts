@@ -18,7 +18,7 @@ class MockChildProcess extends EventEmitter {
 }
 
 describe('list_sims tool', () => {
-  let mockSpawn: any;
+  let mockSpawn: Record<string, unknown>;
   let mockProcess: MockChildProcess;
 
   beforeEach(async () => {

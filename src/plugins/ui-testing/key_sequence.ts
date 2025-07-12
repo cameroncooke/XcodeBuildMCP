@@ -26,7 +26,7 @@ export default {
     keyCodes: z.array(z.number().int().min(0).max(255)).min(1, 'At least one keycode required'),
     delay: z.number().min(0, 'Delay must be non-negative').optional(),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const toolName = 'key_sequence';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);

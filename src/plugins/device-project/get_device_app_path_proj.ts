@@ -36,7 +36,7 @@ export default {
       .optional()
       .describe('Target platform (defaults to iOS)'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
     if (!projectValidation.isValid) return projectValidation.errorResponse;

@@ -75,7 +75,7 @@ function constructDestinationString(
 /**
  * Internal function to handle getting app path
  */
-async function _handleGetAppPathLogic(params: any): Promise<ToolResponse> {
+async function _handleGetAppPathLogic(params: Record<string, unknown>): Promise<ToolResponse> {
   log('info', `Getting app path for scheme ${params.scheme} on platform ${params.platform}`);
 
   try {
@@ -230,7 +230,7 @@ export default {
       .optional()
       .describe('Whether to use the latest OS version for the named simulator'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
     if (!projectValidation.isValid) return projectValidation.errorResponse;

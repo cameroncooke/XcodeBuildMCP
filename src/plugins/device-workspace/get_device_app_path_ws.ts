@@ -36,7 +36,7 @@ export default {
       .optional()
       .describe('Target platform (defaults to iOS)'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
     if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;

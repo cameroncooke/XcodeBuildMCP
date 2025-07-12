@@ -46,7 +46,7 @@ describe('install_app_device plugin', () => {
     pid = 12345;
   }
 
-  let mockSpawn: any;
+  let mockSpawn: Record<string, unknown>;
   let mockProcess: MockChildProcess;
 
   beforeEach(async () => {

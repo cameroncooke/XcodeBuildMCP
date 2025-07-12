@@ -127,7 +127,7 @@ async function _findProjectsRecursive(
 /**
  * Internal logic for discovering projects.
  */
-async function _handleDiscoveryLogic(params: any): Promise<ToolResponse> {
+async function _handleDiscoveryLogic(params: Record<string, unknown>): Promise<ToolResponse> {
   const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = params;
 
   // Calculate and validate the absolute scan path
@@ -249,7 +249,7 @@ export default {
   description:
     'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
   schema: schema,
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const workspaceRootValidation = validateRequiredParam('workspaceRoot', params.workspaceRoot);
     if (!workspaceRootValidation.isValid) {

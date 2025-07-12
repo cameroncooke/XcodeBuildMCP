@@ -18,6 +18,7 @@ import './utils/sentry.js';
 
 // Import server components
 import { createServer, startServer } from './server/server.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Import utilities
 import { log } from './utils/logger.js';
@@ -51,18 +52,19 @@ async function main(): Promise<void> {
     }
 
     // Create the server
-    const server = createServer() as any;
+    const server = createServer();
 
     // Make server available globally for dynamic tools
-    (globalThis as any).mcpServer = server;
+    (globalThis as { mcpServer?: McpServer }).mcpServer = server;
 
     // Add notification capability for dynamic tool updates
-    server.notifyToolsChanged = async (): Promise<void> => {
-      await server.server.notification({
-        method: 'notifications/tools/list_changed',
-        params: {},
-      });
-    };
+    (server as McpServer & { notifyToolsChanged?: () => Promise<void> }).notifyToolsChanged =
+      async (): Promise<void> => {
+        await server.server.notification({
+          method: 'notifications/tools/list_changed',
+          params: {},
+        });
+      };
 
     // Determine operating mode
     const isDynamicMode = process.env.XCODEBUILDMCP_DYNAMIC_TOOLS === 'true';

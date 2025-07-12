@@ -10,7 +10,7 @@ export default {
   schema: {
     pid: z.number().describe('Process ID (PID) of the running executable'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const processInfo = getProcess(params.pid);
     if (!processInfo) {

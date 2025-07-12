@@ -29,7 +29,7 @@ export default {
     showCodecov: z.boolean().optional().describe('Show code coverage (default: false)'),
     parseAsLibrary: parseAsLibrarySchema,
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
     if (!pkgValidation.isValid) return pkgValidation.errorResponse;

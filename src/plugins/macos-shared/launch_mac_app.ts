@@ -24,7 +24,7 @@ export default {
       .describe('Path to the macOS .app bundle to launch (full path to the .app directory)'),
     args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const appPathValidation = validateRequiredParam('appPath', params.appPath);

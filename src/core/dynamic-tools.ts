@@ -5,7 +5,7 @@ import type { WorkflowGroup } from './plugin-types.js';
  * Enable workflows by registering their tools dynamically
  */
 export async function enableWorkflows(
-  server: any,
+  server: Record<string, unknown>,
   workflowNames: string[],
   workflowGroups: Map<string, WorkflowGroup>,
 ): Promise<void> {

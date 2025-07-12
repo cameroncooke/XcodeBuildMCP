@@ -36,7 +36,7 @@ export default {
       .optional()
       .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
     if (!projectValidation.isValid) return projectValidation.errorResponse;

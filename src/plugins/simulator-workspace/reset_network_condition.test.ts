@@ -16,7 +16,7 @@ class MockChildProcess extends EventEmitter {
 }
 
 describe('reset_network_condition plugin', () => {
-  let mockSpawn: any;
+  let mockSpawn: Record<string, unknown>;
   let mockProcess: MockChildProcess;
 
   beforeEach(async () => {

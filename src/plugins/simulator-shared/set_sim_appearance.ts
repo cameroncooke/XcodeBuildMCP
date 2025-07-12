@@ -6,13 +6,13 @@ import { executeCommand } from '../../utils/index.js';
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
-  params: any,
+  params: Record<string, unknown>,
   simctlSubCommand: string[],
   operationDescriptionForXcodeCommand: string,
   successMessage: string,
   failureMessagePrefix: string,
   operationLogContext: string,
-  extraValidation?: any,
+  extraValidation?: Record<string, unknown>,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
@@ -72,7 +72,7 @@ export default {
       .enum(['dark', 'light'])
       .describe('The appearance mode to set (either "dark" or "light")'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     log('info', `Setting simulator ${params.simulatorUuid} appearance to ${params.mode} mode`);
 

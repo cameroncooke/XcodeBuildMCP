@@ -140,7 +140,7 @@ describe('test_device_proj plugin', () => {
         'sh',
         [
           '-c',
-          'xcodebuild -project /path/to/project.xcodeproj -scheme MyScheme -configuration Debug -skipMacroValidation -destination \"platform=iOS,id=test-device-123\" -resultBundlePath /tmp/xcodebuild-test-123456/TestResults.xcresult test',
+          'xcodebuild -project /path/to/project.xcodeproj -scheme MyScheme -configuration Debug -skipMacroValidation -destination "platform=iOS,id=test-device-123" -resultBundlePath /tmp/xcodebuild-test-123456/TestResults.xcresult test',
         ],
         expect.any(Object),
       );
@@ -309,7 +309,7 @@ describe('test_device_proj plugin', () => {
         'sh',
         [
           '-c',
-          'xcodebuild -project /path/to/project.xcodeproj -scheme WatchApp -configuration Debug -skipMacroValidation -destination \"platform=watchOS,id=watch-device-456\" -resultBundlePath /tmp/xcodebuild-test-123456/TestResults.xcresult test',
+          'xcodebuild -project /path/to/project.xcodeproj -scheme WatchApp -configuration Debug -skipMacroValidation -destination "platform=watchOS,id=watch-device-456" -resultBundlePath /tmp/xcodebuild-test-123456/TestResults.xcresult test',
         ],
         expect.any(Object),
       );
@@ -382,7 +382,7 @@ describe('test_device_proj plugin', () => {
         'sh',
         [
           '-c',
-          'xcodebuild -project /path/to/project.xcodeproj -scheme MyScheme -configuration Release -skipMacroValidation -destination \"platform=iOS,id=test-device-123\" -derivedDataPath /tmp/derived-data --verbose -resultBundlePath /tmp/xcodebuild-test-123456/TestResults.xcresult test',
+          'xcodebuild -project /path/to/project.xcodeproj -scheme MyScheme -configuration Release -skipMacroValidation -destination "platform=iOS,id=test-device-123" -derivedDataPath /tmp/derived-data --verbose -resultBundlePath /tmp/xcodebuild-test-123456/TestResults.xcresult test',
         ],
         expect.any(Object),
       );

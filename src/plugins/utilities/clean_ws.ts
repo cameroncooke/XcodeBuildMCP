@@ -25,7 +25,7 @@ const CleanWorkspaceSchema = z.object({
   extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
 });
 
-async function _handleCleanLogic(params: any): Promise<ToolResponse> {
+async function _handleCleanLogic(params: Record<string, unknown>): Promise<ToolResponse> {
   log('info', 'Starting xcodebuild clean request (internal)');
 
   // For clean operations, we need to provide a default platform and configuration
@@ -44,7 +44,7 @@ async function _handleCleanLogic(params: any): Promise<ToolResponse> {
   );
 }
 
-async function cleanWorkspace(params: any): Promise<ToolResponse> {
+async function cleanWorkspace(params: Record<string, unknown>): Promise<ToolResponse> {
   try {
     const validated = CleanWorkspaceSchema.parse(params);
 
@@ -88,7 +88,7 @@ export default {
       .describe('Optional: Path where derived data might be located'),
     extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     return cleanWorkspace(params);
   },

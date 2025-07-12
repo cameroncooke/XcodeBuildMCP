@@ -37,7 +37,7 @@ export default {
       .describe('Additional arguments to pass to xcodebuild'),
     preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
     if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;

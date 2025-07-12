@@ -66,7 +66,7 @@ async function parseXcresultBundle(resultBundlePath: string): Promise<string> {
   }
 }
 
-function formatTestSummary(summary: any): string {
+function formatTestSummary(summary: Record<string, unknown>): string {
   const lines = [];
 
   lines.push(`Test Summary: ${summary.title || 'Unknown'}`);
@@ -129,7 +129,7 @@ function formatTestSummary(summary: any): string {
   return lines.join('\n');
 }
 
-async function handleTestLogic(params: any): Promise<ToolResponse> {
+async function handleTestLogic(params: Record<string, unknown>): Promise<ToolResponse> {
   log(
     'info',
     `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
@@ -227,7 +227,7 @@ export default {
     useLatestOS: useLatestOSSchema,
     preferXcodebuild: preferXcodebuildSchema,
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     return handleTestLogic({
       ...params,

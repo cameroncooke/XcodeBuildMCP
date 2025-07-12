@@ -18,7 +18,7 @@ export default {
           "For example: 'I need to build my iOS app and run it on the iPhone 15 Pro simulator.'",
       ),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const { task_description } = args;
     log('info', `Discovering tools for task: ${task_description}`);
 

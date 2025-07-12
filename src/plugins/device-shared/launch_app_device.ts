@@ -23,7 +23,7 @@ export default {
       .string()
       .describe('Bundle identifier of the app to launch (e.g., "com.example.MyApp")'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const { deviceId, bundleId } = args;
 
     log('info', `Launching app ${bundleId} on device ${deviceId}`);

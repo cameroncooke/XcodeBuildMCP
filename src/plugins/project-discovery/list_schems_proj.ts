@@ -13,7 +13,7 @@ import { ToolResponse } from '../../types/common.js';
 /**
  * Internal logic for listing schemes.
  */
-async function _handleListSchemesLogic(params: any): Promise<ToolResponse> {
+async function _handleListSchemesLogic(params: Record<string, unknown>): Promise<ToolResponse> {
   log('info', 'Listing schemes');
 
   try {
@@ -87,7 +87,7 @@ export default {
   schema: z.object({
     projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
   }),
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     const validated = this.schema.parse(params);
 

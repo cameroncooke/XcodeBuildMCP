@@ -8,12 +8,13 @@ vi.mock('child_process', () => ({
 }));
 
 import { EventEmitter } from 'events';
+import { spawn } from 'child_process';
 
 describe('get_sim_app_path_name_ws plugin', () => {
   let mockSpawn: MockedFunction<any>;
 
   beforeEach(() => {
-    mockSpawn = vi.mocked(require('child_process').spawn);
+    mockSpawn = vi.mocked(spawn);
     vi.clearAllMocks();
   });
 

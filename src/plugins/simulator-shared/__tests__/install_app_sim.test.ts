@@ -24,9 +24,9 @@ class MockChildProcess extends EventEmitter {
 }
 
 describe('install_app_sim tool', () => {
-  let mockSpawn: any;
-  let mockExecSync: any;
-  let mockExistsSync: any;
+  let mockSpawn: Record<string, unknown>;
+  let mockExecSync: Record<string, unknown>;
+  let mockExistsSync: Record<string, unknown>;
   let mockProcess: MockChildProcess;
 
   beforeEach(async () => {

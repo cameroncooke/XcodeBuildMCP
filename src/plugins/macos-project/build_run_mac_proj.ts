@@ -28,7 +28,7 @@ const XcodePlatform = {
 /**
  * Internal logic for building macOS apps.
  */
-async function _handleMacOSBuildLogic(params: any): Promise<ToolResponse> {
+async function _handleMacOSBuildLogic(params: Record<string, unknown>): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
@@ -46,7 +46,7 @@ async function _handleMacOSBuildLogic(params: any): Promise<ToolResponse> {
 }
 
 async function _getAppPathFromBuildSettings(
-  params: any,
+  params: Record<string, unknown>,
 ): Promise<{ appPath?: string; error?: string }> {
   try {
     // Create the command array for xcodebuild
@@ -103,7 +103,9 @@ async function _getAppPathFromBuildSettings(
 /**
  * Internal logic for building and running macOS apps.
  */
-async function _handleMacOSBuildAndRunLogic(params: any): Promise<ToolResponse> {
+async function _handleMacOSBuildAndRunLogic(
+  params: Record<string, unknown>,
+): Promise<ToolResponse> {
   log('info', 'Handling macOS build & run logic...');
 
   try {
@@ -193,7 +195,7 @@ export default {
       .optional()
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
-  async handler(args: any): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     return _handleMacOSBuildAndRunLogic({
       ...params,
