@@ -23,14 +23,24 @@ export interface CommandResponse {
 }
 
 /**
- * Execute a command
+ * Command executor function type for dependency injection
+ */
+export type CommandExecutor = (
+  command: string[],
+  logPrefix?: string,
+  useShell?: boolean,
+  env?: Record<string, string>,
+) => Promise<CommandResponse>;
+
+/**
+ * Default executor implementation using spawn (current production behavior)
  * @param command An array of command and arguments
  * @param logPrefix Prefix for logging
  * @param useShell Whether to use shell execution (true) or direct execution (false)
  * @param env Additional environment variables
  * @returns Promise resolving to command response with the process
  */
-export async function executeCommand(
+async function defaultExecutor(
   command: string[],
   logPrefix?: string,
   useShell: boolean = true,
@@ -112,5 +122,57 @@ export async function executeCommand(
     childProcess.on('error', (err) => {
       reject(err);
     });
+  });
+}
+
+/**
+ * Execute a command with optional dependency injection for testing
+ * @param command An array of command and arguments
+ * @param logPrefix Prefix for logging
+ * @param useShell Whether to use shell execution (true) or direct execution (false)
+ * @param env Additional environment variables
+ * @param executor Optional command executor for dependency injection (testing)
+ * @returns Promise resolving to command response with the process
+ */
+export async function executeCommand(
+  command: string[],
+  logPrefix?: string,
+  useShell: boolean = true,
+  env?: Record<string, string>,
+  executor: CommandExecutor = defaultExecutor,
+): Promise<CommandResponse> {
+  return executor(command, logPrefix, useShell, env);
+}
+
+/**
+ * Create a mock executor for testing
+ * @param result Mock command result
+ * @returns Mock executor function
+ */
+export function createMockExecutor(result: {
+  success?: boolean;
+  output?: string;
+  error?: string;
+  process?: any;
+}): CommandExecutor {
+  const mockProcess = {
+    pid: 12345,
+    stdout: null,
+    stderr: null,
+    stdin: null,
+    stdio: [null, null, null],
+    killed: false,
+    connected: false,
+    exitCode: result.success === false ? 1 : 0,
+    signalCode: null,
+    spawnargs: [],
+    spawnfile: 'sh',
+  };
+
+  return async () => ({
+    success: result.success ?? true,
+    output: result.output ?? '',
+    error: result.error,
+    process: result.process ?? mockProcess,
   });
 }
