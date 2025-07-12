@@ -1,26 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+/**
+ * Tests for list_schems_ws plugin
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
+
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import plugin from '../list_schems_ws.ts';
 
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-import { spawn } from 'child_process';
-const mockSpawn = vi.mocked(spawn);
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 describe('list_schems_ws plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(plugin.name).toBe('list_schems_ws');
@@ -53,6 +40,10 @@ describe('list_schems_ws plugin', () => {
     });
   });
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle schema validation error when workspacePath is null', async () => {
       // Schema validation will throw before reaching validateRequiredParam
@@ -60,13 +51,9 @@ describe('list_schems_ws plugin', () => {
     });
 
     it('should return success with schemes found', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          `Information about workspace "MyWorkspace":
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: `Information about workspace "MyWorkspace":
     Targets:
         MyApp
         MyAppTests
@@ -78,16 +65,20 @@ describe('list_schems_ws plugin', () => {
     Schemes:
         MyApp
         MyAppTests`,
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
-      const result = await plugin.handler({ workspacePath: '/path/to/MyProject.xcworkspace' });
+      const result = await plugin.handler(
+        { workspacePath: '/path/to/MyProject.xcworkspace' },
+        mockExecutor,
+      );
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'xcodebuild -list -workspace /path/to/MyProject.xcworkspace'],
-        expect.any(Object),
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['xcodebuild', '-list', '-workspace', '/path/to/MyProject.xcworkspace'],
+        'List Schemes',
+        true,
+        undefined,
       );
 
       expect(result).toEqual({
@@ -113,15 +104,17 @@ describe('list_schems_ws plugin', () => {
     });
 
     it('should return error when command fails', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        error: 'Workspace not found',
+        output: '',
+        process: { pid: 12345 },
+      });
 
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Workspace not found');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await plugin.handler({ workspacePath: '/path/to/MyProject.xcworkspace' });
+      const result = await plugin.handler(
+        { workspacePath: '/path/to/MyProject.xcworkspace' },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Failed to list schemes: Workspace not found' }],
@@ -130,18 +123,17 @@ describe('list_schems_ws plugin', () => {
     });
 
     it('should return error when no schemes found in output', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Information about workspace "MyWorkspace":\n    Targets:\n        MyApp',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          'Information about workspace "MyWorkspace":\n    Targets:\n        MyApp',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await plugin.handler({ workspacePath: '/path/to/MyProject.xcworkspace' });
+      const result = await plugin.handler(
+        { workspacePath: '/path/to/MyProject.xcworkspace' },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'No schemes found in the output' }],
@@ -150,13 +142,9 @@ describe('list_schems_ws plugin', () => {
     });
 
     it('should return success with empty schemes list', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          `Information about workspace "MinimalWorkspace":
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: `Information about workspace "MinimalWorkspace":
     Targets:
         MinimalApp
 
@@ -167,11 +155,14 @@ describe('list_schems_ws plugin', () => {
     Schemes:
 
 `,
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
-      const result = await plugin.handler({ workspacePath: '/path/to/MyProject.xcworkspace' });
+      const result = await plugin.handler(
+        { workspacePath: '/path/to/MyProject.xcworkspace' },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -193,24 +184,17 @@ describe('list_schems_ws plugin', () => {
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
 
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('Command execution failed'));
-      }, 0);
-
-      const result = await plugin.handler({ workspacePath: '/path/to/MyProject.xcworkspace' });
+      const result = await plugin.handler(
+        { workspacePath: '/path/to/MyProject.xcworkspace' },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Error listing schemes: Command execution failed' }],
         isError: true,
       });
-    });
-
-    it('should handle schema validation error when workspacePath is null', async () => {
-      // Schema validation will throw before reaching validateRequiredParam
-      await expect(plugin.handler({ workspacePath: null })).rejects.toThrow();
     });
   });
 });

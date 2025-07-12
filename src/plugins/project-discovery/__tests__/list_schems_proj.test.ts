@@ -1,20 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+/**
+ * Tests for list_schems_proj plugin
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
+
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { createMockExecutor } from '../../../utils/command.js';
 import plugin from '../list_schems_proj.ts';
-
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-import { spawn } from 'child_process';
-const mockSpawn = vi.mocked(spawn);
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
 
 describe('list_schems_proj plugin', () => {
   beforeEach(() => {
@@ -54,19 +46,10 @@ describe('list_schems_proj plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should handle schema validation error when projectPath is null', async () => {
-      // Schema validation will throw before reaching validateRequiredParam
-      await expect(plugin.handler({ projectPath: null })).rejects.toThrow();
-    });
-
     it('should return success with schemes found', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          `Information about project "MyProject":
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: `Information about project "MyProject":
     Targets:
         MyProject
         MyProjectTests
@@ -78,16 +61,11 @@ describe('list_schems_proj plugin', () => {
     Schemes:
         MyProject
         MyProjectTests`,
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+      });
 
-      const result = await plugin.handler({ projectPath: '/path/to/MyProject.xcodeproj' });
-
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'xcodebuild -list -project /path/to/MyProject.xcodeproj'],
-        expect.any(Object),
+      const result = await plugin.handler(
+        { projectPath: '/path/to/MyProject.xcodeproj' },
+        mockExecutor,
       );
 
       expect(result).toEqual({
@@ -113,15 +91,15 @@ describe('list_schems_proj plugin', () => {
     });
 
     it('should return error when command fails', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Project not found',
+      });
 
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Project not found');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await plugin.handler({ projectPath: '/path/to/MyProject.xcodeproj' });
+      const result = await plugin.handler(
+        { projectPath: '/path/to/MyProject.xcodeproj' },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Failed to list schemes: Project not found' }],
@@ -130,18 +108,15 @@ describe('list_schems_proj plugin', () => {
     });
 
     it('should return error when no schemes found in output', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Information about project "MyProject":\n    Targets:\n        MyProject',
+      });
 
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          'Information about project "MyProject":\n    Targets:\n        MyProject',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await plugin.handler({ projectPath: '/path/to/MyProject.xcodeproj' });
+      const result = await plugin.handler(
+        { projectPath: '/path/to/MyProject.xcodeproj' },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'No schemes found in the output' }],
@@ -150,13 +125,9 @@ describe('list_schems_proj plugin', () => {
     });
 
     it('should return success with empty schemes list', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          `Information about project "MinimalProject":
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: `Information about project "MinimalProject":
     Targets:
         MinimalProject
 
@@ -167,11 +138,12 @@ describe('list_schems_proj plugin', () => {
     Schemes:
 
 `,
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+      });
 
-      const result = await plugin.handler({ projectPath: '/path/to/MyProject.xcodeproj' });
+      const result = await plugin.handler(
+        { projectPath: '/path/to/MyProject.xcodeproj' },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -193,19 +165,58 @@ describe('list_schems_proj plugin', () => {
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
 
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('Command execution failed'));
-      }, 0);
-
-      const result = await plugin.handler({ projectPath: '/path/to/MyProject.xcodeproj' });
+      const result = await plugin.handler(
+        { projectPath: '/path/to/MyProject.xcodeproj' },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Error listing schemes: Command execution failed' }],
         isError: true,
       });
+    });
+
+    it('should handle string error objects in catch blocks', async () => {
+      const mockExecutor = vi.fn().mockRejectedValue('String error');
+
+      const result = await plugin.handler(
+        { projectPath: '/path/to/MyProject.xcodeproj' },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [{ type: 'text', text: 'Error listing schemes: String error' }],
+        isError: true,
+      });
+    });
+
+    it('should verify command generation with mock executor', async () => {
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: `Information about project "MyProject":
+    Targets:
+        MyProject
+
+    Build Configurations:
+        Debug
+        Release
+
+    Schemes:
+        MyProject`,
+        error: undefined,
+        process: { pid: 12345 },
+      });
+
+      await plugin.handler({ projectPath: '/path/to/MyProject.xcodeproj' }, mockExecutor);
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['xcodebuild', '-list', '-project', '/path/to/MyProject.xcodeproj'],
+        'List Schemes',
+        true,
+        undefined,
+      );
     });
 
     it('should handle schema validation error when projectPath is null', async () => {

@@ -1,20 +1,12 @@
 /**
  * Tests for get_device_app_path_ws plugin
  * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
-import { spawn } from 'child_process';
-
-// CRITICAL: Mock BEFORE imports to ensure proper mock chain
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
+import { createMockExecutor } from '../../../utils/command.js';
 import getDeviceAppPathWs from '../get_device_app_path_ws.ts';
-
-// Note: Internal utilities are allowed to execute normally (integration testing pattern)
 
 describe('get_device_app_path_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -50,20 +42,7 @@ describe('get_device_app_path_ws plugin', () => {
     });
   });
 
-  class MockChildProcess extends EventEmitter {
-    stdout = new EventEmitter();
-    stderr = new EventEmitter();
-    pid = 12345;
-  }
-
-  let mockSpawn: Record<string, unknown>;
-  let mockProcess: MockChildProcess;
-
   beforeEach(() => {
-    mockSpawn = vi.mocked(spawn);
-    mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
-
     vi.clearAllMocks();
   });
 
@@ -101,50 +80,57 @@ describe('get_device_app_path_ws plugin', () => {
     });
 
     it('should generate correct xcodebuild command for getting build settings', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          'BUILT_PRODUCTS_DIR = /path/to/build/products/dir\nFULL_PRODUCT_NAME = MyApp.app',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const resultPromise = getDeviceAppPathWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyScheme',
-        configuration: 'Debug',
-        platform: 'iOS',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'BUILT_PRODUCTS_DIR = /path/to/build/products/dir\nFULL_PRODUCT_NAME = MyApp.app',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      const result = await resultPromise;
-
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        [
-          '-c',
-          'xcodebuild -showBuildSettings -workspace /path/to/workspace.xcworkspace -scheme MyScheme -configuration Debug -destination "generic/platform=iOS"',
-        ],
+      await getDeviceAppPathWs.handler(
         {
-          stdio: ['ignore', 'pipe', 'pipe'],
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Debug',
+          platform: 'iOS',
         },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/workspace.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-destination',
+          'generic/platform=iOS',
+        ],
+        'Get App Path',
+        true,
+        undefined,
       );
     });
 
     it('should return exact successful app path response for iOS', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          'BUILT_PRODUCTS_DIR = /path/to/build/products/dir\nFULL_PRODUCT_NAME = MyApp.app',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await getDeviceAppPathWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyScheme',
-        configuration: 'Debug',
-        platform: 'iOS',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILT_PRODUCTS_DIR = /path/to/build/products/dir\nFULL_PRODUCT_NAME = MyApp.app',
       });
+
+      const result = await getDeviceAppPathWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Debug',
+          platform: 'iOS',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -161,15 +147,18 @@ describe('get_device_app_path_ws plugin', () => {
     });
 
     it('should return exact build failure response', async () => {
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'xcodebuild: error: Scheme NonExistentScheme not found');
-        mockProcess.emit('close', 65);
-      }, 0);
-
-      const result = await getDeviceAppPathWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'NonExistentScheme',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'xcodebuild: error: Scheme NonExistentScheme not found',
       });
+
+      const result = await getDeviceAppPathWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'NonExistentScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -183,15 +172,18 @@ describe('get_device_app_path_ws plugin', () => {
     });
 
     it('should return exact missing build settings response', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Some output without build settings');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await getDeviceAppPathWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyScheme',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Some output without build settings',
       });
+
+      const result = await getDeviceAppPathWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -205,14 +197,15 @@ describe('get_device_app_path_ws plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('Network error'));
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const result = await getDeviceAppPathWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyScheme',
-      });
+      const result = await getDeviceAppPathWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Error retrieving app path: Network error' }],

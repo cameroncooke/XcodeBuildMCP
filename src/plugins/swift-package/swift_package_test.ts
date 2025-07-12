@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import path from 'node:path';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import { createTextResponse, validateRequiredParam } from '../../utils/index.js';
 import { createErrorResponse } from '../../utils/index.js';
 import { log } from '../../utils/index.js';
@@ -29,7 +29,7 @@ export default {
     showCodecov: z.boolean().optional().describe('Show code coverage (default: false)'),
     parseAsLibrary: parseAsLibrarySchema,
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
     if (!pkgValidation.isValid) return pkgValidation.errorResponse;
@@ -65,7 +65,13 @@ export default {
 
     log('info', `Running swift ${swiftArgs.join(' ')}`);
     try {
-      const result = await executeCommand(['swift', ...swiftArgs], 'Swift Package Test');
+      const result = await executeCommand(
+        ['swift', ...swiftArgs],
+        'Swift Package Test',
+        true,
+        undefined,
+        executor,
+      );
       if (!result.success) {
         const errorMessage = result.error || result.output || 'Unknown error';
         return createErrorResponse('Swift package tests failed', errorMessage, 'TestError');
