@@ -5,16 +5,16 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { EventEmitter } from 'events';
+import { spawn } from 'child_process';
+
+// CRITICAL: Mock BEFORE imports to ensure proper mock chain
+vi.mock('child_process', () => ({
+  spawn: vi.fn(),
+}));
+
 import getDeviceAppPathWs from '../get_device_app_path_ws.ts';
 
-// Mock external dependencies
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  createTextResponse: vi.fn(),
-  executeCommand: vi.fn(),
-  constructDestinationString: vi.fn(),
-}));
+// Note: Internal utilities are allowed to execute normally (integration testing pattern)
 
 describe('get_device_app_path_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -59,8 +59,7 @@ describe('get_device_app_path_ws plugin', () => {
   let mockSpawn: Record<string, unknown>;
   let mockProcess: MockChildProcess;
 
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
+  beforeEach(() => {
     mockSpawn = vi.mocked(spawn);
     mockProcess = new MockChildProcess();
     mockSpawn.mockReturnValue(mockProcess);
@@ -123,9 +122,11 @@ describe('get_device_app_path_ws plugin', () => {
         'sh',
         [
           '-c',
-          'xcodebuild -workspace "/path/to/workspace.xcworkspace" -scheme "MyScheme" -configuration "Debug" -destination "generic/platform=iOS" -showBuildSettings',
+          'xcodebuild -showBuildSettings -workspace /path/to/workspace.xcworkspace -scheme MyScheme -configuration Debug -destination "generic/platform=iOS"',
         ],
-        expect.any(Object),
+        {
+          stdio: ['ignore', 'pipe', 'pipe'],
+        },
       );
     });
 

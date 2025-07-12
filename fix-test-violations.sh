@@ -3,285 +3,278 @@
 # Review each change before applying!
 
 echo "🔧 XcodeBuildMCP Test Architecture Fix Script"
-echo "This script will help fix the 40 major violations found."
+echo "This script will help fix the 39 major violations found."
 echo ""
 echo "⚠️  IMPORTANT: Review each change before applying!"
 echo ""
 
-echo "Fixing 1/40: src/plugins/device-workspace/__tests__/get_device_app_path_ws.test.ts"
+echo "Fixing 1/39: src/plugins/device-workspace/__tests__/get_device_app_path_ws.test.ts"
 # TODO: Manual fix required for src/plugins/device-workspace/__tests__/get_device_app_path_ws.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 2/40: src/plugins/diagnostics/__tests__/diagnostic.test.ts"
+echo "Fixing 2/39: src/plugins/diagnostics/__tests__/diagnostic.test.ts"
 # TODO: Manual fix required for src/plugins/diagnostics/__tests__/diagnostic.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 3/40: src/plugins/discovery/__tests__/discover_tools.test.ts"
+echo "Fixing 3/39: src/plugins/discovery/__tests__/discover_tools.test.ts"
 # TODO: Manual fix required for src/plugins/discovery/__tests__/discover_tools.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 4/40: src/plugins/logging/__tests__/stop_device_log_cap.test.ts"
-# TODO: Manual fix required for src/plugins/logging/__tests__/stop_device_log_cap.test.ts
-# 1. Remove vi.mock('../../utils/index.js')
-# 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
-# 3. Remove utility imports and mocks
-# 4. Test integration flow instead
-
-echo "Fixing 5/40: src/plugins/macos-shared/__tests__/stop_mac_app.test.ts"
+echo "Fixing 4/39: src/plugins/macos-shared/__tests__/stop_mac_app.test.ts"
 # TODO: Manual fix required for src/plugins/macos-shared/__tests__/stop_mac_app.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 6/40: src/plugins/macos-workspace/__tests__/stop_mac_app.test.ts"
+echo "Fixing 5/39: src/plugins/macos-workspace/__tests__/stop_mac_app.test.ts"
 # TODO: Manual fix required for src/plugins/macos-workspace/__tests__/stop_mac_app.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 7/40: src/plugins/simulator-project/test_sim_id_proj.test.ts"
+echo "Fixing 6/39: src/plugins/simulator-project/test_sim_id_proj.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-project/test_sim_id_proj.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 8/40: src/plugins/simulator-project/test_sim_name_proj.test.ts"
+echo "Fixing 7/39: src/plugins/simulator-project/test_sim_name_proj.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-project/test_sim_name_proj.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 9/40: src/plugins/simulator-shared/__tests__/launch_app_logs_sim.test.ts"
+echo "Fixing 8/39: src/plugins/simulator-shared/__tests__/launch_app_logs_sim.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-shared/__tests__/launch_app_logs_sim.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 10/40: src/plugins/simulator-shared/__tests__/launch_app_sim.test.ts"
+echo "Fixing 9/39: src/plugins/simulator-shared/__tests__/launch_app_sim.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-shared/__tests__/launch_app_sim.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 11/40: src/plugins/simulator-shared/__tests__/reset_simulator_location.test.ts"
+echo "Fixing 10/39: src/plugins/simulator-shared/__tests__/reset_simulator_location.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-shared/__tests__/reset_simulator_location.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 12/40: src/plugins/simulator-shared/__tests__/set_network_condition.test.ts"
+echo "Fixing 11/39: src/plugins/simulator-shared/__tests__/set_network_condition.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-shared/__tests__/set_network_condition.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 13/40: src/plugins/simulator-shared/__tests__/set_sim_appearance.test.ts"
+echo "Fixing 12/39: src/plugins/simulator-shared/__tests__/set_sim_appearance.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-shared/__tests__/set_sim_appearance.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 14/40: src/plugins/simulator-shared/__tests__/set_simulator_location.test.ts"
+echo "Fixing 13/39: src/plugins/simulator-shared/__tests__/set_simulator_location.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-shared/__tests__/set_simulator_location.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 15/40: src/plugins/simulator-workspace/__tests__/build_run_sim_name_ws.test.ts"
+echo "Fixing 14/39: src/plugins/simulator-workspace/__tests__/build_run_sim_name_ws.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/__tests__/build_run_sim_name_ws.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 16/40: src/plugins/simulator-workspace/__tests__/build_sim_id_ws.test.ts"
+echo "Fixing 15/39: src/plugins/simulator-workspace/__tests__/build_sim_id_ws.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/__tests__/build_sim_id_ws.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 17/40: src/plugins/simulator-workspace/__tests__/build_sim_name_ws.test.ts"
+echo "Fixing 16/39: src/plugins/simulator-workspace/__tests__/build_sim_name_ws.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/__tests__/build_sim_name_ws.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 18/40: src/plugins/simulator-workspace/__tests__/describe_ui.test.ts"
+echo "Fixing 17/39: src/plugins/simulator-workspace/__tests__/describe_ui.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/__tests__/describe_ui.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 19/40: src/plugins/simulator-workspace/__tests__/get_sim_app_path_id_ws.test.ts"
+echo "Fixing 18/39: src/plugins/simulator-workspace/__tests__/get_sim_app_path_id_ws.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/__tests__/get_sim_app_path_id_ws.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 20/40: src/plugins/simulator-workspace/launch_app_logs_sim.test.ts"
+echo "Fixing 19/39: src/plugins/simulator-workspace/launch_app_logs_sim.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/launch_app_logs_sim.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 21/40: src/plugins/simulator-workspace/launch_app_sim.test.ts"
+echo "Fixing 20/39: src/plugins/simulator-workspace/launch_app_sim.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/launch_app_sim.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 22/40: src/plugins/simulator-workspace/reset_simulator_location.test.ts"
+echo "Fixing 21/39: src/plugins/simulator-workspace/reset_simulator_location.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/reset_simulator_location.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 23/40: src/plugins/simulator-workspace/set_network_condition.test.ts"
+echo "Fixing 22/39: src/plugins/simulator-workspace/set_network_condition.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/set_network_condition.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 24/40: src/plugins/simulator-workspace/set_sim_appearance.test.ts"
+echo "Fixing 23/39: src/plugins/simulator-workspace/set_sim_appearance.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/set_sim_appearance.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 25/40: src/plugins/simulator-workspace/set_simulator_location.test.ts"
+echo "Fixing 24/39: src/plugins/simulator-workspace/set_simulator_location.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/set_simulator_location.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 26/40: src/plugins/simulator-workspace/test_sim_id_ws.test.ts"
+echo "Fixing 25/39: src/plugins/simulator-workspace/test_sim_id_ws.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/test_sim_id_ws.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 27/40: src/plugins/simulator-workspace/test_sim_name_ws.test.ts"
+echo "Fixing 26/39: src/plugins/simulator-workspace/test_sim_name_ws.test.ts"
 # TODO: Manual fix required for src/plugins/simulator-workspace/test_sim_name_ws.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 28/40: src/plugins/ui-testing/__tests__/button.test.ts"
+echo "Fixing 27/39: src/plugins/ui-testing/__tests__/button.test.ts"
 # TODO: Manual fix required for src/plugins/ui-testing/__tests__/button.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 29/40: src/plugins/ui-testing/__tests__/describe_ui.test.ts"
+echo "Fixing 28/39: src/plugins/ui-testing/__tests__/describe_ui.test.ts"
 # TODO: Manual fix required for src/plugins/ui-testing/__tests__/describe_ui.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 30/40: src/plugins/ui-testing/__tests__/gesture.test.ts"
+echo "Fixing 29/39: src/plugins/ui-testing/__tests__/gesture.test.ts"
 # TODO: Manual fix required for src/plugins/ui-testing/__tests__/gesture.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 31/40: src/plugins/ui-testing/__tests__/key_press.test.ts"
+echo "Fixing 30/39: src/plugins/ui-testing/__tests__/key_press.test.ts"
 # TODO: Manual fix required for src/plugins/ui-testing/__tests__/key_press.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 32/40: src/plugins/ui-testing/__tests__/key_sequence.test.ts"
+echo "Fixing 31/39: src/plugins/ui-testing/__tests__/key_sequence.test.ts"
 # TODO: Manual fix required for src/plugins/ui-testing/__tests__/key_sequence.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 33/40: src/plugins/ui-testing/__tests__/long_press.test.ts"
+echo "Fixing 32/39: src/plugins/ui-testing/__tests__/long_press.test.ts"
 # TODO: Manual fix required for src/plugins/ui-testing/__tests__/long_press.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 34/40: src/plugins/ui-testing/__tests__/screenshot.test.ts"
+echo "Fixing 33/39: src/plugins/ui-testing/__tests__/screenshot.test.ts"
 # TODO: Manual fix required for src/plugins/ui-testing/__tests__/screenshot.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 35/40: src/plugins/ui-testing/__tests__/swipe.test.ts"
+echo "Fixing 34/39: src/plugins/ui-testing/__tests__/swipe.test.ts"
 # TODO: Manual fix required for src/plugins/ui-testing/__tests__/swipe.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 36/40: src/plugins/ui-testing/__tests__/tap.test.ts"
+echo "Fixing 35/39: src/plugins/ui-testing/__tests__/tap.test.ts"
 # TODO: Manual fix required for src/plugins/ui-testing/__tests__/tap.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 37/40: src/plugins/ui-testing/__tests__/touch.test.ts"
+echo "Fixing 36/39: src/plugins/ui-testing/__tests__/touch.test.ts"
 # TODO: Manual fix required for src/plugins/ui-testing/__tests__/touch.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 38/40: src/plugins/ui-testing/__tests__/type_text.test.ts"
+echo "Fixing 37/39: src/plugins/ui-testing/__tests__/type_text.test.ts"
 # TODO: Manual fix required for src/plugins/ui-testing/__tests__/type_text.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 39/40: src/plugins/utilities/__tests__/scaffold_ios_project.test.ts"
+echo "Fixing 38/39: src/plugins/utilities/__tests__/scaffold_ios_project.test.ts"
 # TODO: Manual fix required for src/plugins/utilities/__tests__/scaffold_ios_project.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
 # 3. Remove utility imports and mocks
 # 4. Test integration flow instead
 
-echo "Fixing 40/40: src/plugins/utilities/__tests__/scaffold_macos_project.test.ts"
+echo "Fixing 39/39: src/plugins/utilities/__tests__/scaffold_macos_project.test.ts"
 # TODO: Manual fix required for src/plugins/utilities/__tests__/scaffold_macos_project.test.ts
 # 1. Remove vi.mock('../../utils/index.js')
 # 2. Add vi.mock('child_process', () => ({ spawn: vi.fn() }))
