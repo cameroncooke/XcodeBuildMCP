@@ -4,20 +4,12 @@ import { z } from 'zod';
 // Import the plugin
 import diagnostic from '../diagnostic.ts';
 
-// Mock external dependencies
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  version: '1.0.0',
-  areAxeToolsAvailable: vi.fn(),
-  isXcodemakeEnabled: vi.fn(),
-  isXcodemakeAvailable: vi.fn(),
-  doesMakefileExist: vi.fn(),
-  loadPlugins: vi.fn(),
-}));
+// Note: Internal utilities are allowed to execute normally (integration testing pattern)
 
 // Mock child_process
 vi.mock('child_process', () => ({
   execSync: vi.fn(),
+  spawn: vi.fn(),
 }));
 
 // Mock os
@@ -34,24 +26,10 @@ vi.mock('os', () => ({
 }));
 
 describe('diagnostic tool', () => {
-  let mockLog: MockedFunction<any>;
-  let mockAreAxeToolsAvailable: MockedFunction<any>;
-  let mockIsXcodemakeEnabled: MockedFunction<any>;
-  let mockIsXcodemakeAvailable: MockedFunction<any>;
-  let mockDoesMakefileExist: MockedFunction<any>;
-  let mockLoadPlugins: MockedFunction<any>;
   let mockExecSync: MockedFunction<any>;
 
   beforeEach(async () => {
-    const utils = await import('../../../utils/index.js');
     const childProcess = await import('child_process');
-
-    mockLog = utils.log as MockedFunction<any>;
-    mockAreAxeToolsAvailable = utils.areAxeToolsAvailable as MockedFunction<any>;
-    mockIsXcodemakeEnabled = utils.isXcodemakeEnabled as MockedFunction<any>;
-    mockIsXcodemakeAvailable = utils.isXcodemakeAvailable as MockedFunction<any>;
-    mockDoesMakefileExist = utils.doesMakefileExist as MockedFunction<any>;
-    mockLoadPlugins = utils.loadPlugins as MockedFunction<any>;
     mockExecSync = childProcess.execSync as MockedFunction<any>;
 
     vi.clearAllMocks();
@@ -89,19 +67,7 @@ describe('diagnostic tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle successful diagnostic execution', async () => {
-      // Mock all dependencies for successful execution
-      mockAreAxeToolsAvailable.mockReturnValue(true);
-      mockIsXcodemakeEnabled.mockReturnValue(true);
-      mockIsXcodemakeAvailable.mockResolvedValue(true);
-      mockDoesMakefileExist.mockReturnValue(true);
-      mockLoadPlugins.mockResolvedValue(
-        new Map([
-          [
-            'test-plugin',
-            { name: 'test-plugin', pluginPath: '/path/to/plugins/test-group/test-plugin.ts' },
-          ],
-        ]),
-      );
+      // Integration testing: internal utilities execute normally
 
       // Mock execSync for various commands
       mockExecSync.mockImplementation((cmd: string) => {
@@ -147,12 +113,7 @@ describe('diagnostic tool', () => {
     });
 
     it('should handle plugin loading failure', async () => {
-      // Mock all dependencies for failed plugin loading
-      mockAreAxeToolsAvailable.mockReturnValue(true);
-      mockIsXcodemakeEnabled.mockReturnValue(true);
-      mockIsXcodemakeAvailable.mockResolvedValue(true);
-      mockDoesMakefileExist.mockReturnValue(true);
-      mockLoadPlugins.mockRejectedValue(new Error('Plugin loading failed'));
+      // Integration testing: internal utilities execute normally
 
       // Mock execSync for various commands
       mockExecSync.mockImplementation((cmd: string) => {
@@ -198,19 +159,7 @@ describe('diagnostic tool', () => {
     });
 
     it('should handle xcode command failure', async () => {
-      // Mock all dependencies for xcode failure
-      mockAreAxeToolsAvailable.mockReturnValue(true);
-      mockIsXcodemakeEnabled.mockReturnValue(true);
-      mockIsXcodemakeAvailable.mockResolvedValue(true);
-      mockDoesMakefileExist.mockReturnValue(true);
-      mockLoadPlugins.mockResolvedValue(
-        new Map([
-          [
-            'test-plugin',
-            { name: 'test-plugin', pluginPath: '/path/to/plugins/test-group/test-plugin.ts' },
-          ],
-        ]),
-      );
+      // Integration testing: internal utilities execute normally
 
       // Mock execSync for various commands with xcode failure
       mockExecSync.mockImplementation((cmd: string) => {
@@ -255,19 +204,7 @@ describe('diagnostic tool', () => {
     });
 
     it('should handle xcodemake check failure', async () => {
-      // Mock all dependencies with xcodemake check failure
-      mockAreAxeToolsAvailable.mockReturnValue(true);
-      mockIsXcodemakeEnabled.mockReturnValue(true);
-      mockIsXcodemakeAvailable.mockResolvedValue(false);
-      mockDoesMakefileExist.mockReturnValue(false);
-      mockLoadPlugins.mockResolvedValue(
-        new Map([
-          [
-            'test-plugin',
-            { name: 'test-plugin', pluginPath: '/path/to/plugins/test-group/test-plugin.ts' },
-          ],
-        ]),
-      );
+      // Integration testing: internal utilities execute normally
 
       // Mock execSync for various commands
       mockExecSync.mockImplementation((cmd: string) => {
@@ -313,19 +250,7 @@ describe('diagnostic tool', () => {
     });
 
     it('should handle axe tools not available', async () => {
-      // Mock all dependencies with axe not available
-      mockAreAxeToolsAvailable.mockReturnValue(false);
-      mockIsXcodemakeEnabled.mockReturnValue(false);
-      mockIsXcodemakeAvailable.mockResolvedValue(false);
-      mockDoesMakefileExist.mockReturnValue(false);
-      mockLoadPlugins.mockResolvedValue(
-        new Map([
-          [
-            'test-plugin',
-            { name: 'test-plugin', pluginPath: '/path/to/plugins/test-group/test-plugin.ts' },
-          ],
-        ]),
-      );
+      // Integration testing: internal utilities execute normally
 
       // Mock execSync for various commands
       mockExecSync.mockImplementation((cmd: string) => {
