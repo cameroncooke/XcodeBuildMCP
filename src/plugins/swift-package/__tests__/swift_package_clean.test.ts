@@ -1,29 +1,12 @@
 /**
  * Tests for swift_package_clean plugin
  * Following CLAUDE.md testing standards with literal validation
- * Integration tests that mock only the lowest-level spawn calls
+ * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { EventEmitter } from 'events';
-import { z } from 'zod';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { createMockExecutor } from '../../../utils/command.js';
 import swiftPackageClean from '../swift_package_clean.ts';
-
-// Mock only child_process at the lowest system level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-// Create a mock ChildProcess that extends EventEmitter
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-
-  constructor() {
-    super();
-  }
-}
 
 describe('swift_package_clean plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -52,34 +35,31 @@ describe('swift_package_clean plugin', () => {
     });
   });
 
-  let mockSpawn: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
-    mockSpawn = spawn as MockedFunction<any>;
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Command Generation Testing', () => {
     it('should build correct command for clean', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageClean.handler({
-        packagePath: '/test/package',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Clean succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Clean succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
+      await swiftPackageClean.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockExecutor,
+      );
 
-      await handlerPromise;
-
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'swift package --package-path /test/package clean'],
-        expect.any(Object),
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['swift', 'package', '--package-path', '/test/package', 'clean'],
+        'Swift Package Clean',
+        true,
+        undefined,
       );
     });
   });
@@ -100,19 +80,17 @@ describe('swift_package_clean plugin', () => {
     });
 
     it('should return successful clean response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageClean.handler({
-        packagePath: '/test/package',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Package cleaned successfully',
       });
 
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Package cleaned successfully');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await handlerPromise;
+      const result = await swiftPackageClean.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -127,18 +105,17 @@ describe('swift_package_clean plugin', () => {
     });
 
     it('should return successful clean response with no output', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageClean.handler({
-        packagePath: '/test/package',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
       });
 
-      setTimeout(() => {
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await handlerPromise;
+      const result = await swiftPackageClean.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -153,19 +130,17 @@ describe('swift_package_clean plugin', () => {
     });
 
     it('should return error response for clean failure', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageClean.handler({
-        packagePath: '/test/package',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Permission denied',
       });
 
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Permission denied');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await handlerPromise;
+      const result = await swiftPackageClean.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -179,17 +154,14 @@ describe('swift_package_clean plugin', () => {
     });
 
     it('should handle spawn error', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockImplementation(() => {
-        setTimeout(() => {
-          mockProcess.emit('error', new Error('spawn ENOENT'));
-        }, 0);
-        return mockProcess;
-      });
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn ENOENT'));
 
-      const result = await swiftPackageClean.handler({
-        packagePath: '/test/package',
-      });
+      const result = await swiftPackageClean.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [

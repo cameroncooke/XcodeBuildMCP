@@ -1,22 +1,12 @@
 /**
  * Tests for build_dev_proj plugin
  * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import buildDevProj from '../build_dev_proj.ts';
-
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
 
 describe('build_dev_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -57,11 +47,7 @@ describe('build_dev_proj plugin', () => {
     });
   });
 
-  let mockSpawn: ReturnType<typeof vi.fn>;
-
-  beforeEach(async () => {
-    const childProcess = await import('child_process');
-    mockSpawn = vi.mocked(childProcess.spawn);
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
@@ -100,43 +86,55 @@ describe('build_dev_proj plugin', () => {
       });
     });
 
-    it('should generate correct xcodebuild command for device build', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Build succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      await buildDevProj.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'MyScheme',
+    it('should verify command generation with mock executor', async () => {
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Build succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      await buildDevProj.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -project /path/to/MyProject.xcodeproj -scheme MyScheme -configuration Debug -skipMacroValidation -destination "generic/platform=iOS" build',
+          'xcodebuild',
+          '-project',
+          '/path/to/MyProject.xcodeproj',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'generic/platform=iOS',
+          'build',
         ],
-        expect.any(Object),
+        'iOS Device Build',
+        true,
+        undefined,
       );
     });
 
     it('should return exact successful build response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Build succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await buildDevProj.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'MyScheme',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Build succeeded',
       });
+
+      const result = await buildDevProj.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -153,18 +151,18 @@ describe('build_dev_proj plugin', () => {
     });
 
     it('should return exact build failure response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Compilation error');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await buildDevProj.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'MyScheme',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Compilation error',
       });
+
+      const result = await buildDevProj.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -182,29 +180,44 @@ describe('build_dev_proj plugin', () => {
     });
 
     it('should include optional parameters in command', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Build succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      await buildDevProj.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'MyScheme',
-        configuration: 'Release',
-        derivedDataPath: '/tmp/derived-data',
-        extraArgs: ['--verbose'],
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Build succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      await buildDevProj.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+          configuration: 'Release',
+          derivedDataPath: '/tmp/derived-data',
+          extraArgs: ['--verbose'],
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -project /path/to/MyProject.xcodeproj -scheme MyScheme -configuration Release -skipMacroValidation -destination "generic/platform=iOS" -derivedDataPath /tmp/derived-data --verbose build',
+          'xcodebuild',
+          '-project',
+          '/path/to/MyProject.xcodeproj',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Release',
+          '-skipMacroValidation',
+          '-destination',
+          'generic/platform=iOS',
+          '-derivedDataPath',
+          '/tmp/derived-data',
+          '--verbose',
+          'build',
         ],
-        expect.any(Object),
+        'iOS Device Build',
+        true,
+        undefined,
       );
     });
   });

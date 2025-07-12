@@ -1,20 +1,9 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import getSimAppPathIdProj from '../get_sim_app_path_id_proj.ts';
 
-// Mock only child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
 describe('get_sim_app_path_id_proj plugin', () => {
-  class MockChildProcess extends EventEmitter {
-    stdout = new EventEmitter();
-    stderr = new EventEmitter();
-    pid = 12345;
-  }
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -175,29 +164,26 @@ describe('get_sim_app_path_id_proj plugin', () => {
     });
 
     it('should return command error when command fails', async () => {
-      const { spawn } = await import('child_process');
-      const mockSpawn = vi.mocked(spawn);
-
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Command failed with error');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await getSimAppPathIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Command failed with error',
       });
+
+      const result = await getSimAppPathIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error: Failed to get app path\nDetails: Command failed with error',
+            text: 'Failed to get app path: Command failed with error',
           },
         ],
         isError: true,
@@ -205,79 +191,89 @@ describe('get_sim_app_path_id_proj plugin', () => {
     });
 
     it('should handle successful app path extraction', async () => {
-      const { spawn } = await import('child_process');
-      const mockSpawn = vi.mocked(spawn);
-
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app\n');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await getSimAppPathIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n',
       });
 
+      const result = await getSimAppPathIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid',
+        },
+        mockExecutor,
+      );
+
       expect(result).toEqual({
-        content: [{ type: 'text', text: '/path/to/MyApp.app' }],
-        isError: false,
+        content: [
+          {
+            type: 'text',
+            text: '✅ App path retrieved successfully: /path/to/build/MyApp.app',
+          },
+          {
+            type: 'text',
+            text: `Next Steps:
+1. Get bundle ID: get_app_bundle_id({ appPath: "/path/to/build/MyApp.app" })
+2. Boot simulator: boot_simulator({ simulatorUuid: "SIMULATOR_UUID" })
+3. Install app: install_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", appPath: "/path/to/build/MyApp.app" })
+4. Launch app: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`,
+          },
+        ],
       });
     });
 
     it('should handle no app path found', async () => {
-      const { spawn } = await import('child_process');
-      const mockSpawn = vi.mocked(spawn);
-
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'No CODESIGNING_FOLDER_PATH found\n');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await getSimAppPathIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'No BUILT_PRODUCTS_DIR or FULL_PRODUCT_NAME found\n',
       });
 
+      const result = await getSimAppPathIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid',
+        },
+        mockExecutor,
+      );
+
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Could not find app path in build settings.' }],
+        content: [
+          {
+            type: 'text',
+            text: 'Failed to extract app path from build settings. Make sure the app has been built first.',
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle command generation with extra args', async () => {
-      const { spawn } = await import('child_process');
-      const mockSpawn = vi.mocked(spawn);
-
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Command failed');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      await getSimAppPathIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid',
-        configuration: 'Release',
-        useLatestOS: false,
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        error: 'Command failed',
+        output: '',
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'xcodebuild',
+      await getSimAppPathIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid',
+          configuration: 'Release',
+          useLatestOS: false,
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
         expect.arrayContaining([
+          'xcodebuild',
           '-showBuildSettings',
           '-project',
           '/path/to/project.xcodeproj',
@@ -285,8 +281,12 @@ describe('get_sim_app_path_id_proj plugin', () => {
           'MyScheme',
           '-configuration',
           'Release',
+          '-destination',
+          'platform=iOS Simulator,id=test-uuid',
         ]),
-        expect.any(Object),
+        'Get App Path',
+        true,
+        undefined,
       );
     });
   });

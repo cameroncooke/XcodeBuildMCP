@@ -1,16 +1,12 @@
 /**
  * Tests for build_dev_ws plugin
  * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import buildDevWs from '../build_dev_ws.ts';
-
-// Mock child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
 
 describe('build_dev_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -48,21 +44,7 @@ describe('build_dev_ws plugin', () => {
     });
   });
 
-  class MockChildProcess extends EventEmitter {
-    stdout = new EventEmitter();
-    stderr = new EventEmitter();
-    pid = 12345;
-  }
-
-  let mockSpawn: Record<string, unknown>;
-  let mockProcess: MockChildProcess;
-
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
-    mockSpawn = vi.mocked(spawn);
-    mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
@@ -100,42 +82,56 @@ describe('build_dev_ws plugin', () => {
     });
 
     it('should generate correct xcodebuild command for workspace', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const resultPromise = buildDevWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyScheme',
-        configuration: 'Debug',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      const result = await resultPromise;
+      await buildDevWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Debug',
+        },
+        mockExecutor,
+      );
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -workspace /path/to/workspace.xcworkspace -scheme MyScheme -configuration Debug -skipMacroValidation -destination "generic/platform=iOS" build',
+          'xcodebuild',
+          '-workspace',
+          '/path/to/workspace.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'generic/platform=iOS',
+          'build',
         ],
-        expect.objectContaining({
-          stdio: ['ignore', 'pipe', 'pipe'],
-        }),
+        'iOS Device Build',
+        true,
+        undefined,
       );
     });
 
     it('should return exact successful build response', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await buildDevWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyScheme',
-        configuration: 'Debug',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
       });
+
+      const result = await buildDevWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Debug',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -149,15 +145,18 @@ describe('build_dev_ws plugin', () => {
     });
 
     it('should return exact build failure response', async () => {
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'xcodebuild: error: Scheme NonExistentScheme not found');
-        mockProcess.emit('close', 65);
-      }, 0);
-
-      const result = await buildDevWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'NonExistentScheme',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'xcodebuild: error: Scheme NonExistentScheme not found',
       });
+
+      const result = await buildDevWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'NonExistentScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -175,25 +174,38 @@ describe('build_dev_ws plugin', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      await buildDevWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyScheme',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      await buildDevWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -workspace /path/to/workspace.xcworkspace -scheme MyScheme -configuration Debug -skipMacroValidation -destination "generic/platform=iOS" build',
+          'xcodebuild',
+          '-workspace',
+          '/path/to/workspace.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'generic/platform=iOS',
+          'build',
         ],
-        expect.objectContaining({
-          stdio: ['ignore', 'pipe', 'pipe'],
-        }),
+        'iOS Device Build',
+        true,
+        undefined,
       );
     });
   });
