@@ -1,12 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
-import screenshotPlugin from './screenshot.ts';
-
-// Mock only child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
+import screenshotPlugin from '../ui-testing/screenshot.ts';
 
 // Mock file system operations
 vi.mock('fs/promises', () => ({
@@ -27,29 +21,15 @@ vi.mock('uuid', () => ({
   v4: vi.fn(() => 'mock-uuid-123'),
 }));
 
-// Mock child process class
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 describe('screenshot plugin', () => {
-  let mockSpawn: Record<string, unknown>;
-  let mockProcess: MockChildProcess;
   let mockReadFile: Record<string, unknown>;
   let mockUnlink: Record<string, unknown>;
 
   beforeEach(async () => {
-    const { spawn } = await import('child_process');
     const fs = await import('fs/promises');
 
-    mockSpawn = vi.mocked(spawn);
     mockReadFile = vi.mocked(fs.readFile);
     mockUnlink = vi.mocked(fs.unlink);
-
-    mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
 
     vi.clearAllMocks();
   });
@@ -90,25 +70,29 @@ describe('screenshot plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should capture screenshot successfully', async () => {
-      // Set up successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', '');
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
       const mockImageBuffer = Buffer.from('fake-image-data');
       mockReadFile.mockResolvedValue(mockImageBuffer);
       mockUnlink.mockResolvedValue(undefined);
 
-      const result = await screenshotPlugin.handler({
-        simulatorUuid: 'test-uuid',
-      });
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+        },
+        mockExecutor,
+      );
 
       // Verify command was called correctly (direct execution, not shell)
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'xcrun',
-        ['simctl', 'io', 'test-uuid', 'screenshot', '/tmp/screenshot_mock-uuid-123.png'],
-        expect.any(Object),
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['xcrun', 'simctl', 'io', 'test-uuid', 'screenshot', '/tmp/screenshot_mock-uuid-123.png'],
+        '[Screenshot]: screenshot',
+        false,
       );
 
       expect(result).toEqual({
@@ -137,15 +121,19 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle command failure', async () => {
-      // Set up command failure
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Command failed');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await screenshotPlugin.handler({
-        simulatorUuid: 'test-uuid',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'Command failed',
+        process: { pid: 12345 },
       });
+
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -159,17 +147,21 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle file read failure', async () => {
-      // Set up successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', '');
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
       mockReadFile.mockRejectedValue(new Error('File not found'));
 
-      const result = await screenshotPlugin.handler({
-        simulatorUuid: 'test-uuid',
-      });
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -183,24 +175,28 @@ describe('screenshot plugin', () => {
     });
 
     it('should call correct command', async () => {
-      // Set up successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', '');
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
       const mockImageBuffer = Buffer.from('fake-image-data');
       mockReadFile.mockResolvedValue(mockImageBuffer);
       mockUnlink.mockResolvedValue(undefined);
 
-      await screenshotPlugin.handler({
-        simulatorUuid: 'test-uuid',
-      });
+      await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+        },
+        mockExecutor,
+      );
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'xcrun',
-        ['simctl', 'io', 'test-uuid', 'screenshot', '/tmp/screenshot_mock-uuid-123.png'],
-        expect.any(Object),
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['xcrun', 'simctl', 'io', 'test-uuid', 'screenshot', '/tmp/screenshot_mock-uuid-123.png'],
+        '[Screenshot]: screenshot',
+        false,
       );
     });
   });

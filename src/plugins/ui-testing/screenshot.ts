@@ -10,7 +10,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 
 const LOG_PREFIX = '[Screenshot]';
 
@@ -21,7 +21,7 @@ export default {
   schema: {
     simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
@@ -40,7 +40,9 @@ export default {
 
     try {
       // Execute the screenshot command
-      const result = await executeCommand(commandArgs, `${LOG_PREFIX}: screenshot`, false);
+      const result = executor
+        ? await executor(commandArgs, `${LOG_PREFIX}: screenshot`, false)
+        : await executeCommand(commandArgs, `${LOG_PREFIX}: screenshot`, false);
 
       if (!result.success) {
         throw new SystemError(`Failed to capture screenshot: ${result.error || result.output}`);

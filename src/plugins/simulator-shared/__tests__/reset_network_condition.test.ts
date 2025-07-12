@@ -1,30 +1,16 @@
+/**
+ * Tests for reset_network_condition plugin
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
+
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import resetNetworkConditionPlugin from '../reset_network_condition.ts';
 
-// Mock only child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-// Mock child process class
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 describe('reset_network_condition plugin', () => {
-  let mockSpawn: Record<string, unknown>;
-  let mockProcess: MockChildProcess;
-
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
-    mockSpawn = vi.mocked(spawn);
-    mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
@@ -63,22 +49,40 @@ describe('reset_network_condition plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should successfully reset network condition', async () => {
-      // Set up successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Network condition reset successfully');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await resetNetworkConditionPlugin.handler({
-        simulatorUuid: 'test-uuid-123',
+    it('should verify command generation with mock executor', async () => {
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Network condition reset successfully',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      // Verify command was called correctly
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'xcrun simctl status_bar test-uuid-123 clear'],
-        expect.any(Object),
+      await resetNetworkConditionPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['xcrun', 'simctl', 'status_bar', 'test-uuid-123', 'clear'],
+        'Reset Network Condition',
+        true,
+        undefined,
+      );
+    });
+
+    it('should successfully reset network condition', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Network condition reset successfully',
+      });
+
+      const result = await resetNetworkConditionPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+        },
+        mockExecutor,
       );
 
       expect(result).toEqual({
@@ -92,15 +96,17 @@ describe('reset_network_condition plugin', () => {
     });
 
     it('should handle command failure', async () => {
-      // Set up command failure
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Command failed');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await resetNetworkConditionPlugin.handler({
-        simulatorUuid: 'test-uuid-123',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Command failed',
       });
+
+      const result = await resetNetworkConditionPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -113,7 +119,15 @@ describe('reset_network_condition plugin', () => {
     });
 
     it('should handle missing simulatorUuid', async () => {
-      const result = await resetNetworkConditionPlugin.handler({ simulatorUuid: undefined });
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+      });
+
+      const result = await resetNetworkConditionPlugin.handler(
+        { simulatorUuid: undefined },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -127,14 +141,14 @@ describe('reset_network_condition plugin', () => {
     });
 
     it('should handle exception during execution', async () => {
-      // Set up spawn error
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('Network error'));
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const result = await resetNetworkConditionPlugin.handler({
-        simulatorUuid: 'test-uuid-123',
-      });
+      const result = await resetNetworkConditionPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -147,20 +161,25 @@ describe('reset_network_condition plugin', () => {
     });
 
     it('should call correct command', async () => {
-      // Set up successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Network condition reset successfully');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      await resetNetworkConditionPlugin.handler({
-        simulatorUuid: 'test-uuid-123',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Network condition reset successfully',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'xcrun simctl status_bar test-uuid-123 clear'],
-        expect.any(Object),
+      await resetNetworkConditionPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['xcrun', 'simctl', 'status_bar', 'test-uuid-123', 'clear'],
+        'Reset Network Condition',
+        true,
+        undefined,
       );
     });
   });

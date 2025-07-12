@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
+import { CommandExecutor } from '../../utils/command.js';
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -24,7 +25,10 @@ const XcodePlatform = {
 /**
  * Internal logic for building macOS apps.
  */
-async function _handleMacOSBuildLogic(params: Record<string, unknown>): Promise<ToolResponse> {
+async function _handleMacOSBuildLogic(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
@@ -38,6 +42,7 @@ async function _handleMacOSBuildLogic(params: Record<string, unknown>): Promise<
     },
     params.preferXcodebuild,
     'build',
+    executor,
   );
 }
 
@@ -62,12 +67,15 @@ export default {
       .optional()
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
-    return _handleMacOSBuildLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      preferXcodebuild: params.preferXcodebuild ?? false,
-    });
+    return _handleMacOSBuildLogic(
+      {
+        ...params,
+        configuration: params.configuration ?? 'Debug',
+        preferXcodebuild: params.preferXcodebuild ?? false,
+      },
+      executor,
+    );
   },
 };
