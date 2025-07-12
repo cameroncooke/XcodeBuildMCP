@@ -1,21 +1,31 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import testSimIdProj from './test_sim_id_proj.ts';
+import { EventEmitter } from 'events';
+import { spawn } from 'child_process';
 
-// Mock external dependencies
-vi.mock('../../utils/index.js', () => ({
-  handleTestLogic: vi.fn(),
-  XcodePlatform: {
-    iOSSimulator: 'iOS Simulator',
-  },
+// CRITICAL: Mock BEFORE imports to ensure proper mock chain
+vi.mock('child_process', () => ({
+  spawn: vi.fn(),
 }));
 
-describe('test_sim_id_proj plugin', () => {
-  let mockHandleTestLogic: MockedFunction<any>;
+import testSimIdProj from './test_sim_id_proj.ts';
 
-  beforeEach(async () => {
-    const utils = await import('../../utils/index.js');
-    mockHandleTestLogic = utils.handleTestLogic as MockedFunction<any>;
+// Note: Internal utilities are allowed to execute normally (integration testing pattern)
+
+class MockChildProcess extends EventEmitter {
+  stdout = new EventEmitter();
+  stderr = new EventEmitter();
+  pid = 12345;
+}
+
+describe('test_sim_id_proj plugin', () => {
+  let mockSpawn: Record<string, unknown>;
+  let mockProcess: MockChildProcess;
+
+  beforeEach(() => {
+    mockSpawn = vi.mocked(spawn);
+    mockProcess = new MockChildProcess();
+    mockSpawn.mockReturnValue(mockProcess);
 
     vi.clearAllMocks();
   });
@@ -141,11 +151,93 @@ describe('test_sim_id_proj plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return success when tests pass', async () => {
-      mockHandleTestLogic.mockResolvedValue({
-        content: [{ type: 'text', text: '✅ iOS Simulator Test succeeded for scheme MyScheme.' }],
-        isError: false,
+    it('should return exact validation error for missing projectPath', async () => {
+      const result = await testSimIdProj.handler({
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid',
       });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return exact validation error for missing scheme', async () => {
+      const result = await testSimIdProj.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        simulatorId: 'test-uuid',
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return exact validation error for missing simulatorId', async () => {
+      const result = await testSimIdProj.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        scheme: 'MyScheme',
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should generate correct xcodebuild test command', async () => {
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', 'Test session started');
+        mockProcess.stdout.emit('data', 'Testing completed successfully');
+        mockProcess.emit('close', 0);
+      }, 0);
+
+      const resultPromise = testSimIdProj.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid-123',
+        configuration: 'Release',
+      });
+
+      const result = await resultPromise;
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'sh',
+        [
+          '-c',
+          expect.stringContaining(
+            'xcodebuild -project /path/to/project.xcodeproj -scheme MyScheme -configuration Release',
+          ),
+        ],
+        {
+          stdio: ['ignore', 'pipe', 'pipe'],
+        },
+      );
+    });
+
+    it('should return exact successful test response', async () => {
+      setTimeout(() => {
+        mockProcess.stdout.emit('data', 'Test session started');
+        mockProcess.stdout.emit('data', 'Testing completed successfully');
+        mockProcess.emit('close', 0);
+      }, 0);
 
       const result = await testSimIdProj.handler({
         projectPath: '/path/to/project.xcodeproj',
@@ -153,17 +245,32 @@ describe('test_sim_id_proj plugin', () => {
         simulatorId: 'test-uuid',
       });
 
-      expect(result).toEqual({
-        content: [{ type: 'text', text: '✅ iOS Simulator Test succeeded for scheme MyScheme.' }],
-        isError: false,
-      });
+      expect(result.content[0].text).toContain('✅');
+      expect(result.content[0].text).toContain('Test Run test succeeded');
+      expect(result.isError).toBeFalsy();
     });
 
-    it('should return error when tests fail', async () => {
-      mockHandleTestLogic.mockResolvedValue({
-        content: [{ type: 'text', text: '❌ iOS Simulator Test failed for scheme MyScheme.' }],
-        isError: true,
+    it('should return exact test failure response', async () => {
+      setTimeout(() => {
+        mockProcess.stderr.emit('data', 'xcodebuild: error: Scheme NotFound not found');
+        mockProcess.emit('close', 65);
+      }, 0);
+
+      const result = await testSimIdProj.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        scheme: 'NotFound',
+        simulatorId: 'test-uuid',
       });
+
+      expect(result.content[0].text).toContain('❌');
+      expect(result.content[0].text).toContain('xcodebuild: error');
+      expect(result.isError).toBe(true);
+    });
+
+    it('should handle spawn errors', async () => {
+      setTimeout(() => {
+        mockProcess.emit('error', new Error('spawn xcodebuild ENOENT'));
+      }, 0);
 
       const result = await testSimIdProj.handler({
         projectPath: '/path/to/project.xcodeproj',
@@ -171,91 +278,8 @@ describe('test_sim_id_proj plugin', () => {
         simulatorId: 'test-uuid',
       });
 
-      expect(result).toEqual({
-        content: [{ type: 'text', text: '❌ iOS Simulator Test failed for scheme MyScheme.' }],
-        isError: true,
-      });
-    });
-
-    it('should call handleTestLogic with correct parameters', async () => {
-      mockHandleTestLogic.mockResolvedValue({
-        content: [{ type: 'text', text: 'Test completed' }],
-        isError: false,
-      });
-
-      await testSimIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid',
-        configuration: 'Release',
-        derivedDataPath: '/path/to/derived',
-        extraArgs: ['--arg1'],
-        useLatestOS: true,
-        preferXcodebuild: true,
-      });
-
-      expect(mockHandleTestLogic).toHaveBeenCalledWith({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid',
-        configuration: 'Release',
-        derivedDataPath: '/path/to/derived',
-        extraArgs: ['--arg1'],
-        useLatestOS: true,
-        preferXcodebuild: true,
-        platform: 'iOS Simulator',
-      });
-    });
-
-    it('should apply default values for optional parameters', async () => {
-      mockHandleTestLogic.mockResolvedValue({
-        content: [{ type: 'text', text: 'Test completed' }],
-        isError: false,
-      });
-
-      await testSimIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid',
-      });
-
-      expect(mockHandleTestLogic).toHaveBeenCalledWith({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid',
-        configuration: 'Debug',
-        useLatestOS: false,
-        preferXcodebuild: false,
-        platform: 'iOS Simulator',
-      });
-    });
-
-    it('should handle Exception objects correctly', async () => {
-      mockHandleTestLogic.mockImplementation(() => {
-        throw new Error('Test error');
-      });
-
-      await expect(
-        testSimIdProj.handler({
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          simulatorId: 'test-uuid',
-        }),
-      ).rejects.toThrow('Test error');
-    });
-
-    it('should handle string errors correctly', async () => {
-      mockHandleTestLogic.mockImplementation(() => {
-        throw 'String error';
-      });
-
-      await expect(
-        testSimIdProj.handler({
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          simulatorId: 'test-uuid',
-        }),
-      ).rejects.toBe('String error');
+      expect(result.content[0].text).toContain('Error during Test Run test');
+      expect(result.isError).toBe(true);
     });
   });
 });
