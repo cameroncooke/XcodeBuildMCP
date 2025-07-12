@@ -3,63 +3,31 @@
  */
 
 import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
+import { EventEmitter } from 'events';
+
+// Mock only child_process.spawn at the lowest level
+vi.mock('child_process', () => ({
+  spawn: vi.fn(),
+}));
+
+import { spawn } from 'child_process';
+
+class MockChildProcess extends EventEmitter {
+  stdout = new EventEmitter();
+  stderr = new EventEmitter();
+  pid = 12345;
+}
+
 import { z } from 'zod';
 import typeTextPlugin from '../type_text.ts';
 
 // Mock all utilities from the index module
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  createTextResponse: vi.fn(),
-  createErrorResponse: vi.fn(),
-  executeCommand: vi.fn(),
-  createAxeNotAvailableResponse: vi.fn(),
-  getAxePath: vi.fn(),
-  getBundledAxeEnvironment: vi.fn(),
-  DependencyError: class DependencyError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = 'DependencyError';
-    }
-  },
-  AxeError: class AxeError extends Error {
-    constructor(
-      message: string,
-      public commandName: string,
-      public axeOutput: string,
-      public simulatorUuid: string,
-    ) {
-      super(message);
-      this.name = 'AxeError';
-    }
-  },
-  SystemError: class SystemError extends Error {
-    constructor(
-      message: string,
-      public originalError?: Error,
-    ) {
-      super(message);
-      this.name = 'SystemError';
-    }
-  },
-}));
-
 // Import mocked functions
-import {
-  validateRequiredParam,
-  createTextResponse,
-  createErrorResponse,
-  executeCommand,
-  createAxeNotAvailableResponse,
-  getAxePath,
-  getBundledAxeEnvironment,
-  DependencyError,
-  AxeError,
-  SystemError,
-} from '../../../utils/index.js';
-
 describe('Type Text Plugin', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
+    mockProcess = new MockChildProcess();
+    vi.mocked(spawn).mockReturnValue(mockProcess as any);
     vi.clearAllMocks();
   });
 
@@ -120,13 +88,7 @@ describe('Type Text Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
-          isError: true,
-        },
-      });
+      // TODO: Remove mocked utility - test integration flow instead
 
       const result = await typeTextPlugin.handler({
         text: 'Hello World',
@@ -139,15 +101,7 @@ describe('Type Text Plugin', () => {
     });
 
     it('should return error for missing text', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
-        .mockReturnValueOnce({ isValid: true })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [{ type: 'text', text: 'Missing required parameter: text' }],
-            isError: true,
-          },
-        });
+      // TODO: Remove mocked utility - test integration flow instead
 
       const result = await typeTextPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -160,18 +114,12 @@ describe('Type Text Plugin', () => {
     });
 
     it('should return success for valid text typing', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
+      // TODO: Remove mocked utility - test integration flow instead
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/path/to/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         { AXE_PATH: '/path/to/axe' },
       );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
-        success: true,
-        output: 'Text typed successfully',
-        error: '',
-      });
+      // TODO: Remove mocked utility - test integration flow instead
       (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'Text typing simulated successfully.' }],
       });
@@ -187,9 +135,7 @@ describe('Type Text Plugin', () => {
     });
 
     it('should handle DependencyError when axe binary not found', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
+      // TODO: Remove mocked utility - test integration flow instead
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue(null);
       (
         createAxeNotAvailableResponse as MockedFunction<typeof createAxeNotAvailableResponse>
@@ -220,18 +166,12 @@ describe('Type Text Plugin', () => {
     });
 
     it('should handle AxeError from command execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
+      // TODO: Remove mocked utility - test integration flow instead
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/path/to/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         { AXE_PATH: '/path/to/axe' },
       );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
-        success: false,
-        output: '',
-        error: 'Text field not found',
-      });
+      // TODO: Remove mocked utility - test integration flow instead
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [
           { type: 'text', text: "Failed to simulate text typing: axe command 'type' failed." },
@@ -253,16 +193,12 @@ describe('Type Text Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
+      // TODO: Remove mocked utility - test integration flow instead
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/path/to/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         { AXE_PATH: '/path/to/axe' },
       );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new SystemError('System error occurred'),
-      );
+      // TODO: Remove mocked utility - test integration flow instead
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
         isError: true,
@@ -280,16 +216,12 @@ describe('Type Text Plugin', () => {
     });
 
     it('should handle unexpected Error objects', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
+      // TODO: Remove mocked utility - test integration flow instead
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/path/to/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         { AXE_PATH: '/path/to/axe' },
       );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new Error('Unexpected error'),
-      );
+      // TODO: Remove mocked utility - test integration flow instead
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
         isError: true,
@@ -307,14 +239,12 @@ describe('Type Text Plugin', () => {
     });
 
     it('should handle unexpected string errors', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
+      // TODO: Remove mocked utility - test integration flow instead
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/path/to/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         { AXE_PATH: '/path/to/axe' },
       );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue('String error');
+      // TODO: Remove mocked utility - test integration flow instead
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
         isError: true,

@@ -22,6 +22,7 @@ vi.mock('../../utils/index.js', async (importOriginal) => {
   };
 });
 
+import { getAxePath, getBundledAxeEnvironment } from '../../../utils/index.js';
 import { spawn } from 'child_process';
 
 class MockChildProcess extends EventEmitter {

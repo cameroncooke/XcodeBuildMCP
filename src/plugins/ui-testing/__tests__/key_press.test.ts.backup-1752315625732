@@ -1,65 +1,89 @@
 /**
- * Tests for gesture tool plugin
+ * Tests for key_press tool plugin
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
-import gesturePlugin from '../gesture.ts';
+import keyPressPlugin from '../key_press.ts';
 
-// Mock child_process at the lowest system level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
+// Mock all utilities from the index module
+vi.mock('../../utils/index.js', () => ({
+  log: vi.fn(),
+  validateRequiredParam: vi.fn(),
+  createErrorResponse: vi.fn(),
+  executeCommand: vi.fn(),
+  createAxeNotAvailableResponse: vi.fn(),
+  getAxePath: vi.fn(),
+  getBundledAxeEnvironment: vi.fn(),
+  DependencyError: class DependencyError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = 'DependencyError';
+    }
+  },
+  AxeError: class AxeError extends Error {
+    constructor(
+      message: string,
+      public commandName: string,
+      public axeOutput: string,
+      public simulatorUuid: string,
+    ) {
+      super(message);
+      this.name = 'AxeError';
+    }
+  },
+  SystemError: class SystemError extends Error {
+    constructor(
+      message: string,
+      public originalError?: Error,
+    ) {
+      super(message);
+      this.name = 'SystemError';
+    }
+  },
 }));
 
-// Mock only the path resolution utilities, not validation/response utilities
-vi.mock('../../utils/index.js', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    getAxePath: vi.fn(),
-    getBundledAxeEnvironment: vi.fn(),
-  };
-});
+// Import mocked functions
+import {
+  validateRequiredParam,
+  createErrorResponse,
+  executeCommand,
+  createAxeNotAvailableResponse,
+  getAxePath,
+  getBundledAxeEnvironment,
+  DependencyError,
+  AxeError,
+  SystemError,
+} from '../../../utils/index.js';
 
-import { spawn } from 'child_process';
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
-const mockSpawn = vi.mocked(spawn);
-
-describe('Gesture Plugin', () => {
+describe('Key Press Plugin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(gesturePlugin.name).toBe('gesture');
+      expect(keyPressPlugin.name).toBe('key_press');
     });
 
     it('should have correct description', () => {
-      expect(gesturePlugin.description).toBe(
-        'Perform gesture on iOS simulator using preset gestures: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge',
+      expect(keyPressPlugin.description).toBe(
+        'Press a single key by keycode on the simulator. Common keycodes: 40=Return, 42=Backspace, 43=Tab, 44=Space, 58-67=F1-F10.',
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof gesturePlugin.handler).toBe('function');
+      expect(typeof keyPressPlugin.handler).toBe('function');
     });
 
     it('should validate schema fields with safeParse', () => {
-      const schema = z.object(gesturePlugin.schema);
+      const schema = z.object(keyPressPlugin.schema);
 
       // Valid case
       expect(
         schema.safeParse({
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          preset: 'scroll-up',
+          keyCode: 40,
         }).success,
       ).toBe(true);
 
@@ -67,45 +91,48 @@ describe('Gesture Plugin', () => {
       expect(
         schema.safeParse({
           simulatorUuid: 'invalid-uuid',
-          preset: 'scroll-up',
+          keyCode: 40,
         }).success,
       ).toBe(false);
 
-      // Invalid preset
+      // Invalid keyCode (string)
       expect(
         schema.safeParse({
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          preset: 'invalid-preset',
+          keyCode: 'invalid',
         }).success,
       ).toBe(false);
 
-      // Valid optional parameters
+      // Invalid keyCode (below range)
       expect(
         schema.safeParse({
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          preset: 'scroll-up',
-          screenWidth: 375,
-          screenHeight: 667,
+          keyCode: -1,
+        }).success,
+      ).toBe(false);
+
+      // Invalid keyCode (above range)
+      expect(
+        schema.safeParse({
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 256,
+        }).success,
+      ).toBe(false);
+
+      // Valid with duration
+      expect(
+        schema.safeParse({
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 40,
           duration: 1.5,
-          delta: 100,
-          preDelay: 0.5,
-          postDelay: 0.2,
         }).success,
       ).toBe(true);
 
-      // Invalid optional parameters
+      // Invalid duration (negative)
       expect(
         schema.safeParse({
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          preset: 'scroll-up',
-          screenWidth: 0,
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          preset: 'scroll-up',
+          keyCode: 40,
           duration: -1,
         }).success,
       ).toBe(false);
@@ -114,9 +141,15 @@ describe('Gesture Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValueOnce({
+        isValid: false,
+        errorResponse: {
+          content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
+          isError: true,
+        },
+      });
 
-      const result = await gesturePlugin.handler({ preset: 'scroll-up' });
+      const result = await keyPressPlugin.handler({ keyCode: 40 });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
@@ -124,73 +157,80 @@ describe('Gesture Plugin', () => {
       });
     });
 
-    it('should return error for missing preset', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+    it('should return error for missing keyCode', async () => {
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
+        .mockReturnValueOnce({ isValid: true })
+        .mockReturnValueOnce({
+          isValid: false,
+          errorResponse: {
+            content: [{ type: 'text', text: 'Missing required parameter: keyCode' }],
+            isError: true,
+          },
+        });
 
-      const result = await gesturePlugin.handler({
+      const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
       });
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Missing required parameter: preset' }],
+        content: [{ type: 'text', text: 'Missing required parameter: keyCode' }],
         isError: true,
       });
     });
 
-    it('should return success for valid gesture execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+    it('should return success for valid key press execution', async () => {
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
-      (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
-        content: [{ type: 'text', text: "Gesture 'scroll-up' executed successfully." }],
-        isError: false,
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: true,
+        output: 'key press completed',
+        error: '',
       });
 
-      const result = await gesturePlugin.handler({
+      const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        preset: 'scroll-up',
+        keyCode: 40,
       });
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: "Gesture 'scroll-up' executed successfully." }],
-        isError: false,
+        content: [{ type: 'text', text: 'Key press (code: 40) simulated successfully.' }],
       });
     });
 
-    it('should return success for gesture execution with all optional parameters', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+    it('should return success for key press with duration', async () => {
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
-      (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
-        content: [{ type: 'text', text: "Gesture 'swipe-from-left-edge' executed successfully." }],
-        isError: false,
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: true,
+        output: 'key press completed',
+        error: '',
       });
 
-      const result = await gesturePlugin.handler({
+      const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        preset: 'swipe-from-left-edge',
-        screenWidth: 375,
-        screenHeight: 667,
-        duration: 1.0,
-        delta: 50,
-        preDelay: 0.1,
-        postDelay: 0.2,
+        keyCode: 42,
+        duration: 1.5,
       });
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: "Gesture 'swipe-from-left-edge' executed successfully." }],
-        isError: false,
+        content: [{ type: 'text', text: 'Key press (code: 42) simulated successfully.' }],
       });
     });
 
     it('should handle DependencyError when axe is not available', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue(null);
       (
         createAxeNotAvailableResponse as MockedFunction<typeof createAxeNotAvailableResponse>
@@ -199,9 +239,9 @@ describe('Gesture Plugin', () => {
         isError: true,
       });
 
-      const result = await gesturePlugin.handler({
+      const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        preset: 'scroll-up',
+        keyCode: 40,
       });
 
       expect(result).toEqual({
@@ -211,32 +251,38 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle AxeError from failed command execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'axe command failed',
+      });
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [
           {
             type: 'text',
-            text: "Failed to execute gesture 'scroll-up': axe command 'gesture' failed.",
+            text: "Failed to simulate key press (code: 40): axe command 'key' failed.",
           },
         ],
         isError: true,
       });
 
-      const result = await gesturePlugin.handler({
+      const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        preset: 'scroll-up',
+        keyCode: 40,
       });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Failed to execute gesture 'scroll-up': axe command 'gesture' failed.",
+            text: "Failed to simulate key press (code: 40): axe command 'key' failed.",
           },
         ],
         isError: true,
@@ -244,20 +290,24 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
+        new SystemError('System error occurred'),
+      );
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
         isError: true,
       });
 
-      const result = await gesturePlugin.handler({
+      const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        preset: 'scroll-up',
+        keyCode: 40,
       });
 
       expect(result).toEqual({
@@ -267,20 +317,24 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle unexpected Error objects', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
+        new Error('Unexpected error'),
+      );
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
         isError: true,
       });
 
-      const result = await gesturePlugin.handler({
+      const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        preset: 'scroll-up',
+        keyCode: 40,
       });
 
       expect(result).toEqual({
@@ -290,20 +344,22 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle unexpected string errors', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue('String error');
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
         isError: true,
       });
 
-      const result = await gesturePlugin.handler({
+      const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        preset: 'scroll-up',
+        keyCode: 40,
       });
 
       expect(result).toEqual({

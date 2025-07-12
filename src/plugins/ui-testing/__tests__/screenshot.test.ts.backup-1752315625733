@@ -3,25 +3,26 @@
  */
 
 import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
-import { EventEmitter } from 'events';
-
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-import { spawn } from 'child_process';
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 import { z } from 'zod';
 import screenshotPlugin from '../screenshot.ts';
 
 // Mock all utilities from the index module
+vi.mock('../../utils/index.js', () => ({
+  log: vi.fn(),
+  validateRequiredParam: vi.fn(),
+  createErrorResponse: vi.fn(),
+  executeCommand: vi.fn(),
+  SystemError: class SystemError extends Error {
+    constructor(
+      message: string,
+      public originalError?: Error,
+    ) {
+      super(message);
+      this.name = 'SystemError';
+    }
+  },
+}));
+
 // Mock fs/promises
 vi.mock('fs/promises', () => ({
   readFile: vi.fn(),
@@ -29,13 +30,16 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Import mocked functions
+import {
+  validateRequiredParam,
+  createErrorResponse,
+  executeCommand,
+  SystemError,
+} from '../../../utils/index.js';
 import { readFile, unlink } from 'fs/promises';
 
 describe('Screenshot Plugin', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockProcess = new MockChildProcess();
-    vi.mocked(spawn).mockReturnValue(mockProcess as any);
     vi.clearAllMocks();
   });
 
@@ -78,7 +82,13 @@ describe('Screenshot Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValueOnce({
+        isValid: false,
+        errorResponse: {
+          content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
+          isError: true,
+        },
+      });
 
       const result = await screenshotPlugin.handler({});
 
@@ -92,8 +102,14 @@ describe('Screenshot Plugin', () => {
       const mockImageBuffer = Buffer.from('fake-image-data', 'utf8');
       const expectedBase64 = mockImageBuffer.toString('base64');
 
-      // TODO: Remove mocked utility - test integration flow instead
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: true,
+        output: 'Screenshot saved',
+        error: '',
+      });
       (readFile as MockedFunction<typeof readFile>).mockResolvedValue(mockImageBuffer);
       (unlink as MockedFunction<typeof unlink>).mockResolvedValue(undefined);
 
@@ -113,8 +129,14 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should handle command execution failure', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'Simulator not found',
+      });
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [
           {
@@ -141,8 +163,14 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should handle file reading errors', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: true,
+        output: 'Screenshot saved',
+        error: '',
+      });
       (readFile as MockedFunction<typeof readFile>).mockRejectedValue(new Error('File not found'));
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [
@@ -173,8 +201,14 @@ describe('Screenshot Plugin', () => {
       const mockImageBuffer = Buffer.from('fake-image-data', 'utf8');
       const expectedBase64 = mockImageBuffer.toString('base64');
 
-      // TODO: Remove mocked utility - test integration flow instead
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: true,
+        output: 'Screenshot saved',
+        error: '',
+      });
       (readFile as MockedFunction<typeof readFile>).mockResolvedValue(mockImageBuffer);
       (unlink as MockedFunction<typeof unlink>).mockRejectedValue(new Error('Permission denied'));
 
@@ -195,8 +229,12 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
+        new SystemError('System error occurred'),
+      );
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [
           { type: 'text', text: 'System error executing screenshot: System error occurred' },
@@ -217,8 +255,12 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should handle unexpected Error objects', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
+        new Error('Unexpected error'),
+      );
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
         isError: true,
@@ -235,8 +277,10 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should handle unexpected string errors', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue('String error');
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
         isError: true,

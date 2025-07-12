@@ -1,71 +1,93 @@
 /**
- * Tests for touch tool plugin
+ * Tests for long_press tool plugin
  */
 
 import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
-import { EventEmitter } from 'events';
-
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-import { spawn } from 'child_process';
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 import { z } from 'zod';
-import touchPlugin from '../touch.ts';
+import longPressPlugin from '../long_press.ts';
 
 // Mock all utilities from the index module
+vi.mock('../../utils/index.js', () => ({
+  log: vi.fn(),
+  validateRequiredParam: vi.fn(),
+  createTextResponse: vi.fn(),
+  createErrorResponse: vi.fn(),
+  executeCommand: vi.fn(),
+  createAxeNotAvailableResponse: vi.fn(),
+  getAxePath: vi.fn(),
+  getBundledAxeEnvironment: vi.fn(),
+  DependencyError: class DependencyError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = 'DependencyError';
+    }
+  },
+  AxeError: class AxeError extends Error {
+    constructor(
+      message: string,
+      public commandName: string,
+      public axeOutput: string,
+      public simulatorUuid: string,
+    ) {
+      super(message);
+      this.name = 'AxeError';
+    }
+  },
+  SystemError: class SystemError extends Error {
+    constructor(
+      message: string,
+      public originalError?: Error,
+    ) {
+      super(message);
+      this.name = 'SystemError';
+    }
+  },
+}));
+
 // Import mocked functions
-describe('Touch Plugin', () => {
+import {
+  validateRequiredParam,
+  createTextResponse,
+  createErrorResponse,
+  executeCommand,
+  createAxeNotAvailableResponse,
+  getAxePath,
+  getBundledAxeEnvironment,
+  DependencyError,
+  AxeError,
+  SystemError,
+} from '../../../utils/index.js';
+
+describe('Long Press Plugin', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockProcess = new MockChildProcess();
-    vi.mocked(spawn).mockReturnValue(mockProcess as any);
     vi.clearAllMocks();
   });
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(touchPlugin.name).toBe('touch');
+      expect(longPressPlugin.name).toBe('long_press');
     });
 
     it('should have correct description', () => {
-      expect(touchPlugin.description).toBe(
-        "Perform touch down/up events at specific coordinates. Use describe_ui for precise coordinates (don't guess from screenshots).",
+      expect(longPressPlugin.description).toBe(
+        "Long press at specific coordinates for given duration (ms). Use describe_ui for precise coordinates (don't guess from screenshots).",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof touchPlugin.handler).toBe('function');
+      expect(typeof longPressPlugin.handler).toBe('function');
     });
 
     it('should validate schema fields with safeParse', () => {
-      const schema = z.object(touchPlugin.schema);
+      const schema = z.object(longPressPlugin.schema);
 
-      // Valid case with down
+      // Valid case
       expect(
         schema.safeParse({
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
-          down: true,
-        }).success,
-      ).toBe(true);
-
-      // Valid case with up
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          x: 100,
-          y: 200,
-          up: true,
+          duration: 1500,
         }).success,
       ).toBe(true);
 
@@ -75,7 +97,7 @@ describe('Touch Plugin', () => {
           simulatorUuid: 'invalid-uuid',
           x: 100,
           y: 200,
-          down: true,
+          duration: 1500,
         }).success,
       ).toBe(false);
 
@@ -85,7 +107,7 @@ describe('Touch Plugin', () => {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100.5,
           y: 200,
-          down: true,
+          duration: 1500,
         }).success,
       ).toBe(false);
 
@@ -95,29 +117,27 @@ describe('Touch Plugin', () => {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200.5,
-          down: true,
+          duration: 1500,
         }).success,
       ).toBe(false);
 
-      // Valid with delay
+      // Invalid duration (not positive)
       expect(
         schema.safeParse({
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
-          down: true,
-          delay: 1.5,
+          duration: 0,
         }).success,
-      ).toBe(true);
+      ).toBe(false);
 
-      // Invalid delay (negative)
+      // Invalid duration (negative)
       expect(
         schema.safeParse({
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
-          down: true,
-          delay: -1,
+          duration: -100,
         }).success,
       ).toBe(false);
     });
@@ -125,9 +145,15 @@ describe('Touch Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValueOnce({
+        isValid: false,
+        errorResponse: {
+          content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
+          isError: true,
+        },
+      });
 
-      const result = await touchPlugin.handler({ x: 100, y: 200, down: true });
+      const result = await longPressPlugin.handler({ x: 100, y: 200, duration: 1500 });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
@@ -136,12 +162,20 @@ describe('Touch Plugin', () => {
     });
 
     it('should return error for missing x', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
+        .mockReturnValueOnce({ isValid: true })
+        .mockReturnValueOnce({
+          isValid: false,
+          errorResponse: {
+            content: [{ type: 'text', text: 'Missing required parameter: x' }],
+            isError: true,
+          },
+        });
 
-      const result = await touchPlugin.handler({
+      const result = await longPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
         y: 200,
-        down: true,
+        duration: 1500,
       });
 
       expect(result).toEqual({
@@ -151,12 +185,21 @@ describe('Touch Plugin', () => {
     });
 
     it('should return error for missing y', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
+        .mockReturnValueOnce({ isValid: true })
+        .mockReturnValueOnce({ isValid: true })
+        .mockReturnValueOnce({
+          isValid: false,
+          errorResponse: {
+            content: [{ type: 'text', text: 'Missing required parameter: y' }],
+            isError: true,
+          },
+        });
 
-      const result = await touchPlugin.handler({
+      const result = await longPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
         x: 100,
-        down: true,
+        duration: 1500,
       });
 
       expect(result).toEqual({
@@ -165,125 +208,66 @@ describe('Touch Plugin', () => {
       });
     });
 
-    it('should return error when neither down nor up is specified', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'At least one of "down" or "up" must be true' }],
+    it('should return error for missing duration', async () => {
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
+        .mockReturnValueOnce({ isValid: true })
+        .mockReturnValueOnce({ isValid: true })
+        .mockReturnValueOnce({ isValid: true })
+        .mockReturnValueOnce({
+          isValid: false,
+          errorResponse: {
+            content: [{ type: 'text', text: 'Missing required parameter: duration' }],
+            isError: true,
+          },
+        });
+
+      const result = await longPressPlugin.handler({
+        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        x: 100,
+        y: 200,
+      });
+
+      expect(result).toEqual({
+        content: [{ type: 'text', text: 'Missing required parameter: duration' }],
         isError: true,
       });
-
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-      });
-
-      expect(result).toEqual({
-        content: [{ type: 'text', text: 'At least one of "down" or "up" must be true' }],
-        isError: true,
-      });
     });
 
-    it('should return success for touch down event', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+    it('should return success for valid long press execution', async () => {
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: true,
+        output: 'long press completed',
+        error: '',
+      });
       (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
         content: [
           {
             type: 'text',
-            text: 'Touch event (touch down) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Long press at (100, 200) for 1500ms simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,
       });
 
-      const result = await touchPlugin.handler({
+      const result = await longPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 200,
-        down: true,
+        duration: 1500,
       });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Touch event (touch down) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
-          },
-        ],
-        isError: false,
-      });
-    });
-
-    it('should return success for touch up event', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      // TODO: Remove mocked utility - test integration flow instead
-      (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Touch event (touch up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
-          },
-        ],
-        isError: false,
-      });
-
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-        up: true,
-      });
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Touch event (touch up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
-          },
-        ],
-        isError: false,
-      });
-    });
-
-    it('should return success for touch down+up event', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      // TODO: Remove mocked utility - test integration flow instead
-      (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Touch event (touch down+up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
-          },
-        ],
-        isError: false,
-      });
-
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-        down: true,
-        up: true,
-      });
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Touch event (touch down+up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Long press at (100, 200) for 1500ms simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,
@@ -291,7 +275,9 @@ describe('Touch Plugin', () => {
     });
 
     it('should handle DependencyError when axe is not available', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue(null);
       (
         createAxeNotAvailableResponse as MockedFunction<typeof createAxeNotAvailableResponse>
@@ -300,11 +286,11 @@ describe('Touch Plugin', () => {
         isError: true,
       });
 
-      const result = await touchPlugin.handler({
+      const result = await longPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 200,
-        down: true,
+        duration: 1500,
       });
 
       expect(result).toEqual({
@@ -314,51 +300,67 @@ describe('Touch Plugin', () => {
     });
 
     it('should handle AxeError from failed command execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'axe command failed',
+      });
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [
-          { type: 'text', text: "Failed to execute touch event: axe command 'touch' failed." },
+          {
+            type: 'text',
+            text: "Failed to simulate long press at (100, 200): axe command 'touch' failed.",
+          },
         ],
         isError: true,
       });
 
-      const result = await touchPlugin.handler({
+      const result = await longPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 200,
-        down: true,
+        duration: 1500,
       });
 
       expect(result).toEqual({
         content: [
-          { type: 'text', text: "Failed to execute touch event: axe command 'touch' failed." },
+          {
+            type: 'text',
+            text: "Failed to simulate long press at (100, 200): axe command 'touch' failed.",
+          },
         ],
         isError: true,
       });
     });
 
     it('should handle SystemError from command execution', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
+        new SystemError('System error occurred'),
+      );
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
         isError: true,
       });
 
-      const result = await touchPlugin.handler({
+      const result = await longPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 200,
-        down: true,
+        duration: 1500,
       });
 
       expect(result).toEqual({
@@ -368,22 +370,26 @@ describe('Touch Plugin', () => {
     });
 
     it('should handle unexpected Error objects', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
+        new Error('Unexpected error'),
+      );
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
         isError: true,
       });
 
-      const result = await touchPlugin.handler({
+      const result = await longPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 200,
-        down: true,
+        duration: 1500,
       });
 
       expect(result).toEqual({
@@ -393,22 +399,24 @@ describe('Touch Plugin', () => {
     });
 
     it('should handle unexpected string errors', async () => {
-      // TODO: Remove mocked utility - test integration flow instead
+      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
+        isValid: true,
+      });
       (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
       (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
         {},
       );
-      // TODO: Remove mocked utility - test integration flow instead
+      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue('String error');
       (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
         content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
         isError: true,
       });
 
-      const result = await touchPlugin.handler({
+      const result = await longPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 200,
-        down: true,
+        duration: 1500,
       });
 
       expect(result).toEqual({
