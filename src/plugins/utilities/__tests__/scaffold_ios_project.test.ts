@@ -25,25 +25,12 @@ vi.mock('fs/promises', () => ({
   readdir: vi.fn(),
 }));
 
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  ValidationError: vi.fn().mockImplementation((message) => {
-    const error = new Error(message);
-    error.name = 'ValidationError';
-    return error;
-  }),
-  TemplateManager: {
-    getTemplatePath: vi.fn(),
-    cleanup: vi.fn(),
-  },
-}));
+// Note: Internal utilities are allowed to execute normally (integration testing pattern)
 
 // Import mocked functions
 import { existsSync } from 'fs';
 import { mkdir, cp, readFile, writeFile, readdir } from 'fs/promises';
 
-const mockLog = vi.mocked(log);
-const mockTemplateManager = vi.mocked(TemplateManager);
 const mockExistsSync = vi.mocked(existsSync);
 const mockMkdir = vi.mocked(mkdir);
 const mockCp = vi.mocked(cp);
@@ -55,9 +42,7 @@ describe('scaffold_ios_project plugin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Setup default mock implementations
-    mockTemplateManager.getTemplatePath.mockResolvedValue('/tmp/test-templates/ios');
-    mockTemplateManager.cleanup.mockResolvedValue();
+    // Setup default mock implementations for external dependencies only
     mockExistsSync.mockReturnValue(false);
     mockMkdir.mockResolvedValue(undefined);
     mockCp.mockResolvedValue();
