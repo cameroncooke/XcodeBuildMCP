@@ -4,10 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import plugin from '../stop_device_log_cap.ts';
 
-// Mock logging utilities
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-}));
+// Note: Logger is allowed to execute normally (integration testing pattern)
 
 // Mock file system
 vi.mock('fs', () => ({
