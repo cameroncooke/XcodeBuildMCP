@@ -1,20 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import discoverTools from '../discover_tools.ts';
 
-// Mock only external dependencies, not utility functions
-vi.mock('../../utils/index.js', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    loadWorkflowGroups: vi.fn(),
-    enableWorkflows: vi.fn(),
-  };
-});
-
-// Import the mocked functions
-import { loadWorkflowGroups, enableWorkflows } from '../../../utils/index.js';
-const mockLoadWorkflowGroups = vi.mocked(loadWorkflowGroups);
-const mockEnableWorkflows = vi.mocked(enableWorkflows);
+// Note: Internal utilities are allowed to execute normally (integration testing pattern)
 
 describe('discover_tools', () => {
   let mockServer: Record<string, unknown>;
@@ -38,10 +25,6 @@ describe('discover_tools', () => {
 
     // Reset all mocks
     vi.clearAllMocks();
-
-    // Set up mock return values
-    mockLoadWorkflowGroups.mockResolvedValue(new Map());
-    mockEnableWorkflows.mockResolvedValue();
   });
 
   afterEach(() => {

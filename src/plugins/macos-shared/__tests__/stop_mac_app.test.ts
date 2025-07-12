@@ -6,10 +6,7 @@
 import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
 import { z } from 'zod';
 
-// Mock external dependencies
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-}));
+// Note: Internal utilities are allowed to execute normally (integration testing pattern)
 
 vi.mock('util', () => ({
   promisify: vi.fn(() => vi.fn()),
