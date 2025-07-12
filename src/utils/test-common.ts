@@ -22,6 +22,7 @@ import { XcodePlatform } from './xcode.js';
 import { executeXcodeBuildCommand } from './build-utils.js';
 import { createTextResponse } from './validation.js';
 import { ToolResponse } from '../types/common.js';
+import { CommandExecutor } from './command.js';
 
 /**
  * Type definition for test summary structure from xcresulttool
@@ -142,20 +143,23 @@ function formatTestSummary(summary: TestSummary): string {
 /**
  * Internal logic for running tests with platform-specific handling
  */
-export async function handleTestLogic(params: {
-  workspacePath?: string;
-  projectPath?: string;
-  scheme: string;
-  configuration: string;
-  simulatorName?: string;
-  simulatorId?: string;
-  deviceId?: string;
-  useLatestOS?: boolean;
-  derivedDataPath?: string;
-  extraArgs?: string[];
-  preferXcodebuild?: boolean;
-  platform: XcodePlatform;
-}): Promise<ToolResponse> {
+export async function handleTestLogic(
+  params: {
+    workspacePath?: string;
+    projectPath?: string;
+    scheme: string;
+    configuration: string;
+    simulatorName?: string;
+    simulatorId?: string;
+    deviceId?: string;
+    useLatestOS?: boolean;
+    derivedDataPath?: string;
+    extraArgs?: string[];
+    preferXcodebuild?: boolean;
+    platform: XcodePlatform;
+  },
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   log(
     'info',
     `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
@@ -185,6 +189,7 @@ export async function handleTestLogic(params: {
       },
       params.preferXcodebuild,
       'test',
+      executor,
     );
 
     // Parse xcresult bundle if it exists, regardless of whether tests passed or failed

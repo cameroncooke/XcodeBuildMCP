@@ -1,16 +1,12 @@
 /**
  * Tests for stop_app_device plugin
  * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import stopAppDevice from '../stop_app_device.ts';
-
-// Mock child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
 
 describe('stop_app_device plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -41,57 +37,24 @@ describe('stop_app_device plugin', () => {
     });
   });
 
-  class MockChildProcess extends EventEmitter {
-    stdout = new EventEmitter();
-    stderr = new EventEmitter();
-    pid = 12345;
-  }
-
-  let mockSpawn: Record<string, unknown>;
-  let mockProcess: MockChildProcess;
-
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
-    mockSpawn = vi.mocked(spawn);
-    mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should generate correct devicectl terminate command', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'App terminated successfully');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const resultPromise = stopAppDevice.handler({
-        deviceId: 'test-device-123',
-        processId: 12345,
-      });
-
-      const result = await resultPromise;
-
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'xcrun devicectl device process terminate --device test-device-123 --pid 12345'],
-        expect.objectContaining({
-          stdio: ['ignore', 'pipe', 'pipe'],
-        }),
-      );
-    });
-
     it('should return exact successful stop response', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'App terminated successfully');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await stopAppDevice.handler({
-        deviceId: 'test-device-123',
-        processId: 12345,
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'App terminated successfully',
       });
+
+      const result = await stopAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          processId: 12345,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -104,15 +67,18 @@ describe('stop_app_device plugin', () => {
     });
 
     it('should return exact stop failure response', async () => {
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Terminate failed: Process not found');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await stopAppDevice.handler({
-        deviceId: 'test-device-123',
-        processId: 99999,
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Terminate failed: Process not found',
       });
+
+      const result = await stopAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          processId: 99999,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -126,14 +92,15 @@ describe('stop_app_device plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('Network error'));
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const result = await stopAppDevice.handler({
-        deviceId: 'test-device-123',
-        processId: 12345,
-      });
+      const result = await stopAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          processId: 12345,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -147,14 +114,15 @@ describe('stop_app_device plugin', () => {
     });
 
     it('should return exact string error handling response', async () => {
-      setTimeout(() => {
-        mockProcess.emit('error', 'String error');
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue('String error');
 
-      const result = await stopAppDevice.handler({
-        deviceId: 'test-device-123',
-        processId: 12345,
-      });
+      const result = await stopAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          processId: 12345,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -165,6 +133,40 @@ describe('stop_app_device plugin', () => {
         ],
         isError: true,
       });
+    });
+
+    it('should verify command generation with mock executor', async () => {
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'App terminated successfully',
+        error: undefined,
+        process: { pid: 12345 },
+      });
+
+      await stopAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          processId: 12345,
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        [
+          'xcrun',
+          'devicectl',
+          'device',
+          'process',
+          'terminate',
+          '--device',
+          'test-device-123',
+          '--pid',
+          '12345',
+        ],
+        'Stop app on device',
+        true,
+        undefined,
+      );
     });
   });
 });

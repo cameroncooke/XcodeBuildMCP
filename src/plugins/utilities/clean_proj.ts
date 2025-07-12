@@ -10,9 +10,13 @@ import { XcodePlatform } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
+import { CommandExecutor } from '../../utils/index.js';
 
 // Internal logic for cleaning build products.
-async function _handleCleanLogic(params: Record<string, unknown>): Promise<ToolResponse> {
+async function _handleCleanLogic(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   log('info', 'Starting xcodebuild clean request (internal)');
 
   // For clean operations, we need to provide a default platform and configuration
@@ -28,11 +32,15 @@ async function _handleCleanLogic(params: Record<string, unknown>): Promise<ToolR
     },
     false,
     'clean', // Specify 'clean' as the build action
+    executor,
   );
 }
 
 // Cleans build products for a project
-async function cleanProject(params: Record<string, unknown>): Promise<ToolResponse> {
+async function cleanProject(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   try {
     const validated = z
       .object({
@@ -58,7 +66,7 @@ async function cleanProject(params: Record<string, unknown>): Promise<ToolRespon
       return projectPathValidation.errorResponse;
     }
 
-    return _handleCleanLogic(validated);
+    return _handleCleanLogic(validated, executor);
   } catch (error) {
     if (error instanceof z.ZodError) {
       const firstError = error.errors[0];
@@ -96,8 +104,8 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
-    return cleanProject(params);
+    return cleanProject(params, executor);
   },
 };

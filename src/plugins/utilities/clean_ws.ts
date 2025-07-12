@@ -10,6 +10,7 @@ import { XcodePlatform } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
+import { CommandExecutor } from '../../utils/index.js';
 
 const CleanWorkspaceSchema = z.object({
   workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
@@ -25,7 +26,10 @@ const CleanWorkspaceSchema = z.object({
   extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
 });
 
-async function _handleCleanLogic(params: Record<string, unknown>): Promise<ToolResponse> {
+async function _handleCleanLogic(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   log('info', 'Starting xcodebuild clean request (internal)');
 
   // For clean operations, we need to provide a default platform and configuration
@@ -41,10 +45,14 @@ async function _handleCleanLogic(params: Record<string, unknown>): Promise<ToolR
     },
     false,
     'clean', // Specify 'clean' as the build action
+    executor,
   );
 }
 
-async function cleanWorkspace(params: Record<string, unknown>): Promise<ToolResponse> {
+async function cleanWorkspace(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   try {
     const validated = CleanWorkspaceSchema.parse(params);
 
@@ -53,7 +61,7 @@ async function cleanWorkspace(params: Record<string, unknown>): Promise<ToolResp
       return workspacePathValidation.errorResponse;
     }
 
-    return _handleCleanLogic(validated);
+    return _handleCleanLogic(validated, executor);
   } catch (error) {
     if (error instanceof z.ZodError) {
       const firstError = error.errors[0];
@@ -88,8 +96,8 @@ export default {
       .describe('Optional: Path where derived data might be located'),
     extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
-    return cleanWorkspace(params);
+    return cleanWorkspace(params, executor);
   },
 };

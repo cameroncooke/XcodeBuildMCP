@@ -1,17 +1,16 @@
 import { ToolResponse } from '../../types/common.js';
-import { log } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { log, executeCommand, CommandExecutor } from '../../utils/index.js';
 
 export default {
   name: 'open_sim',
   description: 'Opens the iOS Simulator app.',
   schema: {},
-  async handler(): Promise<ToolResponse> {
+  async handler(args?: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     log('info', 'Starting open simulator request');
 
     try {
       const command = ['open', '-a', 'Simulator'];
-      const result = await executeCommand(command, 'Open Simulator');
+      const result = await executeCommand(command, 'Open Simulator', true, undefined, executor);
 
       if (!result.success) {
         return {

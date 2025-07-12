@@ -10,29 +10,12 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import cleanWs from '../clean_ws.ts';
 
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
 describe('clean_ws plugin tests', () => {
-  // Mock child process for command execution
-  class MockChildProcess extends EventEmitter {
-    stdout = new EventEmitter();
-    stderr = new EventEmitter();
-    pid = 12345;
-  }
-
-  let mockSpawn: Record<string, unknown>;
-
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    // Get the mocked spawn function
-    const { spawn } = await import('child_process');
-    mockSpawn = vi.mocked(spawn);
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -97,19 +80,20 @@ describe('clean_ws plugin tests', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return success response for valid clean workspace request', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Clean succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await cleanWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Clean succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
+
+      const result = await cleanWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -120,33 +104,44 @@ describe('clean_ws plugin tests', () => {
         ],
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -workspace /path/to/MyProject.xcworkspace -scheme MyScheme -configuration Debug -skipMacroValidation -destination "platform=macOS" clean',
+          'xcodebuild',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          'clean',
         ],
-        expect.any(Object),
+        'Clean',
+        true,
+        undefined,
       );
     });
 
     it('should return success response with all optional parameters', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Clean succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await cleanWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
-        configuration: 'Release',
-        derivedDataPath: '/path/to/derived/data',
-        extraArgs: ['--verbose'],
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Clean succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
+
+      const result = await cleanWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Release',
+          derivedDataPath: '/path/to/derived/data',
+          extraArgs: ['--verbose'],
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -157,29 +152,43 @@ describe('clean_ws plugin tests', () => {
         ],
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -workspace /path/to/MyProject.xcworkspace -scheme MyScheme -configuration Release -skipMacroValidation -destination "platform=macOS" -derivedDataPath /path/to/derived/data --verbose clean',
+          'xcodebuild',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Release',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          '-derivedDataPath',
+          '/path/to/derived/data',
+          '--verbose',
+          'clean',
         ],
-        expect.any(Object),
+        'Clean',
+        true,
+        undefined,
       );
     });
 
     it('should return success response with minimal parameters and defaults', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Clean succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await cleanWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Clean succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
+
+      const result = await cleanWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -190,30 +199,39 @@ describe('clean_ws plugin tests', () => {
         ],
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -workspace /path/to/MyProject.xcworkspace -scheme  -configuration Debug -skipMacroValidation -destination "platform=macOS" clean',
+          'xcodebuild',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          '',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          'clean',
         ],
-        expect.any(Object),
+        'Clean',
+        true,
+        undefined,
       );
     });
 
     it('should return error response for command failure', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate command failure
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Clean failed');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await cleanWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Clean failed',
       });
+
+      const result = await cleanWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -247,18 +265,15 @@ describe('clean_ws plugin tests', () => {
     });
 
     it('should handle spawn process error', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn failed'));
 
-      // Simulate process error
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('spawn failed'));
-      }, 0);
-
-      const result = await cleanWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
-      });
+      const result = await cleanWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [

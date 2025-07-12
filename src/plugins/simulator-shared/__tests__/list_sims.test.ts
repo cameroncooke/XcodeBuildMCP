@@ -1,32 +1,11 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
 
 // Import the plugin
 import listSims from '../list_sims.ts';
 
-// Mock only child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-// Mock child process class
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 describe('list_sims tool', () => {
-  let mockSpawn: Record<string, unknown>;
-  let mockProcess: MockChildProcess;
-
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
-    mockSpawn = vi.mocked(spawn);
-    mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
@@ -74,19 +53,21 @@ describe('list_sims tool', () => {
         },
       });
 
-      // Set up successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', mockOutput);
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: mockOutput,
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
-      const result = await listSims.handler({ enabled: true });
+      const result = await listSims.handler({ enabled: true }, mockExecutor);
 
       // Verify command was called correctly
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'xcrun simctl list devices available --json'],
-        expect.any(Object),
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
+        'List Simulators',
+        true,
+        undefined,
       );
 
       expect(result).toEqual({
@@ -122,13 +103,14 @@ Next Steps:
         },
       });
 
-      // Set up successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', mockOutput);
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: mockOutput,
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
-      const result = await listSims.handler({ enabled: true });
+      const result = await listSims.handler({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -150,13 +132,14 @@ Next Steps:
     });
 
     it('should handle command failure', async () => {
-      // Set up command failure
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Command failed');
-        mockProcess.emit('close', 1);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'Command failed',
+        process: { pid: 12345 },
+      });
 
-      const result = await listSims.handler({ enabled: true });
+      const result = await listSims.handler({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -169,13 +152,14 @@ Next Steps:
     });
 
     it('should handle JSON parse failure', async () => {
-      // Set up invalid JSON output
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'invalid json');
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'invalid json',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
-      const result = await listSims.handler({ enabled: true });
+      const result = await listSims.handler({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -188,12 +172,9 @@ Next Steps:
     });
 
     it('should handle exception with Error object', async () => {
-      // Set up spawn error
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('Command execution failed'));
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
 
-      const result = await listSims.handler({ enabled: true });
+      const result = await listSims.handler({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -206,12 +187,9 @@ Next Steps:
     });
 
     it('should handle exception with string error', async () => {
-      // Set up spawn error with string
-      setTimeout(() => {
-        mockProcess.emit('error', 'String error');
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue('String error');
 
-      const result = await listSims.handler({ enabled: true });
+      const result = await listSims.handler({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [

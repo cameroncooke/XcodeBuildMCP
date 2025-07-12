@@ -10,29 +10,12 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import cleanProj from '../clean_proj.ts';
 
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
 describe('clean_proj plugin tests', () => {
-  // Mock child process for command execution
-  class MockChildProcess extends EventEmitter {
-    stdout = new EventEmitter();
-    stderr = new EventEmitter();
-    pid = 12345;
-  }
-
-  let mockSpawn: Record<string, unknown>;
-
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    // Get the mocked spawn function
-    const { spawn } = await import('child_process');
-    mockSpawn = vi.mocked(spawn);
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -106,19 +89,18 @@ describe('clean_proj plugin tests', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return success response for valid clean project request', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Clean succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await cleanProj.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'MyScheme',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Clean succeeded',
       });
+
+      const result = await cleanProj.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -129,13 +111,23 @@ describe('clean_proj plugin tests', () => {
         ],
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -project /path/to/MyProject.xcodeproj -scheme MyScheme -configuration Debug -skipMacroValidation -destination "platform=macOS" clean',
+          'xcodebuild',
+          '-project',
+          '/path/to/MyProject.xcodeproj',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          'clean',
         ],
-        expect.any(Object),
+        'Clean',
+        true,
+        undefined,
       );
     });
 
