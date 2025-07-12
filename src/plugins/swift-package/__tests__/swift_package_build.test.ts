@@ -1,29 +1,12 @@
 /**
  * Tests for swift_package_build plugin
  * Following CLAUDE.md testing standards with literal validation
- * Integration tests that mock only the lowest-level spawn calls
+ * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { EventEmitter } from 'events';
-import { z } from 'zod';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { createMockExecutor } from '../../../utils/command.js';
 import swiftPackageBuild from '../swift_package_build.ts';
-
-// Mock only child_process at the lowest system level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-// Create a mock ChildProcess that extends EventEmitter
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-
-  constructor() {
-    super();
-  }
-}
 
 describe('swift_package_build plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -63,86 +46,97 @@ describe('swift_package_build plugin', () => {
     });
   });
 
-  let mockSpawn: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
-    mockSpawn = spawn as MockedFunction<any>;
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Command Generation Testing', () => {
     it('should build correct command for basic build', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageBuild.handler({
-        packagePath: '/test/package',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Build succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Build succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
+      await swiftPackageBuild.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockExecutor,
+      );
 
-      await handlerPromise;
-
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'swift build --package-path /test/package'],
-        expect.any(Object),
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['swift', 'build', '--package-path', '/test/package'],
+        'Swift Package Build',
+        true,
+        undefined,
       );
     });
 
     it('should build correct command with release configuration', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageBuild.handler({
-        packagePath: '/test/package',
-        configuration: 'release',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Build succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Build succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
+      await swiftPackageBuild.handler(
+        {
+          packagePath: '/test/package',
+          configuration: 'release',
+        },
+        mockExecutor,
+      );
 
-      await handlerPromise;
-
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'swift build --package-path /test/package -c release'],
-        expect.any(Object),
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['swift', 'build', '--package-path', '/test/package', '-c', 'release'],
+        'Swift Package Build',
+        true,
+        undefined,
       );
     });
 
     it('should build correct command with all parameters', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageBuild.handler({
-        packagePath: '/test/package',
-        targetName: 'MyTarget',
-        configuration: 'release',
-        architectures: ['arm64', 'x86_64'],
-        parseAsLibrary: true,
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Build succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Build succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
+      await swiftPackageBuild.handler(
+        {
+          packagePath: '/test/package',
+          targetName: 'MyTarget',
+          configuration: 'release',
+          architectures: ['arm64', 'x86_64'],
+          parseAsLibrary: true,
+        },
+        mockExecutor,
+      );
 
-      await handlerPromise;
-
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
+          'swift',
+          'build',
+          '--package-path',
+          '/test/package',
           '-c',
-          'swift build --package-path /test/package -c release --target MyTarget --arch arm64 --arch x86_64 -Xswiftc -parse-as-library',
+          'release',
+          '--target',
+          'MyTarget',
+          '--arch',
+          'arm64',
+          '--arch',
+          'x86_64',
+          '-Xswiftc',
+          '-parse-as-library',
         ],
-        expect.any(Object),
+        'Swift Package Build',
+        true,
+        undefined,
       );
     });
   });
@@ -163,19 +157,17 @@ describe('swift_package_build plugin', () => {
     });
 
     it('should return successful build response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageBuild.handler({
-        packagePath: '/test/package',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Build complete.',
       });
 
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Build complete.');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await handlerPromise;
+      const result = await swiftPackageBuild.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -191,19 +183,17 @@ describe('swift_package_build plugin', () => {
     });
 
     it('should return error response for build failure', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageBuild.handler({
-        packagePath: '/test/package',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Compilation failed: error in main.swift',
       });
 
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Compilation failed: error in main.swift');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await handlerPromise;
+      const result = await swiftPackageBuild.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -217,17 +207,14 @@ describe('swift_package_build plugin', () => {
     });
 
     it('should handle spawn error', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockImplementation(() => {
-        setTimeout(() => {
-          mockProcess.emit('error', new Error('spawn ENOENT'));
-        }, 0);
-        return mockProcess;
-      });
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn ENOENT'));
 
-      const result = await swiftPackageBuild.handler({
-        packagePath: '/test/package',
-      });
+      const result = await swiftPackageBuild.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -241,23 +228,21 @@ describe('swift_package_build plugin', () => {
     });
 
     it('should handle successful build with parameters', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageBuild.handler({
-        packagePath: '/test/package',
-        targetName: 'MyTarget',
-        configuration: 'release',
-        architectures: ['arm64', 'x86_64'],
-        parseAsLibrary: true,
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Build complete.',
       });
 
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Build complete.');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await handlerPromise;
+      const result = await swiftPackageBuild.handler(
+        {
+          packagePath: '/test/package',
+          targetName: 'MyTarget',
+          configuration: 'release',
+          architectures: ['arm64', 'x86_64'],
+          parseAsLibrary: true,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [

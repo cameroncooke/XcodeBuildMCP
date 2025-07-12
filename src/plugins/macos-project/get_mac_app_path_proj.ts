@@ -7,8 +7,8 @@
 
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { validateRequiredParam } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
@@ -31,12 +31,17 @@ export default {
     projectPath: z.string().describe('Path to the .xcodeproj file'),
     scheme: z.string().describe('The scheme to use'),
     configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+    derivedDataPath: z.string().optional().describe('Path to derived data directory'),
+    extraArgs: z
+      .array(z.string())
+      .optional()
+      .describe('Additional arguments to pass to xcodebuild'),
     arch: z
       .enum(['arm64', 'x86_64'])
       .optional()
       .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
     if (!projectValidation.isValid) return projectValidation.errorResponse;
@@ -59,22 +64,41 @@ export default {
       command.push('-scheme', params.scheme);
       command.push('-configuration', configuration);
 
-      // Handle destination for macOS
-      let destinationString = 'platform=macOS';
-      if (params.arch) {
-        destinationString += `,arch=${params.arch}`;
+      // Add optional derived data path
+      if (params.derivedDataPath) {
+        command.push('-derivedDataPath', params.derivedDataPath);
       }
-      command.push('-destination', destinationString);
 
-      // Execute the command directly
-      const result = await executeCommand(command, 'Get App Path');
+      // Add extra arguments if provided
+      if (params.extraArgs && Array.isArray(params.extraArgs)) {
+        command.push(...(params.extraArgs as string[]));
+      }
+
+      // Execute the command directly with executor
+      const result = await executeCommand(command, 'Get App Path', true, undefined, executor);
 
       if (!result.success) {
-        return createTextResponse(`Failed to get app path: ${result.error}`, true);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Error: Failed to get macOS app path\nDetails: ${result.error}`,
+            },
+          ],
+          isError: true,
+        };
       }
 
       if (!result.output) {
-        return createTextResponse('Failed to extract build settings output from the result.', true);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Error: Failed to get macOS app path\nDetails: Failed to extract build settings output from the result',
+            },
+          ],
+          isError: true,
+        };
       }
 
       const buildSettingsOutput = result.output;
@@ -82,36 +106,36 @@ export default {
       const fullProductNameMatch = buildSettingsOutput.match(/FULL_PRODUCT_NAME = (.+)$/m);
 
       if (!builtProductsDirMatch || !fullProductNameMatch) {
-        return createTextResponse(
-          'Failed to extract app path from build settings. Make sure the app has been built first.',
-          true,
-        );
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Error: Failed to get macOS app path\nDetails: Could not extract app path from build settings',
+            },
+          ],
+          isError: true,
+        };
       }
 
       const builtProductsDir = builtProductsDirMatch[1].trim();
       const fullProductName = fullProductNameMatch[1].trim();
       const appPath = `${builtProductsDir}/${fullProductName}`;
 
-      const nextStepsText = `Next Steps:
-1. Get bundle ID: get_macos_bundle_id({ appPath: "${appPath}" })
-2. Launch the app: launch_macos_app({ appPath: "${appPath}" })`;
-
       return {
-        content: [
-          {
-            type: 'text',
-            text: `✅ App path retrieved successfully: ${appPath}`,
-          },
-          {
-            type: 'text',
-            text: nextStepsText,
-          },
-        ],
+        content: [{ type: 'text', text: `✅ macOS app path: ${appPath}` }],
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log('error', `Error retrieving app path: ${errorMessage}`);
-      return createTextResponse(`Error retrieving app path: ${errorMessage}`, true);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error: Failed to get macOS app path\nDetails: ${errorMessage}`,
+          },
+        ],
+        isError: true,
+      };
     }
   },
 };

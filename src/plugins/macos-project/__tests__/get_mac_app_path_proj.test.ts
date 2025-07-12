@@ -1,27 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+/**
+ * Tests for get_mac_app_path_proj plugin
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
+
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
-import { spawn } from 'child_process';
+import { createMockExecutor } from '../../../utils/command.js';
 import tool from '../get_mac_app_path_proj.ts';
 
-// Mock child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 describe('get_mac_app_path_proj', () => {
-  let mockProcess: MockChildProcess;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    mockProcess = new MockChildProcess();
-    vi.mocked(spawn).mockReturnValue(mockProcess);
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -31,7 +21,7 @@ describe('get_mac_app_path_proj', () => {
 
     it('should export the correct description', () => {
       expect(tool.description).toBe(
-        'Gets the app bundle path for a macOS application using a project file.',
+        "Gets the app bundle path for a macOS application using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_mac_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
       );
     });
 
@@ -81,28 +71,34 @@ describe('get_mac_app_path_proj', () => {
 
   describe('Command Generation and Response Logic', () => {
     it('should successfully get app path for macOS project', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
-      expect(spawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -showBuildSettings -project /path/to/project.xcodeproj -scheme MyApp -configuration Debug',
+          'xcodebuild',
+          '-showBuildSettings',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Debug',
         ],
-        expect.any(Object),
+        'Get App Path',
+        true,
+        undefined,
       );
 
       expect(result).toEqual({
@@ -147,17 +143,17 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should handle command failure', async () => {
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'error: Failed to get build settings');
-        mockProcess.emit('close', 1);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'error: Failed to get build settings',
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -171,16 +167,14 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should handle spawn error', async () => {
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('spawn xcodebuild ENOENT'));
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn xcodebuild ENOENT'));
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -194,39 +188,44 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      await tool.handler(args);
+      await tool.handler(args, mockExecutor);
 
-      expect(spawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -showBuildSettings -project /path/to/project.xcodeproj -scheme MyApp -configuration Debug',
+          'xcodebuild',
+          '-showBuildSettings',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Debug',
         ],
-        expect.any(Object),
+        'Get App Path',
+        true,
+        undefined,
       );
     });
 
     it('should include optional parameters in command', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
@@ -236,30 +235,40 @@ describe('get_mac_app_path_proj', () => {
         extraArgs: ['--verbose'],
       };
 
-      await tool.handler(args);
+      await tool.handler(args, mockExecutor);
 
-      expect(spawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -showBuildSettings -project /path/to/project.xcodeproj -scheme MyApp -configuration Release -derivedDataPath /path/to/derived --verbose',
+          'xcodebuild',
+          '-showBuildSettings',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Release',
+          '-derivedDataPath',
+          '/path/to/derived',
+          '--verbose',
         ],
-        expect.any(Object),
+        'Get App Path',
+        true,
+        undefined,
       );
     });
 
     it('should handle missing build settings in output', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'OTHER_SETTING = value');
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'OTHER_SETTING = value',
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       expect(result).toEqual({
         content: [

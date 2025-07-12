@@ -1,18 +1,14 @@
 /**
  * Tests for launch_app_device plugin
  * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import launchAppDevice from '../launch_app_device.ts';
 
-// Mock child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-// Mock fs/promises
+// Mock fs/promises for file operations
 vi.mock('fs', () => ({
   promises: {
     readFile: vi.fn().mockResolvedValue('{}'),
@@ -62,62 +58,60 @@ describe('launch_app_device plugin', () => {
     });
   });
 
-  class MockChildProcess extends EventEmitter {
-    stdout = new EventEmitter();
-    stderr = new EventEmitter();
-    pid = 12345;
-  }
-
-  let mockSpawn: Record<string, unknown>;
-  let mockProcess: MockChildProcess;
-
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
-    mockSpawn = vi.mocked(spawn);
-    mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should generate correct devicectl launch command', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'App launched successfully');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const resultPromise = launchAppDevice.handler({
-        deviceId: 'test-device-123',
-        bundleId: 'com.example.app',
+    it('should verify command generation with mock executor', async () => {
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'App launched successfully',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      const result = await resultPromise;
+      await launchAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          bundleId: 'com.example.app',
+        },
+        mockExecutor,
+      );
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        [
-          '-c',
-          expect.stringMatching(
-            /xcrun devicectl device process launch --device test-device-123 --json-output .* --terminate-existing com.example.app/,
-          ),
-        ],
-        expect.objectContaining({
-          stdio: ['ignore', 'pipe', 'pipe'],
-        }),
+      expect(mockExecutor).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          'xcrun',
+          'devicectl',
+          'device',
+          'process',
+          'launch',
+          '--device',
+          'test-device-123',
+          '--json-output',
+          '/tmp/launch-123.json',
+          '--terminate-existing',
+          'com.example.app',
+        ]),
+        'Launch app on device',
+        true,
+        undefined,
       );
     });
 
     it('should return exact successful launch response', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'App launched successfully');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await launchAppDevice.handler({
-        deviceId: 'test-device-123',
-        bundleId: 'com.example.app',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'App launched successfully',
       });
+
+      const result = await launchAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          bundleId: 'com.example.app',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -130,15 +124,18 @@ describe('launch_app_device plugin', () => {
     });
 
     it('should return exact launch failure response', async () => {
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Launch failed: App not found');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await launchAppDevice.handler({
-        deviceId: 'test-device-123',
-        bundleId: 'com.nonexistent.app',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Launch failed: App not found',
       });
+
+      const result = await launchAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          bundleId: 'com.nonexistent.app',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -152,14 +149,15 @@ describe('launch_app_device plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('Network error'));
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const result = await launchAppDevice.handler({
-        deviceId: 'test-device-123',
-        bundleId: 'com.example.app',
-      });
+      const result = await launchAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          bundleId: 'com.example.app',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -173,14 +171,15 @@ describe('launch_app_device plugin', () => {
     });
 
     it('should return exact string error handling response', async () => {
-      setTimeout(() => {
-        mockProcess.emit('error', 'String error');
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue('String error');
 
-      const result = await launchAppDevice.handler({
-        deviceId: 'test-device-123',
-        bundleId: 'com.example.app',
-      });
+      const result = await launchAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          bundleId: 'com.example.app',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [

@@ -1,27 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+/**
+ * Tests for test_macos_proj plugin
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
+
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
-import { spawn } from 'child_process';
+import { createMockExecutor } from '../../../utils/command.js';
 import tool from '../test_macos_proj.ts';
 
-// Mock child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 describe('test_macos_proj', () => {
-  let mockProcess: MockChildProcess;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    mockProcess = new MockChildProcess();
-    vi.mocked(spawn).mockReturnValue(mockProcess);
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -31,7 +21,7 @@ describe('test_macos_proj', () => {
 
     it('should export the correct description', () => {
       expect(tool.description).toBe(
-        'Runs tests for a macOS app using xcodebuild from a project file.',
+        'Runs tests for a macOS project using xcodebuild test and parses xcresult output.',
       );
     });
 
@@ -92,37 +82,53 @@ describe('test_macos_proj', () => {
 
   describe('Command Generation and Response Logic', () => {
     it('should generate correct xcodebuild test command for minimal arguments', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'TEST SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'TEST SUCCEEDED',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
-      expect(spawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -project /path/to/project.xcodeproj -scheme MyApp -configuration Debug -skipMacroValidation -destination "platform=macOS" test',
+          'xcodebuild',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          '-resultBundlePath',
+          expect.stringMatching(/.*TestResults\.xcresult$/),
+          'test',
         ],
-        expect.any(Object),
+        'Test Run',
+        true,
+        undefined,
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: '✅ macOS Build test succeeded for scheme MyApp.' }],
+        content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyApp.' }],
       });
     });
 
     it('should generate correct xcodebuild test command with all arguments', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'TEST SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'TEST SUCCEEDED',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
@@ -133,115 +139,141 @@ describe('test_macos_proj', () => {
         preferXcodebuild: true,
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
-      expect(spawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -project /path/to/project.xcodeproj -scheme MyApp -configuration Release -skipMacroValidation -destination "platform=macOS" -derivedDataPath /path/to/derived --verbose test',
+          'xcodebuild',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Release',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          '-derivedDataPath',
+          '/path/to/derived',
+          '--verbose',
+          '-resultBundlePath',
+          expect.stringMatching(/.*TestResults\.xcresult$/),
+          'test',
         ],
-        expect.any(Object),
+        'Test Run',
+        true,
+        undefined,
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: '✅ macOS Build test succeeded for scheme MyApp.' }],
+        content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyApp.' }],
       });
     });
 
     it('should handle test failure with literal error response', async () => {
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'error: Test failed\n');
-        mockProcess.emit('close', 1);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'error: Test failed',
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
           { type: 'text', text: '❌ [stderr] error: Test failed' },
-          { type: 'text', text: '❌ macOS Build test failed for scheme MyApp.' },
+          { type: 'text', text: '❌ Test Run test failed for scheme MyApp.' },
         ],
         isError: true,
       });
     });
 
     it('should handle spawn error with literal error response', async () => {
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('spawn xcodebuild ENOENT'));
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn xcodebuild ENOENT'));
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Error during macOS Build test: spawn xcodebuild ENOENT' }],
+        content: [{ type: 'text', text: 'Error during Test Run test: spawn xcodebuild ENOENT' }],
         isError: true,
       });
     });
 
     it('should use default configuration when not provided', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'TEST SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'TEST SUCCEEDED',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      await tool.handler(args);
+      await tool.handler(args, mockExecutor);
 
-      expect(spawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -project /path/to/project.xcodeproj -scheme MyApp -configuration Debug -skipMacroValidation -destination "platform=macOS" test',
+          'xcodebuild',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          '-resultBundlePath',
+          expect.stringMatching(/.*TestResults\.xcresult$/),
+          'test',
         ],
-        expect.any(Object),
+        'Test Run',
+        true,
+        undefined,
       );
     });
 
     it('should include test warnings and errors in output', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          'warning: deprecated test method\nerror: test assertion failed\nTEST SUCCEEDED',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'warning: deprecated test method\nerror: test assertion failed\nTEST SUCCEEDED',
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
           { type: 'text', text: '⚠️ Warning: warning: deprecated test method' },
           { type: 'text', text: '❌ Error: error: test assertion failed' },
-          { type: 'text', text: '✅ macOS Build test succeeded for scheme MyApp.' },
+          { type: 'text', text: '✅ Test Run test succeeded for scheme MyApp.' },
         ],
       });
     });
 
     it('should handle preferXcodebuild parameter correctly', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'TEST SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'TEST SUCCEEDED',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
@@ -249,20 +281,32 @@ describe('test_macos_proj', () => {
         preferXcodebuild: false,
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       // Verify the command was called correctly
-      expect(spawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -project /path/to/project.xcodeproj -scheme MyApp -configuration Debug -skipMacroValidation -destination "platform=macOS" test',
+          'xcodebuild',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          '-resultBundlePath',
+          expect.stringMatching(/.*TestResults\.xcresult$/),
+          'test',
         ],
-        expect.any(Object),
+        'Test Run',
+        true,
+        undefined,
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: '✅ macOS Build test succeeded for scheme MyApp.' }],
+        content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyApp.' }],
       });
     });
   });

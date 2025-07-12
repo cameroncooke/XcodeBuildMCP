@@ -1,8 +1,12 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.ts';
-import { log } from '../../utils/index.ts';
-import { validateRequiredParam, validateFileExists } from '../../utils/index.ts';
-import { executeCommand } from '../../utils/index.ts';
+import {
+  log,
+  validateRequiredParam,
+  validateFileExists,
+  executeCommand,
+  CommandExecutor,
+} from '../../utils/index.ts';
 import { execSync } from 'child_process';
 
 export default {
@@ -17,7 +21,7 @@ export default {
       .string()
       .describe('Path to the .app bundle to install (full path to the .app directory)'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simulatorUuidValidation.isValid) {
@@ -38,7 +42,13 @@ export default {
 
     try {
       const command = ['xcrun', 'simctl', 'install', params.simulatorUuid, params.appPath];
-      const result = await executeCommand(command, 'Install App in Simulator');
+      const result = await executeCommand(
+        command,
+        'Install App in Simulator',
+        true,
+        undefined,
+        executor,
+      );
 
       if (!result.success) {
         return {

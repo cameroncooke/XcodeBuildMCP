@@ -1,9 +1,12 @@
 import { z } from 'zod';
 import path from 'node:path';
-import { executeCommand } from '../../utils/index.js';
-import { validateRequiredParam } from '../../utils/index.js';
-import { createErrorResponse } from '../../utils/index.js';
-import { log } from '../../utils/index.js';
+import {
+  executeCommand,
+  validateRequiredParam,
+  createErrorResponse,
+  log,
+  CommandExecutor,
+} from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 // Inlined schemas from src/tools/common/index.ts
@@ -32,7 +35,7 @@ export default {
     architectures: swiftArchitecturesSchema,
     parseAsLibrary: parseAsLibrarySchema,
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
     if (!pkgValidation.isValid) return pkgValidation.errorResponse;
@@ -60,7 +63,13 @@ export default {
 
     log('info', `Running swift ${swiftArgs.join(' ')}`);
     try {
-      const result = await executeCommand(['swift', ...swiftArgs], 'Swift Package Build');
+      const result = await executeCommand(
+        ['swift', ...swiftArgs],
+        'Swift Package Build',
+        true,
+        undefined,
+        executor,
+      );
       if (!result.success) {
         const errorMessage = result.error || result.output || 'Unknown error';
         return createErrorResponse('Swift package build failed', errorMessage, 'BuildError');

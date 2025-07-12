@@ -19,7 +19,7 @@
 
 import { log } from './logger.js';
 import { XcodePlatform, constructDestinationString } from './xcode.js';
-import { executeCommand } from './command.js';
+import { executeCommand, CommandExecutor } from './command.js';
 import { ToolResponse, SharedBuildParams, PlatformBuildOptions } from '../types/common.js';
 import { createTextResponse } from './validation.js';
 import {
@@ -38,6 +38,7 @@ import path from 'path';
  * @param platformOptions Platform-specific options
  * @param preferXcodebuild Whether to prefer xcodebuild over xcodemake, useful for if xcodemake is failing
  * @param buildAction The xcodebuild action to perform (e.g., 'build', 'clean', 'test')
+ * @param executor Optional command executor for dependency injection (used for testing)
  * @returns Promise resolving to tool response
  */
 export async function executeXcodeBuildCommand(
@@ -45,6 +46,7 @@ export async function executeXcodeBuildCommand(
   platformOptions: PlatformBuildOptions,
   preferXcodebuild: boolean = false,
   buildAction: string = 'build',
+  executor?: CommandExecutor,
 ): Promise<ToolResponse> {
   // Collect warnings, errors, and stderr messages from the build output
   const buildMessages: { type: 'text'; text: string }[] = [];
@@ -223,7 +225,7 @@ export async function executeXcodeBuildCommand(
       }
     } else {
       // Use standard xcodebuild
-      result = await executeCommand(command, platformOptions.logPrefix);
+      result = await executeCommand(command, platformOptions.logPrefix, true, undefined, executor);
     }
 
     // Grep warnings and errors from stdout (build output)

@@ -1,22 +1,12 @@
 /**
  * Tests for get_device_app_path_proj plugin
  * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import getDeviceAppPathProj from '../get_device_app_path_proj.ts';
-
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
 
 describe('get_device_app_path_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -55,11 +45,7 @@ describe('get_device_app_path_proj plugin', () => {
     });
   });
 
-  let mockSpawn: ReturnType<typeof vi.fn>;
-
-  beforeEach(async () => {
-    const childProcess = await import('child_process');
-    mockSpawn = vi.mocked(childProcess.spawn);
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
@@ -99,76 +85,92 @@ describe('get_device_app_path_proj plugin', () => {
     });
 
     it('should generate correct xcodebuild command for iOS', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output:
           'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      await getDeviceAppPathProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      await getDeviceAppPathProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -showBuildSettings -project /path/to/project.xcodeproj -scheme MyScheme -configuration Debug -destination "generic/platform=iOS"',
+          'xcodebuild',
+          '-showBuildSettings',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-destination',
+          'generic/platform=iOS',
         ],
-        expect.any(Object),
+        'Get App Path',
+        true,
+        undefined,
       );
     });
 
     it('should generate correct xcodebuild command for watchOS', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output:
           'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-watchos\nFULL_PRODUCT_NAME = MyApp.app\n',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      await getDeviceAppPathProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        platform: 'watchOS',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      await getDeviceAppPathProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          platform: 'watchOS',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -showBuildSettings -project /path/to/project.xcodeproj -scheme MyScheme -configuration Debug -destination "generic/platform=watchOS"',
+          'xcodebuild',
+          '-showBuildSettings',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-destination',
+          'generic/platform=watchOS',
         ],
-        expect.any(Object),
+        'Get App Path',
+        true,
+        undefined,
       );
     });
 
     it('should return exact successful app path retrieval response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output:
           'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await getDeviceAppPathProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
       });
+
+      const result = await getDeviceAppPathProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -185,18 +187,18 @@ describe('get_device_app_path_proj plugin', () => {
     });
 
     it('should return exact command failure response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'xcodebuild: error: The project does not exist.');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await getDeviceAppPathProj.handler({
-        projectPath: '/path/to/nonexistent.xcodeproj',
-        scheme: 'MyScheme',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'xcodebuild: error: The project does not exist.',
       });
+
+      const result = await getDeviceAppPathProj.handler(
+        {
+          projectPath: '/path/to/nonexistent.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -210,18 +212,18 @@ describe('get_device_app_path_proj plugin', () => {
     });
 
     it('should return exact parse failure response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Build settings without required fields');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await getDeviceAppPathProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Build settings without required fields',
       });
+
+      const result = await getDeviceAppPathProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -235,31 +237,84 @@ describe('get_device_app_path_proj plugin', () => {
     });
 
     it('should include optional configuration parameter in command', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output:
           'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Release-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      await getDeviceAppPathProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        configuration: 'Release',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        [
-          '-c',
-          'xcodebuild -showBuildSettings -project /path/to/project.xcodeproj -scheme MyScheme -configuration Release -destination "generic/platform=iOS"',
-        ],
-        expect.any(Object),
+      await getDeviceAppPathProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          configuration: 'Release',
+        },
+        mockExecutor,
       );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Release',
+          '-destination',
+          'generic/platform=iOS',
+        ],
+        'Get App Path',
+        true,
+        undefined,
+      );
+    });
+
+    it('should return exact exception handling response', async () => {
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+
+      const result = await getDeviceAppPathProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error retrieving app path: Network error',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return exact string error handling response', async () => {
+      const mockExecutor = vi.fn().mockRejectedValue('String error');
+
+      const result = await getDeviceAppPathProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error retrieving app path: String error',
+          },
+        ],
+        isError: true,
+      });
     });
   });
 });

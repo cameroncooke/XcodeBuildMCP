@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../utils/index.ts';
+import { log, CommandExecutor } from '../../utils/index.ts';
 import { executeXcodeBuildCommand } from '../../utils/index.ts';
 import { createTextResponse } from '../../utils/index.ts';
 import { promisify } from 'util';
@@ -126,7 +126,10 @@ function formatTestSummary(summary: Record<string, unknown>): string {
 }
 
 // Internal logic for running tests with platform-specific handling
-async function handleTestLogic(params: Record<string, unknown>): Promise<ToolResponse> {
+async function handleTestLogic(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   log(
     'info',
     `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
@@ -156,6 +159,7 @@ async function handleTestLogic(params: Record<string, unknown>): Promise<ToolRes
       },
       params.preferXcodebuild,
       'test',
+      executor,
     );
 
     // Parse xcresult bundle if it exists, regardless of whether tests passed or failed
@@ -227,13 +231,16 @@ export default {
       .optional()
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
-    return handleTestLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      preferXcodebuild: params.preferXcodebuild ?? false,
-      platform: XcodePlatform.macOS,
-    });
+    return handleTestLogic(
+      {
+        ...params,
+        configuration: params.configuration ?? 'Debug',
+        preferXcodebuild: params.preferXcodebuild ?? false,
+        platform: XcodePlatform.macOS,
+      },
+      executor,
+    );
   },
 };

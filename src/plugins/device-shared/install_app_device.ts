@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log, executeCommand } from '../../utils/index.js';
+import { log, executeCommand, CommandExecutor } from '../../utils/index.js';
 
 export default {
   name: 'install_app_device',
@@ -22,7 +22,7 @@ export default {
       .string()
       .describe('Path to the .app bundle to install (full path to the .app directory)'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const { deviceId, appPath } = args;
 
     log('info', `Installing app on device ${deviceId}`);
@@ -31,6 +31,9 @@ export default {
       const result = await executeCommand(
         ['xcrun', 'devicectl', 'device', 'install', 'app', '--device', deviceId, appPath],
         'Install app on device',
+        true, // useShell
+        undefined, // env
+        executor,
       );
 
       if (!result.success) {

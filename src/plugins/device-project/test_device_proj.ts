@@ -15,6 +15,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { createTextResponse } from '../../utils/index.js';
+import { CommandExecutor } from '../../utils/command.js';
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -36,12 +37,30 @@ const XcodePlatform = {
 /**
  * Parse xcresult bundle using xcrun xcresulttool
  */
-async function parseXcresultBundle(resultBundlePath: string): Promise<string> {
+async function parseXcresultBundle(
+  resultBundlePath: string,
+  executor?: CommandExecutor,
+): Promise<string> {
   try {
-    const execAsync = promisify(exec);
-    const { stdout } = await execAsync(
-      `xcrun xcresulttool get test-results summary --path "${resultBundlePath}"`,
-    );
+    let stdout: string;
+    if (executor) {
+      // Use injected executor for testing
+      const result = await executor(
+        ['xcrun', 'xcresulttool', 'get', 'test-results', 'summary', '--path', resultBundlePath],
+        'Parse xcresult bundle',
+      );
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to execute xcresulttool');
+      }
+      stdout = result.output;
+    } else {
+      // Use default exec for production
+      const execAsync = promisify(exec);
+      const execResult = await execAsync(
+        `xcrun xcresulttool get test-results summary --path "${resultBundlePath}"`,
+      );
+      stdout = execResult.stdout;
+    }
 
     // Parse JSON response and format as human-readable
     const summary = JSON.parse(stdout);
@@ -122,7 +141,10 @@ function formatTestSummary(summary: Record<string, unknown>): string {
 /**
  * Internal logic for running tests with platform-specific handling
  */
-async function handleTestLogic(params: Record<string, unknown>): Promise<ToolResponse> {
+async function handleTestLogic(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   log(
     'info',
     `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
@@ -169,7 +191,7 @@ async function handleTestLogic(params: Record<string, unknown>): Promise<ToolRes
         throw new Error(`xcresult bundle not found at ${resultBundlePath}`);
       }
 
-      const testSummary = await parseXcresultBundle(resultBundlePath);
+      const testSummary = await parseXcresultBundle(resultBundlePath, executor);
       log('info', 'Successfully parsed xcresult bundle');
 
       // Clean up temporary directory
@@ -226,7 +248,7 @@ export default {
       .optional()
       .describe('Target platform (defaults to iOS)'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const platformMap = {
       iOS: XcodePlatform.iOS,
@@ -235,12 +257,15 @@ export default {
       visionOS: XcodePlatform.visionOS,
     };
 
-    return handleTestLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      preferXcodebuild: params.preferXcodebuild ?? false,
-      platform: platformMap[params.platform ?? 'iOS'],
-      deviceId: params.deviceId,
-    });
+    return handleTestLogic(
+      {
+        ...params,
+        configuration: params.configuration ?? 'Debug',
+        preferXcodebuild: params.preferXcodebuild ?? false,
+        platform: platformMap[params.platform ?? 'iOS'],
+        deviceId: params.deviceId,
+      },
+      executor,
+    );
   },
 };
