@@ -1,20 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+/**
+ * Tests for show_build_set_ws plugin
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
+
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { createMockExecutor } from '../../../utils/command.js';
 import plugin from '../show_build_set_ws.ts';
-
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-import { spawn } from 'child_process';
-const mockSpawn = vi.mocked(spawn);
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
 
 describe('show_build_set_ws plugin', () => {
   beforeEach(() => {
@@ -81,13 +73,9 @@ describe('show_build_set_ws plugin', () => {
     });
 
     it('should return success with build settings', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          `Build settings from command line:
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: `Build settings from command line:
     ARCHS = arm64
     BUILD_DIR = /Users/dev/Build/Products
     CONFIGURATION = Debug
@@ -95,22 +83,30 @@ describe('show_build_set_ws plugin', () => {
     PRODUCT_BUNDLE_IDENTIFIER = com.example.MyApp
     PRODUCT_NAME = MyApp
     SUPPORTED_PLATFORMS = iphoneos iphonesimulator`,
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await plugin.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      const result = await plugin.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -showBuildSettings -workspace /path/to/MyProject.xcworkspace -scheme MyScheme',
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
         ],
-        expect.any(Object),
+        'Show Build Settings',
+        true,
+        undefined,
       );
 
       expect(result).toEqual({
@@ -143,18 +139,20 @@ describe('show_build_set_ws plugin', () => {
     });
 
     it('should return error when command fails', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Scheme not found');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await plugin.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'InvalidScheme',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'Scheme not found',
+        process: { pid: 12345 },
       });
+
+      const result = await plugin.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'InvalidScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Failed to retrieve build settings: Scheme not found' }],
@@ -163,17 +161,15 @@ describe('show_build_set_ws plugin', () => {
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
 
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('Command execution failed'));
-      }, 0);
-
-      const result = await plugin.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
-      });
+      const result = await plugin.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [

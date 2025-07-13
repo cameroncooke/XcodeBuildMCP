@@ -6,8 +6,7 @@
  */
 
 import { ToolResponse } from '../../types/common.js';
-import { log } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { log, executeCommand, CommandExecutor } from '../../utils/index.js';
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -17,7 +16,7 @@ export default {
   description:
     'Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.',
   schema: {},
-  async handler(): Promise<ToolResponse> {
+  async handler(args?: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     log('info', 'Starting device discovery');
 
     try {
@@ -30,6 +29,9 @@ export default {
         const result = await executeCommand(
           ['xcrun', 'devicectl', 'list', 'devices', '--json-output', tempJsonPath],
           'List Devices (devicectl with JSON)',
+          true,
+          undefined,
+          executor,
         );
 
         if (result.success) {
@@ -116,6 +118,9 @@ export default {
         const result = await executeCommand(
           ['xcrun', 'xctrace', 'list', 'devices'],
           'List Devices (xctrace)',
+          true,
+          undefined,
+          executor,
         );
 
         if (!result.success) {

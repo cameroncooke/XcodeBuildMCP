@@ -1,30 +1,15 @@
 /**
  * Tests for get_mac_app_path_ws plugin
  * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
-import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 import getMacAppPathWs from '../get_mac_app_path_ws.ts';
 
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 describe('get_mac_app_path_ws plugin', () => {
-  let mockSpawn: Record<string, unknown>;
-
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
-    mockSpawn = vi.mocked(spawn);
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
@@ -63,34 +48,52 @@ describe('get_mac_app_path_ws plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return exact successful app path response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate successful xcodebuild output
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          `
-BUILT_PRODUCTS_DIR = /Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug
-FULL_PRODUCT_NAME = MyApp.app
-        `,
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
+    it('should return exact validation error response for workspacePath', async () => {
       const result = await getMacAppPathWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
         scheme: 'MyScheme',
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        [
-          '-c',
-          'xcodebuild -showBuildSettings -workspace /path/to/MyProject.xcworkspace -scheme MyScheme -configuration Debug',
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
+          },
         ],
-        expect.any(Object),
+        isError: true,
+      });
+    });
+
+    it('should return exact validation error response for scheme', async () => {
+      const result = await getMacAppPathWs.handler({
+        workspacePath: '/path/to/MyProject.xcworkspace',
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
+    });
+    it('should return exact successful app path response', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: `
+BUILT_PRODUCTS_DIR = /Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug
+FULL_PRODUCT_NAME = MyApp.app
+        `,
+      });
+
+      const result = await getMacAppPathWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
       );
 
       expect(result).toEqual({
@@ -108,19 +111,18 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should return exact build settings failure response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate xcodebuild failure
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'error: No such scheme');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await getMacAppPathWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'error: No such scheme',
       });
+
+      const result = await getMacAppPathWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -134,19 +136,18 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should return exact missing build settings response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate output without required build settings
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'OTHER_SETTING = value');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await getMacAppPathWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'OTHER_SETTING = value',
       });
+
+      const result = await getMacAppPathWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -160,14 +161,15 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should return exact exception handling response', async () => {
-      mockSpawn.mockImplementation(() => {
-        throw new Error('Network error');
-      });
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const result = await getMacAppPathWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
-      });
+      const result = await getMacAppPathWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [

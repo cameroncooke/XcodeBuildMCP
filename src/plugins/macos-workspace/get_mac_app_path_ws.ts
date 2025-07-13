@@ -8,7 +8,7 @@
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
@@ -36,7 +36,7 @@ export default {
       .optional()
       .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
     if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
@@ -67,10 +67,10 @@ export default {
       command.push('-destination', destinationString);
 
       // Execute the command directly
-      const result = await executeCommand(command, 'Get App Path');
+      const result = await executeCommand(command, 'Get App Path', true, undefined, executor);
 
       if (!result.success) {
-        return createTextResponse(`Failed to get app path: ${result.error}`, true);
+        return createTextResponse(`Error retrieving app path: ${result.error}`, true);
       }
 
       if (!result.output) {
@@ -83,7 +83,7 @@ export default {
 
       if (!builtProductsDirMatch || !fullProductNameMatch) {
         return createTextResponse(
-          'Failed to extract app path from build settings. Make sure the app has been built first.',
+          'Error retrieving app path: Could not extract app path from build settings',
           true,
         );
       }
@@ -93,8 +93,8 @@ export default {
       const appPath = `${builtProductsDir}/${fullProductName}`;
 
       const nextStepsText = `Next Steps:
-1. Get bundle ID: get_macos_bundle_id({ appPath: "${appPath}" })
-2. Launch the app: launch_macos_app({ appPath: "${appPath}" })`;
+1. Get bundle ID: get_app_bundle_id({ appPath: "${appPath}" })
+2. Launch app: launch_mac_app({ appPath: "${appPath}" })`;
 
       return {
         content: [

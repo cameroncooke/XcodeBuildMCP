@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { execSync } from 'child_process';
@@ -33,6 +33,7 @@ async function _handleSimulatorBuildLogic(params: Record<string, unknown>): Prom
 // Internal logic for building and running iOS Simulator apps.
 async function _handleIOSSimulatorBuildAndRunLogic(
   params: Record<string, unknown>,
+  executor?: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build and run for scheme ${params.scheme} (internal)`);
 
@@ -85,7 +86,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     }
 
     // Execute the command directly
-    const result = await executeCommand(command, 'Get App Path');
+    const result = await executeCommand(command, 'Get App Path', true, undefined, executor);
 
     // If there was an error with the command execution, return it
     if (!result.success) {
@@ -322,7 +323,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
@@ -335,11 +336,14 @@ export default {
     if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse;
 
     // Provide defaults
-    return _handleIOSSimulatorBuildAndRunLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      useLatestOS: params.useLatestOS ?? true, // May be ignored
-      preferXcodebuild: params.preferXcodebuild ?? false,
-    });
+    return _handleIOSSimulatorBuildAndRunLogic(
+      {
+        ...params,
+        configuration: params.configuration ?? 'Debug',
+        useLatestOS: params.useLatestOS ?? true, // May be ignored
+        preferXcodebuild: params.preferXcodebuild ?? false,
+      },
+      executor,
+    );
   },
 };

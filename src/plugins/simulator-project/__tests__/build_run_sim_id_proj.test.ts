@@ -1,22 +1,29 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import buildRunSimIdProj from '../build_run_sim_id_proj.ts';
 
-// Mock only child_process at the lowest level
+// Mock execSync for simulator operations that don't use CommandExecutor yet
 vi.mock('child_process', () => ({
-  spawn: vi.fn(),
   execSync: vi.fn(),
 }));
 
-describe('build_run_sim_id_proj plugin', () => {
-  class MockChildProcess extends EventEmitter {
-    stdout = new EventEmitter();
-    stderr = new EventEmitter();
-    pid = 12345;
-  }
+// Mock executeXcodeBuildCommand since it doesn't support CommandExecutor yet
+vi.mock('../../../utils/build-utils.js', () => ({
+  executeXcodeBuildCommand: vi.fn(),
+}));
 
-  beforeEach(() => {
+describe('build_run_sim_id_proj plugin', () => {
+  let mockExecSync: ReturnType<typeof vi.fn>;
+  let mockExecuteXcodeBuildCommand: ReturnType<typeof vi.fn>;
+
+  beforeEach(async () => {
+    const { execSync } = await import('child_process');
+    const buildUtils = await import('../../../utils/build-utils.js');
+
+    mockExecSync = vi.mocked(execSync);
+    mockExecuteXcodeBuildCommand = vi.mocked(buildUtils.executeXcodeBuildCommand);
+
     vi.clearAllMocks();
   });
 
@@ -193,16 +200,13 @@ describe('build_run_sim_id_proj plugin', () => {
     });
 
     it('should return build error when build fails', async () => {
-      const { spawn } = await import('child_process');
-      const mockSpawn = vi.mocked(spawn);
-
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Build failed with error');
-        mockProcess.emit('close', 1);
-      }, 0);
+      // Mock build failure
+      mockExecuteXcodeBuildCommand.mockResolvedValue({
+        content: [
+          { type: 'text', text: 'Error: Xcode build failed\nDetails: Build failed with error' },
+        ],
+        isError: true,
+      });
 
       const result = await buildRunSimIdProj.handler({
         projectPath: '/path/to/project.xcodeproj',
@@ -219,33 +223,34 @@ describe('build_run_sim_id_proj plugin', () => {
     });
 
     it('should handle successful build and run', async () => {
-      const { spawn, execSync } = await import('child_process');
-      const mockSpawn = vi.mocked(spawn);
-      const mockExecSync = vi.mocked(execSync);
+      // Mock successful build
+      mockExecuteXcodeBuildCommand.mockResolvedValue({
+        content: [{ type: 'text', text: '✅ Build succeeded for scheme MyScheme' }],
+        isError: false,
+      });
 
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
+      // Mock showBuildSettings command through CommandExecutor
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app',
+      });
 
-      // Mock xcodebuild success
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      // Mock subsequent command calls
+      // Mock subsequent execSync calls for simulator operations
       mockExecSync
-        .mockReturnValueOnce('CODESIGNING_FOLDER_PATH = /path/to/MyApp.app') // showBuildSettings
         .mockReturnValueOnce('    Test Simulator (test-uuid) (Booted)') // simulator list
         .mockReturnValueOnce('') // open Simulator
         .mockReturnValueOnce('') // install app
         .mockReturnValueOnce('com.example.MyApp') // bundle ID
         .mockReturnValueOnce(''); // launch app
 
-      const result = await buildRunSimIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid',
-      });
+      const result = await buildRunSimIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid',
+        },
+        mockExecutor,
+      );
 
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toContain('✅ iOS simulator build and run succeeded');
@@ -253,16 +258,11 @@ describe('build_run_sim_id_proj plugin', () => {
     });
 
     it('should handle command generation with extra args', async () => {
-      const { spawn } = await import('child_process');
-      const mockSpawn = vi.mocked(spawn);
-
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Build failed');
-        mockProcess.emit('close', 1);
-      }, 0);
+      // Mock build failure to test command generation
+      mockExecuteXcodeBuildCommand.mockResolvedValue({
+        content: [{ type: 'text', text: 'Build failed' }],
+        isError: true,
+      });
 
       await buildRunSimIdProj.handler({
         projectPath: '/path/to/project.xcodeproj',
@@ -274,20 +274,23 @@ describe('build_run_sim_id_proj plugin', () => {
         preferXcodebuild: true,
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'xcodebuild',
-        expect.arrayContaining([
-          '-project',
-          '/path/to/project.xcodeproj',
-          '-scheme',
-          'MyScheme',
-          '-configuration',
-          'Release',
-          '-derivedDataPath',
-          '/path/to/derived',
-          '--custom-arg',
-        ]),
-        expect.any(Object),
+      expect(mockExecuteXcodeBuildCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid',
+          configuration: 'Release',
+          derivedDataPath: '/path/to/derived',
+          extraArgs: ['--custom-arg'],
+          preferXcodebuild: true,
+        }),
+        expect.objectContaining({
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid',
+          logPrefix: 'iOS Simulator Build',
+        }),
+        true,
+        'build',
       );
     });
   });

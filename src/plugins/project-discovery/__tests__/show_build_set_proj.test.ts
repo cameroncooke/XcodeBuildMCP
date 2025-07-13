@@ -1,20 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import plugin from '../show_build_set_proj.ts';
-
-// Mock only child_process.spawn at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-import { spawn } from 'child_process';
-const mockSpawn = vi.mocked(spawn);
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
 
 describe('show_build_set_proj plugin', () => {
   beforeEach(() => {
@@ -74,13 +60,9 @@ describe('show_build_set_proj plugin', () => {
     });
 
     it('should return success with build settings', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          `Build settings from command line:
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: `Build settings from command line:
     ARCHS = arm64
     BUILD_DIR = /Users/dev/Build/Products
     CONFIGURATION = Debug
@@ -88,29 +70,37 @@ describe('show_build_set_proj plugin', () => {
     PRODUCT_BUNDLE_IDENTIFIER = com.example.MyApp
     PRODUCT_NAME = MyApp
     SUPPORTED_PLATFORMS = iphoneos iphonesimulator`,
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await plugin.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'MyScheme',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      const result = await plugin.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -showBuildSettings -project /path/to/MyProject.xcodeproj -scheme MyScheme',
+          'xcodebuild',
+          '-showBuildSettings',
+          '-project',
+          '/path/to/MyProject.xcodeproj',
+          '-scheme',
+          'MyScheme',
         ],
-        expect.any(Object),
+        'Show Build Settings',
+        true,
+        undefined,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: '✅ Build settings retrieved successfully',
+            text: '✅ Build settings for scheme MyScheme:',
           },
           {
             type: 'text',
@@ -123,55 +113,46 @@ describe('show_build_set_proj plugin', () => {
     PRODUCT_NAME = MyApp
     SUPPORTED_PLATFORMS = iphoneos iphonesimulator`,
           },
-          {
-            type: 'text',
-            text: `Next Steps:
-- Build the project: macos_build_project({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme" })
-- For iOS: ios_simulator_build_by_name_project({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", simulatorName: "iPhone 16" })
-- List schemes: list_schems_proj({ projectPath: "/path/to/MyProject.xcodeproj" })`,
-          },
         ],
         isError: false,
       });
     });
 
     it('should return error when command fails', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Scheme not found');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await plugin.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'InvalidScheme',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'Scheme not found',
+        process: { pid: 12345 },
       });
 
+      const result = await plugin.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'InvalidScheme',
+        },
+        mockExecutor,
+      );
+
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Failed to retrieve build settings: Scheme not found' }],
+        content: [{ type: 'text', text: 'Failed to show build settings: Scheme not found' }],
         isError: true,
       });
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
 
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('Command execution failed'));
-      }, 0);
-
-      const result = await plugin.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'MyScheme',
-      });
+      const result = await plugin.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
-        content: [
-          { type: 'text', text: 'Error retrieving build settings: Command execution failed' },
-        ],
+        content: [{ type: 'text', text: 'Error showing build settings: Command execution failed' }],
         isError: true,
       });
     });

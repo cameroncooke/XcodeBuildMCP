@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
@@ -15,6 +15,7 @@ import { ToolResponse } from '../../types/common.js';
  */
 async function _handleShowBuildSettingsLogic(
   params: Record<string, unknown>,
+  executor?: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', `Showing build settings for scheme ${params.scheme}`);
 
@@ -33,7 +34,7 @@ async function _handleShowBuildSettingsLogic(
     command.push('-scheme', params.scheme);
 
     // Execute the command directly
-    const result = await executeCommand(command, 'Show Build Settings');
+    const result = await executeCommand(command, 'Show Build Settings', true, undefined, executor);
 
     if (!result.success) {
       return createTextResponse(`Failed to show build settings: ${result.error}`, true);
@@ -67,7 +68,7 @@ export default {
     projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
     scheme: z.string().describe('Scheme name to show build settings for (Required)'),
   }),
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const validated = this.schema.parse(params);
 
@@ -78,6 +79,6 @@ export default {
     const schemeValidation = validateRequiredParam('scheme', validated.scheme);
     if (!schemeValidation.isValid) return schemeValidation.errorResponse;
 
-    return _handleShowBuildSettingsLogic(validated);
+    return _handleShowBuildSettingsLogic(validated, executor);
   },
 };

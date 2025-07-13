@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
@@ -15,6 +15,7 @@ import { ToolResponse } from '../../types/common.js';
  */
 async function _handleShowBuildSettingsLogic(
   params: Record<string, unknown>,
+  executor?: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', `Showing build settings for scheme ${params.scheme}`);
 
@@ -33,29 +34,36 @@ async function _handleShowBuildSettingsLogic(
     command.push('-scheme', params.scheme);
 
     // Execute the command directly
-    const result = await executeCommand(command, 'Show Build Settings');
+    const result = await executeCommand(command, 'Show Build Settings', true, undefined, executor);
 
     if (!result.success) {
-      return createTextResponse(`Failed to show build settings: ${result.error}`, true);
+      return createTextResponse(`Failed to retrieve build settings: ${result.error}`, true);
     }
 
     return {
       content: [
         {
           type: 'text',
-          text: `✅ Build settings for scheme ${params.scheme}:`,
+          text: '✅ Build settings retrieved successfully',
         },
         {
           type: 'text',
           text: result.output || 'Build settings retrieved successfully.',
+        },
+        {
+          type: 'text',
+          text: `Next Steps:
+- Build the workspace: macos_build_workspace({ workspacePath: "${params.workspacePath}", scheme: "${params.scheme}" })
+- For iOS: ios_simulator_build_by_name_workspace({ workspacePath: "${params.workspacePath}", scheme: "${params.scheme}", simulatorName: "iPhone 16" })
+- List schemes: list_schems_ws({ workspacePath: "${params.workspacePath}" })`,
         },
       ],
       isError: false,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    log('error', `Error showing build settings: ${errorMessage}`);
-    return createTextResponse(`Error showing build settings: ${errorMessage}`, true);
+    log('error', `Error retrieving build settings: ${errorMessage}`);
+    return createTextResponse(`Error retrieving build settings: ${errorMessage}`, true);
   }
 }
 
@@ -67,7 +75,7 @@ export default {
     workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
     scheme: z.string().describe('The scheme to use (Required)'),
   }),
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const validated = this.schema.parse(params);
 
@@ -78,6 +86,6 @@ export default {
     const schemeValidation = validateRequiredParam('scheme', validated.scheme);
     if (!schemeValidation.isValid) return schemeValidation.errorResponse;
 
-    return _handleShowBuildSettingsLogic(validated);
+    return _handleShowBuildSettingsLogic(validated, executor);
   },
 };

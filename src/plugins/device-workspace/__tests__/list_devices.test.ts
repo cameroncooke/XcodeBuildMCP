@@ -1,16 +1,12 @@
 /**
  * Tests for list_devices plugin
  * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import listDevices from '../list_devices.ts';
-
-// Mock child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
 
 // Mock fs for file operations
 vi.mock('fs', () => ({
@@ -58,24 +54,11 @@ describe('list_devices plugin', () => {
     });
   });
 
-  class MockChildProcess extends EventEmitter {
-    stdout = new EventEmitter();
-    stderr = new EventEmitter();
-    pid = 12345;
-  }
-
-  let mockSpawn: Record<string, unknown>;
-  let mockProcess: MockChildProcess;
   let mockReadFile: Record<string, unknown>;
   let mockUnlink: Record<string, unknown>;
 
   beforeEach(async () => {
-    const { spawn } = await import('child_process');
     const fs = await import('fs');
-
-    mockSpawn = vi.mocked(spawn);
-    mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
 
     mockReadFile = vi.mocked(fs.promises.readFile);
     mockUnlink = vi.mocked(fs.promises.unlink);
@@ -112,17 +95,20 @@ describe('list_devices plugin', () => {
       mockReadFile.mockResolvedValue(JSON.stringify(devicectlJson));
       mockUnlink.mockResolvedValue(undefined);
 
-      setTimeout(() => {
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
-      const resultPromise = listDevices.handler({});
-      await resultPromise;
+      await listDevices.handler({}, mockExecutor);
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'xcrun devicectl list devices --json-output /tmp/devicectl-123.json'],
-        expect.any(Object),
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['xcrun', 'devicectl', 'list', 'devices', '--json-output', '/tmp/devicectl-123.json'],
+        'List Devices (devicectl with JSON)',
+        true,
+        undefined,
       );
     });
 
@@ -154,11 +140,14 @@ describe('list_devices plugin', () => {
       mockReadFile.mockResolvedValue(JSON.stringify(devicectlJson));
       mockUnlink.mockResolvedValue(undefined);
 
-      setTimeout(() => {
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
-      const result = await listDevices.handler({});
+      const result = await listDevices.handler({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -171,28 +160,30 @@ describe('list_devices plugin', () => {
     });
 
     it('should return exact xctrace fallback response', async () => {
-      // First call fails (devicectl)
+      // First call fails (devicectl), second call succeeds (xctrace)
       let callCount = 0;
-      mockSpawn.mockImplementation(() => {
+      const mockExecutor = vi.fn().mockImplementation(() => {
         callCount++;
-        const process = new MockChildProcess();
-
-        setTimeout(() => {
-          if (callCount === 1) {
-            // First call fails (devicectl)
-            process.stderr.emit('data', 'devicectl failed');
-            process.emit('close', 1);
-          } else {
-            // Second call succeeds (xctrace)
-            process.stdout.emit('data', 'iPhone 15 (12345678-1234-1234-1234-123456789012)');
-            process.emit('close', 0);
-          }
-        }, 0);
-
-        return process;
+        if (callCount === 1) {
+          // First call fails (devicectl)
+          return Promise.resolve({
+            success: false,
+            output: '',
+            error: 'devicectl failed',
+            process: { pid: 12345 },
+          });
+        } else {
+          // Second call succeeds (xctrace)
+          return Promise.resolve({
+            success: true,
+            output: 'iPhone 15 (12345678-1234-1234-1234-123456789012)',
+            error: undefined,
+            process: { pid: 12345 },
+          });
+        }
       });
 
-      const result = await listDevices.handler({});
+      const result = await listDevices.handler({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -206,16 +197,14 @@ describe('list_devices plugin', () => {
 
     it('should return exact failure response', async () => {
       // Both calls fail
-      mockSpawn.mockImplementation(() => {
-        const process = new MockChildProcess();
-        setTimeout(() => {
-          process.stderr.emit('data', 'Command failed');
-          process.emit('close', 1);
-        }, 0);
-        return process;
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'Command failed',
+        process: { pid: 12345 },
       });
 
-      const result = await listDevices.handler({});
+      const result = await listDevices.handler({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -241,25 +230,28 @@ describe('list_devices plugin', () => {
       // First call (devicectl) succeeds but no devices
       // Second call (xctrace fallback) succeeds with empty output
       let callCount = 0;
-      mockSpawn.mockImplementation(() => {
+      const mockExecutor = vi.fn().mockImplementation(() => {
         callCount++;
-        const process = new MockChildProcess();
-
-        setTimeout(() => {
-          if (callCount === 1) {
-            // First call succeeds (devicectl)
-            process.emit('close', 0);
-          } else {
-            // Second call succeeds (xctrace) with empty output
-            process.stdout.emit('data', '');
-            process.emit('close', 0);
-          }
-        }, 0);
-
-        return process;
+        if (callCount === 1) {
+          // First call succeeds (devicectl)
+          return Promise.resolve({
+            success: true,
+            output: '',
+            error: undefined,
+            process: { pid: 12345 },
+          });
+        } else {
+          // Second call succeeds (xctrace) with empty output
+          return Promise.resolve({
+            success: true,
+            output: '',
+            error: undefined,
+            process: { pid: 12345 },
+          });
+        }
       });
 
-      const result = await listDevices.handler({});
+      const result = await listDevices.handler({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -272,15 +264,9 @@ describe('list_devices plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      mockSpawn.mockImplementation(() => {
-        const process = new MockChildProcess();
-        setTimeout(() => {
-          process.emit('error', new Error('Unexpected error'));
-        }, 0);
-        return process;
-      });
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
 
-      const result = await listDevices.handler({});
+      const result = await listDevices.handler({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
