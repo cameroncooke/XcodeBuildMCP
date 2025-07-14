@@ -10,7 +10,12 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import {
+  executeCommand,
+  CommandExecutor,
+  FileSystemExecutor,
+  defaultFileSystemExecutor,
+} from '../../utils/index.js';
 
 const LOG_PREFIX = '[Screenshot]';
 
@@ -21,7 +26,11 @@ export default {
   schema: {
     simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    fileSystemExecutor?: FileSystemExecutor,
+  ): Promise<ToolResponse> {
     const params = args;
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
@@ -32,6 +41,8 @@ export default {
     const screenshotPath = path.join(tempDir, screenshotFilename);
     // Use xcrun simctl to take screenshot
     const commandArgs = ['xcrun', 'simctl', 'io', simulatorUuid, 'screenshot', screenshotPath];
+
+    const fsExecutor = fileSystemExecutor || defaultFileSystemExecutor;
 
     log(
       'info',
@@ -52,7 +63,15 @@ export default {
 
       try {
         // Read the image file into memory
-        const imageBuffer = await fs.readFile(screenshotPath);
+        let imageBuffer: Buffer;
+        if (fileSystemExecutor) {
+          // When using mock executor, the content is returned as a string
+          const imageContent = await fsExecutor.readFile(screenshotPath);
+          imageBuffer = Buffer.from(imageContent, 'utf8');
+        } else {
+          // Production path: read binary file directly
+          imageBuffer = await fs.readFile(screenshotPath);
+        }
 
         // Encode the image as a Base64 string
         const base64Image = imageBuffer.toString('base64');
@@ -60,9 +79,11 @@ export default {
         log('info', `${LOG_PREFIX}/screenshot: Successfully encoded image as Base64`);
 
         // Clean up the temporary file
-        await fs.unlink(screenshotPath).catch((err) => {
+        try {
+          await fs.unlink(screenshotPath);
+        } catch (err) {
           log('warning', `${LOG_PREFIX}/screenshot: Failed to delete temporary file: ${err}`);
-        });
+        }
 
         // Return the image directly in the tool response
         return {

@@ -2,41 +2,10 @@
  * Tests for screenshot tool plugin
  */
 
-import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
 import screenshotPlugin from '../screenshot.ts';
-
-// Mock all utilities from the index module
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  createErrorResponse: vi.fn(),
-  executeCommand: vi.fn(),
-  SystemError: class SystemError extends Error {
-    constructor(
-      message: string,
-      public originalError?: Error,
-    ) {
-      super(message);
-      this.name = 'SystemError';
-    }
-  },
-}));
-
-// Mock fs/promises
-vi.mock('fs/promises', () => ({
-  readFile: vi.fn(),
-  unlink: vi.fn(),
-}));
-
-// Import mocked functions
-import {
-  validateRequiredParam,
-  createErrorResponse,
-  executeCommand,
-  SystemError,
-} from '../../../utils/index.js';
-import { readFile, unlink } from 'fs/promises';
 
 describe('Screenshot Plugin', () => {
   beforeEach(() => {
@@ -82,18 +51,15 @@ describe('Screenshot Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
-          isError: true,
-        },
-      });
-
       const result = await screenshotPlugin.handler({});
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
@@ -102,20 +68,23 @@ describe('Screenshot Plugin', () => {
       const mockImageBuffer = Buffer.from('fake-image-data', 'utf8');
       const expectedBase64 = mockImageBuffer.toString('base64');
 
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Screenshot saved',
-        error: '',
+        error: undefined,
       });
-      (readFile as MockedFunction<typeof readFile>).mockResolvedValue(mockImageBuffer);
-      (unlink as MockedFunction<typeof unlink>).mockResolvedValue(undefined);
 
-      const result = await screenshotPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => mockImageBuffer.toString('utf8'),
       });
+
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -129,33 +98,24 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should handle command execution failure', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Simulator not found',
       });
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'System error executing screenshot: Failed to capture screenshot: Simulator not found',
-          },
-        ],
-        isError: true,
-      });
 
-      const result = await screenshotPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'System error executing screenshot: Failed to capture screenshot: Simulator not found',
+            text: 'Error: System error executing screenshot: Failed to capture screenshot: Simulator not found',
           },
         ],
         isError: true,
@@ -163,34 +123,31 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should handle file reading errors', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Screenshot saved',
-        error: '',
-      });
-      (readFile as MockedFunction<typeof readFile>).mockRejectedValue(new Error('File not found'));
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Screenshot captured but failed to process image file: File not found',
-          },
-        ],
-        isError: true,
+        error: undefined,
       });
 
-      const result = await screenshotPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => {
+          throw new Error('File not found');
+        },
       });
+
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Screenshot captured but failed to process image file: File not found',
+            text: 'Error: Screenshot captured but failed to process image file: File not found',
           },
         ],
         isError: true,
@@ -201,20 +158,25 @@ describe('Screenshot Plugin', () => {
       const mockImageBuffer = Buffer.from('fake-image-data', 'utf8');
       const expectedBase64 = mockImageBuffer.toString('base64');
 
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Screenshot saved',
-        error: '',
+        error: undefined,
       });
-      (readFile as MockedFunction<typeof readFile>).mockResolvedValue(mockImageBuffer);
-      (unlink as MockedFunction<typeof unlink>).mockRejectedValue(new Error('Permission denied'));
 
-      const result = await screenshotPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => mockImageBuffer.toString('utf8'),
+        // unlink method is not overridden, so it will use the default (no-op)
+        // which simulates the cleanup failure being caught and logged
       });
+
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+      );
 
       // Should still return successful result despite cleanup failure
       expect(result).toEqual({
@@ -229,69 +191,58 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new SystemError('System error occurred'),
-      );
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [
-          { type: 'text', text: 'System error executing screenshot: System error occurred' },
-        ],
-        isError: true,
-      });
+      const mockExecutor = async () => {
+        const SystemError = (await import('../../../utils/index.js')).SystemError;
+        throw new SystemError('System error occurred');
+      };
 
-      const result = await screenshotPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
-          { type: 'text', text: 'System error executing screenshot: System error occurred' },
+          { type: 'text', text: 'Error: System error executing screenshot: System error occurred' },
         ],
         isError: true,
       });
     });
 
     it('should handle unexpected Error objects', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new Error('Unexpected error'),
-      );
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
-        isError: true,
-      });
+      const mockExecutor = async () => {
+        throw new Error('Unexpected error');
+      };
 
-      const result = await screenshotPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
+        content: [{ type: 'text', text: 'Error: An unexpected error occurred: Unexpected error' }],
         isError: true,
       });
     });
 
     it('should handle unexpected string errors', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue('String error');
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
-        isError: true,
-      });
+      const mockExecutor = async () => {
+        throw 'String error';
+      };
 
-      const result = await screenshotPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
+        content: [{ type: 'text', text: 'Error: An unexpected error occurred: String error' }],
         isError: true,
       });
     });

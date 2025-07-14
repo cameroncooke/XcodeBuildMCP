@@ -1,7 +1,33 @@
+/**
+ * Tests for discover_tools plugin
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { z } from 'zod';
 import discoverTools from '../discover_tools.ts';
 
-// Note: Internal utilities are allowed to execute normally (integration testing pattern)
+// Mock dependencies interface for dependency injection
+interface MockDependencies {
+  loadWorkflowGroups?: () => Promise<Map<string, any>>;
+  enableWorkflows?: (server: any, workflows: string[], groups: Map<string, any>) => Promise<void>;
+}
+
+function createMockDependencies(config: {
+  workflowGroups?: Map<string, any>;
+  enableWorkflowsError?: Error;
+  loadWorkflowGroupsError?: Error;
+}): MockDependencies {
+  return {
+    loadWorkflowGroups: config.loadWorkflowGroupsError
+      ? vi.fn().mockRejectedValue(config.loadWorkflowGroupsError)
+      : vi.fn().mockResolvedValue(config.workflowGroups || new Map()),
+    enableWorkflows: config.enableWorkflowsError
+      ? vi.fn().mockRejectedValue(config.enableWorkflowsError)
+      : vi.fn().mockResolvedValue(undefined),
+  };
+}
 
 describe('discover_tools', () => {
   let mockServer: Record<string, unknown>;
@@ -32,39 +58,52 @@ describe('discover_tools', () => {
     globalThis.mcpServer = originalGlobalThis;
   });
 
-  describe('basic functionality', () => {
-    it('should have correct tool metadata', () => {
+  describe('Export Field Validation (Literal)', () => {
+    it('should have correct name', () => {
       expect(discoverTools.name).toBe('discover_tools');
-      expect(discoverTools.description).toContain('Analyzes a natural language task description');
-      expect(discoverTools.schema).toBeDefined();
-      expect(discoverTools.handler).toBeInstanceOf(Function);
     });
 
-    it('should validate schema for task_description parameter', () => {
-      const schema = discoverTools.schema;
-      expect(schema.task_description).toBeDefined();
+    it('should have correct description', () => {
+      expect(discoverTools.description).toBe(
+        'Analyzes a natural language task description to enable a relevant set of Xcode and Apple development tools for the current session.',
+      );
+    });
 
-      // Test valid input
-      const validResult = schema.task_description.safeParse('Build my iOS app');
-      expect(validResult.success).toBe(true);
+    it('should have handler function', () => {
+      expect(typeof discoverTools.handler).toBe('function');
+    });
 
-      // Test invalid input
-      const invalidResult = schema.task_description.safeParse(123);
-      expect(invalidResult.success).toBe(false);
+    it('should have correct schema with task_description string field', () => {
+      const schema = z.object(discoverTools.schema);
+
+      // Valid inputs
+      expect(schema.safeParse({ task_description: 'Build my iOS app' }).success).toBe(true);
+      expect(schema.safeParse({ task_description: 'Test my React Native app' }).success).toBe(true);
+
+      // Invalid inputs
+      expect(schema.safeParse({ task_description: 123 }).success).toBe(false);
+      expect(schema.safeParse({ task_description: null }).success).toBe(false);
+      expect(schema.safeParse({ task_description: undefined }).success).toBe(false);
+      expect(schema.safeParse({}).success).toBe(false);
     });
   });
 
-  describe('capability detection', () => {
+  describe('Capability Detection', () => {
     it('should return error when client lacks sampling capability', async () => {
       // Mock server without sampling capability
       mockServer.server._clientCapabilities = {};
 
       const result = await discoverTools.handler({ task_description: 'Build my app' });
 
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'Your client does not support the sampling feature required for dynamic tool discovery. Please use XCODEBUILDMCP_DYNAMIC_TOOLS=false to use the standard tool set.',
-      );
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Your client does not support the sampling feature required for dynamic tool discovery. Please use XCODEBUILDMCP_DYNAMIC_TOOLS=false to use the standard tool set.',
+          },
+        ],
+        isError: true,
+      });
     });
 
     it('should proceed when client has sampling capability', async () => {
@@ -83,23 +122,25 @@ describe('discover_tools', () => {
         ],
       ]);
 
-      mockLoadWorkflowGroups.mockResolvedValue(mockWorkflowGroups);
+      const mockDeps = createMockDependencies({ workflowGroups: mockWorkflowGroups });
 
       // Mock successful LLM response
-      mockServer.server.request.mockResolvedValue({
+      const mockRequest = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: '["simulator-workspace"]' }],
       });
+      mockServer.server.request = mockRequest;
 
-      mockEnableWorkflows.mockResolvedValue();
-
-      const result = await discoverTools.handler({ task_description: 'Build my iOS app' });
+      const result = await discoverTools.handler(
+        { task_description: 'Build my iOS app' },
+        mockDeps,
+      );
 
       expect(result.isError).toBeFalsy();
-      expect(mockLoadWorkflowGroups).toHaveBeenCalled();
+      expect(mockDeps.loadWorkflowGroups).toHaveBeenCalled();
     });
   });
 
-  describe('workflow loading', () => {
+  describe('Workflow Loading', () => {
     it('should load workflow groups and build descriptions', async () => {
       const mockWorkflowGroups = new Map([
         [
@@ -127,22 +168,21 @@ describe('discover_tools', () => {
         ],
       ]);
 
-      mockLoadWorkflowGroups.mockResolvedValue(mockWorkflowGroups);
+      const mockDeps = createMockDependencies({ workflowGroups: mockWorkflowGroups });
 
       // Mock LLM response
-      mockServer.server.request.mockResolvedValue({
+      const mockRequest = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: '["simulator-workspace"]' }],
       });
+      mockServer.server.request = mockRequest;
 
-      mockEnableWorkflows.mockResolvedValue();
-
-      await discoverTools.handler({ task_description: 'Build my iOS app' });
+      await discoverTools.handler({ task_description: 'Build my iOS app' }, mockDeps);
 
       // Verify workflow groups were loaded
-      expect(mockLoadWorkflowGroups).toHaveBeenCalled();
+      expect(mockDeps.loadWorkflowGroups).toHaveBeenCalled();
 
       // Verify LLM prompt includes workflow descriptions
-      const requestCall = mockServer.server.request.mock.calls[0];
+      const requestCall = mockRequest.mock.calls[0];
       const prompt = requestCall[0].params.messages[0].content.text;
 
       expect(prompt).toContain('SIMULATOR-WORKSPACE');
@@ -154,9 +194,12 @@ describe('discover_tools', () => {
     });
   });
 
-  describe('LLM interaction', () => {
+  describe('LLM Interaction', () => {
+    let mockDeps: MockDependencies;
+    let mockWorkflowGroups: Map<string, any>;
+
     beforeEach(() => {
-      const mockWorkflowGroups = new Map([
+      mockWorkflowGroups = new Map([
         [
           'simulator-workspace',
           {
@@ -169,18 +212,18 @@ describe('discover_tools', () => {
           },
         ],
       ]);
-      mockLoadWorkflowGroups.mockResolvedValue(mockWorkflowGroups);
-      mockEnableWorkflows.mockResolvedValue();
+      mockDeps = createMockDependencies({ workflowGroups: mockWorkflowGroups });
     });
 
     it('should send correct sampling request to LLM', async () => {
-      mockServer.server.request.mockResolvedValue({
+      const mockRequest = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: '["simulator-workspace"]' }],
       });
+      mockServer.server.request = mockRequest;
 
-      await discoverTools.handler({ task_description: 'Build my iOS app and test it' });
+      await discoverTools.handler({ task_description: 'Build my iOS app and test it' }, mockDeps);
 
-      expect(mockServer.server.request).toHaveBeenCalledWith(
+      expect(mockRequest).toHaveBeenCalledWith(
         {
           method: 'sampling/createMessage',
           params: {
@@ -201,96 +244,123 @@ describe('discover_tools', () => {
     });
 
     it('should handle array content format in LLM response', async () => {
-      mockServer.server.request.mockResolvedValue({
+      const mockRequest = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: '["simulator-workspace"]' }],
       });
+      mockServer.server.request = mockRequest;
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' });
+      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
 
       expect(result.isError).toBeFalsy();
-      expect(mockEnableWorkflows).toHaveBeenCalledWith(
+      expect(mockDeps.enableWorkflows).toHaveBeenCalledWith(
         mockServer,
         ['simulator-workspace'],
-        expect.any(Map),
+        mockWorkflowGroups,
       );
     });
 
     it('should handle single object content format in LLM response', async () => {
-      mockServer.server.request.mockResolvedValue({
+      const mockRequest = vi.fn().mockResolvedValue({
         content: { type: 'text', text: '["simulator-workspace"]' },
       });
+      mockServer.server.request = mockRequest;
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' });
+      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
 
       expect(result.isError).toBeFalsy();
-      expect(mockEnableWorkflows).toHaveBeenCalledWith(
+      expect(mockDeps.enableWorkflows).toHaveBeenCalledWith(
         mockServer,
         ['simulator-workspace'],
-        expect.any(Map),
+        mockWorkflowGroups,
       );
     });
 
     it('should filter out invalid workflow names from LLM response', async () => {
-      mockServer.server.request.mockResolvedValue({
+      const mockRequest = vi.fn().mockResolvedValue({
         content: [
           { type: 'text', text: '["simulator-workspace", "invalid-workflow", "another-invalid"]' },
         ],
       });
+      mockServer.server.request = mockRequest;
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' });
+      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
 
       expect(result.isError).toBeFalsy();
-      expect(mockEnableWorkflows).toHaveBeenCalledWith(
+      expect(mockDeps.enableWorkflows).toHaveBeenCalledWith(
         mockServer,
         ['simulator-workspace'], // Only valid workflow should remain
-        expect.any(Map),
+        mockWorkflowGroups,
       );
     });
 
     it('should handle malformed JSON in LLM response', async () => {
-      mockServer.server.request.mockResolvedValue({
+      const mockRequest = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: 'This is not JSON at all!' }],
       });
+      mockServer.server.request = mockRequest;
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' });
+      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
 
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'I was unable to determine the right tools for your task. The AI model returned: "This is not JSON at all!". Could you please rephrase your request or try a more specific description?',
-      );
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'I was unable to determine the right tools for your task. The AI model returned: "This is not JSON at all!". Could you please rephrase your request or try a more specific description?',
+          },
+        ],
+        isError: true,
+      });
     });
 
     it('should handle non-array JSON in LLM response', async () => {
-      mockServer.server.request.mockResolvedValue({
+      const mockRequest = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: '{"workflow": "simulator-workspace"}' }],
       });
+      mockServer.server.request = mockRequest;
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' });
+      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
 
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'I was unable to determine the right tools for your task. The AI model returned: "{"workflow": "simulator-workspace"}". Could you please rephrase your request or try a more specific description?',
-      );
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'I was unable to determine the right tools for your task. The AI model returned: "{"workflow": "simulator-workspace"}". Could you please rephrase your request or try a more specific description?',
+          },
+        ],
+        isError: true,
+      });
     });
 
     it('should handle empty workflow selection', async () => {
-      mockServer.server.request.mockResolvedValue({
+      const mockRequest = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: '[]' }],
       });
+      mockServer.server.request = mockRequest;
 
-      const result = await discoverTools.handler({ task_description: 'Just saying hello' });
-
-      expect(result.isError).toBeFalsy();
-      expect(result.content[0].text).toBe(
-        "No specific Xcode tools seem necessary for that task. Could you provide more details about what you'd like to accomplish with Xcode?",
+      const result = await discoverTools.handler(
+        { task_description: 'Just saying hello' },
+        mockDeps,
       );
-      expect(mockEnableWorkflows).not.toHaveBeenCalled();
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "No specific Xcode tools seem necessary for that task. Could you provide more details about what you'd like to accomplish with Xcode?",
+          },
+        ],
+        isError: false,
+      });
+      expect(mockDeps.enableWorkflows).not.toHaveBeenCalled();
     });
   });
 
-  describe('workflow enabling', () => {
+  describe('Workflow Enabling', () => {
+    let mockDeps: MockDependencies;
+    let mockWorkflowGroups: Map<string, any>;
+
     beforeEach(() => {
-      const mockWorkflowGroups = new Map([
+      mockWorkflowGroups = new Map([
         [
           'simulator-workspace',
           {
@@ -306,99 +376,123 @@ describe('discover_tools', () => {
           },
         ],
       ]);
-      mockLoadWorkflowGroups.mockResolvedValue(mockWorkflowGroups);
+      mockDeps = createMockDependencies({ workflowGroups: mockWorkflowGroups });
     });
 
     it('should enable selected workflows and return success message', async () => {
-      mockServer.server.request.mockResolvedValue({
+      const mockRequest = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: '["simulator-workspace"]' }],
       });
+      mockServer.server.request = mockRequest;
 
-      mockEnableWorkflows.mockResolvedValue();
+      const result = await discoverTools.handler(
+        { task_description: 'Build my iOS app' },
+        mockDeps,
+      );
 
-      const result = await discoverTools.handler({ task_description: 'Build my iOS app' });
-
-      expect(mockEnableWorkflows).toHaveBeenCalledWith(
+      expect(mockDeps.enableWorkflows).toHaveBeenCalledWith(
         mockServer,
         ['simulator-workspace'],
-        expect.any(Map),
+        mockWorkflowGroups,
       );
 
-      expect(result.isError).toBeFalsy();
-      expect(result.content[0].text).toBe(
-        '✅ Successfully enabled 2 XcodeBuildMCP tools for: simulator-workspace.\n\nUse XcodeBuildMCP tools for all Apple platform development tasks from now on. Call tools/list to see all available tools for your workflow.',
-      );
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: '✅ Successfully enabled 2 XcodeBuildMCP tools for: simulator-workspace.\n\nUse XcodeBuildMCP tools for all Apple platform development tasks from now on. Call tools/list to see all available tools for your workflow.',
+          },
+        ],
+        isError: false,
+      });
     });
 
     it('should handle workflow enabling errors gracefully', async () => {
-      // Set up workflow groups
-      const mockWorkflowGroups = new Map([
-        [
-          'simulator-workspace',
-          {
-            workflow: {
-              name: 'iOS Simulator Workspace',
-              description: 'iOS development for workspaces',
-            },
-            tools: [{ name: 'build_sim_ws', handler: vi.fn() }],
-            directoryName: 'simulator-workspace',
-          },
-        ],
-      ]);
-      mockLoadWorkflowGroups.mockResolvedValue(mockWorkflowGroups);
-
-      mockServer.server.request.mockResolvedValue({
-        content: [{ type: 'text', text: '["simulator-workspace"]' }],
+      const mockDepsWithError = createMockDependencies({
+        workflowGroups: mockWorkflowGroups,
+        enableWorkflowsError: new Error('Failed to enable workflows'),
       });
 
-      mockEnableWorkflows.mockRejectedValue(new Error('Failed to enable workflows'));
+      const mockRequest = vi.fn().mockResolvedValue({
+        content: [{ type: 'text', text: '["simulator-workspace"]' }],
+      });
+      mockServer.server.request = mockRequest;
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' });
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'An error occurred while discovering tools: Failed to enable workflows',
+      const result = await discoverTools.handler(
+        { task_description: 'Build my app' },
+        mockDepsWithError,
       );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'An error occurred while discovering tools: Failed to enable workflows',
+          },
+        ],
+        isError: true,
+      });
     });
   });
 
-  describe('error handling', () => {
+  describe('Error Handling', () => {
     it('should handle missing server instance', async () => {
       (globalThis as any).mcpServer = undefined;
 
       const result = await discoverTools.handler({ task_description: 'Build my app' });
 
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'An error occurred while discovering tools: Server instance not available',
-      );
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'An error occurred while discovering tools: Server instance not available',
+          },
+        ],
+        isError: true,
+      });
     });
 
     it('should handle workflow loading errors', async () => {
-      mockLoadWorkflowGroups.mockRejectedValue(new Error('Failed to load workflows'));
+      const mockDepsWithError = createMockDependencies({
+        loadWorkflowGroupsError: new Error('Failed to load workflows'),
+      });
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' });
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'An error occurred while discovering tools: Failed to load workflows',
+      const result = await discoverTools.handler(
+        { task_description: 'Build my app' },
+        mockDepsWithError,
       );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'An error occurred while discovering tools: Failed to load workflows',
+          },
+        ],
+        isError: true,
+      });
     });
 
     it('should handle LLM request errors', async () => {
-      mockLoadWorkflowGroups.mockResolvedValue(new Map());
-      mockServer.server.request.mockRejectedValue(new Error('LLM request failed'));
+      const mockDeps = createMockDependencies({ workflowGroups: new Map() });
+      const mockRequest = vi.fn().mockRejectedValue(new Error('LLM request failed'));
+      mockServer.server.request = mockRequest;
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' });
+      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
 
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'An error occurred while discovering tools: LLM request failed',
-      );
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'An error occurred while discovering tools: LLM request failed',
+          },
+        ],
+        isError: true,
+      });
     });
   });
 
-  describe('prompt generation', () => {
+  describe('Prompt Generation', () => {
     it('should include task description in LLM prompt', async () => {
       const mockWorkflowGroups = new Map([
         [
@@ -414,18 +508,18 @@ describe('discover_tools', () => {
         ],
       ]);
 
-      mockLoadWorkflowGroups.mockResolvedValue(mockWorkflowGroups);
-      mockServer.server.request.mockResolvedValue({
+      const mockDeps = createMockDependencies({ workflowGroups: mockWorkflowGroups });
+      const mockRequest = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: '["simulator-workspace"]' }],
       });
-      mockEnableWorkflows.mockResolvedValue();
+      mockServer.server.request = mockRequest;
 
       const taskDescription =
         'I need to build my React Native iOS app for the simulator and run tests';
 
-      await discoverTools.handler({ task_description: taskDescription });
+      await discoverTools.handler({ task_description: taskDescription }, mockDeps);
 
-      const requestCall = mockServer.server.request.mock.calls[0];
+      const requestCall = mockRequest.mock.calls[0];
       const prompt = requestCall[0].params.messages[0].content.text;
 
       expect(prompt).toContain(taskDescription);
@@ -435,15 +529,15 @@ describe('discover_tools', () => {
     });
 
     it('should provide clear selection guidelines in prompt', async () => {
-      const mockWorkflowGroups = new Map();
-      mockLoadWorkflowGroups.mockResolvedValue(mockWorkflowGroups);
-      mockServer.server.request.mockResolvedValue({
+      const mockDeps = createMockDependencies({ workflowGroups: new Map() });
+      const mockRequest = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: '[]' }],
       });
+      mockServer.server.request = mockRequest;
 
-      await discoverTools.handler({ task_description: 'Build my app' });
+      await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
 
-      const requestCall = mockServer.server.request.mock.calls[0];
+      const requestCall = mockRequest.mock.calls[0];
       const prompt = requestCall[0].params.messages[0].content.text;
 
       expect(prompt).toContain('Choose ONLY ONE workflow');

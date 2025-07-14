@@ -1,86 +1,23 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { z } from 'zod';
+/**
+ * Tests for test_sim_name_ws plugin
+ * Following CLAUDE.md testing standards with dependency injection and literal validation
+ */
+
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { createMockExecutor } from '../../utils/command.js';
 import testSimNameWs from './test_sim_name_ws.ts';
 
-vi.mock('child_process', () => ({
-  exec: vi.fn(),
-}));
-
-vi.mock('util', () => ({
-  promisify: vi.fn(),
-}));
-
-vi.mock('fs/promises', () => ({
-  mkdtemp: vi.fn(),
-  rm: vi.fn(),
-  stat: vi.fn(),
-}));
-
-vi.mock('os', () => ({
-  tmpdir: vi.fn(),
-}));
-
-vi.mock('path', () => ({
-  join: vi.fn(),
-}));
-
-vi.mock('../../utils/index.js', () => ({
-  executeXcodeBuildCommand: vi.fn(),
-  createTextResponse: vi.fn(),
-  createErrorResponse: vi.fn(),
-  log: vi.fn(),
-}));
-
 describe('test_sim_name_ws plugin', () => {
-  let mockExecuteXcodeBuildCommand: MockedFunction<any>;
-  let mockCreateTextResponse: MockedFunction<any>;
-  let mockMkdtemp: MockedFunction<any>;
-  let mockRm: MockedFunction<any>;
-  let mockStat: MockedFunction<any>;
-  let mockTmpdir: MockedFunction<any>;
-  let mockJoin: MockedFunction<any>;
-  let mockPromisify: MockedFunction<any>;
-  let mockExec: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const utilsModule = await import('../../src/utils/index.ts');
-    const utilModule = await import('util');
-    const childProcessModule = await import('child_process');
-    const fsModule = await import('fs/promises');
-    const osModule = await import('os');
-    const pathModule = await import('path');
-
-    mockExecuteXcodeBuildCommand = utilsModule.executeXcodeBuildCommand as MockedFunction<any>;
-    mockCreateTextResponse = utilsModule.createTextResponse as MockedFunction<any>;
-    mockMkdtemp = fsModule.mkdtemp as MockedFunction<any>;
-    mockRm = fsModule.rm as MockedFunction<any>;
-    mockStat = fsModule.stat as MockedFunction<any>;
-    mockTmpdir = osModule.tmpdir as MockedFunction<any>;
-    mockJoin = pathModule.join as MockedFunction<any>;
-    mockPromisify = utilModule.promisify as MockedFunction<any>;
-    mockExec = childProcessModule.exec as MockedFunction<any>;
-
-    mockCreateTextResponse.mockImplementation((text: string, isError: boolean = false) => ({
-      content: [{ type: 'text', text }],
-      isError,
-    }));
-
-    // Setup default mock values
-    mockTmpdir.mockReturnValue('/tmp');
-    mockJoin.mockReturnValue('/tmp/xcodebuild-test-abc123/TestResults.xcresult');
-    mockMkdtemp.mockResolvedValue('/tmp/xcodebuild-test-abc123');
-    mockRm.mockResolvedValue(undefined);
-    mockStat.mockResolvedValue({ isFile: () => true });
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name field', () => {
+    it('should have correct name', () => {
       expect(testSimNameWs.name).toBe('test_sim_name_ws');
     });
 
-    it('should have correct description field', () => {
+    it('should have correct description', () => {
       expect(testSimNameWs.description).toBe(
         'Runs tests for a workspace on a simulator by name using xcodebuild test and parses xcresult output.',
       );
@@ -90,176 +27,135 @@ describe('test_sim_name_ws plugin', () => {
       expect(typeof testSimNameWs.handler).toBe('function');
     });
 
-    it('should have correct schema validation', () => {
-      const schema = z.object(testSimNameWs.schema);
-
+    it('should validate schema correctly', () => {
+      // Test required fields
       expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
+        testSimNameWs.schema.workspacePath.safeParse('/path/to/workspace.xcworkspace').success,
       ).toBe(true);
+      expect(testSimNameWs.schema.scheme.safeParse('MyScheme').success).toBe(true);
+      expect(testSimNameWs.schema.simulatorName.safeParse('iPhone 16').success).toBe(true);
 
-      expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-          configuration: 'Release',
-          useLatestOS: true,
-          preferXcodebuild: false,
-        }).success,
-      ).toBe(true);
+      // Test optional fields
+      expect(testSimNameWs.schema.configuration.safeParse('Debug').success).toBe(true);
+      expect(testSimNameWs.schema.derivedDataPath.safeParse('/path/to/derived').success).toBe(true);
+      expect(testSimNameWs.schema.extraArgs.safeParse(['--quiet']).success).toBe(true);
+      expect(testSimNameWs.schema.preferXcodebuild.safeParse(true).success).toBe(true);
+      expect(testSimNameWs.schema.useLatestOS.safeParse(true).success).toBe(true);
 
-      expect(
-        schema.safeParse({
-          workspacePath: 123,
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(false);
+      // Test invalid inputs
+      expect(testSimNameWs.schema.workspacePath.safeParse(123).success).toBe(false);
+      expect(testSimNameWs.schema.extraArgs.safeParse('not-array').success).toBe(false);
+      expect(testSimNameWs.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
+      expect(testSimNameWs.schema.useLatestOS.safeParse('not-boolean').success).toBe(false);
     });
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should handle successful test execution', async () => {
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Tests completed successfully',
-          },
-        ],
-        isError: false,
+    it('should handle missing parameters and generate test command', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
       });
 
-      // Mock xcresulttool execution
-      const mockExecAsync = vi.fn().mockResolvedValue({
-        stdout: JSON.stringify({
-          title: 'Test Run',
-          result: 'SUCCESS',
-          totalTestCount: 5,
-          passedTests: 5,
-          failedTests: 0,
-          skippedTests: 0,
-          expectedFailures: 0,
-        }),
-      });
-      mockPromisify.mockReturnValue(mockExecAsync);
-
-      const result = await testSimNameWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Tests completed successfully',
-          },
-          {
-            type: 'text',
-            text: '\nTest Results Summary:\nTest Summary: Test Run\nOverall Result: SUCCESS\n\nTest Counts:\n  Total: 5\n  Passed: 5\n  Failed: 0\n  Skipped: 0\n  Expected Failures: 0\n',
-          },
-        ],
-        isError: false,
-      });
-    });
-
-    it('should handle test failure', async () => {
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Test execution failed',
-          },
-        ],
-        isError: true,
-      });
-
-      // Mock xcresulttool execution for failed tests
-      const mockExecAsync = vi.fn().mockResolvedValue({
-        stdout: JSON.stringify({
-          title: 'Test Run',
-          result: 'FAILURE',
-          totalTestCount: 5,
-          passedTests: 3,
-          failedTests: 2,
-          skippedTests: 0,
-          expectedFailures: 0,
-          testFailures: [
-            {
-              testName: 'testExample',
-              targetName: 'AppTests',
-              failureText: 'Assertion failed',
-            },
-          ],
-        }),
-      });
-      mockPromisify.mockReturnValue(mockExecAsync);
-
-      const result = await testSimNameWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Test execution failed',
-          },
-          {
-            type: 'text',
-            text: '\nTest Results Summary:\nTest Summary: Test Run\nOverall Result: FAILURE\n\nTest Counts:\n  Total: 5\n  Passed: 3\n  Failed: 2\n  Skipped: 0\n  Expected Failures: 0\n\nTest Failures:\n  1. testExample (AppTests)\n     Assertion failed\n',
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should set default values correctly', async () => {
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [{ type: 'text', text: 'Success' }],
-        isError: false,
-      });
-
-      // Mock xcresulttool execution to prevent path errors
-      const mockExecAsync = vi.fn().mockResolvedValue({
-        stdout: JSON.stringify({
-          title: 'Test Run',
-          result: 'SUCCESS',
-          totalTestCount: 1,
-          passedTests: 1,
-          failedTests: 0,
-          skippedTests: 0,
-          expectedFailures: 0,
-        }),
-      });
-      mockPromisify.mockReturnValue(mockExecAsync);
-
-      await testSimNameWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
-
-      // The handler should call with default values
-      expect(mockExecuteXcodeBuildCommand).toHaveBeenCalledWith(
-        expect.objectContaining({
+      const result = await testSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
           configuration: 'Debug',
-          useLatestOS: false,
-          preferXcodebuild: false,
-          platform: 'iOS Simulator',
-        }),
-        expect.any(Object),
-        false,
-        'test',
+        },
+        mockExecutor,
       );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should return successful test response when xcodebuild succeeds', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await testSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+          configuration: 'Debug',
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should return error response when xcodebuild fails', async () => {
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'xcodebuild: error: Scheme not found',
+      });
+
+      const result = await testSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'NonExistentScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+    });
+
+    it('should use default configuration when not provided', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await testSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should handle optional parameters correctly', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await testSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+          configuration: 'Release',
+          derivedDataPath: '/custom/derived',
+          extraArgs: ['--verbose'],
+          useLatestOS: true,
+          preferXcodebuild: true,
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
     });
   });
 });

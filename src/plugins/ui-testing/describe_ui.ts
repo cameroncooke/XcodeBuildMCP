@@ -29,7 +29,11 @@ export default {
   schema: {
     simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    axeHelpers?: any,
+  ): Promise<ToolResponse> {
     const params = args;
     const toolName = 'describe_ui';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -46,6 +50,7 @@ export default {
         simulatorUuid,
         'describe-ui',
         executor,
+        axeHelpers,
       );
 
       // Record the describe_ui call for warning system
@@ -100,9 +105,10 @@ async function executeAxeCommand(
   simulatorUuid: string,
   commandName: string,
   executor?: CommandExecutor,
+  axeHelpers?: any,
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
-  const axeBinary = getAxePath();
+  const axeBinary = axeHelpers ? axeHelpers.getAxePath() : getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -115,7 +121,12 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv = axeBinary !== 'axe' ? getBundledAxeEnvironment() : undefined;
+    const axeEnv =
+      axeBinary !== 'axe'
+        ? axeHelpers
+          ? axeHelpers.getBundledAxeEnvironment()
+          : getBundledAxeEnvironment()
+        : undefined;
 
     const result = await executeCommand(
       fullCommand,

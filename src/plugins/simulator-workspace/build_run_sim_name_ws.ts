@@ -3,7 +3,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import { execSync } from 'child_process';
 
 const XcodePlatform = {
@@ -11,7 +11,10 @@ const XcodePlatform = {
 };
 
 // Helper function for simulator build logic
-async function _handleSimulatorBuildLogic(params: Record<string, unknown>): Promise<ToolResponse> {
+async function _handleSimulatorBuildLogic(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   log('info', `Building ${params.workspacePath || params.projectPath} for iOS Simulator`);
 
   try {
@@ -26,6 +29,7 @@ async function _handleSimulatorBuildLogic(params: Record<string, unknown>): Prom
       },
       params.preferXcodebuild,
       'build',
+      executor,
     );
 
     return buildResult;
@@ -39,6 +43,7 @@ async function _handleSimulatorBuildLogic(params: Record<string, unknown>): Prom
 // Helper function for iOS Simulator build and run logic (by name)
 async function _handleIOSSimulatorBuildAndRunLogic(
   params: Record<string, unknown>,
+  executor?: CommandExecutor,
 ): Promise<ToolResponse> {
   log(
     'info',
@@ -47,8 +52,22 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
   try {
     // Step 1: Find simulator by name first
-    const simulatorsOutput = execSync('xcrun simctl list devices available --json').toString();
-    const simulatorsData = JSON.parse(simulatorsOutput);
+    let simulatorsData;
+    if (executor) {
+      // When using dependency injection (testing), get simulator data from mock
+      const simulatorListResult = await executor(
+        ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
+        'List Simulators',
+      );
+      if (!simulatorListResult.success) {
+        return createTextResponse(`Failed to list simulators: ${simulatorListResult.error}`, true);
+      }
+      simulatorsData = JSON.parse(simulatorListResult.output);
+    } else {
+      // Production path - use execSync
+      const simulatorsOutput = execSync('xcrun simctl list devices available --json').toString();
+      simulatorsData = JSON.parse(simulatorsOutput);
+    }
     let foundSimulator = null;
 
     // Find the target simulator by name
@@ -75,7 +94,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     log('info', `Found simulator for run: ${foundSimulator.name} (${simulatorUuid})`);
 
     // Step 2: Build
-    const buildResult = await _handleSimulatorBuildLogic(params);
+    const buildResult = await _handleSimulatorBuildLogic(params, executor);
 
     if (buildResult.isError) {
       return buildResult;
@@ -97,7 +116,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
       `platform=${XcodePlatform.iOSSimulator},name=${params.simulatorName}${params.useLatestOS ? ',OS=latest' : ''}`,
     );
 
-    const result = await executeCommand(command, 'Get App Path');
+    const result = await executeCommand(command, 'Get App Path', true, {}, executor);
 
     if (!result.success) {
       return createTextResponse(`Failed to get app path: ${result.error}`, true);
@@ -128,6 +147,9 @@ async function _handleIOSSimulatorBuildAndRunLogic(
       const bootResult = await executeCommand(
         ['xcrun', 'simctl', 'boot', simulatorUuid],
         'Boot Simulator',
+        true,
+        {},
+        executor,
       );
 
       if (!bootResult.success) {
@@ -140,6 +162,9 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     const installResult = await executeCommand(
       ['xcrun', 'simctl', 'install', simulatorUuid, appPath],
       'Install App',
+      true,
+      {},
+      executor,
     );
 
     if (!installResult.success) {
@@ -151,6 +176,9 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     const bundleIdResult = await executeCommand(
       ['plutil', '-extract', 'CFBundleIdentifier', 'raw', `${appPath}/Info.plist`],
       'Get Bundle ID',
+      true,
+      {},
+      executor,
     );
 
     if (!bundleIdResult.success) {
@@ -166,6 +194,9 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     const launchResult = await executeCommand(
       ['xcrun', 'simctl', 'launch', simulatorUuid, bundleId],
       'Launch App',
+      true,
+      {},
+      executor,
     );
 
     if (!launchResult.success) {
@@ -227,7 +258,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
@@ -240,11 +271,14 @@ export default {
     if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
 
     // Provide defaults
-    return _handleIOSSimulatorBuildAndRunLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      useLatestOS: params.useLatestOS ?? true,
-      preferXcodebuild: params.preferXcodebuild ?? false,
-    });
+    return _handleIOSSimulatorBuildAndRunLogic(
+      {
+        ...params,
+        configuration: params.configuration ?? 'Debug',
+        useLatestOS: params.useLatestOS ?? true,
+        preferXcodebuild: params.preferXcodebuild ?? false,
+      },
+      executor,
+    );
   },
 };

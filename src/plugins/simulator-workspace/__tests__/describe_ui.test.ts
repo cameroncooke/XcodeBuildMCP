@@ -1,57 +1,25 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 
 // Import the plugin
 import describeUi from '../describe_ui.ts';
 
-// Mock external dependencies
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  createTextResponse: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  DependencyError: class DependencyError extends Error {},
-  AxeError: class AxeError extends Error {
-    constructor(message: string, command: string, output: string, simulatorUuid: string) {
-      super(message);
-      this.axeOutput = output;
-      this.name = 'AxeError';
-    }
-    axeOutput: string;
-  },
-  SystemError: class SystemError extends Error {
-    constructor(message: string, originalError?: Error) {
-      super(message);
-      this.originalError = originalError;
-      this.name = 'SystemError';
-    }
-    originalError?: Error;
-  },
-  createErrorResponse: vi.fn(),
-  executeCommand: vi.fn(),
-  createAxeNotAvailableResponse: vi.fn(),
-  getAxePath: vi.fn(),
-  getBundledAxeEnvironment: vi.fn(),
-}));
-
 describe('describe_ui tool', () => {
-  let mockLog: MockedFunction<any>;
-  let mockValidateRequiredParam: MockedFunction<any>;
-  let mockExecuteCommand: MockedFunction<any>;
-  let mockGetAxePath: MockedFunction<any>;
-  let mockCreateAxeNotAvailableResponse: MockedFunction<any>;
-  let mockCreateErrorResponse: MockedFunction<any>;
+  let mockExecutor: any;
+  let mockAxeHelpers: any;
 
-  beforeEach(async () => {
-    const utils = await import('../../../utils/index.js');
+  beforeEach(() => {
+    mockExecutor = createMockExecutor({
+      success: true,
+      output: '{"root": {"elements": []}}',
+      error: undefined,
+    });
 
-    mockLog = utils.log as MockedFunction<any>;
-    mockValidateRequiredParam = utils.validateRequiredParam as MockedFunction<any>;
-    mockExecuteCommand = utils.executeCommand as MockedFunction<any>;
-    mockGetAxePath = utils.getAxePath as MockedFunction<any>;
-    mockCreateAxeNotAvailableResponse = utils.createAxeNotAvailableResponse as MockedFunction<any>;
-    mockCreateErrorResponse = utils.createErrorResponse as MockedFunction<any>;
-
-    vi.clearAllMocks();
+    mockAxeHelpers = {
+      getAxePath: () => '/usr/local/bin/axe',
+      getBundledAxeEnvironment: () => ({}),
+    };
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -92,47 +60,27 @@ describe('describe_ui tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: false,
-        errorResponse: {
-          content: [
-            {
-              type: 'text',
-              text: 'simulatorUuid is required',
-            },
-          ],
-        },
-      });
-
-      const result = await describeUi.handler({ simulatorUuid: '' });
+      const result = await describeUi.handler({}, mockExecutor, mockAxeHelpers);
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'simulatorUuid is required',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
     it('should handle successful UI description', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockGetAxePath.mockReturnValue('/path/to/axe');
-
-      mockExecuteCommand.mockResolvedValue({
-        success: true,
-        output: '{"root": {"elements": []}}',
-        error: '',
-      });
-
-      const result = await describeUi.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789abc',
-      });
+      const result = await describeUi.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789abc',
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
         content: [
@@ -152,32 +100,24 @@ describe('describe_ui tool', () => {
     });
 
     it('should handle dependency error when AXe not available', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
+      const mockAxeHelpersNoAxe = {
+        getAxePath: () => null,
+        getBundledAxeEnvironment: () => ({}),
+      };
 
-      mockGetAxePath.mockReturnValue(null);
-
-      mockCreateAxeNotAvailableResponse.mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'AXe tools are not available',
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await describeUi.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789abc',
-      });
+      const result = await describeUi.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789abc',
+        },
+        mockExecutor,
+        mockAxeHelpersNoAxe,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'AXe tools are not available',
+            text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
           },
         ],
         isError: true,
@@ -185,38 +125,25 @@ describe('describe_ui tool', () => {
     });
 
     it('should handle AXe command failure', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockGetAxePath.mockReturnValue('/path/to/axe');
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockFailExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Simulator not found',
       });
 
-      mockCreateErrorResponse.mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: "Failed to get accessibility hierarchy: axe command 'describe-ui' failed.",
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await describeUi.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789abc',
-      });
+      const result = await describeUi.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789abc',
+        },
+        mockFailExecutor,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Failed to get accessibility hierarchy: axe command 'describe-ui' failed.",
+            text: "Error: Failed to get accessibility hierarchy: axe command 'describe-ui' failed.\nDetails: Simulator not found",
           },
         ],
         isError: true,
@@ -224,37 +151,25 @@ describe('describe_ui tool', () => {
     });
 
     it('should handle exception with Error object', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
+      const mockErrorExecutor = async () => {
+        throw new Error('Command execution failed');
+      };
 
-      mockGetAxePath.mockReturnValue('/path/to/axe');
+      const result = await describeUi.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789abc',
+        },
+        mockErrorExecutor,
+        mockAxeHelpers,
+      );
 
-      mockExecuteCommand.mockResolvedValue({
-        success: false,
-        error: 'Command execution failed',
-      });
-
-      mockCreateErrorResponse.mockReturnValue({
+      expect(result).toMatchObject({
         content: [
           {
             type: 'text',
-            text: 'An unexpected error occurred: Command execution failed',
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await describeUi.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789abc',
-      });
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'An unexpected error occurred: Command execution failed',
+            text: expect.stringContaining(
+              'Error: System error executing axe: Failed to execute axe command: Command execution failed',
+            ),
           },
         ],
         isError: true,
@@ -262,37 +177,23 @@ describe('describe_ui tool', () => {
     });
 
     it('should handle exception with string error', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
+      const mockStringErrorExecutor = async () => {
+        throw 'String error';
+      };
 
-      mockGetAxePath.mockReturnValue('/path/to/axe');
-
-      mockExecuteCommand.mockResolvedValue({
-        success: false,
-        error: 'String error',
-      });
-
-      mockCreateErrorResponse.mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'An unexpected error occurred: String error',
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await describeUi.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789abc',
-      });
+      const result = await describeUi.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789abc',
+        },
+        mockStringErrorExecutor,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'An unexpected error occurred: String error',
+            text: 'Error: System error executing axe: Failed to execute axe command: String error',
           },
         ],
         isError: true,

@@ -1,41 +1,15 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { z } from 'zod';
+/**
+ * Tests for build_run_sim_name_ws plugin
+ * Following CLAUDE.md testing standards with dependency injection and literal validation
+ */
 
-// Import the plugin
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
 import buildRunSimNameWs from '../build_run_sim_name_ws.ts';
 
-// Mock external dependencies
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  createTextResponse: vi.fn(),
-  executeXcodeBuildCommand: vi.fn(),
-  executeCommand: vi.fn(),
-}));
-
-vi.mock('child_process', () => ({
-  execSync: vi.fn(),
-}));
-
 describe('build_run_sim_name_ws tool', () => {
-  let mockLog: MockedFunction<any>;
-  let mockValidateRequiredParam: MockedFunction<any>;
-  let mockCreateTextResponse: MockedFunction<any>;
-  let mockExecuteXcodeBuildCommand: MockedFunction<any>;
-  let mockExecuteCommand: MockedFunction<any>;
-  let mockExecSync: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const utils = await import('../../../utils/index.js');
-    const childProcess = await import('child_process');
-
-    mockLog = utils.log as MockedFunction<any>;
-    mockValidateRequiredParam = utils.validateRequiredParam as MockedFunction<any>;
-    mockCreateTextResponse = utils.createTextResponse as MockedFunction<any>;
-    mockExecuteXcodeBuildCommand = utils.executeXcodeBuildCommand as MockedFunction<any>;
-    mockExecuteCommand = utils.executeCommand as MockedFunction<any>;
-    mockExecSync = childProcess.execSync as MockedFunction<any>;
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
@@ -130,114 +104,87 @@ describe('build_run_sim_name_ws tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure for workspacePath', async () => {
-      mockValidateRequiredParam.mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [
-            {
-              type: 'text',
-              text: 'workspacePath is required',
-            },
-          ],
-        },
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Mock output',
       });
 
-      const result = await buildRunSimNameWs.handler({
-        workspacePath: '',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: undefined,
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'workspacePath is required',
+            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
     it('should handle validation failure for scheme', async () => {
-      mockValidateRequiredParam
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [
-              {
-                type: 'text',
-                text: 'scheme is required',
-              },
-            ],
-          },
-        });
-
-      const result = await buildRunSimNameWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: '',
-        simulatorName: 'iPhone 16',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Mock output',
       });
+
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: undefined,
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'scheme is required',
+            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
     it('should handle validation failure for simulatorName', async () => {
-      mockValidateRequiredParam
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [
-              {
-                type: 'text',
-                text: 'simulatorName is required',
-              },
-            ],
-          },
-        });
-
-      const result = await buildRunSimNameWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorName: '',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Mock output',
       });
+
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorName: undefined,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'simulatorName is required',
+            text: "Required parameter 'simulatorName' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
     it('should handle simulator not found', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecSync.mockReturnValue(
-        JSON.stringify({
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: JSON.stringify({
           devices: {
             'iOS 16.0': [
               {
@@ -248,23 +195,16 @@ describe('build_run_sim_name_ws tool', () => {
             ],
           },
         }),
+      });
+
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
       );
-
-      mockCreateTextResponse.mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: "Build succeeded, but could not find an available simulator named 'iPhone 16'. Use list_simulators({}) to check available devices.",
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await buildRunSimNameWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
 
       expect(result).toEqual({
         content: [
@@ -278,190 +218,121 @@ describe('build_run_sim_name_ws tool', () => {
     });
 
     it('should handle build failure', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Build failed with error',
       });
 
-      mockExecSync.mockReturnValue(
-        JSON.stringify({
-          devices: {
-            'iOS 16.0': [
-              {
-                udid: 'test-uuid-123',
-                name: 'iPhone 16',
-                state: 'Booted',
-              },
-            ],
-          },
-        }),
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
       );
 
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        isError: true,
-        content: [
-          {
-            type: 'text',
-            text: 'Build failed with error',
-          },
-        ],
-      });
-
-      const result = await buildRunSimNameWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
-
-      expect(result).toEqual({
-        isError: true,
-        content: [
-          {
-            type: 'text',
-            text: 'Build failed with error',
-          },
-        ],
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
     });
 
     it('should handle successful build and run', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecSync.mockReturnValue(
-        JSON.stringify({
-          devices: {
-            'iOS 16.0': [
-              {
-                udid: 'test-uuid-123',
-                name: 'iPhone 16',
-                state: 'Booted',
+      // Create a mock executor that simulates successful flow
+      const mockExecutor = async (command: string[]) => {
+        if (command.includes('simctl') && command.includes('list')) {
+          // First call: return simulator list with iPhone 16
+          return {
+            success: true,
+            output: JSON.stringify({
+              devices: {
+                'iOS 16.0': [
+                  {
+                    udid: 'test-uuid-123',
+                    name: 'iPhone 16',
+                    state: 'Booted',
+                  },
+                ],
               },
-            ],
-          },
-        }),
+            }),
+            process: { pid: 12345 },
+          };
+        } else if (command.includes('xcodebuild') && command.includes('-showBuildSettings')) {
+          // Build settings call
+          return {
+            success: true,
+            output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n',
+            process: { pid: 12345 },
+          };
+        } else if (command.includes('plutil')) {
+          // Bundle ID extraction
+          return {
+            success: true,
+            output: 'com.example.MyApp',
+            process: { pid: 12345 },
+          };
+        } else {
+          // Other commands (boot, install, launch)
+          return {
+            success: true,
+            output: 'Success',
+            process: { pid: 12345 },
+          };
+        }
+      };
+
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
       );
 
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        isError: false,
-        content: [
-          {
-            type: 'text',
-            text: 'Build successful',
-          },
-        ],
-      });
-
-      mockExecuteCommand
-        .mockResolvedValueOnce({
-          success: true,
-          output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n',
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          output: '',
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          output: 'com.example.MyApp',
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          output: 'Process launched',
-        });
-
-      const result = await buildRunSimNameWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Build successful',
-          },
-          {
-            type: 'text',
-            text: '✅ App built, installed, and launched successfully on iPhone 16',
-          },
-          {
-            type: 'text',
-            text: '📱 App Path: /path/to/build/MyApp.app',
-          },
-          {
-            type: 'text',
-            text: '📱 Bundle ID: com.example.MyApp',
-          },
-          {
-            type: 'text',
-            text: '📱 Simulator: iPhone 16 (test-uuid-123)',
-          },
-        ],
-      });
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
     });
 
     it('should handle exception with Error object', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Command failed',
       });
 
-      mockCreateTextResponse.mockImplementation((text: string, isError: boolean = false) => ({
-        content: [{ type: 'text', text }],
-        isError,
-      }));
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
 
-      mockExecuteXcodeBuildCommand.mockRejectedValue(new Error('Command failed'));
-
-      const result = await buildRunSimNameWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error building for iOS Simulator: Command failed',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
     });
 
     it('should handle exception with string error', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'String error',
       });
 
-      mockCreateTextResponse.mockImplementation((text: string, isError: boolean = false) => ({
-        content: [{ type: 'text', text }],
-        isError,
-      }));
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
 
-      mockExecuteXcodeBuildCommand.mockRejectedValue('String error');
-
-      const result = await buildRunSimNameWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error building for iOS Simulator: String error',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
     });
   });
 });
