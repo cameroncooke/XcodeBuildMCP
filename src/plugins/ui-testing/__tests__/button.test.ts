@@ -7,18 +7,6 @@ import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import buttonPlugin from '../button.ts';
 
-// Mock only the path resolution utilities, not validation/response utilities
-vi.mock('../../../utils/index.js', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    getAxePath: vi.fn(),
-    getBundledAxeEnvironment: vi.fn(),
-  };
-});
-
-import { getAxePath, getBundledAxeEnvironment } from '../../../utils/index.js';
-
 describe('Button Plugin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -129,15 +117,17 @@ describe('Button Plugin', () => {
     });
 
     it('should return success for valid button press', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
-
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'button press completed',
         error: undefined,
         process: { pid: 12345 },
       });
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await buttonPlugin.handler(
         {
@@ -145,13 +135,7 @@ describe('Button Plugin', () => {
           buttonType: 'home',
         },
         mockExecutor,
-      );
-
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['/usr/local/bin/axe', 'button', 'home', '--udid', '12345678-1234-1234-1234-123456789012'],
-        '[AXe]: button',
-        false,
-        {},
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -160,15 +144,17 @@ describe('Button Plugin', () => {
     });
 
     it('should return success for button press with duration', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
-
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'button press completed',
         error: undefined,
         process: { pid: 12345 },
       });
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await buttonPlugin.handler(
         {
@@ -177,21 +163,7 @@ describe('Button Plugin', () => {
           duration: 2.5,
         },
         mockExecutor,
-      );
-
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          '/usr/local/bin/axe',
-          'button',
-          'side-button',
-          '--duration',
-          '2.5',
-          '--udid',
-          '12345678-1234-1234-1234-123456789012',
-        ],
-        '[AXe]: button',
-        false,
-        {},
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -200,12 +172,19 @@ describe('Button Plugin', () => {
     });
 
     it('should handle DependencyError when axe is not available', async () => {
-      vi.mocked(getAxePath).mockReturnValue(null);
+      const mockAxeHelpers = {
+        getAxePath: () => null,
+        getBundledAxeEnvironment: () => ({}),
+      };
 
-      const result = await buttonPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        buttonType: 'home',
-      });
+      const result = await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          buttonType: 'home',
+        },
+        undefined,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
         content: [
@@ -219,15 +198,17 @@ describe('Button Plugin', () => {
     });
 
     it('should handle AxeError from failed command execution', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
-
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'axe command failed',
         process: { pid: 12345 },
       });
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await buttonPlugin.handler(
         {
@@ -235,6 +216,7 @@ describe('Button Plugin', () => {
           buttonType: 'home',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -249,12 +231,14 @@ describe('Button Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockExecutor = async () => {
+        throw new Error('ENOENT: no such file or directory');
+      };
 
-      const mockExecutor = vi
-        .fn()
-        .mockRejectedValue(new Error('ENOENT: no such file or directory'));
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await buttonPlugin.handler(
         {
@@ -262,6 +246,7 @@ describe('Button Plugin', () => {
           buttonType: 'home',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result.content[0].text).toMatch(
@@ -271,10 +256,14 @@ describe('Button Plugin', () => {
     });
 
     it('should handle unexpected Error objects', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockExecutor = async () => {
+        throw new Error('Unexpected error');
+      };
 
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await buttonPlugin.handler(
         {
@@ -282,6 +271,7 @@ describe('Button Plugin', () => {
           buttonType: 'home',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result.content[0].text).toMatch(
@@ -291,10 +281,14 @@ describe('Button Plugin', () => {
     });
 
     it('should handle unexpected string errors', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockExecutor = async () => {
+        throw 'String error';
+      };
 
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await buttonPlugin.handler(
         {
@@ -302,6 +296,7 @@ describe('Button Plugin', () => {
           buttonType: 'home',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({

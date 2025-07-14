@@ -1,0 +1,683 @@
+🚨 CRITICAL: VITEST MOCKING AUDIT - ALL VITEST MOCKING IS BANNED 🚨
+
+ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()
+
+📊 VITEST MOCKING VIOLATION ANALYSIS
+===================================
+Total test files analyzed: 121
+🚨 FILES VIOLATING VITEST MOCKING BAN: 81
+  └─ setTimeout-based violations: 1
+  └─ vitest mocking violations: 30
+✅ COMPLIANT (pure dependency injection): 15
+⚠️  MIXED VIOLATIONS: 50
+📝 No patterns detected: 25
+
+❌ FILES THAT NEED CONVERSION (81):
+=====================================
+1. src/plugins/device-project/__tests__/build_dev_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 90: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 90: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 6 more vitest patterns
+
+2. src/plugins/device-project/__tests__/get_device_app_path_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (16):
+   Line 88: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 88: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 14 more vitest patterns
+
+3. src/plugins/device-project/__tests__/test_device_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (31):
+   Line 12: vi.mock('fs/promises', () => ({
+   Line 13: mkdtemp: vi.fn(),
+   ... and 29 more vitest patterns
+
+4. src/plugins/device-workspace/__tests__/build_dev_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 85: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 85: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 6 more vitest patterns
+
+5. src/plugins/device-workspace/__tests__/get_device_app_path_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (6):
+   Line 83: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 83: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 4 more vitest patterns
+
+6. src/plugins/device-workspace/__tests__/install_app_device.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 94: const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+   Line 94: const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+   ... and 6 more vitest patterns
+
+7. src/plugins/device-workspace/__tests__/launch_app_device.test.ts
+   🧪 VITEST MOCKING PATTERNS (19):
+   Line 12: vi.mock('fs', () => ({
+   Line 14: readFile: vi.fn().mockResolvedValue('{}'),
+   ... and 17 more vitest patterns
+
+8. src/plugins/device-workspace/__tests__/list_devices.test.ts
+   🧪 VITEST MOCKING PATTERNS (31):
+   Line 12: vi.mock('fs', () => ({
+   Line 14: readFile: vi.fn(),
+   ... and 29 more vitest patterns
+
+9. src/plugins/device-workspace/__tests__/stop_app_device.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 95: const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+   Line 95: const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+   ... and 6 more vitest patterns
+
+10. src/plugins/device-workspace/__tests__/test_device_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 55: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 55: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 6 more vitest patterns
+
+11. src/plugins/diagnostics/__tests__/diagnostic.test.ts
+   🧪 VITEST MOCKING PATTERNS (22):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 10: vi.mock('child_process', () => ({
+   ... and 20 more vitest patterns
+
+12. src/plugins/logging/__tests__/start_device_log_cap.test.ts
+   🧪 VITEST MOCKING PATTERNS (37):
+   Line 10: vi.mock('uuid', () => ({
+   Line 11: v4: vi.fn(() => 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'),
+   ... and 35 more vitest patterns
+
+13. src/plugins/logging/__tests__/start_sim_log_cap.test.ts
+   🧪 VITEST MOCKING PATTERNS (31):
+   Line 9: vi.mock('uuid', () => ({
+   Line 10: v4: vi.fn(() => 'test-uuid-123'),
+   ... and 29 more vitest patterns
+
+14. src/plugins/logging/__tests__/stop_device_log_cap.test.ts
+   🧪 VITEST MOCKING PATTERNS (35):
+   Line 10: vi.mock('fs', () => ({
+   Line 12: access: vi.fn(),
+   ... and 33 more vitest patterns
+
+15. src/plugins/logging/__tests__/stop_sim_log_cap.test.ts
+   🧪 VITEST MOCKING PATTERNS (20):
+   Line 17: vi.mock('fs', () => ({
+   Line 19: access: vi.fn(),
+   ... and 18 more vitest patterns
+
+16. src/plugins/macos-project/__tests__/build_mac_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (12):
+   Line 12: vi.mock('../../../utils/build-utils.js', () => ({
+   Line 13: executeXcodeBuildCommand: vi.fn(),
+   ... and 10 more vitest patterns
+
+17. src/plugins/macos-project/__tests__/build_run_mac_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (32):
+   Line 8: vi.mock('child_process', () => ({
+   Line 9: exec: vi.fn(),
+   ... and 30 more vitest patterns
+
+18. src/plugins/macos-project/__tests__/get_mac_app_path_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (14):
+   Line 74: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 74: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 12 more vitest patterns
+
+19. src/plugins/macos-project/__tests__/test_macos_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (18):
+   Line 85: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 85: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 16 more vitest patterns
+
+20. src/plugins/macos-shared/__tests__/launch_mac_app.test.ts
+   🧪 VITEST MOCKING PATTERNS (21):
+   Line 12: vi.mock('child_process', () => ({
+   Line 13: exec: vi.fn(),
+   ... and 19 more vitest patterns
+
+21. src/plugins/macos-shared/__tests__/stop_mac_app.test.ts
+   🧪 VITEST MOCKING PATTERNS (11):
+   Line 6: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 11: vi.mock('util', () => ({
+   ... and 9 more vitest patterns
+
+22. src/plugins/macos-workspace/__tests__/build_mac_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (4):
+   Line 146: const mockExecutor = vi.fn().mockImplementation(() => {
+   Line 146: const mockExecutor = vi.fn().mockImplementation(() => {
+   ... and 2 more vitest patterns
+
+23. src/plugins/macos-workspace/__tests__/build_run_mac_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (12):
+   Line 13: vi.mock('child_process', () => ({
+   Line 14: exec: vi.fn(),
+   ... and 10 more vitest patterns
+
+24. src/plugins/macos-workspace/__tests__/get_mac_app_path_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (2):
+   Line 164: const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+   Line 164: const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+
+25. src/plugins/macos-workspace/__tests__/launch_mac_app.test.ts
+   🧪 VITEST MOCKING PATTERNS (21):
+   Line 12: vi.mock('child_process', () => ({
+   Line 13: exec: vi.fn(),
+   ... and 19 more vitest patterns
+
+26. src/plugins/macos-workspace/__tests__/stop_mac_app.test.ts
+   🧪 VITEST MOCKING PATTERNS (11):
+   Line 6: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 11: vi.mock('util', () => ({
+   ... and 9 more vitest patterns
+
+27. src/plugins/macos-workspace/__tests__/test_macos_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (41):
+   Line 12: vi.mock('child_process', () => ({
+   Line 13: spawn: vi.fn(),
+   ... and 39 more vitest patterns
+
+28. src/plugins/project-discovery/__tests__/discover_projs.test.ts
+   🧪 VITEST MOCKING PATTERNS (33):
+   Line 1: import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
+   Line 7: vi.mock('node:fs/promises', () => {
+   ... and 31 more vitest patterns
+
+29. src/plugins/project-discovery/__tests__/get_app_bundle_id.test.ts
+   🧪 VITEST MOCKING PATTERNS (20):
+   Line 1: import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
+   Line 7: vi.mock('child_process', () => ({
+   ... and 18 more vitest patterns
+
+30. src/plugins/project-discovery/__tests__/get_mac_bundle_id.test.ts
+   🧪 VITEST MOCKING PATTERNS (20):
+   Line 1: import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
+   Line 7: vi.mock('child_process', () => ({
+   ... and 18 more vitest patterns
+
+31. src/plugins/project-discovery/__tests__/list_schems_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 168: const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
+   Line 168: const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
+   ... and 6 more vitest patterns
+
+32. src/plugins/project-discovery/__tests__/list_schems_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (12):
+   Line 54: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 54: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 10 more vitest patterns
+
+33. src/plugins/project-discovery/__tests__/show_build_set_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 63: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 63: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 6 more vitest patterns
+
+34. src/plugins/project-discovery/__tests__/show_build_set_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 76: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 76: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 6 more vitest patterns
+
+35. src/plugins/simulator-project/__tests__/build_run_sim_id_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (16):
+   Line 7: vi.mock('child_process', () => ({
+   Line 8: execSync: vi.fn(),
+   ... and 14 more vitest patterns
+
+36. src/plugins/simulator-project/__tests__/build_run_sim_name_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (16):
+   Line 7: vi.mock('child_process', () => ({
+   Line 8: spawn: vi.fn(),
+   ... and 14 more vitest patterns
+
+37. src/plugins/simulator-project/__tests__/build_sim_id_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (4):
+   Line 181: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 181: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 2 more vitest patterns
+
+38. src/plugins/simulator-project/__tests__/build_sim_name_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 7: vi.mock('../../../utils/build-utils.js', () => ({
+   Line 8: executeXcodeBuildCommand: vi.fn(),
+   ... and 6 more vitest patterns
+
+39. src/plugins/simulator-project/__tests__/get_sim_app_path_id_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (4):
+   Line 255: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 255: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 2 more vitest patterns
+
+40. src/plugins/simulator-project/__tests__/get_sim_app_path_name_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (4):
+   Line 255: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 255: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 2 more vitest patterns
+
+41. src/plugins/simulator-project/test_sim_id_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (6):
+   Line 214: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 214: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 4 more vitest patterns
+
+42. src/plugins/simulator-project/test_sim_name_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (16):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 6: vi.mock('../../utils/index.js', () => ({
+   ... and 14 more vitest patterns
+
+43. src/plugins/simulator-shared/__tests__/boot_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 109: const mockExecutor = vi.fn().mockRejectedValue(new Error('Connection failed'));
+   Line 109: const mockExecutor = vi.fn().mockRejectedValue(new Error('Connection failed'));
+   ... and 6 more vitest patterns
+
+44. src/plugins/simulator-shared/__tests__/install_app_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (18):
+   Line 7: vi.mock('child_process', () => ({
+   Line 8: execSync: vi.fn(),
+   ... and 16 more vitest patterns
+
+45. src/plugins/simulator-shared/__tests__/launch_app_logs_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (44):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 5: vi.mock('child_process', () => ({
+   ... and 42 more vitest patterns
+
+46. src/plugins/simulator-shared/__tests__/list_sims.test.ts
+   🧪 VITEST MOCKING PATTERNS (14):
+   Line 56: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 56: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 12 more vitest patterns
+
+47. src/plugins/simulator-shared/__tests__/open_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 102: const mockExecutor = vi.fn().mockRejectedValue(new Error('Test error'));
+   Line 102: const mockExecutor = vi.fn().mockRejectedValue(new Error('Test error'));
+   ... and 6 more vitest patterns
+
+48. src/plugins/simulator-shared/__tests__/reset_network_condition.test.ts
+   🧪 VITEST MOCKING PATTERNS (10):
+   Line 53: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 53: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 8 more vitest patterns
+
+49. src/plugins/simulator-shared/__tests__/reset_simulator_location.test.ts
+   🧪 VITEST MOCKING PATTERNS (32):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 5: vi.mock('../../utils/index.js', () => ({
+   ... and 30 more vitest patterns
+
+50. src/plugins/simulator-shared/__tests__/screenshot.test.ts
+   🧪 VITEST MOCKING PATTERNS (29):
+   Line 6: vi.mock('fs/promises', () => ({
+   Line 7: readFile: vi.fn(),
+   ... and 27 more vitest patterns
+
+51. src/plugins/simulator-shared/__tests__/set_network_condition.test.ts
+   🧪 VITEST MOCKING PATTERNS (38):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 8: vi.mock('../../utils/index.js', () => ({
+   ... and 36 more vitest patterns
+
+52. src/plugins/simulator-shared/__tests__/set_sim_appearance.test.ts
+   🧪 VITEST MOCKING PATTERNS (32):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 5: vi.mock('../../utils/index.js', () => ({
+   ... and 30 more vitest patterns
+
+53. src/plugins/simulator-shared/__tests__/set_simulator_location.test.ts
+   🧪 VITEST MOCKING PATTERNS (42):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 8: vi.mock('../../utils/index.js', () => ({
+   ... and 40 more vitest patterns
+
+54. src/plugins/simulator-shared/__tests__/stop_app_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (6):
+   Line 140: const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+   Line 140: const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+   ... and 4 more vitest patterns
+
+55. src/plugins/simulator-workspace/__tests__/boot_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (4):
+   Line 105: const mockExecutor = vi.fn().mockRejectedValue(new Error('Connection failed'));
+   Line 105: const mockExecutor = vi.fn().mockRejectedValue(new Error('Connection failed'));
+   ... and 2 more vitest patterns
+
+56. src/plugins/simulator-workspace/__tests__/build_run_sim_id_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (13):
+   Line 9: vi.mock('child_process', () => ({
+   Line 10: spawn: vi.fn(),
+   ... and 11 more vitest patterns
+
+57. src/plugins/simulator-workspace/__tests__/get_sim_app_path_name_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 108: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 108: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 6 more vitest patterns
+
+58. src/plugins/simulator-workspace/__tests__/reset_network_condition.test.ts
+   🧪 VITEST MOCKING PATTERNS (6):
+   Line 114: mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+   Line 114: mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+   ... and 4 more vitest patterns
+
+59. src/plugins/simulator-workspace/__tests__/stop_app_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (6):
+   Line 152: mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+   Line 152: mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+   ... and 4 more vitest patterns
+
+60. src/plugins/simulator-workspace/launch_app_logs_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (44):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 5: vi.mock('child_process', () => ({
+   ... and 42 more vitest patterns
+
+61. src/plugins/simulator-workspace/list_sims.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 164: const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
+   Line 164: const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
+   ... and 6 more vitest patterns
+
+62. src/plugins/simulator-workspace/open_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 94: const mockExecutor = vi.fn().mockRejectedValue(new Error('Test error'));
+   Line 94: const mockExecutor = vi.fn().mockRejectedValue(new Error('Test error'));
+   ... and 6 more vitest patterns
+
+63. src/plugins/simulator-workspace/reset_simulator_location.test.ts
+   🧪 VITEST MOCKING PATTERNS (32):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 5: vi.mock('../../utils/index.js', () => ({
+   ... and 30 more vitest patterns
+
+64. src/plugins/simulator-workspace/set_network_condition.test.ts
+   🧪 VITEST MOCKING PATTERNS (38):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 8: vi.mock('../../utils/index.js', () => ({
+   ... and 36 more vitest patterns
+
+65. src/plugins/simulator-workspace/set_sim_appearance.test.ts
+   🧪 VITEST MOCKING PATTERNS (32):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 5: vi.mock('../../utils/index.js', () => ({
+   ... and 30 more vitest patterns
+
+66. src/plugins/simulator-workspace/set_simulator_location.test.ts
+   🧪 VITEST MOCKING PATTERNS (42):
+   Line 1: import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+   Line 8: vi.mock('../../utils/index.js', () => ({
+   ... and 40 more vitest patterns
+
+67. src/plugins/swift-package/__tests__/swift_package_build.test.ts
+   🧪 VITEST MOCKING PATTERNS (14):
+   Line 55: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 55: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 12 more vitest patterns
+
+68. src/plugins/swift-package/__tests__/swift_package_clean.test.ts
+   🧪 VITEST MOCKING PATTERNS (6):
+   Line 44: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 44: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 4 more vitest patterns
+
+69. src/plugins/swift-package/__tests__/swift_package_list.test.ts
+   🧪 VITEST MOCKING PATTERNS (38):
+   Line 38: vi.spyOn(Array, 'from').mockReturnValue([]);
+   Line 38: vi.spyOn(Array, 'from').mockReturnValue([]);
+   ... and 36 more vitest patterns
+
+70. src/plugins/swift-package/__tests__/swift_package_run.test.ts
+   🧪 VITEST MOCKING PATTERNS (26):
+   Line 18: stdout: { on: vi.fn() },
+   Line 19: stderr: { on: vi.fn() },
+   ... and 24 more vitest patterns
+
+71. src/plugins/swift-package/__tests__/swift_package_stop.test.ts
+   🕐 TIMEOUT PATTERNS (2):
+   Line 122: setTimeout(() => callback(), 0);
+   Line 375: setTimeout(() => callback(), 0);
+
+72. src/plugins/swift-package/__tests__/swift_package_test.test.ts
+   🧪 VITEST MOCKING PATTERNS (10):
+   Line 60: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 60: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 8 more vitest patterns
+
+73. src/plugins/ui-testing/__tests__/button.test.ts
+   🧪 VITEST MOCKING PATTERNS (44):
+   Line 11: vi.mock('../../../utils/index.js', async (importOriginal) => {
+   Line 15: getAxePath: vi.fn(),
+   ... and 42 more vitest patterns
+
+74. src/plugins/ui-testing/__tests__/describe_ui.test.ts
+   🧪 VITEST MOCKING PATTERNS (36):
+   Line 11: vi.mock('../../../utils/index.js', async (importOriginal) => {
+   Line 15: getAxePath: vi.fn(),
+   ... and 34 more vitest patterns
+
+75. src/plugins/ui-testing/__tests__/gesture.test.ts
+   🧪 VITEST MOCKING PATTERNS (44):
+   Line 11: vi.mock('../../../utils/index.js', async (importOriginal) => {
+   Line 15: getAxePath: vi.fn(),
+   ... and 42 more vitest patterns
+
+76. src/plugins/ui-testing/__tests__/key_sequence.test.ts
+   🧪 VITEST MOCKING PATTERNS (42):
+   Line 11: vi.mock('../../../utils/index.js', async (importOriginal) => {
+   Line 15: getAxePath: vi.fn(),
+   ... and 40 more vitest patterns
+
+77. src/plugins/ui-testing/__tests__/type_text.test.ts
+   🧪 VITEST MOCKING PATTERNS (30):
+   Line 11: vi.mock('../../../utils/index.js', async (importOriginal) => {
+   Line 15: getAxePath: vi.fn(),
+   ... and 28 more vitest patterns
+
+78. src/plugins/utilities/__tests__/clean_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (16):
+   Line 91: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 91: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 14 more vitest patterns
+
+79. src/plugins/utilities/__tests__/clean_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (14):
+   Line 83: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 83: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 12 more vitest patterns
+
+80. src/plugins/utilities/__tests__/scaffold_ios_project.test.ts
+   🧪 VITEST MOCKING PATTERNS (2):
+   Line 348: mockCommandExecutor = vi.fn().mockImplementation(() => {
+   Line 348: mockCommandExecutor = vi.fn().mockImplementation(() => {
+
+81. src/plugins/utilities/__tests__/scaffold_macos_project.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 20: let mockTemplateManager: any;
+   Line 29: mockTemplateManager = {
+   ... and 6 more vitest patterns
+
+⚠️  FILES WITH MIXED PATTERNS (50):
+===================================
+1. src/plugins/device-project/__tests__/build_dev_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+2. src/plugins/device-project/__tests__/get_device_app_path_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+3. src/plugins/device-project/__tests__/test_device_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+4. src/plugins/device-workspace/__tests__/build_dev_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+5. src/plugins/device-workspace/__tests__/get_device_app_path_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+6. src/plugins/device-workspace/__tests__/install_app_device.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+7. src/plugins/device-workspace/__tests__/launch_app_device.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+8. src/plugins/device-workspace/__tests__/list_devices.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+9. src/plugins/device-workspace/__tests__/stop_app_device.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+10. src/plugins/device-workspace/__tests__/test_device_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+11. src/plugins/macos-project/__tests__/build_mac_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+12. src/plugins/macos-project/__tests__/build_run_mac_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+13. src/plugins/macos-project/__tests__/get_mac_app_path_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+14. src/plugins/macos-project/__tests__/test_macos_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+15. src/plugins/macos-workspace/__tests__/build_mac_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+16. src/plugins/macos-workspace/__tests__/build_run_mac_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+17. src/plugins/macos-workspace/__tests__/get_mac_app_path_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+18. src/plugins/project-discovery/__tests__/list_schems_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+19. src/plugins/project-discovery/__tests__/show_build_set_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+20. src/plugins/project-discovery/__tests__/show_build_set_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+21. src/plugins/simulator-project/__tests__/build_run_sim_id_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+22. src/plugins/simulator-project/__tests__/build_run_sim_name_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+23. src/plugins/simulator-project/__tests__/build_sim_id_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+24. src/plugins/simulator-project/__tests__/build_sim_name_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+25. src/plugins/simulator-project/__tests__/get_sim_app_path_id_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+26. src/plugins/simulator-project/__tests__/get_sim_app_path_name_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+27. src/plugins/simulator-project/test_sim_id_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+28. src/plugins/simulator-shared/__tests__/boot_sim.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+29. src/plugins/simulator-shared/__tests__/install_app_sim.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+30. src/plugins/simulator-shared/__tests__/open_sim.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+31. src/plugins/simulator-shared/__tests__/reset_network_condition.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+32. src/plugins/simulator-shared/__tests__/stop_app_sim.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+33. src/plugins/simulator-workspace/__tests__/boot_sim.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+34. src/plugins/simulator-workspace/__tests__/build_run_sim_id_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+35. src/plugins/simulator-workspace/__tests__/get_sim_app_path_name_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+36. src/plugins/simulator-workspace/__tests__/reset_network_condition.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+37. src/plugins/simulator-workspace/__tests__/stop_app_sim.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+38. src/plugins/simulator-workspace/list_sims.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+39. src/plugins/simulator-workspace/open_sim.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+40. src/plugins/swift-package/__tests__/swift_package_build.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+41. src/plugins/swift-package/__tests__/swift_package_clean.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+42. src/plugins/swift-package/__tests__/swift_package_test.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+43. src/plugins/ui-testing/__tests__/button.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+44. src/plugins/ui-testing/__tests__/describe_ui.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+45. src/plugins/ui-testing/__tests__/gesture.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+46. src/plugins/ui-testing/__tests__/key_sequence.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+47. src/plugins/ui-testing/__tests__/type_text.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+48. src/plugins/utilities/__tests__/clean_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+49. src/plugins/utilities/__tests__/scaffold_ios_project.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+50. src/plugins/utilities/__tests__/scaffold_macos_project.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+✅ SUCCESSFULLY CONVERTED FILES (15):
+====================================
+1. src/plugins/simulator-shared/__tests__/launch_app_sim.test.ts
+2. src/plugins/simulator-workspace/__tests__/build_run_sim_name_ws.test.ts
+3. src/plugins/simulator-workspace/__tests__/build_sim_id_ws.test.ts
+4. src/plugins/simulator-workspace/__tests__/build_sim_name_ws.test.ts
+5. src/plugins/simulator-workspace/__tests__/describe_ui.test.ts
+6. src/plugins/simulator-workspace/__tests__/get_sim_app_path_id_ws.test.ts
+7. src/plugins/simulator-workspace/__tests__/test_sim_id_ws.test.ts
+8. src/plugins/simulator-workspace/launch_app_sim.test.ts
+9. src/plugins/simulator-workspace/test_sim_name_ws.test.ts
+10. src/plugins/ui-testing/__tests__/key_press.test.ts
+11. src/plugins/ui-testing/__tests__/long_press.test.ts
+12. src/plugins/ui-testing/__tests__/screenshot.test.ts
+13. src/plugins/ui-testing/__tests__/swipe.test.ts
+14. src/plugins/ui-testing/__tests__/tap.test.ts
+15. src/plugins/ui-testing/__tests__/touch.test.ts
+
+🚨 CRITICAL ACTION REQUIRED:
+===========================
+1. IMMEDIATELY remove ALL vitest mocking from 81 files
+2. BANNED: vi.mock(), vi.fn(), .mockResolvedValue(), .toHaveBeenCalled(), etc.
+3. ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()
+4. Update plugin implementations to accept executor?: CommandExecutor parameter
+5. Run this script again after each fix to track progress
+
+🚨 TOP 5 FILES WITH MOST VIOLATIONS:
+1. src/plugins/simulator-shared/__tests__/launch_app_logs_sim.test.ts (44 violations: 0 timeout + 44 vitest)
+2. src/plugins/simulator-workspace/launch_app_logs_sim.test.ts (44 violations: 0 timeout + 44 vitest)
+3. src/plugins/ui-testing/__tests__/button.test.ts (44 violations: 0 timeout + 44 vitest)
+4. src/plugins/ui-testing/__tests__/gesture.test.ts (44 violations: 0 timeout + 44 vitest)
+5. src/plugins/simulator-shared/__tests__/set_simulator_location.test.ts (42 violations: 0 timeout + 42 vitest)

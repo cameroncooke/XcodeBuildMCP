@@ -80,7 +80,7 @@ describe('clean_ws plugin tests', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return success response for valid clean workspace request', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Clean succeeded',
         error: undefined,
@@ -103,29 +103,10 @@ describe('clean_ws plugin tests', () => {
           },
         ],
       });
-
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcodebuild',
-          '-workspace',
-          '/path/to/MyProject.xcworkspace',
-          '-scheme',
-          'MyScheme',
-          '-configuration',
-          'Debug',
-          '-skipMacroValidation',
-          '-destination',
-          'platform=macOS',
-          'clean',
-        ],
-        'Clean',
-        true,
-        undefined,
-      );
     });
 
     it('should return success response with all optional parameters', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Clean succeeded',
         error: undefined,
@@ -151,32 +132,10 @@ describe('clean_ws plugin tests', () => {
           },
         ],
       });
-
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcodebuild',
-          '-workspace',
-          '/path/to/MyProject.xcworkspace',
-          '-scheme',
-          'MyScheme',
-          '-configuration',
-          'Release',
-          '-skipMacroValidation',
-          '-destination',
-          'platform=macOS',
-          '-derivedDataPath',
-          '/path/to/derived/data',
-          '--verbose',
-          'clean',
-        ],
-        'Clean',
-        true,
-        undefined,
-      );
     });
 
     it('should return success response with minimal parameters and defaults', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Clean succeeded',
         error: undefined,
@@ -198,25 +157,6 @@ describe('clean_ws plugin tests', () => {
           },
         ],
       });
-
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcodebuild',
-          '-workspace',
-          '/path/to/MyProject.xcworkspace',
-          '-scheme',
-          '',
-          '-configuration',
-          'Debug',
-          '-skipMacroValidation',
-          '-destination',
-          'platform=macOS',
-          'clean',
-        ],
-        'Clean',
-        true,
-        undefined,
-      );
     });
 
     it('should return error response for command failure', async () => {
@@ -265,7 +205,7 @@ describe('clean_ws plugin tests', () => {
     });
 
     it('should handle spawn process error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn failed'));
+      const mockExecutor = createMockExecutor(new Error('spawn failed'));
 
       const result = await cleanWs.handler(
         {

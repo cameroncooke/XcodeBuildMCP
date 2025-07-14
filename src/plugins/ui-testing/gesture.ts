@@ -17,6 +17,11 @@ import {
   getBundledAxeEnvironment,
 } from '../../utils/index.js';
 
+interface AxeHelpers {
+  getAxePath: () => string | null;
+  getBundledAxeEnvironment: () => Record<string, string>;
+}
+
 const LOG_PREFIX = '[AXe]';
 
 export default {
@@ -76,7 +81,11 @@ export default {
       .optional()
       .describe('Optional: Delay after completing the gesture in seconds.'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    axeHelpers?: AxeHelpers,
+  ): Promise<ToolResponse> {
     const params = args;
     const toolName = 'gesture';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -118,7 +127,7 @@ export default {
     log('info', `${LOG_PREFIX}/${toolName}: Starting gesture '${preset}' on ${simulatorUuid}`);
 
     try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'gesture', executor);
+      await executeAxeCommand(commandArgs, simulatorUuid, 'gesture', executor, axeHelpers);
       log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
       return createTextResponse(`Gesture '${preset}' executed successfully.`);
     } catch (error) {
@@ -153,9 +162,10 @@ async function executeAxeCommand(
   simulatorUuid: string,
   commandName: string,
   executor?: CommandExecutor,
+  axeHelpers?: AxeHelpers,
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
-  const axeBinary = getAxePath();
+  const axeBinary = axeHelpers ? axeHelpers.getAxePath() : getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -168,7 +178,12 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv = axeBinary !== 'axe' ? getBundledAxeEnvironment() : undefined;
+    const axeEnv =
+      axeBinary !== 'axe'
+        ? axeHelpers
+          ? axeHelpers.getBundledAxeEnvironment()
+          : getBundledAxeEnvironment()
+        : undefined;
 
     const result = executor
       ? await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv)

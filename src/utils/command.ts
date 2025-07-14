@@ -159,15 +159,27 @@ export async function executeCommand(
 
 /**
  * Create a mock executor for testing
- * @param result Mock command result
+ * @param result Mock command result or error to throw
  * @returns Mock executor function
  */
-export function createMockExecutor(result: {
-  success?: boolean;
-  output?: string;
-  error?: string;
-  process?: any;
-}): CommandExecutor {
+export function createMockExecutor(
+  result:
+    | {
+        success?: boolean;
+        output?: string;
+        error?: string;
+        process?: any;
+      }
+    | Error
+    | string,
+): CommandExecutor {
+  // If result is Error or string, return executor that rejects
+  if (result instanceof Error || typeof result === 'string') {
+    return async () => {
+      throw result;
+    };
+  }
+
   const mockProcess = {
     pid: 12345,
     stdout: null,

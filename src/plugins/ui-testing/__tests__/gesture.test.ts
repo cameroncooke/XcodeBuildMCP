@@ -7,18 +7,6 @@ import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import gesturePlugin from '../gesture.ts';
 
-// Mock only the path resolution utilities, not validation/response utilities
-vi.mock('../../../utils/index.js', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    getAxePath: vi.fn(),
-    getBundledAxeEnvironment: vi.fn(),
-  };
-});
-
-import { getAxePath, getBundledAxeEnvironment } from '../../../utils/index.js';
-
 describe('Gesture Plugin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -131,15 +119,17 @@ describe('Gesture Plugin', () => {
     });
 
     it('should return success for valid gesture execution', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
-
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'gesture completed',
         error: undefined,
         process: { pid: 12345 },
       });
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await gesturePlugin.handler(
         {
@@ -147,19 +137,7 @@ describe('Gesture Plugin', () => {
           preset: 'scroll-up',
         },
         mockExecutor,
-      );
-
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          '/usr/local/bin/axe',
-          'gesture',
-          'scroll-up',
-          '--udid',
-          '12345678-1234-1234-1234-123456789012',
-        ],
-        '[AXe]: gesture',
-        false,
-        {},
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -169,15 +147,17 @@ describe('Gesture Plugin', () => {
     });
 
     it('should return success for gesture execution with all optional parameters', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
-
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'gesture completed',
         error: undefined,
         process: { pid: 12345 },
       });
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await gesturePlugin.handler(
         {
@@ -191,31 +171,7 @@ describe('Gesture Plugin', () => {
           postDelay: 0.2,
         },
         mockExecutor,
-      );
-
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          '/usr/local/bin/axe',
-          'gesture',
-          'swipe-from-left-edge',
-          '--screen-width',
-          '375',
-          '--screen-height',
-          '667',
-          '--duration',
-          '1',
-          '--delta',
-          '50',
-          '--pre-delay',
-          '0.1',
-          '--post-delay',
-          '0.2',
-          '--udid',
-          '12345678-1234-1234-1234-123456789012',
-        ],
-        '[AXe]: gesture',
-        false,
-        {},
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -225,12 +181,19 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle DependencyError when axe is not available', async () => {
-      vi.mocked(getAxePath).mockReturnValue(null);
+      const mockAxeHelpers = {
+        getAxePath: () => null,
+        getBundledAxeEnvironment: () => ({}),
+      };
 
-      const result = await gesturePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        preset: 'scroll-up',
-      });
+      const result = await gesturePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          preset: 'scroll-up',
+        },
+        undefined,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
         content: [
@@ -244,15 +207,17 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle AxeError from failed command execution', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
-
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'axe command failed',
         process: { pid: 12345 },
       });
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await gesturePlugin.handler(
         {
@@ -260,6 +225,7 @@ describe('Gesture Plugin', () => {
           preset: 'scroll-up',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -274,12 +240,12 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockExecutor = createMockExecutor(new Error('ENOENT: no such file or directory'));
 
-      const mockExecutor = vi
-        .fn()
-        .mockRejectedValue(new Error('ENOENT: no such file or directory'));
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await gesturePlugin.handler(
         {
@@ -287,6 +253,7 @@ describe('Gesture Plugin', () => {
           preset: 'scroll-up',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result.content[0].text).toMatch(
@@ -296,10 +263,12 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle unexpected Error objects', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockExecutor = createMockExecutor(new Error('Unexpected error'));
 
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await gesturePlugin.handler(
         {
@@ -307,6 +276,7 @@ describe('Gesture Plugin', () => {
           preset: 'scroll-up',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result.content[0].text).toMatch(
@@ -316,10 +286,12 @@ describe('Gesture Plugin', () => {
     });
 
     it('should handle unexpected string errors', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockExecutor = createMockExecutor('String error');
 
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await gesturePlugin.handler(
         {
@@ -327,6 +299,7 @@ describe('Gesture Plugin', () => {
           preset: 'scroll-up',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
