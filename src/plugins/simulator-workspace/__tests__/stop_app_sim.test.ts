@@ -1,30 +1,12 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
-import plugin from './stop_app_sim.ts';
-
-// Mock only child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-// Mock child process class
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
+import { createMockExecutor } from '../../../utils/command.js';
+import plugin from '../stop_app_sim.ts';
 
 describe('stop_app_sim plugin', () => {
-  let mockSpawn: Record<string, unknown>;
-  let mockProcess: MockChildProcess;
+  let mockExecutor: ReturnType<typeof createMockExecutor>;
 
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
-    mockSpawn = vi.mocked(spawn);
-    mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
@@ -77,22 +59,17 @@ describe('stop_app_sim plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should stop app successfully', async () => {
-      // Set up successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', '');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await plugin.handler({
-        simulatorUuid: 'test-uuid',
-        bundleId: 'com.example.App',
+      mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
       });
 
-      // Verify command was called correctly
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'xcrun simctl terminate test-uuid com.example.App'],
-        expect.any(Object),
+      const result = await plugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+          bundleId: 'com.example.App',
+        },
+        mockExecutor,
       );
 
       expect(result).toEqual({
@@ -106,16 +83,18 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle command failure', async () => {
-      // Set up command failure
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Simulator not found');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await plugin.handler({
-        simulatorUuid: 'invalid-uuid',
-        bundleId: 'com.example.App',
+      mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Simulator not found',
       });
+
+      const result = await plugin.handler(
+        {
+          simulatorUuid: 'invalid-uuid',
+          bundleId: 'com.example.App',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -129,10 +108,15 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle missing simulatorUuid', async () => {
-      const result = await plugin.handler({
-        simulatorUuid: undefined,
-        bundleId: 'com.example.App',
-      });
+      mockExecutor = createMockExecutor({ success: true });
+
+      const result = await plugin.handler(
+        {
+          simulatorUuid: undefined,
+          bundleId: 'com.example.App',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -146,7 +130,12 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle missing bundleId', async () => {
-      const result = await plugin.handler({ simulatorUuid: 'test-uuid', bundleId: undefined });
+      mockExecutor = createMockExecutor({ success: true });
+
+      const result = await plugin.handler(
+        { simulatorUuid: 'test-uuid', bundleId: undefined },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -160,15 +149,15 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle exception during execution', async () => {
-      // Set up spawn error
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('Unexpected error'));
-      }, 0);
+      mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
 
-      const result = await plugin.handler({
-        simulatorUuid: 'test-uuid',
-        bundleId: 'com.example.App',
-      });
+      const result = await plugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+          bundleId: 'com.example.App',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -182,21 +171,24 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should call correct command', async () => {
-      // Set up successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', '');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      await plugin.handler({
-        simulatorUuid: 'test-uuid',
-        bundleId: 'com.example.App',
+      mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: '',
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'xcrun simctl terminate test-uuid com.example.App'],
-        expect.any(Object),
+      await plugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+          bundleId: 'com.example.App',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['xcrun', 'simctl', 'terminate', 'test-uuid', 'com.example.App'],
+        'Stop App in Simulator',
+        true,
+        undefined,
       );
     });
   });
