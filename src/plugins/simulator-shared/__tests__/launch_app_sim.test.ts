@@ -1,20 +1,7 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 import launchAppSim from '../launch_app_sim.ts';
-
-vi.mock('child_process', () => ({
-  execSync: vi.fn(),
-}));
-
-vi.mock('../../utils/index.js', () => ({
-  executeCommand: vi.fn(),
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  validateFileExists: vi.fn(),
-  startLogCapture: vi.fn(),
-  createTextResponse: vi.fn(),
-  createErrorResponse: vi.fn(),
-}));
 
 describe('launch_app_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -66,46 +53,44 @@ describe('launch_app_sim tool', () => {
     });
   });
 
-  let mockExecuteCommand: MockedFunction<any>;
-  let mockValidateRequiredParam: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const { executeCommand, validateRequiredParam } = await import('../../../utils/index.js');
-    mockExecuteCommand = executeCommand as MockedFunction<any>;
-    mockExecuteCommand.mockResolvedValue({
-      success: true,
-      output: 'App launched successfully',
-      error: '',
-    });
-
-    mockValidateRequiredParam = validateRequiredParam as MockedFunction<any>;
-
-    mockValidateRequiredParam.mockReturnValue({
-      isValid: true,
-      errorResponse: null,
-    });
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle successful app launch', async () => {
-      mockExecuteCommand
-        .mockResolvedValueOnce({
-          success: true,
-          output: '/path/to/app/container',
-          error: '',
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          output: 'App launched successfully',
-          error: '',
-        });
+      let callCount = 0;
+      const mockExecutor = createMockExecutor({});
+      const originalExecutor = mockExecutor;
 
-      const result = await launchAppSim.handler({
-        simulatorUuid: 'test-uuid-123',
-        bundleId: 'com.example.testapp',
-      });
+      const sequencedExecutor = async (command: string[], logPrefix?: string) => {
+        callCount++;
+        if (callCount === 1) {
+          // First call - app container check
+          return {
+            success: true,
+            output: '/path/to/app/container',
+            error: '',
+            process: {} as any,
+          };
+        } else {
+          // Second call - launch command
+          return {
+            success: true,
+            output: 'App launched successfully',
+            error: '',
+            process: {} as any,
+          };
+        }
+      };
+
+      const result = await launchAppSim.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          bundleId: 'com.example.testapp',
+        },
+        sequencedExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -132,49 +117,65 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should handle app launch with additional arguments', async () => {
-      mockExecuteCommand
-        .mockResolvedValueOnce({
-          success: true,
-          output: '/path/to/app/container',
-          error: '',
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          output: 'App launched successfully',
-          error: '',
-        });
+      let callCount = 0;
+      const commands: string[][] = [];
 
-      const result = await launchAppSim.handler({
-        simulatorUuid: 'test-uuid-123',
-        bundleId: 'com.example.testapp',
-        args: ['--debug', '--verbose'],
-      });
+      const sequencedExecutor = async (command: string[], logPrefix?: string) => {
+        commands.push(command);
+        callCount++;
+        if (callCount === 1) {
+          // First call - app container check
+          return {
+            success: true,
+            output: '/path/to/app/container',
+            error: '',
+            process: {} as any,
+          };
+        } else {
+          // Second call - launch command
+          return {
+            success: true,
+            output: 'App launched successfully',
+            error: '',
+            process: {} as any,
+          };
+        }
+      };
 
-      expect(mockExecuteCommand).toHaveBeenCalledWith(
-        [
-          'xcrun',
-          'simctl',
-          'launch',
-          'test-uuid-123',
-          'com.example.testapp',
-          '--debug',
-          '--verbose',
-        ],
-        'Launch App in Simulator',
+      const result = await launchAppSim.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          bundleId: 'com.example.testapp',
+          args: ['--debug', '--verbose'],
+        },
+        sequencedExecutor,
       );
+
+      expect(commands[1]).toEqual([
+        'xcrun',
+        'simctl',
+        'launch',
+        'test-uuid-123',
+        'com.example.testapp',
+        '--debug',
+        '--verbose',
+      ]);
     });
 
     it('should handle app not installed error', async () => {
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'App not found',
       });
 
-      const result = await launchAppSim.handler({
-        simulatorUuid: 'test-uuid-123',
-        bundleId: 'com.example.testapp',
-      });
+      const result = await launchAppSim.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          bundleId: 'com.example.testapp',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -188,22 +189,36 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should handle app launch failure', async () => {
-      mockExecuteCommand
-        .mockResolvedValueOnce({
-          success: true,
-          output: '/path/to/app/container',
-          error: '',
-        })
-        .mockResolvedValueOnce({
-          success: false,
-          output: '',
-          error: 'Launch failed',
-        });
+      let callCount = 0;
 
-      const result = await launchAppSim.handler({
-        simulatorUuid: 'test-uuid-123',
-        bundleId: 'com.example.testapp',
-      });
+      const sequencedExecutor = async (command: string[], logPrefix?: string) => {
+        callCount++;
+        if (callCount === 1) {
+          // First call - app container check succeeds
+          return {
+            success: true,
+            output: '/path/to/app/container',
+            error: '',
+            process: {} as any,
+          };
+        } else {
+          // Second call - launch command fails
+          return {
+            success: false,
+            output: '',
+            error: 'Launch failed',
+            process: {} as any,
+          };
+        }
+      };
+
+      const result = await launchAppSim.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          bundleId: 'com.example.testapp',
+        },
+        sequencedExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -216,61 +231,71 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should handle validation failures for simulatorUuid', async () => {
-      mockValidateRequiredParam.mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [{ type: 'text', text: 'simulatorUuid is required' }],
-          isError: true,
-        },
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        error: '',
       });
 
-      const result = await launchAppSim.handler({
-        simulatorUuid: '',
-        bundleId: 'com.example.testapp',
-      });
+      const result = await launchAppSim.handler(
+        {
+          simulatorUuid: undefined,
+          bundleId: 'com.example.testapp',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'simulatorUuid is required' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle validation failures for bundleId', async () => {
-      mockValidateRequiredParam
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [{ type: 'text', text: 'bundleId is required' }],
-            isError: true,
-          },
-        });
-
-      const result = await launchAppSim.handler({
-        simulatorUuid: 'test-uuid-123',
-        bundleId: '',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        error: '',
       });
 
+      const result = await launchAppSim.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          bundleId: undefined,
+        },
+        mockExecutor,
+      );
+
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'bundleId is required' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'bundleId' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle command failure during app container check', async () => {
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Network error',
       });
 
-      const result = await launchAppSim.handler({
-        simulatorUuid: 'test-uuid-123',
-        bundleId: 'com.example.testapp',
-      });
+      const result = await launchAppSim.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          bundleId: 'com.example.testapp',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -284,22 +309,36 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should handle command failure during launch', async () => {
-      mockExecuteCommand
-        .mockResolvedValueOnce({
-          success: true,
-          output: '/path/to/app/container',
-          error: '',
-        })
-        .mockResolvedValueOnce({
-          success: false,
-          output: '',
-          error: 'Launch operation failed',
-        });
+      let callCount = 0;
 
-      const result = await launchAppSim.handler({
-        simulatorUuid: 'test-uuid-123',
-        bundleId: 'com.example.testapp',
-      });
+      const sequencedExecutor = async (command: string[], logPrefix?: string) => {
+        callCount++;
+        if (callCount === 1) {
+          // First call - app container check succeeds
+          return {
+            success: true,
+            output: '/path/to/app/container',
+            error: '',
+            process: {} as any,
+          };
+        } else {
+          // Second call - launch command fails
+          return {
+            success: false,
+            output: '',
+            error: 'Launch operation failed',
+            process: {} as any,
+          };
+        }
+      };
+
+      const result = await launchAppSim.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          bundleId: 'com.example.testapp',
+        },
+        sequencedExecutor,
+      );
 
       expect(result).toEqual({
         content: [

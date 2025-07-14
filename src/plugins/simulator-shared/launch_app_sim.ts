@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/command.js';
 
 export default {
   name: 'launch_app_sim',
@@ -17,7 +17,7 @@ export default {
       .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
     args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simulatorUuidValidation.isValid) {
@@ -41,7 +41,13 @@ export default {
         params.bundleId,
         'app',
       ];
-      const getAppContainerResult = await executeCommand(getAppContainerCmd, 'Check App Installed');
+      const getAppContainerResult = await executeCommand(
+        getAppContainerCmd,
+        'Check App Installed',
+        true,
+        undefined,
+        executor,
+      );
       if (!getAppContainerResult.success) {
         return {
           content: [
@@ -72,7 +78,13 @@ export default {
         command.push(...params.args);
       }
 
-      const result = await executeCommand(command, 'Launch App in Simulator');
+      const result = await executeCommand(
+        command,
+        'Launch App in Simulator',
+        true,
+        undefined,
+        executor,
+      );
 
       if (!result.success) {
         return {

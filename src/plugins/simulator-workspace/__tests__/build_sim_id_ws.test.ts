@@ -1,32 +1,13 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 
 // Import the plugin
 import buildSimIdWs from '../build_sim_id_ws.ts';
 
-// Mock external dependencies
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  createTextResponse: vi.fn(),
-  executeXcodeBuildCommand: vi.fn(),
-}));
-
 describe('build_sim_id_ws tool', () => {
-  let mockLog: MockedFunction<any>;
-  let mockValidateRequiredParam: MockedFunction<any>;
-  let mockCreateTextResponse: MockedFunction<any>;
-  let mockExecuteXcodeBuildCommand: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const utils = await import('../../../utils/index.js');
-
-    mockLog = utils.log as MockedFunction<any>;
-    mockValidateRequiredParam = utils.validateRequiredParam as MockedFunction<any>;
-    mockCreateTextResponse = utils.createTextResponse as MockedFunction<any>;
-    mockExecuteXcodeBuildCommand = utils.executeXcodeBuildCommand as MockedFunction<any>;
-
-    vi.clearAllMocks();
+  beforeEach(() => {
+    // Only clear any remaining mocks if needed
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -118,238 +99,446 @@ describe('build_sim_id_ws tool', () => {
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should handle validation failure for workspacePath', async () => {
-      mockValidateRequiredParam.mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [
-            {
-              type: 'text',
-              text: 'workspacePath is required',
-            },
-          ],
+  describe('Parameter Validation', () => {
+    it('should handle missing workspacePath parameter', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
+
+      const result = await buildSimIdWs.handler(
+        {
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
         },
-      });
-
-      const result = await buildSimIdWs.handler({
-        workspacePath: '',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'workspacePath is required',
+            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
-    it('should handle validation failure for scheme', async () => {
-      mockValidateRequiredParam
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [
-              {
-                type: 'text',
-                text: 'scheme is required',
-              },
-            ],
-          },
-        });
+    it('should handle empty workspacePath parameter', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      const result = await buildSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: '',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
+
+      // Empty string passes validation but may cause build issues
+      expect(result.content).toEqual([
+        {
+          type: 'text',
+          text: '✅ Build build succeeded for scheme MyScheme.',
+        },
+        {
+          type: 'text',
+          text: expect.stringContaining('Next Steps:'),
+        },
+      ]);
+    });
+
+    it('should handle missing scheme parameter', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
+
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'scheme is required',
+            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
-    it('should handle validation failure for simulatorId', async () => {
-      mockValidateRequiredParam
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [
-              {
-                type: 'text',
-                text: 'simulatorId is required',
-              },
-            ],
-          },
-        });
+    it('should handle empty scheme parameter', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      const result = await buildSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: '',
-      });
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: '',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
+
+      // Empty string passes validation but may cause build issues
+      expect(result.content).toEqual([
+        {
+          type: 'text',
+          text: '✅ Build build succeeded for scheme .',
+        },
+        {
+          type: 'text',
+          text: expect.stringContaining('Next Steps:'),
+        },
+      ]);
+    });
+
+    it('should handle missing simulatorId parameter', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
+
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'simulatorId is required',
+            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
+    it('should handle empty simulatorId parameter', async () => {
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'error: Unable to find a destination matching the provided destination specifier',
+      });
+
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: '',
+        },
+        mockExecutor,
+      );
+
+      // Empty simulatorId passes validation but causes early failure in destination construction
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toBe(
+        'For iOS Simulator platform, either simulatorId or simulatorName must be provided',
+      );
+    });
+  });
+
+  describe('Command Generation', () => {
+    it('should generate correct xcodebuild command with minimal parameters', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
+
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        spyExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=iOS Simulator,id=test-uuid-123',
+        'build',
+      ]);
+    });
+
+    it('should generate correct xcodebuild command with all parameters', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
+
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+          configuration: 'Release',
+          derivedDataPath: '/custom/derived',
+          extraArgs: ['--verbose'],
+        },
+        spyExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Release',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=iOS Simulator,id=test-uuid-123',
+        '-derivedDataPath',
+        '/custom/derived',
+        '--verbose',
+        'build',
+      ]);
+    });
+
+    it('should handle paths with spaces in command generation', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
+
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        spyExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/Users/dev/My Project/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=iOS Simulator,id=test-uuid-123',
+        'build',
+      ]);
+    });
+
+    it('should use default configuration when not provided', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
+
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+          // configuration intentionally omitted
+        },
+        spyExecutor,
+      );
+
+      expect(capturedCommand).toContain('-configuration');
+      expect(capturedCommand).toContain('Debug');
+    });
+  });
+
+  describe('Response Processing', () => {
     it('should handle successful build', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
       });
 
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        isError: false,
-        content: [
-          {
-            type: 'text',
-            text: 'Build succeeded',
-          },
-        ],
-      });
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
-      const result = await buildSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
-
-      expect(result).toEqual({
-        isError: false,
-        content: [
-          {
-            type: 'text',
-            text: 'Build succeeded',
-          },
-        ],
-      });
+      expect(result.isError).toBeUndefined();
+      expect(result.content).toEqual([
+        { type: 'text', text: '✅ Build build succeeded for scheme MyScheme.' },
+        { type: 'text', text: expect.stringContaining('Next Steps:') },
+      ]);
     });
 
     it('should handle build failure', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'error: Build input file cannot be found',
       });
 
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        isError: true,
-        content: [
-          {
-            type: 'text',
-            text: 'Build failed with error',
-          },
-        ],
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('❌ [stderr]');
+      expect(result.content[1].text).toBe('❌ Build build failed for scheme MyScheme.');
+    });
+
+    it('should extract and format warnings from build output', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'warning: deprecated method used\nBUILD SUCCEEDED',
       });
 
-      const result = await buildSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content).toEqual([
+        { type: 'text', text: '⚠️ Warning: warning: deprecated method used' },
+        { type: 'text', text: '✅ Build build succeeded for scheme MyScheme.' },
+        { type: 'text', text: expect.stringContaining('Next Steps:') },
+      ]);
+    });
+
+    it('should handle command execution errors', async () => {
+      const mockExecutor = async () => {
+        throw new Error('spawn xcodebuild ENOENT');
+      };
+
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
-        isError: true,
         content: [
           {
             type: 'text',
-            text: 'Build failed with error',
+            text: 'Error during Build build: spawn xcodebuild ENOENT',
           },
         ],
+        isError: true,
       });
     });
 
-    it('should handle exception with Error object', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
+    it('should handle string errors from exceptions', async () => {
+      const mockExecutor = async () => {
+        throw 'String error message';
+      };
 
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Error during iOS Simulator Build build: Build system error',
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await buildSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error during iOS Simulator Build build: Build system error',
+            text: 'Error during Build build: String error message',
           },
         ],
         isError: true,
       });
     });
+  });
 
-    it('should handle exception with string error', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
+  describe('Optional Parameters', () => {
+    it('should handle useLatestOS parameter', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Error during iOS Simulator Build build: String error',
-          },
-        ],
-        isError: true,
-      });
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
 
-      const result = await buildSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+          useLatestOS: false,
+        },
+        spyExecutor,
+      );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error during iOS Simulator Build build: String error',
-          },
-        ],
-        isError: true,
-      });
+      // useLatestOS affects the internal behavior but may not directly appear in the command
+      expect(capturedCommand).toContain('xcodebuild');
+    });
+
+    it('should handle preferXcodebuild parameter', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
+
+      const result = await buildSimIdWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+          preferXcodebuild: true,
+        },
+        spyExecutor,
+      );
+
+      // preferXcodebuild affects internal routing but command should still contain xcodebuild
+      expect(capturedCommand).toContain('xcodebuild');
     });
   });
 });
