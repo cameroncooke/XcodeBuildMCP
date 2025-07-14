@@ -1,20 +1,9 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import buildSimIdProj from '../build_sim_id_proj.ts';
 
-// Mock only child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
 describe('build_sim_id_proj plugin', () => {
-  class MockChildProcess extends EventEmitter {
-    stdout = new EventEmitter();
-    stderr = new EventEmitter();
-    pid = 12345;
-  }
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -142,22 +131,20 @@ describe('build_sim_id_proj plugin', () => {
     });
 
     it('should return build error when build fails', async () => {
-      const { spawn } = await import('child_process');
-      const mockSpawn = vi.mocked(spawn);
-
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Build failed with error');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await buildSimIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Build failed with error',
+        output: '',
       });
+
+      const result = await buildSimIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -169,59 +156,52 @@ describe('build_sim_id_proj plugin', () => {
     });
 
     it('should handle successful build', async () => {
-      const { spawn } = await import('child_process');
-      const mockSpawn = vi.mocked(spawn);
-
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await buildSimIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        error: undefined,
       });
 
-      console.log('SUCCESS RESULT:', JSON.stringify(result, null, 2));
-      expect(result.isError).toBe(false);
+      const result = await buildSimIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBeFalsy();
       expect(result.content).toHaveLength(2);
-      expect(result.content[0].text).toContain('✅ Build succeeded');
-      expect(result.content[1].text).toContain('✅ iOS Simulator build succeeded');
+      expect(result.content[0].text).toContain('✅ iOS Simulator Build build succeeded');
+      expect(result.content[1].text).toContain('Next Steps:');
     });
 
     it('should handle command generation with extra args', async () => {
-      const { spawn } = await import('child_process');
-      const mockSpawn = vi.mocked(spawn);
-
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Build failed');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      await buildSimIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid',
-        configuration: 'Release',
-        derivedDataPath: '/path/to/derived',
-        extraArgs: ['--custom-arg'],
-        preferXcodebuild: true,
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        error: 'Build failed',
+        output: '',
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        expect.arrayContaining([
-          '-c',
-          expect.stringContaining('xcodebuild -project /path/to/project.xcodeproj'),
-        ]),
-        expect.any(Object),
+      await buildSimIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid',
+          configuration: 'Release',
+          derivedDataPath: '/path/to/derived',
+          extraArgs: ['--custom-arg'],
+          preferXcodebuild: true,
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        expect.arrayContaining(['xcodebuild', '-project', '/path/to/project.xcodeproj']),
+        'iOS Simulator Build',
+        true,
+        undefined,
       );
     });
   });

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
+import { CommandExecutor } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
@@ -9,7 +10,10 @@ const XcodePlatform = {
 };
 
 // Internal logic for building Simulator apps.
-async function _handleSimulatorBuildLogic(params: Record<string, unknown>): Promise<ToolResponse> {
+async function _handleSimulatorBuildLogic(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
@@ -25,6 +29,7 @@ async function _handleSimulatorBuildLogic(params: Record<string, unknown>): Prom
     },
     params.preferXcodebuild,
     'build',
+    executor,
   );
 }
 
@@ -55,7 +60,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
@@ -68,11 +73,14 @@ export default {
     if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
 
     // Provide defaults
-    return _handleSimulatorBuildLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      useLatestOS: params.useLatestOS ?? true,
-      preferXcodebuild: params.preferXcodebuild ?? false,
-    });
+    return _handleSimulatorBuildLogic(
+      {
+        ...params,
+        configuration: params.configuration ?? 'Debug',
+        useLatestOS: params.useLatestOS ?? true,
+        preferXcodebuild: params.preferXcodebuild ?? false,
+      },
+      executor,
+    );
   },
 };

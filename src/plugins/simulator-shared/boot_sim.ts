@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.ts';
-import { log } from '../../utils/index.ts';
-import { executeCommand } from '../../utils/index.ts';
+import { log, executeCommand, CommandExecutor } from '../../utils/index.ts';
 import { validateRequiredParam } from '../../utils/index.ts';
 
-async function bootSimToolHandler(params: { simulatorUuid: string }): Promise<ToolResponse> {
+async function bootSimToolHandler(
+  params: { simulatorUuid: string },
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
     return simulatorUuidValidation.errorResponse;
@@ -14,7 +16,7 @@ async function bootSimToolHandler(params: { simulatorUuid: string }): Promise<To
 
   try {
     const command = ['xcrun', 'simctl', 'boot', params.simulatorUuid];
-    const result = await executeCommand(command, 'Boot Simulator');
+    const result = await executeCommand(command, 'Boot Simulator', true, undefined, executor);
 
     if (!result.success) {
       return {
