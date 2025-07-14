@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 
 // Import the plugin
 import buildRunSimIdWs from '../build_run_sim_id_ws.ts';
@@ -11,24 +11,12 @@ vi.mock('child_process', () => ({
   execSync: vi.fn(),
 }));
 
-// Mock child process class
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 describe('build_run_sim_id_ws tool', () => {
-  let mockSpawn: Record<string, unknown>;
   let mockExecSync: Record<string, unknown>;
-  let mockProcess: MockChildProcess;
 
   beforeEach(async () => {
-    const { spawn, execSync } = await import('child_process');
-    mockSpawn = vi.mocked(spawn);
+    const { execSync } = await import('child_process');
     mockExecSync = vi.mocked(execSync);
-    mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
 
     vi.clearAllMocks();
   });
@@ -124,11 +112,16 @@ describe('build_run_sim_id_ws tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure for workspacePath', async () => {
-      const result = await buildRunSimIdWs.handler({
-        workspacePath: undefined,
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+      const mockExecutor = createMockExecutor({ success: true });
+
+      const result = await buildRunSimIdWs.handler(
+        {
+          workspacePath: undefined,
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -142,11 +135,16 @@ describe('build_run_sim_id_ws tool', () => {
     });
 
     it('should handle validation failure for scheme', async () => {
-      const result = await buildRunSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: undefined,
-        simulatorId: 'test-uuid-123',
-      });
+      const mockExecutor = createMockExecutor({ success: true });
+
+      const result = await buildRunSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: undefined,
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -160,11 +158,16 @@ describe('build_run_sim_id_ws tool', () => {
     });
 
     it('should handle validation failure for simulatorId', async () => {
-      const result = await buildRunSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: undefined,
-      });
+      const mockExecutor = createMockExecutor({ success: true });
+
+      const result = await buildRunSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: undefined,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -178,48 +181,47 @@ describe('build_run_sim_id_ws tool', () => {
     });
 
     it('should handle build failure', async () => {
-      // Set up build failure
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Build failed with error');
-        mockProcess.emit('close', 1);
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Build failed with error'));
 
-      const result = await buildRunSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await buildRunSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         isError: true,
         content: [
           {
             type: 'text',
-            text: 'Error during iOS Simulator Build build: Build failed with error',
+            text: 'Error during Build build: Build failed with error',
           },
         ],
       });
     });
 
     it('should handle successful build and run', async () => {
-      // Set up multiple command responses in sequence
       let commandCount = 0;
       const mockOutputs = [
-        'Build successful', // xcodebuild output
+        'Build successful', // xcodebuild build output
         'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n', // showBuildSettings
         'App installed successfully', // simctl install
         'com.example.MyApp', // plutil extract bundle ID
         'Process launched', // simctl launch
       ];
 
-      mockSpawn.mockImplementation(() => {
-        const process = new MockChildProcess();
-        setTimeout(() => {
-          process.stdout.emit('data', mockOutputs[commandCount] || '');
-          process.emit('close', 0);
-          commandCount++;
-        }, 0);
-        return process;
+      const mockExecutor = vi.fn().mockImplementation(() => {
+        const output = mockOutputs[commandCount] || '';
+        commandCount++;
+        return Promise.resolve({
+          success: true,
+          output,
+          error: undefined,
+          process: { pid: 12345 },
+        });
       });
 
       // Set up execSync for simulator list
@@ -237,21 +239,39 @@ describe('build_run_sim_id_ws tool', () => {
         }),
       );
 
-      const result = await buildRunSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await buildRunSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: '✅ iOS Simulator Build build succeeded.',
+            text: '✅ Build build succeeded for scheme MyScheme.',
           },
           {
             type: 'text',
-            text: 'Build successful',
+            text: `Next Steps:
+1. Get App Path: get_simulator_app_path_by_id_workspace({ simulatorId: 'test-uuid-123', scheme: 'MyScheme' })
+2. Get Bundle ID: get_ios_bundle_id({ appPath: 'APP_PATH_FROM_STEP_1' })
+3. Choose one of the following options:
+   - Option 1: Launch app normally:
+     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })
+   - Option 2: Launch app with logs (captures both console and structured logs):
+     launch_app_with_logs_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })
+   - Option 3: Launch app normally, then capture structured logs only:
+     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })
+     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })
+   - Option 4: Launch app normally, then capture all logs (will restart app):
+     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })
+     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID', captureConsole: true })
+
+When done capturing logs, use: stop_and_get_simulator_log({ logSessionId: 'SESSION_ID' })`,
           },
           {
             type: 'text',
@@ -274,22 +294,22 @@ describe('build_run_sim_id_ws tool', () => {
     });
 
     it('should handle exception with Error object', async () => {
-      // Set up spawn error
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('Build system error'));
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Build system error'));
 
-      const result = await buildRunSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await buildRunSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error building for iOS Simulator: Build system error',
+            text: 'Error during Build build: Build system error',
           },
         ],
         isError: true,
@@ -297,22 +317,22 @@ describe('build_run_sim_id_ws tool', () => {
     });
 
     it('should handle exception with string error', async () => {
-      // Set up spawn error with string
-      setTimeout(() => {
-        mockProcess.emit('error', 'String error');
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue('String error');
 
-      const result = await buildRunSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await buildRunSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error building for iOS Simulator: String error',
+            text: 'Error during Build build: String error',
           },
         ],
         isError: true,

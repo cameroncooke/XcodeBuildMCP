@@ -1,20 +1,10 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 import getSimAppPathNameWsTool from '../get_sim_app_path_name_ws.ts';
 
-// Mock external dependencies
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
-import { EventEmitter } from 'events';
-import { spawn } from 'child_process';
-
 describe('get_sim_app_path_name_ws plugin', () => {
-  let mockSpawn: MockedFunction<any>;
-
   beforeEach(() => {
-    mockSpawn = vi.mocked(spawn);
     vi.clearAllMocks();
   });
 
@@ -78,32 +68,23 @@ describe('get_sim_app_path_name_ws plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return app path successfully for iOS Simulator', async () => {
-      class MockChildProcess extends EventEmitter {
-        stdout = new EventEmitter();
-        stderr = new EventEmitter();
-        pid = 12345;
-      }
-
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          `
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: `
 BUILT_PRODUCTS_DIR = /Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug-iphonesimulator
 FULL_PRODUCT_NAME = MyApp.app
         `,
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await getSimAppPathNameWsTool.handler({
-        workspacePath: '/path/to/Project.xcworkspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorName: 'iPhone 16',
       });
+
+      const result = await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Project.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -124,15 +105,25 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should handle optional configuration parameter', async () => {
-      const result = await getSimAppPathNameWsTool.handler({
-        workspacePath: '/path/to/Project.xcworkspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorName: 'iPhone 16',
-        configuration: 'Release',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        error: 'Command failed',
+        output: '',
+        process: { pid: 12345 },
       });
 
-      expect(mockExecuteCommand).toHaveBeenCalledWith(
+      await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Project.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+          configuration: 'Release',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
           'xcodebuild',
           '-showBuildSettings',
@@ -146,19 +137,31 @@ FULL_PRODUCT_NAME = MyApp.app
           'platform=iOS Simulator,name=iPhone 16,OS=latest',
         ],
         'Get App Path',
+        true,
+        undefined,
       );
     });
 
     it('should handle useLatestOS=false parameter', async () => {
-      const result = await getSimAppPathNameWsTool.handler({
-        workspacePath: '/path/to/Project.xcworkspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorName: 'iPhone 16',
-        useLatestOS: false,
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        error: 'Command failed',
+        output: '',
+        process: { pid: 12345 },
       });
 
-      expect(mockExecuteCommand).toHaveBeenCalledWith(
+      await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Project.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+          useLatestOS: false,
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
           'xcodebuild',
           '-showBuildSettings',
@@ -172,6 +175,8 @@ FULL_PRODUCT_NAME = MyApp.app
           'platform=iOS Simulator,name=iPhone 16',
         ],
         'Get App Path',
+        true,
+        undefined,
       );
     });
 
@@ -248,17 +253,20 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should handle command failure', async () => {
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         error: 'xcodebuild failed',
       });
 
-      const result = await getSimAppPathNameWsTool.handler({
-        workspacePath: '/path/to/Project.xcworkspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Project.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -272,17 +280,20 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should handle missing build settings', async () => {
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'No valid build settings found',
       });
 
-      const result = await getSimAppPathNameWsTool.handler({
-        workspacePath: '/path/to/Project.xcworkspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Project.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -296,17 +307,20 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should handle exception during execution', async () => {
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         error: 'Network error',
       });
 
-      const result = await getSimAppPathNameWsTool.handler({
-        workspacePath: '/path/to/Project.xcworkspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Project.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [

@@ -3,7 +3,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import { execSync } from 'child_process';
 
 const XcodePlatform = {
@@ -11,7 +11,10 @@ const XcodePlatform = {
 };
 
 // Helper function for simulator build logic
-async function _handleSimulatorBuildLogic(params: Record<string, unknown>): Promise<ToolResponse> {
+async function _handleSimulatorBuildLogic(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   log('info', `Building ${params.workspacePath || params.projectPath} for iOS Simulator`);
 
   try {
@@ -26,6 +29,7 @@ async function _handleSimulatorBuildLogic(params: Record<string, unknown>): Prom
       },
       params.preferXcodebuild,
       'build',
+      executor,
     );
 
     return buildResult;
@@ -39,6 +43,7 @@ async function _handleSimulatorBuildLogic(params: Record<string, unknown>): Prom
 // Helper function for iOS Simulator build and run logic
 async function _handleIOSSimulatorBuildAndRunLogic(
   params: Record<string, unknown>,
+  executor?: CommandExecutor,
 ): Promise<ToolResponse> {
   log(
     'info',
@@ -47,7 +52,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
   try {
     // Step 1: Build
-    const buildResult = await _handleSimulatorBuildLogic(params);
+    const buildResult = await _handleSimulatorBuildLogic(params, executor);
 
     if (buildResult.isError) {
       return buildResult;
@@ -66,7 +71,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     command.push('-configuration', params.configuration);
     command.push('-destination', `platform=${XcodePlatform.iOSSimulator},id=${params.simulatorId}`);
 
-    const result = await executeCommand(command, 'Get App Path');
+    const result = await executeCommand(command, 'Get App Path', true, undefined, executor);
 
     if (!result.success) {
       return createTextResponse(`Failed to get app path: ${result.error}`, true);
@@ -119,6 +124,9 @@ async function _handleIOSSimulatorBuildAndRunLogic(
       const bootResult = await executeCommand(
         ['xcrun', 'simctl', 'boot', params.simulatorId],
         'Boot Simulator',
+        true,
+        undefined,
+        executor,
       );
 
       if (!bootResult.success) {
@@ -131,6 +139,9 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     const installResult = await executeCommand(
       ['xcrun', 'simctl', 'install', params.simulatorId, appPath],
       'Install App',
+      true,
+      undefined,
+      executor,
     );
 
     if (!installResult.success) {
@@ -142,6 +153,9 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     const bundleIdResult = await executeCommand(
       ['plutil', '-extract', 'CFBundleIdentifier', 'raw', `${appPath}/Info.plist`],
       'Get Bundle ID',
+      true,
+      undefined,
+      executor,
     );
 
     if (!bundleIdResult.success) {
@@ -157,6 +171,9 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     const launchResult = await executeCommand(
       ['xcrun', 'simctl', 'launch', params.simulatorId, bundleId],
       'Launch App',
+      true,
+      undefined,
+      executor,
     );
 
     if (!launchResult.success) {
@@ -218,7 +235,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
@@ -231,11 +248,14 @@ export default {
     if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse;
 
     // Provide defaults
-    return _handleIOSSimulatorBuildAndRunLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      useLatestOS: params.useLatestOS ?? true, // May be ignored
-      preferXcodebuild: params.preferXcodebuild ?? false,
-    });
+    return _handleIOSSimulatorBuildAndRunLogic(
+      {
+        ...params,
+        configuration: params.configuration ?? 'Debug',
+        useLatestOS: params.useLatestOS ?? true, // May be ignored
+        preferXcodebuild: params.preferXcodebuild ?? false,
+      },
+      executor,
+    );
   },
 };

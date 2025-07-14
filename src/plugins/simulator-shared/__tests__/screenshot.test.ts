@@ -1,6 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import screenshotPlugin from '../ui-testing/screenshot.ts';
+import screenshotPlugin from '../../ui-testing/screenshot.ts';
 
 // Mock file system operations
 vi.mock('fs/promises', () => ({

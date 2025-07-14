@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 
 export default {
   name: 'stop_app_sim',
@@ -13,7 +13,7 @@ export default {
       .string()
       .describe("Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simulatorUuidValidation.isValid) {
@@ -29,7 +29,13 @@ export default {
 
     try {
       const command = ['xcrun', 'simctl', 'terminate', params.simulatorUuid, params.bundleId];
-      const result = await executeCommand(command, 'Stop App in Simulator');
+      const result = await executeCommand(
+        command,
+        'Stop App in Simulator',
+        true,
+        undefined,
+        executor,
+      );
 
       if (!result.success) {
         return {

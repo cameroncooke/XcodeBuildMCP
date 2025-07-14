@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 
 const XcodePlatform = {
   macOS: 'macOS',
@@ -70,7 +70,10 @@ function constructDestinationString(
 /**
  * Internal function to handle getting app path
  */
-async function _handleGetAppPathLogic(params: Record<string, unknown>): Promise<ToolResponse> {
+async function _handleGetAppPathLogic(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   log('info', `Getting app path for scheme ${params.scheme} on platform ${params.platform}`);
 
   try {
@@ -132,7 +135,7 @@ async function _handleGetAppPathLogic(params: Record<string, unknown>): Promise<
     command.push('-destination', destinationString);
 
     // Execute the command directly
-    const result = await executeCommand(command, 'Get App Path');
+    const result = await executeCommand(command, 'Get App Path', true, undefined, executor);
 
     if (!result.success) {
       return createTextResponse(`Failed to get app path: ${result.error}`, true);
@@ -225,7 +228,7 @@ export default {
       .optional()
       .describe('Whether to use the latest OS version for the named simulator'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
     if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
@@ -239,10 +242,13 @@ export default {
     const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
     if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
 
-    return _handleGetAppPathLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      useLatestOS: params.useLatestOS ?? true,
-    });
+    return _handleGetAppPathLogic(
+      {
+        ...params,
+        configuration: params.configuration ?? 'Debug',
+        useLatestOS: params.useLatestOS ?? true,
+      },
+      executor,
+    );
   },
 };

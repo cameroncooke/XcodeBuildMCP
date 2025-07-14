@@ -38,7 +38,10 @@ export default {
       .describe('Run in background and return immediately (default: false)'),
     parseAsLibrary: parseAsLibrarySchema,
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    spawnFn: typeof spawn = spawn,
+  ): Promise<ToolResponse> {
     const params = args;
     const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
     if (!pkgValidation.isValid) return pkgValidation.errorResponse;
@@ -71,7 +74,7 @@ export default {
     log('info', `Running swift ${swiftArgs.join(' ')}`);
 
     try {
-      const child = spawn('swift', swiftArgs, {
+      const child = spawnFn('swift', swiftArgs, {
         cwd: resolvedPath,
         env: { ...process.env },
       });

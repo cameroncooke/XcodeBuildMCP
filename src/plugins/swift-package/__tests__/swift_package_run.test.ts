@@ -1,18 +1,13 @@
 /**
  * Tests for swift_package_run plugin
  * Following CLAUDE.md testing standards with literal validation
- * Integration tests that mock only the lowest-level spawn calls
+ * Integration tests using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
 import swiftPackageRun from '../swift_package_run.ts';
-
-// Mock external dependencies
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
 
 // Create a mock ChildProcess that extends EventEmitter
 class MockChildProcess extends EventEmitter {
@@ -26,11 +21,10 @@ class MockChildProcess extends EventEmitter {
 }
 
 describe('swift_package_run plugin', () => {
-  let mockSpawn: MockedFunction<any>;
+  let mockProcess: MockChildProcess;
 
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
-    mockSpawn = spawn as MockedFunction<any>;
+  beforeEach(() => {
+    mockProcess = new MockChildProcess();
     vi.clearAllMocks();
   });
 
@@ -91,12 +85,14 @@ describe('swift_package_run plugin', () => {
 
   describe('Command Generation Testing', () => {
     it('should build correct command for basic run', () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
+      const mockSpawn = vi.fn().mockReturnValue(mockProcess);
 
-      swiftPackageRun.handler({
-        packagePath: '/test/package',
-      });
+      swiftPackageRun.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockSpawn,
+      );
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'swift',
@@ -109,13 +105,15 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should build correct command with release configuration', () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
+      const mockSpawn = vi.fn().mockReturnValue(mockProcess);
 
-      swiftPackageRun.handler({
-        packagePath: '/test/package',
-        configuration: 'release',
-      });
+      swiftPackageRun.handler(
+        {
+          packagePath: '/test/package',
+          configuration: 'release',
+        },
+        mockSpawn,
+      );
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'swift',
@@ -127,13 +125,15 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should build correct command with executable name', () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
+      const mockSpawn = vi.fn().mockReturnValue(mockProcess);
 
-      swiftPackageRun.handler({
-        packagePath: '/test/package',
-        executableName: 'MyApp',
-      });
+      swiftPackageRun.handler(
+        {
+          packagePath: '/test/package',
+          executableName: 'MyApp',
+        },
+        mockSpawn,
+      );
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'swift',
@@ -145,13 +145,15 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should build correct command with arguments', () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
+      const mockSpawn = vi.fn().mockReturnValue(mockProcess);
 
-      swiftPackageRun.handler({
-        packagePath: '/test/package',
-        arguments: ['arg1', 'arg2'],
-      });
+      swiftPackageRun.handler(
+        {
+          packagePath: '/test/package',
+          arguments: ['arg1', 'arg2'],
+        },
+        mockSpawn,
+      );
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'swift',
@@ -163,13 +165,15 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should build correct command with parseAsLibrary flag', () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
+      const mockSpawn = vi.fn().mockReturnValue(mockProcess);
 
-      swiftPackageRun.handler({
-        packagePath: '/test/package',
-        parseAsLibrary: true,
-      });
+      swiftPackageRun.handler(
+        {
+          packagePath: '/test/package',
+          parseAsLibrary: true,
+        },
+        mockSpawn,
+      );
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'swift',
@@ -181,16 +185,18 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should build correct command with all parameters', () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
+      const mockSpawn = vi.fn().mockReturnValue(mockProcess);
 
-      swiftPackageRun.handler({
-        packagePath: '/test/package',
-        executableName: 'MyApp',
-        configuration: 'release',
-        arguments: ['arg1'],
-        parseAsLibrary: true,
-      });
+      swiftPackageRun.handler(
+        {
+          packagePath: '/test/package',
+          executableName: 'MyApp',
+          configuration: 'release',
+          arguments: ['arg1'],
+          parseAsLibrary: true,
+        },
+        mockSpawn,
+      );
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'swift',
@@ -229,13 +235,15 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should return success response for background mode', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
+      const mockSpawn = vi.fn().mockReturnValue(mockProcess);
 
-      const result = await swiftPackageRun.handler({
-        packagePath: '/test/package',
-        background: true,
-      });
+      const result = await swiftPackageRun.handler(
+        {
+          packagePath: '/test/package',
+          background: true,
+        },
+        mockSpawn,
+      );
 
       expect(result).toEqual({
         content: [
@@ -248,19 +256,20 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should return success response for successful execution', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageRun.handler({
-        packagePath: '/test/package',
+      const mockSpawn = vi.fn().mockImplementation(() => {
+        Promise.resolve().then(() => {
+          mockProcess.stdout.emit('data', 'Hello, World!');
+          mockProcess.emit('exit', 0, null);
+        });
+        return mockProcess;
       });
 
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Hello, World!');
-        mockProcess.emit('exit', 0, null);
-      }, 0);
-
-      const result = await handlerPromise;
+      const result = await swiftPackageRun.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockSpawn,
+      );
 
       expect(result).toEqual({
         content: [
@@ -272,19 +281,20 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should return error response for failed execution', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      const handlerPromise = swiftPackageRun.handler({
-        packagePath: '/test/package',
+      const mockSpawn = vi.fn().mockImplementation(() => {
+        Promise.resolve().then(() => {
+          mockProcess.stderr.emit('data', 'Compilation failed');
+          mockProcess.emit('exit', 1, null);
+        });
+        return mockProcess;
       });
 
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Compilation failed');
-        mockProcess.emit('exit', 1, null);
-      }, 0);
-
-      const result = await handlerPromise;
+      const result = await swiftPackageRun.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockSpawn,
+      );
 
       expect(result).toEqual({
         content: [
@@ -296,18 +306,20 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should handle spawn process error', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockImplementation(() => {
-        setTimeout(() => {
+      const mockSpawn = vi.fn().mockImplementation(() => {
+        Promise.resolve().then(() => {
           mockProcess.emit('error', new Error('Command not found'));
           mockProcess.emit('exit', 1, null); // Also emit exit so the promise resolves
-        }, 0);
+        });
         return mockProcess;
       });
 
-      const result = await swiftPackageRun.handler({
-        packagePath: '/test/package',
-      });
+      const result = await swiftPackageRun.handler(
+        {
+          packagePath: '/test/package',
+        },
+        mockSpawn,
+      );
 
       expect(result).toEqual({
         content: [
