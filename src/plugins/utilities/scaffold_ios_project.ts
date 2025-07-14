@@ -5,12 +5,15 @@
  */
 
 import { z } from 'zod';
-import { existsSync } from 'fs';
-import { mkdir, cp, readFile, writeFile, readdir } from 'fs/promises';
 import { join, dirname, basename } from 'path';
 import { log } from '../../utils/index.js';
 import { ValidationError } from '../../utils/index.js';
 import { TemplateManager } from '../../utils/index.js';
+import {
+  CommandExecutor,
+  FileSystemExecutor,
+  defaultFileSystemExecutor,
+} from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 // Common base schema for both iOS and macOS
@@ -244,6 +247,7 @@ async function processFile(
   sourcePath: string,
   destPath: string,
   params: Record<string, unknown>,
+  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
 ): Promise<void> {
   // Determine the destination file path
   let finalDestPath = destPath;
@@ -284,7 +288,7 @@ async function processFile(
 
   if (isTextFile && params.customizeNames) {
     // Read the file content
-    const content = await readFile(sourcePath, 'utf-8');
+    const content = await fileSystemExecutor.readFile(sourcePath, 'utf-8');
 
     let processedContent;
 
@@ -302,12 +306,12 @@ async function processFile(
       processedContent = replacePlaceholders(content, params.projectName, bundleIdentifier);
     }
 
-    await mkdir(dirname(finalDestPath), { recursive: true });
-    await writeFile(finalDestPath, processedContent, 'utf-8');
+    await fileSystemExecutor.mkdir(dirname(finalDestPath), { recursive: true });
+    await fileSystemExecutor.writeFile(finalDestPath, processedContent, 'utf-8');
   } else {
     // Copy binary files as-is
-    await mkdir(dirname(finalDestPath), { recursive: true });
-    await cp(sourcePath, finalDestPath, { preserveTimestamps: true });
+    await fileSystemExecutor.mkdir(dirname(finalDestPath), { recursive: true });
+    await fileSystemExecutor.cp(sourcePath, finalDestPath, { preserveTimestamps: true });
   }
 }
 
@@ -318,8 +322,9 @@ async function processDirectory(
   sourceDir: string,
   destDir: string,
   params: Record<string, unknown>,
+  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
 ): Promise<void> {
-  const entries = await readdir(sourceDir, { withFileTypes: true });
+  const entries = await fileSystemExecutor.readdir(sourceDir, { withFileTypes: true });
 
   for (const entry of entries) {
     const sourcePath = join(sourceDir, entry.name);
@@ -337,14 +342,14 @@ async function processDirectory(
       if (entry.name === '.git' || entry.name === 'xcuserdata') {
         continue;
       }
-      await mkdir(destPath, { recursive: true });
-      await processDirectory(sourcePath, destPath, params);
+      await fileSystemExecutor.mkdir(destPath, { recursive: true });
+      await processDirectory(sourcePath, destPath, params, fileSystemExecutor);
     } else if (entry.isFile()) {
       // Skip certain files
       if (entry.name === '.DS_Store' || entry.name.endsWith('.xcuserstate')) {
         continue;
       }
-      await processFile(sourcePath, destPath, params);
+      await processFile(sourcePath, destPath, params, fileSystemExecutor);
     }
   }
 }
@@ -352,7 +357,11 @@ async function processDirectory(
 /**
  * Scaffold a new iOS or macOS project
  */
-async function scaffoldProject(params: Record<string, unknown>): Promise<string> {
+async function scaffoldProject(
+  params: Record<string, unknown>,
+  commandExecutor?: CommandExecutor,
+  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+): Promise<string> {
   const { projectName, outputPath, platform, customizeNames = true } = params;
 
   log('info', `Scaffolding project: ${projectName} (${platform}) at ${outputPath}`);
@@ -367,7 +376,11 @@ async function scaffoldProject(params: Record<string, unknown>): Promise<string>
   // Get template path from TemplateManager
   let templatePath;
   try {
-    templatePath = await TemplateManager.getTemplatePath(platform);
+    templatePath = await TemplateManager.getTemplatePath(
+      platform,
+      commandExecutor,
+      fileSystemExecutor,
+    );
   } catch (error) {
     throw new ValidationError(
       `Failed to get template for ${platform}: ${error instanceof Error ? error.message : String(error)}`,
@@ -378,10 +391,10 @@ async function scaffoldProject(params: Record<string, unknown>): Promise<string>
   const projectPath = outputPath;
 
   // Check if the output directory already has Xcode project files
-  const xcworkspaceExists = existsSync(
+  const xcworkspaceExists = fileSystemExecutor.existsSync(
     join(projectPath, `${customizeNames ? projectName : 'MyProject'}.xcworkspace`),
   );
-  const xcodeprojExists = existsSync(
+  const xcodeprojExists = fileSystemExecutor.existsSync(
     join(projectPath, `${customizeNames ? projectName : 'MyProject'}.xcodeproj`),
   );
 
@@ -391,12 +404,12 @@ async function scaffoldProject(params: Record<string, unknown>): Promise<string>
 
   try {
     // Process the template directly into the output path
-    await processDirectory(templatePath, projectPath, params);
+    await processDirectory(templatePath, projectPath, params, fileSystemExecutor);
 
     return projectPath;
   } finally {
     // Clean up downloaded template if needed
-    await TemplateManager.cleanup(templatePath);
+    await TemplateManager.cleanup(templatePath, fileSystemExecutor);
   }
 }
 
@@ -405,11 +418,15 @@ export default {
   description:
     'Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.',
   schema: ScaffoldiOSProjectSchema.shape,
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    commandExecutor?: CommandExecutor,
+    fileSystemExecutor?: FileSystemExecutor,
+  ): Promise<ToolResponse> {
     const params = args;
     try {
       const projectParams = { ...params, platform: 'iOS' };
-      const projectPath = await scaffoldProject(projectParams);
+      const projectPath = await scaffoldProject(projectParams, commandExecutor, fileSystemExecutor);
 
       const response = {
         success: true,

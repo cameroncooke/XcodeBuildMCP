@@ -24,7 +24,7 @@ vi.mock('fs/promises', () => ({
   readdir: vi.fn(),
 }));
 
-vi.mock('../../utils/index.js', () => ({
+vi.mock('../../../utils/index.js', () => ({
   log: vi.fn(),
   ValidationError: vi.fn().mockImplementation((message) => {
     const error = new Error(message);

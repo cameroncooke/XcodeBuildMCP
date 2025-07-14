@@ -2,65 +2,12 @@
  * Tests for key_press tool plugin
  */
 
-import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 import keyPressPlugin from '../key_press.ts';
 
-// Mock all utilities from the index module
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  createErrorResponse: vi.fn(),
-  executeCommand: vi.fn(),
-  createAxeNotAvailableResponse: vi.fn(),
-  getAxePath: vi.fn(),
-  getBundledAxeEnvironment: vi.fn(),
-  DependencyError: class DependencyError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = 'DependencyError';
-    }
-  },
-  AxeError: class AxeError extends Error {
-    constructor(
-      message: string,
-      public commandName: string,
-      public axeOutput: string,
-      public simulatorUuid: string,
-    ) {
-      super(message);
-      this.name = 'AxeError';
-    }
-  },
-  SystemError: class SystemError extends Error {
-    constructor(
-      message: string,
-      public originalError?: Error,
-    ) {
-      super(message);
-      this.name = 'SystemError';
-    }
-  },
-}));
-
-// Import mocked functions
-import {
-  validateRequiredParam,
-  createErrorResponse,
-  executeCommand,
-  createAxeNotAvailableResponse,
-  getAxePath,
-  getBundledAxeEnvironment,
-  DependencyError,
-  AxeError,
-  SystemError,
-} from '../../../utils/index.js';
-
 describe('Key Press Plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(keyPressPlugin.name).toBe('key_press');
@@ -141,61 +88,54 @@ describe('Key Press Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
-          isError: true,
-        },
-      });
-
       const result = await keyPressPlugin.handler({ keyCode: 40 });
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should return error for missing keyCode', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
-        .mockReturnValueOnce({ isValid: true })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [{ type: 'text', text: 'Missing required parameter: keyCode' }],
-            isError: true,
-          },
-        });
-
       const result = await keyPressPlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
       });
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Missing required parameter: keyCode' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'keyCode' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should return success for valid key press execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'key press completed',
         error: '',
       });
 
-      const result = await keyPressPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCode: 40,
-      });
+      const mockGetAxePath = () => '/usr/local/bin/axe';
+      const mockGetBundledAxeEnvironment = () => ({});
+
+      const result = await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 40,
+        },
+        mockExecutor,
+        mockGetAxePath,
+        mockGetBundledAxeEnvironment,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Key press (code: 40) simulated successfully.' }],
@@ -203,24 +143,25 @@ describe('Key Press Plugin', () => {
     });
 
     it('should return success for key press with duration', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'key press completed',
         error: '',
       });
 
-      const result = await keyPressPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCode: 42,
-        duration: 1.5,
-      });
+      const mockGetAxePath = () => '/usr/local/bin/axe';
+      const mockGetBundledAxeEnvironment = () => ({});
+
+      const result = await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 42,
+          duration: 1.5,
+        },
+        mockExecutor,
+        mockGetAxePath,
+        mockGetBundledAxeEnvironment,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Key press (code: 42) simulated successfully.' }],
@@ -228,61 +169,58 @@ describe('Key Press Plugin', () => {
     });
 
     it('should handle DependencyError when axe is not available', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue(null);
-      (
-        createAxeNotAvailableResponse as MockedFunction<typeof createAxeNotAvailableResponse>
-      ).mockReturnValue({
-        content: [{ type: 'text', text: 'AXe tools not available' }],
-        isError: true,
-      });
+      const mockGetAxePath = () => null;
+      const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keyPressPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCode: 40,
-      });
+      const result = await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 40,
+        },
+        undefined,
+        mockGetAxePath,
+        mockGetBundledAxeEnvironment,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'AXe tools not available' }],
+        content: [
+          {
+            type: 'text',
+            text:
+              'Bundled axe tool not found. UI automation features are not available.\n\n' +
+              'This is likely an installation issue with the npm package.\n' +
+              'Please reinstall xcodebuildmcp or report this issue.',
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle AxeError from failed command execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'axe command failed',
       });
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: "Failed to simulate key press (code: 40): axe command 'key' failed.",
-          },
-        ],
-        isError: true,
-      });
 
-      const result = await keyPressPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCode: 40,
-      });
+      const mockGetAxePath = () => '/usr/local/bin/axe';
+      const mockGetBundledAxeEnvironment = () => ({});
+
+      const result = await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 40,
+        },
+        mockExecutor,
+        mockGetAxePath,
+        mockGetBundledAxeEnvironment,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Failed to simulate key press (code: 40): axe command 'key' failed.",
+            text: "Error: Failed to simulate key press (code: 40): axe command 'key' failed.\nDetails: axe command failed",
           },
         ],
         isError: true,
@@ -290,80 +228,78 @@ describe('Key Press Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new SystemError('System error occurred'),
-      );
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
-        isError: true,
-      });
+      const mockExecutor = () => {
+        throw new Error('System error occurred');
+      };
 
-      const result = await keyPressPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCode: 40,
-      });
+      const mockGetAxePath = () => '/usr/local/bin/axe';
+      const mockGetBundledAxeEnvironment = () => ({});
 
-      expect(result).toEqual({
-        content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
-        isError: true,
-      });
+      const result = await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 40,
+        },
+        mockExecutor,
+        mockGetAxePath,
+        mockGetBundledAxeEnvironment,
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain(
+        'Error: System error executing axe: Failed to execute axe command: System error occurred',
+      );
     });
 
     it('should handle unexpected Error objects', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new Error('Unexpected error'),
-      );
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
-        isError: true,
-      });
+      const mockExecutor = () => {
+        throw new Error('Unexpected error');
+      };
 
-      const result = await keyPressPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCode: 40,
-      });
+      const mockGetAxePath = () => '/usr/local/bin/axe';
+      const mockGetBundledAxeEnvironment = () => ({});
 
-      expect(result).toEqual({
-        content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
-        isError: true,
-      });
+      const result = await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 40,
+        },
+        mockExecutor,
+        mockGetAxePath,
+        mockGetBundledAxeEnvironment,
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain(
+        'Error: System error executing axe: Failed to execute axe command: Unexpected error',
+      );
     });
 
     it('should handle unexpected string errors', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue('String error');
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
-        isError: true,
-      });
+      const mockExecutor = () => {
+        throw 'String error';
+      };
 
-      const result = await keyPressPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCode: 40,
-      });
+      const mockGetAxePath = () => '/usr/local/bin/axe';
+      const mockGetBundledAxeEnvironment = () => ({});
+
+      const result = await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 40,
+        },
+        mockExecutor,
+        mockGetAxePath,
+        mockGetBundledAxeEnvironment,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
+        content: [
+          {
+            type: 'text',
+            text: 'Error: System error executing axe: Failed to execute axe command: String error',
+          },
+        ],
         isError: true,
       });
     });

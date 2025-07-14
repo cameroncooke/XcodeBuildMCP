@@ -3,7 +3,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { createTextResponse, validateRequiredParam } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -42,7 +42,7 @@ export default {
     preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
     postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const toolName = 'tap';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -64,7 +64,7 @@ export default {
     log('info', `${LOG_PREFIX}/${toolName}: Starting for (${x}, ${y}) on ${simulatorUuid}`);
 
     try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'tap');
+      await executeAxeCommand(commandArgs, simulatorUuid, 'tap', executor);
       log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
 
       const warning = getCoordinateWarning(simulatorUuid);
@@ -106,6 +106,7 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
+  executor?: CommandExecutor,
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
   const axeBinary = getAxePath();
@@ -128,6 +129,7 @@ async function executeAxeCommand(
       `${LOG_PREFIX}: ${commandName}`,
       false,
       axeEnv,
+      executor,
     );
 
     if (!result.success) {

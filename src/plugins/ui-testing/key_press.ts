@@ -3,7 +3,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -21,7 +21,12 @@ export default {
     keyCode: z.number().int('HID keycode to press (0-255)').min(0).max(255),
     duration: z.number().min(0, 'Duration must be non-negative').optional(),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    getAxePathFn?: () => string | null,
+    getBundledAxeEnvironmentFn?: () => Record<string, string>,
+  ): Promise<ToolResponse> {
     const params = args;
     const toolName = 'key_press';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -38,7 +43,14 @@ export default {
     log('info', `${LOG_PREFIX}/${toolName}: Starting key press ${keyCode} on ${simulatorUuid}`);
 
     try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'key');
+      await executeAxeCommand(
+        commandArgs,
+        simulatorUuid,
+        'key',
+        executor,
+        getAxePathFn,
+        getBundledAxeEnvironmentFn,
+      );
       log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
       return {
         content: [{ type: 'text', text: `Key press (code: ${keyCode}) simulated successfully.` }],
@@ -74,9 +86,12 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
+  executor?: CommandExecutor,
+  getAxePathFn?: () => string | null,
+  getBundledAxeEnvironmentFn?: () => Record<string, string>,
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
-  const axeBinary = getAxePath();
+  const axeBinary = getAxePathFn ? getAxePathFn() : getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -89,13 +104,19 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv = axeBinary !== 'axe' ? getBundledAxeEnvironment() : undefined;
+    const axeEnv =
+      axeBinary !== 'axe'
+        ? getBundledAxeEnvironmentFn
+          ? getBundledAxeEnvironmentFn()
+          : getBundledAxeEnvironment()
+        : undefined;
 
     const result = await executeCommand(
       fullCommand,
       `${LOG_PREFIX}: ${commandName}`,
       false,
       axeEnv,
+      executor,
     );
 
     if (!result.success) {

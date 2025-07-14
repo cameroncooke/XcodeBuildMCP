@@ -2,67 +2,15 @@
  * Tests for swipe tool plugin
  */
 
-import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
+import { SystemError, DependencyError } from '../../../utils/index.js';
+
+// Import the plugin module to test
 import swipePlugin from '../swipe.ts';
 
-// Mock all utilities from the index module
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  createTextResponse: vi.fn(),
-  createErrorResponse: vi.fn(),
-  executeCommand: vi.fn(),
-  createAxeNotAvailableResponse: vi.fn(),
-  getAxePath: vi.fn(),
-  getBundledAxeEnvironment: vi.fn(),
-  DependencyError: class DependencyError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = 'DependencyError';
-    }
-  },
-  AxeError: class AxeError extends Error {
-    constructor(
-      message: string,
-      public commandName: string,
-      public axeOutput: string,
-      public simulatorUuid: string,
-    ) {
-      super(message);
-      this.name = 'AxeError';
-    }
-  },
-  SystemError: class SystemError extends Error {
-    constructor(
-      message: string,
-      public originalError?: Error,
-    ) {
-      super(message);
-      this.name = 'SystemError';
-    }
-  },
-}));
-
-// Import mocked functions
-import {
-  validateRequiredParam,
-  createTextResponse,
-  createErrorResponse,
-  executeCommand,
-  createAxeNotAvailableResponse,
-  getAxePath,
-  getBundledAxeEnvironment,
-  DependencyError,
-  AxeError,
-  SystemError,
-} from '../../../utils/index.js';
-
 describe('Swipe Plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(swipePlugin.name).toBe('swipe');
@@ -145,33 +93,20 @@ describe('Swipe Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
-          isError: true,
-        },
-      });
-
       const result = await swipePlugin.handler({ x1: 100, y1: 200, x2: 300, y2: 400 });
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should return error for missing x1', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
-        .mockReturnValueOnce({ isValid: true })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [{ type: 'text', text: 'Missing required parameter: x1' }],
-            isError: true,
-          },
-        });
-
       const result = await swipePlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
         y1: 200,
@@ -180,41 +115,43 @@ describe('Swipe Plugin', () => {
       });
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Missing required parameter: x1' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'x1' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should return success for valid swipe execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'swipe completed',
         error: '',
       });
-      (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Swipe from (100, 200) to (300, 400) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
-          },
-        ],
-        isError: false,
-      });
 
-      const result = await swipePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x1: 100,
-        y1: 200,
-        x2: 300,
-        y2: 400,
-      });
+      const mockDependencies = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'AXe tools not available' }],
+          isError: true,
+        }),
+      };
+
+      const result = await swipePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x1: 100,
+          y1: 200,
+          x2: 300,
+          y2: 400,
+        },
+        mockExecutor,
+        mockDependencies,
+      );
 
       expect(result).toEqual({
         content: [
@@ -228,36 +165,33 @@ describe('Swipe Plugin', () => {
     });
 
     it('should return success for swipe with duration', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'swipe completed',
         error: '',
       });
-      (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Swipe from (100, 200) to (300, 400) duration=1.5s simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
-          },
-        ],
-        isError: false,
-      });
 
-      const result = await swipePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x1: 100,
-        y1: 200,
-        x2: 300,
-        y2: 400,
-        duration: 1.5,
-      });
+      const mockDependencies = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'AXe tools not available' }],
+          isError: true,
+        }),
+      };
+
+      const result = await swipePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x1: 100,
+          y1: 200,
+          x2: 300,
+          y2: 400,
+          duration: 1.5,
+        },
+        mockExecutor,
+        mockDependencies,
+      );
 
       expect(result).toEqual({
         content: [
@@ -271,147 +205,192 @@ describe('Swipe Plugin', () => {
     });
 
     it('should handle DependencyError when axe is not available', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue(null);
-      (
-        createAxeNotAvailableResponse as MockedFunction<typeof createAxeNotAvailableResponse>
-      ).mockReturnValue({
-        content: [{ type: 'text', text: 'AXe tools not available' }],
-        isError: true,
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'swipe completed',
+        error: '',
       });
 
-      const result = await swipePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x1: 100,
-        y1: 200,
-        x2: 300,
-        y2: 400,
-      });
+      const mockDependencies = {
+        getAxePath: () => null, // Simulate axe not available
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'AXe tools are not available. Please install AXe tools using the install_axe tool.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
+      const result = await swipePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x1: 100,
+          y1: 200,
+          x2: 300,
+          y2: 400,
+        },
+        mockExecutor,
+        mockDependencies,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'AXe tools not available' }],
+        content: [
+          {
+            type: 'text',
+            text: 'AXe tools are not available. Please install AXe tools using the install_axe tool.',
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle AxeError from failed command execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'axe command failed',
       });
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: "Failed to simulate swipe: axe command 'swipe' failed." }],
-        isError: true,
-      });
 
-      const result = await swipePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x1: 100,
-        y1: 200,
-        x2: 300,
-        y2: 400,
-      });
+      const mockDependencies = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'AXe tools not available' }],
+          isError: true,
+        }),
+      };
+
+      const result = await swipePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x1: 100,
+          y1: 200,
+          x2: 300,
+          y2: 400,
+        },
+        mockExecutor,
+        mockDependencies,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: "Failed to simulate swipe: axe command 'swipe' failed." }],
+        content: [
+          {
+            type: 'text',
+            text: "Error: Failed to simulate swipe: axe command 'swipe' failed.\nDetails: axe command failed",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle SystemError from command execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new SystemError('System error occurred'),
-      );
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
-        isError: true,
-      });
+      // Override the executor to throw SystemError for this test
+      const systemErrorExecutor = async () => {
+        throw new SystemError('System error occurred');
+      };
 
-      const result = await swipePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x1: 100,
-        y1: 200,
-        x2: 300,
-        y2: 400,
-      });
+      const mockDependencies = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'AXe tools not available' }],
+          isError: true,
+        }),
+      };
 
-      expect(result).toEqual({
-        content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
-        isError: true,
-      });
+      const result = await swipePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x1: 100,
+          y1: 200,
+          x2: 300,
+          y2: 400,
+        },
+        systemErrorExecutor,
+        mockDependencies,
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain(
+        'Error: System error executing axe: Failed to execute axe command: System error occurred',
+      );
+      expect(result.content[0].text).toContain('Details: SystemError: System error occurred');
     });
 
     it('should handle unexpected Error objects', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new Error('Unexpected error'),
-      );
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
-        isError: true,
-      });
+      // Override the executor to throw an unexpected Error for this test
+      const unexpectedErrorExecutor = async () => {
+        throw new Error('Unexpected error');
+      };
 
-      const result = await swipePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x1: 100,
-        y1: 200,
-        x2: 300,
-        y2: 400,
-      });
+      const mockDependencies = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'AXe tools not available' }],
+          isError: true,
+        }),
+      };
 
-      expect(result).toEqual({
-        content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
-        isError: true,
-      });
+      const result = await swipePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x1: 100,
+          y1: 200,
+          x2: 300,
+          y2: 400,
+        },
+        unexpectedErrorExecutor,
+        mockDependencies,
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain(
+        'Error: System error executing axe: Failed to execute axe command: Unexpected error',
+      );
+      expect(result.content[0].text).toContain('Details: Error: Unexpected error');
     });
 
     it('should handle unexpected string errors', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue('String error');
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
-        isError: true,
-      });
+      // Override the executor to throw a string error for this test
+      const stringErrorExecutor = async () => {
+        throw 'String error';
+      };
 
-      const result = await swipePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x1: 100,
-        y1: 200,
-        x2: 300,
-        y2: 400,
-      });
+      const mockDependencies = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'AXe tools not available' }],
+          isError: true,
+        }),
+      };
+
+      const result = await swipePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x1: 100,
+          y1: 200,
+          x2: 300,
+          y2: 400,
+        },
+        stringErrorExecutor,
+        mockDependencies,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
+        content: [
+          {
+            type: 'text',
+            text: 'Error: System error executing axe: Failed to execute axe command: String error',
+          },
+        ],
         isError: true,
       });
     });

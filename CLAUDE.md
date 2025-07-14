@@ -146,6 +146,76 @@ The workflow metadata is used by:
 
 ### 4.3. Testing Standards
 
+#### CRITICAL: Vitest Mocking Ban
+
+**🚨 ABSOLUTE RULE: ALL VITEST MOCKING IS COMPLETELY BANNED 🚨**
+
+**FORBIDDEN PATTERNS (will cause immediate test failure):**
+- `vi.mock()` - BANNED
+- `vi.fn()` - BANNED  
+- `vi.mocked()` - BANNED
+- `vi.spyOn()` - BANNED
+- `.mockResolvedValue()` - BANNED
+- `.mockRejectedValue()` - BANNED
+- `.mockReturnValue()` - BANNED
+- `.mockImplementation()` - BANNED
+- `.toHaveBeenCalled()` - BANNED
+- `.toHaveBeenCalledWith()` - BANNED
+- `MockedFunction` type - BANNED
+- Any `mock*` variables - BANNED
+
+**ONLY ALLOWED MOCKING:**
+- `createMockExecutor({ success: true, output: 'result' })` - command execution
+- `createMockFileSystemExecutor({ readFile: async () => 'content' })` - file system operations
+
+**Rationale:** Vitest mocking defeats the purpose of dependency injection architecture. With proper dependency injection, you pass real implementations or clean mock implementations - no vitest mocking needed.
+
+**Example - CORRECT:**
+```typescript
+const mockExecutor = createMockExecutor({
+  success: true,
+  output: 'BUILD SUCCEEDED'
+});
+
+const result = await plugin.handler(params, mockExecutor);
+```
+
+**Example - FORBIDDEN:**
+```typescript
+const mockExecutor = vi.fn().mockResolvedValue({ success: true }); // BANNED
+```
+
+#### Sub-Agent Orchestration Workflow
+
+**CRITICAL PROCESS for fixing vitest mocking violations:**
+
+1. **Main Agent Coordination:**
+   - Run `scripts/find-timeout-tests.js` to identify all violating files
+   - Launch 5 parallel sub-agents, each assigned a unique test file
+   - Coordinate work to prevent conflicts
+
+2. **Sub-Agent Responsibilities:**
+   - Convert ONE assigned test file to pure dependency injection
+   - Remove ALL vitest mocking patterns (vi.mock, vi.fn, .mockResolvedValue, etc.)
+   - Use ONLY createMockExecutor() and createMockFileSystemExecutor()
+   - Update plugin implementation if needed to accept executor parameter
+
+3. **Validation Process:**
+   - Sub-agent reports completion
+   - Main agent validates by running specific test: `npm test -- file.test.ts`
+   - If test fails: Sub-agent fixes and re-submits
+   - If test passes: Main agent re-runs `scripts/find-timeout-tests.js` to confirm compliance
+
+4. **Selective Commit:**
+   - Only when test passes AND script confirms compliance
+   - Commit ONLY the validated file: `git add specific-file.test.ts && git commit`
+   - This prevents committing other sub-agents' incomplete work
+
+5. **Iteration:**
+   - Continue until all 97 violating files are fixed
+   - Each sub-agent works on next available file
+   - Maintain parallel execution for efficiency
+
 #### Test Organization
 
 **Directory Structure:** Plugin groups use `__tests__/` subdirectories containing:

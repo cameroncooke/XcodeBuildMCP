@@ -33,6 +33,19 @@ export type CommandExecutor = (
 ) => Promise<CommandResponse>;
 
 /**
+ * File system executor interface for dependency injection
+ */
+export interface FileSystemExecutor {
+  mkdir(path: string, options?: { recursive?: boolean }): Promise<void>;
+  readFile(path: string, encoding?: BufferEncoding): Promise<string>;
+  writeFile(path: string, content: string, encoding?: BufferEncoding): Promise<void>;
+  cp(source: string, destination: string, options?: { recursive?: boolean }): Promise<void>;
+  readdir(path: string, options?: { withFileTypes?: boolean }): Promise<any[]>;
+  rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void>;
+  existsSync(path: string): boolean;
+}
+
+/**
  * Default executor implementation using spawn (current production behavior)
  * @param command An array of command and arguments
  * @param logPrefix Prefix for logging
@@ -175,4 +188,63 @@ export function createMockExecutor(result: {
     error: result.error,
     process: result.process ?? mockProcess,
   });
+}
+
+/**
+ * Default file system executor implementation using Node.js fs/promises
+ */
+export const defaultFileSystemExecutor: FileSystemExecutor = {
+  async mkdir(path: string, options?: { recursive?: boolean }): Promise<void> {
+    const fs = await import('fs/promises');
+    await fs.mkdir(path, options);
+  },
+
+  async readFile(path: string, encoding: BufferEncoding = 'utf8'): Promise<string> {
+    const fs = await import('fs/promises');
+    const content = await fs.readFile(path, encoding);
+    return content;
+  },
+
+  async writeFile(path: string, content: string, encoding: BufferEncoding = 'utf8'): Promise<void> {
+    const fs = await import('fs/promises');
+    await fs.writeFile(path, content, encoding);
+  },
+
+  async cp(source: string, destination: string, options?: { recursive?: boolean }): Promise<void> {
+    const fs = await import('fs/promises');
+    await fs.cp(source, destination, options);
+  },
+
+  async readdir(path: string, options?: { withFileTypes?: boolean }): Promise<any[]> {
+    const fs = await import('fs/promises');
+    return await fs.readdir(path, options);
+  },
+
+  async rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {
+    const fs = await import('fs/promises');
+    await fs.rm(path, options);
+  },
+
+  existsSync(path: string): boolean {
+    const fs = require('fs'); // eslint-disable-line @typescript-eslint/no-require-imports
+    return fs.existsSync(path);
+  },
+};
+
+/**
+ * Create a mock file system executor for testing
+ */
+export function createMockFileSystemExecutor(
+  overrides?: Partial<FileSystemExecutor>,
+): FileSystemExecutor {
+  return {
+    mkdir: async () => {},
+    readFile: async () => 'mock file content',
+    writeFile: async () => {},
+    cp: async () => {},
+    readdir: async () => [],
+    rm: async () => {},
+    existsSync: () => false,
+    ...overrides,
+  };
 }

@@ -9,7 +9,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -33,7 +33,15 @@ export default {
     preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
     postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    dependencies?: {
+      getAxePath?: () => string | null;
+      getBundledAxeEnvironment?: () => Record<string, string>;
+      createAxeNotAvailableResponse?: () => ToolResponse;
+    },
+  ): Promise<ToolResponse> {
     const params = args;
     const toolName = 'swipe';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -79,7 +87,7 @@ export default {
     );
 
     try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'swipe');
+      await executeAxeCommand(commandArgs, simulatorUuid, 'swipe', executor, dependencies);
       log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
 
       const warning = getCoordinateWarning(simulatorUuid);
@@ -93,7 +101,7 @@ export default {
     } catch (error) {
       log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
       if (error instanceof DependencyError) {
-        return createAxeNotAvailableResponse();
+        return dependencies?.createAxeNotAvailableResponse?.() || createAxeNotAvailableResponse();
       } else if (error instanceof AxeError) {
         return createErrorResponse(
           `Failed to simulate swipe: ${error.message}`,
@@ -142,9 +150,15 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
+  executor?: CommandExecutor,
+  dependencies?: {
+    getAxePath?: () => string | null;
+    getBundledAxeEnvironment?: () => Record<string, string>;
+    createAxeNotAvailableResponse?: () => ToolResponse;
+  },
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
-  const axeBinary = getAxePath();
+  const axeBinary = dependencies?.getAxePath?.() || getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -157,13 +171,17 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv = axeBinary !== 'axe' ? getBundledAxeEnvironment() : undefined;
+    const axeEnv =
+      axeBinary !== 'axe'
+        ? dependencies?.getBundledAxeEnvironment?.() || getBundledAxeEnvironment()
+        : undefined;
 
     const result = await executeCommand(
       fullCommand,
       `${LOG_PREFIX}: ${commandName}`,
       false,
       axeEnv,
+      executor,
     );
 
     if (!result.success) {

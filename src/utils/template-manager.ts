@@ -1,11 +1,14 @@
-import { existsSync } from 'fs';
-import { mkdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
-import { spawn } from 'child_process';
 import { log } from './logger.js';
 import { iOSTemplateVersion, macOSTemplateVersion } from '../version.js';
+import {
+  CommandExecutor,
+  FileSystemExecutor,
+  defaultFileSystemExecutor,
+  executeCommand,
+} from './command.js';
 
 /**
  * Template manager for downloading and managing project templates
@@ -19,15 +22,19 @@ export class TemplateManager {
    * Get the template path for a specific platform
    * Checks for local override via environment variable first
    */
-  static async getTemplatePath(platform: 'iOS' | 'macOS'): Promise<string> {
+  static async getTemplatePath(
+    platform: 'iOS' | 'macOS',
+    commandExecutor?: CommandExecutor,
+    fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  ): Promise<string> {
     // Check for local override
     const envVar =
       platform === 'iOS' ? 'XCODEBUILDMCP_IOS_TEMPLATE_PATH' : 'XCODEBUILDMCP_MACOS_TEMPLATE_PATH';
 
     const localPath = process.env[envVar];
-    if (localPath && existsSync(localPath)) {
+    if (localPath && fileSystemExecutor.existsSync(localPath)) {
       const templateSubdir = join(localPath, 'template');
-      if (existsSync(templateSubdir)) {
+      if (fileSystemExecutor.existsSync(templateSubdir)) {
         log('info', `Using local ${platform} template from: ${templateSubdir}`);
         return templateSubdir;
       } else {
@@ -36,13 +43,17 @@ export class TemplateManager {
     }
 
     // Download from GitHub release
-    return await this.downloadTemplate(platform);
+    return await this.downloadTemplate(platform, commandExecutor, fileSystemExecutor);
   }
 
   /**
    * Download template from GitHub release
    */
-  private static async downloadTemplate(platform: 'iOS' | 'macOS'): Promise<string> {
+  private static async downloadTemplate(
+    platform: 'iOS' | 'macOS',
+    commandExecutor?: CommandExecutor,
+    fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  ): Promise<string> {
     const repo = platform === 'iOS' ? this.IOS_TEMPLATE_REPO : this.MACOS_TEMPLATE_REPO;
     const defaultVersion = platform === 'iOS' ? iOSTemplateVersion : macOSTemplateVersion;
     const envVarName =
@@ -54,7 +65,7 @@ export class TemplateManager {
 
     // Create temp directory for download
     const tempDir = join(tmpdir(), `xcodebuild-mcp-template-${randomUUID()}`);
-    await mkdir(tempDir, { recursive: true });
+    await fileSystemExecutor.mkdir(tempDir, { recursive: true });
 
     try {
       const downloadUrl = `https://github.com/${this.GITHUB_ORG}/${repo}/releases/download/${version}/${repo}-${version.substring(1)}.zip`;
@@ -64,48 +75,34 @@ export class TemplateManager {
       log('info', `Download URL: ${downloadUrl}`);
 
       // Download the release artifact
-      await new Promise<void>((resolve, reject) => {
-        const curl = spawn('curl', ['-L', '-f', '-o', zipPath, downloadUrl], { cwd: tempDir });
-        let stderr = '';
+      const curlResult = await executeCommand(
+        ['curl', '-L', '-f', '-o', zipPath, downloadUrl],
+        'Download Template',
+        true,
+        undefined,
+        commandExecutor,
+      );
 
-        curl.stderr.on('data', (data) => {
-          stderr += data.toString();
-        });
-
-        curl.on('close', (code) => {
-          if (code !== 0) {
-            reject(new Error(`Failed to download template: ${stderr}`));
-          } else {
-            resolve();
-          }
-        });
-
-        curl.on('error', reject);
-      });
+      if (!curlResult.success) {
+        throw new Error(`Failed to download template: ${curlResult.error}`);
+      }
 
       // Extract the zip file
-      await new Promise<void>((resolve, reject) => {
-        const unzip = spawn('unzip', ['-q', zipPath], { cwd: tempDir });
-        let stderr = '';
+      const unzipResult = await executeCommand(
+        ['unzip', '-q', zipPath],
+        'Extract Template',
+        true,
+        { cwd: tempDir },
+        commandExecutor,
+      );
 
-        unzip.stderr.on('data', (data) => {
-          stderr += data.toString();
-        });
-
-        unzip.on('close', (code) => {
-          if (code !== 0) {
-            reject(new Error(`Failed to extract template: ${stderr}`));
-          } else {
-            resolve();
-          }
-        });
-
-        unzip.on('error', reject);
-      });
+      if (!unzipResult.success) {
+        throw new Error(`Failed to extract template: ${unzipResult.error}`);
+      }
 
       // Find the extracted directory and return the template subdirectory
       const extractedDir = join(tempDir, `${repo}-${version.substring(1)}`);
-      if (!existsSync(extractedDir)) {
+      if (!fileSystemExecutor.existsSync(extractedDir)) {
         throw new Error(`Expected template directory not found: ${extractedDir}`);
       }
 
@@ -114,7 +111,7 @@ export class TemplateManager {
     } catch (error) {
       // Clean up on error
       log('error', `Failed to download ${platform} template ${version}: ${error}`);
-      await this.cleanup(tempDir);
+      await this.cleanup(tempDir, fileSystemExecutor);
       throw error;
     }
   }
@@ -122,10 +119,13 @@ export class TemplateManager {
   /**
    * Clean up downloaded template directory
    */
-  static async cleanup(templatePath: string): Promise<void> {
+  static async cleanup(
+    templatePath: string,
+    fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  ): Promise<void> {
     // Only clean up if it's in temp directory
     if (templatePath.startsWith(tmpdir())) {
-      await rm(templatePath, { recursive: true, force: true });
+      await fileSystemExecutor.rm(templatePath, { recursive: true, force: true });
     }
   }
 }

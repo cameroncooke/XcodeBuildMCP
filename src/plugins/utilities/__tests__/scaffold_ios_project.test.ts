@@ -7,51 +7,37 @@
  * Plugin location: plugins/utilities/scaffold_ios_project.js
  */
 
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import scaffoldIosProject from '../scaffold_ios_project.ts';
-import { log, ValidationError, TemplateManager } from '../../../utils/index.js';
-
-// Mock all external dependencies
-vi.mock('fs', () => ({
-  existsSync: vi.fn(),
-}));
-
-vi.mock('fs/promises', () => ({
-  mkdir: vi.fn(),
-  cp: vi.fn(),
-  readFile: vi.fn(),
-  writeFile: vi.fn(),
-  readdir: vi.fn(),
-}));
-
-// Note: Internal utilities are allowed to execute normally (integration testing pattern)
-
-// Import mocked functions
-import { existsSync } from 'fs';
-import { mkdir, cp, readFile, writeFile, readdir } from 'fs/promises';
-
-const mockExistsSync = vi.mocked(existsSync);
-const mockMkdir = vi.mocked(mkdir);
-const mockCp = vi.mocked(cp);
-const mockReadFile = vi.mocked(readFile);
-const mockWriteFile = vi.mocked(writeFile);
-const mockReaddir = vi.mocked(readdir);
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/index.js';
 
 describe('scaffold_ios_project plugin', () => {
+  let mockCommandExecutor: any;
+  let mockFileSystemExecutor: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Setup default mock implementations for external dependencies only
-    mockExistsSync.mockReturnValue(false);
-    mockMkdir.mockResolvedValue(undefined);
-    mockCp.mockResolvedValue();
-    mockReadFile.mockResolvedValue('template content with MyProject placeholder');
-    mockWriteFile.mockResolvedValue();
-    mockReaddir.mockResolvedValue([
-      { name: 'Package.swift', isDirectory: () => false, isFile: () => true } as any,
-      { name: 'MyProject.swift', isDirectory: () => false, isFile: () => true } as any,
-    ]);
+    // Create mock executors
+    mockCommandExecutor = createMockExecutor({
+      success: true,
+      output: 'Command executed successfully',
+    });
+
+    mockFileSystemExecutor = createMockFileSystemExecutor({
+      existsSync: (path) => {
+        // Return true for template directories, false for project files
+        return (
+          path.includes('xcodebuild-mcp-template') || path.includes('XcodeBuildMCP-iOS-Template')
+        );
+      },
+      readFile: async () => 'template content with MyProject placeholder',
+      readdir: async () => [
+        { name: 'Package.swift', isDirectory: () => false, isFile: () => true } as any,
+        { name: 'MyProject.swift', isDirectory: () => false, isFile: () => true } as any,
+      ],
+    });
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -142,11 +128,15 @@ describe('scaffold_ios_project plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return success response for valid scaffold iOS project request', async () => {
-      const result = await scaffoldIosProject.handler({
-        projectName: 'TestIOSApp',
-        outputPath: '/tmp/test-projects',
-        bundleIdentifier: 'com.test.iosapp',
-      });
+      const result = await scaffoldIosProject.handler(
+        {
+          projectName: 'TestIOSApp',
+          outputPath: '/tmp/test-projects',
+          bundleIdentifier: 'com.test.iosapp',
+        },
+        mockCommandExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -170,25 +160,26 @@ describe('scaffold_ios_project plugin', () => {
           },
         ],
       });
-
-      expect(mockTemplateManager.getTemplatePath).toHaveBeenCalledWith('iOS');
-      expect(mockTemplateManager.cleanup).toHaveBeenCalledWith('/tmp/test-templates/ios');
     });
 
     it('should return success response with all optional parameters', async () => {
-      const result = await scaffoldIosProject.handler({
-        projectName: 'TestIOSApp',
-        outputPath: '/tmp/test-projects',
-        bundleIdentifier: 'com.test.iosapp',
-        displayName: 'Test iOS App',
-        marketingVersion: '2.0',
-        currentProjectVersion: '5',
-        customizeNames: true,
-        deploymentTarget: '17.0',
-        targetedDeviceFamily: ['iphone'],
-        supportedOrientations: ['portrait'],
-        supportedOrientationsIpad: ['portrait', 'landscape-left'],
-      });
+      const result = await scaffoldIosProject.handler(
+        {
+          projectName: 'TestIOSApp',
+          outputPath: '/tmp/test-projects',
+          bundleIdentifier: 'com.test.iosapp',
+          displayName: 'Test iOS App',
+          marketingVersion: '2.0',
+          currentProjectVersion: '5',
+          customizeNames: true,
+          deploymentTarget: '17.0',
+          targetedDeviceFamily: ['iphone'],
+          supportedOrientations: ['portrait'],
+          supportedOrientationsIpad: ['portrait', 'landscape-left'],
+        },
+        mockCommandExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -215,11 +206,15 @@ describe('scaffold_ios_project plugin', () => {
     });
 
     it('should return success response with customizeNames false', async () => {
-      const result = await scaffoldIosProject.handler({
-        projectName: 'TestIOSApp',
-        outputPath: '/tmp/test-projects',
-        customizeNames: false,
-      });
+      const result = await scaffoldIosProject.handler(
+        {
+          projectName: 'TestIOSApp',
+          outputPath: '/tmp/test-projects',
+          customizeNames: false,
+        },
+        mockCommandExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -246,10 +241,14 @@ describe('scaffold_ios_project plugin', () => {
     });
 
     it('should return error response for invalid project name', async () => {
-      const result = await scaffoldIosProject.handler({
-        projectName: '123InvalidName',
-        outputPath: '/tmp/test-projects',
-      });
+      const result = await scaffoldIosProject.handler(
+        {
+          projectName: '123InvalidName',
+          outputPath: '/tmp/test-projects',
+        },
+        mockCommandExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -271,12 +270,24 @@ describe('scaffold_ios_project plugin', () => {
     });
 
     it('should return error response for existing project files', async () => {
-      mockExistsSync.mockReturnValue(true);
-
-      const result = await scaffoldIosProject.handler({
-        projectName: 'TestIOSApp',
-        outputPath: '/tmp/test-projects',
+      // Update mock to return true for existing files
+      mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => true,
+        readFile: async () => 'template content with MyProject placeholder',
+        readdir: async () => [
+          { name: 'Package.swift', isDirectory: () => false, isFile: () => true } as any,
+          { name: 'MyProject.swift', isDirectory: () => false, isFile: () => true } as any,
+        ],
       });
+
+      const result = await scaffoldIosProject.handler(
+        {
+          projectName: 'TestIOSApp',
+          outputPath: '/tmp/test-projects',
+        },
+        mockCommandExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -296,13 +307,21 @@ describe('scaffold_ios_project plugin', () => {
       });
     });
 
-    it('should return error response for template manager failure', async () => {
-      mockTemplateManager.getTemplatePath.mockRejectedValue(new Error('Template not found'));
-
-      const result = await scaffoldIosProject.handler({
-        projectName: 'TestIOSApp',
-        outputPath: '/tmp/test-projects',
+    it('should return error response for template download failure', async () => {
+      // Mock command executor to fail for template download
+      mockCommandExecutor = createMockExecutor({
+        success: false,
+        error: 'Template download failed',
       });
+
+      const result = await scaffoldIosProject.handler(
+        {
+          projectName: 'TestIOSApp',
+          outputPath: '/tmp/test-projects',
+        },
+        mockCommandExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -311,7 +330,8 @@ describe('scaffold_ios_project plugin', () => {
             text: JSON.stringify(
               {
                 success: false,
-                error: 'Failed to get template for iOS: Template not found',
+                error:
+                  'Failed to get template for iOS: Failed to download template: Template download failed',
               },
               null,
               2,
@@ -322,13 +342,36 @@ describe('scaffold_ios_project plugin', () => {
       });
     });
 
-    it('should handle string error from template manager', async () => {
-      mockTemplateManager.getTemplatePath.mockRejectedValue('String error occurred');
-
-      const result = await scaffoldIosProject.handler({
-        projectName: 'TestIOSApp',
-        outputPath: '/tmp/test-projects',
+    it('should return error response for template extraction failure', async () => {
+      // Mock command executor to succeed for download but fail for extraction
+      let callCount = 0;
+      mockCommandExecutor = vi.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          // First call (download) succeeds
+          return Promise.resolve({
+            success: true,
+            output: 'Downloaded successfully',
+            error: '',
+          });
+        } else {
+          // Second call (extract) fails
+          return Promise.resolve({
+            success: false,
+            output: '',
+            error: 'Extraction failed',
+          });
+        }
       });
+
+      const result = await scaffoldIosProject.handler(
+        {
+          projectName: 'TestIOSApp',
+          outputPath: '/tmp/test-projects',
+        },
+        mockCommandExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -337,7 +380,8 @@ describe('scaffold_ios_project plugin', () => {
             text: JSON.stringify(
               {
                 success: false,
-                error: 'Failed to get template for iOS: String error occurred',
+                error:
+                  'Failed to get template for iOS: Failed to extract template: Extraction failed',
               },
               null,
               2,

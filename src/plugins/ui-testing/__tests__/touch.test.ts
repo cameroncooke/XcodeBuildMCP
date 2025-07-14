@@ -1,62 +1,12 @@
 /**
  * Tests for touch tool plugin
+ * Following CLAUDE.md testing standards with dependency injection
  */
 
-import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 import touchPlugin from '../touch.ts';
-
-// Mock all utilities from the index module
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  createTextResponse: vi.fn(),
-  createErrorResponse: vi.fn(),
-  executeCommand: vi.fn(),
-  createAxeNotAvailableResponse: vi.fn(),
-  getAxePath: vi.fn(),
-  getBundledAxeEnvironment: vi.fn(),
-  DependencyError: class DependencyError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = 'DependencyError';
-    }
-  },
-  AxeError: class AxeError extends Error {
-    constructor(
-      message: string,
-      public commandName: string,
-      public axeOutput: string,
-      public simulatorUuid: string,
-    ) {
-      super(message);
-      this.name = 'AxeError';
-    }
-  },
-  SystemError: class SystemError extends Error {
-    constructor(
-      message: string,
-      public originalError?: Error,
-    ) {
-      super(message);
-      this.name = 'SystemError';
-    }
-  },
-}));
-
-// Import mocked functions
-import {
-  validateRequiredParam,
-  createTextResponse,
-  createErrorResponse,
-  executeCommand,
-  createAxeNotAvailableResponse,
-  getAxePath,
-  getBundledAxeEnvironment,
-  DependencyError,
-  AxeError,
-  SystemError,
-} from '../../../utils/index.js';
 
 describe('Touch Plugin', () => {
   beforeEach(() => {
@@ -157,119 +107,107 @@ describe('Touch Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
-          isError: true,
-        },
-      });
+      const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await touchPlugin.handler({ x: 100, y: 200, down: true });
+      const result = await touchPlugin.handler({ x: 100, y: 200, down: true }, mockExecutor);
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should return error for missing x', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
-        .mockReturnValueOnce({ isValid: true })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [{ type: 'text', text: 'Missing required parameter: x' }],
-            isError: true,
-          },
-        });
+      const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        y: 200,
-        down: true,
-      });
+      const result = await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          y: 200,
+          down: true,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Missing required parameter: x' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'x' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should return error for missing y', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
-        .mockReturnValueOnce({ isValid: true })
-        .mockReturnValueOnce({ isValid: true })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [{ type: 'text', text: 'Missing required parameter: y' }],
-            isError: true,
-          },
-        });
+      const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        down: true,
-      });
+      const result = await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          down: true,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Missing required parameter: y' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'y' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should return error when neither down nor up is specified', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'At least one of "down" or "up" must be true' }],
-        isError: true,
-      });
+      const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-      });
+      const result = await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'At least one of "down" or "up" must be true' }],
+        content: [{ type: 'text', text: 'Error: At least one of "down" or "up" must be true' }],
         isError: true,
       });
     });
 
     it('should return success for touch down event', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'touch completed',
-        error: '',
-      });
-      (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Touch event (touch down) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
-          },
-        ],
-        isError: false,
+        error: undefined,
       });
 
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-        down: true,
-      });
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      const result = await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          down: true,
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
         content: [
@@ -283,34 +221,27 @@ describe('Touch Plugin', () => {
     });
 
     it('should return success for touch up event', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'touch completed',
-        error: '',
-      });
-      (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Touch event (touch up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
-          },
-        ],
-        isError: false,
+        error: undefined,
       });
 
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-        up: true,
-      });
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      const result = await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          up: true,
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
         content: [
@@ -324,35 +255,28 @@ describe('Touch Plugin', () => {
     });
 
     it('should return success for touch down+up event', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'touch completed',
-        error: '',
-      });
-      (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Touch event (touch down+up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
-          },
-        ],
-        isError: false,
+        error: undefined,
       });
 
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-        down: true,
-        up: true,
-      });
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      const result = await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          down: true,
+          up: true,
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
         content: [
@@ -366,146 +290,165 @@ describe('Touch Plugin', () => {
     });
 
     it('should handle DependencyError when axe is not available', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue(null);
-      (
-        createAxeNotAvailableResponse as MockedFunction<typeof createAxeNotAvailableResponse>
-      ).mockReturnValue({
-        content: [{ type: 'text', text: 'AXe tools not available' }],
-        isError: true,
-      });
+      const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-        down: true,
-      });
+      const mockAxeHelpers = {
+        getAxePath: () => null,
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      const result = await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          down: true,
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'AXe tools not available' }],
+        content: [
+          {
+            type: 'text',
+            text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle AxeError from failed command execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'axe command failed',
       });
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [
-          { type: 'text', text: "Failed to execute touch event: axe command 'touch' failed." },
-        ],
-        isError: true,
-      });
 
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-        down: true,
-      });
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      const result = await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          down: true,
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
         content: [
-          { type: 'text', text: "Failed to execute touch event: axe command 'touch' failed." },
+          {
+            type: 'text',
+            text: "Error: Failed to execute touch event: axe command 'touch' failed.\nDetails: axe command failed",
+          },
         ],
         isError: true,
       });
     });
 
     it('should handle SystemError from command execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new SystemError('System error occurred'),
-      );
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
-        isError: true,
-      });
+      const mockExecutor = async () => {
+        throw new Error('System error occurred');
+      };
 
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-        down: true,
-      });
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
-      expect(result).toEqual({
-        content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
+      const result = await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          down: true,
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(result).toMatchObject({
+        content: [
+          {
+            type: 'text',
+            text: expect.stringContaining(
+              'Error: System error executing axe: Failed to execute axe command: System error occurred',
+            ),
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle unexpected Error objects', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new Error('Unexpected error'),
-      );
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
-        isError: true,
-      });
+      const mockExecutor = async () => {
+        throw new Error('Unexpected error');
+      };
 
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-        down: true,
-      });
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
-      expect(result).toEqual({
-        content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
+      const result = await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          down: true,
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(result).toMatchObject({
+        content: [
+          {
+            type: 'text',
+            text: expect.stringContaining(
+              'Error: System error executing axe: Failed to execute axe command: Unexpected error',
+            ),
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle unexpected string errors', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/usr/local/bin/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        {},
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue('String error');
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
-        isError: true,
-      });
+      const mockExecutor = async () => {
+        throw 'String error';
+      };
 
-      const result = await touchPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-        down: true,
-      });
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      const result = await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          down: true,
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
+        content: [
+          {
+            type: 'text',
+            text: 'Error: System error executing axe: Failed to execute axe command: String error',
+          },
+        ],
         isError: true,
       });
     });
