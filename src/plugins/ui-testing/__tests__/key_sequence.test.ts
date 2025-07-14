@@ -2,61 +2,22 @@
  * Tests for key_sequence plugin
  */
 
-import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 import keySequencePlugin from '../key_sequence.ts';
 
-// Mock all utilities from the index module
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  createTextResponse: vi.fn(),
-  createErrorResponse: vi.fn(),
-  executeCommand: vi.fn(),
-  createAxeNotAvailableResponse: vi.fn(),
-  getAxePath: vi.fn(),
-  getBundledAxeEnvironment: vi.fn(),
-  DependencyError: class DependencyError extends Error {
-    constructor(message: string) {
-      super(message);
-      this.name = 'DependencyError';
-    }
-  },
-  AxeError: class AxeError extends Error {
-    constructor(
-      message: string,
-      public commandName: string,
-      public axeOutput: string,
-      public simulatorUuid: string,
-    ) {
-      super(message);
-      this.name = 'AxeError';
-    }
-  },
-  SystemError: class SystemError extends Error {
-    constructor(
-      message: string,
-      public originalError?: Error,
-    ) {
-      super(message);
-      this.name = 'SystemError';
-    }
-  },
-}));
+// Mock only the path resolution utilities, not validation/response utilities
+vi.mock('../../../utils/index.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    getAxePath: vi.fn(),
+    getBundledAxeEnvironment: vi.fn(),
+  };
+});
 
-// Import mocked functions
-import {
-  validateRequiredParam,
-  createTextResponse,
-  createErrorResponse,
-  executeCommand,
-  createAxeNotAvailableResponse,
-  getAxePath,
-  getBundledAxeEnvironment,
-  DependencyError,
-  AxeError,
-  SystemError,
-} from '../../../utils/index.js';
+import { getAxePath, getBundledAxeEnvironment } from '../../../utils/index.js';
 
 describe('Key Sequence Plugin', () => {
   beforeEach(() => {
@@ -145,89 +106,120 @@ describe('Key Sequence Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
-          isError: true,
-        },
-      });
-
       const result = await keySequencePlugin.handler({
         keyCodes: [40],
       });
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Missing required parameter: simulatorUuid' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should return error for missing keyCodes', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>)
-        .mockReturnValueOnce({ isValid: true })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [{ type: 'text', text: 'Missing required parameter: keyCodes' }],
-            isError: true,
-          },
-        });
-
       const result = await keySequencePlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
       });
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Missing required parameter: keyCodes' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'keyCodes' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should return success for valid key sequence execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/path/to/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        { AXE_PATH: '/path/to/axe' },
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
+      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+
+      const mockExecutor = vi.fn().mockResolvedValue({
         success: true,
         output: 'Key sequence executed',
-        error: '',
-      });
-      (createTextResponse as MockedFunction<typeof createTextResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'Key sequence [40,42,44] executed successfully.' }],
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      const result = await keySequencePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCodes: [40, 42, 44],
-        delay: 0.1,
-      });
+      const result = await keySequencePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCodes: [40, 42, 44],
+          delay: 0.1,
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        [
+          '/usr/local/bin/axe',
+          'key-sequence',
+          '--keycodes',
+          '40,42,44',
+          '--delay',
+          '0.1',
+          '--udid',
+          '12345678-1234-1234-1234-123456789012',
+        ],
+        '[AXe]: key-sequence',
+        false,
+        {},
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Key sequence [40,42,44] executed successfully.' }],
+        isError: false,
+      });
+    });
+
+    it('should return success for key sequence without delay', async () => {
+      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
+      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Key sequence executed',
+        error: undefined,
+        process: { pid: 12345 },
+      });
+
+      const result = await keySequencePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCodes: [40],
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        [
+          '/usr/local/bin/axe',
+          'key-sequence',
+          '--keycodes',
+          '40',
+          '--udid',
+          '12345678-1234-1234-1234-123456789012',
+        ],
+        '[AXe]: key-sequence',
+        false,
+        {},
+      );
+
+      expect(result).toEqual({
+        content: [{ type: 'text', text: 'Key sequence [40] executed successfully.' }],
+        isError: false,
       });
     });
 
     it('should handle DependencyError when axe binary not found', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue(null);
-      (
-        createAxeNotAvailableResponse as MockedFunction<typeof createAxeNotAvailableResponse>
-      ).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'AXe binary not found. Please install AXe to use UI testing features.',
-          },
-        ],
-        isError: true,
-      });
+      vi.mocked(getAxePath).mockReturnValue(null);
 
       const result = await keySequencePlugin.handler({
         simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -238,7 +230,7 @@ describe('Key Sequence Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'AXe binary not found. Please install AXe to use UI testing features.',
+            text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
           },
         ],
         isError: true,
@@ -246,38 +238,28 @@ describe('Key Sequence Plugin', () => {
     });
 
     it('should handle AxeError from command execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/path/to/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        { AXE_PATH: '/path/to/axe' },
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockResolvedValue({
+      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
+      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Simulator not found',
       });
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: "Failed to execute key sequence: axe command 'key-sequence' failed.",
-          },
-        ],
-        isError: true,
-      });
 
-      const result = await keySequencePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCodes: [40],
-      });
+      const result = await keySequencePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCodes: [40],
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Failed to execute key sequence: axe command 'key-sequence' failed.",
+            text: "Error: Failed to execute key sequence: axe command 'key-sequence' failed.\nDetails: Simulator not found",
           },
         ],
         isError: true,
@@ -285,80 +267,68 @@ describe('Key Sequence Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/path/to/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        { AXE_PATH: '/path/to/axe' },
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new SystemError('System error occurred'),
-      );
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
-        isError: true,
-      });
+      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
+      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      const result = await keySequencePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCodes: [40],
-      });
+      const mockExecutor = vi
+        .fn()
+        .mockRejectedValue(new Error('ENOENT: no such file or directory'));
 
-      expect(result).toEqual({
-        content: [{ type: 'text', text: 'System error executing axe: System error occurred' }],
-        isError: true,
-      });
+      const result = await keySequencePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCodes: [40],
+        },
+        mockExecutor,
+      );
+
+      expect(result.content[0].text).toMatch(
+        /^Error: System error executing axe: Failed to execute axe command: ENOENT: no such file or directory/,
+      );
+      expect(result.isError).toBe(true);
     });
 
     it('should handle unexpected Error objects', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/path/to/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        { AXE_PATH: '/path/to/axe' },
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue(
-        new Error('Unexpected error'),
-      );
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
-        isError: true,
-      });
+      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
+      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      const result = await keySequencePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCodes: [40],
-      });
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
 
-      expect(result).toEqual({
-        content: [{ type: 'text', text: 'An unexpected error occurred: Unexpected error' }],
-        isError: true,
-      });
+      const result = await keySequencePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCodes: [40],
+        },
+        mockExecutor,
+      );
+
+      expect(result.content[0].text).toMatch(
+        /^Error: System error executing axe: Failed to execute axe command: Unexpected error/,
+      );
+      expect(result.isError).toBe(true);
     });
 
     it('should handle unexpected string errors', async () => {
-      (validateRequiredParam as MockedFunction<typeof validateRequiredParam>).mockReturnValue({
-        isValid: true,
-      });
-      (getAxePath as MockedFunction<typeof getAxePath>).mockReturnValue('/path/to/axe');
-      (getBundledAxeEnvironment as MockedFunction<typeof getBundledAxeEnvironment>).mockReturnValue(
-        { AXE_PATH: '/path/to/axe' },
-      );
-      (executeCommand as MockedFunction<typeof executeCommand>).mockRejectedValue('String error');
-      (createErrorResponse as MockedFunction<typeof createErrorResponse>).mockReturnValue({
-        content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
-        isError: true,
-      });
+      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
+      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      const result = await keySequencePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        keyCodes: [40],
-      });
+      const mockExecutor = vi.fn().mockRejectedValue('String error');
+
+      const result = await keySequencePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCodes: [40],
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'An unexpected error occurred: String error' }],
+        content: [
+          {
+            type: 'text',
+            text: 'Error: System error executing axe: Failed to execute axe command: String error',
+          },
+        ],
         isError: true,
       });
     });

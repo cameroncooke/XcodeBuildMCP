@@ -1,31 +1,12 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 
 // Import the plugin
 import getSimAppPathIdWs from '../get_sim_app_path_id_ws.ts';
 
-// Mock external dependencies
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  createTextResponse: vi.fn(),
-  executeCommand: vi.fn(),
-}));
-
 describe('get_sim_app_path_id_ws tool', () => {
-  let mockLog: MockedFunction<any>;
-  let mockValidateRequiredParam: MockedFunction<any>;
-  let mockCreateTextResponse: MockedFunction<any>;
-  let mockExecuteCommand: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const utils = await import('../../../utils/index.js');
-
-    mockLog = utils.log as MockedFunction<any>;
-    mockValidateRequiredParam = utils.validateRequiredParam as MockedFunction<any>;
-    mockCreateTextResponse = utils.createTextResponse as MockedFunction<any>;
-    mockExecuteCommand = utils.executeCommand as MockedFunction<any>;
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
@@ -109,20 +90,7 @@ describe('get_sim_app_path_id_ws tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure for workspacePath', async () => {
-      mockValidateRequiredParam.mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [
-            {
-              type: 'text',
-              text: 'workspacePath is required',
-            },
-          ],
-        },
-      });
-
       const result = await getSimAppPathIdWs.handler({
-        workspacePath: '',
         scheme: 'MyScheme',
         platform: 'iOS Simulator',
         simulatorId: 'test-uuid-123',
@@ -132,29 +100,28 @@ describe('get_sim_app_path_id_ws tool', () => {
         content: [
           {
             type: 'text',
-            text: 'workspacePath is required',
+            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
     it('should handle successful app path retrieval for iOS Simulator', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n',
       });
 
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -175,22 +142,20 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle successful app path retrieval for watchOS Simulator', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'BUILT_PRODUCTS_DIR = /path/to/watch/build\nFULL_PRODUCT_NAME = WatchApp.app\n',
       });
 
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'WatchScheme',
-        platform: 'watchOS Simulator',
-        simulatorId: 'watch-uuid-456',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'WatchScheme',
+          platform: 'watchOS Simulator',
+          simulatorId: 'watch-uuid-456',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -211,23 +176,21 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle successful app path retrieval for tvOS Simulator', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'BUILT_PRODUCTS_DIR = /path/to/tv/build\nFULL_PRODUCT_NAME = TVApp.app\n',
       });
 
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'TVScheme',
-        platform: 'tvOS Simulator',
-        simulatorId: 'tv-uuid-789',
-        configuration: 'Release',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'TVScheme',
+          platform: 'tvOS Simulator',
+          simulatorId: 'tv-uuid-789',
+          configuration: 'Release',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -248,23 +211,21 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle successful app path retrieval for visionOS Simulator', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'BUILT_PRODUCTS_DIR = /path/to/vision/build\nFULL_PRODUCT_NAME = VisionApp.app\n',
       });
 
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'VisionScheme',
-        platform: 'visionOS Simulator',
-        simulatorId: 'vision-uuid-101',
-        useLatestOS: true,
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'VisionScheme',
+          platform: 'visionOS Simulator',
+          simulatorId: 'vision-uuid-101',
+          useLatestOS: true,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -285,33 +246,21 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle command failure', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Build settings command failed',
       });
 
-      mockCreateTextResponse.mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Failed to get app path: Build settings command failed',
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -325,32 +274,20 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle exception with Error object', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         error: 'Command execution failed',
       });
 
-      mockCreateTextResponse.mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Failed to get app path: Command execution failed',
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -364,32 +301,20 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle exception with string error', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         error: 'String error',
       });
 
-      mockCreateTextResponse.mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Failed to get app path: String error',
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -403,32 +328,20 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle missing output from executeCommand', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: null,
       });
 
-      mockCreateTextResponse.mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Failed to extract build settings output from the result.',
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -442,32 +355,20 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle missing build settings in output', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Some output without build settings',
       });
 
-      mockCreateTextResponse.mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Failed to extract app path from build settings. Make sure the app has been built first.',
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -481,32 +382,20 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle exception in catch block with Error object', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
+      const mockExecutor = async () => {
+        throw new Error('Test exception');
+      };
 
-      const testError = new Error('Test exception');
-      mockExecuteCommand.mockRejectedValue(testError);
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
-      mockCreateTextResponse.mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Error retrieving app path: Test exception',
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
-      });
-
-      expect(mockLog).toHaveBeenCalledWith('error', 'Error retrieving app path: Test exception');
       expect(result).toEqual({
         content: [
           {
@@ -519,32 +408,20 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle exception in catch block with string error', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
+      const mockExecutor = async () => {
+        throw 'String exception';
+      };
 
-      const stringError = 'String exception';
-      mockExecuteCommand.mockRejectedValue(stringError);
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
 
-      mockCreateTextResponse.mockReturnValue({
-        content: [
-          {
-            type: 'text',
-            text: 'Error retrieving app path: String exception',
-          },
-        ],
-        isError: true,
-      });
-
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
-      });
-
-      expect(mockLog).toHaveBeenCalledWith('error', 'Error retrieving app path: String exception');
       expect(result).toEqual({
         content: [
           {
@@ -557,26 +434,8 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle scheme validation failure', async () => {
-      mockValidateRequiredParam
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [
-              {
-                type: 'text',
-                text: 'scheme is required',
-              },
-            ],
-          },
-        });
-
       const result = await getSimAppPathIdWs.handler({
         workspacePath: '/path/to/workspace',
-        scheme: '',
         platform: 'iOS Simulator',
         simulatorId: 'test-uuid-123',
       });
@@ -585,38 +444,17 @@ describe('get_sim_app_path_id_ws tool', () => {
         content: [
           {
             type: 'text',
-            text: 'scheme is required',
+            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
     it('should handle platform validation failure', async () => {
-      mockValidateRequiredParam
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [
-              {
-                type: 'text',
-                text: 'platform is required',
-              },
-            ],
-          },
-        });
-
       const result = await getSimAppPathIdWs.handler({
         workspacePath: '/path/to/workspace',
         scheme: 'MyScheme',
-        platform: '',
         simulatorId: 'test-uuid-123',
       });
 
@@ -624,52 +462,28 @@ describe('get_sim_app_path_id_ws tool', () => {
         content: [
           {
             type: 'text',
-            text: 'platform is required',
+            text: "Required parameter 'platform' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
     it('should handle simulatorId validation failure', async () => {
-      mockValidateRequiredParam
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: true,
-          errorResponse: null,
-        })
-        .mockReturnValueOnce({
-          isValid: false,
-          errorResponse: {
-            content: [
-              {
-                type: 'text',
-                text: 'simulatorId is required',
-              },
-            ],
-          },
-        });
-
       const result = await getSimAppPathIdWs.handler({
         workspacePath: '/path/to/workspace',
         scheme: 'MyScheme',
         platform: 'iOS Simulator',
-        simulatorId: '',
       });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'simulatorId is required',
+            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
   });

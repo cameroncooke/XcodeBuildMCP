@@ -1,18 +1,52 @@
 /**
  * Tests for swift_package_stop plugin
- * Following CLAUDE.md testing standards with literal validation
- * Integration tests that mock only the lowest-level spawn calls
+ * Following CLAUDE.md testing standards with pure dependency injection
+ * No vitest mocking - using dependency injection pattern
  */
 
-import { vi, describe, it, expect, beforeEach, afterEach, type MockedFunction } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import swiftPackageStop from '../swift_package_stop.js';
+import swiftPackageStop, {
+  createMockProcessManager,
+  type ProcessManager,
+} from '../swift_package_stop.js';
 
-// Mock the active-processes module
-vi.mock('../active-processes.js', () => ({
-  getProcess: vi.fn(),
-  removeProcess: vi.fn(),
-}));
+/**
+ * Mock process implementation for testing
+ */
+class MockProcess {
+  public killed = false;
+  public killSignal: string | undefined;
+  public exitCallback: (() => void) | undefined;
+  public shouldThrowOnKill = false;
+  public killError: Error | string | undefined;
+  public pid: number;
+
+  constructor(pid: number) {
+    this.pid = pid;
+  }
+
+  kill(signal?: string): void {
+    if (this.shouldThrowOnKill) {
+      throw this.killError || new Error('Process kill failed');
+    }
+    this.killed = true;
+    this.killSignal = signal;
+  }
+
+  on(event: string, callback: () => void): void {
+    if (event === 'exit') {
+      this.exitCallback = callback;
+    }
+  }
+
+  // Simulate immediate exit for test control
+  simulateExit(): void {
+    if (this.exitCallback) {
+      this.exitCallback();
+    }
+  }
+}
 
 describe('swift_package_stop plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -45,32 +79,14 @@ describe('swift_package_stop plugin', () => {
     });
   });
 
-  let mockGetProcess: MockedFunction<any>;
-  let mockRemoveProcess: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const activeProcesses = await import('../active-processes.js');
-
-    mockGetProcess = vi.mocked(activeProcesses.getProcess);
-    mockRemoveProcess = vi.mocked(activeProcesses.removeProcess);
-
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.clearAllTimers();
-    vi.useRealTimers();
-  });
-
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact error for process not found', async () => {
-      mockGetProcess.mockReturnValue(undefined);
-
-      const result = await swiftPackageStop.handler({
-        pid: 99999,
+      const mockProcessManager = createMockProcessManager({
+        getProcess: () => undefined,
       });
 
-      expect(mockGetProcess).toHaveBeenCalledWith(99999);
+      const result = await swiftPackageStop.handler({ pid: 99999 }, mockProcessManager);
+
       expect(result).toEqual({
         content: [
           {
@@ -83,44 +99,38 @@ describe('swift_package_stop plugin', () => {
     });
 
     it('should successfully stop a process that exits gracefully', async () => {
-      vi.useFakeTimers();
-
-      const mockProcess = {
-        kill: vi.fn(),
-        on: vi.fn(),
-        pid: 12345,
-      };
-
+      const mockProcess = new MockProcess(12345);
       const startedAt = new Date('2023-01-01T10:00:00.000Z');
-      const processInfo = {
-        process: mockProcess,
-        startedAt: startedAt,
+
+      const mockProcessManager = createMockProcessManager({
+        getProcess: (pid: number) =>
+          pid === 12345
+            ? {
+                process: mockProcess,
+                startedAt: startedAt,
+              }
+            : undefined,
+        removeProcess: () => true,
+      });
+
+      // Set up the process to exit immediately when exit handler is registered
+      const originalOn = mockProcess.on.bind(mockProcess);
+      mockProcess.on = (event: string, callback: () => void) => {
+        originalOn(event, callback);
+        if (event === 'exit') {
+          // Simulate immediate graceful exit
+          setTimeout(() => callback(), 0);
+        }
       };
 
-      mockGetProcess.mockReturnValue(processInfo);
-      mockRemoveProcess.mockReturnValue(true);
+      const result = await swiftPackageStop.handler(
+        { pid: 12345 },
+        mockProcessManager,
+        10, // Very short timeout for testing
+      );
 
-      // Mock the process.on call to immediately trigger the exit callback
-      mockProcess.on.mockImplementation((event, callback) => {
-        if (event === 'exit') {
-          // Simulate immediate exit using direct callback invocation
-          callback();
-        }
-      });
-
-      const resultPromise = swiftPackageStop.handler({
-        pid: 12345,
-      });
-
-      // Advance timers to trigger the immediate exit callback
-      await vi.runAllTimersAsync();
-
-      const result = await resultPromise;
-
-      expect(mockGetProcess).toHaveBeenCalledWith(12345);
-      expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
-      expect(mockProcess.on).toHaveBeenCalledWith('exit', expect.any(Function));
-      expect(mockRemoveProcess).toHaveBeenCalledWith(12345);
+      expect(mockProcess.killed).toBe(true);
+      expect(mockProcess.killSignal).toBe('SIGTERM');
       expect(result).toEqual({
         content: [
           {
@@ -136,42 +146,42 @@ describe('swift_package_stop plugin', () => {
     });
 
     it('should force kill process if graceful termination fails', async () => {
-      vi.useFakeTimers();
-
-      const mockProcess = {
-        kill: vi.fn(),
-        on: vi.fn(),
-        pid: 67890,
-      };
-
+      const mockProcess = new MockProcess(67890);
       const startedAt = new Date('2023-02-15T14:30:00.000Z');
-      const processInfo = {
-        process: mockProcess,
-        startedAt: startedAt,
+
+      const mockProcessManager = createMockProcessManager({
+        getProcess: (pid: number) =>
+          pid === 67890
+            ? {
+                process: mockProcess,
+                startedAt: startedAt,
+              }
+            : undefined,
+        removeProcess: () => true,
+      });
+
+      // Mock the process to NOT exit gracefully (no callback invocation)
+      const killCalls: string[] = [];
+      const originalKill = mockProcess.kill.bind(mockProcess);
+      mockProcess.kill = (signal?: string) => {
+        killCalls.push(signal || 'default');
+        originalKill(signal);
       };
 
-      mockGetProcess.mockReturnValue(processInfo);
-      mockRemoveProcess.mockReturnValue(true);
+      // Set up timeout to trigger SIGKILL after SIGTERM
+      const originalOn = mockProcess.on.bind(mockProcess);
+      mockProcess.on = (event: string, callback: () => void) => {
+        originalOn(event, callback);
+        // Do NOT call the callback to simulate hanging process
+      };
 
-      // Mock the process.on call to NOT trigger the exit callback (hanging process)
-      mockProcess.on.mockImplementation((event, callback) => {
-        // Don't call the callback to simulate hanging process
-      });
+      const result = await swiftPackageStop.handler(
+        { pid: 67890 },
+        mockProcessManager,
+        10, // Very short timeout for testing
+      );
 
-      const resultPromise = swiftPackageStop.handler({
-        pid: 67890,
-      });
-
-      // Advance timers to trigger the timeout (5000ms)
-      await vi.runAllTimersAsync();
-
-      const result = await resultPromise;
-
-      expect(mockGetProcess).toHaveBeenCalledWith(67890);
-      expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
-      expect(mockProcess.kill).toHaveBeenCalledWith('SIGKILL');
-      expect(mockProcess.on).toHaveBeenCalledWith('exit', expect.any(Function));
-      expect(mockRemoveProcess).toHaveBeenCalledWith(67890);
+      expect(killCalls).toEqual(['SIGTERM', 'SIGKILL']);
       expect(result).toEqual({
         content: [
           {
@@ -187,32 +197,25 @@ describe('swift_package_stop plugin', () => {
     });
 
     it('should handle process kill error and return error response', async () => {
-      const mockProcess = {
-        kill: vi.fn(),
-        on: vi.fn(),
-        pid: 54321,
-      };
-
+      const mockProcess = new MockProcess(54321);
       const startedAt = new Date('2023-03-20T09:15:00.000Z');
-      const processInfo = {
-        process: mockProcess,
-        startedAt: startedAt,
-      };
 
-      mockGetProcess.mockReturnValue(processInfo);
+      // Configure process to throw error on kill
+      mockProcess.shouldThrowOnKill = true;
+      mockProcess.killError = new Error('ESRCH: No such process');
 
-      // Mock process.kill to throw an error
-      const killError = new Error('ESRCH: No such process');
-      mockProcess.kill.mockImplementation(() => {
-        throw killError;
+      const mockProcessManager = createMockProcessManager({
+        getProcess: (pid: number) =>
+          pid === 54321
+            ? {
+                process: mockProcess,
+                startedAt: startedAt,
+              }
+            : undefined,
       });
 
-      const result = await swiftPackageStop.handler({
-        pid: 54321,
-      });
+      const result = await swiftPackageStop.handler({ pid: 54321 }, mockProcessManager);
 
-      expect(mockGetProcess).toHaveBeenCalledWith(54321);
-      expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
       expect(result).toEqual({
         content: [
           {
@@ -225,32 +228,25 @@ describe('swift_package_stop plugin', () => {
     });
 
     it('should handle non-Error exception in catch block', async () => {
-      const mockProcess = {
-        kill: vi.fn(),
-        on: vi.fn(),
-        pid: 11111,
-      };
-
+      const mockProcess = new MockProcess(11111);
       const startedAt = new Date('2023-04-10T16:45:00.000Z');
-      const processInfo = {
-        process: mockProcess,
-        startedAt: startedAt,
-      };
 
-      mockGetProcess.mockReturnValue(processInfo);
+      // Configure process to throw non-Error object
+      mockProcess.shouldThrowOnKill = true;
+      mockProcess.killError = 'Process termination failed';
 
-      // Mock process.kill to throw a non-Error object
-      const stringError = 'Process termination failed';
-      mockProcess.kill.mockImplementation(() => {
-        throw stringError;
+      const mockProcessManager = createMockProcessManager({
+        getProcess: (pid: number) =>
+          pid === 11111
+            ? {
+                process: mockProcess,
+                startedAt: startedAt,
+              }
+            : undefined,
       });
 
-      const result = await swiftPackageStop.handler({
-        pid: 11111,
-      });
+      const result = await swiftPackageStop.handler({ pid: 11111 }, mockProcessManager);
 
-      expect(mockGetProcess).toHaveBeenCalledWith(11111);
-      expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
       expect(result).toEqual({
         content: [
           {
@@ -263,42 +259,41 @@ describe('swift_package_stop plugin', () => {
     });
 
     it('should handle process found but exit event never fires and timeout occurs', async () => {
-      vi.useFakeTimers();
-
-      const mockProcess = {
-        kill: vi.fn(),
-        on: vi.fn(),
-        pid: 22222,
-      };
-
+      const mockProcess = new MockProcess(22222);
       const startedAt = new Date('2023-05-05T12:00:00.000Z');
-      const processInfo = {
-        process: mockProcess,
-        startedAt: startedAt,
+
+      const mockProcessManager = createMockProcessManager({
+        getProcess: (pid: number) =>
+          pid === 22222
+            ? {
+                process: mockProcess,
+                startedAt: startedAt,
+              }
+            : undefined,
+        removeProcess: () => true,
+      });
+
+      const killCalls: string[] = [];
+      const originalKill = mockProcess.kill.bind(mockProcess);
+      mockProcess.kill = (signal?: string) => {
+        killCalls.push(signal || 'default');
+        originalKill(signal);
       };
 
-      mockGetProcess.mockReturnValue(processInfo);
-      mockRemoveProcess.mockReturnValue(true);
+      // Mock process.on to register the exit handler but never call it (timeout scenario)
+      const originalOn = mockProcess.on.bind(mockProcess);
+      mockProcess.on = (event: string, callback: () => void) => {
+        originalOn(event, callback);
+        // Handler is registered but callback never called (simulates hanging process)
+      };
 
-      // Mock process.on to register the exit handler but never call it
-      mockProcess.on.mockImplementation((event, callback) => {
-        // Handler is registered but callback never called
-      });
+      const result = await swiftPackageStop.handler(
+        { pid: 22222 },
+        mockProcessManager,
+        10, // Very short timeout for testing
+      );
 
-      const resultPromise = swiftPackageStop.handler({
-        pid: 22222,
-      });
-
-      // Fast forward past the 5000ms timeout
-      await vi.runAllTimersAsync();
-
-      const result = await resultPromise;
-
-      expect(mockGetProcess).toHaveBeenCalledWith(22222);
-      expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
-      expect(mockProcess.kill).toHaveBeenCalledWith('SIGKILL');
-      expect(mockProcess.on).toHaveBeenCalledWith('exit', expect.any(Function));
-      expect(mockRemoveProcess).toHaveBeenCalledWith(22222);
+      expect(killCalls).toEqual(['SIGTERM', 'SIGKILL']);
       expect(result).toEqual({
         content: [
           {
@@ -314,13 +309,12 @@ describe('swift_package_stop plugin', () => {
     });
 
     it('should handle edge case with pid 0', async () => {
-      mockGetProcess.mockReturnValue(undefined);
-
-      const result = await swiftPackageStop.handler({
-        pid: 0,
+      const mockProcessManager = createMockProcessManager({
+        getProcess: () => undefined,
       });
 
-      expect(mockGetProcess).toHaveBeenCalledWith(0);
+      const result = await swiftPackageStop.handler({ pid: 0 }, mockProcessManager);
+
       expect(result).toEqual({
         content: [
           {
@@ -333,13 +327,12 @@ describe('swift_package_stop plugin', () => {
     });
 
     it('should handle edge case with negative pid', async () => {
-      mockGetProcess.mockReturnValue(undefined);
-
-      const result = await swiftPackageStop.handler({
-        pid: -1,
+      const mockProcessManager = createMockProcessManager({
+        getProcess: () => undefined,
       });
 
-      expect(mockGetProcess).toHaveBeenCalledWith(-1);
+      const result = await swiftPackageStop.handler({ pid: -1 }, mockProcessManager);
+
       expect(result).toEqual({
         content: [
           {
@@ -352,45 +345,44 @@ describe('swift_package_stop plugin', () => {
     });
 
     it('should handle process that exits after first SIGTERM call', async () => {
-      vi.useFakeTimers();
-
-      const mockProcess = {
-        kill: vi.fn(),
-        on: vi.fn(),
-        pid: 33333,
-      };
-
+      const mockProcess = new MockProcess(33333);
       const startedAt = new Date('2023-06-01T08:30:00.000Z');
-      const processInfo = {
-        process: mockProcess,
-        startedAt: startedAt,
+
+      const mockProcessManager = createMockProcessManager({
+        getProcess: (pid: number) =>
+          pid === 33333
+            ? {
+                process: mockProcess,
+                startedAt: startedAt,
+              }
+            : undefined,
+        removeProcess: () => true,
+      });
+
+      const killCalls: string[] = [];
+      const originalKill = mockProcess.kill.bind(mockProcess);
+      mockProcess.kill = (signal?: string) => {
+        killCalls.push(signal || 'default');
+        originalKill(signal);
       };
 
-      mockGetProcess.mockReturnValue(processInfo);
-      mockRemoveProcess.mockReturnValue(true);
-
-      // Mock process.on to trigger exit callback after a short delay
-      mockProcess.on.mockImplementation((event, callback) => {
+      // Set up the process to exit immediately when exit handler is registered
+      const originalOn = mockProcess.on.bind(mockProcess);
+      mockProcess.on = (event: string, callback: () => void) => {
+        originalOn(event, callback);
         if (event === 'exit') {
-          // Simulate delayed exit using direct callback invocation
-          callback();
+          // Simulate immediate graceful exit
+          setTimeout(() => callback(), 0);
         }
-      });
+      };
 
-      const resultPromise = swiftPackageStop.handler({
-        pid: 33333,
-      });
+      const result = await swiftPackageStop.handler(
+        { pid: 33333 },
+        mockProcessManager,
+        10, // Very short timeout for testing
+      );
 
-      // Advance timers to trigger exit callback before timeout
-      await vi.runAllTimersAsync();
-
-      const result = await resultPromise;
-
-      expect(mockGetProcess).toHaveBeenCalledWith(33333);
-      expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
-      expect(mockProcess.kill).toHaveBeenCalledTimes(1); // Should not call SIGKILL
-      expect(mockProcess.on).toHaveBeenCalledWith('exit', expect.any(Function));
-      expect(mockRemoveProcess).toHaveBeenCalledWith(33333);
+      expect(killCalls).toEqual(['SIGTERM']); // Should not call SIGKILL
       expect(result).toEqual({
         content: [
           {
@@ -406,11 +398,12 @@ describe('swift_package_stop plugin', () => {
     });
 
     it('should handle undefined pid parameter', async () => {
-      mockGetProcess.mockReturnValue(undefined);
+      const mockProcessManager = createMockProcessManager({
+        getProcess: () => undefined,
+      });
 
-      const result = await swiftPackageStop.handler({});
+      const result = await swiftPackageStop.handler({}, mockProcessManager);
 
-      expect(mockGetProcess).toHaveBeenCalledWith(undefined);
       expect(result).toEqual({
         content: [
           {

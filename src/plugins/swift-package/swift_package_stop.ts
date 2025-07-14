@@ -1,8 +1,35 @@
 import { z } from 'zod';
 import { createTextResponse } from '../../utils/index.js';
 import { createErrorResponse } from '../../utils/index.js';
-import { getProcess, removeProcess } from './active-processes.js';
+import { getProcess, removeProcess, type ProcessInfo } from './active-processes.js';
 import { ToolResponse } from '../../types/common.js';
+
+/**
+ * Process manager interface for dependency injection
+ */
+export interface ProcessManager {
+  getProcess: (pid: number) => ProcessInfo | undefined;
+  removeProcess: (pid: number) => boolean;
+}
+
+/**
+ * Default process manager implementation
+ */
+const defaultProcessManager: ProcessManager = {
+  getProcess,
+  removeProcess,
+};
+
+/**
+ * Create a mock process manager for testing
+ */
+export function createMockProcessManager(overrides?: Partial<ProcessManager>): ProcessManager {
+  return {
+    getProcess: () => undefined,
+    removeProcess: () => true,
+    ...overrides,
+  };
+}
 
 export default {
   name: 'swift_package_stop',
@@ -10,9 +37,13 @@ export default {
   schema: {
     pid: z.number().describe('Process ID (PID) of the running executable'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    processManager: ProcessManager = defaultProcessManager,
+    timeout: number = 5000,
+  ): Promise<ToolResponse> {
     const params = args;
-    const processInfo = getProcess(params.pid);
+    const processInfo = processManager.getProcess(params.pid);
     if (!processInfo) {
       return createTextResponse(
         `⚠️ No running process found with PID ${params.pid}. Use swift_package_run to check active processes.`,
@@ -23,7 +54,7 @@ export default {
     try {
       processInfo.process.kill('SIGTERM');
 
-      // Give it 5 seconds to terminate gracefully
+      // Give it time to terminate gracefully (configurable for testing)
       await new Promise((resolve) => {
         let terminated = false;
 
@@ -37,10 +68,10 @@ export default {
             processInfo.process.kill('SIGKILL');
           }
           resolve(true);
-        }, 5000);
+        }, timeout);
       });
 
-      removeProcess(params.pid);
+      processManager.removeProcess(params.pid);
 
       return {
         content: [
