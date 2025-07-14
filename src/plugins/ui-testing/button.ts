@@ -10,7 +10,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -28,7 +28,7 @@ export default {
     buttonType: z.enum(['apple-pay', 'home', 'lock', 'side-button', 'siri']),
     duration: z.number().min(0, 'Duration must be non-negative').optional(),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const toolName = 'button';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -48,7 +48,7 @@ export default {
     );
 
     try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'button');
+      await executeAxeCommand(commandArgs, simulatorUuid, 'button', executor);
       log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
       return {
         content: [{ type: 'text', text: `Hardware button '${buttonType}' pressed successfully.` }],
@@ -84,6 +84,7 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
+  executor?: CommandExecutor,
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
   const axeBinary = getAxePath();
@@ -101,12 +102,9 @@ async function executeAxeCommand(
     // Determine environment variables for bundled AXe
     const axeEnv = axeBinary !== 'axe' ? getBundledAxeEnvironment() : undefined;
 
-    const result = await executeCommand(
-      fullCommand,
-      `${LOG_PREFIX}: ${commandName}`,
-      false,
-      axeEnv,
-    );
+    const result = executor
+      ? await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv)
+      : await executeCommand(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 
     if (!result.success) {
       throw new AxeError(

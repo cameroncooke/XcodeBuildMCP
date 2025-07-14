@@ -4,16 +4,11 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import describeUIPlugin from '../describe_ui.ts';
 
-// Mock child_process at the lowest system level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
 // Mock only the path resolution utilities, not validation/response utilities
-vi.mock('../../utils/index.js', async (importOriginal) => {
+vi.mock('../../../utils/index.js', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
@@ -23,15 +18,6 @@ vi.mock('../../utils/index.js', async (importOriginal) => {
 });
 
 import { getAxePath, getBundledAxeEnvironment } from '../../../utils/index.js';
-import { spawn } from 'child_process';
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
-const mockSpawn = vi.mocked(spawn);
 
 describe('Describe UI Plugin', () => {
   beforeEach(() => {
@@ -94,28 +80,28 @@ describe('Describe UI Plugin', () => {
       vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
       vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
       const uiHierarchy =
         '{"elements": [{"type": "Button", "frame": {"x": 100, "y": 200, "width": 50, "height": 30}}]}';
 
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', uiHierarchy);
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await describeUIPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: uiHierarchy,
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        '/usr/local/bin/axe',
-        ['describe-ui', '--udid', '12345678-1234-1234-1234-123456789012'],
-        expect.objectContaining({
-          stdio: ['pipe', 'pipe', 'pipe'],
-          env: expect.any(Object),
-        }),
+      const result = await describeUIPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['/usr/local/bin/axe', 'describe-ui', '--udid', '12345678-1234-1234-1234-123456789012'],
+        '[AXe]: describe-ui',
+        false,
+        expect.any(Object),
       );
 
       expect(result).toEqual({
@@ -146,7 +132,7 @@ describe('Describe UI Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'AXe binary not available. Please install AXe using the instructions at: https://github.com/nbbeeken/dashlane-xcuitest',
+            text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
           },
         ],
         isError: true,
@@ -157,17 +143,19 @@ describe('Describe UI Plugin', () => {
       vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
       vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'axe command failed');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await describeUIPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'axe command failed',
+        process: { pid: 12345 },
       });
+
+      const result = await describeUIPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -184,19 +172,24 @@ describe('Describe UI Plugin', () => {
       vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
       vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      mockSpawn.mockImplementation(() => {
-        throw new Error('ENOENT: no such file or directory');
-      });
+      const mockExecutor = vi
+        .fn()
+        .mockRejectedValue(new Error('ENOENT: no such file or directory'));
 
-      const result = await describeUIPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await describeUIPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error: System error executing axe: Failed to execute axe command: ENOENT: no such file or directory',
+            text: expect.stringContaining(
+              'Error: System error executing axe: Failed to execute axe command: ENOENT: no such file or directory',
+            ),
           },
         ],
         isError: true,
@@ -207,19 +200,22 @@ describe('Describe UI Plugin', () => {
       vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
       vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      mockSpawn.mockImplementation(() => {
-        throw new Error('Unexpected error');
-      });
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
 
-      const result = await describeUIPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await describeUIPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error: An unexpected error occurred: System error executing axe: Failed to execute axe command: Unexpected error',
+            text: expect.stringContaining(
+              'Error: System error executing axe: Failed to execute axe command: Unexpected error',
+            ),
           },
         ],
         isError: true,
@@ -230,19 +226,20 @@ describe('Describe UI Plugin', () => {
       vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
       vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      mockSpawn.mockImplementation(() => {
-        throw 'String error';
-      });
+      const mockExecutor = vi.fn().mockRejectedValue('String error');
 
-      const result = await describeUIPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await describeUIPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error: An unexpected error occurred: System error executing axe: Failed to execute axe command: String error',
+            text: 'Error: System error executing axe: Failed to execute axe command: String error',
           },
         ],
         isError: true,

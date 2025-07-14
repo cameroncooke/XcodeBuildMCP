@@ -10,7 +10,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -76,7 +76,7 @@ export default {
       .optional()
       .describe('Optional: Delay after completing the gesture in seconds.'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const toolName = 'gesture';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -118,7 +118,7 @@ export default {
     log('info', `${LOG_PREFIX}/${toolName}: Starting gesture '${preset}' on ${simulatorUuid}`);
 
     try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'gesture');
+      await executeAxeCommand(commandArgs, simulatorUuid, 'gesture', executor);
       log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
       return createTextResponse(`Gesture '${preset}' executed successfully.`);
     } catch (error) {
@@ -152,6 +152,7 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
+  executor?: CommandExecutor,
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
   const axeBinary = getAxePath();
@@ -169,12 +170,9 @@ async function executeAxeCommand(
     // Determine environment variables for bundled AXe
     const axeEnv = axeBinary !== 'axe' ? getBundledAxeEnvironment() : undefined;
 
-    const result = await executeCommand(
-      fullCommand,
-      `${LOG_PREFIX}: ${commandName}`,
-      false,
-      axeEnv,
-    );
+    const result = executor
+      ? await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv)
+      : await executeCommand(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 
     if (!result.success) {
       throw new AxeError(

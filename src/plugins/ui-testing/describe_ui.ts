@@ -3,7 +3,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -29,7 +29,7 @@ export default {
   schema: {
     simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const toolName = 'describe_ui';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -41,7 +41,12 @@ export default {
     log('info', `${LOG_PREFIX}/${toolName}: Starting for ${simulatorUuid}`);
 
     try {
-      const responseText = await executeAxeCommand(commandArgs, simulatorUuid, 'describe-ui');
+      const responseText = await executeAxeCommand(
+        commandArgs,
+        simulatorUuid,
+        'describe-ui',
+        executor,
+      );
 
       // Record the describe_ui call for warning system
       recordDescribeUICall(simulatorUuid);
@@ -94,6 +99,7 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
+  executor?: CommandExecutor,
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
   const axeBinary = getAxePath();
@@ -116,6 +122,7 @@ async function executeAxeCommand(
       `${LOG_PREFIX}: ${commandName}`,
       false,
       axeEnv,
+      executor,
     );
 
     if (!result.success) {

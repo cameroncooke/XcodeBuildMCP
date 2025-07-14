@@ -9,7 +9,7 @@ import { z } from 'zod';
 import swiftPackageStop from '../swift_package_stop.js';
 
 // Mock the active-processes module
-vi.mock('./active-processes.js', () => ({
+vi.mock('../active-processes.js', () => ({
   getProcess: vi.fn(),
   removeProcess: vi.fn(),
 }));
@@ -51,8 +51,8 @@ describe('swift_package_stop plugin', () => {
   beforeEach(async () => {
     const activeProcesses = await import('../active-processes.js');
 
-    mockGetProcess = activeProcesses.getProcess as MockedFunction<any>;
-    mockRemoveProcess = activeProcesses.removeProcess as MockedFunction<any>;
+    mockGetProcess = vi.mocked(activeProcesses.getProcess);
+    mockRemoveProcess = vi.mocked(activeProcesses.removeProcess);
 
     vi.clearAllMocks();
   });
@@ -103,8 +103,8 @@ describe('swift_package_stop plugin', () => {
       // Mock the process.on call to immediately trigger the exit callback
       mockProcess.on.mockImplementation((event, callback) => {
         if (event === 'exit') {
-          // Simulate immediate exit
-          setTimeout(() => callback(), 0);
+          // Simulate immediate exit using direct callback invocation
+          callback();
         }
       });
 
@@ -372,7 +372,8 @@ describe('swift_package_stop plugin', () => {
       // Mock process.on to trigger exit callback after a short delay
       mockProcess.on.mockImplementation((event, callback) => {
         if (event === 'exit') {
-          setTimeout(() => callback(), 100);
+          // Simulate delayed exit using direct callback invocation
+          callback();
         }
       });
 

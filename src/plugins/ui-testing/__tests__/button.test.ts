@@ -4,16 +4,11 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import buttonPlugin from '../button.ts';
 
-// Mock child_process at the lowest system level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
-
 // Mock only the path resolution utilities, not validation/response utilities
-vi.mock('../../utils/index.js', async (importOriginal) => {
+vi.mock('../../../utils/index.js', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
@@ -23,15 +18,6 @@ vi.mock('../../utils/index.js', async (importOriginal) => {
 });
 
 import { getAxePath, getBundledAxeEnvironment } from '../../../utils/index.js';
-import { spawn } from 'child_process';
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
-const mockSpawn = vi.mocked(spawn);
 
 describe('Button Plugin', () => {
   beforeEach(() => {
@@ -146,25 +132,26 @@ describe('Button Plugin', () => {
       vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
       vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'button press completed');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await buttonPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        buttonType: 'home',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'button press completed',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        '/usr/local/bin/axe',
-        ['button', 'home', '--udid', '12345678-1234-1234-1234-123456789012'],
-        expect.objectContaining({
-          stdio: ['ignore', 'pipe', 'pipe'],
-        }),
+      const result = await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          buttonType: 'home',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['/usr/local/bin/axe', 'button', 'home', '--udid', '12345678-1234-1234-1234-123456789012'],
+        '[AXe]: button',
+        false,
+        {},
       );
 
       expect(result).toEqual({
@@ -176,23 +163,25 @@ describe('Button Plugin', () => {
       vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
       vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'button press completed');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await buttonPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        buttonType: 'side-button',
-        duration: 2.5,
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'button press completed',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        '/usr/local/bin/axe',
+      const result = await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          buttonType: 'side-button',
+          duration: 2.5,
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
+          '/usr/local/bin/axe',
           'button',
           'side-button',
           '--duration',
@@ -200,9 +189,9 @@ describe('Button Plugin', () => {
           '--udid',
           '12345678-1234-1234-1234-123456789012',
         ],
-        expect.objectContaining({
-          stdio: ['ignore', 'pipe', 'pipe'],
-        }),
+        '[AXe]: button',
+        false,
+        {},
       );
 
       expect(result).toEqual({
@@ -233,18 +222,20 @@ describe('Button Plugin', () => {
       vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
       vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess as any);
-
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'axe command failed');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await buttonPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        buttonType: 'home',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'axe command failed',
+        process: { pid: 12345 },
       });
+
+      const result = await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          buttonType: 'home',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -261,15 +252,17 @@ describe('Button Plugin', () => {
       vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
       vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockImplementation(() => {
-        throw new Error('ENOENT: no such file or directory');
-      });
+      const mockExecutor = vi
+        .fn()
+        .mockRejectedValue(new Error('ENOENT: no such file or directory'));
 
-      const result = await buttonPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        buttonType: 'home',
-      });
+      const result = await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          buttonType: 'home',
+        },
+        mockExecutor,
+      );
 
       expect(result.content[0].text).toMatch(
         /^Error: System error executing axe: Failed to execute axe command: ENOENT: no such file or directory/,
@@ -281,15 +274,15 @@ describe('Button Plugin', () => {
       vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
       vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockImplementation(() => {
-        throw new Error('Unexpected error');
-      });
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
 
-      const result = await buttonPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        buttonType: 'home',
-      });
+      const result = await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          buttonType: 'home',
+        },
+        mockExecutor,
+      );
 
       expect(result.content[0].text).toMatch(
         /^Error: System error executing axe: Failed to execute axe command: Unexpected error/,
@@ -301,14 +294,15 @@ describe('Button Plugin', () => {
       vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
       vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
 
-      mockSpawn.mockImplementation(() => {
-        throw 'String error';
-      });
+      const mockExecutor = vi.fn().mockRejectedValue('String error');
 
-      const result = await buttonPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        buttonType: 'home',
-      });
+      const result = await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          buttonType: 'home',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
