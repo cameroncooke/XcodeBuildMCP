@@ -4,31 +4,8 @@
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { createMockExecutor } from '../../../utils/command.js';
 import testDeviceWs from '../test_device_ws.ts';
-
-// Mock child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-  exec: vi.fn(),
-}));
-
-// Mock fs/promises
-vi.mock('fs/promises', () => ({
-  mkdtemp: vi.fn().mockResolvedValue('/tmp/xcodebuild-test-123'),
-  rm: vi.fn().mockResolvedValue(undefined),
-  stat: vi.fn().mockResolvedValue({ isFile: () => true }),
-}));
-
-// Mock os
-vi.mock('os', () => ({
-  tmpdir: vi.fn().mockReturnValue('/tmp'),
-}));
-
-// Mock util
-vi.mock('util', () => ({
-  promisify: vi.fn((fn) => vi.fn().mockResolvedValue({ stdout: '{}' })),
-}));
 
 describe('test_device_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -69,60 +46,59 @@ describe('test_device_ws plugin', () => {
     });
   });
 
-  class MockChildProcess extends EventEmitter {
-    stdout = new EventEmitter();
-    stderr = new EventEmitter();
-    pid = 12345;
-  }
-
-  let mockSpawn: Record<string, unknown>;
-  let mockProcess: MockChildProcess;
-
-  beforeEach(async () => {
-    const { spawn } = await import('child_process');
-    mockSpawn = vi.mocked(spawn);
-    mockProcess = new MockChildProcess();
-    mockSpawn.mockReturnValue(mockProcess);
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle missing parameters and generate xcodebuild command', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Test Suite All Tests passed');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const resultPromise = testDeviceWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyScheme',
-        configuration: 'Debug',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Test Suite All Tests passed',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      const result = await resultPromise;
+      const result = await testDeviceWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Debug',
+        },
+        mockExecutor,
+      );
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         expect.arrayContaining([
-          '-c',
-          expect.stringMatching(/xcodebuild.*-workspace.*MyScheme.*test/),
+          'xcodebuild',
+          '-workspace',
+          '/path/to/workspace.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          'test',
         ]),
-        expect.any(Object),
+        'Test Run',
+        true,
+        undefined,
       );
     });
 
     it('should return successful test response when xcodebuild succeeds', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Test Suite All Tests passed');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await testDeviceWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyScheme',
-        configuration: 'Debug',
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
       });
+
+      const result = await testDeviceWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Debug',
+        },
+        mockExecutor,
+      );
 
       expect(result.content).toBeDefined();
       expect(Array.isArray(result.content)).toBe(true);
@@ -130,15 +106,18 @@ describe('test_device_ws plugin', () => {
     });
 
     it('should return error response when xcodebuild fails', async () => {
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'xcodebuild: error: Scheme not found');
-        mockProcess.emit('close', 65);
-      }, 0);
-
-      const result = await testDeviceWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'NonExistentScheme',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'xcodebuild: error: Scheme not found',
       });
+
+      const result = await testDeviceWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'NonExistentScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result.isError).toBe(true);
       expect(result.content).toBeDefined();
@@ -146,20 +125,35 @@ describe('test_device_ws plugin', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Test Suite All Tests passed');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      await testDeviceWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyScheme',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Test Suite All Tests passed',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        expect.arrayContaining(['-c', expect.stringMatching(/Debug/)]),
-        expect.any(Object),
+      await testDeviceWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          'xcodebuild',
+          '-workspace',
+          '/path/to/workspace.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          'test',
+        ]),
+        'Test Run',
+        true,
+        undefined,
       );
     });
   });

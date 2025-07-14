@@ -1,10 +1,10 @@
 /**
  * Tests for test_macos_ws plugin
  * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
 import { z } from 'zod';
 import testMacosWs from '../test_macos_ws.ts';
 
@@ -40,27 +40,16 @@ vi.mock('path', async (importOriginal) => {
   };
 });
 
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
-
 describe('test_macos_ws plugin', () => {
-  let mockSpawn: Record<string, unknown>;
-  let mockExec: Record<string, unknown>;
   let mockPromisify: Record<string, unknown>;
   let mockMkdtemp: Record<string, unknown>;
   let mockRm: Record<string, unknown>;
   let mockStat: Record<string, unknown>;
 
   beforeEach(async () => {
-    const { spawn, exec } = await import('child_process');
     const { promisify } = await import('util');
     const { mkdtemp, rm, stat } = await import('fs/promises');
 
-    mockSpawn = vi.mocked(spawn);
-    mockExec = vi.mocked(exec);
     mockPromisify = vi.mocked(promisify);
     mockMkdtemp = vi.mocked(mkdtemp);
     mockRm = vi.mocked(rm);
@@ -114,9 +103,6 @@ describe('test_macos_ws plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact successful test response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
       // Mock xcresulttool execution
       const mockExecPromise = vi.fn().mockResolvedValue({
         stdout: JSON.stringify({
@@ -131,26 +117,41 @@ describe('test_macos_ws plugin', () => {
       });
       mockPromisify.mockReturnValue(mockExecPromise);
 
-      // Simulate successful test
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Test Succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await testMacosWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
+      // Mock executor for successful test
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Test Succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        expect.arrayContaining([
-          '-c',
-          expect.stringContaining(
-            'xcodebuild -workspace /path/to/MyProject.xcworkspace -scheme MyScheme -configuration Debug -skipMacroValidation -destination "platform=macOS"',
-          ),
-        ]),
-        expect.any(Object),
+      const result = await testMacosWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        [
+          'xcodebuild',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          '-resultBundlePath',
+          expect.stringMatching(/.*TestResults\.xcresult$/),
+          'test',
+        ],
+        'Test Run',
+        true,
+        undefined,
       );
 
       expect(result.content).toEqual(
@@ -164,9 +165,6 @@ describe('test_macos_ws plugin', () => {
     });
 
     it('should return exact test failure response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
       // Mock xcresulttool execution for failed tests
       const mockExecPromise = vi.fn().mockResolvedValue({
         stdout: JSON.stringify({
@@ -181,16 +179,21 @@ describe('test_macos_ws plugin', () => {
       });
       mockPromisify.mockReturnValue(mockExecPromise);
 
-      // Simulate test failure
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'error: Test failed');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await testMacosWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
+      // Mock executor for failed test
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'error: Test failed',
+        process: { pid: 12345 },
       });
+
+      const result = await testMacosWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result.content).toEqual(
         expect.arrayContaining([
@@ -204,9 +207,6 @@ describe('test_macos_ws plugin', () => {
     });
 
     it('should return exact successful test response with optional parameters', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
       // Mock xcresulttool execution
       const mockExecPromise = vi.fn().mockResolvedValue({
         stdout: JSON.stringify({
@@ -221,29 +221,48 @@ describe('test_macos_ws plugin', () => {
       });
       mockPromisify.mockReturnValue(mockExecPromise);
 
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Test Succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await testMacosWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
-        configuration: 'Release',
-        derivedDataPath: '/path/to/derived-data',
-        extraArgs: ['--verbose'],
-        preferXcodebuild: true,
+      // Mock executor for successful test with optional parameters
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Test Succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        expect.arrayContaining([
-          '-c',
-          expect.stringContaining(
-            'xcodebuild -workspace /path/to/MyProject.xcworkspace -scheme MyScheme -configuration Release -skipMacroValidation -destination "platform=macOS" -derivedDataPath /path/to/derived-data --verbose',
-          ),
-        ]),
-        expect.any(Object),
+      const result = await testMacosWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Release',
+          derivedDataPath: '/path/to/derived-data',
+          extraArgs: ['--verbose'],
+          preferXcodebuild: true,
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        [
+          'xcodebuild',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Release',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          '-derivedDataPath',
+          '/path/to/derived-data',
+          '--verbose',
+          '-resultBundlePath',
+          expect.stringMatching(/.*TestResults\.xcresult$/),
+          'test',
+        ],
+        'Test Run',
+        true,
+        undefined,
       );
 
       expect(result.content).toEqual(
@@ -260,10 +279,16 @@ describe('test_macos_ws plugin', () => {
       // Mock mkdtemp to fail to trigger the main catch block
       mockMkdtemp.mockRejectedValue(new Error('Network error'));
 
-      const result = await testMacosWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
-      });
+      // Mock executor (won't be called due to mkdtemp failure)
+      const mockExecutor = vi.fn();
+
+      const result = await testMacosWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [

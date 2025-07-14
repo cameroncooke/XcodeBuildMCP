@@ -10,7 +10,6 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
 import cleanProj from '../clean_proj.ts';
 
 describe('clean_proj plugin tests', () => {
@@ -89,9 +88,11 @@ describe('clean_proj plugin tests', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return success response for valid clean project request', async () => {
-      const mockExecutor = createMockExecutor({
+      const mockExecutor = vi.fn().mockResolvedValue({
         success: true,
         output: 'Clean succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
 
       const result = await cleanProj.handler(
@@ -132,23 +133,24 @@ describe('clean_proj plugin tests', () => {
     });
 
     it('should return success response with all optional parameters', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Clean succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await cleanProj.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'MyScheme',
-        configuration: 'Release',
-        derivedDataPath: '/path/to/derived/data',
-        extraArgs: ['--verbose'],
-        preferXcodebuild: true,
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Clean succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
+
+      const result = await cleanProj.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+          configuration: 'Release',
+          derivedDataPath: '/path/to/derived/data',
+          extraArgs: ['--verbose'],
+          preferXcodebuild: true,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -159,29 +161,43 @@ describe('clean_proj plugin tests', () => {
         ],
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -project /path/to/MyProject.xcodeproj -scheme MyScheme -configuration Release -skipMacroValidation -destination "platform=macOS" -derivedDataPath /path/to/derived/data --verbose clean',
+          'xcodebuild',
+          '-project',
+          '/path/to/MyProject.xcodeproj',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Release',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          '-derivedDataPath',
+          '/path/to/derived/data',
+          '--verbose',
+          'clean',
         ],
-        expect.any(Object),
+        'Clean',
+        true,
+        undefined,
       );
     });
 
     it('should return success response with minimal parameters and defaults', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Clean succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await cleanProj.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Clean succeeded',
+        error: undefined,
+        process: { pid: 12345 },
       });
+
+      const result = await cleanProj.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -192,30 +208,41 @@ describe('clean_proj plugin tests', () => {
         ],
       });
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -project /path/to/MyProject.xcodeproj -scheme  -configuration Debug -skipMacroValidation -destination "platform=macOS" clean',
+          'xcodebuild',
+          '-project',
+          '/path/to/MyProject.xcodeproj',
+          '-scheme',
+          '',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          'clean',
         ],
-        expect.any(Object),
+        'Clean',
+        true,
+        undefined,
       );
     });
 
     it('should return error response for command failure', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate command failure
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Clean failed');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await cleanProj.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'MyScheme',
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: false,
+        output: '',
+        error: 'Clean failed',
+        process: { pid: 12345 },
       });
+
+      const result = await cleanProj.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -249,18 +276,15 @@ describe('clean_proj plugin tests', () => {
     });
 
     it('should handle spawn process error', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn failed'));
 
-      // Simulate process error
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('spawn failed'));
-      }, 0);
-
-      const result = await cleanProj.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: 'MyScheme',
-      });
+      const result = await cleanProj.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [

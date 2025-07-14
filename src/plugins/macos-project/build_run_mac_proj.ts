@@ -12,6 +12,7 @@ import { executeCommand } from '../../utils/index.js';
 import { createTextResponse } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
+import { CommandExecutor } from '../../utils/command.js';
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -28,7 +29,10 @@ const XcodePlatform = {
 /**
  * Internal logic for building macOS apps.
  */
-async function _handleMacOSBuildLogic(params: Record<string, unknown>): Promise<ToolResponse> {
+async function _handleMacOSBuildLogic(
+  params: Record<string, unknown>,
+  executor?: CommandExecutor,
+): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
@@ -42,11 +46,13 @@ async function _handleMacOSBuildLogic(params: Record<string, unknown>): Promise<
     },
     params.preferXcodebuild,
     'build',
+    executor,
   );
 }
 
 async function _getAppPathFromBuildSettings(
   params: Record<string, unknown>,
+  executor?: CommandExecutor,
 ): Promise<{ appPath?: string; error?: string }> {
   try {
     // Create the command array for xcodebuild
@@ -74,7 +80,13 @@ async function _getAppPathFromBuildSettings(
     }
 
     // Execute the command directly
-    const result = await executeCommand(command, 'Get Build Settings for Launch');
+    const result = await executeCommand(
+      command,
+      'Get Build Settings for Launch',
+      true,
+      undefined,
+      executor,
+    );
 
     if (!result.success) {
       return {
@@ -105,12 +117,13 @@ async function _getAppPathFromBuildSettings(
  */
 async function _handleMacOSBuildAndRunLogic(
   params: Record<string, unknown>,
+  executor?: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', 'Handling macOS build & run logic...');
 
   try {
     // First, build the app
-    const buildResult = await _handleMacOSBuildLogic(params);
+    const buildResult = await _handleMacOSBuildLogic(params, executor);
 
     // 1. Check if the build itself failed
     if (buildResult.isError) {
@@ -119,7 +132,7 @@ async function _handleMacOSBuildAndRunLogic(
     const buildWarningMessages = buildResult.content?.filter((c) => c.type === 'text') ?? [];
 
     // 2. Build succeeded, now get the app path using the helper
-    const appPathResult = await _getAppPathFromBuildSettings(params);
+    const appPathResult = await _getAppPathFromBuildSettings(params, executor);
 
     // 3. Check if getting the app path failed
     if (!appPathResult.success) {
@@ -195,12 +208,15 @@ export default {
       .optional()
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
-    return _handleMacOSBuildAndRunLogic({
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      preferXcodebuild: params.preferXcodebuild ?? false,
-    });
+    return _handleMacOSBuildAndRunLogic(
+      {
+        ...params,
+        configuration: params.configuration ?? 'Debug',
+        preferXcodebuild: params.preferXcodebuild ?? false,
+      },
+      executor,
+    );
   },
 };

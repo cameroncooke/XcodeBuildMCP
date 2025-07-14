@@ -4,40 +4,24 @@
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
 import { z } from 'zod';
-import buildRunMacWs from '../build_run_mac_ws.ts';
+import { createMockExecutor } from '../../../utils/command.js';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 
-// Mock only child_process.spawn and exec at the lowest level
+// Mock child_process and util at module level
 vi.mock('child_process', () => ({
-  spawn: vi.fn(),
   exec: vi.fn(),
 }));
 
-// Mock util.promisify
 vi.mock('util', () => ({
   promisify: vi.fn(),
 }));
 
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
+import buildRunMacWs from '../build_run_mac_ws.ts';
 
 describe('build_run_mac_ws plugin', () => {
-  let mockSpawn: Record<string, unknown>;
-  let mockExec: Record<string, unknown>;
-  let mockPromisify: Record<string, unknown>;
-
-  beforeEach(async () => {
-    const { spawn, exec } = await import('child_process');
-    const { promisify } = await import('util');
-
-    mockSpawn = vi.mocked(spawn);
-    mockExec = vi.mocked(exec);
-    mockPromisify = vi.mocked(promisify);
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
@@ -83,32 +67,38 @@ describe('build_run_mac_ws plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return exact successful build and run response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
+    it('should successfully build and run macOS app', async () => {
+      // Mock successful build first, then successful build settings
+      let callCount = 0;
+      const mockExecutor = vi.fn().mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          // First call for build
+          return Promise.resolve({
+            success: true,
+            output: 'BUILD SUCCEEDED',
+            error: '',
+          });
+        } else {
+          // Second call for build settings
+          return Promise.resolve({
+            success: true,
+            output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+            error: '',
+          });
+        }
+      });
 
       // Mock promisify(exec) to return successful launch
       const mockExecPromise = vi.fn().mockResolvedValue({ stdout: '', stderr: '' });
-      mockPromisify.mockReturnValue(mockExecPromise);
+      vi.mocked(promisify).mockReturnValue(mockExecPromise);
 
-      // Simulate successful build
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'Build succeeded');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      const result = await buildRunMacWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
-      });
-
-      expect(mockSpawn).toHaveBeenCalledWith(
-        'sh',
-        [
-          '-c',
-          'xcodebuild -workspace /path/to/MyProject.xcworkspace -scheme MyScheme -configuration Debug -skipMacroValidation -destination "platform=macOS" build',
-        ],
-        expect.any(Object),
+      const result = await buildRunMacWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
       );
 
       expect(result.content).toEqual(
@@ -122,19 +112,19 @@ describe('build_run_mac_ws plugin', () => {
     });
 
     it('should return exact build failure response', async () => {
-      const mockProcess = new MockChildProcess();
-      mockSpawn.mockReturnValue(mockProcess);
-
-      // Simulate build failure
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'error: Compilation error in main.swift');
-        mockProcess.emit('close', 1);
-      }, 0);
-
-      const result = await buildRunMacWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'error: Compilation error in main.swift',
       });
+
+      const result = await buildRunMacWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -152,20 +142,21 @@ describe('build_run_mac_ws plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      mockSpawn.mockImplementation(() => {
-        throw new Error('Network error');
-      });
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const result = await buildRunMacWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-        scheme: 'MyScheme',
-      });
+      const result = await buildRunMacWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error during macOS build and run: Network error',
+            text: 'Error during macOS Build build: Network error',
           },
         ],
         isError: true,

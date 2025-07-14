@@ -1,42 +1,23 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
-import { spawn, exec } from 'child_process';
+import { createMockExecutor } from '../../../utils/command.js';
+import { exec } from 'child_process';
 import { promisify } from 'util';
-import tool from '../build_run_mac_proj.ts';
 
-// Mock child_process at the lowest level
+// Mock child_process and util at module level
 vi.mock('child_process', () => ({
-  spawn: vi.fn(),
   exec: vi.fn(),
 }));
 
-// Mock util module
 vi.mock('util', () => ({
   promisify: vi.fn(),
 }));
 
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
+import tool from '../build_run_mac_proj.ts';
 
 describe('build_run_mac_proj', () => {
-  let mockProcess: MockChildProcess;
-  let mockExec: Record<string, unknown>;
-  let mockPromisify: Record<string, unknown>;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    mockProcess = new MockChildProcess();
-
-    vi.mocked(spawn).mockReturnValue(mockProcess);
-    mockExec = vi.mocked(exec);
-    mockPromisify = vi.mocked(promisify);
-
-    // Mock promisify to return a function that resolves
-    mockPromisify.mockReturnValue(vi.fn().mockResolvedValue({}));
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -106,65 +87,86 @@ describe('build_run_mac_proj', () => {
 
   describe('Command Generation and Response Logic', () => {
     it('should successfully build and run macOS app', async () => {
-      const mockExecAsync = mockPromisify.mockReturnValue(vi.fn().mockResolvedValue({}));
-
-      // Mock successful build
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      // Mock successful build settings retrieval on second spawn call
+      // Mock successful build first, then successful build settings
       let callCount = 0;
-      vi.mocked(spawn).mockImplementation(() => {
+      const mockExecutor = vi.fn().mockImplementation(() => {
         callCount++;
-        if (callCount === 2) {
+        if (callCount === 1) {
+          // First call for build
+          return Promise.resolve({
+            success: true,
+            output: 'BUILD SUCCEEDED',
+            error: '',
+          });
+        } else if (callCount === 2) {
           // Second call for build settings
-          const mockBuildSettingsProcess = new MockChildProcess();
-          setTimeout(() => {
-            mockBuildSettingsProcess.stdout.emit(
-              'data',
-              'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
-            );
-            mockBuildSettingsProcess.emit('close', 0);
-          }, 0);
-          return mockBuildSettingsProcess;
+          return Promise.resolve({
+            success: true,
+            output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+            error: '',
+          });
         }
-        return mockProcess;
+        return Promise.resolve({ success: true, output: '', error: '' });
       });
+
+      // Mock exec for launching app
+      const mockExecAsync = vi.fn().mockResolvedValue('');
+      vi.mocked(promisify).mockReturnValue(mockExecAsync);
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       // Verify build command was called
-      expect(spawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -project /path/to/project.xcodeproj -scheme MyApp -configuration Debug -skipMacroValidation -destination "platform=macOS" build',
+          'xcodebuild',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          'build',
         ],
-        expect.any(Object),
+        'macOS Build',
+        true,
+        undefined,
       );
 
       // Verify build settings command was called
-      expect(spawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -showBuildSettings -project /path/to/project.xcodeproj -scheme MyApp -configuration Debug',
+          'xcodebuild',
+          '-showBuildSettings',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Debug',
         ],
-        expect.any(Object),
+        'Get Build Settings for Launch',
+        true,
+        undefined,
       );
-
-      // Verify app launch command was called
-      expect(mockExecAsync).toHaveBeenCalledWith('open "/path/to/build/MyApp.app"');
 
       expect(result).toEqual({
         content: [
+          {
+            type: 'text',
+            text: '✅ macOS Build build succeeded for scheme MyApp.',
+          },
+          {
+            type: 'text',
+            text: 'Next Steps:\n1. Get App Path: get_macos_app_path_project\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+          },
           {
             type: 'text',
             text: '✅ macOS build and run succeeded for scheme MyApp. App launched: /path/to/build/MyApp.app',
@@ -174,17 +176,18 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should handle build failure', async () => {
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'error: Build failed\n');
-        mockProcess.emit('close', 1);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'error: Build failed',
+      });
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -196,26 +199,26 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should handle build settings failure', async () => {
-      // Mock successful build
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      // Mock failed build settings retrieval
+      // Mock successful build first, then failed build settings
       let callCount = 0;
-      vi.mocked(spawn).mockImplementation(() => {
+      const mockExecutor = vi.fn().mockImplementation(() => {
         callCount++;
-        if (callCount === 2) {
+        if (callCount === 1) {
+          // First call for build succeeds
+          return Promise.resolve({
+            success: true,
+            output: 'BUILD SUCCEEDED',
+            error: '',
+          });
+        } else if (callCount === 2) {
           // Second call for build settings fails
-          const mockBuildSettingsProcess = new MockChildProcess();
-          setTimeout(() => {
-            mockBuildSettingsProcess.stderr.emit('data', 'error: Failed to get settings');
-            mockBuildSettingsProcess.emit('close', 1);
-          }, 0);
-          return mockBuildSettingsProcess;
+          return Promise.resolve({
+            success: false,
+            output: '',
+            error: 'error: Failed to get settings',
+          });
         }
-        return mockProcess;
+        return Promise.resolve({ success: true, output: '', error: '' });
       });
 
       const args = {
@@ -223,76 +226,89 @@ describe('build_run_mac_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
+          {
+            type: 'text',
+            text: '✅ macOS Build build succeeded for scheme MyApp.',
+          },
+          {
+            type: 'text',
+            text: 'Next Steps:\n1. Get App Path: get_macos_app_path_project\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+          },
           {
             type: 'text',
             text: '✅ Build succeeded, but failed to get app path to launch: error: Failed to get settings',
           },
         ],
+        isError: false,
       });
     });
 
     it('should handle app launch failure', async () => {
-      const mockExecAsync = mockPromisify.mockReturnValue(
-        vi.fn().mockRejectedValue(new Error('Failed to launch')),
-      );
-
-      // Mock successful build
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      // Mock successful build settings retrieval
+      // Mock successful build and build settings
       let callCount = 0;
-      vi.mocked(spawn).mockImplementation(() => {
+      const mockExecutor = vi.fn().mockImplementation(() => {
         callCount++;
-        if (callCount === 2) {
-          // Second call for build settings
-          const mockBuildSettingsProcess = new MockChildProcess();
-          setTimeout(() => {
-            mockBuildSettingsProcess.stdout.emit(
-              'data',
-              'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
-            );
-            mockBuildSettingsProcess.emit('close', 0);
-          }, 0);
-          return mockBuildSettingsProcess;
+        if (callCount === 1) {
+          // First call for build succeeds
+          return Promise.resolve({
+            success: true,
+            output: 'BUILD SUCCEEDED',
+            error: '',
+          });
+        } else if (callCount === 2) {
+          // Second call for build settings succeeds
+          return Promise.resolve({
+            success: true,
+            output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+            error: '',
+          });
         }
-        return mockProcess;
+        return Promise.resolve({ success: true, output: '', error: '' });
       });
+
+      // Mock exec for launching app to fail
+      const mockExecAsync = vi.fn().mockRejectedValue(new Error('Failed to launch'));
+      vi.mocked(promisify).mockReturnValue(mockExecAsync);
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
+            text: '✅ macOS Build build succeeded for scheme MyApp.',
+          },
+          {
+            type: 'text',
+            text: 'Next Steps:\n1. Get App Path: get_macos_app_path_project\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+          },
+          {
+            type: 'text',
             text: '✅ Build succeeded, but failed to launch app /path/to/build/MyApp.app. Error: Failed to launch',
           },
         ],
+        isError: false,
       });
     });
 
     it('should handle spawn error', async () => {
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('spawn xcodebuild ENOENT'));
-      }, 0);
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn xcodebuild ENOENT'));
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -303,46 +319,56 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      const mockExecAsync = mockPromisify.mockReturnValue(vi.fn().mockResolvedValue({}));
-
-      // Mock successful build
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
-        mockProcess.emit('close', 0);
-      }, 0);
-
-      // Mock successful build settings retrieval
+      // Mock successful build first, then successful build settings
       let callCount = 0;
-      vi.mocked(spawn).mockImplementation(() => {
+      const mockExecutor = vi.fn().mockImplementation(() => {
         callCount++;
-        if (callCount === 2) {
-          const mockBuildSettingsProcess = new MockChildProcess();
-          setTimeout(() => {
-            mockBuildSettingsProcess.stdout.emit(
-              'data',
-              'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
-            );
-            mockBuildSettingsProcess.emit('close', 0);
-          }, 0);
-          return mockBuildSettingsProcess;
+        if (callCount === 1) {
+          // First call for build
+          return Promise.resolve({
+            success: true,
+            output: 'BUILD SUCCEEDED',
+            error: '',
+          });
+        } else if (callCount === 2) {
+          // Second call for build settings
+          return Promise.resolve({
+            success: true,
+            output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+            error: '',
+          });
         }
-        return mockProcess;
+        return Promise.resolve({ success: true, output: '', error: '' });
       });
+
+      // Mock exec for launching app
+      const mockExecAsync = vi.fn().mockResolvedValue('');
+      vi.mocked(promisify).mockReturnValue(mockExecAsync);
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      await tool.handler(args);
+      await tool.handler(args, mockExecutor);
 
-      expect(spawn).toHaveBeenCalledWith(
-        'sh',
+      expect(mockExecutor).toHaveBeenCalledWith(
         [
-          '-c',
-          'xcodebuild -project /path/to/project.xcodeproj -scheme MyApp -configuration Debug -skipMacroValidation -destination "platform=macOS" build',
+          'xcodebuild',
+          '-project',
+          '/path/to/project.xcodeproj',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          'build',
         ],
-        expect.any(Object),
+        'macOS Build',
+        true,
+        undefined,
       );
     });
   });
