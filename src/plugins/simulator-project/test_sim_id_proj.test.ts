@@ -4,16 +4,12 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../utils/command.js';
 import testSimIdProj from './test_sim_id_proj.ts';
 
 describe('test_sim_id_proj plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
       expect(testSimIdProj.name).toBe('test_sim_id_proj');
@@ -211,12 +207,18 @@ describe('test_sim_id_proj plugin', () => {
     });
 
     it('should generate correct xcodebuild test command', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Test session started\nTesting completed successfully',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      // Manual call tracking for mockExecutor
+      const executorCalls: any[] = [];
+
+      const mockExecutor = (...args: any[]) => {
+        executorCalls.push(args);
+        return Promise.resolve({
+          success: true,
+          output: 'Test session started\nTesting completed successfully',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
 
       await testSimIdProj.handler(
         {
@@ -228,7 +230,8 @@ describe('test_sim_id_proj plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(executorCalls).toHaveLength(1);
+      expect(executorCalls[0][0]).toEqual(
         expect.arrayContaining([
           'xcodebuild',
           '-project',
@@ -238,10 +241,10 @@ describe('test_sim_id_proj plugin', () => {
           '-configuration',
           'Release',
         ]),
-        'Test Run',
-        true,
-        undefined,
       );
+      expect(executorCalls[0][1]).toBe('Test Run');
+      expect(executorCalls[0][2]).toBe(true);
+      expect(executorCalls[0][3]).toBe(undefined);
     });
 
     it('should return exact successful test response', async () => {
@@ -285,7 +288,13 @@ describe('test_sim_id_proj plugin', () => {
     });
 
     it('should handle spawn errors', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn xcodebuild ENOENT'));
+      // Manual call tracking for mockExecutor that throws error
+      const executorCalls: any[] = [];
+
+      const mockExecutor = (...args: any[]) => {
+        executorCalls.push(args);
+        return Promise.reject(new Error('spawn xcodebuild ENOENT'));
+      };
 
       const result = await testSimIdProj.handler(
         {
@@ -296,6 +305,7 @@ describe('test_sim_id_proj plugin', () => {
         mockExecutor,
       );
 
+      expect(executorCalls).toHaveLength(1);
       expect(result.content[0].text).toContain(
         'Error during Test Run test: spawn xcodebuild ENOENT',
       );

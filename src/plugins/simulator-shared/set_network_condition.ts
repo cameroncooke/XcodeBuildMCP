@@ -29,13 +29,7 @@ async function executeSimctlCommandAndRespond(
 
   try {
     const command = ['xcrun', 'simctl', ...simctlSubCommand];
-    const result = await executeCommand(
-      command,
-      operationDescriptionForXcodeCommand,
-      true,
-      undefined,
-      executor,
-    );
+    const result = await executor(command, operationDescriptionForXcodeCommand, true, undefined);
 
     if (!result.success) {
       const fullFailureMessage = `${failureMessagePrefix}: ${result.error}`;

@@ -38,6 +38,7 @@ async function _handleSimulatorBuildLogic(
 async function _handleIOSSimulatorBuildAndRunLogic(
   params: Record<string, unknown>,
   executor?: CommandExecutor,
+  execSyncFn: (command: string) => string | Buffer = execSync,
 ): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build and run for scheme ${params.scheme} (internal)`);
 
@@ -120,7 +121,9 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     if (!simulatorUuid && params.simulatorName) {
       try {
         log('info', `Finding simulator UUID for name: ${params.simulatorName}`);
-        const simulatorsOutput = execSync('xcrun simctl list devices available --json').toString();
+        const simulatorsOutput = execSyncFn(
+          'xcrun simctl list devices available --json',
+        ).toString();
         const simulatorsJson = JSON.parse(simulatorsOutput);
         let foundSimulator = null;
 
@@ -164,7 +167,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // Ensure simulator is booted
     try {
       log('info', `Checking simulator state for UUID: ${simulatorUuid}`);
-      const simulatorStateOutput = execSync('xcrun simctl list devices').toString();
+      const simulatorStateOutput = execSyncFn('xcrun simctl list devices').toString();
       const simulatorLine = simulatorStateOutput
         .split('\n')
         .find((line) => line.includes(simulatorUuid));
@@ -180,7 +183,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
       if (!isBooted) {
         log('info', `Booting simulator ${simulatorUuid}`);
-        execSync(`xcrun simctl boot "${simulatorUuid}"`);
+        execSyncFn(`xcrun simctl boot "${simulatorUuid}"`);
       } else {
         log('info', `Simulator ${simulatorUuid} is already booted`);
       }
@@ -196,7 +199,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // --- Open Simulator UI Step ---
     try {
       log('info', 'Opening Simulator app');
-      execSync('open -a Simulator');
+      execSyncFn('open -a Simulator');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log('warning', `Warning: Could not open Simulator app: ${errorMessage}`);
@@ -206,7 +209,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // --- Install App Step ---
     try {
       log('info', `Installing app at path: ${appBundlePath} to simulator: ${simulatorUuid}`);
-      execSync(`xcrun simctl install "${simulatorUuid}" "${appBundlePath}"`);
+      execSyncFn(`xcrun simctl install "${simulatorUuid}" "${appBundlePath}"`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log('error', `Error installing app: ${errorMessage}`);
@@ -223,7 +226,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
       // Try PlistBuddy first (more reliable)
       try {
-        bundleId = execSync(
+        bundleId = execSyncFn(
           `/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${appBundlePath}/Info.plist"`,
         )
           .toString()
@@ -232,7 +235,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
         // Fallback to defaults if PlistBuddy fails
         const errorMessage = plistError instanceof Error ? plistError.message : String(plistError);
         log('warning', `PlistBuddy failed, trying defaults: ${errorMessage}`);
-        bundleId = execSync(`defaults read "${appBundlePath}/Info" CFBundleIdentifier`)
+        bundleId = execSyncFn(`defaults read "${appBundlePath}/Info" CFBundleIdentifier`)
           .toString()
           .trim();
       }
@@ -254,7 +257,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // --- Launch App Step ---
     try {
       log('info', `Launching app with bundle ID: ${bundleId} on simulator: ${simulatorUuid}`);
-      execSync(`xcrun simctl launch "${simulatorUuid}" "${bundleId}"`);
+      execSyncFn(`xcrun simctl launch "${simulatorUuid}" "${bundleId}"`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log('error', `Error launching app: ${errorMessage}`);
@@ -327,7 +330,11 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    execSyncFn?: (command: string) => string | Buffer,
+  ): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
@@ -348,6 +355,7 @@ export default {
         preferXcodebuild: params.preferXcodebuild ?? false,
       },
       executor,
+      execSyncFn,
     );
   },
 };

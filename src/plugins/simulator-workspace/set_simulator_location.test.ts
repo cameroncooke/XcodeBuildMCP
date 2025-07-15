@@ -1,47 +1,26 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-
-// Import the plugin
-import setSimulatorLocation from './set_simulator_location.ts';
-
-// Mock external dependencies
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  executeCommand: vi.fn(),
-  validateRequiredParam: vi.fn(),
-}));
+import setSimulatorLocationPlugin from './set_simulator_location.ts';
+import { createMockExecutor } from '../../utils/command.js';
 
 describe('set_simulator_location tool', () => {
-  let mockExecuteCommand: MockedFunction<any>;
-  let mockValidateRequiredParam: MockedFunction<any>;
-  let mockLog: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const utils = await import('../../utils/index.js');
-    mockExecuteCommand = utils.executeCommand as MockedFunction<any>;
-    mockValidateRequiredParam = utils.validateRequiredParam as MockedFunction<any>;
-    mockLog = utils.log as MockedFunction<any>;
-
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(setSimulatorLocation.name).toBe('set_simulator_location');
+      expect(setSimulatorLocationPlugin.name).toBe('set_simulator_location');
     });
 
     it('should have correct description', () => {
-      expect(setSimulatorLocation.description).toBe(
+      expect(setSimulatorLocationPlugin.description).toBe(
         'Sets a custom GPS location for the simulator.',
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof setSimulatorLocation.handler).toBe('function');
+      expect(typeof setSimulatorLocationPlugin.handler).toBe('function');
     });
 
     it('should have correct schema with simulatorUuid string field and latitude/longitude number fields', () => {
-      const schema = z.object(setSimulatorLocation.schema);
+      const schema = z.object(setSimulatorLocationPlugin.schema);
 
       // Valid inputs
       expect(
@@ -92,22 +71,20 @@ describe('set_simulator_location tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle successful location setting', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Location set successfully',
         error: '',
       });
 
-      const result = await setSimulatorLocation.handler({
-        simulatorUuid: 'test-uuid-123',
-        latitude: 37.7749,
-        longitude: -122.4194,
-      });
+      const result = await setSimulatorLocationPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -119,46 +96,45 @@ describe('set_simulator_location tool', () => {
       });
     });
 
-    it('should handle validation failure', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: false,
-        errorResponse: {
-          content: [
-            {
-              type: 'text',
-              text: 'simulatorUuid is required',
-            },
-          ],
-        },
+    it('should handle missing simulatorUuid', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Location set successfully',
       });
 
-      const result = await setSimulatorLocation.handler({
-        simulatorUuid: '',
-        latitude: 37.7749,
-        longitude: -122.4194,
-      });
+      const result = await setSimulatorLocationPlugin.handler(
+        {
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'simulatorUuid is required',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
     it('should handle latitude validation failure', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Location set successfully',
       });
 
-      const result = await setSimulatorLocation.handler({
-        simulatorUuid: 'test-uuid-123',
-        latitude: 95,
-        longitude: -122.4194,
-      });
+      const result = await setSimulatorLocationPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          latitude: 95,
+          longitude: -122.4194,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -171,16 +147,19 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle longitude validation failure', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Location set successfully',
       });
 
-      const result = await setSimulatorLocation.handler({
-        simulatorUuid: 'test-uuid-123',
-        latitude: 37.7749,
-        longitude: -185,
-      });
+      const result = await setSimulatorLocationPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          latitude: 37.7749,
+          longitude: -185,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -193,22 +172,20 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle command failure', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Simulator not found',
       });
 
-      const result = await setSimulatorLocation.handler({
-        simulatorUuid: 'invalid-uuid',
-        latitude: 37.7749,
-        longitude: -122.4194,
-      });
+      const result = await setSimulatorLocationPlugin.handler(
+        {
+          simulatorUuid: 'invalid-uuid',
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -221,18 +198,16 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle exception with Error object', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
+      const mockExecutor = createMockExecutor(new Error('Connection failed'));
 
-      mockExecuteCommand.mockRejectedValue(new Error('Connection failed'));
-
-      const result = await setSimulatorLocation.handler({
-        simulatorUuid: 'test-uuid-123',
-        latitude: 37.7749,
-        longitude: -122.4194,
-      });
+      const result = await setSimulatorLocationPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -245,18 +220,16 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle exception with string error', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
+      const mockExecutor = createMockExecutor('String error');
 
-      mockExecuteCommand.mockRejectedValue('String error');
-
-      const result = await setSimulatorLocation.handler({
-        simulatorUuid: 'test-uuid-123',
-        latitude: 37.7749,
-        longitude: -122.4194,
-      });
+      const result = await setSimulatorLocationPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -266,6 +239,42 @@ describe('set_simulator_location tool', () => {
           },
         ],
       });
+    });
+
+    it('should call correct command', async () => {
+      let capturedCommand: string[] = [];
+      let capturedLogPrefix: string | undefined;
+
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Location set successfully',
+      });
+
+      // Create a wrapper to capture the command arguments
+      const capturingExecutor = async (command: string[], logPrefix?: string) => {
+        capturedCommand = command;
+        capturedLogPrefix = logPrefix;
+        return mockExecutor(command, logPrefix);
+      };
+
+      await setSimulatorLocationPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        capturingExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcrun',
+        'simctl',
+        'location',
+        'test-uuid-123',
+        'set',
+        '37.7749,-122.4194',
+      ]);
+      expect(capturedLogPrefix).toBe('Set Simulator Location');
     });
   });
 });

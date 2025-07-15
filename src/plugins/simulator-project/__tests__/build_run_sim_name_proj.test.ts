@@ -1,19 +1,9 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import buildRunSimNameProj from '../build_run_sim_name_proj.ts';
 
-// Mock only child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-  execSync: vi.fn(),
-}));
-
 describe('build_run_sim_name_proj plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
       expect(buildRunSimNameProj.name).toBe('build_run_sim_name_proj');
@@ -161,45 +151,93 @@ describe('build_run_sim_name_proj plugin', () => {
     });
 
     it('should handle successful build and run', async () => {
-      const { execSync } = await import('child_process');
-      const mockExecSync = vi.mocked(execSync);
+      // Manual call tracking for mockExecutor
+      const executorCalls: any[] = [];
+      let callIndex = 0;
 
-      // Mock both build and app path command success
-      const mockExecutor = vi
-        .fn()
-        .mockResolvedValueOnce({
+      const mockExecutor = (...args: any[]) => {
+        executorCalls.push(args);
+        callIndex++;
+
+        // First call: build command
+        if (callIndex === 1) {
+          return Promise.resolve({
+            success: true,
+            output: 'BUILD SUCCEEDED',
+            error: undefined,
+            process: { pid: 12345 },
+          });
+        }
+
+        // Second call: app path command
+        if (callIndex === 2) {
+          return Promise.resolve({
+            success: true,
+            output: 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app',
+            error: undefined,
+            process: { pid: 12345 },
+          });
+        }
+
+        // Default fallback
+        return Promise.resolve({
           success: true,
-          output: 'BUILD SUCCEEDED',
-          error: undefined,
-          process: { pid: 12345 },
-        })
-        .mockResolvedValueOnce({
-          success: true,
-          output: 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app',
+          output: '',
           error: undefined,
           process: { pid: 12345 },
         });
+      };
 
-      // Mock subsequent command calls
-      const simulatorListOutput = JSON.stringify({
-        devices: {
-          'com.apple.CoreSimulator.SimRuntime.iOS-17-0': [
-            {
-              name: 'iPhone 16',
-              udid: 'test-uuid-123',
-              isAvailable: true,
+      // Mock execSync calls with manual tracking
+      const execSyncCalls: any[] = [];
+      let execSyncCallIndex = 0;
+
+      const mockExecSync = (command: string) => {
+        execSyncCalls.push(command);
+        execSyncCallIndex++;
+
+        // simulator list
+        if (execSyncCallIndex === 1) {
+          return JSON.stringify({
+            devices: {
+              'com.apple.CoreSimulator.SimRuntime.iOS-17-0': [
+                {
+                  name: 'iPhone 16',
+                  udid: 'test-uuid-123',
+                  isAvailable: true,
+                },
+              ],
             },
-          ],
-        },
-      });
+          });
+        }
 
-      mockExecSync
-        .mockReturnValueOnce(simulatorListOutput) // simulator list
-        .mockReturnValueOnce('    iPhone 16 (test-uuid-123) (Booted)') // simulator state
-        .mockReturnValueOnce('') // open Simulator
-        .mockReturnValueOnce('') // install app
-        .mockReturnValueOnce('com.example.MyApp') // bundle ID
-        .mockReturnValueOnce(''); // launch app
+        // simulator state
+        if (execSyncCallIndex === 2) {
+          return '    iPhone 16 (test-uuid-123) (Booted)';
+        }
+
+        // open Simulator
+        if (execSyncCallIndex === 3) {
+          return '';
+        }
+
+        // install app
+        if (execSyncCallIndex === 4) {
+          return '';
+        }
+
+        // bundle ID
+        if (execSyncCallIndex === 5) {
+          return 'com.example.MyApp';
+        }
+
+        // launch app
+        if (execSyncCallIndex === 6) {
+          return '';
+        }
+
+        return '';
+      };
 
       const result = await buildRunSimNameProj.handler(
         {
@@ -208,6 +246,7 @@ describe('build_run_sim_name_proj plugin', () => {
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
+        mockExecSync,
       );
 
       expect(result.isError).toBe(false);
@@ -216,12 +255,18 @@ describe('build_run_sim_name_proj plugin', () => {
     });
 
     it('should handle command generation with extra args', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: false,
-        error: 'Build failed',
-        output: '',
-        process: { pid: 12345 },
-      });
+      // Manual call tracking for mockExecutor
+      const executorCalls: any[] = [];
+
+      const mockExecutor = (...args: any[]) => {
+        executorCalls.push(args);
+        return Promise.resolve({
+          success: false,
+          error: 'Build failed',
+          output: '',
+          process: { pid: 12345 },
+        });
+      };
 
       await buildRunSimNameProj.handler(
         {
@@ -236,7 +281,8 @@ describe('build_run_sim_name_proj plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(executorCalls).toHaveLength(1);
+      expect(executorCalls[0][0]).toEqual(
         expect.arrayContaining([
           'xcodebuild',
           '-project',
@@ -250,10 +296,10 @@ describe('build_run_sim_name_proj plugin', () => {
           '--custom-arg',
           'build',
         ]),
-        'iOS Simulator Build',
-        true,
-        undefined,
       );
+      expect(executorCalls[0][1]).toBe('iOS Simulator Build');
+      expect(executorCalls[0][2]).toBe(true);
+      expect(executorCalls[0][3]).toBe(undefined);
     });
   });
 });

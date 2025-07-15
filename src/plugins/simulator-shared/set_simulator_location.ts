@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
@@ -12,6 +12,7 @@ async function executeSimctlCommandAndRespond(
   successMessage: string,
   failureMessagePrefix: string,
   operationLogContext: string,
+  executor?: CommandExecutor,
   extraValidation?: Record<string, unknown>,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -28,7 +29,13 @@ async function executeSimctlCommandAndRespond(
 
   try {
     const command = ['xcrun', 'simctl', ...simctlSubCommand];
-    const result = await executeCommand(command, operationDescriptionForXcodeCommand);
+    const result = await executeCommand(
+      command,
+      operationDescriptionForXcodeCommand,
+      true,
+      {},
+      executor,
+    );
 
     if (!result.success) {
       const fullFailureMessage = `${failureMessagePrefix}: ${result.error}`;
@@ -71,7 +78,7 @@ export default {
     latitude: z.number().describe('The latitude for the custom location.'),
     longitude: z.number().describe('The longitude for the custom location.'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     const extraValidation = (): {
       content: Array<{ type: string; text: string }>;
@@ -112,6 +119,7 @@ export default {
       `Successfully set simulator ${params.simulatorUuid} location to ${params.latitude},${params.longitude}`,
       'Failed to set simulator location',
       'set simulator location',
+      executor,
       extraValidation,
     );
   },

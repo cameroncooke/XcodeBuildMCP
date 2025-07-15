@@ -4,25 +4,29 @@
  * Integration tests using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import swiftPackageRun from '../swift_package_run.ts';
 
+// Pure dependency injection mock for spawn
+function createMockSpawn() {
+  const calls: any[] = [];
+  const mockProcess = {
+    pid: 12345,
+    stdout: { on: (event: string, callback: (data: any) => void) => {} },
+    stderr: { on: (event: string, callback: (data: any) => void) => {} },
+    on: (event: string, callback: (code?: number, signal?: string) => void) => {},
+  };
+
+  const mockSpawn = (...args: any[]) => {
+    calls.push(args);
+    return mockProcess;
+  };
+
+  return { mockSpawn, mockProcess, calls };
+}
+
 describe('swift_package_run plugin', () => {
-  let mockSpawn: ReturnType<typeof vi.fn>;
-  let mockProcess: any;
-
-  beforeEach(() => {
-    mockProcess = {
-      pid: 12345,
-      stdout: { on: vi.fn() },
-      stderr: { on: vi.fn() },
-      on: vi.fn(),
-    };
-    mockSpawn = vi.fn().mockReturnValue(mockProcess);
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(swiftPackageRun.name).toBe('swift_package_run');
@@ -80,6 +84,8 @@ describe('swift_package_run plugin', () => {
 
   describe('Command Generation Testing', () => {
     it('should build correct command for basic run', () => {
+      const { mockSpawn, calls } = createMockSpawn();
+
       swiftPackageRun.handler(
         {
           packagePath: '/test/package',
@@ -87,17 +93,19 @@ describe('swift_package_run plugin', () => {
         mockSpawn,
       );
 
-      expect(mockSpawn).toHaveBeenCalledWith(
+      expect(calls[0]).toEqual([
         'swift',
         ['run', '--package-path', '/test/package'],
-        expect.objectContaining({
+        {
           cwd: '/test/package',
-          env: expect.any(Object),
-        }),
-      );
+          env: process.env,
+        },
+      ]);
     });
 
     it('should build correct command with release configuration', () => {
+      const { mockSpawn, calls } = createMockSpawn();
+
       swiftPackageRun.handler(
         {
           packagePath: '/test/package',
@@ -106,16 +114,19 @@ describe('swift_package_run plugin', () => {
         mockSpawn,
       );
 
-      expect(mockSpawn).toHaveBeenCalledWith(
+      expect(calls[0]).toEqual([
         'swift',
         ['run', '--package-path', '/test/package', '-c', 'release'],
-        expect.objectContaining({
+        {
           cwd: '/test/package',
-        }),
-      );
+          env: process.env,
+        },
+      ]);
     });
 
     it('should build correct command with executable name', () => {
+      const { mockSpawn, calls } = createMockSpawn();
+
       swiftPackageRun.handler(
         {
           packagePath: '/test/package',
@@ -124,16 +135,19 @@ describe('swift_package_run plugin', () => {
         mockSpawn,
       );
 
-      expect(mockSpawn).toHaveBeenCalledWith(
+      expect(calls[0]).toEqual([
         'swift',
         ['run', '--package-path', '/test/package', 'MyApp'],
-        expect.objectContaining({
+        {
           cwd: '/test/package',
-        }),
-      );
+          env: process.env,
+        },
+      ]);
     });
 
     it('should build correct command with arguments', () => {
+      const { mockSpawn, calls } = createMockSpawn();
+
       swiftPackageRun.handler(
         {
           packagePath: '/test/package',
@@ -142,16 +156,19 @@ describe('swift_package_run plugin', () => {
         mockSpawn,
       );
 
-      expect(mockSpawn).toHaveBeenCalledWith(
+      expect(calls[0]).toEqual([
         'swift',
         ['run', '--package-path', '/test/package', '--', 'arg1', 'arg2'],
-        expect.objectContaining({
+        {
           cwd: '/test/package',
-        }),
-      );
+          env: process.env,
+        },
+      ]);
     });
 
     it('should build correct command with parseAsLibrary flag', () => {
+      const { mockSpawn, calls } = createMockSpawn();
+
       swiftPackageRun.handler(
         {
           packagePath: '/test/package',
@@ -160,16 +177,19 @@ describe('swift_package_run plugin', () => {
         mockSpawn,
       );
 
-      expect(mockSpawn).toHaveBeenCalledWith(
+      expect(calls[0]).toEqual([
         'swift',
         ['run', '--package-path', '/test/package', '-Xswiftc', '-parse-as-library'],
-        expect.objectContaining({
+        {
           cwd: '/test/package',
-        }),
-      );
+          env: process.env,
+        },
+      ]);
     });
 
     it('should build correct command with all parameters', () => {
+      const { mockSpawn, calls } = createMockSpawn();
+
       swiftPackageRun.handler(
         {
           packagePath: '/test/package',
@@ -181,7 +201,7 @@ describe('swift_package_run plugin', () => {
         mockSpawn,
       );
 
-      expect(mockSpawn).toHaveBeenCalledWith(
+      expect(calls[0]).toEqual([
         'swift',
         [
           'run',
@@ -195,15 +215,17 @@ describe('swift_package_run plugin', () => {
           '--',
           'arg1',
         ],
-        expect.objectContaining({
+        {
           cwd: '/test/package',
-        }),
-      );
+          env: process.env,
+        },
+      ]);
     });
   });
 
   describe('Response Logic Testing', () => {
     it('should return validation error for missing packagePath', async () => {
+      const { mockSpawn } = createMockSpawn();
       const result = await swiftPackageRun.handler({}, mockSpawn);
 
       expect(result).toEqual({
@@ -218,6 +240,7 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should return success response for background mode', async () => {
+      const { mockSpawn } = createMockSpawn();
       const result = await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
@@ -237,26 +260,35 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should return success response for successful execution', async () => {
-      const mockExitPromise = Promise.resolve();
-      mockProcess.on.mockImplementation((event, callback) => {
-        if (event === 'exit') {
-          mockExitPromise.then(() => callback(0, null));
-        } else if (event === 'error') {
-          // Do nothing for error in success case
-        }
-      });
-      mockProcess.stdout.on.mockImplementation((event, callback) => {
-        if (event === 'data') {
-          mockExitPromise.then(() => callback('Hello, World!'));
-        }
-      });
-      mockProcess.stderr.on.mockImplementation(() => {});
+      const { mockSpawn } = createMockSpawn();
+
+      // Create custom process with success behavior
+      const mockProcess = {
+        pid: 12345,
+        stdout: {
+          on: (event: string, callback: (data: any) => void) => {
+            if (event === 'data') {
+              setTimeout(() => callback('Hello, World!'), 0);
+            }
+          },
+        },
+        stderr: {
+          on: (event: string, callback: (data: any) => void) => {},
+        },
+        on: (event: string, callback: (code?: number, signal?: string) => void) => {
+          if (event === 'exit') {
+            setTimeout(() => callback(0, null), 0);
+          }
+        },
+      };
+
+      const customMockSpawn = () => mockProcess;
 
       const result = await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
         },
-        mockSpawn,
+        customMockSpawn,
       );
 
       expect(result).toEqual({
@@ -269,26 +301,33 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should return error response for failed execution', async () => {
-      const mockExitPromise = Promise.resolve();
-      mockProcess.on.mockImplementation((event, callback) => {
-        if (event === 'exit') {
-          mockExitPromise.then(() => callback(1, null));
-        } else if (event === 'error') {
-          // Do nothing for error in failure case
-        }
-      });
-      mockProcess.stdout.on.mockImplementation(() => {});
-      mockProcess.stderr.on.mockImplementation((event, callback) => {
-        if (event === 'data') {
-          mockExitPromise.then(() => callback('Compilation failed'));
-        }
-      });
+      // Create custom process with failure behavior
+      const mockProcess = {
+        pid: 12345,
+        stdout: {
+          on: (event: string, callback: (data: any) => void) => {},
+        },
+        stderr: {
+          on: (event: string, callback: (data: any) => void) => {
+            if (event === 'data') {
+              setTimeout(() => callback('Compilation failed'), 0);
+            }
+          },
+        },
+        on: (event: string, callback: (code?: number, signal?: string) => void) => {
+          if (event === 'exit') {
+            setTimeout(() => callback(1, null), 0);
+          }
+        },
+      };
+
+      const customMockSpawn = () => mockProcess;
 
       const result = await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
         },
-        mockSpawn,
+        customMockSpawn,
       );
 
       expect(result).toEqual({
@@ -301,22 +340,31 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should handle spawn process error', async () => {
-      const mockExitPromise = Promise.resolve();
-      mockProcess.on.mockImplementation((event, callback) => {
-        if (event === 'exit') {
-          mockExitPromise.then(() => callback(1, null));
-        } else if (event === 'error') {
-          mockExitPromise.then(() => callback(new Error('Command not found')));
-        }
-      });
-      mockProcess.stdout.on.mockImplementation(() => {});
-      mockProcess.stderr.on.mockImplementation(() => {});
+      // Create custom process with error behavior
+      const mockProcess = {
+        pid: 12345,
+        stdout: {
+          on: (event: string, callback: (data: any) => void) => {},
+        },
+        stderr: {
+          on: (event: string, callback: (data: any) => void) => {},
+        },
+        on: (event: string, callback: (code?: number, signal?: string, error?: Error) => void) => {
+          if (event === 'exit') {
+            setTimeout(() => callback(1, null), 0);
+          } else if (event === 'error') {
+            setTimeout(() => callback(new Error('Command not found')), 0);
+          }
+        },
+      };
+
+      const customMockSpawn = () => mockProcess;
 
       const result = await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
         },
-        mockSpawn,
+        customMockSpawn,
       );
 
       expect(result).toEqual({
