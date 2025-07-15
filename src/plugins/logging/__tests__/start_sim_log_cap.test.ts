@@ -1,13 +1,13 @@
 /**
  * Tests for start_sim_log_cap plugin
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import plugin from '../start_sim_log_cap.ts';
 
 describe('start_sim_log_cap plugin', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // Reset any test state if needed
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -98,7 +98,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should handle null bundleId parameter', async () => {
-      const mockStartLogCapture = (params: any) => {
+      const logCaptureStub = (params: any) => {
         return Promise.resolve({
           sessionId: 'test-uuid-123',
           logFilePath: '/tmp/test.log',
@@ -112,7 +112,7 @@ describe('start_sim_log_cap plugin', () => {
           simulatorUuid: 'test-uuid',
           bundleId: null,
         },
-        mockStartLogCapture,
+        logCaptureStub,
       );
 
       expect(result.isError).toBeUndefined();
@@ -122,7 +122,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should return error when log capture fails', async () => {
-      const mockStartLogCapture = (params: any) => {
+      const logCaptureStub = (params: any) => {
         return Promise.resolve({
           sessionId: '',
           logFilePath: '',
@@ -136,7 +136,7 @@ describe('start_sim_log_cap plugin', () => {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.app',
         },
-        mockStartLogCapture,
+        logCaptureStub,
       );
 
       expect(result.isError).toBe(true);
@@ -144,7 +144,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should return success with session ID when log capture starts successfully', async () => {
-      const mockStartLogCapture = (params: any) => {
+      const logCaptureStub = (params: any) => {
         return Promise.resolve({
           sessionId: 'test-uuid-123',
           logFilePath: '/tmp/test.log',
@@ -158,7 +158,7 @@ describe('start_sim_log_cap plugin', () => {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.app',
         },
-        mockStartLogCapture,
+        logCaptureStub,
       );
 
       expect(result.isError).toBeUndefined();
@@ -168,7 +168,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should indicate console capture when captureConsole is true', async () => {
-      const mockStartLogCapture = (params: any) => {
+      const logCaptureStub = (params: any) => {
         return Promise.resolve({
           sessionId: 'test-uuid-123',
           logFilePath: '/tmp/test.log',
@@ -183,7 +183,7 @@ describe('start_sim_log_cap plugin', () => {
           bundleId: 'com.example.app',
           captureConsole: true,
         },
-        mockStartLogCapture,
+        logCaptureStub,
       );
 
       expect(result.content[0].text).toBe(
@@ -197,7 +197,7 @@ describe('start_sim_log_cap plugin', () => {
         args: string[];
       }> = [];
 
-      const mockStartLogCapture = (params: any) => {
+      const logCaptureStub = (params: any) => {
         if (params.captureConsole) {
           // Record the console capture spawn call
           spawnCalls.push({
@@ -241,7 +241,7 @@ describe('start_sim_log_cap plugin', () => {
           bundleId: 'com.example.app',
           captureConsole: true,
         },
-        mockStartLogCapture,
+        logCaptureStub,
       );
 
       // Should spawn both console capture and structured log capture
@@ -278,7 +278,7 @@ describe('start_sim_log_cap plugin', () => {
         args: string[];
       }> = [];
 
-      const mockStartLogCapture = (params: any) => {
+      const logCaptureStub = (params: any) => {
         // Record the structured log capture spawn call only
         spawnCalls.push({
           command: 'xcrun',
@@ -308,7 +308,7 @@ describe('start_sim_log_cap plugin', () => {
           bundleId: 'com.example.app',
           captureConsole: false,
         },
-        mockStartLogCapture,
+        logCaptureStub,
       );
 
       // Should only spawn structured log capture

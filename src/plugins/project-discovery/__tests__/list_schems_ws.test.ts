@@ -79,7 +79,12 @@ describe('list_schems_ws plugin', () => {
       });
 
       // Create executor with call tracking
-      const trackingExecutor = async (command: string[], description: string, hideOutput: boolean, cwd?: string) => {
+      const trackingExecutor = async (
+        command: string[],
+        description: string,
+        hideOutput: boolean,
+        cwd?: string,
+      ) => {
         executorCalls.push({ command, description, hideOutput, cwd });
         return mockExecutor(command, description, hideOutput, cwd);
       };

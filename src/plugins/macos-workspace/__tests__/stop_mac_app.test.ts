@@ -1,20 +1,15 @@
 /**
- * Tests for stop_mac_app plugin
- * Following CLAUDE.md testing standards with literal validation
+ * Pure dependency injection test for stop_mac_app plugin (re-export from macos-shared)
+ *
+ * Tests plugin structure and macOS app stopping functionality including parameter validation,
+ * command generation, and response formatting.
+ *
+ * Uses manual call tracking instead of vitest mocking.
+ * NO VITEST MOCKING ALLOWED - Only manual stubs
  */
 
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-
-// Note: Internal utilities are allowed to execute normally (integration testing pattern)
-
-vi.mock('util', () => ({
-  promisify: vi.fn(() => vi.fn()),
-}));
-
-vi.mock('child_process', () => ({
-  exec: vi.fn(),
-}));
 
 import stopMacApp from '../stop_mac_app.ts';
 
@@ -48,15 +43,7 @@ describe('stop_mac_app plugin', () => {
     });
   });
 
-  let mockExecPromise: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const utilModule = await import('util');
-    mockExecPromise = utilModule.promisify() as MockedFunction<any>;
-    vi.clearAllMocks();
-  });
-
-  describe('Handler Behavior (Complete Literal Returns)', () => {
+  describe('Input Validation', () => {
     it('should return exact validation error for missing parameters', async () => {
       const result = await stopMacApp.handler({});
 
@@ -70,13 +57,77 @@ describe('stop_mac_app plugin', () => {
         isError: true,
       });
     });
+  });
 
+  describe('Command Generation', () => {
+    it('should generate correct command for process ID', async () => {
+      const calls: any[] = [];
+      const mockExecutor = async (command: string) => {
+        calls.push({ command });
+        return { stdout: '', stderr: '' };
+      };
+
+      await stopMacApp.handler(
+        {
+          processId: 1234,
+        },
+        mockExecutor,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].command).toBe('kill 1234');
+    });
+
+    it('should generate correct command for app name', async () => {
+      const calls: any[] = [];
+      const mockExecutor = async (command: string) => {
+        calls.push({ command });
+        return { stdout: '', stderr: '' };
+      };
+
+      await stopMacApp.handler(
+        {
+          appName: 'Calculator',
+        },
+        mockExecutor,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].command).toBe(
+        'pkill -f "Calculator" || osascript -e \'tell application "Calculator" to quit\'',
+      );
+    });
+
+    it('should prioritize processId over appName', async () => {
+      const calls: any[] = [];
+      const mockExecutor = async (command: string) => {
+        calls.push({ command });
+        return { stdout: '', stderr: '' };
+      };
+
+      await stopMacApp.handler(
+        {
+          appName: 'Calculator',
+          processId: 1234,
+        },
+        mockExecutor,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].command).toBe('kill 1234');
+    });
+  });
+
+  describe('Response Processing', () => {
     it('should return exact successful stop response by app name', async () => {
-      mockExecPromise.mockResolvedValue({ stdout: '', stderr: '' });
+      const mockExecutor = async () => ({ stdout: '', stderr: '' });
 
-      const result = await stopMacApp.handler({
-        appName: 'Calculator',
-      });
+      const result = await stopMacApp.handler(
+        {
+          appName: 'Calculator',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -89,11 +140,14 @@ describe('stop_mac_app plugin', () => {
     });
 
     it('should return exact successful stop response by process ID', async () => {
-      mockExecPromise.mockResolvedValue({ stdout: '', stderr: '' });
+      const mockExecutor = async () => ({ stdout: '', stderr: '' });
 
-      const result = await stopMacApp.handler({
-        processId: 1234,
-      });
+      const result = await stopMacApp.handler(
+        {
+          processId: 1234,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -106,12 +160,15 @@ describe('stop_mac_app plugin', () => {
     });
 
     it('should return exact successful stop response with both parameters (processId takes precedence)', async () => {
-      mockExecPromise.mockResolvedValue({ stdout: '', stderr: '' });
+      const mockExecutor = async () => ({ stdout: '', stderr: '' });
 
-      const result = await stopMacApp.handler({
-        appName: 'Calculator',
-        processId: 1234,
-      });
+      const result = await stopMacApp.handler(
+        {
+          appName: 'Calculator',
+          processId: 1234,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -123,35 +180,26 @@ describe('stop_mac_app plugin', () => {
       });
     });
 
-    it('should handle stop command execution', async () => {
-      // Test with processId to verify the command structure and response format
-      const result = await stopMacApp.handler({
-        processId: 9999,
-      });
+    it('should handle execution errors', async () => {
+      const mockExecutor = async () => {
+        throw new Error('Process not found');
+      };
 
-      // Should return success response (mocks resolve by default)
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: '✅ macOS app stopped successfully: PID 9999',
-          },
-        ],
-      });
-    });
-
-    it('should handle stop command with app name', async () => {
-      const result = await stopMacApp.handler({
-        appName: 'Calculator',
-      });
+      const result = await stopMacApp.handler(
+        {
+          processId: 9999,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: '✅ macOS app stopped successfully: Calculator',
+            text: '❌ Stop macOS app operation failed: Process not found',
           },
         ],
+        isError: true,
       });
     });
   });

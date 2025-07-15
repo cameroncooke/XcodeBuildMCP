@@ -6,6 +6,9 @@ import { ToolResponse } from '../../types/common.js';
 
 const execPromise = promisify(exec);
 
+// Executive function type for dependency injection
+type ExecFunction = (command: string) => Promise<{ stdout: string; stderr: string }>;
+
 export default {
   name: 'stop_mac_app',
   description: 'Stops a running macOS application. Can stop by app name or process ID.',
@@ -16,7 +19,7 @@ export default {
       .describe('Name of the application to stop (e.g., "Calculator" or "MyApp")'),
     processId: z.number().optional().describe('Process ID (PID) of the application to stop'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: ExecFunction): Promise<ToolResponse> {
     const params = args;
     if (!params.appName && !params.processId) {
       return {
@@ -46,7 +49,8 @@ export default {
         command = `pkill -f "${params.appName}" || osascript -e 'tell application "${params.appName}" to quit'`;
       }
 
-      await execPromise(command);
+      const execFunction = executor || execPromise;
+      await execFunction(command);
 
       return {
         content: [
