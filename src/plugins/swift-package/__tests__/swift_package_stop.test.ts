@@ -119,7 +119,7 @@ describe('swift_package_stop plugin', () => {
         originalOn(event, callback);
         if (event === 'exit') {
           // Simulate immediate graceful exit
-          setTimeout(() => callback(), 0);
+          setImmediate(() => callback());
         }
       };
 
@@ -372,7 +372,7 @@ describe('swift_package_stop plugin', () => {
         originalOn(event, callback);
         if (event === 'exit') {
           // Simulate immediate graceful exit
-          setTimeout(() => callback(), 0);
+          setImmediate(() => callback());
         }
       };
 

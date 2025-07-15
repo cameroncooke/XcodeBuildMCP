@@ -1,13 +1,9 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import plugin from '../stop_app_sim.ts';
 
 describe('stop_app_sim plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
       expect(plugin.name).toBe('stop_app_sim');
@@ -137,7 +133,9 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle exception during execution', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+      const mockExecutor = async () => {
+        throw new Error('Unexpected error');
+      };
 
       const result = await plugin.handler(
         {
@@ -159,12 +157,21 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should call correct command', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: '',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const calls: any[] = [];
+      const mockExecutor = async (
+        command: string[],
+        description: string,
+        suppressErrorLogging: boolean,
+        timeout?: number,
+      ) => {
+        calls.push({ command, description, suppressErrorLogging, timeout });
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await plugin.handler(
         {
@@ -174,12 +181,14 @@ describe('stop_app_sim plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['xcrun', 'simctl', 'terminate', 'test-uuid', 'com.example.App'],
-        'Stop App in Simulator',
-        true,
-        undefined,
-      );
+      expect(calls).toEqual([
+        {
+          command: ['xcrun', 'simctl', 'terminate', 'test-uuid', 'com.example.App'],
+          description: 'Stop App in Simulator',
+          suppressErrorLogging: true,
+          timeout: undefined,
+        },
+      ]);
     });
   });
 });

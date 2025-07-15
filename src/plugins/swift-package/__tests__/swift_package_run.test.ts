@@ -260,15 +260,14 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should return success response for successful execution', async () => {
-      const { mockSpawn } = createMockSpawn();
-
-      // Create custom process with success behavior
+      // Create custom process with success behavior - immediate resolution
       const mockProcess = {
         pid: 12345,
         stdout: {
           on: (event: string, callback: (data: any) => void) => {
             if (event === 'data') {
-              setTimeout(() => callback('Hello, World!'), 0);
+              // Immediate callback, no setTimeout
+              callback('Hello, World!');
             }
           },
         },
@@ -277,7 +276,8 @@ describe('swift_package_run plugin', () => {
         },
         on: (event: string, callback: (code?: number, signal?: string) => void) => {
           if (event === 'exit') {
-            setTimeout(() => callback(0, null), 0);
+            // Use setImmediate for next tick, no setTimeout
+            setImmediate(() => callback(0, null));
           }
         },
       };
@@ -301,7 +301,7 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should return error response for failed execution', async () => {
-      // Create custom process with failure behavior
+      // Create custom process with failure behavior - immediate resolution
       const mockProcess = {
         pid: 12345,
         stdout: {
@@ -310,13 +310,15 @@ describe('swift_package_run plugin', () => {
         stderr: {
           on: (event: string, callback: (data: any) => void) => {
             if (event === 'data') {
-              setTimeout(() => callback('Compilation failed'), 0);
+              // Immediate callback, no setTimeout
+              callback('Compilation failed');
             }
           },
         },
         on: (event: string, callback: (code?: number, signal?: string) => void) => {
           if (event === 'exit') {
-            setTimeout(() => callback(1, null), 0);
+            // Use setImmediate for next tick, no setTimeout
+            setImmediate(() => callback(1, null));
           }
         },
       };
@@ -340,7 +342,7 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should handle spawn process error', async () => {
-      // Create custom process with error behavior
+      // Create custom process with error behavior - immediate resolution
       const mockProcess = {
         pid: 12345,
         stdout: {
@@ -351,9 +353,11 @@ describe('swift_package_run plugin', () => {
         },
         on: (event: string, callback: (code?: number, signal?: string, error?: Error) => void) => {
           if (event === 'exit') {
-            setTimeout(() => callback(1, null), 0);
+            // Use setImmediate for next tick, no setTimeout
+            setImmediate(() => callback(1, null));
           } else if (event === 'error') {
-            setTimeout(() => callback(new Error('Command not found')), 0);
+            // Use setImmediate for next tick, no setTimeout
+            setImmediate(() => callback(new Error('Command not found')));
           }
         },
       };

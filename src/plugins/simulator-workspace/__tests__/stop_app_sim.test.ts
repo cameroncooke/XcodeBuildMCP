@@ -1,14 +1,10 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, CommandExecutor } from '../../../utils/command.js';
 import plugin from '../stop_app_sim.ts';
 
 describe('stop_app_sim plugin', () => {
-  let mockExecutor: ReturnType<typeof createMockExecutor>;
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  let mockExecutor: CommandExecutor;
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
@@ -149,7 +145,9 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle exception during execution', async () => {
-      mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+      mockExecutor = async () => {
+        throw new Error('Unexpected error');
+      };
 
       const result = await plugin.handler(
         {
@@ -171,10 +169,14 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should call correct command', async () => {
-      mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: '',
-      });
+      const executorCalls: any[] = [];
+      mockExecutor = async (command, description, suppressOutput, workingDirectory) => {
+        executorCalls.push([command, description, suppressOutput, workingDirectory]);
+        return {
+          success: true,
+          output: '',
+        };
+      };
 
       await plugin.handler(
         {
@@ -184,12 +186,14 @@ describe('stop_app_sim plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['xcrun', 'simctl', 'terminate', 'test-uuid', 'com.example.App'],
-        'Stop App in Simulator',
-        true,
-        undefined,
-      );
+      expect(executorCalls).toEqual([
+        [
+          ['xcrun', 'simctl', 'terminate', 'test-uuid', 'com.example.App'],
+          'Stop App in Simulator',
+          true,
+          undefined,
+        ],
+      ]);
     });
   });
 });

@@ -1,14 +1,10 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import resetNetworkConditionPlugin from '../reset_network_condition.ts';
 
 describe('reset_network_condition plugin', () => {
   let mockExecutor: ReturnType<typeof createMockExecutor>;
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
@@ -111,7 +107,9 @@ describe('reset_network_condition plugin', () => {
     });
 
     it('should handle exception during execution', async () => {
-      mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+      mockExecutor = async () => {
+        throw new Error('Network error');
+      };
 
       const result = await resetNetworkConditionPlugin.handler(
         {
@@ -131,10 +129,14 @@ describe('reset_network_condition plugin', () => {
     });
 
     it('should call correct command', async () => {
-      mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Network condition reset successfully',
-      });
+      let capturedArgs: any[] = [];
+      mockExecutor = async (...args: any[]) => {
+        capturedArgs = args;
+        return {
+          success: true,
+          output: 'Network condition reset successfully',
+        };
+      };
 
       await resetNetworkConditionPlugin.handler(
         {
@@ -143,12 +145,12 @@ describe('reset_network_condition plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(capturedArgs).toEqual([
         ['xcrun', 'simctl', 'status_bar', 'test-uuid-123', 'clear'],
         'Reset Network Condition',
         true,
         undefined,
-      );
+      ]);
     });
   });
 });
