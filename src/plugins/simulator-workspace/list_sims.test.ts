@@ -4,16 +4,12 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../utils/command.js';
 import listSims from './list_sims.ts';
 
 describe('list_sims plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(listSims.name).toBe('list_sims');
@@ -161,7 +157,9 @@ Next Steps:
     });
 
     it('should handle exception with Error object', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
+      const mockExecutor = async () => {
+        throw new Error('Command execution failed');
+      };
 
       const result = await listSims.handler({ enabled: true }, mockExecutor);
 
@@ -176,7 +174,9 @@ Next Steps:
     });
 
     it('should handle exception with string error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockExecutor = async () => {
+        throw 'String error';
+      };
 
       const result = await listSims.handler({ enabled: true }, mockExecutor);
 
@@ -204,21 +204,26 @@ Next Steps:
         },
       });
 
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: mockOutput,
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const executorCalls: any[] = [];
+      const mockExecutor = async (...args: any[]) => {
+        executorCalls.push(args);
+        return {
+          success: true,
+          output: mockOutput,
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await listSims.handler({ enabled: true }, mockExecutor);
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(executorCalls).toHaveLength(1);
+      expect(executorCalls[0]).toEqual([
         ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
         'List Simulators',
         true,
         undefined,
-      );
+      ]);
     });
   });
 });

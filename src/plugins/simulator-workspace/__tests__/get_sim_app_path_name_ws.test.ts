@@ -1,13 +1,9 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import getSimAppPathNameWsTool from '../get_sim_app_path_name_ws.ts';
 
 describe('get_sim_app_path_name_ws plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
       expect(getSimAppPathNameWsTool.name).toBe('get_sim_app_path_name_ws');
@@ -105,12 +101,29 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should handle optional configuration parameter', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const calls: Array<{
+        args: unknown[];
+        taskName?: string;
+        safeToLog?: boolean;
+        logLevel?: unknown;
+      }> = [];
+
+      const mockExecutor = createMockExecutor({
         success: false,
         error: 'Command failed',
         output: '',
         process: { pid: 12345 },
       });
+
+      const executorWithTracking = (
+        args: unknown[],
+        taskName?: string,
+        safeToLog?: boolean,
+        logLevel?: unknown,
+      ) => {
+        calls.push({ args, taskName, safeToLog, logLevel });
+        return mockExecutor(args, taskName, safeToLog, logLevel);
+      };
 
       await getSimAppPathNameWsTool.handler(
         {
@@ -120,11 +133,12 @@ FULL_PRODUCT_NAME = MyApp.app
           simulatorName: 'iPhone 16',
           configuration: 'Release',
         },
-        mockExecutor,
+        executorWithTracking,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: [
           'xcodebuild',
           '-showBuildSettings',
           '-workspace',
@@ -136,19 +150,36 @@ FULL_PRODUCT_NAME = MyApp.app
           '-destination',
           'platform=iOS Simulator,name=iPhone 16,OS=latest',
         ],
-        'Get App Path',
-        true,
-        undefined,
-      );
+        taskName: 'Get App Path',
+        safeToLog: true,
+        logLevel: undefined,
+      });
     });
 
     it('should handle useLatestOS=false parameter', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const calls: Array<{
+        args: unknown[];
+        taskName?: string;
+        safeToLog?: boolean;
+        logLevel?: unknown;
+      }> = [];
+
+      const mockExecutor = createMockExecutor({
         success: false,
         error: 'Command failed',
         output: '',
         process: { pid: 12345 },
       });
+
+      const executorWithTracking = (
+        args: unknown[],
+        taskName?: string,
+        safeToLog?: boolean,
+        logLevel?: unknown,
+      ) => {
+        calls.push({ args, taskName, safeToLog, logLevel });
+        return mockExecutor(args, taskName, safeToLog, logLevel);
+      };
 
       await getSimAppPathNameWsTool.handler(
         {
@@ -158,11 +189,12 @@ FULL_PRODUCT_NAME = MyApp.app
           simulatorName: 'iPhone 16',
           useLatestOS: false,
         },
-        mockExecutor,
+        executorWithTracking,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: [
           'xcodebuild',
           '-showBuildSettings',
           '-workspace',
@@ -174,10 +206,10 @@ FULL_PRODUCT_NAME = MyApp.app
           '-destination',
           'platform=iOS Simulator,name=iPhone 16',
         ],
-        'Get App Path',
-        true,
-        undefined,
-      );
+        taskName: 'Get App Path',
+        safeToLog: true,
+        logLevel: undefined,
+      });
     });
 
     it('should handle missing workspacePath', async () => {
