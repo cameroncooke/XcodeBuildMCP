@@ -1,35 +1,9 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
 import installAppSim from '../install_app_sim.ts';
 
-// Mock child_process for execSync
-vi.mock('child_process', () => ({
-  execSync: vi.fn(),
-}));
-
-// Mock file system for file existence checks
-vi.mock('fs', () => ({
-  existsSync: vi.fn(),
-}));
-
 describe('install_app_sim tool', () => {
-  let mockExecSync: Record<string, unknown>;
-  let mockExistsSync: Record<string, unknown>;
-
-  beforeEach(async () => {
-    const { execSync } = await import('child_process');
-    const fs = await import('fs');
-
-    mockExecSync = vi.mocked(execSync);
-    mockExistsSync = vi.mocked(fs.existsSync);
-
-    // Default to file exists
-    mockExistsSync.mockReturnValue(true);
-
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(installAppSim.name).toBe('install_app_sim');
@@ -94,6 +68,78 @@ describe('install_app_sim tool', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct simctl install command', async () => {
+      const executorCalls: any[] = [];
+      const mockExecutor = (...args: any[]) => {
+        executorCalls.push(args);
+        return Promise.resolve({
+          success: true,
+          output: 'App installed',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      await installAppSim.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          appPath: '/path/to/app.app',
+        },
+        mockExecutor,
+        mockFileSystem,
+      );
+
+      expect(executorCalls).toEqual([
+        [
+          ['xcrun', 'simctl', 'install', 'test-uuid-123', '/path/to/app.app'],
+          'Install App in Simulator',
+          true,
+          undefined,
+        ],
+      ]);
+    });
+
+    it('should generate command with different simulator UUID', async () => {
+      const executorCalls: any[] = [];
+      const mockExecutor = (...args: any[]) => {
+        executorCalls.push(args);
+        return Promise.resolve({
+          success: true,
+          output: 'App installed',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      await installAppSim.handler(
+        {
+          simulatorUuid: 'different-uuid-456',
+          appPath: '/different/path/MyApp.app',
+        },
+        mockExecutor,
+        mockFileSystem,
+      );
+
+      expect(executorCalls).toEqual([
+        [
+          ['xcrun', 'simctl', 'install', 'different-uuid-456', '/different/path/MyApp.app'],
+          'Install App in Simulator',
+          true,
+          undefined,
+        ],
+      ]);
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure for simulatorUuid', async () => {
       const result = await installAppSim.handler({
@@ -130,12 +176,18 @@ describe('install_app_sim tool', () => {
     });
 
     it('should handle file does not exist', async () => {
-      mockExistsSync.mockReturnValue(false);
-
-      const result = await installAppSim.handler({
-        simulatorUuid: 'test-uuid-123',
-        appPath: '/path/to/app.app',
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => false,
       });
+
+      const result = await installAppSim.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          appPath: '/path/to/app.app',
+        },
+        undefined,
+        mockFileSystem,
+      );
 
       expect(result).toEqual({
         content: [
@@ -149,11 +201,17 @@ describe('install_app_sim tool', () => {
     });
 
     it('should handle successful install', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'App installed',
-        error: undefined,
-        process: { pid: 12345 },
+      const mockExecutor = () => {
+        return Promise.resolve({
+          success: true,
+          output: 'App installed',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
       });
 
       const result = await installAppSim.handler(
@@ -162,14 +220,7 @@ describe('install_app_sim tool', () => {
           appPath: '/path/to/app.app',
         },
         mockExecutor,
-      );
-
-      // Verify command was called correctly
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['xcrun', 'simctl', 'install', 'test-uuid-123', '/path/to/app.app'],
-        'Install App in Simulator',
-        true,
-        undefined,
+        mockFileSystem,
       );
 
       expect(result).toEqual({
@@ -189,11 +240,17 @@ describe('install_app_sim tool', () => {
     });
 
     it('should handle command failure', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: false,
-        output: '',
-        error: 'Install failed',
-        process: { pid: 12345 },
+      const mockExecutor = () => {
+        return Promise.resolve({
+          success: false,
+          output: '',
+          error: 'Install failed',
+          process: { pid: 12345 },
+        });
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
       });
 
       const result = await installAppSim.handler(
@@ -202,6 +259,7 @@ describe('install_app_sim tool', () => {
           appPath: '/path/to/app.app',
         },
         mockExecutor,
+        mockFileSystem,
       );
 
       expect(result).toEqual({
@@ -215,7 +273,13 @@ describe('install_app_sim tool', () => {
     });
 
     it('should handle exception with Error object', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
+      const mockExecutor = () => {
+        return Promise.reject(new Error('Command execution failed'));
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
 
       const result = await installAppSim.handler(
         {
@@ -223,6 +287,7 @@ describe('install_app_sim tool', () => {
           appPath: '/path/to/app.app',
         },
         mockExecutor,
+        mockFileSystem,
       );
 
       expect(result).toEqual({
@@ -236,7 +301,13 @@ describe('install_app_sim tool', () => {
     });
 
     it('should handle exception with string error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockExecutor = () => {
+        return Promise.reject('String error');
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
 
       const result = await installAppSim.handler(
         {
@@ -244,6 +315,7 @@ describe('install_app_sim tool', () => {
           appPath: '/path/to/app.app',
         },
         mockExecutor,
+        mockFileSystem,
       );
 
       expect(result).toEqual({

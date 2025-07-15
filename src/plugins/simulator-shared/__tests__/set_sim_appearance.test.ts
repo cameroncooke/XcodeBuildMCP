@@ -1,32 +1,9 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import setSimAppearancePlugin from '../set_sim_appearance.ts';
-
-vi.mock('../../utils/index.js', () => ({
-  executeCommand: vi.fn(),
-  log: vi.fn(),
-  validateRequiredParam: vi.fn(),
-  createTextResponse: vi.fn(),
-  createErrorResponse: vi.fn(),
-}));
+import { createMockExecutor } from '../../../utils/command.js';
 
 describe('set_sim_appearance plugin', () => {
-  let mockExecuteCommand: MockedFunction<any>;
-  let mockValidateRequiredParam: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const { executeCommand, validateRequiredParam } = await import('../../../utils/index.js');
-    mockExecuteCommand = executeCommand as MockedFunction<any>;
-    mockValidateRequiredParam = validateRequiredParam as MockedFunction<any>;
-
-    mockValidateRequiredParam.mockReturnValue({
-      isValid: true,
-      errorResponse: null,
-    });
-
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
       expect(setSimAppearancePlugin.name).toBe('set_sim_appearance');
@@ -77,16 +54,19 @@ describe('set_sim_appearance plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle successful appearance change', async () => {
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: '',
         error: '',
       });
 
-      const result = await setSimAppearancePlugin.handler({
-        simulatorUuid: 'test-uuid-123',
-        mode: 'dark',
-      });
+      const result = await setSimAppearancePlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          mode: 'dark',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -99,15 +79,18 @@ describe('set_sim_appearance plugin', () => {
     });
 
     it('should handle appearance change failure', async () => {
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         error: 'Invalid device: invalid-uuid',
       });
 
-      const result = await setSimAppearancePlugin.handler({
-        simulatorUuid: 'invalid-uuid',
-        mode: 'light',
-      });
+      const result = await setSimAppearancePlugin.handler(
+        {
+          simulatorUuid: 'invalid-uuid',
+          mode: 'light',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -120,29 +103,35 @@ describe('set_sim_appearance plugin', () => {
     });
 
     it('should handle missing simulatorUuid', async () => {
-      mockValidateRequiredParam.mockReturnValueOnce({
-        isValid: false,
-        errorResponse: {
-          content: [{ type: 'text', text: 'simulatorUuid is required' }],
-          isError: true,
-        },
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        error: '',
       });
 
-      const result = await setSimAppearancePlugin.handler({ mode: 'dark' });
+      const result = await setSimAppearancePlugin.handler({ mode: 'dark' }, mockExecutor);
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'simulatorUuid is required' }],
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+          },
+        ],
         isError: true,
       });
     });
 
     it('should handle exception during execution', async () => {
-      mockExecuteCommand.mockRejectedValue(new Error('Network error'));
+      const mockExecutor = createMockExecutor(new Error('Network error'));
 
-      const result = await setSimAppearancePlugin.handler({
-        simulatorUuid: 'test-uuid-123',
-        mode: 'dark',
-      });
+      const result = await setSimAppearancePlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          mode: 'dark',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -155,21 +144,33 @@ describe('set_sim_appearance plugin', () => {
     });
 
     it('should call correct command', async () => {
-      mockExecuteCommand.mockResolvedValue({
-        success: true,
-        output: '',
-        error: '',
-      });
+      const commandCalls: any[] = [];
+      const mockExecutor = (...args: any[]) => {
+        commandCalls.push(args);
+        return Promise.resolve({
+          success: true,
+          output: '',
+          error: '',
+          process: { pid: 12345 },
+        });
+      };
 
-      await setSimAppearancePlugin.handler({
-        simulatorUuid: 'test-uuid-123',
-        mode: 'dark',
-      });
-
-      expect(mockExecuteCommand).toHaveBeenCalledWith(
-        ['xcrun', 'simctl', 'ui', 'test-uuid-123', 'appearance', 'dark'],
-        'Set Simulator Appearance',
+      await setSimAppearancePlugin.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          mode: 'dark',
+        },
+        mockExecutor,
       );
+
+      expect(commandCalls).toEqual([
+        [
+          ['xcrun', 'simctl', 'ui', 'test-uuid-123', 'appearance', 'dark'],
+          'Set Simulator Appearance',
+          true,
+          undefined,
+        ],
+      ]);
     });
   });
 });

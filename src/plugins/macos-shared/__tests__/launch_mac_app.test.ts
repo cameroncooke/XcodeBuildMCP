@@ -1,37 +1,18 @@
 /**
- * Tests for launch_mac_app plugin
- * Following CLAUDE.md testing standards with literal validation
+ * Pure dependency injection test for launch_mac_app plugin
+ *
+ * Tests plugin structure and macOS app launching functionality including parameter validation,
+ * command generation, file validation, and response formatting.
+ *
+ * Uses manual call tracking and createMockFileSystemExecutor for file operations.
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
+import { createMockFileSystemExecutor } from '../../../utils/command.js';
 import launchMacApp from '../launch_mac_app.ts';
 
-// Mock only child_process.exec at the lowest level
-vi.mock('child_process', () => ({
-  exec: vi.fn(),
-}));
-
-// Mock util.promisify
-vi.mock('util', () => ({
-  promisify: vi.fn(),
-}));
-
 describe('launch_mac_app plugin', () => {
-  let mockExec: Record<string, unknown>;
-  let mockPromisify: Record<string, unknown>;
-
-  beforeEach(async () => {
-    const { exec } = await import('child_process');
-    const { promisify } = await import('util');
-
-    mockExec = vi.mocked(exec);
-    mockPromisify = vi.mocked(promisify);
-
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(launchMacApp.name).toBe('launch_mac_app');
@@ -47,55 +28,204 @@ describe('launch_mac_app plugin', () => {
       expect(typeof launchMacApp.handler).toBe('function');
     });
 
-    it('should validate schema correctly', () => {
-      // Test required fields
-      expect(launchMacApp.schema.appPath.safeParse('/path/to/MyApp.app').success).toBe(true);
+    it('should validate schema with valid inputs', () => {
+      const schema = z.object(launchMacApp.schema);
+      expect(
+        schema.safeParse({
+          appPath: '/path/to/MyApp.app',
+        }).success,
+      ).toBe(true);
+      expect(
+        schema.safeParse({
+          appPath: '/Applications/Calculator.app',
+          args: ['--debug'],
+        }).success,
+      ).toBe(true);
+      expect(
+        schema.safeParse({
+          appPath: '/path/to/MyApp.app',
+          args: ['--debug', '--verbose'],
+        }).success,
+      ).toBe(true);
+    });
 
-      // Test optional fields
-      expect(launchMacApp.schema.args.safeParse(['--debug']).success).toBe(true);
-      expect(launchMacApp.schema.args.safeParse(undefined).success).toBe(true);
-
-      // Test invalid inputs
-      expect(launchMacApp.schema.appPath.safeParse(null).success).toBe(false);
-      expect(launchMacApp.schema.args.safeParse('not-array').success).toBe(false);
+    it('should validate schema with invalid inputs', () => {
+      const schema = z.object(launchMacApp.schema);
+      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({ appPath: null }).success).toBe(false);
+      expect(schema.safeParse({ appPath: 123 }).success).toBe(false);
+      expect(schema.safeParse({ appPath: '/path/to/MyApp.app', args: 'not-array' }).success).toBe(
+        false,
+      );
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return exact successful launch response', async () => {
-      // Mock promisify(exec) to return successful launch
-      const mockExecPromise = vi.fn().mockResolvedValue({ stdout: '', stderr: '' });
-      mockPromisify.mockReturnValue(mockExecPromise);
-
-      const result = await launchMacApp.handler({
-        appPath: '/path/to/MyApp.app',
-      });
-
-      expect(mockPromisify).toHaveBeenCalledWith(mockExec);
-      expect(mockExecPromise).toHaveBeenCalledWith('open "/path/to/MyApp.app"');
+  describe('Input Validation', () => {
+    it('should handle missing appPath parameter', async () => {
+      const result = await launchMacApp.handler({});
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: '✅ macOS app launched successfully: /path/to/MyApp.app',
+            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
-    it('should return exact successful launch response with args', async () => {
-      // Mock promisify(exec) to return successful launch
-      const mockExecPromise = vi.fn().mockResolvedValue({ stdout: '', stderr: '' });
-      mockPromisify.mockReturnValue(mockExecPromise);
-
+    it('should handle missing appPath with other parameters', async () => {
       const result = await launchMacApp.handler({
-        appPath: '/path/to/MyApp.app',
-        args: ['--debug', '--verbose'],
+        args: ['--debug'],
       });
 
-      expect(mockExecPromise).toHaveBeenCalledWith(
-        'open "/path/to/MyApp.app" --args --debug --verbose',
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should handle non-existent app path', async () => {
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => false,
+      });
+
+      const result = await launchMacApp.handler(
+        {
+          appPath: '/path/to/NonExistent.app',
+        },
+        undefined,
+        mockFileSystem,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "File does not exist: '/path/to/NonExistent.app'. Please provide a valid file path.",
+          },
+        ],
+        isError: true,
+      });
+    });
+  });
+
+  describe('Command Generation', () => {
+    it('should generate correct command with minimal parameters', async () => {
+      const calls: any[] = [];
+      const mockExecutor = async (command: string) => {
+        calls.push({ command });
+        return { stdout: '', stderr: '' };
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      await launchMacApp.handler(
+        {
+          appPath: '/path/to/MyApp.app',
+        },
+        mockExecutor,
+        mockFileSystem,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].command).toBe('open "/path/to/MyApp.app"');
+    });
+
+    it('should generate correct command with args parameter', async () => {
+      const calls: any[] = [];
+      const mockExecutor = async (command: string) => {
+        calls.push({ command });
+        return { stdout: '', stderr: '' };
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      await launchMacApp.handler(
+        {
+          appPath: '/path/to/MyApp.app',
+          args: ['--debug', '--verbose'],
+        },
+        mockExecutor,
+        mockFileSystem,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].command).toBe('open "/path/to/MyApp.app" --args --debug --verbose');
+    });
+
+    it('should generate correct command with empty args array', async () => {
+      const calls: any[] = [];
+      const mockExecutor = async (command: string) => {
+        calls.push({ command });
+        return { stdout: '', stderr: '' };
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      await launchMacApp.handler(
+        {
+          appPath: '/path/to/MyApp.app',
+          args: [],
+        },
+        mockExecutor,
+        mockFileSystem,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].command).toBe('open "/path/to/MyApp.app"');
+    });
+
+    it('should handle paths with spaces correctly', async () => {
+      const calls: any[] = [];
+      const mockExecutor = async (command: string) => {
+        calls.push({ command });
+        return { stdout: '', stderr: '' };
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      await launchMacApp.handler(
+        {
+          appPath: '/Applications/My App.app',
+        },
+        mockExecutor,
+        mockFileSystem,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].command).toBe('open "/Applications/My App.app"');
+    });
+  });
+
+  describe('Response Processing', () => {
+    it('should return successful launch response', async () => {
+      const mockExecutor = async () => Promise.resolve({ stdout: '', stderr: '' });
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      const result = await launchMacApp.handler(
+        {
+          appPath: '/path/to/MyApp.app',
+        },
+        mockExecutor,
+        mockFileSystem,
       );
 
       expect(result).toEqual({
@@ -108,34 +238,110 @@ describe('launch_mac_app plugin', () => {
       });
     });
 
-    it('should return exact launch failure response', async () => {
-      // Mock promisify(exec) to return launch error
-      const mockExecPromise = vi.fn().mockRejectedValue(new Error('App not found'));
-      mockPromisify.mockReturnValue(mockExecPromise);
+    it('should return successful launch response with args', async () => {
+      const mockExecutor = async () => Promise.resolve({ stdout: '', stderr: '' });
 
-      const result = await launchMacApp.handler({
-        appPath: '/path/to/MyApp.app',
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
       });
+
+      const result = await launchMacApp.handler(
+        {
+          appPath: '/path/to/MyApp.app',
+          args: ['--debug', '--verbose'],
+        },
+        mockExecutor,
+        mockFileSystem,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error launching macOS app: App not found',
+            text: '✅ macOS app launched successfully: /path/to/MyApp.app',
+          },
+        ],
+      });
+    });
+
+    it('should handle launch failure with Error object', async () => {
+      const mockExecutor = async () => {
+        throw new Error('App not found');
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      const result = await launchMacApp.handler(
+        {
+          appPath: '/path/to/MyApp.app',
+        },
+        mockExecutor,
+        mockFileSystem,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: '❌ Launch macOS app operation failed: App not found',
           },
         ],
         isError: true,
       });
     });
 
-    it('should return exact missing appPath validation response', async () => {
-      const result = await launchMacApp.handler({});
+    it('should handle launch failure with string error', async () => {
+      const mockExecutor = async () => {
+        throw 'Permission denied';
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      const result = await launchMacApp.handler(
+        {
+          appPath: '/path/to/MyApp.app',
+        },
+        mockExecutor,
+        mockFileSystem,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+            text: '❌ Launch macOS app operation failed: Permission denied',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should handle launch failure with unknown error type', async () => {
+      const mockExecutor = async () => {
+        throw 123;
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      const result = await launchMacApp.handler(
+        {
+          appPath: '/path/to/MyApp.app',
+        },
+        mockExecutor,
+        mockFileSystem,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: '❌ Launch macOS app operation failed: 123',
           },
         ],
         isError: true,

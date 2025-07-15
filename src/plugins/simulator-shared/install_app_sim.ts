@@ -6,6 +6,7 @@ import {
   validateFileExists,
   executeCommand,
   CommandExecutor,
+  FileSystemExecutor,
 } from '../../utils/index.ts';
 import { execSync } from 'child_process';
 
@@ -21,7 +22,11 @@ export default {
       .string()
       .describe('Path to the .app bundle to install (full path to the .app directory)'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    fileSystem?: FileSystemExecutor,
+  ): Promise<ToolResponse> {
     const params = args;
     const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simulatorUuidValidation.isValid) {
@@ -33,7 +38,7 @@ export default {
       return appPathValidation.errorResponse;
     }
 
-    const appPathExistsValidation = validateFileExists(params.appPath);
+    const appPathExistsValidation = validateFileExists(params.appPath, fileSystem);
     if (!appPathExistsValidation.isValid) {
       return appPathExistsValidation.errorResponse;
     }
