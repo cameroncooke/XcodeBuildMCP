@@ -3,7 +3,7 @@
  * Following CLAUDE.md testing standards with literal validation
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import testDeviceWs from '../test_device_ws.ts';
 
@@ -46,18 +46,23 @@ describe('test_device_ws plugin', () => {
     });
   });
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle missing parameters and generate xcodebuild command', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Test Suite All Tests passed',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const executorCalls: any[] = [];
+      const mockExecutor = async (
+        args: any,
+        title: string,
+        hasRealTimeOutput: boolean,
+        env?: any,
+      ) => {
+        executorCalls.push({ args, title, hasRealTimeOutput, env });
+        return {
+          success: true,
+          output: 'Test Suite All Tests passed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       const result = await testDeviceWs.handler(
         {
@@ -68,7 +73,8 @@ describe('test_device_ws plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(executorCalls).toHaveLength(1);
+      expect(executorCalls[0].args).toEqual(
         expect.arrayContaining([
           'xcodebuild',
           '-workspace',
@@ -79,10 +85,10 @@ describe('test_device_ws plugin', () => {
           'Debug',
           'test',
         ]),
-        'Test Run',
-        true,
-        undefined,
       );
+      expect(executorCalls[0].title).toBe('Test Run');
+      expect(executorCalls[0].hasRealTimeOutput).toBe(true);
+      expect(executorCalls[0].env).toBeUndefined();
     });
 
     it('should return successful test response when xcodebuild succeeds', async () => {
@@ -125,12 +131,21 @@ describe('test_device_ws plugin', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Test Suite All Tests passed',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const executorCalls: any[] = [];
+      const mockExecutor = async (
+        args: any,
+        title: string,
+        hasRealTimeOutput: boolean,
+        env?: any,
+      ) => {
+        executorCalls.push({ args, title, hasRealTimeOutput, env });
+        return {
+          success: true,
+          output: 'Test Suite All Tests passed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await testDeviceWs.handler(
         {
@@ -140,7 +155,8 @@ describe('test_device_ws plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(executorCalls).toHaveLength(1);
+      expect(executorCalls[0].args).toEqual(
         expect.arrayContaining([
           'xcodebuild',
           '-workspace',
@@ -151,10 +167,10 @@ describe('test_device_ws plugin', () => {
           'Debug',
           'test',
         ]),
-        'Test Run',
-        true,
-        undefined,
       );
+      expect(executorCalls[0].title).toBe('Test Run');
+      expect(executorCalls[0].hasRealTimeOutput).toBe(true);
+      expect(executorCalls[0].env).toBeUndefined();
     });
   });
 });

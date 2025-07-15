@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import swiftPackageClean from '../swift_package_clean.ts';
 
@@ -35,18 +35,29 @@ describe('swift_package_clean plugin', () => {
     });
   });
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Command Generation Testing', () => {
     it('should build correct command for clean', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Clean succeeded',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const calls: Array<{
+        command: string[];
+        description: string;
+        showOutput: boolean;
+        workingDirectory: string | undefined;
+      }> = [];
+
+      const mockExecutor = async (
+        command: string[],
+        description: string,
+        showOutput: boolean,
+        workingDirectory?: string,
+      ) => {
+        calls.push({ command, description, showOutput, workingDirectory });
+        return {
+          success: true,
+          output: 'Clean succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await swiftPackageClean.handler(
         {
@@ -55,12 +66,13 @@ describe('swift_package_clean plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['swift', 'package', '--package-path', '/test/package', 'clean'],
-        'Swift Package Clean',
-        true,
-        undefined,
-      );
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        command: ['swift', 'package', '--package-path', '/test/package', 'clean'],
+        description: 'Swift Package Clean',
+        showOutput: true,
+        workingDirectory: undefined,
+      });
     });
   });
 
@@ -154,7 +166,9 @@ describe('swift_package_clean plugin', () => {
     });
 
     it('should handle spawn error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn ENOENT'));
+      const mockExecutor = async () => {
+        throw new Error('spawn ENOENT');
+      };
 
       const result = await swiftPackageClean.handler(
         {

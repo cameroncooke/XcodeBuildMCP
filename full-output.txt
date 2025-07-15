@@ -1,0 +1,249 @@
+🚨 CRITICAL: VITEST MOCKING AUDIT - ALL VITEST MOCKING IS BANNED 🚨
+
+ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()
+
+📊 VITEST MOCKING VIOLATION ANALYSIS
+===================================
+Total test files analyzed: 121
+🚨 FILES VIOLATING VITEST MOCKING BAN: 17
+  └─ setTimeout-based violations: 2
+  └─ vitest mocking violations: 0
+✅ COMPLIANT (pure dependency injection): 70
+⚠️  MIXED VIOLATIONS: 15
+📝 No patterns detected: 34
+
+❌ FILES THAT NEED CONVERSION (17):
+=====================================
+1. src/plugins/device-workspace/__tests__/build_dev_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 85: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 85: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 6 more vitest patterns
+
+2. src/plugins/device-workspace/__tests__/test_device_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 55: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 55: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 6 more vitest patterns
+
+3. src/plugins/macos-project/__tests__/get_mac_app_path_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (5):
+   Line 70: // Manual call tracking instead of vi.fn()
+   Line 173: // Manual error throwing instead of vi.fn().mockRejectedValue()
+   ... and 3 more vitest patterns
+
+4. src/plugins/macos-workspace/__tests__/build_mac_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (4):
+   Line 146: const mockExecutor = vi.fn().mockImplementation(() => {
+   Line 146: const mockExecutor = vi.fn().mockImplementation(() => {
+   ... and 2 more vitest patterns
+
+5. src/plugins/macos-workspace/__tests__/get_mac_app_path_ws.test.ts
+   🧪 VITEST MOCKING PATTERNS (2):
+   Line 164: const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+   Line 164: const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+
+6. src/plugins/simulator-project/__tests__/build_sim_id_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (4):
+   Line 181: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 181: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 2 more vitest patterns
+
+7. src/plugins/simulator-project/__tests__/get_sim_app_path_id_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (4):
+   Line 255: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 255: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 2 more vitest patterns
+
+8. src/plugins/simulator-project/__tests__/get_sim_app_path_name_proj.test.ts
+   🧪 VITEST MOCKING PATTERNS (4):
+   Line 255: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 255: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 2 more vitest patterns
+
+9. src/plugins/simulator-shared/__tests__/stop_app_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (6):
+   Line 140: const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+   Line 140: const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+   ... and 4 more vitest patterns
+
+10. src/plugins/simulator-workspace/__tests__/boot_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (4):
+   Line 105: const mockExecutor = vi.fn().mockRejectedValue(new Error('Connection failed'));
+   Line 105: const mockExecutor = vi.fn().mockRejectedValue(new Error('Connection failed'));
+   ... and 2 more vitest patterns
+
+11. src/plugins/simulator-workspace/__tests__/reset_network_condition.test.ts
+   🧪 VITEST MOCKING PATTERNS (6):
+   Line 114: mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+   Line 114: mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+   ... and 4 more vitest patterns
+
+12. src/plugins/simulator-workspace/__tests__/stop_app_sim.test.ts
+   🧪 VITEST MOCKING PATTERNS (6):
+   Line 152: mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+   Line 152: mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+   ... and 4 more vitest patterns
+
+13. src/plugins/swift-package/__tests__/swift_package_clean.test.ts
+   🧪 VITEST MOCKING PATTERNS (6):
+   Line 44: const mockExecutor = vi.fn().mockResolvedValue({
+   Line 44: const mockExecutor = vi.fn().mockResolvedValue({
+   ... and 4 more vitest patterns
+
+14. src/plugins/swift-package/__tests__/swift_package_run.test.ts
+   🕐 TIMEOUT PATTERNS (6):
+   Line 271: setTimeout(() => callback('Hello, World!'), 0);
+   Line 280: setTimeout(() => callback(0, null), 0);
+   ... and 4 more setTimeout patterns
+
+15. src/plugins/swift-package/__tests__/swift_package_stop.test.ts
+   🕐 TIMEOUT PATTERNS (2):
+   Line 122: setTimeout(() => callback(), 0);
+   Line 375: setTimeout(() => callback(), 0);
+
+16. src/plugins/utilities/__tests__/scaffold_ios_project.test.ts
+   🧪 VITEST MOCKING PATTERNS (2):
+   Line 348: mockCommandExecutor = vi.fn().mockImplementation(() => {
+   Line 348: mockCommandExecutor = vi.fn().mockImplementation(() => {
+
+17. src/plugins/utilities/__tests__/scaffold_macos_project.test.ts
+   🧪 VITEST MOCKING PATTERNS (8):
+   Line 20: let mockTemplateManager: any;
+   Line 29: mockTemplateManager = {
+   ... and 6 more vitest patterns
+
+⚠️  FILES WITH MIXED PATTERNS (15):
+===================================
+1. src/plugins/device-workspace/__tests__/build_dev_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+2. src/plugins/device-workspace/__tests__/test_device_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+3. src/plugins/macos-project/__tests__/get_mac_app_path_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+4. src/plugins/macos-workspace/__tests__/build_mac_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+5. src/plugins/macos-workspace/__tests__/get_mac_app_path_ws.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+6. src/plugins/simulator-project/__tests__/build_sim_id_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+7. src/plugins/simulator-project/__tests__/get_sim_app_path_id_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+8. src/plugins/simulator-project/__tests__/get_sim_app_path_name_proj.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+9. src/plugins/simulator-shared/__tests__/stop_app_sim.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+10. src/plugins/simulator-workspace/__tests__/boot_sim.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+11. src/plugins/simulator-workspace/__tests__/reset_network_condition.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+12. src/plugins/simulator-workspace/__tests__/stop_app_sim.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+13. src/plugins/swift-package/__tests__/swift_package_clean.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+14. src/plugins/utilities/__tests__/scaffold_ios_project.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+15. src/plugins/utilities/__tests__/scaffold_macos_project.test.ts
+   ⚠️  Contains both setTimeout and dependency injection patterns
+
+✅ SUCCESSFULLY CONVERTED FILES (70):
+====================================
+1. src/plugins/device-project/__tests__/build_dev_proj.test.ts
+2. src/plugins/device-project/__tests__/get_device_app_path_proj.test.ts
+3. src/plugins/device-project/__tests__/test_device_proj.test.ts
+4. src/plugins/device-workspace/__tests__/get_device_app_path_ws.test.ts
+5. src/plugins/device-workspace/__tests__/install_app_device.test.ts
+6. src/plugins/device-workspace/__tests__/launch_app_device.test.ts
+7. src/plugins/device-workspace/__tests__/list_devices.test.ts
+8. src/plugins/device-workspace/__tests__/stop_app_device.test.ts
+9. src/plugins/logging/__tests__/start_device_log_cap.test.ts
+10. src/plugins/macos-project/__tests__/build_mac_proj.test.ts
+11. src/plugins/macos-project/__tests__/build_run_mac_proj.test.ts
+12. src/plugins/macos-project/__tests__/test_macos_proj.test.ts
+13. src/plugins/macos-shared/__tests__/launch_mac_app.test.ts
+14. src/plugins/macos-workspace/__tests__/build_run_mac_ws.test.ts
+15. src/plugins/macos-workspace/__tests__/launch_mac_app.test.ts
+16. src/plugins/macos-workspace/__tests__/test_macos_ws.test.ts
+17. src/plugins/project-discovery/__tests__/discover_projs.test.ts
+18. src/plugins/project-discovery/__tests__/get_app_bundle_id.test.ts
+19. src/plugins/project-discovery/__tests__/get_mac_bundle_id.test.ts
+20. src/plugins/project-discovery/__tests__/list_schems_proj.test.ts
+21. src/plugins/project-discovery/__tests__/list_schems_ws.test.ts
+22. src/plugins/project-discovery/__tests__/show_build_set_proj.test.ts
+23. src/plugins/project-discovery/__tests__/show_build_set_ws.test.ts
+24. src/plugins/simulator-project/__tests__/build_run_sim_id_proj.test.ts
+25. src/plugins/simulator-project/__tests__/build_run_sim_name_proj.test.ts
+26. src/plugins/simulator-project/__tests__/build_sim_name_proj.test.ts
+27. src/plugins/simulator-project/test_sim_id_proj.test.ts
+28. src/plugins/simulator-project/test_sim_name_proj.test.ts
+29. src/plugins/simulator-shared/__tests__/boot_sim.test.ts
+30. src/plugins/simulator-shared/__tests__/install_app_sim.test.ts
+31. src/plugins/simulator-shared/__tests__/launch_app_sim.test.ts
+32. src/plugins/simulator-shared/__tests__/list_sims.test.ts
+33. src/plugins/simulator-shared/__tests__/open_sim.test.ts
+34. src/plugins/simulator-shared/__tests__/reset_network_condition.test.ts
+35. src/plugins/simulator-shared/__tests__/reset_simulator_location.test.ts
+36. src/plugins/simulator-shared/__tests__/screenshot.test.ts
+37. src/plugins/simulator-shared/__tests__/set_network_condition.test.ts
+38. src/plugins/simulator-shared/__tests__/set_sim_appearance.test.ts
+39. src/plugins/simulator-shared/__tests__/set_simulator_location.test.ts
+40. src/plugins/simulator-workspace/__tests__/build_run_sim_id_ws.test.ts
+41. src/plugins/simulator-workspace/__tests__/build_run_sim_name_ws.test.ts
+42. src/plugins/simulator-workspace/__tests__/build_sim_id_ws.test.ts
+43. src/plugins/simulator-workspace/__tests__/build_sim_name_ws.test.ts
+44. src/plugins/simulator-workspace/__tests__/describe_ui.test.ts
+45. src/plugins/simulator-workspace/__tests__/get_sim_app_path_id_ws.test.ts
+46. src/plugins/simulator-workspace/__tests__/get_sim_app_path_name_ws.test.ts
+47. src/plugins/simulator-workspace/__tests__/test_sim_id_ws.test.ts
+48. src/plugins/simulator-workspace/launch_app_sim.test.ts
+49. src/plugins/simulator-workspace/list_sims.test.ts
+50. src/plugins/simulator-workspace/open_sim.test.ts
+51. src/plugins/simulator-workspace/reset_simulator_location.test.ts
+52. src/plugins/simulator-workspace/set_network_condition.test.ts
+53. src/plugins/simulator-workspace/set_sim_appearance.test.ts
+54. src/plugins/simulator-workspace/set_simulator_location.test.ts
+55. src/plugins/simulator-workspace/test_sim_name_ws.test.ts
+56. src/plugins/swift-package/__tests__/swift_package_build.test.ts
+57. src/plugins/swift-package/__tests__/swift_package_test.test.ts
+58. src/plugins/ui-testing/__tests__/button.test.ts
+59. src/plugins/ui-testing/__tests__/describe_ui.test.ts
+60. src/plugins/ui-testing/__tests__/gesture.test.ts
+61. src/plugins/ui-testing/__tests__/key_press.test.ts
+62. src/plugins/ui-testing/__tests__/key_sequence.test.ts
+63. src/plugins/ui-testing/__tests__/long_press.test.ts
+64. src/plugins/ui-testing/__tests__/screenshot.test.ts
+65. src/plugins/ui-testing/__tests__/swipe.test.ts
+66. src/plugins/ui-testing/__tests__/tap.test.ts
+67. src/plugins/ui-testing/__tests__/touch.test.ts
+68. src/plugins/ui-testing/__tests__/type_text.test.ts
+69. src/plugins/utilities/__tests__/clean_proj.test.ts
+70. src/plugins/utilities/__tests__/clean_ws.test.ts
+
+🚨 CRITICAL ACTION REQUIRED:
+===========================
+1. IMMEDIATELY remove ALL vitest mocking from 17 files
+2. BANNED: vi.mock(), vi.fn(), .mockResolvedValue(), .toHaveBeenCalled(), etc.
+3. ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()
+4. Update plugin implementations to accept executor?: CommandExecutor parameter
+5. Run this script again after each fix to track progress
+
+🚨 TOP 5 FILES WITH MOST VIOLATIONS:
+1. src/plugins/device-workspace/__tests__/build_dev_ws.test.ts (8 violations: 0 timeout + 8 vitest)
+2. src/plugins/device-workspace/__tests__/test_device_ws.test.ts (8 violations: 0 timeout + 8 vitest)
+3. src/plugins/utilities/__tests__/scaffold_macos_project.test.ts (8 violations: 0 timeout + 8 vitest)
+4. src/plugins/simulator-shared/__tests__/stop_app_sim.test.ts (6 violations: 0 timeout + 6 vitest)
+5. src/plugins/simulator-workspace/__tests__/reset_network_condition.test.ts (6 violations: 0 timeout + 6 vitest)

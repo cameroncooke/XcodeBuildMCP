@@ -67,7 +67,7 @@ describe('get_mac_app_path_proj', () => {
 
   describe('Command Generation and Response Logic', () => {
     it('should successfully get app path for macOS project', async () => {
-      // Manual call tracking instead of vi.fn()
+      // Manual call tracking for command verification
       const calls: any[] = [];
       const mockExecutor: CommandExecutor = async (...args) => {
         calls.push(args);
@@ -170,7 +170,7 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should handle spawn error', async () => {
-      // Manual error throwing instead of vi.fn().mockRejectedValue()
+      // Manual error throwing for spawn error testing
       const mockExecutor: CommandExecutor = async () => {
         throw new Error('spawn xcodebuild ENOENT');
       };
@@ -194,7 +194,7 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      // Manual call tracking instead of vi.fn()
+      // Manual call tracking for command verification
       const calls: any[] = [];
       const mockExecutor: CommandExecutor = async (...args) => {
         calls.push(args);
@@ -233,7 +233,7 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should include optional parameters in command', async () => {
-      // Manual call tracking instead of vi.fn()
+      // Manual call tracking for command verification
       const calls: any[] = [];
       const mockExecutor: CommandExecutor = async (...args) => {
         calls.push(args);

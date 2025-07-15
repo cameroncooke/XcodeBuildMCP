@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import buildDevWs from '../build_dev_ws.ts';
 
@@ -44,10 +44,6 @@ describe('build_dev_ws plugin', () => {
     });
   });
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation error response for workspacePath', async () => {
       const result = await buildDevWs.handler({
@@ -82,12 +78,21 @@ describe('build_dev_ws plugin', () => {
     });
 
     it('should generate correct xcodebuild command for workspace', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'BUILD SUCCEEDED',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const executorCalls: any[] = [];
+      const mockExecutor = async (
+        command: string[],
+        label?: string,
+        canExit?: boolean,
+        timeout?: number,
+      ) => {
+        executorCalls.push({ command, label, canExit, timeout });
+        return {
+          success: true,
+          output: 'BUILD SUCCEEDED',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await buildDevWs.handler(
         {
@@ -98,24 +103,26 @@ describe('build_dev_ws plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcodebuild',
-          '-workspace',
-          '/path/to/workspace.xcworkspace',
-          '-scheme',
-          'MyScheme',
-          '-configuration',
-          'Debug',
-          '-skipMacroValidation',
-          '-destination',
-          'generic/platform=iOS',
-          'build',
-        ],
-        'iOS Device Build',
-        true,
-        undefined,
-      );
+      expect(executorCalls).toEqual([
+        {
+          command: [
+            'xcodebuild',
+            '-workspace',
+            '/path/to/workspace.xcworkspace',
+            '-scheme',
+            'MyScheme',
+            '-configuration',
+            'Debug',
+            '-skipMacroValidation',
+            '-destination',
+            'generic/platform=iOS',
+            'build',
+          ],
+          label: 'iOS Device Build',
+          canExit: true,
+          timeout: undefined,
+        },
+      ]);
     });
 
     it('should return exact successful build response', async () => {
@@ -174,12 +181,21 @@ describe('build_dev_ws plugin', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'BUILD SUCCEEDED',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const executorCalls: any[] = [];
+      const mockExecutor = async (
+        command: string[],
+        label?: string,
+        canExit?: boolean,
+        timeout?: number,
+      ) => {
+        executorCalls.push({ command, label, canExit, timeout });
+        return {
+          success: true,
+          output: 'BUILD SUCCEEDED',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await buildDevWs.handler(
         {
@@ -189,24 +205,26 @@ describe('build_dev_ws plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcodebuild',
-          '-workspace',
-          '/path/to/workspace.xcworkspace',
-          '-scheme',
-          'MyScheme',
-          '-configuration',
-          'Debug',
-          '-skipMacroValidation',
-          '-destination',
-          'generic/platform=iOS',
-          'build',
-        ],
-        'iOS Device Build',
-        true,
-        undefined,
-      );
+      expect(executorCalls).toEqual([
+        {
+          command: [
+            'xcodebuild',
+            '-workspace',
+            '/path/to/workspace.xcworkspace',
+            '-scheme',
+            'MyScheme',
+            '-configuration',
+            'Debug',
+            '-skipMacroValidation',
+            '-destination',
+            'generic/platform=iOS',
+            'build',
+          ],
+          label: 'iOS Device Build',
+          canExit: true,
+          timeout: undefined,
+        },
+      ]);
     });
   });
 });

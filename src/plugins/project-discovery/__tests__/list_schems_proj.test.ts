@@ -4,15 +4,11 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import plugin from '../list_schems_proj.ts';
 
 describe('list_schems_proj plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(plugin.name).toBe('list_schems_proj');
@@ -165,7 +161,9 @@ describe('list_schems_proj plugin', () => {
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
+      const mockExecutor = async () => {
+        throw new Error('Command execution failed');
+      };
 
       const result = await plugin.handler(
         { projectPath: '/path/to/MyProject.xcodeproj' },
@@ -179,7 +177,9 @@ describe('list_schems_proj plugin', () => {
     });
 
     it('should handle string error objects in catch blocks', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockExecutor = async () => {
+        throw 'String error';
+      };
 
       const result = await plugin.handler(
         { projectPath: '/path/to/MyProject.xcodeproj' },
@@ -193,9 +193,17 @@ describe('list_schems_proj plugin', () => {
     });
 
     it('should verify command generation with mock executor', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: `Information about project "MyProject":
+      const calls: any[] = [];
+      const mockExecutor = async (
+        command: string[],
+        action: string,
+        showOutput: boolean,
+        workingDir?: string,
+      ) => {
+        calls.push([command, action, showOutput, workingDir]);
+        return {
+          success: true,
+          output: `Information about project "MyProject":
     Targets:
         MyProject
 
@@ -205,18 +213,21 @@ describe('list_schems_proj plugin', () => {
 
     Schemes:
         MyProject`,
-        error: undefined,
-        process: { pid: 12345 },
-      });
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await plugin.handler({ projectPath: '/path/to/MyProject.xcodeproj' }, mockExecutor);
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['xcodebuild', '-list', '-project', '/path/to/MyProject.xcodeproj'],
-        'List Schemes',
-        true,
-        undefined,
-      );
+      expect(calls).toEqual([
+        [
+          ['xcodebuild', '-list', '-project', '/path/to/MyProject.xcodeproj'],
+          'List Schemes',
+          true,
+          undefined,
+        ],
+      ]);
     });
 
     it('should handle schema validation error when projectPath is null', async () => {
