@@ -1,25 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-// Mock child_process and util at module level
-vi.mock('child_process', () => ({
-  exec: vi.fn(),
-}));
-
-vi.mock('util', () => ({
-  promisify: vi.fn(),
-}));
-
 import tool from '../build_run_mac_proj.ts';
 
 describe('build_run_mac_proj', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should export the correct name', () => {
       expect(tool.name).toBe('build_run_mac_proj');
@@ -87,10 +71,18 @@ describe('build_run_mac_proj', () => {
 
   describe('Command Generation and Response Logic', () => {
     it('should successfully build and run macOS app', async () => {
-      // Mock successful build first, then successful build settings
+      // Track executor calls manually
       let callCount = 0;
-      const mockExecutor = vi.fn().mockImplementation(() => {
+      const executorCalls: any[] = [];
+      const mockExecutor = (
+        command: string[],
+        description: string,
+        logOutput: boolean,
+        timeout?: number,
+      ) => {
         callCount++;
+        executorCalls.push({ command, description, logOutput, timeout });
+
         if (callCount === 1) {
           // First call for build
           return Promise.resolve({
@@ -107,22 +99,25 @@ describe('build_run_mac_proj', () => {
           });
         }
         return Promise.resolve({ success: true, output: '', error: '' });
-      });
+      };
 
-      // Mock exec for launching app
-      const mockExecAsync = vi.fn().mockResolvedValue('');
-      vi.mocked(promisify).mockReturnValue(mockExecAsync);
+      // Mock execAsync for launching app
+      const execAsyncCalls: string[] = [];
+      const mockExecAsync = (cmd: string) => {
+        execAsyncCalls.push(cmd);
+        return Promise.resolve('');
+      };
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await tool.handler(args, mockExecutor, mockExecAsync);
 
       // Verify build command was called
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(executorCalls[0]).toEqual({
+        command: [
           'xcodebuild',
           '-project',
           '/path/to/project.xcodeproj',
@@ -135,14 +130,14 @@ describe('build_run_mac_proj', () => {
           'platform=macOS',
           'build',
         ],
-        'macOS Build',
-        true,
-        undefined,
-      );
+        description: 'macOS Build',
+        logOutput: true,
+        timeout: undefined,
+      });
 
       // Verify build settings command was called
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(executorCalls[1]).toEqual({
+        command: [
           'xcodebuild',
           '-showBuildSettings',
           '-project',
@@ -152,10 +147,10 @@ describe('build_run_mac_proj', () => {
           '-configuration',
           'Debug',
         ],
-        'Get Build Settings for Launch',
-        true,
-        undefined,
-      );
+        description: 'Get Build Settings for Launch',
+        logOutput: true,
+        timeout: undefined,
+      });
 
       expect(result).toEqual({
         content: [
@@ -199,9 +194,14 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should handle build settings failure', async () => {
-      // Mock successful build first, then failed build settings
+      // Track executor calls manually
       let callCount = 0;
-      const mockExecutor = vi.fn().mockImplementation(() => {
+      const mockExecutor = (
+        command: string[],
+        description: string,
+        logOutput: boolean,
+        timeout?: number,
+      ) => {
         callCount++;
         if (callCount === 1) {
           // First call for build succeeds
@@ -219,7 +219,7 @@ describe('build_run_mac_proj', () => {
           });
         }
         return Promise.resolve({ success: true, output: '', error: '' });
-      });
+      };
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
@@ -248,9 +248,14 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should handle app launch failure', async () => {
-      // Mock successful build and build settings
+      // Track executor calls manually
       let callCount = 0;
-      const mockExecutor = vi.fn().mockImplementation(() => {
+      const mockExecutor = (
+        command: string[],
+        description: string,
+        logOutput: boolean,
+        timeout?: number,
+      ) => {
         callCount++;
         if (callCount === 1) {
           // First call for build succeeds
@@ -268,18 +273,19 @@ describe('build_run_mac_proj', () => {
           });
         }
         return Promise.resolve({ success: true, output: '', error: '' });
-      });
+      };
 
-      // Mock exec for launching app to fail
-      const mockExecAsync = vi.fn().mockRejectedValue(new Error('Failed to launch'));
-      vi.mocked(promisify).mockReturnValue(mockExecAsync);
+      // Mock execAsync for launching app to fail
+      const mockExecAsync = (cmd: string) => {
+        return Promise.reject(new Error('Failed to launch'));
+      };
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await tool.handler(args, mockExecutor, mockExecAsync);
 
       expect(result).toEqual({
         content: [
@@ -301,7 +307,14 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should handle spawn error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn xcodebuild ENOENT'));
+      const mockExecutor = (
+        command: string[],
+        description: string,
+        logOutput: boolean,
+        timeout?: number,
+      ) => {
+        return Promise.reject(new Error('spawn xcodebuild ENOENT'));
+      };
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
@@ -319,10 +332,18 @@ describe('build_run_mac_proj', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      // Mock successful build first, then successful build settings
+      // Track executor calls manually
       let callCount = 0;
-      const mockExecutor = vi.fn().mockImplementation(() => {
+      const executorCalls: any[] = [];
+      const mockExecutor = (
+        command: string[],
+        description: string,
+        logOutput: boolean,
+        timeout?: number,
+      ) => {
         callCount++;
+        executorCalls.push({ command, description, logOutput, timeout });
+
         if (callCount === 1) {
           // First call for build
           return Promise.resolve({
@@ -339,21 +360,22 @@ describe('build_run_mac_proj', () => {
           });
         }
         return Promise.resolve({ success: true, output: '', error: '' });
-      });
+      };
 
-      // Mock exec for launching app
-      const mockExecAsync = vi.fn().mockResolvedValue('');
-      vi.mocked(promisify).mockReturnValue(mockExecAsync);
+      // Mock execAsync for launching app
+      const mockExecAsync = (cmd: string) => {
+        return Promise.resolve('');
+      };
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
 
-      await tool.handler(args, mockExecutor);
+      await tool.handler(args, mockExecutor, mockExecAsync);
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(executorCalls[0]).toEqual({
+        command: [
           'xcodebuild',
           '-project',
           '/path/to/project.xcodeproj',
@@ -366,10 +388,10 @@ describe('build_run_mac_proj', () => {
           'platform=macOS',
           'build',
         ],
-        'macOS Build',
-        true,
-        undefined,
-      );
+        description: 'macOS Build',
+        logOutput: true,
+        timeout: undefined,
+      });
     });
   });
 });

@@ -15,6 +15,7 @@ import { ToolResponse } from '../../types/common.js';
  */
 export async function stopDeviceLogCapture(
   logSessionId: string,
+  fileSystem?: any,
 ): Promise<{ logContent: string; error?: string }> {
   const session = activeDeviceLogSessions.get(logSessionId);
   if (!session) {
@@ -36,8 +37,9 @@ export async function stopDeviceLogCapture(
       `Device log capture session ${logSessionId} stopped. Log file retained at: ${logFilePath}`,
     );
 
-    await fs.promises.access(logFilePath, fs.constants.R_OK);
-    const fileContent = await fs.promises.readFile(logFilePath, 'utf-8');
+    const fsToUse = fileSystem || fs;
+    await fsToUse.promises.access(logFilePath, (fileSystem || fs).constants.R_OK);
+    const fileContent = await fsToUse.promises.readFile(logFilePath, 'utf-8');
     log('info', `Successfully read device log content from ${logFilePath}`);
     return { logContent: fileContent };
   } catch (error) {
@@ -47,12 +49,13 @@ export async function stopDeviceLogCapture(
   }
 }
 
-const stopDeviceLogCapToolHandler = async (args: {
-  logSessionId: string;
-}): Promise<ToolResponse> => {
+const stopDeviceLogCapToolHandler = async (
+  args: { logSessionId: string },
+  fileSystem?: any,
+): Promise<ToolResponse> => {
   const { logSessionId } = args;
 
-  const { logContent, error } = await stopDeviceLogCapture(logSessionId);
+  const { logContent, error } = await stopDeviceLogCapture(logSessionId, fileSystem);
 
   if (error) {
     return {

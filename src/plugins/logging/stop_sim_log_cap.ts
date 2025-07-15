@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { stopLogCapture } from '../../utils/index.js';
+import { stopLogCapture as _stopLogCapture } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
@@ -14,12 +14,19 @@ function createTextContent(text: string): { type: string; text: string } {
   return { type: 'text', text };
 }
 
-async function stopSimLogCapToolHandler(params: { logSessionId: string }): Promise<ToolResponse> {
+async function stopSimLogCapToolHandler(
+  params: { logSessionId: string },
+  stopLogCapture?: (logSessionId: string) => Promise<{ logContent: string; error?: string }>,
+): Promise<ToolResponse> {
   const validationResult = validateRequiredParam('logSessionId', params.logSessionId);
   if (!validationResult.isValid) {
     return validationResult.errorResponse;
   }
-  const { logContent, error } = await stopLogCapture(params.logSessionId);
+
+  // Use injected dependency or default import
+  const stopLogCaptureFunc = stopLogCapture || _stopLogCapture;
+
+  const { logContent, error } = await stopLogCaptureFunc(params.logSessionId);
   if (error) {
     return {
       content: [

@@ -129,6 +129,9 @@ function formatTestSummary(summary: Record<string, unknown>): string {
 async function handleTestLogic(
   params: Record<string, unknown>,
   executor?: CommandExecutor,
+  _tempDirDeps?: any,
+  _buildUtilsDeps?: any,
+  _fileSystemDeps?: any,
 ): Promise<ToolResponse> {
   log(
     'info',
@@ -231,7 +234,13 @@ export default {
       .optional()
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    tempDirDeps?: any,
+    buildUtilsDeps?: any,
+    fileSystemDeps?: any,
+  ): Promise<ToolResponse> {
     const params = args;
     return handleTestLogic(
       {
@@ -241,6 +250,9 @@ export default {
         platform: XcodePlatform.macOS,
       },
       executor,
+      tempDirDeps,
+      buildUtilsDeps,
+      fileSystemDeps,
     );
   },
 };

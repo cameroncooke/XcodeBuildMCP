@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import getDeviceAppPathProj from '../get_device_app_path_proj.ts';
 
@@ -45,10 +45,6 @@ describe('get_device_app_path_proj plugin', () => {
     });
   });
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation failure response for missing projectPath', async () => {
       const result = await getDeviceAppPathProj.handler({
@@ -85,13 +81,28 @@ describe('get_device_app_path_proj plugin', () => {
     });
 
     it('should generate correct xcodebuild command for iOS', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output:
-          'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const calls: Array<{
+        args: any[];
+        description: string;
+        suppressErrors: boolean;
+        workingDirectory: string | undefined;
+      }> = [];
+
+      const mockExecutor = (
+        args: any[],
+        description: string,
+        suppressErrors: boolean,
+        workingDirectory: string | undefined,
+      ) => {
+        calls.push({ args, description, suppressErrors, workingDirectory });
+        return Promise.resolve({
+          success: true,
+          output:
+            'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
 
       await getDeviceAppPathProj.handler(
         {
@@ -101,8 +112,9 @@ describe('get_device_app_path_proj plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: [
           'xcodebuild',
           '-showBuildSettings',
           '-project',
@@ -114,20 +126,35 @@ describe('get_device_app_path_proj plugin', () => {
           '-destination',
           'generic/platform=iOS',
         ],
-        'Get App Path',
-        true,
-        undefined,
-      );
+        description: 'Get App Path',
+        suppressErrors: true,
+        workingDirectory: undefined,
+      });
     });
 
     it('should generate correct xcodebuild command for watchOS', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output:
-          'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-watchos\nFULL_PRODUCT_NAME = MyApp.app\n',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const calls: Array<{
+        args: any[];
+        description: string;
+        suppressErrors: boolean;
+        workingDirectory: string | undefined;
+      }> = [];
+
+      const mockExecutor = (
+        args: any[],
+        description: string,
+        suppressErrors: boolean,
+        workingDirectory: string | undefined,
+      ) => {
+        calls.push({ args, description, suppressErrors, workingDirectory });
+        return Promise.resolve({
+          success: true,
+          output:
+            'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-watchos\nFULL_PRODUCT_NAME = MyApp.app\n',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
 
       await getDeviceAppPathProj.handler(
         {
@@ -138,8 +165,9 @@ describe('get_device_app_path_proj plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: [
           'xcodebuild',
           '-showBuildSettings',
           '-project',
@@ -151,10 +179,10 @@ describe('get_device_app_path_proj plugin', () => {
           '-destination',
           'generic/platform=watchOS',
         ],
-        'Get App Path',
-        true,
-        undefined,
-      );
+        description: 'Get App Path',
+        suppressErrors: true,
+        workingDirectory: undefined,
+      });
     });
 
     it('should return exact successful app path retrieval response', async () => {
@@ -237,13 +265,28 @@ describe('get_device_app_path_proj plugin', () => {
     });
 
     it('should include optional configuration parameter in command', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output:
-          'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Release-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const calls: Array<{
+        args: any[];
+        description: string;
+        suppressErrors: boolean;
+        workingDirectory: string | undefined;
+      }> = [];
+
+      const mockExecutor = (
+        args: any[],
+        description: string,
+        suppressErrors: boolean,
+        workingDirectory: string | undefined,
+      ) => {
+        calls.push({ args, description, suppressErrors, workingDirectory });
+        return Promise.resolve({
+          success: true,
+          output:
+            'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Release-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
 
       await getDeviceAppPathProj.handler(
         {
@@ -254,8 +297,9 @@ describe('get_device_app_path_proj plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: [
           'xcodebuild',
           '-showBuildSettings',
           '-project',
@@ -267,14 +311,16 @@ describe('get_device_app_path_proj plugin', () => {
           '-destination',
           'generic/platform=iOS',
         ],
-        'Get App Path',
-        true,
-        undefined,
-      );
+        description: 'Get App Path',
+        suppressErrors: true,
+        workingDirectory: undefined,
+      });
     });
 
     it('should return exact exception handling response', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+      const mockExecutor = () => {
+        return Promise.reject(new Error('Network error'));
+      };
 
       const result = await getDeviceAppPathProj.handler(
         {
@@ -296,7 +342,9 @@ describe('get_device_app_path_proj plugin', () => {
     });
 
     it('should return exact string error handling response', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockExecutor = () => {
+        return Promise.reject('String error');
+      };
 
       const result = await getDeviceAppPathProj.handler(
         {
