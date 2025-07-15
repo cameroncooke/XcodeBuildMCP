@@ -7,8 +7,8 @@ import { activeDeviceLogSessions } from '../start_device_log_cap.ts';
 
 // Note: Logger is allowed to execute normally (integration testing pattern)
 
-// Mock file system interface
-interface MockFileSystem {
+// Test file system interface
+interface TestFileSystem {
   promises: {
     access: (path: string, mode: number) => Promise<void>;
     readFile: (path: string, encoding: string) => Promise<string>;
@@ -18,8 +18,8 @@ interface MockFileSystem {
   };
 }
 
-// Create mock file system executor
-function createMockFileSystemExecutor(): MockFileSystem {
+// Create test file system executor
+function createTestFileSystemExecutor(): TestFileSystem {
   let accessCalls: any[] = [];
   let accessShouldThrow = false;
   let accessError: any = null;
@@ -29,7 +29,7 @@ function createMockFileSystemExecutor(): MockFileSystem {
   let readFileError: any = null;
   let readFileContent = '';
 
-  const mockFs: MockFileSystem = {
+  const testFs: TestFileSystem = {
     promises: {
       access: function (path: string, mode: number) {
         // Track calls manually
@@ -56,12 +56,12 @@ function createMockFileSystemExecutor(): MockFileSystem {
   };
 
   // Add configuration methods
-  (mockFs.promises.access as any).configure = function (shouldThrow: boolean, error: any) {
+  (testFs.promises.access as any).configure = function (shouldThrow: boolean, error: any) {
     accessShouldThrow = shouldThrow;
     accessError = error;
   };
 
-  (mockFs.promises.readFile as any).configure = function (
+  (testFs.promises.readFile as any).configure = function (
     shouldThrow: boolean,
     error: any,
     content: string,
@@ -71,21 +71,21 @@ function createMockFileSystemExecutor(): MockFileSystem {
     readFileContent = content;
   };
 
-  (mockFs.promises.access as any).getCalls = () => accessCalls;
-  (mockFs.promises.readFile as any).getCalls = () => readFileCalls;
+  (testFs.promises.access as any).getCalls = () => accessCalls;
+  (testFs.promises.readFile as any).getCalls = () => readFileCalls;
 
-  return mockFs;
+  return testFs;
 }
 
 describe('stop_device_log_cap plugin', () => {
-  let mockFileSystem: MockFileSystem;
+  let testFileSystem: TestFileSystem;
 
   beforeEach(() => {
-    mockFileSystem = createMockFileSystemExecutor();
+    testFileSystem = createTestFileSystemExecutor();
 
-    // Reset mock state
-    (mockFileSystem.promises.access as any).configure(false, null);
-    (mockFileSystem.promises.readFile as any).configure(false, null, '');
+    // Reset test state
+    (testFileSystem.promises.access as any).configure(false, null);
+    (testFileSystem.promises.readFile as any).configure(false, null, '');
 
     // Clear actual active sessions
     activeDeviceLogSessions.clear();
@@ -120,14 +120,14 @@ describe('stop_device_log_cap plugin', () => {
   });
 
   describe('Handler Functionality', () => {
-    // Helper function to create a mock process
-    function createMockProcess(
+    // Helper function to create a test process
+    function createTestProcess(
       options: {
         killed?: boolean;
         exitCode?: number | null;
       } = {},
     ) {
-      const mockProcess = {
+      const testProcess = {
         killed: options.killed || false,
         exitCode: options.exitCode !== undefined ? options.exitCode : null,
         killCalls: [] as string[],
@@ -137,7 +137,7 @@ describe('stop_device_log_cap plugin', () => {
         },
       };
 
-      return mockProcess;
+      return testProcess;
     }
 
     it('should handle stop log capture when session not found', async () => {
@@ -145,7 +145,7 @@ describe('stop_device_log_cap plugin', () => {
         {
           logSessionId: 'device-log-00008110-001A2C3D4E5F-com.example.MyApp',
         },
-        mockFileSystem,
+        testFileSystem,
       );
 
       expect(result.content[0].text).toBe(
@@ -155,146 +155,146 @@ describe('stop_device_log_cap plugin', () => {
     });
 
     it('should handle successful log capture stop', async () => {
-      const mockSessionId = 'test-session-123';
-      const mockLogFilePath = '/tmp/xcodemcp_device_log_test-session-123.log';
-      const mockLogContent = 'Device log content here...';
+      const testSessionId = 'test-session-123';
+      const testLogFilePath = '/tmp/xcodemcp_device_log_test-session-123.log';
+      const testLogContent = 'Device log content here...';
 
-      // Mock active session
-      const mockProcess = createMockProcess({
+      // Test active session
+      const testProcess = createTestProcess({
         killed: false,
         exitCode: null,
       });
 
-      activeDeviceLogSessions.set(mockSessionId, {
-        process: mockProcess,
-        logFilePath: mockLogFilePath,
+      activeDeviceLogSessions.set(testSessionId, {
+        process: testProcess,
+        logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
         bundleId: 'com.example.MyApp',
       });
 
-      // Configure mock file system for successful operation
-      (mockFileSystem.promises.access as any).configure(false, null);
-      (mockFileSystem.promises.readFile as any).configure(false, null, mockLogContent);
+      // Configure test file system for successful operation
+      (testFileSystem.promises.access as any).configure(false, null);
+      (testFileSystem.promises.readFile as any).configure(false, null, testLogContent);
 
       const result = await plugin.handler(
         {
-          logSessionId: mockSessionId,
+          logSessionId: testSessionId,
         },
-        mockFileSystem,
+        testFileSystem,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: `✅ Device log capture session stopped successfully\n\nSession ID: ${mockSessionId}\n\n--- Captured Logs ---\n${mockLogContent}`,
+            text: `✅ Device log capture session stopped successfully\n\nSession ID: ${testSessionId}\n\n--- Captured Logs ---\n${testLogContent}`,
           },
         ],
       });
       expect(result.isError).toBeUndefined();
-      expect(mockProcess.killCalls).toEqual(['SIGTERM']);
-      expect(activeDeviceLogSessions.has(mockSessionId)).toBe(false);
+      expect(testProcess.killCalls).toEqual(['SIGTERM']);
+      expect(activeDeviceLogSessions.has(testSessionId)).toBe(false);
     });
 
     it('should handle already killed process', async () => {
-      const mockSessionId = 'test-session-456';
-      const mockLogFilePath = '/tmp/xcodemcp_device_log_test-session-456.log';
-      const mockLogContent = 'Device log content...';
+      const testSessionId = 'test-session-456';
+      const testLogFilePath = '/tmp/xcodemcp_device_log_test-session-456.log';
+      const testLogContent = 'Device log content...';
 
-      // Mock active session with already killed process
-      const mockProcess = createMockProcess({
+      // Test active session with already killed process
+      const testProcess = createTestProcess({
         killed: true,
         exitCode: 0,
       });
 
-      activeDeviceLogSessions.set(mockSessionId, {
-        process: mockProcess,
-        logFilePath: mockLogFilePath,
+      activeDeviceLogSessions.set(testSessionId, {
+        process: testProcess,
+        logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
         bundleId: 'com.example.MyApp',
       });
 
-      // Configure mock file system for successful operation
-      (mockFileSystem.promises.access as any).configure(false, null);
-      (mockFileSystem.promises.readFile as any).configure(false, null, mockLogContent);
+      // Configure test file system for successful operation
+      (testFileSystem.promises.access as any).configure(false, null);
+      (testFileSystem.promises.readFile as any).configure(false, null, testLogContent);
 
       const result = await plugin.handler(
         {
-          logSessionId: mockSessionId,
+          logSessionId: testSessionId,
         },
-        mockFileSystem,
+        testFileSystem,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: `✅ Device log capture session stopped successfully\n\nSession ID: ${mockSessionId}\n\n--- Captured Logs ---\n${mockLogContent}`,
+            text: `✅ Device log capture session stopped successfully\n\nSession ID: ${testSessionId}\n\n--- Captured Logs ---\n${testLogContent}`,
           },
         ],
       });
-      expect(mockProcess.killCalls).toEqual([]); // Should not kill already killed process
+      expect(testProcess.killCalls).toEqual([]); // Should not kill already killed process
     });
 
     it('should handle file access failure', async () => {
-      const mockSessionId = 'test-session-789';
-      const mockLogFilePath = '/tmp/xcodemcp_device_log_test-session-789.log';
+      const testSessionId = 'test-session-789';
+      const testLogFilePath = '/tmp/xcodemcp_device_log_test-session-789.log';
 
-      // Mock active session
-      const mockProcess = createMockProcess({
+      // Test active session
+      const testProcess = createTestProcess({
         killed: false,
         exitCode: null,
       });
 
-      activeDeviceLogSessions.set(mockSessionId, {
-        process: mockProcess,
-        logFilePath: mockLogFilePath,
+      activeDeviceLogSessions.set(testSessionId, {
+        process: testProcess,
+        logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
         bundleId: 'com.example.MyApp',
       });
 
-      // Configure mock file system for access failure
-      (mockFileSystem.promises.access as any).configure(true, new Error('File not found'));
+      // Configure test file system for access failure
+      (testFileSystem.promises.access as any).configure(true, new Error('File not found'));
 
       const result = await plugin.handler(
         {
-          logSessionId: mockSessionId,
+          logSessionId: testSessionId,
         },
-        mockFileSystem,
+        testFileSystem,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: `Failed to stop device log capture session ${mockSessionId}: File not found`,
+            text: `Failed to stop device log capture session ${testSessionId}: File not found`,
           },
         ],
         isError: true,
       });
-      expect(activeDeviceLogSessions.has(mockSessionId)).toBe(false); // Session still removed
+      expect(activeDeviceLogSessions.has(testSessionId)).toBe(false); // Session still removed
     });
 
     it('should handle file read failure', async () => {
-      const mockSessionId = 'test-session-abc';
-      const mockLogFilePath = '/tmp/xcodemcp_device_log_test-session-abc.log';
+      const testSessionId = 'test-session-abc';
+      const testLogFilePath = '/tmp/xcodemcp_device_log_test-session-abc.log';
 
-      // Mock active session
-      const mockProcess = createMockProcess({
+      // Test active session
+      const testProcess = createTestProcess({
         killed: false,
         exitCode: null,
       });
 
-      activeDeviceLogSessions.set(mockSessionId, {
-        process: mockProcess,
-        logFilePath: mockLogFilePath,
+      activeDeviceLogSessions.set(testSessionId, {
+        process: testProcess,
+        logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
         bundleId: 'com.example.MyApp',
       });
 
-      // Configure mock file system for successful access but failed read
-      (mockFileSystem.promises.access as any).configure(false, null);
-      (mockFileSystem.promises.readFile as any).configure(
+      // Configure test file system for successful access but failed read
+      (testFileSystem.promises.access as any).configure(false, null);
+      (testFileSystem.promises.readFile as any).configure(
         true,
         new Error('Read permission denied'),
         '',
@@ -302,16 +302,16 @@ describe('stop_device_log_cap plugin', () => {
 
       const result = await plugin.handler(
         {
-          logSessionId: mockSessionId,
+          logSessionId: testSessionId,
         },
-        mockFileSystem,
+        testFileSystem,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: `Failed to stop device log capture session ${mockSessionId}: Read permission denied`,
+            text: `Failed to stop device log capture session ${testSessionId}: Read permission denied`,
           },
         ],
         isError: true,
@@ -319,37 +319,37 @@ describe('stop_device_log_cap plugin', () => {
     });
 
     it('should handle string error objects', async () => {
-      const mockSessionId = 'test-session-def';
-      const mockLogFilePath = '/tmp/xcodemcp_device_log_test-session-def.log';
+      const testSessionId = 'test-session-def';
+      const testLogFilePath = '/tmp/xcodemcp_device_log_test-session-def.log';
 
-      // Mock active session
-      const mockProcess = createMockProcess({
+      // Test active session
+      const testProcess = createTestProcess({
         killed: false,
         exitCode: null,
       });
 
-      activeDeviceLogSessions.set(mockSessionId, {
-        process: mockProcess,
-        logFilePath: mockLogFilePath,
+      activeDeviceLogSessions.set(testSessionId, {
+        process: testProcess,
+        logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
         bundleId: 'com.example.MyApp',
       });
 
-      // Configure mock file system for access failure with string error
-      (mockFileSystem.promises.access as any).configure(true, 'String error message');
+      // Configure test file system for access failure with string error
+      (testFileSystem.promises.access as any).configure(true, 'String error message');
 
       const result = await plugin.handler(
         {
-          logSessionId: mockSessionId,
+          logSessionId: testSessionId,
         },
-        mockFileSystem,
+        testFileSystem,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: `Failed to stop device log capture session ${mockSessionId}: String error message`,
+            text: `Failed to stop device log capture session ${testSessionId}: String error message`,
           },
         ],
         isError: true,

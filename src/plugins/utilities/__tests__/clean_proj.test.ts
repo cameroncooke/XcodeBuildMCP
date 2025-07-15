@@ -8,13 +8,21 @@
  * response validation and comprehensive parameter testing.
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 import cleanProj from '../clean_proj.ts';
 
 describe('clean_proj plugin tests', () => {
+  let executorCalls: Array<{
+    command: string[];
+    logPrefix?: string;
+    useShell?: boolean;
+    env?: Record<string, string>;
+  }>;
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    executorCalls = [];
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -88,19 +96,30 @@ describe('clean_proj plugin tests', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return success response for valid clean project request', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Clean succeeded',
         error: undefined,
         process: { pid: 12345 },
       });
 
+      // Manual call tracking
+      const trackingExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        executorCalls.push({ command, logPrefix, useShell, env });
+        return await mockExecutor(command, logPrefix, useShell, env);
+      };
+
       const result = await cleanProj.handler(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
         },
-        mockExecutor,
+        trackingExecutor,
       );
 
       expect(result).toEqual({
@@ -112,33 +131,46 @@ describe('clean_proj plugin tests', () => {
         ],
       });
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcodebuild',
-          '-project',
-          '/path/to/MyProject.xcodeproj',
-          '-scheme',
-          'MyScheme',
-          '-configuration',
-          'Debug',
-          '-skipMacroValidation',
-          '-destination',
-          'platform=macOS',
-          'clean',
-        ],
-        'Clean',
-        true,
-        undefined,
-      );
+      expect(executorCalls).toEqual([
+        {
+          command: [
+            'xcodebuild',
+            '-project',
+            '/path/to/MyProject.xcodeproj',
+            '-scheme',
+            'MyScheme',
+            '-configuration',
+            'Debug',
+            '-skipMacroValidation',
+            '-destination',
+            'platform=macOS',
+            'clean',
+          ],
+          logPrefix: 'Clean',
+          useShell: true,
+          env: undefined,
+        },
+      ]);
     });
 
     it('should return success response with all optional parameters', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Clean succeeded',
         error: undefined,
         process: { pid: 12345 },
       });
+
+      // Manual call tracking
+      const trackingExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        executorCalls.push({ command, logPrefix, useShell, env });
+        return await mockExecutor(command, logPrefix, useShell, env);
+      };
 
       const result = await cleanProj.handler(
         {
@@ -149,7 +181,7 @@ describe('clean_proj plugin tests', () => {
           extraArgs: ['--verbose'],
           preferXcodebuild: true,
         },
-        mockExecutor,
+        trackingExecutor,
       );
 
       expect(result).toEqual({
@@ -161,42 +193,55 @@ describe('clean_proj plugin tests', () => {
         ],
       });
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcodebuild',
-          '-project',
-          '/path/to/MyProject.xcodeproj',
-          '-scheme',
-          'MyScheme',
-          '-configuration',
-          'Release',
-          '-skipMacroValidation',
-          '-destination',
-          'platform=macOS',
-          '-derivedDataPath',
-          '/path/to/derived/data',
-          '--verbose',
-          'clean',
-        ],
-        'Clean',
-        true,
-        undefined,
-      );
+      expect(executorCalls).toEqual([
+        {
+          command: [
+            'xcodebuild',
+            '-project',
+            '/path/to/MyProject.xcodeproj',
+            '-scheme',
+            'MyScheme',
+            '-configuration',
+            'Release',
+            '-skipMacroValidation',
+            '-destination',
+            'platform=macOS',
+            '-derivedDataPath',
+            '/path/to/derived/data',
+            '--verbose',
+            'clean',
+          ],
+          logPrefix: 'Clean',
+          useShell: true,
+          env: undefined,
+        },
+      ]);
     });
 
     it('should return success response with minimal parameters and defaults', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Clean succeeded',
         error: undefined,
         process: { pid: 12345 },
       });
 
+      // Manual call tracking
+      const trackingExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        executorCalls.push({ command, logPrefix, useShell, env });
+        return await mockExecutor(command, logPrefix, useShell, env);
+      };
+
       const result = await cleanProj.handler(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
         },
-        mockExecutor,
+        trackingExecutor,
       );
 
       expect(result).toEqual({
@@ -208,28 +253,30 @@ describe('clean_proj plugin tests', () => {
         ],
       });
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcodebuild',
-          '-project',
-          '/path/to/MyProject.xcodeproj',
-          '-scheme',
-          '',
-          '-configuration',
-          'Debug',
-          '-skipMacroValidation',
-          '-destination',
-          'platform=macOS',
-          'clean',
-        ],
-        'Clean',
-        true,
-        undefined,
-      );
+      expect(executorCalls).toEqual([
+        {
+          command: [
+            'xcodebuild',
+            '-project',
+            '/path/to/MyProject.xcodeproj',
+            '-scheme',
+            '',
+            '-configuration',
+            'Debug',
+            '-skipMacroValidation',
+            '-destination',
+            'platform=macOS',
+            'clean',
+          ],
+          logPrefix: 'Clean',
+          useShell: true,
+          env: undefined,
+        },
+      ]);
     });
 
     it('should return error response for command failure', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Clean failed',
@@ -276,7 +323,7 @@ describe('clean_proj plugin tests', () => {
     });
 
     it('should handle spawn process error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn failed'));
+      const mockExecutor = createMockExecutor(new Error('spawn failed'));
 
       const result = await cleanProj.handler(
         {
