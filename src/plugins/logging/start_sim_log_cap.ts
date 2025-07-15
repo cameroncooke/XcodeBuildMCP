@@ -14,17 +14,30 @@ function createTextContent(text: string): { type: string; text: string } {
   return { type: 'text', text };
 }
 
-async function startSimLogCapToolHandler(params: {
-  simulatorUuid: string;
-  bundleId: string;
-  captureConsole?: boolean;
-}): Promise<ToolResponse> {
+async function startSimLogCapToolHandler(
+  params: {
+    simulatorUuid: string;
+    bundleId: string;
+    captureConsole?: boolean;
+  },
+  startLogCaptureFunction?: (params: {
+    simulatorUuid: string;
+    bundleId: string;
+    captureConsole?: boolean;
+  }) => Promise<{
+    sessionId: string;
+    logFilePath: string;
+    processes: any[];
+    error?: string;
+  }>,
+): Promise<ToolResponse> {
   const validationResult = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!validationResult.isValid) {
     return validationResult.errorResponse;
   }
 
-  const { sessionId, error } = await startLogCapture(params);
+  const logCaptureFunction = startLogCaptureFunction || startLogCapture;
+  const { sessionId, error } = await logCaptureFunction(params);
   if (error) {
     return {
       content: [createTextContent(`Error starting log capture: ${error}`)],

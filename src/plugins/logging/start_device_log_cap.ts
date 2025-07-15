@@ -140,13 +140,23 @@ async function cleanOldDeviceLogs(): Promise<void> {
   );
 }
 
-const startDeviceLogCapToolHandler = async (args: {
-  deviceId: string;
-  bundleId: string;
-}): Promise<ToolResponse> => {
+const startDeviceLogCapToolHandler = async (
+  args: {
+    deviceId: string;
+    bundleId: string;
+  },
+  executor?: any,
+  startLogCapture?: (params: {
+    deviceUuid: string;
+    bundleId: string;
+  }) => Promise<{ sessionId: string; error?: string }>,
+): Promise<ToolResponse> => {
   const { deviceId, bundleId } = args;
 
-  const { sessionId, error } = await startDeviceLogCapture({
+  // Use injected startLogCapture function if provided, otherwise use default
+  const logCaptureFunction = startLogCapture || startDeviceLogCapture;
+
+  const { sessionId, error } = await logCaptureFunction({
     deviceUuid: deviceId,
     bundleId: bundleId,
   });

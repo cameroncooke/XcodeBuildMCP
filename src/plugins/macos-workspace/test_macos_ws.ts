@@ -44,9 +44,19 @@ const XcodePlatform = {
  */
 
 // Parse xcresult bundle using xcrun xcresulttool
-async function parseXcresultBundle(resultBundlePath: string): Promise<string> {
+async function parseXcresultBundle(
+  resultBundlePath: string,
+  utilDeps?: {
+    promisify: <T extends (...args: any[]) => any>(
+      fn: T,
+    ) => T extends (...args: infer Args) => infer Return
+      ? (...args: Args) => Promise<Return>
+      : never;
+  },
+): Promise<string> {
   try {
-    const execAsync = promisify(exec);
+    const promisifyFn = utilDeps?.promisify || promisify;
+    const execAsync = promisifyFn(exec);
     const { stdout } = await execAsync(
       `xcrun xcresulttool get test-results summary --path "${resultBundlePath}"`,
     );
@@ -129,6 +139,22 @@ function formatTestSummary(summary: Record<string, unknown>): string {
 async function handleTestLogic(
   params: Record<string, unknown>,
   executor?: CommandExecutor,
+  tempDirDeps?: {
+    mkdtemp: (prefix: string) => Promise<string>;
+    rm: (path: string, options?: { recursive?: boolean; force?: boolean }) => Promise<void>;
+    join: (...paths: string[]) => string;
+    tmpdir: () => string;
+  },
+  utilDeps?: {
+    promisify: <T extends (...args: any[]) => any>(
+      fn: T,
+    ) => T extends (...args: infer Args) => infer Return
+      ? (...args: Args) => Promise<Return>
+      : never;
+  },
+  fileSystemDeps?: {
+    stat: (path: string) => Promise<{ isDirectory: () => boolean }>;
+  },
 ): Promise<ToolResponse> {
   log(
     'info',
@@ -137,8 +163,12 @@ async function handleTestLogic(
 
   try {
     // Create temporary directory for xcresult bundle
-    const tempDir = await mkdtemp(join(tmpdir(), 'xcodebuild-test-'));
-    const resultBundlePath = join(tempDir, 'TestResults.xcresult');
+    const mkdtempFn = tempDirDeps?.mkdtemp || mkdtemp;
+    const joinFn = tempDirDeps?.join || join;
+    const tmpdirFn = tempDirDeps?.tmpdir || tmpdir;
+
+    const tempDir = await mkdtempFn(joinFn(tmpdirFn(), 'xcodebuild-test-'));
+    const resultBundlePath = joinFn(tempDir, 'TestResults.xcresult');
 
     // Add resultBundlePath to extraArgs
     const extraArgs = [...(params.extraArgs || []), `-resultBundlePath`, resultBundlePath];
@@ -169,19 +199,20 @@ async function handleTestLogic(
 
       // Check if the file exists
       try {
-        const { stat } = await import('fs/promises');
-        await stat(resultBundlePath);
+        const statFn = fileSystemDeps?.stat || (await import('fs/promises')).stat;
+        await statFn(resultBundlePath);
         log('info', `xcresult bundle exists at: ${resultBundlePath}`);
       } catch {
         log('warn', `xcresult bundle does not exist at: ${resultBundlePath}`);
         throw new Error(`xcresult bundle not found at ${resultBundlePath}`);
       }
 
-      const testSummary = await parseXcresultBundle(resultBundlePath);
+      const testSummary = await parseXcresultBundle(resultBundlePath, utilDeps);
       log('info', 'Successfully parsed xcresult bundle');
 
       // Clean up temporary directory
-      await rm(tempDir, { recursive: true, force: true });
+      const rmFn = tempDirDeps?.rm || rm;
+      await rmFn(tempDir, { recursive: true, force: true });
 
       // Return combined result - preserve isError from testResult (test failures should be marked as errors)
       return {
@@ -200,7 +231,8 @@ async function handleTestLogic(
 
       // Clean up temporary directory even if parsing fails
       try {
-        await rm(tempDir, { recursive: true, force: true });
+        const rmFn = tempDirDeps?.rm || rm;
+        await rmFn(tempDir, { recursive: true, force: true });
       } catch (cleanupError) {
         log('warn', `Failed to clean up temporary directory: ${cleanupError}`);
       }
@@ -233,7 +265,26 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    tempDirDeps?: {
+      mkdtemp: (prefix: string) => Promise<string>;
+      rm: (path: string, options?: { recursive?: boolean; force?: boolean }) => Promise<void>;
+      join: (...paths: string[]) => string;
+      tmpdir: () => string;
+    },
+    utilDeps?: {
+      promisify: <T extends (...args: any[]) => any>(
+        fn: T,
+      ) => T extends (...args: infer Args) => infer Return
+        ? (...args: Args) => Promise<Return>
+        : never;
+    },
+    fileSystemDeps?: {
+      stat: (path: string) => Promise<{ isDirectory: () => boolean }>;
+    },
+  ): Promise<ToolResponse> {
     const params = args;
     return handleTestLogic(
       {
@@ -243,6 +294,9 @@ export default {
         platform: XcodePlatform.macOS,
       },
       executor,
+      tempDirDeps,
+      utilDeps,
+      fileSystemDeps,
     );
   },
 };

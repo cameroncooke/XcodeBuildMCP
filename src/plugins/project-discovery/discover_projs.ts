@@ -7,10 +7,10 @@
 
 import { z } from 'zod';
 import path from 'node:path';
-import fs from 'node:fs/promises';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
+import { FileSystemExecutor, defaultFileSystemExecutor } from '../../utils/command.js';
 
 // Helper to create a standard text response content.
 function createTextContent(text: string): { type: string; text: string } {
@@ -29,7 +29,8 @@ async function _findProjectsRecursive(
   workspaceRootAbs: string,
   currentDepth: number,
   maxDepth: number,
-  results: Array<{ name: string; path: string; type: string; relativePath: string }>,
+  results: { projects: string[]; workspaces: string[] },
+  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
 ): Promise<void> {
   // Explicit depth check (now simplified as maxDepth is always non-negative)
   if (currentDepth >= maxDepth) {
@@ -41,7 +42,7 @@ async function _findProjectsRecursive(
   const normalizedWorkspaceRoot = path.normalize(workspaceRootAbs);
 
   try {
-    const entries = await fs.readdir(currentDirAbs, { withFileTypes: true });
+    const entries = await fileSystemExecutor.readdir(currentDirAbs, { withFileTypes: true });
     for (const entry of entries) {
       const absoluteEntryPath = path.join(currentDirAbs, entry.name);
       const relativePath = path.relative(workspaceRootAbs, absoluteEntryPath);
@@ -89,6 +90,7 @@ async function _findProjectsRecursive(
             currentDepth + 1,
             maxDepth,
             results,
+            fileSystemExecutor,
           );
         }
       }
@@ -127,7 +129,10 @@ async function _findProjectsRecursive(
 /**
  * Internal logic for discovering projects.
  */
-async function _handleDiscoveryLogic(params: Record<string, unknown>): Promise<ToolResponse> {
+async function _handleDiscoveryLogic(
+  params: Record<string, unknown>,
+  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+): Promise<ToolResponse> {
   const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = params;
 
   // Calculate and validate the absolute scan path
@@ -151,7 +156,7 @@ async function _handleDiscoveryLogic(params: Record<string, unknown>): Promise<T
 
   try {
     // Ensure the scan path exists and is a directory
-    const stats = await fs.stat(absoluteScanPath);
+    const stats = await fileSystemExecutor.stat(absoluteScanPath);
     if (!stats.isDirectory()) {
       const errorMsg = `Scan path is not a directory: ${absoluteScanPath}`;
       log('error', errorMsg);
@@ -192,7 +197,14 @@ async function _handleDiscoveryLogic(params: Record<string, unknown>): Promise<T
   }
 
   // Start the recursive scan from the validated absolute path
-  await _findProjectsRecursive(absoluteScanPath, workspaceRoot, 0, maxDepth, results);
+  await _findProjectsRecursive(
+    absoluteScanPath,
+    workspaceRoot,
+    0,
+    maxDepth,
+    results,
+    fileSystemExecutor,
+  );
 
   log(
     'info',
@@ -249,13 +261,16 @@ export default {
   description:
     'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
   schema: schema,
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    fileSystemExecutor?: FileSystemExecutor,
+  ): Promise<ToolResponse> {
     const params = args;
     const workspaceRootValidation = validateRequiredParam('workspaceRoot', params.workspaceRoot);
     if (!workspaceRootValidation.isValid) {
       return workspaceRootValidation.errorResponse;
     }
 
-    return _handleDiscoveryLogic(params);
+    return _handleDiscoveryLogic(params, fileSystemExecutor);
   },
 };

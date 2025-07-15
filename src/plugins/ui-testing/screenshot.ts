@@ -30,15 +30,19 @@ export default {
     args: Record<string, unknown>,
     executor?: CommandExecutor,
     fileSystemExecutor?: FileSystemExecutor,
+    pathDeps?: { tmpdir?: () => string; join?: (...paths: string[]) => string },
+    uuidDeps?: { v4?: () => string },
   ): Promise<ToolResponse> {
     const params = args;
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
 
     const { simulatorUuid } = params;
-    const tempDir = os.tmpdir();
-    const screenshotFilename = `screenshot_${uuidv4()}.png`;
-    const screenshotPath = path.join(tempDir, screenshotFilename);
+    const tempDir = pathDeps?.tmpdir ? pathDeps.tmpdir() : os.tmpdir();
+    const screenshotFilename = `screenshot_${uuidDeps?.v4 ? uuidDeps.v4() : uuidv4()}.png`;
+    const screenshotPath = pathDeps?.join
+      ? pathDeps.join(tempDir, screenshotFilename)
+      : path.join(tempDir, screenshotFilename);
     // Use xcrun simctl to take screenshot
     const commandArgs = ['xcrun', 'simctl', 'io', simulatorUuid, 'screenshot', screenshotPath];
 

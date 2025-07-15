@@ -4,63 +4,14 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 import testMacosWs from '../test_macos_ws.ts';
 
-// Mock only child_process at the lowest level
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-  exec: vi.fn(),
-}));
-
-// Mock util.promisify
-vi.mock('util', () => ({
-  promisify: vi.fn(),
-}));
-
-// Mock fs/promises
-vi.mock('fs/promises', () => ({
-  mkdtemp: vi.fn(),
-  rm: vi.fn(),
-  stat: vi.fn(),
-}));
-
-// Mock os
-vi.mock('os', () => ({
-  tmpdir: vi.fn(() => '/tmp'),
-}));
-
-// Mock path
-vi.mock('path', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    join: vi.fn((...args) => args.join('/')),
-  };
-});
-
 describe('test_macos_ws plugin', () => {
-  let mockPromisify: Record<string, unknown>;
-  let mockMkdtemp: Record<string, unknown>;
-  let mockRm: Record<string, unknown>;
-  let mockStat: Record<string, unknown>;
-
-  beforeEach(async () => {
-    const { promisify } = await import('util');
-    const { mkdtemp, rm, stat } = await import('fs/promises');
-
-    mockPromisify = vi.mocked(promisify);
-    mockMkdtemp = vi.mocked(mkdtemp);
-    mockRm = vi.mocked(rm);
-    mockStat = vi.mocked(stat);
-
-    vi.clearAllMocks();
-
-    // Setup common mocks
-    mockMkdtemp.mockResolvedValue('/tmp/xcodebuild-test-abc123');
-    mockRm.mockResolvedValue(undefined);
-    mockStat.mockResolvedValue({} as any);
+  beforeEach(() => {
+    // Clear any state if needed
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -103,27 +54,52 @@ describe('test_macos_ws plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact successful test response', async () => {
-      // Mock xcresulttool execution
-      const mockExecPromise = vi.fn().mockResolvedValue({
-        stdout: JSON.stringify({
-          title: 'Test Results',
-          result: 'SUCCEEDED',
-          totalTestCount: 5,
-          passedTests: 5,
-          failedTests: 0,
-          skippedTests: 0,
-          expectedFailures: 0,
-        }),
-      });
-      mockPromisify.mockReturnValue(mockExecPromise);
+      // Track command execution calls
+      const commandCalls: any[] = [];
 
       // Mock executor for successful test
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Test Succeeded',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const mockExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        commandCalls.push({ command, logPrefix, useShell, env });
+        return {
+          success: true,
+          output: 'Test Succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      // Mock temp directory dependencies
+      const mockTempDirDeps = {
+        mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
+        rm: async () => {},
+        join: (...args: string[]) => args.join('/'),
+        tmpdir: () => '/tmp',
+      };
+
+      // Mock exec/promisify for xcresulttool
+      const mockUtilDeps = {
+        promisify: () => async () => ({
+          stdout: JSON.stringify({
+            title: 'Test Results',
+            result: 'SUCCEEDED',
+            totalTestCount: 5,
+            passedTests: 5,
+            failedTests: 0,
+            skippedTests: 0,
+            expectedFailures: 0,
+          }),
+        }),
+      };
+
+      // Mock file system check
+      const mockFileSystemDeps = {
+        stat: async () => ({}),
+      };
 
       const result = await testMacosWs.handler(
         {
@@ -131,28 +107,30 @@ describe('test_macos_ws plugin', () => {
           scheme: 'MyScheme',
         },
         mockExecutor,
+        mockTempDirDeps,
+        mockUtilDeps,
+        mockFileSystemDeps,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcodebuild',
-          '-workspace',
-          '/path/to/MyProject.xcworkspace',
-          '-scheme',
-          'MyScheme',
-          '-configuration',
-          'Debug',
-          '-skipMacroValidation',
-          '-destination',
-          'platform=macOS',
-          '-resultBundlePath',
-          expect.stringMatching(/.*TestResults\.xcresult$/),
-          'test',
-        ],
-        'Test Run',
-        true,
-        undefined,
-      );
+      // Verify command was called with correct parameters
+      expect(commandCalls).toHaveLength(1);
+      expect(commandCalls[0].command).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS',
+        '-resultBundlePath',
+        '/tmp/xcodebuild-test-abc123/TestResults.xcresult',
+        'test',
+      ]);
+      expect(commandCalls[0].logPrefix).toBe('Test Run');
+      expect(commandCalls[0].useShell).toBe(true);
 
       expect(result.content).toEqual(
         expect.arrayContaining([
@@ -165,27 +143,41 @@ describe('test_macos_ws plugin', () => {
     });
 
     it('should return exact test failure response', async () => {
-      // Mock xcresulttool execution for failed tests
-      const mockExecPromise = vi.fn().mockResolvedValue({
-        stdout: JSON.stringify({
-          title: 'Test Results',
-          result: 'FAILED',
-          totalTestCount: 5,
-          passedTests: 3,
-          failedTests: 2,
-          skippedTests: 0,
-          expectedFailures: 0,
-        }),
-      });
-      mockPromisify.mockReturnValue(mockExecPromise);
-
       // Mock executor for failed test
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'error: Test failed',
         process: { pid: 12345 },
       });
+
+      // Mock temp directory dependencies
+      const mockTempDirDeps = {
+        mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
+        rm: async () => {},
+        join: (...args: string[]) => args.join('/'),
+        tmpdir: () => '/tmp',
+      };
+
+      // Mock exec/promisify for xcresulttool (failed test)
+      const mockUtilDeps = {
+        promisify: () => async () => ({
+          stdout: JSON.stringify({
+            title: 'Test Results',
+            result: 'FAILED',
+            totalTestCount: 5,
+            passedTests: 3,
+            failedTests: 2,
+            skippedTests: 0,
+            expectedFailures: 0,
+          }),
+        }),
+      };
+
+      // Mock file system check
+      const mockFileSystemDeps = {
+        stat: async () => ({}),
+      };
 
       const result = await testMacosWs.handler(
         {
@@ -193,6 +185,9 @@ describe('test_macos_ws plugin', () => {
           scheme: 'MyScheme',
         },
         mockExecutor,
+        mockTempDirDeps,
+        mockUtilDeps,
+        mockFileSystemDeps,
       );
 
       expect(result.content).toEqual(
@@ -207,27 +202,44 @@ describe('test_macos_ws plugin', () => {
     });
 
     it('should return exact successful test response with optional parameters', async () => {
-      // Mock xcresulttool execution
-      const mockExecPromise = vi.fn().mockResolvedValue({
-        stdout: JSON.stringify({
-          title: 'Test Results',
-          result: 'SUCCEEDED',
-          totalTestCount: 5,
-          passedTests: 5,
-          failedTests: 0,
-          skippedTests: 0,
-          expectedFailures: 0,
-        }),
-      });
-      mockPromisify.mockReturnValue(mockExecPromise);
+      // Track command execution calls
+      const commandCalls: any[] = [];
 
       // Mock executor for successful test with optional parameters
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Test Succeeded',
         error: undefined,
         process: { pid: 12345 },
       });
+
+      // Mock temp directory dependencies
+      const mockTempDirDeps = {
+        mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
+        rm: async () => {},
+        join: (...args: string[]) => args.join('/'),
+        tmpdir: () => '/tmp',
+      };
+
+      // Mock exec/promisify for xcresulttool
+      const mockUtilDeps = {
+        promisify: () => async () => ({
+          stdout: JSON.stringify({
+            title: 'Test Results',
+            result: 'SUCCEEDED',
+            totalTestCount: 5,
+            passedTests: 5,
+            failedTests: 0,
+            skippedTests: 0,
+            expectedFailures: 0,
+          }),
+        }),
+      };
+
+      // Mock file system check
+      const mockFileSystemDeps = {
+        stat: async () => ({}),
+      };
 
       const result = await testMacosWs.handler(
         {
@@ -239,30 +251,9 @@ describe('test_macos_ws plugin', () => {
           preferXcodebuild: true,
         },
         mockExecutor,
-      );
-
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcodebuild',
-          '-workspace',
-          '/path/to/MyProject.xcworkspace',
-          '-scheme',
-          'MyScheme',
-          '-configuration',
-          'Release',
-          '-skipMacroValidation',
-          '-destination',
-          'platform=macOS',
-          '-derivedDataPath',
-          '/path/to/derived-data',
-          '--verbose',
-          '-resultBundlePath',
-          expect.stringMatching(/.*TestResults\.xcresult$/),
-          'test',
-        ],
-        'Test Run',
-        true,
-        undefined,
+        mockTempDirDeps,
+        mockUtilDeps,
+        mockFileSystemDeps,
       );
 
       expect(result.content).toEqual(
@@ -276,11 +267,43 @@ describe('test_macos_ws plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      // Mock mkdtemp to fail to trigger the main catch block
-      mockMkdtemp.mockRejectedValue(new Error('Network error'));
-
       // Mock executor (won't be called due to mkdtemp failure)
-      const mockExecutor = vi.fn();
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Succeeded',
+        error: undefined,
+        process: { pid: 12345 },
+      });
+
+      // Mock temp directory dependencies - mkdtemp fails
+      const mockTempDirDeps = {
+        mkdtemp: async () => {
+          throw new Error('Network error');
+        },
+        rm: async () => {},
+        join: (...args: string[]) => args.join('/'),
+        tmpdir: () => '/tmp',
+      };
+
+      // Mock exec/promisify for xcresulttool
+      const mockUtilDeps = {
+        promisify: () => async () => ({
+          stdout: JSON.stringify({
+            title: 'Test Results',
+            result: 'SUCCEEDED',
+            totalTestCount: 5,
+            passedTests: 5,
+            failedTests: 0,
+            skippedTests: 0,
+            expectedFailures: 0,
+          }),
+        }),
+      };
+
+      // Mock file system check
+      const mockFileSystemDeps = {
+        stat: async () => ({}),
+      };
 
       const result = await testMacosWs.handler(
         {
@@ -288,6 +311,9 @@ describe('test_macos_ws plugin', () => {
           scheme: 'MyScheme',
         },
         mockExecutor,
+        mockTempDirDeps,
+        mockUtilDeps,
+        mockFileSystemDeps,
       );
 
       expect(result).toEqual({

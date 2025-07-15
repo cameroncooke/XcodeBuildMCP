@@ -1,40 +1,26 @@
-import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
+/**
+ * Pure dependency injection test for discover_projs plugin
+ *
+ * Tests the plugin structure and project discovery functionality
+ * including parameter validation, file system operations, and response formatting.
+ *
+ * Uses createMockFileSystemExecutor for file system operations.
+ */
+
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import plugin from '../discover_projs.ts';
-import * as fs from 'node:fs/promises';
-
-// Mock only the file system calls at the lowest level
-vi.mock('node:fs/promises', () => {
-  const mockFunctions = {
-    readdir: vi.fn(),
-    stat: vi.fn(),
-  };
-  return {
-    default: mockFunctions,
-    ...mockFunctions,
-  };
-});
-
-vi.mock('node:path', () => {
-  const actualPath = {
-    join: (...parts: string[]) => parts.join('/'),
-    resolve: (base: string, rel: string = '.') => (rel === '.' ? base : `${base}/${rel}`),
-    relative: (from: string, to: string) => to.replace(from, '').replace(/^\//, ''),
-    normalize: (p: string) => p,
-    dirname: (p: string) => p.split('/').slice(0, -1).join('/'),
-  };
-  return {
-    default: actualPath,
-    ...actualPath,
-  };
-});
-
-const mockStat = fs.stat as MockedFunction<typeof fs.stat>;
-const mockReaddir = fs.readdir as MockedFunction<typeof fs.readdir>;
+import { createMockFileSystemExecutor } from '../../../utils/index.js';
 
 describe('discover_projs plugin', () => {
+  let mockFileSystemExecutor: any;
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    // Create mock file system executor
+    mockFileSystemExecutor = createMockFileSystemExecutor({
+      stat: async () => ({ isDirectory: () => true }),
+      readdir: async () => [],
+    });
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -88,7 +74,7 @@ describe('discover_projs plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error when workspaceRoot validation fails', async () => {
-      const result = await plugin.handler({ workspaceRoot: null });
+      const result = await plugin.handler({ workspaceRoot: null }, mockFileSystemExecutor);
 
       expect(result).toEqual({
         content: [
@@ -102,12 +88,17 @@ describe('discover_projs plugin', () => {
     });
 
     it('should return error when scan path does not exist', async () => {
-      mockStat.mockRejectedValueOnce(new Error('ENOENT: no such file or directory'));
+      mockFileSystemExecutor.stat = async () => {
+        throw new Error('ENOENT: no such file or directory');
+      };
 
-      const result = await plugin.handler({
-        workspaceRoot: '/workspace',
-        scanPath: '.',
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: '/workspace',
+          scanPath: '.',
+        },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -121,12 +112,15 @@ describe('discover_projs plugin', () => {
     });
 
     it('should return error when scan path is not a directory', async () => {
-      mockStat.mockResolvedValueOnce({ isDirectory: () => false } as any);
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => false });
 
-      const result = await plugin.handler({
-        workspaceRoot: '/workspace',
-        scanPath: '.',
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: '/workspace',
+          scanPath: '.',
+        },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Scan path is not a directory: /workspace' }],
@@ -135,13 +129,16 @@ describe('discover_projs plugin', () => {
     });
 
     it('should return success with no projects found', async () => {
-      mockStat.mockResolvedValueOnce({ isDirectory: () => true } as any);
-      mockReaddir.mockResolvedValueOnce([]);
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.readdir = async () => [];
 
-      const result = await plugin.handler({
-        workspaceRoot: '/workspace',
-        scanPath: '.',
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: '/workspace',
+          scanPath: '.',
+        },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' }],
@@ -152,16 +149,19 @@ describe('discover_projs plugin', () => {
     });
 
     it('should return success with projects found', async () => {
-      mockStat.mockResolvedValueOnce({ isDirectory: () => true } as any);
-      mockReaddir.mockResolvedValueOnce([
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.readdir = async () => [
         { name: 'MyApp.xcodeproj', isDirectory: () => true, isSymbolicLink: () => false },
         { name: 'MyWorkspace.xcworkspace', isDirectory: () => true, isSymbolicLink: () => false },
-      ] as any);
+      ];
 
-      const result = await plugin.handler({
-        workspaceRoot: '/workspace',
-        scanPath: '.',
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: '/workspace',
+          scanPath: '.',
+        },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -178,12 +178,17 @@ describe('discover_projs plugin', () => {
     it('should handle fs error with code', async () => {
       const error = new Error('Permission denied');
       (error as any).code = 'EACCES';
-      mockStat.mockRejectedValueOnce(error);
+      mockFileSystemExecutor.stat = async () => {
+        throw error;
+      };
 
-      const result = await plugin.handler({
-        workspaceRoot: '/workspace',
-        scanPath: '.',
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: '/workspace',
+          scanPath: '.',
+        },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -197,12 +202,17 @@ describe('discover_projs plugin', () => {
     });
 
     it('should handle string error', async () => {
-      mockStat.mockRejectedValueOnce('String error');
+      mockFileSystemExecutor.stat = async () => {
+        throw 'String error';
+      };
 
-      const result = await plugin.handler({
-        workspaceRoot: '/workspace',
-        scanPath: '.',
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: '/workspace',
+          scanPath: '.',
+        },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -213,9 +223,12 @@ describe('discover_projs plugin', () => {
     });
 
     it('should handle validation error when workspaceRoot is null', async () => {
-      const result = await plugin.handler({
-        workspaceRoot: null,
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: null,
+        },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -229,20 +242,17 @@ describe('discover_projs plugin', () => {
     });
 
     it('should handle scan path outside workspace root', async () => {
-      // Mock path.normalize to make paths fall outside workspace root
-      const mockPath = await import('node:path');
-      vi.spyOn(mockPath, 'normalize').mockImplementation((p: string) => {
-        if (p.includes('outside')) return '/outside/path';
-        return '/workspace';
-      });
+      // Mock path normalization to simulate path outside workspace root
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.readdir = async () => [];
 
-      mockStat.mockResolvedValueOnce({ isDirectory: () => true } as any);
-      mockReaddir.mockResolvedValueOnce([]);
-
-      const result = await plugin.handler({
-        workspaceRoot: '/workspace',
-        scanPath: '../outside',
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: '/workspace',
+          scanPath: '../outside',
+        },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' }],
@@ -257,12 +267,17 @@ describe('discover_projs plugin', () => {
         message: 'Access denied',
         code: 'EACCES',
       };
-      mockStat.mockRejectedValueOnce(errorObject);
+      mockFileSystemExecutor.stat = async () => {
+        throw errorObject;
+      };
 
-      const result = await plugin.handler({
-        workspaceRoot: '/workspace',
-        scanPath: '.',
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: '/workspace',
+          scanPath: '.',
+        },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -273,32 +288,31 @@ describe('discover_projs plugin', () => {
     });
 
     it('should handle max depth reached during recursive scan', async () => {
-      mockStat.mockResolvedValueOnce({ isDirectory: () => true } as any);
+      let readdirCallCount = 0;
 
-      // Mock nested directory structure that exceeds max depth
-      mockReaddir
-        .mockResolvedValueOnce([
-          { name: 'subdir', isDirectory: () => true, isSymbolicLink: () => false },
-        ] as any)
-        .mockResolvedValueOnce([
-          { name: 'subdir2', isDirectory: () => true, isSymbolicLink: () => false },
-        ] as any)
-        .mockResolvedValueOnce([
-          { name: 'subdir3', isDirectory: () => true, isSymbolicLink: () => false },
-        ] as any)
-        .mockResolvedValueOnce([
-          { name: 'subdir4', isDirectory: () => true, isSymbolicLink: () => false },
-        ] as any)
-        .mockResolvedValueOnce([
-          { name: 'subdir5', isDirectory: () => true, isSymbolicLink: () => false },
-        ] as any)
-        .mockResolvedValueOnce([]); // This should not be reached due to max depth
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.readdir = async () => {
+        readdirCallCount++;
+        if (readdirCallCount <= 3) {
+          return [
+            {
+              name: `subdir${readdirCallCount}`,
+              isDirectory: () => true,
+              isSymbolicLink: () => false,
+            },
+          ];
+        }
+        return [];
+      };
 
-      const result = await plugin.handler({
-        workspaceRoot: '/workspace',
-        scanPath: '.',
-        maxDepth: 3,
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: '/workspace',
+          scanPath: '.',
+          maxDepth: 3,
+        },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' }],
@@ -309,20 +323,21 @@ describe('discover_projs plugin', () => {
     });
 
     it('should handle skipped directory types during scan', async () => {
-      mockStat.mockResolvedValueOnce({ isDirectory: () => true } as any);
-
-      // Mock directory entries including skipped directories and symbolic links
-      mockReaddir.mockResolvedValueOnce([
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.readdir = async () => [
         { name: 'build', isDirectory: () => true, isSymbolicLink: () => false },
         { name: 'DerivedData', isDirectory: () => true, isSymbolicLink: () => false },
         { name: 'symlink', isDirectory: () => true, isSymbolicLink: () => true },
         { name: 'regular.txt', isDirectory: () => false, isSymbolicLink: () => false },
-      ] as any);
+      ];
 
-      const result = await plugin.handler({
-        workspaceRoot: '/workspace',
-        scanPath: '.',
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: '/workspace',
+          scanPath: '.',
+        },
+        mockFileSystemExecutor,
+      );
 
       // Test that skipped directories and files are correctly filtered out
       expect(result).toEqual({
@@ -334,17 +349,20 @@ describe('discover_projs plugin', () => {
     });
 
     it('should handle error during recursive directory reading', async () => {
-      mockStat.mockResolvedValueOnce({ isDirectory: () => true } as any);
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.readdir = async () => {
+        const readError = new Error('Permission denied');
+        (readError as any).code = 'EACCES';
+        throw readError;
+      };
 
-      // Mock readdir to fail during recursive scan
-      const readError = new Error('Permission denied');
-      (readError as any).code = 'EACCES';
-      mockReaddir.mockRejectedValueOnce(readError);
-
-      const result = await plugin.handler({
-        workspaceRoot: '/workspace',
-        scanPath: '.',
-      });
+      const result = await plugin.handler(
+        {
+          workspaceRoot: '/workspace',
+          scanPath: '.',
+        },
+        mockFileSystemExecutor,
+      );
 
       // The function should handle the error gracefully and continue
       expect(result).toEqual({

@@ -43,6 +43,7 @@ export interface FileSystemExecutor {
   readdir(path: string, options?: { withFileTypes?: boolean }): Promise<any[]>;
   rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void>;
   existsSync(path: string): boolean;
+  stat(path: string): Promise<{ isDirectory(): boolean }>;
 }
 
 /**
@@ -241,6 +242,11 @@ export const defaultFileSystemExecutor: FileSystemExecutor = {
     const fs = require('fs'); // eslint-disable-line @typescript-eslint/no-require-imports
     return fs.existsSync(path);
   },
+
+  async stat(path: string): Promise<{ isDirectory(): boolean }> {
+    const fs = await import('fs/promises');
+    return await fs.stat(path);
+  },
 };
 
 /**
@@ -257,6 +263,7 @@ export function createMockFileSystemExecutor(
     readdir: async () => [],
     rm: async () => {},
     existsSync: () => false,
+    stat: async () => ({ isDirectory: () => true }),
     ...overrides,
   };
 }

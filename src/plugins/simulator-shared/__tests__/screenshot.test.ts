@@ -1,37 +1,17 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+/**
+ * Tests for screenshot plugin
+ * Following CLAUDE.md testing standards with literal validation
+ * Using pure dependency injection for deterministic testing
+ */
+
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
 import screenshotPlugin from '../../ui-testing/screenshot.ts';
 
-// Mock file system operations
-vi.mock('fs/promises', () => ({
-  readFile: vi.fn(),
-  unlink: vi.fn(),
-}));
-
-vi.mock('os', () => ({
-  tmpdir: vi.fn(() => '/tmp'),
-}));
-
-vi.mock('path', () => ({
-  join: vi.fn((...args: string[]) => args.join('/')),
-  dirname: vi.fn((path: string) => path.split('/').slice(0, -1).join('/')),
-}));
-
-vi.mock('uuid', () => ({
-  v4: vi.fn(() => 'mock-uuid-123'),
-}));
-
 describe('screenshot plugin', () => {
-  let mockReadFile: Record<string, unknown>;
-  let mockUnlink: Record<string, unknown>;
-
-  beforeEach(async () => {
-    const fs = await import('fs/promises');
-
-    mockReadFile = vi.mocked(fs.readFile);
-    mockUnlink = vi.mocked(fs.unlink);
-
-    vi.clearAllMocks();
+  beforeEach(() => {
+    // No mocks to clear since we use pure dependency injection
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -68,31 +48,166 @@ describe('screenshot plugin', () => {
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
+  describe('Command Generation', () => {
+    it('should generate correct simctl command', async () => {
+      let capturedCommand: string[] = [];
+
+      const mockExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => 'fake-image-data',
+      });
+
+      const mockPathDeps = {
+        tmpdir: () => '/tmp',
+        join: (...paths: string[]) => paths.join('/'),
+      };
+
+      const mockUuidDeps = {
+        v4: () => 'mock-uuid-123',
+      };
+
+      await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+        mockPathDeps,
+        mockUuidDeps,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcrun',
+        'simctl',
+        'io',
+        'test-uuid',
+        'screenshot',
+        '/tmp/screenshot_mock-uuid-123.png',
+      ]);
+    });
+
+    it('should generate correct path with different uuid', async () => {
+      let capturedCommand: string[] = [];
+
+      const mockExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => 'fake-image-data',
+      });
+
+      const mockPathDeps = {
+        tmpdir: () => '/tmp',
+        join: (...paths: string[]) => paths.join('/'),
+      };
+
+      const mockUuidDeps = {
+        v4: () => 'different-uuid-456',
+      };
+
+      await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'another-uuid',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+        mockPathDeps,
+        mockUuidDeps,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcrun',
+        'simctl',
+        'io',
+        'another-uuid',
+        'screenshot',
+        '/tmp/screenshot_different-uuid-456.png',
+      ]);
+    });
+
+    it('should use default dependencies when not provided', async () => {
+      let capturedCommand: string[] = [];
+
+      const mockExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => 'fake-image-data',
+      });
+
+      await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+      );
+
+      // Command should be generated with real os.tmpdir, path.join, and uuidv4
+      expect(capturedCommand).toHaveLength(6);
+      expect(capturedCommand[0]).toBe('xcrun');
+      expect(capturedCommand[1]).toBe('simctl');
+      expect(capturedCommand[2]).toBe('io');
+      expect(capturedCommand[3]).toBe('test-uuid');
+      expect(capturedCommand[4]).toBe('screenshot');
+      expect(capturedCommand[5]).toMatch(/\/.*\/screenshot_.*\.png/);
+    });
+  });
+
+  describe('Response Processing', () => {
     it('should capture screenshot successfully', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockImageBuffer = Buffer.from('fake-image-data');
+
+      const mockExecutor = createMockExecutor({
         success: true,
         output: '',
         error: undefined,
-        process: { pid: 12345 },
       });
 
-      const mockImageBuffer = Buffer.from('fake-image-data');
-      mockReadFile.mockResolvedValue(mockImageBuffer);
-      mockUnlink.mockResolvedValue(undefined);
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => mockImageBuffer.toString('utf8'),
+      });
+
+      const mockPathDeps = {
+        tmpdir: () => '/tmp',
+        join: (...paths: string[]) => paths.join('/'),
+      };
+
+      const mockUuidDeps = {
+        v4: () => 'mock-uuid-123',
+      };
 
       const result = await screenshotPlugin.handler(
         {
           simulatorUuid: 'test-uuid',
         },
         mockExecutor,
-      );
-
-      // Verify command was called correctly (direct execution, not shell)
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['xcrun', 'simctl', 'io', 'test-uuid', 'screenshot', '/tmp/screenshot_mock-uuid-123.png'],
-        '[Screenshot]: screenshot',
-        false,
+        mockFileSystemExecutor,
+        mockPathDeps,
+        mockUuidDeps,
       );
 
       expect(result).toEqual({
@@ -121,18 +236,29 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle command failure', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Command failed',
-        process: { pid: 12345 },
       });
+
+      const mockPathDeps = {
+        tmpdir: () => '/tmp',
+        join: (...paths: string[]) => paths.join('/'),
+      };
+
+      const mockUuidDeps = {
+        v4: () => 'mock-uuid-123',
+      };
 
       const result = await screenshotPlugin.handler(
         {
           simulatorUuid: 'test-uuid',
         },
         mockExecutor,
+        undefined,
+        mockPathDeps,
+        mockUuidDeps,
       );
 
       expect(result).toEqual({
@@ -147,20 +273,35 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle file read failure', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: '',
         error: undefined,
-        process: { pid: 12345 },
       });
 
-      mockReadFile.mockRejectedValue(new Error('File not found'));
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => {
+          throw new Error('File not found');
+        },
+      });
+
+      const mockPathDeps = {
+        tmpdir: () => '/tmp',
+        join: (...paths: string[]) => paths.join('/'),
+      };
+
+      const mockUuidDeps = {
+        v4: () => 'mock-uuid-123',
+      };
 
       const result = await screenshotPlugin.handler(
         {
           simulatorUuid: 'test-uuid',
         },
         mockExecutor,
+        mockFileSystemExecutor,
+        mockPathDeps,
+        mockUuidDeps,
       );
 
       expect(result).toEqual({
@@ -174,30 +315,196 @@ describe('screenshot plugin', () => {
       });
     });
 
-    it('should call correct command', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: '',
-        error: undefined,
-        process: { pid: 12345 },
+    it('should call correct command with direct execution', async () => {
+      let capturedArgs: any[] = [];
+
+      const mockExecutor = async (...args: any[]) => {
+        capturedArgs = args;
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => 'fake-image-data',
       });
 
-      const mockImageBuffer = Buffer.from('fake-image-data');
-      mockReadFile.mockResolvedValue(mockImageBuffer);
-      mockUnlink.mockResolvedValue(undefined);
+      const mockPathDeps = {
+        tmpdir: () => '/tmp',
+        join: (...paths: string[]) => paths.join('/'),
+      };
+
+      const mockUuidDeps = {
+        v4: () => 'mock-uuid-123',
+      };
 
       await screenshotPlugin.handler(
         {
           simulatorUuid: 'test-uuid',
         },
         mockExecutor,
+        mockFileSystemExecutor,
+        mockPathDeps,
+        mockUuidDeps,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(capturedArgs).toEqual([
         ['xcrun', 'simctl', 'io', 'test-uuid', 'screenshot', '/tmp/screenshot_mock-uuid-123.png'],
         '[Screenshot]: screenshot',
         false,
+      ]);
+    });
+
+    it('should handle SystemError exceptions', async () => {
+      const mockExecutor = async () => {
+        const { SystemError } = await import('../../../utils/index.js');
+        throw new SystemError('System error occurred');
+      };
+
+      const mockPathDeps = {
+        tmpdir: () => '/tmp',
+        join: (...paths: string[]) => paths.join('/'),
+      };
+
+      const mockUuidDeps = {
+        v4: () => 'mock-uuid-123',
+      };
+
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+        },
+        mockExecutor,
+        undefined,
+        mockPathDeps,
+        mockUuidDeps,
       );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: System error executing screenshot: System error occurred',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should handle unexpected Error objects', async () => {
+      const mockExecutor = async () => {
+        throw new Error('Unexpected error');
+      };
+
+      const mockPathDeps = {
+        tmpdir: () => '/tmp',
+        join: (...paths: string[]) => paths.join('/'),
+      };
+
+      const mockUuidDeps = {
+        v4: () => 'mock-uuid-123',
+      };
+
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+        },
+        mockExecutor,
+        undefined,
+        mockPathDeps,
+        mockUuidDeps,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: An unexpected error occurred: Unexpected error',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should handle unexpected string errors', async () => {
+      const mockExecutor = async () => {
+        throw 'String error';
+      };
+
+      const mockPathDeps = {
+        tmpdir: () => '/tmp',
+        join: (...paths: string[]) => paths.join('/'),
+      };
+
+      const mockUuidDeps = {
+        v4: () => 'mock-uuid-123',
+      };
+
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+        },
+        mockExecutor,
+        undefined,
+        mockPathDeps,
+        mockUuidDeps,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: An unexpected error occurred: String error',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should handle file read error with fileSystemExecutor', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        error: undefined,
+      });
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => {
+          throw 'File system error';
+        },
+      });
+
+      const mockPathDeps = {
+        tmpdir: () => '/tmp',
+        join: (...paths: string[]) => paths.join('/'),
+      };
+
+      const mockUuidDeps = {
+        v4: () => 'mock-uuid-123',
+      };
+
+      const result = await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'test-uuid',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+        mockPathDeps,
+        mockUuidDeps,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Screenshot captured but failed to process image file: File system error',
+          },
+        ],
+        isError: true,
+      });
     });
   });
 });
