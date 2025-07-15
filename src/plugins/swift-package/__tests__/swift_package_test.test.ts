@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import swiftPackageTest from '../swift_package_test.ts';
 
@@ -51,18 +51,23 @@ describe('swift_package_test plugin', () => {
     });
   });
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Command Generation Testing', () => {
     it('should build correct command for basic test', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Test Passed',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const calls: any[] = [];
+      const mockExecutor = async (
+        args: string[],
+        name: string,
+        hideOutput: boolean,
+        workingDir: string | undefined,
+      ) => {
+        calls.push({ args, name, hideOutput, workingDir });
+        return {
+          success: true,
+          output: 'Test Passed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await swiftPackageTest.handler(
         {
@@ -71,21 +76,31 @@ describe('swift_package_test plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['swift', 'test', '--package-path', '/test/package'],
-        'Swift Package Test',
-        true,
-        undefined,
-      );
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: ['swift', 'test', '--package-path', '/test/package'],
+        name: 'Swift Package Test',
+        hideOutput: true,
+        workingDir: undefined,
+      });
     });
 
     it('should build correct command with all parameters', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Tests completed',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const calls: any[] = [];
+      const mockExecutor = async (
+        args: string[],
+        name: string,
+        hideOutput: boolean,
+        workingDir: string | undefined,
+      ) => {
+        calls.push({ args, name, hideOutput, workingDir });
+        return {
+          success: true,
+          output: 'Tests completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await swiftPackageTest.handler(
         {
@@ -100,8 +115,9 @@ describe('swift_package_test plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: [
           'swift',
           'test',
           '--package-path',
@@ -117,10 +133,10 @@ describe('swift_package_test plugin', () => {
           '-Xswiftc',
           '-parse-as-library',
         ],
-        'Swift Package Test',
-        true,
-        undefined,
-      );
+        name: 'Swift Package Test',
+        hideOutput: true,
+        workingDir: undefined,
+      });
     });
   });
 
@@ -189,7 +205,9 @@ describe('swift_package_test plugin', () => {
     });
 
     it('should handle spawn error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn ENOENT'));
+      const mockExecutor = async () => {
+        throw new Error('spawn ENOENT');
+      };
 
       const result = await swiftPackageTest.handler(
         {
