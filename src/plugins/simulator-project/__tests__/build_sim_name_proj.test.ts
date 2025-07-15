@@ -1,20 +1,37 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import buildSimNameProj from '../build_sim_name_proj.ts';
 
-// Mock executeXcodeBuildCommand since it doesn't fully support CommandExecutor yet
-vi.mock('../../../utils/build-utils.js', () => ({
-  executeXcodeBuildCommand: vi.fn(),
-}));
-
 describe('build_sim_name_proj plugin', () => {
-  let mockExecuteXcodeBuildCommand: ReturnType<typeof vi.fn>;
+  let mockExecuteXcodeBuildCommand: (
+    params: any,
+    platformOptions: any,
+    preferXcodebuild: boolean,
+    buildAction: string,
+    executor: any,
+  ) => Promise<any>;
 
-  beforeEach(async () => {
-    const buildUtils = await import('../../../utils/build-utils.js');
-    mockExecuteXcodeBuildCommand = vi.mocked(buildUtils.executeXcodeBuildCommand);
-    vi.clearAllMocks();
+  beforeEach(() => {
+    // Reset the mock function
+    mockExecuteXcodeBuildCommand = async (
+      params,
+      platformOptions,
+      preferXcodebuild,
+      buildAction,
+      executor,
+    ) => {
+      // Default successful response
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `✅ ${platformOptions.logPrefix} ${buildAction} succeeded for scheme ${params.scheme}.`,
+          },
+        ],
+        isError: false,
+      };
+    };
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -140,19 +157,31 @@ describe('build_sim_name_proj plugin', () => {
     });
 
     it('should return build error when build fails', async () => {
-      // Mock build failure
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [
-          { type: 'text', text: 'Error: Xcode build failed\nDetails: Build failed with error' },
-        ],
-        isError: true,
-      });
+      // Configure mock to return failure
+      mockExecuteXcodeBuildCommand = async (
+        params,
+        platformOptions,
+        preferXcodebuild,
+        buildAction,
+        executor,
+      ) => {
+        return {
+          content: [
+            { type: 'text', text: 'Error: Xcode build failed\nDetails: Build failed with error' },
+          ],
+          isError: true,
+        };
+      };
 
-      const result = await buildSimNameProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await buildSimNameProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        undefined,
+        mockExecuteXcodeBuildCommand,
+      );
 
       expect(result).toEqual({
         content: [
@@ -163,22 +192,34 @@ describe('build_sim_name_proj plugin', () => {
     });
 
     it('should handle successful build', async () => {
-      // Mock successful build
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [
-          {
-            type: 'text',
-            text: "✅ iOS Simulator build succeeded for scheme MyScheme targeting simulator name 'iPhone 16'.",
-          },
-        ],
-        isError: false,
-      });
+      // Configure mock to return success
+      mockExecuteXcodeBuildCommand = async (
+        params,
+        platformOptions,
+        preferXcodebuild,
+        buildAction,
+        executor,
+      ) => {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: "✅ iOS Simulator build succeeded for scheme MyScheme targeting simulator name 'iPhone 16'.",
+            },
+          ],
+          isError: false,
+        };
+      };
 
-      const result = await buildSimNameProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await buildSimNameProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        undefined,
+        mockExecuteXcodeBuildCommand,
+      );
 
       expect(result).toEqual({
         content: [
@@ -192,23 +233,38 @@ describe('build_sim_name_proj plugin', () => {
     });
 
     it('should handle command generation with extra args', async () => {
-      // Mock build failure to test command generation
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [{ type: 'text', text: 'Build failed' }],
-        isError: true,
-      });
+      // Track calls to the mock function
+      let capturedCallArgs: any[] = [];
 
-      await buildSimNameProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-        configuration: 'Release',
-        derivedDataPath: '/path/to/derived',
-        extraArgs: ['--custom-arg'],
-        preferXcodebuild: true,
-      });
+      mockExecuteXcodeBuildCommand = async (
+        params,
+        platformOptions,
+        preferXcodebuild,
+        buildAction,
+        executor,
+      ) => {
+        capturedCallArgs = [params, platformOptions, preferXcodebuild, buildAction, executor];
+        return {
+          content: [{ type: 'text', text: 'Build failed' }],
+          isError: true,
+        };
+      };
 
-      expect(mockExecuteXcodeBuildCommand).toHaveBeenCalledWith(
+      await buildSimNameProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+          configuration: 'Release',
+          derivedDataPath: '/path/to/derived',
+          extraArgs: ['--custom-arg'],
+          preferXcodebuild: true,
+        },
+        undefined,
+        mockExecuteXcodeBuildCommand,
+      );
+
+      expect(capturedCallArgs[0]).toEqual(
         expect.objectContaining({
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -218,15 +274,17 @@ describe('build_sim_name_proj plugin', () => {
           extraArgs: ['--custom-arg'],
           preferXcodebuild: true,
         }),
+      );
+      expect(capturedCallArgs[1]).toEqual(
         expect.objectContaining({
           platform: 'iOS Simulator',
           simulatorName: 'iPhone 16',
           logPrefix: 'iOS Simulator Build',
         }),
-        true,
-        'build',
-        undefined,
       );
+      expect(capturedCallArgs[2]).toBe(true);
+      expect(capturedCallArgs[3]).toBe('build');
+      expect(capturedCallArgs[4]).toBe(undefined);
     });
   });
 });

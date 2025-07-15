@@ -13,10 +13,12 @@ const XcodePlatform = {
 async function _handleSimulatorBuildLogic(
   params: Record<string, unknown>,
   executor?: CommandExecutor,
+  executeXcodeBuildCommandFn?: typeof executeXcodeBuildCommand,
 ): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
-  return executeXcodeBuildCommand(
+  const buildCommandFn = executeXcodeBuildCommandFn || executeXcodeBuildCommand;
+  return buildCommandFn(
     {
       ...params,
     },
@@ -60,7 +62,11 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    executeXcodeBuildCommandFn?: typeof executeXcodeBuildCommand,
+  ): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
@@ -81,6 +87,7 @@ export default {
         preferXcodebuild: params.preferXcodebuild ?? false,
       },
       executor,
+      executeXcodeBuildCommandFn,
     );
   },
 };

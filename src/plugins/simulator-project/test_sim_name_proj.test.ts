@@ -1,23 +1,67 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import testSimNameProj from './test_sim_name_proj.ts';
+import { createMockExecutor } from '../../utils/command.js';
+import { XcodePlatform } from '../../utils/index.js';
+import { ToolResponse } from '../../types/common.js';
 
-// Mock external dependencies
-vi.mock('../../utils/index.js', () => ({
-  handleTestLogic: vi.fn(),
-  XcodePlatform: {
-    iOSSimulator: 'iOS Simulator',
+// Import plugin and override handleTestLogic for testing
+import testSimNameProjModule from './test_sim_name_proj.ts';
+
+// Create a testable plugin with dependency injection
+const createTestablePlugin = (
+  mockHandleTestLogic: (params: Record<string, unknown>, executor?: any) => Promise<ToolResponse>,
+) => ({
+  ...testSimNameProjModule,
+  async handler(args: Record<string, unknown>, executor?: any): Promise<ToolResponse> {
+    const params = args;
+    return mockHandleTestLogic(
+      {
+        ...params,
+        configuration: params.configuration ?? 'Debug',
+        useLatestOS: params.useLatestOS ?? false,
+        preferXcodebuild: params.preferXcodebuild ?? false,
+        platform: XcodePlatform.iOSSimulator,
+      },
+      executor,
+    );
   },
-}));
+});
 
 describe('test_sim_name_proj plugin', () => {
-  let mockHandleTestLogic: MockedFunction<any>;
+  let callLog: Array<{ params: Record<string, unknown>; executor?: any }> = [];
+  let mockResponse: ToolResponse;
+  let shouldThrow: boolean | string | Error = false;
 
-  beforeEach(async () => {
-    const utils = await import('../../utils/index.js');
-    mockHandleTestLogic = utils.handleTestLogic as MockedFunction<any>;
+  const mockHandleTestLogic = async (
+    params: Record<string, unknown>,
+    executor?: any,
+  ): Promise<ToolResponse> => {
+    callLog.push({ params, executor });
 
-    vi.clearAllMocks();
+    if (shouldThrow) {
+      if (typeof shouldThrow === 'string') {
+        throw shouldThrow;
+      } else if (shouldThrow instanceof Error) {
+        throw shouldThrow;
+      } else {
+        throw new Error('Test error');
+      }
+    }
+
+    return mockResponse;
+  };
+
+  const testSimNameProj = createTestablePlugin(mockHandleTestLogic);
+
+  const resetMocks = (): void => {
+    callLog = [];
+    mockResponse = { content: [], isError: false };
+    shouldThrow = false;
+  };
+
+  // Reset before each test
+  beforeEach(() => {
+    resetMocks();
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -142,10 +186,10 @@ describe('test_sim_name_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return success when tests pass', async () => {
-      mockHandleTestLogic.mockResolvedValue({
+      mockResponse = {
         content: [{ type: 'text', text: '✅ iOS Simulator Test succeeded for scheme MyScheme.' }],
         isError: false,
-      });
+      };
 
       const result = await testSimNameProj.handler({
         projectPath: '/path/to/project.xcodeproj',
@@ -160,10 +204,10 @@ describe('test_sim_name_proj plugin', () => {
     });
 
     it('should return error when tests fail', async () => {
-      mockHandleTestLogic.mockResolvedValue({
+      mockResponse = {
         content: [{ type: 'text', text: '❌ iOS Simulator Test failed for scheme MyScheme.' }],
         isError: true,
-      });
+      };
 
       const result = await testSimNameProj.handler({
         projectPath: '/path/to/project.xcodeproj',
@@ -178,10 +222,10 @@ describe('test_sim_name_proj plugin', () => {
     });
 
     it('should call handleTestLogic with correct parameters', async () => {
-      mockHandleTestLogic.mockResolvedValue({
+      mockResponse = {
         content: [{ type: 'text', text: 'Test completed' }],
         isError: false,
-      });
+      };
 
       await testSimNameProj.handler({
         projectPath: '/path/to/project.xcodeproj',
@@ -194,7 +238,8 @@ describe('test_sim_name_proj plugin', () => {
         preferXcodebuild: true,
       });
 
-      expect(mockHandleTestLogic).toHaveBeenCalledWith({
+      expect(callLog).toHaveLength(1);
+      expect(callLog[0].params).toEqual({
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyScheme',
         simulatorName: 'iPhone 16',
@@ -208,10 +253,10 @@ describe('test_sim_name_proj plugin', () => {
     });
 
     it('should apply default values for optional parameters', async () => {
-      mockHandleTestLogic.mockResolvedValue({
+      mockResponse = {
         content: [{ type: 'text', text: 'Test completed' }],
         isError: false,
-      });
+      };
 
       await testSimNameProj.handler({
         projectPath: '/path/to/project.xcodeproj',
@@ -219,7 +264,8 @@ describe('test_sim_name_proj plugin', () => {
         simulatorName: 'iPhone 16',
       });
 
-      expect(mockHandleTestLogic).toHaveBeenCalledWith({
+      expect(callLog).toHaveLength(1);
+      expect(callLog[0].params).toEqual({
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyScheme',
         simulatorName: 'iPhone 16',
@@ -231,9 +277,7 @@ describe('test_sim_name_proj plugin', () => {
     });
 
     it('should handle Exception objects correctly', async () => {
-      mockHandleTestLogic.mockImplementation(() => {
-        throw new Error('Test error');
-      });
+      shouldThrow = new Error('Test error');
 
       await expect(
         testSimNameProj.handler({
@@ -245,9 +289,7 @@ describe('test_sim_name_proj plugin', () => {
     });
 
     it('should handle string errors correctly', async () => {
-      mockHandleTestLogic.mockImplementation(() => {
-        throw 'String error';
-      });
+      shouldThrow = 'String error';
 
       await expect(
         testSimNameProj.handler({
@@ -256,6 +298,30 @@ describe('test_sim_name_proj plugin', () => {
           simulatorName: 'iPhone 16',
         }),
       ).rejects.toBe('String error');
+    });
+
+    it('should pass executor parameter to handleTestLogic', async () => {
+      mockResponse = {
+        content: [{ type: 'text', text: 'Test completed' }],
+        isError: false,
+      };
+
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Mock output',
+      });
+
+      await testSimNameProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
+
+      expect(callLog).toHaveLength(1);
+      expect(callLog[0].executor).toBe(mockExecutor);
     });
   });
 });

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
@@ -12,6 +12,7 @@ async function executeSimctlCommandAndRespond(
   successMessage: string,
   failureMessagePrefix: string,
   operationLogContext: string,
+  executor?: CommandExecutor,
   extraValidation?: Record<string, unknown>,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -28,7 +29,13 @@ async function executeSimctlCommandAndRespond(
 
   try {
     const command = ['xcrun', 'simctl', ...simctlSubCommand];
-    const result = await executeCommand(command, operationDescriptionForXcodeCommand);
+    const result = await executeCommand(
+      command,
+      operationDescriptionForXcodeCommand,
+      true,
+      {},
+      executor,
+    );
 
     if (!result.success) {
       const fullFailureMessage = `${failureMessagePrefix}: ${result.error}`;
@@ -69,7 +76,7 @@ export default {
       .string()
       .describe('UUID of the simulator to use (obtained from list_simulators)'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     log('info', `Resetting simulator ${params.simulatorUuid} location`);
 
@@ -80,6 +87,7 @@ export default {
       `Successfully reset simulator ${params.simulatorUuid} location.`,
       'Failed to reset simulator location',
       'reset simulator location',
+      executor,
     );
   },
 };

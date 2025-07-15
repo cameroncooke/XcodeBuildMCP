@@ -1,27 +1,16 @@
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
-import { z } from 'zod';
+/**
+ * Tests for set_network_condition plugin
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
 
-// Import the plugin
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 import setNetworkCondition from '../set_network_condition.ts';
 
-// Mock external dependencies
-vi.mock('../../utils/index.js', () => ({
-  log: vi.fn(),
-  executeCommand: vi.fn(),
-  validateRequiredParam: vi.fn(),
-}));
-
 describe('set_network_condition tool', () => {
-  let mockExecuteCommand: MockedFunction<any>;
-  let mockValidateRequiredParam: MockedFunction<any>;
-  let mockLog: MockedFunction<any>;
-
-  beforeEach(async () => {
-    const utils = await import('../../../utils/index.js');
-    mockExecuteCommand = utils.executeCommand as MockedFunction<any>;
-    mockValidateRequiredParam = utils.validateRequiredParam as MockedFunction<any>;
-    mockLog = utils.log as MockedFunction<any>;
-
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
@@ -80,21 +69,18 @@ describe('set_network_condition tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle successful network condition setting', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Network condition set successfully',
-        error: '',
       });
 
-      const result = await setNetworkCondition.handler({
-        simulatorUuid: 'test-uuid-123',
-        profile: 'wifi',
-      });
+      const result = await setNetworkCondition.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          profile: 'wifi',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -107,46 +93,35 @@ describe('set_network_condition tool', () => {
     });
 
     it('should handle validation failure', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: false,
-        errorResponse: {
-          content: [
-            {
-              type: 'text',
-              text: 'simulatorUuid is required',
-            },
-          ],
-        },
+      const result = await setNetworkCondition.handler({
+        simulatorUuid: undefined,
+        profile: 'wifi',
       });
-
-      const result = await setNetworkCondition.handler({ simulatorUuid: '', profile: 'wifi' });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'simulatorUuid is required',
+            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
           },
         ],
+        isError: true,
       });
     });
 
     it('should handle command failure', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
-
-      mockExecuteCommand.mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
-        output: '',
         error: 'Simulator not found',
       });
 
-      const result = await setNetworkCondition.handler({
-        simulatorUuid: 'invalid-uuid',
-        profile: '3g',
-      });
+      const result = await setNetworkCondition.handler(
+        {
+          simulatorUuid: 'invalid-uuid',
+          profile: '3g',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -159,17 +134,15 @@ describe('set_network_condition tool', () => {
     });
 
     it('should handle exception with Error object', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
+      const mockExecutor = vi.fn().mockRejectedValue(new Error('Connection failed'));
 
-      mockExecuteCommand.mockRejectedValue(new Error('Connection failed'));
-
-      const result = await setNetworkCondition.handler({
-        simulatorUuid: 'test-uuid-123',
-        profile: 'edge',
-      });
+      const result = await setNetworkCondition.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          profile: 'edge',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -182,17 +155,15 @@ describe('set_network_condition tool', () => {
     });
 
     it('should handle exception with string error', async () => {
-      mockValidateRequiredParam.mockReturnValue({
-        isValid: true,
-        errorResponse: null,
-      });
+      const mockExecutor = vi.fn().mockRejectedValue('String error');
 
-      mockExecuteCommand.mockRejectedValue('String error');
-
-      const result = await setNetworkCondition.handler({
-        simulatorUuid: 'test-uuid-123',
-        profile: 'dsl',
-      });
+      const result = await setNetworkCondition.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          profile: 'dsl',
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -202,6 +173,30 @@ describe('set_network_condition tool', () => {
           },
         ],
       });
+    });
+
+    it('should verify command generation with mock executor', async () => {
+      const mockExecutor = vi.fn().mockResolvedValue({
+        success: true,
+        output: 'Network condition set successfully',
+        error: undefined,
+        process: { pid: 12345 },
+      });
+
+      await setNetworkCondition.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          profile: 'wifi',
+        },
+        mockExecutor,
+      );
+
+      expect(mockExecutor).toHaveBeenCalledWith(
+        ['xcrun', 'simctl', 'status_bar', 'test-uuid-123', 'override', '--dataNetwork', 'wifi'],
+        'Set Network Condition',
+        true,
+        undefined,
+      );
     });
   });
 });

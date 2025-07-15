@@ -1,30 +1,15 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import buildRunSimIdProj from '../build_run_sim_id_proj.ts';
 
-// Mock execSync for simulator operations that don't use CommandExecutor yet
-vi.mock('child_process', () => ({
-  execSync: vi.fn(),
-}));
-
-// Mock executeXcodeBuildCommand since it doesn't support CommandExecutor yet
-vi.mock('../../../utils/build-utils.js', () => ({
-  executeXcodeBuildCommand: vi.fn(),
-}));
-
 describe('build_run_sim_id_proj plugin', () => {
-  let mockExecSync: ReturnType<typeof vi.fn>;
-  let mockExecuteXcodeBuildCommand: ReturnType<typeof vi.fn>;
+  let mockExecSyncCalls: { command: string; result: string }[];
+  let mockExecuteXcodeBuildCommandCalls: any[];
 
-  beforeEach(async () => {
-    const { execSync } = await import('child_process');
-    const buildUtils = await import('../../../utils/build-utils.js');
-
-    mockExecSync = vi.mocked(execSync);
-    mockExecuteXcodeBuildCommand = vi.mocked(buildUtils.executeXcodeBuildCommand);
-
-    vi.clearAllMocks();
+  beforeEach(() => {
+    mockExecSyncCalls = [];
+    mockExecuteXcodeBuildCommandCalls = [];
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -200,19 +185,27 @@ describe('build_run_sim_id_proj plugin', () => {
     });
 
     it('should return build error when build fails', async () => {
-      // Mock build failure
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [
-          { type: 'text', text: 'Error: Xcode build failed\nDetails: Build failed with error' },
-        ],
-        isError: true,
-      });
+      // Create mock executeXcodeBuildCommand function
+      const mockExecuteXcodeBuildCommand = async (...args: any[]) => {
+        mockExecuteXcodeBuildCommandCalls.push(args);
+        return {
+          content: [
+            { type: 'text', text: 'Error: Xcode build failed\nDetails: Build failed with error' },
+          ],
+          isError: true,
+        };
+      };
 
-      const result = await buildRunSimIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid',
-      });
+      const result = await buildRunSimIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid',
+        },
+        undefined,
+        undefined,
+        mockExecuteXcodeBuildCommand,
+      );
 
       expect(result).toEqual({
         content: [
@@ -223,11 +216,14 @@ describe('build_run_sim_id_proj plugin', () => {
     });
 
     it('should handle successful build and run', async () => {
-      // Mock successful build
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [{ type: 'text', text: '✅ Build succeeded for scheme MyScheme' }],
-        isError: false,
-      });
+      // Create mock executeXcodeBuildCommand function
+      const mockExecuteXcodeBuildCommand = async (...args: any[]) => {
+        mockExecuteXcodeBuildCommandCalls.push(args);
+        return {
+          content: [{ type: 'text', text: '✅ Build succeeded for scheme MyScheme' }],
+          isError: false,
+        };
+      };
 
       // Mock showBuildSettings command through CommandExecutor
       const mockExecutor = createMockExecutor({
@@ -235,13 +231,26 @@ describe('build_run_sim_id_proj plugin', () => {
         output: 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app',
       });
 
-      // Mock subsequent execSync calls for simulator operations
-      mockExecSync
-        .mockReturnValueOnce('    Test Simulator (test-uuid) (Booted)') // simulator list
-        .mockReturnValueOnce('') // open Simulator
-        .mockReturnValueOnce('') // install app
-        .mockReturnValueOnce('com.example.MyApp') // bundle ID
-        .mockReturnValueOnce(''); // launch app
+      // Create mock execSync function with sequential returns
+      let execSyncCallCount = 0;
+      const mockExecSync = (command: string) => {
+        mockExecSyncCalls.push({ command, result: '' });
+        execSyncCallCount++;
+        switch (execSyncCallCount) {
+          case 1:
+            return '    Test Simulator (test-uuid) (Booted)'; // simulator list
+          case 2:
+            return ''; // open Simulator
+          case 3:
+            return ''; // install app
+          case 4:
+            return 'com.example.MyApp'; // bundle ID
+          case 5:
+            return ''; // launch app
+          default:
+            return '';
+        }
+      };
 
       const result = await buildRunSimIdProj.handler(
         {
@@ -250,6 +259,8 @@ describe('build_run_sim_id_proj plugin', () => {
           simulatorId: 'test-uuid',
         },
         mockExecutor,
+        mockExecSync,
+        mockExecuteXcodeBuildCommand,
       );
 
       expect(result.isError).toBe(false);
@@ -258,23 +269,33 @@ describe('build_run_sim_id_proj plugin', () => {
     });
 
     it('should handle command generation with extra args', async () => {
-      // Mock build failure to test command generation
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [{ type: 'text', text: 'Build failed' }],
-        isError: true,
-      });
+      // Create mock executeXcodeBuildCommand function that captures calls
+      const mockExecuteXcodeBuildCommand = async (...args: any[]) => {
+        mockExecuteXcodeBuildCommandCalls.push(args);
+        return {
+          content: [{ type: 'text', text: 'Build failed' }],
+          isError: true,
+        };
+      };
 
-      await buildRunSimIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid',
-        configuration: 'Release',
-        derivedDataPath: '/path/to/derived',
-        extraArgs: ['--custom-arg'],
-        preferXcodebuild: true,
-      });
+      await buildRunSimIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid',
+          configuration: 'Release',
+          derivedDataPath: '/path/to/derived',
+          extraArgs: ['--custom-arg'],
+          preferXcodebuild: true,
+        },
+        undefined,
+        undefined,
+        mockExecuteXcodeBuildCommand,
+      );
 
-      expect(mockExecuteXcodeBuildCommand).toHaveBeenCalledWith(
+      expect(mockExecuteXcodeBuildCommandCalls).toHaveLength(1);
+      const call = mockExecuteXcodeBuildCommandCalls[0];
+      expect(call[0]).toEqual(
         expect.objectContaining({
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -284,14 +305,16 @@ describe('build_run_sim_id_proj plugin', () => {
           extraArgs: ['--custom-arg'],
           preferXcodebuild: true,
         }),
+      );
+      expect(call[1]).toEqual(
         expect.objectContaining({
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid',
           logPrefix: 'iOS Simulator Build',
         }),
-        true,
-        'build',
       );
+      expect(call[2]).toBe(true);
+      expect(call[3]).toBe('build');
     });
   });
 });

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
@@ -13,6 +13,7 @@ async function executeSimctlCommandAndRespond(
   failureMessagePrefix: string,
   operationLogContext: string,
   extraValidation?: Record<string, unknown>,
+  executor: CommandExecutor = executeCommand,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
@@ -28,7 +29,13 @@ async function executeSimctlCommandAndRespond(
 
   try {
     const command = ['xcrun', 'simctl', ...simctlSubCommand];
-    const result = await executeCommand(command, operationDescriptionForXcodeCommand);
+    const result = await executeCommand(
+      command,
+      operationDescriptionForXcodeCommand,
+      true,
+      undefined,
+      executor,
+    );
 
     if (!result.success) {
       const fullFailureMessage = `${failureMessagePrefix}: ${result.error}`;
@@ -75,7 +82,7 @@ export default {
         'The network profile to simulate. Must be one of: wifi, 3g, edge, high-latency, dsl, 100%loss, 3g-lossy, very-lossy.',
       ),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
     const params = args;
     log('info', `Setting simulator ${params.simulatorUuid} network condition to ${params.profile}`);
 
@@ -86,6 +93,8 @@ export default {
       `Successfully set simulator ${params.simulatorUuid} network condition to ${params.profile} profile`,
       'Failed to set network condition',
       'set network condition',
+      undefined,
+      executor,
     );
   },
 };
