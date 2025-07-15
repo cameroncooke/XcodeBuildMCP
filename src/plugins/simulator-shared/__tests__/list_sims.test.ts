@@ -1,12 +1,20 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 
 // Import the plugin
 import listSims from '../list_sims.ts';
 
 describe('list_sims tool', () => {
+  let callHistory: Array<{
+    command: string[];
+    logPrefix?: string;
+    useShell?: boolean;
+    env?: Record<string, string>;
+  }>;
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    callHistory = [];
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -53,22 +61,34 @@ describe('list_sims tool', () => {
         },
       });
 
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: mockOutput,
         error: undefined,
         process: { pid: 12345 },
       });
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      // Track calls manually
+      const wrappedExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        return mockExecutor(command, logPrefix, useShell, env);
+      };
+
+      const result = await listSims.handler({ enabled: true }, wrappedExecutor);
 
       // Verify command was called correctly
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
-        'List Simulators',
-        true,
-        undefined,
-      );
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0]).toEqual({
+        command: ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
+        logPrefix: 'List Simulators',
+        useShell: true,
+        env: undefined,
+      });
 
       expect(result).toEqual({
         content: [
@@ -103,7 +123,7 @@ Next Steps:
         },
       });
 
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: mockOutput,
         error: undefined,
@@ -132,7 +152,7 @@ Next Steps:
     });
 
     it('should handle command failure', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Command failed',
@@ -152,7 +172,7 @@ Next Steps:
     });
 
     it('should handle JSON parse failure', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'invalid json',
         error: undefined,
@@ -172,7 +192,7 @@ Next Steps:
     });
 
     it('should handle exception with Error object', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
+      const mockExecutor = createMockExecutor(new Error('Command execution failed'));
 
       const result = await listSims.handler({ enabled: true }, mockExecutor);
 
@@ -187,7 +207,7 @@ Next Steps:
     });
 
     it('should handle exception with string error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockExecutor = createMockExecutor('String error');
 
       const result = await listSims.handler({ enabled: true }, mockExecutor);
 

@@ -3,11 +3,37 @@
  * Following CLAUDE.md testing standards with pure dependency injection
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
 import plugin from '../start_device_log_cap.ts';
 
 describe('start_device_log_cap plugin', () => {
+  // Mock state tracking
+  let commandCalls: Array<{
+    command: string[];
+    logPrefix?: string;
+    useShell?: boolean;
+    env?: Record<string, string>;
+  }> = [];
+  let mkdirCalls: string[] = [];
+  let writeFileCalls: Array<{ path: string; content: string }> = [];
+  let createWriteStreamCalls: Array<{ path: string; flags: string }> = [];
+  let writeStreamWriteCalls: string[] = [];
+  let mockWriteStream: any;
+
   beforeEach(() => {
-    // Clear any state between tests
+    // Reset state
+    commandCalls = [];
+    mkdirCalls = [];
+    writeFileCalls = [];
+    createWriteStreamCalls = [];
+    writeStreamWriteCalls = [];
+
+    mockWriteStream = {
+      write: (data: string) => {
+        writeStreamWriteCalls.push(data);
+      },
+      flags: 'a',
+    };
   });
 
   describe('Plugin Structure', () => {
@@ -41,11 +67,24 @@ describe('start_device_log_cap plugin', () => {
 
   describe('Handler Functionality', () => {
     it('should start log capture successfully', async () => {
-      // Mock successful file operations
-      const mockStartLogCapture = () => {
-        return Promise.resolve({
-          sessionId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-        });
+      // Mock successful command execution
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'App launched successfully',
+      });
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        mkdir: async (path: string) => {
+          mkdirCalls.push(path);
+        },
+        writeFile: async (path: string, content: string) => {
+          writeFileCalls.push({ path, content });
+        },
+      });
+
+      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
+        createWriteStreamCalls.push({ path, flags: options.flags });
+        return mockWriteStream;
       };
 
       const result = await plugin.handler(
@@ -53,21 +92,35 @@ describe('start_device_log_cap plugin', () => {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
-        undefined,
-        mockStartLogCapture,
+        mockExecutor,
+        mockFileSystemExecutor,
+        mockCreateWriteStream,
       );
 
       expect(result.content[0].text).toMatch(/✅ Device log capture started successfully/);
-      expect(result.content[0].text).toMatch(/Session ID: a1b2c3d4-e5f6-7890-abcd-ef1234567890/);
+      expect(result.content[0].text).toMatch(/Session ID: [a-f0-9-]{36}/);
       expect(result.isError || false).toBe(false);
     });
 
     it('should include next steps in success response', async () => {
-      // Mock successful file operations
-      const mockStartLogCapture = () => {
-        return Promise.resolve({
-          sessionId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-        });
+      // Mock successful command execution
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'App launched successfully',
+      });
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        mkdir: async (path: string) => {
+          mkdirCalls.push(path);
+        },
+        writeFile: async (path: string, content: string) => {
+          writeFileCalls.push({ path, content });
+        },
+      });
+
+      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
+        createWriteStreamCalls.push({ path, flags: options.flags });
+        return mockWriteStream;
       };
 
       const result = await plugin.handler(
@@ -75,8 +128,9 @@ describe('start_device_log_cap plugin', () => {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
-        undefined,
-        mockStartLogCapture,
+        mockExecutor,
+        mockFileSystemExecutor,
+        mockCreateWriteStream,
       );
 
       expect(result.content[0].text).toContain('Next Steps:');
@@ -85,11 +139,22 @@ describe('start_device_log_cap plugin', () => {
 
     it('should handle directory creation failure', async () => {
       // Mock mkdir to fail
-      const mockStartLogCapture = () => {
-        return Promise.resolve({
-          sessionId: '',
-          error: 'Permission denied',
-        });
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'Command failed',
+      });
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        mkdir: async (path: string) => {
+          mkdirCalls.push(path);
+          throw new Error('Permission denied');
+        },
+      });
+
+      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
+        createWriteStreamCalls.push({ path, flags: options.flags });
+        return mockWriteStream;
       };
 
       const result = await plugin.handler(
@@ -97,8 +162,9 @@ describe('start_device_log_cap plugin', () => {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
-        undefined,
-        mockStartLogCapture,
+        mockExecutor,
+        mockFileSystemExecutor,
+        mockCreateWriteStream,
       );
 
       expect(result).toEqual({
@@ -114,11 +180,25 @@ describe('start_device_log_cap plugin', () => {
 
     it('should handle file write failure', async () => {
       // Mock writeFile to fail
-      const mockStartLogCapture = () => {
-        return Promise.resolve({
-          sessionId: '',
-          error: 'Disk full',
-        });
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'Command failed',
+      });
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        mkdir: async (path: string) => {
+          mkdirCalls.push(path);
+        },
+        writeFile: async (path: string, content: string) => {
+          writeFileCalls.push({ path, content });
+          throw new Error('Disk full');
+        },
+      });
+
+      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
+        createWriteStreamCalls.push({ path, flags: options.flags });
+        return mockWriteStream;
       };
 
       const result = await plugin.handler(
@@ -126,8 +206,9 @@ describe('start_device_log_cap plugin', () => {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
-        undefined,
-        mockStartLogCapture,
+        mockExecutor,
+        mockFileSystemExecutor,
+        mockCreateWriteStream,
       );
 
       expect(result).toEqual({
@@ -143,11 +224,20 @@ describe('start_device_log_cap plugin', () => {
 
     it('should handle spawn process error', async () => {
       // Mock spawn to throw error
-      const mockStartLogCapture = () => {
-        return Promise.resolve({
-          sessionId: '',
-          error: 'Command not found',
-        });
+      const mockExecutor = createMockExecutor(new Error('Command not found'));
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        mkdir: async (path: string) => {
+          mkdirCalls.push(path);
+        },
+        writeFile: async (path: string, content: string) => {
+          writeFileCalls.push({ path, content });
+        },
+      });
+
+      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
+        createWriteStreamCalls.push({ path, flags: options.flags });
+        return mockWriteStream;
       };
 
       const result = await plugin.handler(
@@ -155,8 +245,9 @@ describe('start_device_log_cap plugin', () => {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
-        undefined,
-        mockStartLogCapture,
+        mockExecutor,
+        mockFileSystemExecutor,
+        mockCreateWriteStream,
       );
 
       expect(result).toEqual({
@@ -172,11 +263,20 @@ describe('start_device_log_cap plugin', () => {
 
     it('should handle string error objects', async () => {
       // Mock mkdir to fail with string error
-      const mockStartLogCapture = () => {
-        return Promise.resolve({
-          sessionId: '',
-          error: 'String error message',
-        });
+      const mockExecutor = createMockExecutor('String error message');
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        mkdir: async (path: string) => {
+          mkdirCalls.push(path);
+        },
+        writeFile: async (path: string, content: string) => {
+          writeFileCalls.push({ path, content });
+        },
+      });
+
+      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
+        createWriteStreamCalls.push({ path, flags: options.flags });
+        return mockWriteStream;
       };
 
       const result = await plugin.handler(
@@ -184,8 +284,9 @@ describe('start_device_log_cap plugin', () => {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
-        undefined,
-        mockStartLogCapture,
+        mockExecutor,
+        mockFileSystemExecutor,
+        mockCreateWriteStream,
       );
 
       expect(result).toEqual({
@@ -201,11 +302,24 @@ describe('start_device_log_cap plugin', () => {
 
     it('should handle createWriteStream failure', async () => {
       // Mock createWriteStream to fail
-      const mockStartLogCapture = () => {
-        return Promise.resolve({
-          sessionId: '',
-          error: 'Stream creation failed',
-        });
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'Command failed',
+      });
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        mkdir: async (path: string) => {
+          mkdirCalls.push(path);
+        },
+        writeFile: async (path: string, content: string) => {
+          writeFileCalls.push({ path, content });
+        },
+      });
+
+      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
+        createWriteStreamCalls.push({ path, flags: options.flags });
+        throw new Error('Stream creation failed');
       };
 
       const result = await plugin.handler(
@@ -213,8 +327,9 @@ describe('start_device_log_cap plugin', () => {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
-        undefined,
-        mockStartLogCapture,
+        mockExecutor,
+        mockFileSystemExecutor,
+        mockCreateWriteStream,
       );
 
       expect(result).toEqual({
