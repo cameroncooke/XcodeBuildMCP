@@ -3,28 +3,12 @@
  * Following CLAUDE.md testing standards with literal validation
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-// Mock child_process and util at module level
-vi.mock('child_process', () => ({
-  exec: vi.fn(),
-}));
-
-vi.mock('util', () => ({
-  promisify: vi.fn(),
-}));
-
 import buildRunMacWs from '../build_run_mac_ws.ts';
 
 describe('build_run_mac_ws plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(buildRunMacWs.name).toBe('build_run_mac_ws');
@@ -70,7 +54,9 @@ describe('build_run_mac_ws plugin', () => {
     it('should successfully build and run macOS app', async () => {
       // Mock successful build first, then successful build settings
       let callCount = 0;
-      const mockExecutor = vi.fn().mockImplementation(() => {
+      const calls: any[] = [];
+      const mockExecutor = (command: string[]) => {
+        calls.push(command);
         callCount++;
         if (callCount === 1) {
           // First call for build
@@ -87,11 +73,10 @@ describe('build_run_mac_ws plugin', () => {
             error: '',
           });
         }
-      });
+      };
 
-      // Mock promisify(exec) to return successful launch
-      const mockExecPromise = vi.fn().mockResolvedValue({ stdout: '', stderr: '' });
-      vi.mocked(promisify).mockReturnValue(mockExecPromise);
+      // Mock exec function through dependency injection
+      const mockExecFunction = () => Promise.resolve({ stdout: '', stderr: '' });
 
       const result = await buildRunMacWs.handler(
         {
@@ -99,16 +84,23 @@ describe('build_run_mac_ws plugin', () => {
           scheme: 'MyScheme',
         },
         mockExecutor,
+        { execFunction: mockExecFunction },
       );
 
-      expect(result.content).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            type: 'text',
-            text: expect.stringContaining('✅ macOS build and run succeeded for scheme MyScheme'),
-          }),
-        ]),
-      );
+      expect(result.content).toEqual([
+        {
+          type: 'text',
+          text: '✅ macOS Build build succeeded for scheme MyScheme.',
+        },
+        {
+          type: 'text',
+          text: 'Next Steps:\n1. Get App Path: get_macos_app_path_workspace\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+        },
+        {
+          type: 'text',
+          text: '✅ macOS build and run succeeded for scheme MyScheme. App launched: /path/to/build/MyApp.app',
+        },
+      ]);
     });
 
     it('should return exact build failure response', async () => {
@@ -142,7 +134,11 @@ describe('build_run_mac_ws plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+      const calls: any[] = [];
+      const mockExecutor = (command: string[]) => {
+        calls.push(command);
+        return Promise.reject(new Error('Network error'));
+      };
 
       const result = await buildRunMacWs.handler(
         {

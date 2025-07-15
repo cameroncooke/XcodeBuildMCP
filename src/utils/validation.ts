@@ -23,6 +23,7 @@
 import * as fs from 'fs';
 import { log } from './logger.js';
 import { ToolResponse, ValidationResult } from '../types/common.js';
+import { FileSystemExecutor } from './command.js';
 
 /**
  * Creates a text response with the given message
@@ -126,8 +127,12 @@ export function validateCondition(
  * @param filePath Path to check
  * @returns Validation result
  */
-export function validateFileExists(filePath: string): ValidationResult {
-  if (!fs.existsSync(filePath)) {
+export function validateFileExists(
+  filePath: string,
+  fileSystem?: FileSystemExecutor,
+): ValidationResult {
+  const exists = fileSystem ? fileSystem.existsSync(filePath) : fs.existsSync(filePath);
+  if (!exists) {
     return {
       isValid: false,
       errorResponse: createTextResponse(

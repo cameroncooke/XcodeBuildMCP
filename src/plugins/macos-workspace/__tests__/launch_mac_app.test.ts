@@ -1,37 +1,37 @@
 /**
  * Tests for launch_mac_app plugin
  * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { EventEmitter } from 'events';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
+import { createMockFileSystemExecutor } from '../../../utils/command.js';
 import launchMacApp from '../launch_mac_app.ts';
 
-// Mock only child_process.exec at the lowest level
-vi.mock('child_process', () => ({
-  exec: vi.fn(),
-}));
+// Manual execution stub for testing
+interface ExecutionStub {
+  command: string;
+  success: boolean;
+  error?: string;
+}
 
-// Mock util.promisify
-vi.mock('util', () => ({
-  promisify: vi.fn(),
-}));
+function createExecutionStub(stub: ExecutionStub) {
+  const calls: string[] = [];
+
+  const execStub = async (command: string) => {
+    calls.push(command);
+    if (stub.success) {
+      return { stdout: '', stderr: '' };
+    } else {
+      throw new Error(stub.error || 'Command failed');
+    }
+  };
+
+  return { execStub, calls };
+}
 
 describe('launch_mac_app plugin', () => {
-  let mockExec: Record<string, unknown>;
-  let mockPromisify: Record<string, unknown>;
-
-  beforeEach(async () => {
-    const { exec } = await import('child_process');
-    const { promisify } = await import('util');
-
-    mockExec = vi.mocked(exec);
-    mockPromisify = vi.mocked(promisify);
-
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(launchMacApp.name).toBe('launch_mac_app');
@@ -63,17 +63,24 @@ describe('launch_mac_app plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact successful launch response', async () => {
-      // Mock promisify(exec) to return successful launch
-      const mockExecPromise = vi.fn().mockResolvedValue({ stdout: '', stderr: '' });
-      mockPromisify.mockReturnValue(mockExecPromise);
-
-      const result = await launchMacApp.handler({
-        appPath: '/path/to/MyApp.app',
+      const { execStub, calls } = createExecutionStub({
+        command: 'open "/path/to/MyApp.app"',
+        success: true,
       });
 
-      expect(mockPromisify).toHaveBeenCalledWith(mockExec);
-      expect(mockExecPromise).toHaveBeenCalledWith('open "/path/to/MyApp.app"');
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
 
+      const result = await launchMacApp.handler(
+        {
+          appPath: '/path/to/MyApp.app',
+        },
+        execStub,
+        mockFileSystem,
+      );
+
+      expect(calls).toEqual(['open "/path/to/MyApp.app"']);
       expect(result).toEqual({
         content: [
           {
@@ -85,19 +92,25 @@ describe('launch_mac_app plugin', () => {
     });
 
     it('should return exact successful launch response with args', async () => {
-      // Mock promisify(exec) to return successful launch
-      const mockExecPromise = vi.fn().mockResolvedValue({ stdout: '', stderr: '' });
-      mockPromisify.mockReturnValue(mockExecPromise);
-
-      const result = await launchMacApp.handler({
-        appPath: '/path/to/MyApp.app',
-        args: ['--debug', '--verbose'],
+      const { execStub, calls } = createExecutionStub({
+        command: 'open "/path/to/MyApp.app" --args --debug --verbose',
+        success: true,
       });
 
-      expect(mockExecPromise).toHaveBeenCalledWith(
-        'open "/path/to/MyApp.app" --args --debug --verbose',
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      const result = await launchMacApp.handler(
+        {
+          appPath: '/path/to/MyApp.app',
+          args: ['--debug', '--verbose'],
+        },
+        execStub,
+        mockFileSystem,
       );
 
+      expect(calls).toEqual(['open "/path/to/MyApp.app" --args --debug --verbose']);
       expect(result).toEqual({
         content: [
           {
@@ -109,19 +122,30 @@ describe('launch_mac_app plugin', () => {
     });
 
     it('should return exact launch failure response', async () => {
-      // Mock promisify(exec) to return launch error
-      const mockExecPromise = vi.fn().mockRejectedValue(new Error('App not found'));
-      mockPromisify.mockReturnValue(mockExecPromise);
-
-      const result = await launchMacApp.handler({
-        appPath: '/path/to/MyApp.app',
+      const { execStub, calls } = createExecutionStub({
+        command: 'open "/path/to/MyApp.app"',
+        success: false,
+        error: 'App not found',
       });
 
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      const result = await launchMacApp.handler(
+        {
+          appPath: '/path/to/MyApp.app',
+        },
+        execStub,
+        mockFileSystem,
+      );
+
+      expect(calls).toEqual(['open "/path/to/MyApp.app"']);
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error launching macOS app: App not found',
+            text: '❌ Launch macOS app operation failed: App not found',
           },
         ],
         isError: true,

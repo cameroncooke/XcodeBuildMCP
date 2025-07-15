@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import getDeviceAppPathWs from '../get_device_app_path_ws.ts';
 
@@ -42,10 +42,6 @@ describe('get_device_app_path_ws plugin', () => {
     });
   });
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation error response for workspacePath', async () => {
       const result = await getDeviceAppPathWs.handler({
@@ -80,12 +76,21 @@ describe('get_device_app_path_ws plugin', () => {
     });
 
     it('should generate correct xcodebuild command for getting build settings', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'BUILT_PRODUCTS_DIR = /path/to/build/products/dir\nFULL_PRODUCT_NAME = MyApp.app',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const calls: any[] = [];
+      const mockExecutor = (
+        command: string[],
+        action: string,
+        silent: boolean,
+        timeout: number | undefined,
+      ) => {
+        calls.push({ command, action, silent, timeout });
+        return Promise.resolve({
+          success: true,
+          output: 'BUILT_PRODUCTS_DIR = /path/to/build/products/dir\nFULL_PRODUCT_NAME = MyApp.app',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
 
       await getDeviceAppPathWs.handler(
         {
@@ -97,8 +102,9 @@ describe('get_device_app_path_ws plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        command: [
           'xcodebuild',
           '-showBuildSettings',
           '-workspace',
@@ -110,10 +116,10 @@ describe('get_device_app_path_ws plugin', () => {
           '-destination',
           'generic/platform=iOS',
         ],
-        'Get App Path',
-        true,
-        undefined,
-      );
+        action: 'Get App Path',
+        silent: true,
+        timeout: undefined,
+      });
     });
 
     it('should return exact successful app path response for iOS', async () => {
@@ -197,7 +203,9 @@ describe('get_device_app_path_ws plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+      const mockExecutor = () => {
+        return Promise.reject(new Error('Network error'));
+      };
 
       const result = await getDeviceAppPathWs.handler(
         {

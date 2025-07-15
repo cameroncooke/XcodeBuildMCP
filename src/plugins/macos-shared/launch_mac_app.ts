@@ -11,8 +11,12 @@ import { exec } from 'child_process';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, validateFileExists } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
+import { FileSystemExecutor } from '../../utils/command.js';
 
 const execPromise = promisify(exec);
+
+// Executive function type for dependency injection
+type ExecFunction = (command: string) => Promise<{ stdout: string; stderr: string }>;
 
 export default {
   name: 'launch_mac_app',
@@ -24,7 +28,11 @@ export default {
       .describe('Path to the macOS .app bundle to launch (full path to the .app directory)'),
     args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
   },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: ExecFunction,
+    fileSystem?: FileSystemExecutor,
+  ): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const appPathValidation = validateRequiredParam('appPath', params.appPath);
@@ -33,7 +41,7 @@ export default {
     }
 
     // Validate that the app file exists
-    const fileExistsValidation = await validateFileExists(params.appPath);
+    const fileExistsValidation = validateFileExists(params.appPath as string, fileSystem);
     if (!fileExistsValidation.isValid) {
       return fileExistsValidation.errorResponse;
     }
@@ -50,7 +58,8 @@ export default {
       }
 
       // Execute the command
-      await execPromise(command);
+      const execFunc = executor || execPromise;
+      await execFunc(command);
 
       // Return success response
       return {

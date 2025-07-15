@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import buildDevProj from '../build_dev_proj.ts';
 
@@ -47,10 +47,6 @@ describe('build_dev_proj plugin', () => {
     });
   });
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation failure response for missing projectPath', async () => {
       const result = await buildDevProj.handler({
@@ -87,23 +83,39 @@ describe('build_dev_proj plugin', () => {
     });
 
     it('should verify command generation with mock executor', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Build succeeded',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const commandCalls: Array<{
+        args: string[];
+        logPrefix: string;
+        silent: boolean;
+        timeout: number | undefined;
+      }> = [];
+
+      const stubExecutor = async (
+        args: string[],
+        logPrefix: string,
+        silent: boolean,
+        timeout?: number,
+      ) => {
+        commandCalls.push({ args, logPrefix, silent, timeout });
+        return {
+          success: true,
+          output: 'Build succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await buildDevProj.handler(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
         },
-        mockExecutor,
+        stubExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(commandCalls).toHaveLength(1);
+      expect(commandCalls[0]).toEqual({
+        args: [
           'xcodebuild',
           '-project',
           '/path/to/MyProject.xcodeproj',
@@ -116,10 +128,10 @@ describe('build_dev_proj plugin', () => {
           'generic/platform=iOS',
           'build',
         ],
-        'iOS Device Build',
-        true,
-        undefined,
-      );
+        logPrefix: 'iOS Device Build',
+        silent: true,
+        timeout: undefined,
+      });
     });
 
     it('should return exact successful build response', async () => {
@@ -180,12 +192,27 @@ describe('build_dev_proj plugin', () => {
     });
 
     it('should include optional parameters in command', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Build succeeded',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const commandCalls: Array<{
+        args: string[];
+        logPrefix: string;
+        silent: boolean;
+        timeout: number | undefined;
+      }> = [];
+
+      const stubExecutor = async (
+        args: string[],
+        logPrefix: string,
+        silent: boolean,
+        timeout?: number,
+      ) => {
+        commandCalls.push({ args, logPrefix, silent, timeout });
+        return {
+          success: true,
+          output: 'Build succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await buildDevProj.handler(
         {
@@ -195,11 +222,12 @@ describe('build_dev_proj plugin', () => {
           derivedDataPath: '/tmp/derived-data',
           extraArgs: ['--verbose'],
         },
-        mockExecutor,
+        stubExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
+      expect(commandCalls).toHaveLength(1);
+      expect(commandCalls[0]).toEqual({
+        args: [
           'xcodebuild',
           '-project',
           '/path/to/MyProject.xcodeproj',
@@ -215,10 +243,10 @@ describe('build_dev_proj plugin', () => {
           '--verbose',
           'build',
         ],
-        'iOS Device Build',
-        true,
-        undefined,
-      );
+        logPrefix: 'iOS Device Build',
+        silent: true,
+        timeout: undefined,
+      });
     });
   });
 });

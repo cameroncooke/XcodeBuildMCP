@@ -118,6 +118,7 @@ async function _getAppPathFromBuildSettings(
 async function _handleMacOSBuildAndRunLogic(
   params: Record<string, unknown>,
   executor?: CommandExecutor,
+  execFunction?: (command: string) => Promise<{ stdout: string; stderr: string }>,
 ): Promise<ToolResponse> {
   log('info', 'Handling macOS build & run logic...');
   const _warningMessages = [];
@@ -155,7 +156,8 @@ async function _handleMacOSBuildAndRunLogic(
     // 4. Launch the app using the verified path
     // Launch the app
     try {
-      await promisify(exec)(`open "${appPath}"`);
+      const execFunc = execFunction || promisify(exec);
+      await execFunc(`open "${appPath}"`);
       log('info', `✅ macOS app launched successfully: ${appPath}`);
       const successResponse = {
         content: [
@@ -213,7 +215,13 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    buildUtilsDeps?: {
+      execFunction?: (command: string) => Promise<{ stdout: string; stderr: string }>;
+    },
+  ): Promise<ToolResponse> {
     const params = args;
     return _handleMacOSBuildAndRunLogic(
       {
@@ -222,6 +230,7 @@ export default {
         preferXcodebuild: params.preferXcodebuild ?? false,
       },
       executor,
+      buildUtilsDeps?.execFunction,
     );
   },
 };

@@ -4,16 +4,12 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, type CommandExecutor } from '../../../utils/command.js';
 import tool from '../get_mac_app_path_proj.ts';
 
 describe('get_mac_app_path_proj', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should export the correct name', () => {
       expect(tool.name).toBe('get_mac_app_path_proj');
@@ -71,12 +67,17 @@ describe('get_mac_app_path_proj', () => {
 
   describe('Command Generation and Response Logic', () => {
     it('should successfully get app path for macOS project', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      // Manual call tracking instead of vi.fn()
+      const calls: any[] = [];
+      const mockExecutor: CommandExecutor = async (...args) => {
+        calls.push(args);
+        return {
+          success: true,
+          output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
@@ -85,7 +86,9 @@ describe('get_mac_app_path_proj', () => {
 
       const result = await tool.handler(args, mockExecutor);
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      // Verify command generation with manual call tracking
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual([
         [
           'xcodebuild',
           '-showBuildSettings',
@@ -99,7 +102,7 @@ describe('get_mac_app_path_proj', () => {
         'Get App Path',
         true,
         undefined,
-      );
+      ]);
 
       expect(result).toEqual({
         content: [{ type: 'text', text: '✅ macOS app path: /path/to/build/MyApp.app' }],
@@ -167,7 +170,10 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should handle spawn error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('spawn xcodebuild ENOENT'));
+      // Manual error throwing instead of vi.fn().mockRejectedValue()
+      const mockExecutor: CommandExecutor = async () => {
+        throw new Error('spawn xcodebuild ENOENT');
+      };
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
@@ -188,12 +194,17 @@ describe('get_mac_app_path_proj', () => {
     });
 
     it('should use default configuration when not provided', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      // Manual call tracking instead of vi.fn()
+      const calls: any[] = [];
+      const mockExecutor: CommandExecutor = async (...args) => {
+        calls.push(args);
+        return {
+          success: true,
+          output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
@@ -202,7 +213,9 @@ describe('get_mac_app_path_proj', () => {
 
       await tool.handler(args, mockExecutor);
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      // Verify command generation with manual call tracking
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual([
         [
           'xcodebuild',
           '-showBuildSettings',
@@ -216,16 +229,21 @@ describe('get_mac_app_path_proj', () => {
         'Get App Path',
         true,
         undefined,
-      );
+      ]);
     });
 
     it('should include optional parameters in command', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      // Manual call tracking instead of vi.fn()
+      const calls: any[] = [];
+      const mockExecutor: CommandExecutor = async (...args) => {
+        calls.push(args);
+        return {
+          success: true,
+          output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       const args = {
         projectPath: '/path/to/project.xcodeproj',
@@ -237,7 +255,9 @@ describe('get_mac_app_path_proj', () => {
 
       await tool.handler(args, mockExecutor);
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      // Verify command generation with manual call tracking
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual([
         [
           'xcodebuild',
           '-showBuildSettings',
@@ -254,7 +274,7 @@ describe('get_mac_app_path_proj', () => {
         'Get App Path',
         true,
         undefined,
-      );
+      ]);
     });
 
     it('should handle missing build settings in output', async () => {
