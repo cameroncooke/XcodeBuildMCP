@@ -17,6 +17,39 @@ import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { createTextResponse } from '../../utils/index.js';
 import { CommandExecutor } from '../../utils/command.js';
 
+// Types for dependency injection
+export interface TempDirectoryDependencies {
+  mkdtemp: (prefix: string) => Promise<string>;
+  rm: (path: string, options: { recursive: boolean; force: boolean }) => Promise<void>;
+  tmpdir: () => string;
+}
+
+export interface BuildUtilsDependencies {
+  executeXcodeBuildCommand: typeof executeXcodeBuildCommand;
+}
+
+export interface FileSystemDependencies {
+  stat: (path: string) => Promise<{ isFile: () => boolean }>;
+}
+
+// Default implementations
+const defaultTempDirectoryDependencies: TempDirectoryDependencies = {
+  mkdtemp: async (prefix: string) => mkdtemp(prefix),
+  rm: async (path: string, options: { recursive: boolean; force: boolean }) => rm(path, options),
+  tmpdir: () => tmpdir(),
+};
+
+const defaultBuildUtilsDependencies: BuildUtilsDependencies = {
+  executeXcodeBuildCommand,
+};
+
+const defaultFileSystemDependencies: FileSystemDependencies = {
+  stat: async (path: string) => {
+    const fs = await import('fs/promises');
+    return fs.stat(path);
+  },
+};
+
 const XcodePlatform = {
   iOS: 'iOS',
   watchOS: 'watchOS',
@@ -144,6 +177,9 @@ function formatTestSummary(summary: Record<string, unknown>): string {
 async function handleTestLogic(
   params: Record<string, unknown>,
   executor?: CommandExecutor,
+  tempDirDeps: TempDirectoryDependencies = defaultTempDirectoryDependencies,
+  buildUtilsDeps: BuildUtilsDependencies = defaultBuildUtilsDependencies,
+  fileSystemDeps: FileSystemDependencies = defaultFileSystemDependencies,
 ): Promise<ToolResponse> {
   log(
     'info',
@@ -152,14 +188,14 @@ async function handleTestLogic(
 
   try {
     // Create temporary directory for xcresult bundle
-    const tempDir = await mkdtemp(join(tmpdir(), 'xcodebuild-test-'));
+    const tempDir = await tempDirDeps.mkdtemp(join(tempDirDeps.tmpdir(), 'xcodebuild-test-'));
     const resultBundlePath = join(tempDir, 'TestResults.xcresult');
 
     // Add resultBundlePath to extraArgs
     const extraArgs = [...(params.extraArgs || []), `-resultBundlePath`, resultBundlePath];
 
     // Run the test command
-    const testResult = await executeXcodeBuildCommand(
+    const testResult = await buildUtilsDeps.executeXcodeBuildCommand(
       {
         ...params,
         extraArgs,
@@ -183,8 +219,7 @@ async function handleTestLogic(
 
       // Check if the file exists
       try {
-        const { stat } = await import('fs/promises');
-        await stat(resultBundlePath);
+        await fileSystemDeps.stat(resultBundlePath);
         log('info', `xcresult bundle exists at: ${resultBundlePath}`);
       } catch {
         log('warn', `xcresult bundle does not exist at: ${resultBundlePath}`);
@@ -195,7 +230,7 @@ async function handleTestLogic(
       log('info', 'Successfully parsed xcresult bundle');
 
       // Clean up temporary directory
-      await rm(tempDir, { recursive: true, force: true });
+      await tempDirDeps.rm(tempDir, { recursive: true, force: true });
 
       // Return combined result - preserve isError from testResult (test failures should be marked as errors)
       return {
@@ -214,7 +249,7 @@ async function handleTestLogic(
 
       // Clean up temporary directory even if parsing fails
       try {
-        await rm(tempDir, { recursive: true, force: true });
+        await tempDirDeps.rm(tempDir, { recursive: true, force: true });
       } catch (cleanupError) {
         log('warn', `Failed to clean up temporary directory: ${cleanupError}`);
       }
@@ -248,7 +283,13 @@ export default {
       .optional()
       .describe('Target platform (defaults to iOS)'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    tempDirDeps?: TempDirectoryDependencies,
+    buildUtilsDeps?: BuildUtilsDependencies,
+    fileSystemDeps?: FileSystemDependencies,
+  ): Promise<ToolResponse> {
     const params = args;
     const platformMap = {
       iOS: XcodePlatform.iOS,
@@ -266,6 +307,9 @@ export default {
         deviceId: params.deviceId,
       },
       executor,
+      tempDirDeps,
+      buildUtilsDeps,
+      fileSystemDeps,
     );
   },
 };

@@ -1,28 +1,17 @@
 /**
  * Tests for test_device_proj plugin
  * Following CLAUDE.md testing standards with literal validation
- * Using dependency injection for deterministic testing
+ * Using pure dependency injection for deterministic testing
+ * NO VITEST MOCKING ALLOWED - Only createMockExecutor and manual stubs
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
-import testDeviceProj from '../test_device_proj.ts';
-
-// Mock fs promises for temp file handling
-vi.mock('fs/promises', () => ({
-  mkdtemp: vi.fn(),
-  rm: vi.fn(),
-  stat: vi.fn(),
-}));
-
-vi.mock('os', () => ({
-  tmpdir: vi.fn(() => '/tmp'),
-}));
-
-// Mock executeXcodeBuildCommand since it doesn't support CommandExecutor yet
-vi.mock('../../../utils/build-utils.js', () => ({
-  executeXcodeBuildCommand: vi.fn(),
-}));
+import testDeviceProj, {
+  type TempDirectoryDependencies,
+  type BuildUtilsDependencies,
+  type FileSystemDependencies,
+} from '../test_device_proj.ts';
 
 describe('test_device_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -68,35 +57,60 @@ describe('test_device_proj plugin', () => {
     });
   });
 
-  let mockMkdtemp: ReturnType<typeof vi.fn>;
-  let mockRm: ReturnType<typeof vi.fn>;
-  let mockStat: ReturnType<typeof vi.fn>;
-  let mockExecuteXcodeBuildCommand: ReturnType<typeof vi.fn>;
-
-  beforeEach(async () => {
-    const fs = await import('fs/promises');
-    const buildUtils = await import('../../../utils/build-utils.js');
-
-    mockMkdtemp = vi.mocked(fs.mkdtemp);
-    mockRm = vi.mocked(fs.rm);
-    mockStat = vi.mocked(fs.stat);
-    mockExecuteXcodeBuildCommand = vi.mocked(buildUtils.executeXcodeBuildCommand);
-
-    vi.clearAllMocks();
-
-    // Setup default mock behavior
-    mockMkdtemp.mockResolvedValue('/tmp/xcodebuild-test-123456');
-    mockRm.mockResolvedValue(undefined);
-    mockStat.mockResolvedValue({ isFile: () => true } as any);
-  });
-
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should generate correct xcodebuild test command for iOS device', async () => {
-      // Mock successful test execution
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyScheme.' }],
-      });
+    let mockTempDirDeps: TempDirectoryDependencies;
+    let mockBuildUtilsDeps: BuildUtilsDependencies;
+    let mockFileSystemDeps: FileSystemDependencies;
+    let executeXcodeBuildCommandCalls: any[];
+    let mkdtempCalls: string[];
+    let rmCalls: any[];
+    let statCalls: string[];
 
+    beforeEach(() => {
+      executeXcodeBuildCommandCalls = [];
+      mkdtempCalls = [];
+      rmCalls = [];
+      statCalls = [];
+
+      mockTempDirDeps = {
+        mkdtemp: async (prefix: string) => {
+          mkdtempCalls.push(prefix);
+          return '/tmp/xcodebuild-test-123456';
+        },
+        rm: async (path: string, options: { recursive: boolean; force: boolean }) => {
+          rmCalls.push({ path, options });
+        },
+        tmpdir: () => '/tmp',
+      };
+
+      mockBuildUtilsDeps = {
+        executeXcodeBuildCommand: async (
+          params: any,
+          platformOptions: any,
+          preferXcodebuild: any,
+          buildAction: any,
+        ) => {
+          executeXcodeBuildCommandCalls.push({
+            params,
+            platformOptions,
+            preferXcodebuild,
+            buildAction,
+          });
+          return {
+            content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyScheme.' }],
+          };
+        },
+      };
+
+      mockFileSystemDeps = {
+        stat: async (path: string) => {
+          statCalls.push(path);
+          return { isFile: () => true };
+        },
+      };
+    });
+
+    it('should generate correct xcodebuild test command for iOS device', async () => {
       // Mock xcresulttool output
       const mockExecutor = createMockExecutor({
         success: true,
@@ -118,10 +132,14 @@ describe('test_device_proj plugin', () => {
           deviceId: 'test-device-123',
         },
         mockExecutor,
+        mockTempDirDeps,
+        mockBuildUtilsDeps,
+        mockFileSystemDeps,
       );
 
-      expect(mockExecuteXcodeBuildCommand).toHaveBeenCalledWith(
-        {
+      expect(executeXcodeBuildCommandCalls).toHaveLength(1);
+      expect(executeXcodeBuildCommandCalls[0]).toEqual({
+        params: {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           deviceId: 'test-device-123',
@@ -130,7 +148,7 @@ describe('test_device_proj plugin', () => {
           platform: 'iOS',
           extraArgs: ['-resultBundlePath', '/tmp/xcodebuild-test-123456/TestResults.xcresult'],
         },
-        {
+        platformOptions: {
           platform: 'iOS',
           simulatorName: undefined,
           simulatorId: undefined,
@@ -138,17 +156,12 @@ describe('test_device_proj plugin', () => {
           useLatestOS: undefined,
           logPrefix: 'Test Run',
         },
-        false,
-        'test',
-      );
+        preferXcodebuild: false,
+        buildAction: 'test',
+      });
     });
 
     it('should return exact successful test response with parsed results', async () => {
-      // Mock successful test execution
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyScheme.' }],
-      });
-
       // Mock xcresulttool output
       const mockExecutor = createMockExecutor({
         success: true,
@@ -180,6 +193,9 @@ describe('test_device_proj plugin', () => {
           deviceId: 'test-device-123',
         },
         mockExecutor,
+        mockTempDirDeps,
+        mockBuildUtilsDeps,
+        mockFileSystemDeps,
       );
 
       expect(result).toEqual({
@@ -198,7 +214,7 @@ describe('test_device_proj plugin', () => {
 
     it('should return exact test failure response with parsed results', async () => {
       // Mock failed test execution
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
+      mockBuildUtilsDeps.executeXcodeBuildCommand = async () => ({
         content: [{ type: 'text', text: '❌ Test Run test failed for scheme MyScheme.' }],
         isError: true,
       });
@@ -231,6 +247,9 @@ describe('test_device_proj plugin', () => {
           deviceId: 'test-device-123',
         },
         mockExecutor,
+        mockTempDirDeps,
+        mockBuildUtilsDeps,
+        mockFileSystemDeps,
       );
 
       expect(result).toEqual({
@@ -249,17 +268,16 @@ describe('test_device_proj plugin', () => {
     });
 
     it('should fallback to original response if xcresult parsing fails', async () => {
-      // Mock successful test execution
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyScheme.' }],
-      });
-
       // Mock xcresulttool to fail
       const mockExecutor = createMockExecutor({
         success: false,
         error: 'xcresulttool failed',
       });
-      mockStat.mockRejectedValue(new Error('File not found'));
+
+      // Mock stat to fail (file not found)
+      mockFileSystemDeps.stat = async () => {
+        throw new Error('File not found');
+      };
 
       const result = await testDeviceProj.handler(
         {
@@ -268,6 +286,9 @@ describe('test_device_proj plugin', () => {
           deviceId: 'test-device-123',
         },
         mockExecutor,
+        mockTempDirDeps,
+        mockBuildUtilsDeps,
+        mockFileSystemDeps,
       );
 
       expect(result).toEqual({
@@ -281,11 +302,6 @@ describe('test_device_proj plugin', () => {
     });
 
     it('should use different platforms correctly', async () => {
-      // Mock successful test execution
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme WatchApp.' }],
-      });
-
       // Mock xcresulttool output
       const mockExecutor = createMockExecutor({
         success: true,
@@ -308,10 +324,14 @@ describe('test_device_proj plugin', () => {
           platform: 'watchOS',
         },
         mockExecutor,
+        mockTempDirDeps,
+        mockBuildUtilsDeps,
+        mockFileSystemDeps,
       );
 
-      expect(mockExecuteXcodeBuildCommand).toHaveBeenCalledWith(
-        {
+      expect(executeXcodeBuildCommandCalls).toHaveLength(1);
+      expect(executeXcodeBuildCommandCalls[0]).toEqual({
+        params: {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'WatchApp',
           deviceId: 'watch-device-456',
@@ -320,7 +340,7 @@ describe('test_device_proj plugin', () => {
           preferXcodebuild: false,
           extraArgs: ['-resultBundlePath', '/tmp/xcodebuild-test-123456/TestResults.xcresult'],
         },
-        {
+        platformOptions: {
           platform: 'watchOS',
           simulatorName: undefined,
           simulatorId: undefined,
@@ -328,17 +348,12 @@ describe('test_device_proj plugin', () => {
           useLatestOS: undefined,
           logPrefix: 'Test Run',
         },
-        false,
-        'test',
-      );
+        preferXcodebuild: false,
+        buildAction: 'test',
+      });
     });
 
     it('should clean up temp directory after processing', async () => {
-      // Mock successful test execution
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyScheme.' }],
-      });
-
       // Mock xcresulttool output
       const mockExecutor = createMockExecutor({
         success: true,
@@ -360,20 +375,19 @@ describe('test_device_proj plugin', () => {
           deviceId: 'test-device-123',
         },
         mockExecutor,
+        mockTempDirDeps,
+        mockBuildUtilsDeps,
+        mockFileSystemDeps,
       );
 
-      expect(mockRm).toHaveBeenCalledWith('/tmp/xcodebuild-test-123456', {
-        recursive: true,
-        force: true,
+      expect(rmCalls).toHaveLength(1);
+      expect(rmCalls[0]).toEqual({
+        path: '/tmp/xcodebuild-test-123456',
+        options: { recursive: true, force: true },
       });
     });
 
     it('should include optional parameters in command', async () => {
-      // Mock successful test execution
-      mockExecuteXcodeBuildCommand.mockResolvedValue({
-        content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyScheme.' }],
-      });
-
       // Mock xcresulttool output
       const mockExecutor = createMockExecutor({
         success: true,
@@ -398,10 +412,14 @@ describe('test_device_proj plugin', () => {
           extraArgs: ['--verbose'],
         },
         mockExecutor,
+        mockTempDirDeps,
+        mockBuildUtilsDeps,
+        mockFileSystemDeps,
       );
 
-      expect(mockExecuteXcodeBuildCommand).toHaveBeenCalledWith(
-        {
+      expect(executeXcodeBuildCommandCalls).toHaveLength(1);
+      expect(executeXcodeBuildCommandCalls[0]).toEqual({
+        params: {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           deviceId: 'test-device-123',
@@ -415,7 +433,7 @@ describe('test_device_proj plugin', () => {
           preferXcodebuild: false,
           platform: 'iOS',
         },
-        {
+        platformOptions: {
           platform: 'iOS',
           simulatorName: undefined,
           simulatorId: undefined,
@@ -423,9 +441,69 @@ describe('test_device_proj plugin', () => {
           useLatestOS: undefined,
           logPrefix: 'Test Run',
         },
-        false,
-        'test',
+        preferXcodebuild: false,
+        buildAction: 'test',
+      });
+    });
+
+    it('should create temporary directory with correct prefix', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: JSON.stringify({
+          title: 'Tests',
+          result: 'SUCCESS',
+          totalTestCount: 1,
+          passedTests: 1,
+          failedTests: 0,
+          skippedTests: 0,
+          expectedFailures: 0,
+        }),
+      });
+
+      await testDeviceProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          deviceId: 'test-device-123',
+        },
+        mockExecutor,
+        mockTempDirDeps,
+        mockBuildUtilsDeps,
+        mockFileSystemDeps,
       );
+
+      expect(mkdtempCalls).toHaveLength(1);
+      expect(mkdtempCalls[0]).toBe('/tmp/xcodebuild-test-');
+    });
+
+    it('should check for xcresult bundle existence', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: JSON.stringify({
+          title: 'Tests',
+          result: 'SUCCESS',
+          totalTestCount: 1,
+          passedTests: 1,
+          failedTests: 0,
+          skippedTests: 0,
+          expectedFailures: 0,
+        }),
+      });
+
+      await testDeviceProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          deviceId: 'test-device-123',
+        },
+        mockExecutor,
+        mockTempDirDeps,
+        mockBuildUtilsDeps,
+        mockFileSystemDeps,
+      );
+
+      expect(statCalls).toHaveLength(1);
+      expect(statCalls[0]).toBe('/tmp/xcodebuild-test-123456/TestResults.xcresult');
     });
   });
 });

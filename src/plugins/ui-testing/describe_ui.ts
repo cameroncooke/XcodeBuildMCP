@@ -32,7 +32,10 @@ export default {
   async handler(
     args: Record<string, unknown>,
     executor?: CommandExecutor,
-    axeHelpers?: any,
+    axeHelpers?: {
+      getAxePath: () => string | null;
+      getBundledAxeEnvironment: () => Record<string, string>;
+    },
   ): Promise<ToolResponse> {
     const params = args;
     const toolName = 'describe_ui';
@@ -105,7 +108,10 @@ async function executeAxeCommand(
   simulatorUuid: string,
   commandName: string,
   executor?: CommandExecutor,
-  axeHelpers?: any,
+  axeHelpers?: {
+    getAxePath: () => string | null;
+    getBundledAxeEnvironment: () => Record<string, string>;
+  },
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
   const axeBinary = axeHelpers ? axeHelpers.getAxePath() : getAxePath();

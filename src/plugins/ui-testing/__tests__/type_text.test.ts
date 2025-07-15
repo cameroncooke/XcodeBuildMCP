@@ -2,28 +2,36 @@
  * Tests for type_text plugin
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import typeTextPlugin from '../type_text.ts';
 
-// Mock only the path resolution utilities, not validation/response utilities
-vi.mock('../../../utils/index.js', async (importOriginal) => {
-  const actual = await importOriginal();
+// Mock axe helpers for dependency injection
+function createMockAxeHelpers(
+  overrides: {
+    getAxePathReturn?: string | null;
+    getBundledAxeEnvironmentReturn?: Record<string, string>;
+  } = {},
+) {
   return {
-    ...actual,
-    getAxePath: vi.fn(),
-    getBundledAxeEnvironment: vi.fn(),
+    getAxePath: () => {
+      return Object.prototype.hasOwnProperty.call(overrides, 'getAxePathReturn')
+        ? overrides.getAxePathReturn
+        : '/usr/local/bin/axe';
+    },
+    getBundledAxeEnvironment: () => overrides.getBundledAxeEnvironmentReturn ?? {},
   };
-});
+}
 
-import { getAxePath, getBundledAxeEnvironment } from '../../../utils/index.js';
+// Mock executor that tracks rejections for testing
+function createRejectingExecutor(error: any) {
+  return async () => {
+    throw error;
+  };
+}
 
 describe('Type Text Plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(typeTextPlugin.name).toBe('type_text');
@@ -113,8 +121,10 @@ describe('Type Text Plugin', () => {
     });
 
     it('should return success for valid text typing', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: '/usr/local/bin/axe',
+        getBundledAxeEnvironmentReturn: {},
+      });
 
       const mockExecutor = createMockExecutor({
         success: true,
@@ -128,6 +138,7 @@ describe('Type Text Plugin', () => {
           text: 'Hello World',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -137,12 +148,18 @@ describe('Type Text Plugin', () => {
     });
 
     it('should handle DependencyError when axe binary not found', async () => {
-      vi.mocked(getAxePath).mockReturnValue(null);
-
-      const result = await typeTextPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        text: 'Hello World',
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: null,
       });
+
+      const result = await typeTextPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          text: 'Hello World',
+        },
+        undefined,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
         content: [
@@ -156,8 +173,10 @@ describe('Type Text Plugin', () => {
     });
 
     it('should handle AxeError from command execution', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: '/usr/local/bin/axe',
+        getBundledAxeEnvironmentReturn: {},
+      });
 
       const mockExecutor = createMockExecutor({
         success: false,
@@ -171,6 +190,7 @@ describe('Type Text Plugin', () => {
           text: 'Hello World',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -185,12 +205,12 @@ describe('Type Text Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: '/usr/local/bin/axe',
+        getBundledAxeEnvironmentReturn: {},
+      });
 
-      const mockExecutor = vi
-        .fn()
-        .mockRejectedValue(new Error('ENOENT: no such file or directory'));
+      const mockExecutor = createRejectingExecutor(new Error('ENOENT: no such file or directory'));
 
       const result = await typeTextPlugin.handler(
         {
@@ -198,6 +218,7 @@ describe('Type Text Plugin', () => {
           text: 'Hello World',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -214,10 +235,12 @@ describe('Type Text Plugin', () => {
     });
 
     it('should handle unexpected Error objects', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: '/usr/local/bin/axe',
+        getBundledAxeEnvironmentReturn: {},
+      });
 
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+      const mockExecutor = createRejectingExecutor(new Error('Unexpected error'));
 
       const result = await typeTextPlugin.handler(
         {
@@ -225,6 +248,7 @@ describe('Type Text Plugin', () => {
           text: 'Hello World',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -241,10 +265,12 @@ describe('Type Text Plugin', () => {
     });
 
     it('should handle unexpected string errors', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: '/usr/local/bin/axe',
+        getBundledAxeEnvironmentReturn: {},
+      });
 
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockExecutor = createRejectingExecutor('String error');
 
       const result = await typeTextPlugin.handler(
         {
@@ -252,6 +278,7 @@ describe('Type Text Plugin', () => {
           text: 'Hello World',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({

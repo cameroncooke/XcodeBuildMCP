@@ -2,26 +2,16 @@
  * Tests for describe_ui tool plugin
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import describeUIPlugin from '../describe_ui.ts';
 
-// Mock only the path resolution utilities, not validation/response utilities
-vi.mock('../../../utils/index.js', async (importOriginal) => {
-  const actual = await importOriginal();
-  return {
-    ...actual,
-    getAxePath: vi.fn(),
-    getBundledAxeEnvironment: vi.fn(),
-  };
-});
-
-import { getAxePath, getBundledAxeEnvironment } from '../../../utils/index.js';
-
 describe('Describe UI Plugin', () => {
+  let mockCalls: any[] = [];
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockCalls = [];
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -77,32 +67,43 @@ describe('Describe UI Plugin', () => {
     });
 
     it('should return success for valid describe_ui execution', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
-
       const uiHierarchy =
         '{"elements": [{"type": "Button", "frame": {"x": 100, "y": 200, "width": 50, "height": 30}}]}';
 
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: uiHierarchy,
         error: undefined,
         process: { pid: 12345 },
       });
 
+      // Create mock axe helpers
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      // Wrap executor to track calls
+      const executorCalls: any[] = [];
+      const trackingExecutor = async (...args: any[]) => {
+        executorCalls.push(args);
+        return mockExecutor(...args);
+      };
+
       const result = await describeUIPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
-        mockExecutor,
+        trackingExecutor,
+        mockAxeHelpers,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(executorCalls[0]).toEqual([
         ['/usr/local/bin/axe', 'describe-ui', '--udid', '12345678-1234-1234-1234-123456789012'],
         '[AXe]: describe-ui',
         false,
-        expect.any(Object),
-      );
+        {},
+      ]);
 
       expect(result).toEqual({
         content: [
@@ -122,11 +123,19 @@ describe('Describe UI Plugin', () => {
     });
 
     it('should handle DependencyError when axe is not available', async () => {
-      vi.mocked(getAxePath).mockReturnValue(null);
+      // Create mock axe helpers that return null for axe path
+      const mockAxeHelpers = {
+        getAxePath: () => null,
+        getBundledAxeEnvironment: () => ({}),
+      };
 
-      const result = await describeUIPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await describeUIPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        undefined,
+        mockAxeHelpers,
+      );
 
       expect(result).toEqual({
         content: [
@@ -140,21 +149,25 @@ describe('Describe UI Plugin', () => {
     });
 
     it('should handle AxeError from failed command execution', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
-
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'axe command failed',
         process: { pid: 12345 },
       });
 
+      // Create mock axe helpers
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
       const result = await describeUIPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -169,18 +182,20 @@ describe('Describe UI Plugin', () => {
     });
 
     it('should handle SystemError from command execution', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockExecutor = createMockExecutor(new Error('ENOENT: no such file or directory'));
 
-      const mockExecutor = vi
-        .fn()
-        .mockRejectedValue(new Error('ENOENT: no such file or directory'));
+      // Create mock axe helpers
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await describeUIPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -197,16 +212,20 @@ describe('Describe UI Plugin', () => {
     });
 
     it('should handle unexpected Error objects', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockExecutor = createMockExecutor(new Error('Unexpected error'));
 
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Unexpected error'));
+      // Create mock axe helpers
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await describeUIPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -223,16 +242,20 @@ describe('Describe UI Plugin', () => {
     });
 
     it('should handle unexpected string errors', async () => {
-      vi.mocked(getAxePath).mockReturnValue('/usr/local/bin/axe');
-      vi.mocked(getBundledAxeEnvironment).mockReturnValue({});
+      const mockExecutor = createMockExecutor('String error');
 
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      // Create mock axe helpers
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
 
       const result = await describeUIPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({

@@ -10,6 +10,16 @@ import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 import { CommandExecutor } from '../../utils/command.js';
 
+// Types for dependency injection
+export interface BuildUtilsDependencies {
+  executeXcodeBuildCommand: typeof executeXcodeBuildCommand;
+}
+
+// Default implementations
+const defaultBuildUtilsDependencies: BuildUtilsDependencies = {
+  executeXcodeBuildCommand,
+};
+
 const XcodePlatform = {
   iOS: 'iOS',
   watchOS: 'watchOS',
@@ -28,10 +38,11 @@ const XcodePlatform = {
 async function _handleMacOSBuildLogic(
   params: Record<string, unknown>,
   executor?: CommandExecutor,
+  buildUtilsDeps: BuildUtilsDependencies = defaultBuildUtilsDependencies,
 ): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
-  return executeXcodeBuildCommand(
+  return buildUtilsDeps.executeXcodeBuildCommand(
     {
       ...params,
     },
@@ -67,7 +78,11 @@ export default {
       .optional()
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    buildUtilsDeps?: BuildUtilsDependencies,
+  ): Promise<ToolResponse> {
     const params = args;
     return _handleMacOSBuildLogic(
       {
@@ -76,6 +91,7 @@ export default {
         preferXcodebuild: params.preferXcodebuild ?? false,
       },
       executor,
+      buildUtilsDeps,
     );
   },
 };

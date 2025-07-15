@@ -19,6 +19,11 @@ import {
 
 const LOG_PREFIX = '[AXe]';
 
+interface AxeHelpers {
+  getAxePath: () => string | null;
+  getBundledAxeEnvironment: () => Record<string, string>;
+}
+
 export default {
   name: 'type_text',
   description:
@@ -27,7 +32,11 @@ export default {
     simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
     text: z.string().min(1, 'Text cannot be empty'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor?: CommandExecutor,
+    axeHelpers?: AxeHelpers,
+  ): Promise<ToolResponse> {
     const params = args;
     const toolName = 'type_text';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -44,7 +53,7 @@ export default {
     );
 
     try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'type', executor);
+      await executeAxeCommand(commandArgs, simulatorUuid, 'type', executor, axeHelpers);
       log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
       return createTextResponse('Text typing simulated successfully.');
     } catch (error) {
@@ -79,9 +88,13 @@ async function executeAxeCommand(
   simulatorUuid: string,
   commandName: string,
   executor?: CommandExecutor,
+  axeHelpers?: AxeHelpers,
 ): Promise<ToolResponse> {
+  // Use provided helpers or defaults
+  const helpers = axeHelpers || { getAxePath, getBundledAxeEnvironment };
+
   // Get the appropriate axe binary path
-  const axeBinary = getAxePath();
+  const axeBinary = helpers.getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -94,7 +107,7 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv = axeBinary !== 'axe' ? getBundledAxeEnvironment() : undefined;
+    const axeEnv = axeBinary !== 'axe' ? helpers.getBundledAxeEnvironment() : undefined;
 
     const result = await executeCommand(
       fullCommand,
