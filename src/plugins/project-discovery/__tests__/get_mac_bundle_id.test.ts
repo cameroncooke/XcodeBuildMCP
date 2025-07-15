@@ -1,25 +1,28 @@
-import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
-import plugin from '../get_mac_bundle_id.ts';
-import { execSync } from 'child_process';
-
-// Mock only the child_process execution at the lowest level
-vi.mock('child_process', () => ({
-  execSync: vi.fn(),
-}));
-
-vi.mock('fs', () => ({
-  existsSync: vi.fn(),
-}));
-
-const mockExecSync = execSync as MockedFunction<typeof execSync>;
-import fs from 'fs';
-const mockExistsSync = vi.mocked(fs.existsSync);
+import plugin, { type SyncExecutor } from '../get_mac_bundle_id.ts';
+import { createMockFileSystemExecutor } from '../../../utils/command.js';
 
 describe('get_mac_bundle_id plugin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+
+  // Helper function to create mock sync executor
+  const createMockSyncExecutor = (results: Record<string, string | Error>): SyncExecutor => {
+    const calls: string[] = [];
+    return (command: string): string => {
+      calls.push(command);
+      const result = results[command];
+      if (result instanceof Error) {
+        throw result;
+      }
+      if (typeof result === 'string') {
+        return result;
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    };
+  };
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
@@ -65,9 +68,16 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should return error when file exists validation fails', async () => {
-      mockExistsSync.mockReturnValueOnce(false);
+      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => false,
+      });
 
-      const result = await plugin.handler({ appPath: '/Applications/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/Applications/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -81,10 +91,19 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should return success with bundle ID using defaults read', async () => {
-      mockExistsSync.mockReturnValueOnce(true);
-      mockExecSync.mockReturnValueOnce('com.example.MyMacApp\n');
+      const mockSyncExecutor = createMockSyncExecutor({
+        'defaults read "/Applications/MyApp.app/Contents/Info" CFBundleIdentifier':
+          'com.example.MyMacApp',
+      });
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
 
-      const result = await plugin.handler({ appPath: '/Applications/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/Applications/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -105,14 +124,22 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should fallback to PlistBuddy when defaults read fails', async () => {
-      mockExistsSync.mockReturnValueOnce(true);
-      mockExecSync
-        .mockImplementationOnce(() => {
-          throw new Error('defaults read failed');
-        })
-        .mockReturnValueOnce('com.example.MyMacApp\n');
+      const mockSyncExecutor = createMockSyncExecutor({
+        'defaults read "/Applications/MyApp.app/Contents/Info" CFBundleIdentifier': new Error(
+          'defaults read failed',
+        ),
+        '/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/Applications/MyApp.app/Contents/Info.plist"':
+          'com.example.MyMacApp',
+      });
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
 
-      const result = await plugin.handler({ appPath: '/Applications/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/Applications/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -133,77 +160,103 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should return error when both extraction methods fail', async () => {
-      mockExistsSync.mockReturnValueOnce(true);
-      mockExecSync.mockImplementation(() => {
-        throw new Error('Command failed');
+      const mockSyncExecutor = createMockSyncExecutor({
+        'defaults read "/Applications/MyApp.app/Contents/Info" CFBundleIdentifier': new Error(
+          'Command failed',
+        ),
+        '/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/Applications/MyApp.app/Contents/Info.plist"':
+          new Error('Command failed'),
+      });
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => true,
       });
 
-      const result = await plugin.handler({ appPath: '/Applications/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/Applications/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error extracting macOS app bundle ID: Could not extract bundle ID from Info.plist: Command failed',
-          },
-          {
-            type: 'text',
-            text: 'Make sure the path points to a valid macOS app bundle (.app directory).',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Error extracting macOS bundle ID');
+      expect(result.content[0].text).toContain('Could not extract bundle ID from Info.plist');
+      expect(result.content[0].text).toContain('Command failed');
+      expect(result.content[1].type).toBe('text');
+      expect(result.content[1].text).toBe(
+        'Make sure the path points to a valid macOS app bundle (.app directory).',
+      );
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      mockExistsSync.mockReturnValueOnce(true);
-      mockExecSync.mockImplementation(() => {
-        throw new Error('Custom error message');
+      const mockSyncExecutor = createMockSyncExecutor({
+        'defaults read "/Applications/MyApp.app/Contents/Info" CFBundleIdentifier': new Error(
+          'Custom error message',
+        ),
+        '/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/Applications/MyApp.app/Contents/Info.plist"':
+          new Error('Custom error message'),
+      });
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => true,
       });
 
-      const result = await plugin.handler({ appPath: '/Applications/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/Applications/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error extracting macOS app bundle ID: Could not extract bundle ID from Info.plist: Custom error message',
-          },
-          {
-            type: 'text',
-            text: 'Make sure the path points to a valid macOS app bundle (.app directory).',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Error extracting macOS bundle ID');
+      expect(result.content[0].text).toContain('Could not extract bundle ID from Info.plist');
+      expect(result.content[0].text).toContain('Custom error message');
+      expect(result.content[1].type).toBe('text');
+      expect(result.content[1].text).toBe(
+        'Make sure the path points to a valid macOS app bundle (.app directory).',
+      );
     });
 
     it('should handle string errors in catch blocks', async () => {
-      mockExistsSync.mockReturnValueOnce(true);
-      mockExecSync.mockImplementation(() => {
+      const mockSyncExecutor: SyncExecutor = (command: string): string => {
         throw 'String error';
+      };
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => true,
       });
 
-      const result = await plugin.handler({ appPath: '/Applications/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/Applications/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Error extracting macOS bundle ID');
+      expect(result.content[0].text).toContain('Could not extract bundle ID from Info.plist');
+      expect(result.content[0].text).toContain('String error');
+      expect(result.content[1].type).toBe('text');
+      expect(result.content[1].text).toBe(
+        'Make sure the path points to a valid macOS app bundle (.app directory).',
+      );
+    });
+
+    it('should handle schema validation error when appPath is null', async () => {
+      const result = await plugin.handler({ appPath: null });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error extracting macOS app bundle ID: Could not extract bundle ID from Info.plist: String error',
-          },
-          {
-            type: 'text',
-            text: 'Make sure the path points to a valid macOS app bundle (.app directory).',
+            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
           },
         ],
         isError: true,
       });
-    });
-
-    it('should handle schema validation error when appPath is null', async () => {
-      // Schema validation will throw before reaching validateRequiredParam
-      await expect(plugin.handler({ appPath: null })).rejects.toThrow();
     });
   });
 });

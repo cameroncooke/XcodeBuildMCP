@@ -1,25 +1,34 @@
-import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
+/**
+ * Test for get_app_bundle_id plugin - Dependency Injection Architecture
+ *
+ * Tests the plugin structure and exported components for get_app_bundle_id tool.
+ * Uses pure dependency injection with createMockFileSystemExecutor.
+ * NO VITEST MOCKING ALLOWED - Only createMockFileSystemExecutor
+ *
+ * Plugin location: plugins/project-discovery/get_app_bundle_id.ts
+ */
+
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import plugin from '../get_app_bundle_id.ts';
-import { execSync } from 'child_process';
-
-// Mock only the child_process execution at the lowest level
-vi.mock('child_process', () => ({
-  execSync: vi.fn(),
-}));
-
-vi.mock('fs', () => ({
-  existsSync: vi.fn(),
-}));
-
-const mockExecSync = execSync as MockedFunction<typeof execSync>;
-import fs from 'fs';
-const mockExistsSync = vi.mocked(fs.existsSync);
+import plugin, { type SyncExecutor } from '../get_app_bundle_id.ts';
+import { createMockFileSystemExecutor } from '../../../utils/command.js';
 
 describe('get_app_bundle_id plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  // Helper function to create mock sync executor
+  const createMockSyncExecutor = (results: Record<string, string | Error>): SyncExecutor => {
+    const calls: string[] = [];
+    return (command: string): string => {
+      calls.push(command);
+      const result = results[command];
+      if (result instanceof Error) {
+        throw result;
+      }
+      if (typeof result === 'string') {
+        return result;
+      }
+      throw new Error(`Unexpected command: ${command}`);
+    };
+  };
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
@@ -65,9 +74,16 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should return error when file exists validation fails', async () => {
-      mockExistsSync.mockReturnValueOnce(false);
+      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => false,
+      });
 
-      const result = await plugin.handler({ appPath: '/path/to/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/path/to/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -81,10 +97,18 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should return success with bundle ID using defaults read', async () => {
-      mockExistsSync.mockReturnValueOnce(true);
-      mockExecSync.mockReturnValueOnce('com.example.MyApp\n');
+      const mockSyncExecutor = createMockSyncExecutor({
+        'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': 'com.example.MyApp',
+      });
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
 
-      const result = await plugin.handler({ appPath: '/path/to/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/path/to/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -106,14 +130,22 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should fallback to PlistBuddy when defaults read fails', async () => {
-      mockExistsSync.mockReturnValueOnce(true);
-      mockExecSync
-        .mockImplementationOnce(() => {
-          throw new Error('defaults read failed');
-        })
-        .mockReturnValueOnce('com.example.MyApp\n');
+      const mockSyncExecutor = createMockSyncExecutor({
+        'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': new Error(
+          'defaults read failed',
+        ),
+        '/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/path/to/MyApp.app/Info.plist"':
+          'com.example.MyApp',
+      });
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
 
-      const result = await plugin.handler({ appPath: '/path/to/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/path/to/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -135,12 +167,22 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should return error when both extraction methods fail', async () => {
-      mockExistsSync.mockReturnValueOnce(true);
-      mockExecSync.mockImplementation(() => {
-        throw new Error('Command failed');
+      const mockSyncExecutor = createMockSyncExecutor({
+        'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': new Error(
+          'defaults read failed',
+        ),
+        '/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/path/to/MyApp.app/Info.plist"':
+          new Error('Command failed'),
+      });
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => true,
       });
 
-      const result = await plugin.handler({ appPath: '/path/to/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/path/to/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -158,12 +200,22 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      mockExistsSync.mockReturnValueOnce(true);
-      mockExecSync.mockImplementation(() => {
-        throw new Error('Custom error message');
+      const mockSyncExecutor = createMockSyncExecutor({
+        'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': new Error(
+          'defaults read failed',
+        ),
+        '/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/path/to/MyApp.app/Info.plist"':
+          new Error('Custom error message'),
+      });
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => true,
       });
 
-      const result = await plugin.handler({ appPath: '/path/to/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/path/to/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -181,12 +233,22 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle string errors in catch blocks', async () => {
-      mockExistsSync.mockReturnValueOnce(true);
-      mockExecSync.mockImplementation(() => {
-        throw 'String error';
+      const mockSyncExecutor = createMockSyncExecutor({
+        'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': new Error(
+          'defaults read failed',
+        ),
+        '/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/path/to/MyApp.app/Info.plist"':
+          new Error('String error'),
+      });
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => true,
       });
 
-      const result = await plugin.handler({ appPath: '/path/to/MyApp.app' });
+      const result = await plugin.handler(
+        { appPath: '/path/to/MyApp.app' },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -205,7 +267,59 @@ describe('get_app_bundle_id plugin', () => {
 
     it('should handle schema validation error when appPath is null', async () => {
       // Schema validation will throw before reaching validateRequiredParam
-      await expect(plugin.handler({ appPath: null })).rejects.toThrow();
+      const result = await plugin.handler({ appPath: null });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should handle schema validation with missing appPath', async () => {
+      const result = await plugin.handler({});
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should handle schema validation with undefined appPath', async () => {
+      const result = await plugin.handler({ appPath: undefined });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should handle schema validation with number type appPath', async () => {
+      const result = await plugin.handler({ appPath: 123 });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
     });
   });
 });

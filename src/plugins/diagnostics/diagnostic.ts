@@ -14,16 +14,44 @@ import * as os from 'os';
 import { loadPlugins } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
+// Mock system interface for dependency injection
+interface MockSystem {
+  execSync: (cmd: string, options?: any) => string;
+  platform: () => string;
+  release: () => string;
+  arch: () => string;
+  cpus: () => Array<{ model: string }>;
+  totalmem: () => number;
+  hostname: () => string;
+  userInfo: () => { username: string };
+  homedir: () => string;
+  tmpdir: () => string;
+}
+
+// Mock utilities interface for dependency injection
+interface MockUtilities {
+  areAxeToolsAvailable: () => boolean;
+  isXcodemakeEnabled: () => boolean;
+  isXcodemakeAvailable: () => Promise<boolean>;
+  doesMakefileExist: (path: string) => boolean;
+  loadPlugins: () => Promise<Map<string, any>>;
+}
+
 // Constants
 const LOG_PREFIX = '[Diagnostic]';
 
 /**
  * Check if a binary is available in the PATH and attempt to get its version
  */
-function checkBinaryAvailability(binary: string): { available: boolean; version?: string } {
+function checkBinaryAvailability(
+  binary: string,
+  mockSystem?: MockSystem,
+): { available: boolean; version?: string } {
+  const execSyncFn = mockSystem?.execSync || execSync;
+
   // First check if the binary exists at all
   try {
-    execSync(`which ${binary}`, { stdio: 'ignore' });
+    execSyncFn(`which ${binary}`, { stdio: 'ignore' });
   } catch {
     // Binary not found in PATH
     return { available: false };
@@ -41,7 +69,7 @@ function checkBinaryAvailability(binary: string): { available: boolean; version?
   // Try to get version using binary-specific commands
   if (binary in versionCommands) {
     try {
-      const output = execSync(versionCommands[binary], {
+      const output = execSyncFn(versionCommands[binary], {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
       }).trim();
@@ -69,20 +97,24 @@ function checkBinaryAvailability(binary: string): { available: boolean; version?
 /**
  * Get information about the Xcode installation
  */
-function getXcodeInfo():
+function getXcodeInfo(
+  mockSystem?: MockSystem,
+):
   | { version: string; path: string; selectedXcode: string; xcrunVersion: string }
   | { error: string } {
+  const execSyncFn = mockSystem?.execSync || execSync;
+
   try {
     // Get Xcode version info
-    const xcodebuildOutput = execSync('xcodebuild -version', { encoding: 'utf8' }).trim();
+    const xcodebuildOutput = execSyncFn('xcodebuild -version', { encoding: 'utf8' }).trim();
     const version = xcodebuildOutput.split('\n').slice(0, 2).join(' - ');
 
     // Get Xcode selection info
-    const path = execSync('xcode-select -p', { encoding: 'utf8' }).trim();
-    const selectedXcode = execSync('xcrun --find xcodebuild', { encoding: 'utf8' }).trim();
+    const path = execSyncFn('xcode-select -p', { encoding: 'utf8' }).trim();
+    const selectedXcode = execSyncFn('xcrun --find xcodebuild', { encoding: 'utf8' }).trim();
 
     // Get xcrun version info
-    const xcrunVersion = execSync('xcrun --version', { encoding: 'utf8' }).trim();
+    const xcrunVersion = execSyncFn('xcrun --version', { encoding: 'utf8' }).trim();
 
     return { version, path, selectedXcode, xcrunVersion };
   } catch (error) {
@@ -130,7 +162,7 @@ function getEnvironmentVariables(): Record<string, string | undefined> {
 /**
  * Get system information
  */
-function getSystemInfo(): {
+function getSystemInfo(mockSystem?: MockSystem): {
   platform: string;
   release: string;
   arch: string;
@@ -141,16 +173,26 @@ function getSystemInfo(): {
   homedir: string;
   tmpdir: string;
 } {
+  const platformFn = mockSystem?.platform || os.platform;
+  const releaseFn = mockSystem?.release || os.release;
+  const archFn = mockSystem?.arch || os.arch;
+  const cpusFn = mockSystem?.cpus || os.cpus;
+  const totalmemFn = mockSystem?.totalmem || os.totalmem;
+  const hostnameFn = mockSystem?.hostname || os.hostname;
+  const userInfoFn = mockSystem?.userInfo || os.userInfo;
+  const homedirFn = mockSystem?.homedir || os.homedir;
+  const tmpdirFn = mockSystem?.tmpdir || os.tmpdir;
+
   return {
-    platform: os.platform(),
-    release: os.release(),
-    arch: os.arch(),
-    cpus: `${os.cpus().length} x ${os.cpus()[0]?.model || 'Unknown'}`,
-    memory: `${Math.round(os.totalmem() / (1024 * 1024 * 1024))} GB`,
-    hostname: os.hostname(),
-    username: os.userInfo().username,
-    homedir: os.homedir(),
-    tmpdir: os.tmpdir(),
+    platform: platformFn(),
+    release: releaseFn(),
+    arch: archFn(),
+    cpus: `${cpusFn().length} x ${cpusFn()[0]?.model || 'Unknown'}`,
+    memory: `${Math.round(totalmemFn() / (1024 * 1024 * 1024))} GB`,
+    hostname: hostnameFn(),
+    username: userInfoFn().username,
+    homedir: homedirFn(),
+    tmpdir: tmpdirFn(),
   };
 }
 
@@ -182,7 +224,7 @@ function getNodeInfo(): {
 /**
  * Get information about loaded plugins and their directories
  */
-async function getPluginSystemInfo(): Promise<
+async function getPluginSystemInfo(mockUtilities?: MockUtilities): Promise<
   | {
       totalPlugins: number;
       pluginDirectories: number;
@@ -191,8 +233,10 @@ async function getPluginSystemInfo(): Promise<
     }
   | { error: string; systemMode: string }
 > {
+  const loadPluginsFn = mockUtilities?.loadPlugins || loadPlugins;
+
   try {
-    const plugins = await loadPlugins();
+    const plugins = await loadPluginsFn();
 
     // Group plugins by directory
     const pluginsByDirectory = {};
@@ -235,7 +279,10 @@ function getIndividuallyEnabledTools(): string[] {
 /**
  * Run the diagnostic tool and return the results
  */
-async function runDiagnosticTool(): Promise<ToolResponse> {
+async function runDiagnosticTool(
+  mockSystem?: MockSystem,
+  mockUtilities?: MockUtilities,
+): Promise<ToolResponse> {
   log('info', `${LOG_PREFIX}: Running diagnostic tool`);
 
   // Check for required binaries
@@ -244,34 +291,35 @@ async function runDiagnosticTool(): Promise<ToolResponse> {
   const binaryStatus = {};
 
   for (const binary of requiredBinaries) {
-    binaryStatus[binary] = checkBinaryAvailability(binary);
+    binaryStatus[binary] = checkBinaryAvailability(binary, mockSystem);
   }
 
   // Get Xcode information
-  const xcodeInfo = getXcodeInfo();
+  const xcodeInfo = getXcodeInfo(mockSystem);
 
   // Get environment variables
   const envVars = getEnvironmentVariables();
 
   // Get system information
-  const systemInfo = getSystemInfo();
+  const systemInfo = getSystemInfo(mockSystem);
 
   // Get Node.js information
   const nodeInfo = getNodeInfo();
 
   // Check for axe tools availability
-  const axeAvailable = areAxeToolsAvailable();
+  const axeAvailable = mockUtilities?.areAxeToolsAvailable() || areAxeToolsAvailable();
 
   // Get plugin system information
-  const pluginSystemInfo = await getPluginSystemInfo();
+  const pluginSystemInfo = await getPluginSystemInfo(mockUtilities);
 
   // Get individually enabled tools
   const individuallyEnabledTools = getIndividuallyEnabledTools();
 
   // Check for xcodemake configuration
-  const xcodemakeEnabled = isXcodemakeEnabled();
-  const xcodemakeAvailable = await isXcodemakeAvailable();
-  const makefileExists = doesMakefileExist('./');
+  const xcodemakeEnabled = mockUtilities?.isXcodemakeEnabled() || isXcodemakeEnabled();
+  const xcodemakeAvailable = await (mockUtilities?.isXcodemakeAvailable() ||
+    isXcodemakeAvailable());
+  const makefileExists = mockUtilities?.doesMakefileExist('./') || doesMakefileExist('./');
 
   // Compile the diagnostic information
   const diagnosticInfo = {
@@ -390,7 +438,11 @@ export default {
   schema: {
     enabled: z.boolean().optional().describe('Optional: dummy parameter to satisfy MCP protocol'),
   },
-  async handler(_args: Record<string, unknown>): Promise<ToolResponse> {
-    return runDiagnosticTool();
+  async handler(
+    _args: Record<string, unknown>,
+    mockSystem?: MockSystem,
+    mockUtilities?: MockUtilities,
+  ): Promise<ToolResponse> {
+    return runDiagnosticTool(mockSystem, mockUtilities);
   },
 };

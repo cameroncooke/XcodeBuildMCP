@@ -7,8 +7,21 @@
 import { z } from 'zod';
 import { execSync } from 'child_process';
 import { log } from '../../utils/index.js';
-import { validateRequiredParam, validateFileExists } from '../../utils/index.js';
+import { validateRequiredParam } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
+import { FileSystemExecutor, defaultFileSystemExecutor } from '../../utils/command.js';
+
+/**
+ * Sync executor function type for dependency injection
+ */
+export type SyncExecutor = (command: string) => string;
+
+/**
+ * Default sync executor implementation using execSync
+ */
+const defaultSyncExecutor: SyncExecutor = (command: string): string => {
+  return execSync(command).toString().trim();
+};
 
 export default {
   name: 'get_mac_bundle_id',
@@ -21,18 +34,54 @@ export default {
         'Path to the macOS .app bundle to extract bundle ID from (full path to the .app directory)',
       ),
   }),
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    syncExecutor: SyncExecutor = defaultSyncExecutor,
+    fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  ): Promise<ToolResponse> {
     const params = args;
-    const validated = this.schema.parse(params);
 
-    const appPathValidation = validateRequiredParam('appPath', validated.appPath);
-    if (!appPathValidation.isValid) {
-      return appPathValidation.errorResponse;
+    // Handle schema validation errors
+    try {
+      const validated = this.schema.parse(params);
+
+      const appPathValidation = validateRequiredParam('appPath', validated.appPath);
+      if (!appPathValidation.isValid) {
+        return appPathValidation.errorResponse;
+      }
+
+      return await this.processExtraction(validated, syncExecutor, fileSystemExecutor);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+            },
+          ],
+          isError: true,
+        };
+      }
+      throw error;
     }
+  },
 
-    const appPathExistsValidation = validateFileExists(validated.appPath);
-    if (!appPathExistsValidation.isValid) {
-      return appPathExistsValidation.errorResponse;
+  async processExtraction(
+    validated: { appPath: string },
+    syncExecutor: SyncExecutor,
+    fileSystemExecutor: FileSystemExecutor,
+  ): Promise<ToolResponse> {
+    if (!fileSystemExecutor.existsSync(validated.appPath)) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `File not found: '${validated.appPath}'. Please check the path and try again.`,
+          },
+        ],
+        isError: true,
+      };
     }
 
     log('info', `Starting bundle ID extraction for macOS app: ${validated.appPath}`);
@@ -41,16 +90,14 @@ export default {
       let bundleId;
 
       try {
-        bundleId = execSync(`defaults read "${validated.appPath}/Contents/Info" CFBundleIdentifier`)
-          .toString()
-          .trim();
+        bundleId = syncExecutor(
+          `defaults read "${validated.appPath}/Contents/Info" CFBundleIdentifier`,
+        );
       } catch {
         try {
-          bundleId = execSync(
+          bundleId = syncExecutor(
             `/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${validated.appPath}/Contents/Info.plist"`,
-          )
-            .toString()
-            .trim();
+          );
         } catch (innerError) {
           throw new Error(
             `Could not extract bundle ID from Info.plist: ${innerError instanceof Error ? innerError.message : String(innerError)}`,
@@ -64,12 +111,14 @@ export default {
         content: [
           {
             type: 'text',
-            text: ` Bundle ID for macOS app: ${bundleId}`,
+            text: `✅ Bundle ID: ${bundleId}`,
           },
           {
             type: 'text',
             text: `Next Steps:
-- Launch the app: launch_macos_app({ appPath: "${validated.appPath}" })`,
+- Launch the app: launch_mac_app({ appPath: "${validated.appPath}" })
+- Build from workspace: macos_build_workspace({ workspacePath: "PATH_TO_WORKSPACE", scheme: "SCHEME_NAME" })
+- Build from project: macos_build_project({ projectPath: "PATH_TO_PROJECT", scheme: "SCHEME_NAME" })`,
           },
         ],
         isError: false,

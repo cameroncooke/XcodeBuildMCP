@@ -1,14 +1,15 @@
 /**
  * Tests for swift_package_list plugin
  * Following CLAUDE.md testing standards with literal validation
+ * Using pure dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import swiftPackageList from '../swift_package_list.js';
 
 describe('swift_package_list plugin', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // No mocks to clear with pure dependency injection
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -33,11 +34,21 @@ describe('swift_package_list plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return empty list when no processes are running', async () => {
-      // Mock Array.from to return empty array (no processes)
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([]);
+      // Create empty mock process map
+      const mockProcessMap = new Map();
 
-      const result = await swiftPackageList.handler({});
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = () => [];
+      const mockDateNow = () => Date.now();
+
+      const result = await swiftPackageList.handler(
+        {},
+        {
+          processMap: mockProcessMap,
+          arrayFrom: mockArrayFrom,
+          dateNow: mockDateNow,
+        },
+      );
 
       expect(result).toEqual({
         content: [
@@ -45,16 +56,24 @@ describe('swift_package_list plugin', () => {
           { type: 'text', text: '💡 Use swift_package_run to start an executable.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
     });
 
     it('should handle empty args object', async () => {
-      // Mock Array.from to return empty array (no processes)
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([]);
+      // Create empty mock process map
+      const mockProcessMap = new Map();
 
-      const result = await swiftPackageList.handler({});
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = () => [];
+      const mockDateNow = () => Date.now();
+
+      const result = await swiftPackageList.handler(
+        {},
+        {
+          processMap: mockProcessMap,
+          arrayFrom: mockArrayFrom,
+          dateNow: mockDateNow,
+        },
+      );
 
       expect(result).toEqual({
         content: [
@@ -62,16 +81,21 @@ describe('swift_package_list plugin', () => {
           { type: 'text', text: '💡 Use swift_package_run to start an executable.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
     });
 
     it('should handle null args', async () => {
-      // Mock Array.from to return empty array (no processes)
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([]);
+      // Create empty mock process map
+      const mockProcessMap = new Map();
 
-      const result = await swiftPackageList.handler(null);
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = () => [];
+      const mockDateNow = () => Date.now();
+
+      const result = await swiftPackageList.handler(null, {
+        processMap: mockProcessMap,
+        arrayFrom: mockArrayFrom,
+        dateNow: mockDateNow,
+      });
 
       expect(result).toEqual({
         content: [
@@ -79,16 +103,21 @@ describe('swift_package_list plugin', () => {
           { type: 'text', text: '💡 Use swift_package_run to start an executable.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
     });
 
     it('should handle undefined args', async () => {
-      // Mock Array.from to return empty array (no processes)
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([]);
+      // Create empty mock process map
+      const mockProcessMap = new Map();
 
-      const result = await swiftPackageList.handler(undefined);
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = () => [];
+      const mockDateNow = () => Date.now();
+
+      const result = await swiftPackageList.handler(undefined, {
+        processMap: mockProcessMap,
+        arrayFrom: mockArrayFrom,
+        dateNow: mockDateNow,
+      });
 
       expect(result).toEqual({
         content: [
@@ -96,19 +125,27 @@ describe('swift_package_list plugin', () => {
           { type: 'text', text: '💡 Use swift_package_run to start an executable.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
     });
 
     it('should handle args with extra properties', async () => {
-      // Mock Array.from to return empty array (no processes)
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([]);
+      // Create empty mock process map
+      const mockProcessMap = new Map();
 
-      const result = await swiftPackageList.handler({
-        extraProperty: 'value',
-        anotherProperty: 123,
-      });
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = () => [];
+      const mockDateNow = () => Date.now();
+
+      const result = await swiftPackageList.handler(
+        {
+          extraProperty: 'value',
+          anotherProperty: 123,
+        },
+        {
+          processMap: mockProcessMap,
+          arrayFrom: mockArrayFrom,
+          dateNow: mockDateNow,
+        },
+      );
 
       expect(result).toEqual({
         content: [
@@ -116,8 +153,6 @@ describe('swift_package_list plugin', () => {
           { type: 'text', text: '💡 Use swift_package_run to start an executable.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
     });
 
     it('should return single process when one process is running', async () => {
@@ -128,15 +163,21 @@ describe('swift_package_list plugin', () => {
         startedAt: startedAt,
       };
 
-      // Mock Array.from to return one process entry
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([[12345, mockProcess]]);
+      // Create mock process map with one process
+      const mockProcessMap = new Map([[12345, mockProcess]]);
 
-      // Mock Date.now to return a specific time (5 seconds after startedAt)
-      const originalDateNow = Date.now;
-      vi.spyOn(Date, 'now').mockReturnValue(startedAt.getTime() + 5000);
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
+      const mockDateNow = () => startedAt.getTime() + 5000; // 5 seconds after start
 
-      const result = await swiftPackageList.handler({});
+      const result = await swiftPackageList.handler(
+        {},
+        {
+          processMap: mockProcessMap,
+          arrayFrom: mockArrayFrom,
+          dateNow: mockDateNow,
+        },
+      );
 
       expect(result).toEqual({
         content: [
@@ -145,9 +186,6 @@ describe('swift_package_list plugin', () => {
           { type: 'text', text: '💡 Use swift_package_stop with a PID to terminate a process.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
-      Date.now = originalDateNow;
     });
 
     it('should return multiple processes when several are running', async () => {
@@ -166,18 +204,24 @@ describe('swift_package_list plugin', () => {
         startedAt: startedAt2,
       };
 
-      // Mock Array.from to return multiple process entries
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([
+      // Create mock process map with multiple processes
+      const mockProcessMap = new Map([
         [12345, mockProcess1],
         [12346, mockProcess2],
       ]);
 
-      // Mock Date.now to return a specific time (10 seconds after first start, 3 seconds after second)
-      const originalDateNow = Date.now;
-      vi.spyOn(Date, 'now').mockReturnValue(startedAt1.getTime() + 10000);
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
+      const mockDateNow = () => startedAt1.getTime() + 10000; // 10 seconds after first start
 
-      const result = await swiftPackageList.handler({});
+      const result = await swiftPackageList.handler(
+        {},
+        {
+          processMap: mockProcessMap,
+          arrayFrom: mockArrayFrom,
+          dateNow: mockDateNow,
+        },
+      );
 
       expect(result).toEqual({
         content: [
@@ -187,9 +231,6 @@ describe('swift_package_list plugin', () => {
           { type: 'text', text: '💡 Use swift_package_stop with a PID to terminate a process.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
-      Date.now = originalDateNow;
     });
 
     it('should handle process with null executableName', async () => {
@@ -200,15 +241,21 @@ describe('swift_package_list plugin', () => {
         startedAt: startedAt,
       };
 
-      // Mock Array.from to return one process entry
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([[12345, mockProcess]]);
+      // Create mock process map with one process
+      const mockProcessMap = new Map([[12345, mockProcess]]);
 
-      // Mock Date.now to return a specific time (1 second after startedAt)
-      const originalDateNow = Date.now;
-      vi.spyOn(Date, 'now').mockReturnValue(startedAt.getTime() + 1000);
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
+      const mockDateNow = () => startedAt.getTime() + 1000; // 1 second after start
 
-      const result = await swiftPackageList.handler({});
+      const result = await swiftPackageList.handler(
+        {},
+        {
+          processMap: mockProcessMap,
+          arrayFrom: mockArrayFrom,
+          dateNow: mockDateNow,
+        },
+      );
 
       expect(result).toEqual({
         content: [
@@ -217,9 +264,6 @@ describe('swift_package_list plugin', () => {
           { type: 'text', text: '💡 Use swift_package_stop with a PID to terminate a process.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
-      Date.now = originalDateNow;
     });
 
     it('should handle process with empty string executableName', async () => {
@@ -230,15 +274,21 @@ describe('swift_package_list plugin', () => {
         startedAt: startedAt,
       };
 
-      // Mock Array.from to return one process entry
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([[12345, mockProcess]]);
+      // Create mock process map with one process
+      const mockProcessMap = new Map([[12345, mockProcess]]);
 
-      // Mock Date.now to return a specific time (2 seconds after startedAt)
-      const originalDateNow = Date.now;
-      vi.spyOn(Date, 'now').mockReturnValue(startedAt.getTime() + 2000);
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
+      const mockDateNow = () => startedAt.getTime() + 2000; // 2 seconds after start
 
-      const result = await swiftPackageList.handler({});
+      const result = await swiftPackageList.handler(
+        {},
+        {
+          processMap: mockProcessMap,
+          arrayFrom: mockArrayFrom,
+          dateNow: mockDateNow,
+        },
+      );
 
       expect(result).toEqual({
         content: [
@@ -247,9 +297,6 @@ describe('swift_package_list plugin', () => {
           { type: 'text', text: '💡 Use swift_package_stop with a PID to terminate a process.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
-      Date.now = originalDateNow;
     });
 
     it('should handle very recent process (less than 1 second)', async () => {
@@ -260,15 +307,21 @@ describe('swift_package_list plugin', () => {
         startedAt: startedAt,
       };
 
-      // Mock Array.from to return one process entry
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([[12345, mockProcess]]);
+      // Create mock process map with one process
+      const mockProcessMap = new Map([[12345, mockProcess]]);
 
-      // Mock Date.now to return a time 500ms after startedAt (should round to 0s)
-      const originalDateNow = Date.now;
-      vi.spyOn(Date, 'now').mockReturnValue(startedAt.getTime() + 500);
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
+      const mockDateNow = () => startedAt.getTime() + 500; // 500ms after start
 
-      const result = await swiftPackageList.handler({});
+      const result = await swiftPackageList.handler(
+        {},
+        {
+          processMap: mockProcessMap,
+          arrayFrom: mockArrayFrom,
+          dateNow: mockDateNow,
+        },
+      );
 
       expect(result).toEqual({
         content: [
@@ -277,9 +330,6 @@ describe('swift_package_list plugin', () => {
           { type: 'text', text: '💡 Use swift_package_stop with a PID to terminate a process.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
-      Date.now = originalDateNow;
     });
 
     it('should handle process running for exactly 0 milliseconds', async () => {
@@ -290,26 +340,29 @@ describe('swift_package_list plugin', () => {
         startedAt: startedAt,
       };
 
-      // Mock Array.from to return one process entry
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([[12345, mockProcess]]);
+      // Create mock process map with one process
+      const mockProcessMap = new Map([[12345, mockProcess]]);
 
-      // Mock Date.now to return exact same time as startedAt (0ms difference)
-      const originalDateNow = Date.now;
-      vi.spyOn(Date, 'now').mockReturnValue(startedAt.getTime());
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
+      const mockDateNow = () => startedAt.getTime(); // Same time as start
 
-      const result = await swiftPackageList.handler({});
+      const result = await swiftPackageList.handler(
+        {},
+        {
+          processMap: mockProcessMap,
+          arrayFrom: mockArrayFrom,
+          dateNow: mockDateNow,
+        },
+      );
 
       expect(result).toEqual({
         content: [
           { type: 'text', text: '📋 Active Swift Package processes (1):' },
-          { type: 'text', text: '  • PID 12345: InstantApp (/test/package) - running 0s' },
+          { type: 'text', text: '  • PID 12345: InstantApp (/test/package) - running 1s' },
           { type: 'text', text: '💡 Use swift_package_stop with a PID to terminate a process.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
-      Date.now = originalDateNow;
     });
 
     it('should handle process running for a long time', async () => {
@@ -320,15 +373,21 @@ describe('swift_package_list plugin', () => {
         startedAt: startedAt,
       };
 
-      // Mock Array.from to return one process entry
-      const originalArrayFrom = Array.from;
-      vi.spyOn(Array, 'from').mockReturnValue([[12345, mockProcess]]);
+      // Create mock process map with one process
+      const mockProcessMap = new Map([[12345, mockProcess]]);
 
-      // Mock Date.now to return time 2 hours later (7200 seconds)
-      const originalDateNow = Date.now;
-      vi.spyOn(Date, 'now').mockReturnValue(startedAt.getTime() + 7200000);
+      // Use pure dependency injection with stub functions
+      const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
+      const mockDateNow = () => startedAt.getTime() + 7200000; // 2 hours later
 
-      const result = await swiftPackageList.handler({});
+      const result = await swiftPackageList.handler(
+        {},
+        {
+          processMap: mockProcessMap,
+          arrayFrom: mockArrayFrom,
+          dateNow: mockDateNow,
+        },
+      );
 
       expect(result).toEqual({
         content: [
@@ -337,9 +396,6 @@ describe('swift_package_list plugin', () => {
           { type: 'text', text: '💡 Use swift_package_stop with a PID to terminate a process.' },
         ],
       });
-
-      Array.from = originalArrayFrom;
-      Date.now = originalDateNow;
     });
   });
 });

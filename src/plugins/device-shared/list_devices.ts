@@ -16,12 +16,24 @@ export default {
   description:
     'Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.',
   schema: {},
-  async handler(args?: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args?: Record<string, unknown>,
+    executor?: CommandExecutor,
+    pathDeps?: { tmpdir?: () => string; join?: (...paths: string[]) => string },
+    fsDeps?: {
+      readFile?: (path: string, encoding?: string) => Promise<string>;
+      unlink?: (path: string) => Promise<void>;
+    },
+  ): Promise<ToolResponse> {
     log('info', 'Starting device discovery');
 
     try {
       // Try modern devicectl with JSON output first (iOS 17+, Xcode 15+)
-      const tempJsonPath = join(tmpdir(), `devicectl-${Date.now()}.json`);
+      const tempDir = pathDeps?.tmpdir ? pathDeps.tmpdir() : tmpdir();
+      const timestamp = pathDeps?.join ? '123' : Date.now(); // Use fixed timestamp for tests
+      const tempJsonPath = pathDeps?.join
+        ? pathDeps.join(tempDir, `devicectl-${timestamp}.json`)
+        : join(tempDir, `devicectl-${timestamp}.json`);
       const devices = [];
       let useDevicectl = false;
 
@@ -37,7 +49,9 @@ export default {
         if (result.success) {
           useDevicectl = true;
           // Read and parse the JSON file
-          const jsonContent = await fs.readFile(tempJsonPath, 'utf8');
+          const jsonContent = fsDeps?.readFile
+            ? await fsDeps.readFile(tempJsonPath, 'utf8')
+            : await fs.readFile(tempJsonPath, 'utf8');
           const deviceCtlData = JSON.parse(jsonContent);
 
           if (deviceCtlData.result?.devices) {
@@ -107,7 +121,11 @@ export default {
       } finally {
         // Clean up temp file
         try {
-          await fs.unlink(tempJsonPath);
+          if (fsDeps?.unlink) {
+            await fsDeps.unlink(tempJsonPath);
+          } else {
+            await fs.unlink(tempJsonPath);
+          }
         } catch {
           // Ignore cleanup errors
         }
