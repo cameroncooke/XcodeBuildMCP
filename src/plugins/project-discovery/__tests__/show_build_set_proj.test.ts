@@ -1,12 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import plugin from '../show_build_set_proj.ts';
 
 describe('show_build_set_proj plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(plugin.name).toBe('show_build_set_proj');
@@ -60,7 +56,8 @@ describe('show_build_set_proj plugin', () => {
     });
 
     it('should return success with build settings', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const calls: any[] = [];
+      const mockExecutor = createMockExecutor({
         success: true,
         output: `Build settings from command line:
     ARCHS = arm64
@@ -74,15 +71,22 @@ describe('show_build_set_proj plugin', () => {
         process: { pid: 12345 },
       });
 
+      // Wrap mockExecutor to track calls
+      const wrappedExecutor = (...args: any[]) => {
+        calls.push(args);
+        return mockExecutor(...args);
+      };
+
       const result = await plugin.handler(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
         },
-        mockExecutor,
+        wrappedExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual([
         [
           'xcodebuild',
           '-showBuildSettings',
@@ -94,7 +98,7 @@ describe('show_build_set_proj plugin', () => {
         'Show Build Settings',
         true,
         undefined,
-      );
+      ]);
 
       expect(result).toEqual({
         content: [
@@ -119,7 +123,7 @@ describe('show_build_set_proj plugin', () => {
     });
 
     it('should return error when command fails', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Scheme not found',
@@ -141,7 +145,9 @@ describe('show_build_set_proj plugin', () => {
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
+      const mockExecutor = async () => {
+        throw new Error('Command execution failed');
+      };
 
       const result = await plugin.handler(
         {

@@ -4,16 +4,12 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import bootSim from '../boot_sim.ts';
 
 describe('boot_sim tool', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(bootSim.name).toBe('boot_sim');
@@ -106,7 +102,9 @@ describe('boot_sim tool', () => {
     });
 
     it('should handle exception with Error object', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Connection failed'));
+      const mockExecutor = async () => {
+        throw new Error('Connection failed');
+      };
 
       const result = await bootSim.handler({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
 
@@ -121,7 +119,9 @@ describe('boot_sim tool', () => {
     });
 
     it('should handle exception with string error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockExecutor = async () => {
+        throw 'String error';
+      };
 
       const result = await bootSim.handler({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
 
@@ -136,21 +136,31 @@ describe('boot_sim tool', () => {
     });
 
     it('should verify command generation with mock executor', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Simulator booted successfully',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const calls: any[] = [];
+      const mockExecutor = async (
+        command: string[],
+        description: string,
+        allowStderr: boolean,
+        timeout?: number,
+      ) => {
+        calls.push({ command, description, allowStderr, timeout });
+        return {
+          success: true,
+          output: 'Simulator booted successfully',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await bootSim.handler({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['xcrun', 'simctl', 'boot', 'test-uuid-123'],
-        'Boot Simulator',
-        true,
-        undefined,
-      );
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        command: ['xcrun', 'simctl', 'boot', 'test-uuid-123'],
+        description: 'Boot Simulator',
+        allowStderr: true,
+        timeout: undefined,
+      });
     });
   });
 });

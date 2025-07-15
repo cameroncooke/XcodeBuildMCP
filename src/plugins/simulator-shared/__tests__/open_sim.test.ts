@@ -4,9 +4,9 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, CommandExecutor } from '../../../utils/command.js';
 import openSim from '../open_sim.ts';
 
 describe('open_sim tool', () => {
@@ -42,10 +42,6 @@ describe('open_sim tool', () => {
         }).success,
       ).toBe(true);
     });
-  });
-
-  beforeEach(() => {
-    vi.clearAllMocks();
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
@@ -99,7 +95,9 @@ describe('open_sim tool', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Test error'));
+      const mockExecutor: CommandExecutor = async () => {
+        throw new Error('Test error');
+      };
 
       const result = await openSim.handler({}, mockExecutor);
 
@@ -114,7 +112,9 @@ describe('open_sim tool', () => {
     });
 
     it('should return exact string error handling response', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockExecutor: CommandExecutor = async () => {
+        throw 'String error';
+      };
 
       const result = await openSim.handler({}, mockExecutor);
 
@@ -129,21 +129,37 @@ describe('open_sim tool', () => {
     });
 
     it('should verify command generation with mock executor', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: '',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const calls: Array<{
+        command: string[];
+        description: string;
+        hideOutput: boolean;
+        workingDirectory: string | undefined;
+      }> = [];
+
+      const mockExecutor: CommandExecutor = async (
+        command,
+        description,
+        hideOutput,
+        workingDirectory,
+      ) => {
+        calls.push({ command, description, hideOutput, workingDirectory });
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await openSim.handler({}, mockExecutor);
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['open', '-a', 'Simulator'],
-        'Open Simulator',
-        true,
-        undefined,
-      );
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        command: ['open', '-a', 'Simulator'],
+        description: 'Open Simulator',
+        hideOutput: true,
+        workingDirectory: undefined,
+      });
     });
   });
 });

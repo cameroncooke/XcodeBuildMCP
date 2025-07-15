@@ -4,15 +4,11 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import plugin from '../show_build_set_ws.ts';
 
 describe('show_build_set_ws plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(plugin.name).toBe('show_build_set_ws');
@@ -73,7 +69,8 @@ describe('show_build_set_ws plugin', () => {
     });
 
     it('should return success with build settings', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const calls: any[] = [];
+      const mockExecutor = createMockExecutor({
         success: true,
         output: `Build settings from command line:
     ARCHS = arm64
@@ -87,15 +84,23 @@ describe('show_build_set_ws plugin', () => {
         process: { pid: 12345 },
       });
 
+      // Override to track calls
+      const originalExecutor = mockExecutor;
+      const trackingExecutor = async (...args: any[]) => {
+        calls.push(args);
+        return originalExecutor(...args);
+      };
+
       const result = await plugin.handler(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
         },
-        mockExecutor,
+        trackingExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual([
         [
           'xcodebuild',
           '-showBuildSettings',
@@ -107,7 +112,7 @@ describe('show_build_set_ws plugin', () => {
         'Show Build Settings',
         true,
         undefined,
-      );
+      ]);
 
       expect(result).toEqual({
         content: [
@@ -139,7 +144,7 @@ describe('show_build_set_ws plugin', () => {
     });
 
     it('should return error when command fails', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Scheme not found',
@@ -161,7 +166,9 @@ describe('show_build_set_ws plugin', () => {
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
+      const mockExecutor = async (...args: any[]) => {
+        throw new Error('Command execution failed');
+      };
 
       const result = await plugin.handler(
         {

@@ -4,16 +4,12 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, type CommandExecutor } from '../../../utils/command.js';
 import setNetworkCondition from '../set_network_condition.ts';
 
 describe('set_network_condition tool', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(setNetworkCondition.name).toBe('set_network_condition');
@@ -134,7 +130,9 @@ describe('set_network_condition tool', () => {
     });
 
     it('should handle exception with Error object', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Connection failed'));
+      const mockExecutor: CommandExecutor = async () => {
+        throw new Error('Connection failed');
+      };
 
       const result = await setNetworkCondition.handler(
         {
@@ -155,7 +153,9 @@ describe('set_network_condition tool', () => {
     });
 
     it('should handle exception with string error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockExecutor: CommandExecutor = async () => {
+        throw 'String error';
+      };
 
       const result = await setNetworkCondition.handler(
         {
@@ -176,12 +176,27 @@ describe('set_network_condition tool', () => {
     });
 
     it('should verify command generation with mock executor', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'Network condition set successfully',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const calls: Array<{
+        command: string[];
+        operationDescription: string;
+        keepAlive: boolean;
+        timeout: number | undefined;
+      }> = [];
+
+      const mockExecutor: CommandExecutor = async (
+        command,
+        operationDescription,
+        keepAlive,
+        timeout,
+      ) => {
+        calls.push({ command, operationDescription, keepAlive, timeout });
+        return {
+          success: true,
+          output: 'Network condition set successfully',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await setNetworkCondition.handler(
         {
@@ -191,12 +206,21 @@ describe('set_network_condition tool', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['xcrun', 'simctl', 'status_bar', 'test-uuid-123', 'override', '--dataNetwork', 'wifi'],
-        'Set Network Condition',
-        true,
-        undefined,
-      );
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        command: [
+          'xcrun',
+          'simctl',
+          'status_bar',
+          'test-uuid-123',
+          'override',
+          '--dataNetwork',
+          'wifi',
+        ],
+        operationDescription: 'Set Network Condition',
+        keepAlive: true,
+        timeout: undefined,
+      });
     });
   });
 });
