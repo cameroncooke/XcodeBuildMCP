@@ -4,10 +4,23 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createMockExecutor } from '../../../utils/command.js';
 import plugin from '../list_schems_ws.ts';
 
 describe('list_schems_ws plugin', () => {
+  // Manual call tracking for dependency injection testing
+  let executorCalls: Array<{
+    command: string[];
+    description: string;
+    hideOutput: boolean;
+    cwd: string | undefined;
+  }>;
+
+  beforeEach(() => {
+    executorCalls = [];
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(plugin.name).toBe('list_schems_ws');
@@ -40,10 +53,6 @@ describe('list_schems_ws plugin', () => {
     });
   });
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle schema validation error when workspacePath is null', async () => {
       // Schema validation will throw before reaching validateRequiredParam
@@ -51,7 +60,7 @@ describe('list_schems_ws plugin', () => {
     });
 
     it('should return success with schemes found', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: `Information about workspace "MyWorkspace":
     Targets:
@@ -69,17 +78,24 @@ describe('list_schems_ws plugin', () => {
         process: { pid: 12345 },
       });
 
+      // Create executor with call tracking
+      const trackingExecutor = async (command: string[], description: string, hideOutput: boolean, cwd?: string) => {
+        executorCalls.push({ command, description, hideOutput, cwd });
+        return mockExecutor(command, description, hideOutput, cwd);
+      };
+
       const result = await plugin.handler(
         { workspacePath: '/path/to/MyProject.xcworkspace' },
-        mockExecutor,
+        trackingExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['xcodebuild', '-list', '-workspace', '/path/to/MyProject.xcworkspace'],
-        'List Schemes',
-        true,
-        undefined,
-      );
+      expect(executorCalls).toHaveLength(1);
+      expect(executorCalls[0]).toEqual({
+        command: ['xcodebuild', '-list', '-workspace', '/path/to/MyProject.xcworkspace'],
+        description: 'List Schemes',
+        hideOutput: true,
+        cwd: undefined,
+      });
 
       expect(result).toEqual({
         content: [
@@ -104,7 +120,7 @@ describe('list_schems_ws plugin', () => {
     });
 
     it('should return error when command fails', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: false,
         error: 'Workspace not found',
         output: '',
@@ -123,7 +139,7 @@ describe('list_schems_ws plugin', () => {
     });
 
     it('should return error when no schemes found in output', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: 'Information about workspace "MyWorkspace":\n    Targets:\n        MyApp',
         error: undefined,
@@ -142,7 +158,7 @@ describe('list_schems_ws plugin', () => {
     });
 
     it('should return success with empty schemes list', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
+      const mockExecutor = createMockExecutor({
         success: true,
         output: `Information about workspace "MinimalWorkspace":
     Targets:
@@ -184,7 +200,7 @@ describe('list_schems_ws plugin', () => {
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Command execution failed'));
+      const mockExecutor = createMockExecutor(new Error('Command execution failed'));
 
       const result = await plugin.handler(
         { workspacePath: '/path/to/MyProject.xcworkspace' },
