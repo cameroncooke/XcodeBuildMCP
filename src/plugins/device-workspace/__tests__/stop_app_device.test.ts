@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import stopAppDevice from '../stop_app_device.ts';
 
@@ -35,10 +35,6 @@ describe('stop_app_device plugin', () => {
       expect(stopAppDevice.schema.processId.safeParse(null).success).toBe(false);
       expect(stopAppDevice.schema.processId.safeParse('not-number').success).toBe(false);
     });
-  });
-
-  beforeEach(() => {
-    vi.clearAllMocks();
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
@@ -92,7 +88,9 @@ describe('stop_app_device plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+      const mockExecutor = async () => {
+        throw new Error('Network error');
+      };
 
       const result = await stopAppDevice.handler(
         {
@@ -114,7 +112,9 @@ describe('stop_app_device plugin', () => {
     });
 
     it('should return exact string error handling response', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockExecutor = async () => {
+        throw 'String error';
+      };
 
       const result = await stopAppDevice.handler(
         {
@@ -136,12 +136,28 @@ describe('stop_app_device plugin', () => {
     });
 
     it('should verify command generation with mock executor', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'App terminated successfully',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      let capturedArgs: any[] = [];
+      let capturedDescription: string = '';
+      let capturedUseShell: boolean = false;
+      let capturedEnv: any = undefined;
+
+      const mockExecutor = async (
+        args: any[],
+        description: string,
+        useShell: boolean,
+        env: any,
+      ) => {
+        capturedArgs = args;
+        capturedDescription = description;
+        capturedUseShell = useShell;
+        capturedEnv = env;
+        return {
+          success: true,
+          output: 'App terminated successfully',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await stopAppDevice.handler(
         {
@@ -151,22 +167,20 @@ describe('stop_app_device plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcrun',
-          'devicectl',
-          'device',
-          'process',
-          'terminate',
-          '--device',
-          'test-device-123',
-          '--pid',
-          '12345',
-        ],
-        'Stop app on device',
-        true,
-        undefined,
-      );
+      expect(capturedArgs).toEqual([
+        'xcrun',
+        'devicectl',
+        'device',
+        'process',
+        'terminate',
+        '--device',
+        'test-device-123',
+        '--pid',
+        '12345',
+      ]);
+      expect(capturedDescription).toBe('Stop app on device');
+      expect(capturedUseShell).toBe(true);
+      expect(capturedEnv).toBe(undefined);
     });
   });
 });

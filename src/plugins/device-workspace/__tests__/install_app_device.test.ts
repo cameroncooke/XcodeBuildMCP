@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 import installAppDevice from '../install_app_device.ts';
 
@@ -34,10 +34,6 @@ describe('install_app_device plugin', () => {
       expect(installAppDevice.schema.deviceId.safeParse(123).success).toBe(false);
       expect(installAppDevice.schema.appPath.safeParse(null).success).toBe(false);
     });
-  });
-
-  beforeEach(() => {
-    vi.clearAllMocks();
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
@@ -91,7 +87,10 @@ describe('install_app_device plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+      // Manual stub function for error injection
+      const mockExecutor = async () => {
+        throw new Error('Network error');
+      };
 
       const result = await installAppDevice.handler(
         {
@@ -113,7 +112,10 @@ describe('install_app_device plugin', () => {
     });
 
     it('should return exact string error handling response', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      // Manual stub function for string error injection
+      const mockExecutor = async () => {
+        throw 'String error';
+      };
 
       const result = await installAppDevice.handler(
         {
@@ -135,12 +137,29 @@ describe('install_app_device plugin', () => {
     });
 
     it('should verify command generation with mock executor', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: true,
-        output: 'App installation successful',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      // Manual call tracking with closure
+      let capturedCommand: unknown[] = [];
+      let capturedDescription: string = '';
+      let capturedUseShell: boolean = false;
+      let capturedEnv: unknown = undefined;
+
+      const mockExecutor = async (
+        command: unknown[],
+        description: string,
+        useShell: boolean,
+        env: unknown,
+      ) => {
+        capturedCommand = command;
+        capturedDescription = description;
+        capturedUseShell = useShell;
+        capturedEnv = env;
+        return {
+          success: true,
+          output: 'App installation successful',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       await installAppDevice.handler(
         {
@@ -150,21 +169,19 @@ describe('install_app_device plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        [
-          'xcrun',
-          'devicectl',
-          'device',
-          'install',
-          'app',
-          '--device',
-          'test-device-123',
-          '/path/to/test.app',
-        ],
-        'Install app on device',
-        true,
-        undefined,
-      );
+      expect(capturedCommand).toEqual([
+        'xcrun',
+        'devicectl',
+        'device',
+        'install',
+        'app',
+        '--device',
+        'test-device-123',
+        '/path/to/test.app',
+      ]);
+      expect(capturedDescription).toBe('Install app on device');
+      expect(capturedUseShell).toBe(true);
+      expect(capturedEnv).toBe(undefined);
     });
   });
 });
