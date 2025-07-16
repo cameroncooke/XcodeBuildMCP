@@ -80,16 +80,12 @@ function createTestFileSystemExecutor(): TestFileSystem {
 describe('stop_device_log_cap plugin', () => {
   let testFileSystem: TestFileSystem;
 
-  beforeEach(() => {
-    testFileSystem = createTestFileSystemExecutor();
-
-    // Reset test state
-    (testFileSystem.promises.access as any).configure(false, null);
-    (testFileSystem.promises.readFile as any).configure(false, null, '');
-
-    // Clear actual active sessions
-    activeDeviceLogSessions.clear();
-  });
+  testFileSystem = createTestFileSystemExecutor();
+  // Reset test state
+  (testFileSystem.promises.access as any).configure(false, null);
+  (testFileSystem.promises.readFile as any).configure(false, null, '');
+  // Clear actual active sessions
+  activeDeviceLogSessions.clear();
 
   describe('Plugin Structure', () => {
     it('should export an object with required properties', () => {

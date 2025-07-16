@@ -60,7 +60,6 @@ describe('discover_tools', () => {
   beforeEach(() => {
     // Save original globalThis
     originalGlobalThis = globalThis.mcpServer;
-
     // Initialize call trackers
     callTracker = {
       loadWorkflowGroupsCalls: [],
@@ -68,7 +67,6 @@ describe('discover_tools', () => {
     };
     requestCalls = [];
     notifyToolsChangedCalls = [];
-
     // Create mock server
     mockServer = {
       server: {
@@ -82,12 +80,9 @@ describe('discover_tools', () => {
         notifyToolsChangedCalls.push(args);
       },
     };
-
     // Set up global server
     (globalThis as any).mcpServer = mockServer;
-
     // Reset all mocks
-    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -247,7 +242,6 @@ describe('discover_tools', () => {
         loadWorkflowGroupsCalls: [],
         enableWorkflowsCalls: [],
       };
-
       mockWorkflowGroups = new Map([
         [
           'simulator-workspace',
@@ -451,7 +445,6 @@ describe('discover_tools', () => {
         loadWorkflowGroupsCalls: [],
         enableWorkflowsCalls: [],
       };
-
       mockWorkflowGroups = new Map([
         [
           'simulator-workspace',

@@ -53,10 +53,6 @@ describe('launch_app_sim tool', () => {
     });
   });
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle successful app launch', async () => {
       let callCount = 0;

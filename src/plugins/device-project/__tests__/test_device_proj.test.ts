@@ -71,15 +71,12 @@ describe('test_device_proj plugin', () => {
       mkdtempCalls = [];
       rmCalls = [];
       statCalls = [];
-
       mockTempDirDeps = {
         mkdtemp: async (prefix: string) => {
           mkdtempCalls.push(prefix);
           return '/tmp/xcodebuild-test-123456';
         },
-        rm: async (path: string, options: { recursive: boolean; force: boolean }) => {
-          rmCalls.push({ path, options });
-        },
+        rm: async (path: string, options: { recursive: boolean; force: boolean }) => {},
         tmpdir: () => '/tmp',
       };
 

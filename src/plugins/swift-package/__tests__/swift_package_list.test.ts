@@ -8,9 +8,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import swiftPackageList from '../swift_package_list.js';
 
 describe('swift_package_list plugin', () => {
-  beforeEach(() => {
-    // No mocks to clear with pure dependency injection
-  });
+  // No mocks to clear with pure dependency injection
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {

@@ -15,12 +15,10 @@ import { createMockFileSystemExecutor } from '../../../utils/index.js';
 describe('discover_projs plugin', () => {
   let mockFileSystemExecutor: any;
 
-  beforeEach(() => {
-    // Create mock file system executor
-    mockFileSystemExecutor = createMockFileSystemExecutor({
-      stat: async () => ({ isDirectory: () => true }),
-      readdir: async () => [],
-    });
+  // Create mock file system executor
+  mockFileSystemExecutor = createMockFileSystemExecutor({
+    stat: async () => ({ isDirectory: () => true }),
+    readdir: async () => [],
   });
 
   describe('Export Field Validation (Literal)', () => {

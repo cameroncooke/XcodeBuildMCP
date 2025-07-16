@@ -14,10 +14,6 @@ import { createMockExecutor } from '../../../utils/command.js';
 import cleanWs from '../clean_ws.ts';
 
 describe('clean_ws plugin tests', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
       expect(cleanWs.name).toBe('clean_ws');

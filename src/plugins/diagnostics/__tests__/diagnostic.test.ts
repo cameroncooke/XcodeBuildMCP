@@ -73,9 +73,7 @@ function createMockUtilities(overrides?: Partial<MockUtilities>): MockUtilities 
 }
 
 describe('diagnostic tool', () => {
-  beforeEach(() => {
-    // Reset any state if needed
-  });
+  // Reset any state if needed
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {

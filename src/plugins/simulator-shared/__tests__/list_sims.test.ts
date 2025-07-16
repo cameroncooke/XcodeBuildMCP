@@ -13,9 +13,7 @@ describe('list_sims tool', () => {
     env?: Record<string, string>;
   }>;
 
-  beforeEach(() => {
-    callHistory = [];
-  });
+  callHistory = [];
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {

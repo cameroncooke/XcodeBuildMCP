@@ -33,12 +33,10 @@ const mockStopLogCapture = async (logSessionId: string) => {
 };
 
 describe('stop_sim_log_cap plugin', () => {
-  beforeEach(() => {
-    // Reset state
-    stopLogCaptureCalls = [];
-    mockStopLogCaptureError = null;
-    mockStopLogCaptureLogContent = '';
-  });
+  // Reset state
+  stopLogCaptureCalls = [];
+  mockStopLogCaptureError = null;
+  mockStopLogCaptureLogContent = '';
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct plugin structure', () => {

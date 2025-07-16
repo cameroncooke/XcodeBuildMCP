@@ -8,10 +8,6 @@ import { createMockExecutor } from '../../../utils/command.js';
 import tapPlugin from '../tap.ts';
 
 describe('Tap Plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(tapPlugin.name).toBe('tap');

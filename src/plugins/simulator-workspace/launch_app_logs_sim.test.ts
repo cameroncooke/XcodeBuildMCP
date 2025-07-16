@@ -9,10 +9,6 @@ import { z } from 'zod';
 import launchAppLogsSim from './launch_app_logs_sim.ts';
 
 describe('launch_app_logs_sim tool', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(launchAppLogsSim.name).toBe('launch_app_logs_sim');

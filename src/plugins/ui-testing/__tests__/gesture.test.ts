@@ -8,10 +8,6 @@ import { createMockExecutor } from '../../../utils/command.js';
 import gesturePlugin from '../gesture.ts';
 
 describe('Gesture Plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(gesturePlugin.name).toBe('gesture');

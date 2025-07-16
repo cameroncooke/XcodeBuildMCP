@@ -6,9 +6,7 @@ import { createMockExecutor } from '../../utils/command.js';
 import setNetworkCondition from './set_network_condition.ts';
 
 describe('set_network_condition tool', () => {
-  beforeEach(() => {
-    // Clean setup for each test
-  });
+  // Clean setup for each test
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {

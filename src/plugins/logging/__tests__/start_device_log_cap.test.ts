@@ -20,21 +20,18 @@ describe('start_device_log_cap plugin', () => {
   let writeStreamWriteCalls: string[] = [];
   let mockWriteStream: any;
 
-  beforeEach(() => {
-    // Reset state
-    commandCalls = [];
-    mkdirCalls = [];
-    writeFileCalls = [];
-    createWriteStreamCalls = [];
-    writeStreamWriteCalls = [];
-
-    mockWriteStream = {
-      write: (data: string) => {
-        writeStreamWriteCalls.push(data);
-      },
-      flags: 'a',
-    };
-  });
+  // Reset state
+  commandCalls = [];
+  mkdirCalls = [];
+  writeFileCalls = [];
+  createWriteStreamCalls = [];
+  writeStreamWriteCalls = [];
+  mockWriteStream = {
+    write: (data: string) => {
+      writeStreamWriteCalls.push(data);
+    },
+    flags: 'a',
+  };
 
   describe('Plugin Structure', () => {
     it('should export an object with required properties', () => {

@@ -16,7 +16,6 @@ describe('build_mac_proj plugin', () => {
 
   beforeEach(() => {
     executeXcodeBuildCommandCalls = [];
-
     mockBuildUtilsDeps = {
       executeXcodeBuildCommand: async (
         params: any,

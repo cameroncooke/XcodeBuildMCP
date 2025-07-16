@@ -6,9 +6,7 @@ import { createMockExecutor } from '../../../utils/command.js';
 import buildSimNameWs from '../build_sim_name_ws.ts';
 
 describe('build_sim_name_ws tool', () => {
-  beforeEach(() => {
-    // Only clear any remaining mocks if needed
-  });
+  // Only clear any remaining mocks if needed
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {

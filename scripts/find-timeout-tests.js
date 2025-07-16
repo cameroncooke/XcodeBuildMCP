@@ -43,6 +43,7 @@ const VITEST_MOCKING_PATTERNS = [
   /vi\.fn\s*\(/,                     // vi.fn() - BANNED
   /vi\.mocked\s*\(/,                 // vi.mocked() - BANNED
   /vi\.spyOn\s*\(/,                  // vi.spyOn() - BANNED
+  /vi\.clearAllMocks\s*\(/,          // vi.clearAllMocks() - BANNED
   /\.mockResolvedValue/,             // .mockResolvedValue - BANNED
   /\.mockRejectedValue/,             // .mockRejectedValue - BANNED
   /\.mockReturnValue/,               // .mockReturnValue - BANNED
@@ -66,7 +67,7 @@ const VITEST_MOCKING_PATTERNS = [
 
 // ALLOWED PATTERNS for cleanup (not mocking)
 const ALLOWED_CLEANUP_PATTERNS = [
-  /vi\.clearAllMocks\(\)/,           // vi.clearAllMocks() - ALLOWED for cleanup
+  // All cleanup patterns removed - no exceptions allowed
 ];
 
 // Patterns that indicate TRUE dependency injection approach

@@ -60,9 +60,7 @@ describe('test_sim_name_proj plugin', () => {
   };
 
   // Reset before each test
-  beforeEach(() => {
-    resetMocks();
-  });
+  resetMocks();
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {

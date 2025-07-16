@@ -12,27 +12,25 @@ describe('build_sim_name_proj plugin', () => {
     executor: any,
   ) => Promise<any>;
 
-  beforeEach(() => {
-    // Reset the mock function
-    mockExecuteXcodeBuildCommand = async (
-      params,
-      platformOptions,
-      preferXcodebuild,
-      buildAction,
-      executor,
-    ) => {
-      // Default successful response
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `✅ ${platformOptions.logPrefix} ${buildAction} succeeded for scheme ${params.scheme}.`,
-          },
-        ],
-        isError: false,
-      };
+  // Reset the mock function
+  mockExecuteXcodeBuildCommand = async (
+    params,
+    platformOptions,
+    preferXcodebuild,
+    buildAction,
+    executor,
+  ) => {
+    // Default successful response
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `✅ ${platformOptions.logPrefix} ${buildAction} succeeded for scheme ${params.scheme}.`,
+        },
+      ],
+      isError: false,
     };
-  });
+  };
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {

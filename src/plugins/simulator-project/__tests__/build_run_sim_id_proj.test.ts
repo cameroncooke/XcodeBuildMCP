@@ -7,10 +7,8 @@ describe('build_run_sim_id_proj plugin', () => {
   let mockExecSyncCalls: { command: string; result: string }[];
   let mockExecuteXcodeBuildCommandCalls: any[];
 
-  beforeEach(() => {
-    mockExecSyncCalls = [];
-    mockExecuteXcodeBuildCommandCalls = [];
-  });
+  mockExecSyncCalls = [];
+  mockExecuteXcodeBuildCommandCalls = [];
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {

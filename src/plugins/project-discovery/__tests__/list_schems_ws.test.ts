@@ -17,9 +17,7 @@ describe('list_schems_ws plugin', () => {
     cwd: string | undefined;
   }>;
 
-  beforeEach(() => {
-    executorCalls = [];
-  });
+  executorCalls = [];
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {

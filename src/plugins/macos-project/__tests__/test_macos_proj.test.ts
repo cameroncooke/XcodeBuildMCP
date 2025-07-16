@@ -14,9 +14,7 @@ import { ToolResponse } from '../../../types/common.js';
 describe('test_macos_proj', () => {
   let mockExecutorCalls: any[];
 
-  beforeEach(() => {
-    mockExecutorCalls = [];
-  });
+  mockExecutorCalls = [];
 
   describe('Export Field Validation (Literal)', () => {
     it('should export the correct name', () => {

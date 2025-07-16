@@ -21,9 +21,7 @@ describe('clean_proj plugin tests', () => {
     env?: Record<string, string>;
   }>;
 
-  beforeEach(() => {
-    executorCalls = [];
-  });
+  executorCalls = [];
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {

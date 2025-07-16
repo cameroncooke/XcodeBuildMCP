@@ -48,9 +48,7 @@ describe('swift_package_build plugin', () => {
 
   let executorCalls: any[] = [];
 
-  beforeEach(() => {
-    executorCalls = [];
-  });
+  executorCalls = [];
 
   describe('Command Generation Testing', () => {
     it('should build correct command for basic build', async () => {

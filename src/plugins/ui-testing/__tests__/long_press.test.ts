@@ -8,9 +8,7 @@ import { createMockExecutor } from '../../../utils/command.js';
 import longPressPlugin from '../long_press.ts';
 
 describe('Long Press Plugin', () => {
-  beforeEach(() => {
-    // Setup for each test - no vitest mocks to clear
-  });
+  // Setup for each test - no vitest mocks to clear
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {

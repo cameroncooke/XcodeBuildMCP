@@ -43,13 +43,11 @@ describe('list_devices plugin', () => {
   let unlinkCalls: string[] = [];
   let mockReadFileData: string | null = null;
 
-  beforeEach(() => {
-    // Reset state
-    commandCalls = [];
-    readFileCalls = [];
-    unlinkCalls = [];
-    mockReadFileData = null;
-  });
+  // Reset state
+  commandCalls = [];
+  readFileCalls = [];
+  unlinkCalls = [];
+  mockReadFileData = null;
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should generate correct devicectl command', async () => {

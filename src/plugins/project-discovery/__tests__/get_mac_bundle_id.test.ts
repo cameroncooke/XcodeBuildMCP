@@ -4,10 +4,6 @@ import plugin, { type SyncExecutor } from '../get_mac_bundle_id.ts';
 import { createMockFileSystemExecutor } from '../../../utils/command.js';
 
 describe('get_mac_bundle_id plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   // Helper function to create mock sync executor
   const createMockSyncExecutor = (results: Record<string, string | Error>): SyncExecutor => {
     const calls: string[] = [];

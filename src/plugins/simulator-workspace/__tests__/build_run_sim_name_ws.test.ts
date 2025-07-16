@@ -9,10 +9,6 @@ import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils
 import buildRunSimNameWs from '../build_run_sim_name_ws.ts';
 
 describe('build_run_sim_name_ws tool', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(buildRunSimNameWs.name).toBe('build_run_sim_name_ws');

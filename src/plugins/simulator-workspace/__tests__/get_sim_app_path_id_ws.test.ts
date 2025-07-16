@@ -6,10 +6,6 @@ import { createMockExecutor } from '../../../utils/command.js';
 import getSimAppPathIdWs from '../get_sim_app_path_id_ws.ts';
 
 describe('get_sim_app_path_id_ws tool', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(getSimAppPathIdWs.name).toBe('get_sim_app_path_id_ws');

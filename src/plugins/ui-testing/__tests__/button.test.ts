@@ -8,10 +8,6 @@ import { createMockExecutor } from '../../../utils/command.js';
 import buttonPlugin from '../button.ts';
 
 describe('Button Plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(buttonPlugin.name).toBe('button');

@@ -8,10 +8,6 @@ import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils
 import screenshotPlugin from '../screenshot.ts';
 
 describe('Screenshot Plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(screenshotPlugin.name).toBe('screenshot');

@@ -6,9 +6,7 @@ import { createMockExecutor } from '../../utils/command.js';
 import setSimAppearancePlugin from './set_sim_appearance.ts';
 
 describe('set_sim_appearance plugin', () => {
-  beforeEach(() => {
-    // Clean setup for each test
-  });
+  // Clean setup for each test
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {

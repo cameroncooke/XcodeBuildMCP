@@ -9,10 +9,6 @@ import { createMockExecutor } from '../../../utils/command.js';
 import getMacAppPathWs from '../get_mac_app_path_ws.ts';
 
 describe('get_mac_app_path_ws plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(getMacAppPathWs.name).toBe('get_mac_app_path_ws');

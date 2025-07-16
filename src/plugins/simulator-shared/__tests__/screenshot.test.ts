@@ -10,9 +10,7 @@ import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils
 import screenshotPlugin from '../../ui-testing/screenshot.ts';
 
 describe('screenshot plugin', () => {
-  beforeEach(() => {
-    // No mocks to clear since we use pure dependency injection
-  });
+  // No mocks to clear since we use pure dependency injection
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {

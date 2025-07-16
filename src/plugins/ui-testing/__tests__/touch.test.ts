@@ -9,10 +9,6 @@ import { createMockExecutor } from '../../../utils/command.js';
 import touchPlugin from '../touch.ts';
 
 describe('Touch Plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(touchPlugin.name).toBe('touch');

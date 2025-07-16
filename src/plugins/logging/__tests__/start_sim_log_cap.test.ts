@@ -6,9 +6,7 @@ import { z } from 'zod';
 import plugin from '../start_sim_log_cap.ts';
 
 describe('start_sim_log_cap plugin', () => {
-  beforeEach(() => {
-    // Reset any test state if needed
-  });
+  // Reset any test state if needed
 
   describe('Export Field Validation (Literal)', () => {
     it('should export an object with required properties', () => {

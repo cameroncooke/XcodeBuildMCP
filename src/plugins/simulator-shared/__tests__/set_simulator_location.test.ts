@@ -10,9 +10,7 @@ import { createMockExecutor } from '../../../utils/command.js';
 import setSimulatorLocation from '../set_simulator_location.ts';
 
 describe('set_simulator_location tool', () => {
-  beforeEach(() => {
-    // No mocks to clear since we use pure dependency injection
-  });
+  // No mocks to clear since we use pure dependency injection
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {

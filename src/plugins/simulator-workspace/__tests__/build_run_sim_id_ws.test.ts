@@ -31,10 +31,8 @@ Object.defineProperty(childProcess, 'execSync', {
 import buildRunSimIdWs from '../build_run_sim_id_ws.ts';
 
 describe('build_run_sim_id_ws tool', () => {
-  beforeEach(() => {
-    mockExecSyncCalls.length = 0;
-    mockExecSyncResults = [];
-  });
+  mockExecSyncCalls.length = 0;
+  mockExecSyncResults = [];
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {

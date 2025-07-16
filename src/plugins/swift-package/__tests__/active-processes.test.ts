@@ -14,10 +14,8 @@ import {
 } from '../active-processes.js';
 
 describe('active-processes module', () => {
-  beforeEach(() => {
-    // Clear the map before each test
-    clearAllProcesses();
-  });
+  // Clear the map before each test
+  clearAllProcesses();
 
   describe('activeProcesses Map', () => {
     it('should be a Map instance', () => {

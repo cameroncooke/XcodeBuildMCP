@@ -10,9 +10,7 @@ import { createMockExecutor } from '../../../utils/command.js';
 import testMacosWs from '../test_macos_ws.ts';
 
 describe('test_macos_ws plugin', () => {
-  beforeEach(() => {
-    // Clear any state if needed
-  });
+  // Clear any state if needed
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {

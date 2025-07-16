@@ -10,9 +10,7 @@ import describeUIPlugin from '../describe_ui.ts';
 describe('Describe UI Plugin', () => {
   let mockCalls: any[] = [];
 
-  beforeEach(() => {
-    mockCalls = [];
-  });
+  mockCalls = [];
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {

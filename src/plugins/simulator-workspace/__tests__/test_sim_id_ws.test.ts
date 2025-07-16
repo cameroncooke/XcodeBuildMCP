@@ -8,10 +8,6 @@ import { createMockExecutor } from '../../../utils/command.js';
 import testSimIdWs from '../test_sim_id_ws.ts';
 
 describe('test_sim_id_ws plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(testSimIdWs.name).toBe('test_sim_id_ws');
