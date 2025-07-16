@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 
@@ -6,10 +6,6 @@ import { createMockExecutor } from '../../../utils/command.js';
 import bootSim from '../boot_sim.ts';
 
 describe('boot_sim tool', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(bootSim.name).toBe('boot_sim');
@@ -102,7 +98,9 @@ describe('boot_sim tool', () => {
     });
 
     it('should handle exception with Error object', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Connection failed'));
+      const mockExecutor = async () => {
+        throw new Error('Connection failed');
+      };
 
       const result = await bootSim.handler({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
 
@@ -117,7 +115,9 @@ describe('boot_sim tool', () => {
     });
 
     it('should handle exception with string error', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue('String error');
+      const mockExecutor = async () => {
+        throw 'String error';
+      };
 
       const result = await bootSim.handler({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
 
