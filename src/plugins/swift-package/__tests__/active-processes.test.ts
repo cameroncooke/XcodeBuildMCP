@@ -15,7 +15,9 @@ import {
 
 describe('active-processes module', () => {
   // Clear the map before each test
-  clearAllProcesses();
+  beforeEach(() => {
+    clearAllProcesses();
+  });
 
   describe('activeProcesses Map', () => {
     it('should be a Map instance', () => {

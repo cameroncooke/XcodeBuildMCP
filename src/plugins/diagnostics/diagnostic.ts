@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { execSync } from 'child_process';
+import { executeCommand, CommandExecutor } from '../../utils/index.js';
 import { version } from '../../utils/index.js';
 import { areAxeToolsAvailable } from '../../utils/index.js';
 import { isXcodemakeEnabled, isXcodemakeAvailable, doesMakefileExist } from '../../utils/index.js';
@@ -16,7 +16,7 @@ import { ToolResponse } from '../../types/common.js';
 
 // Mock system interface for dependency injection
 interface MockSystem {
-  execSync: (cmd: string, options?: any) => string;
+  executeCommand: CommandExecutor;
   platform: () => string;
   release: () => string;
   arch: () => string;
@@ -43,15 +43,18 @@ const LOG_PREFIX = '[Diagnostic]';
 /**
  * Check if a binary is available in the PATH and attempt to get its version
  */
-function checkBinaryAvailability(
+async function checkBinaryAvailability(
   binary: string,
   mockSystem?: MockSystem,
-): { available: boolean; version?: string } {
-  const execSyncFn = mockSystem?.execSync || execSync;
+): Promise<{ available: boolean; version?: string }> {
+  const commandExecutor = mockSystem?.executeCommand || executeCommand;
 
   // First check if the binary exists at all
   try {
-    execSyncFn(`which ${binary}`, { stdio: 'ignore' });
+    const whichResult = await commandExecutor(['which', binary], 'Check Binary Availability');
+    if (!whichResult.success) {
+      return { available: false };
+    }
   } catch {
     // Binary not found in PATH
     return { available: false };
@@ -69,11 +72,12 @@ function checkBinaryAvailability(
   // Try to get version using binary-specific commands
   if (binary in versionCommands) {
     try {
-      const output = execSyncFn(versionCommands[binary], {
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-      }).trim();
-      if (output) {
+      const versionResult = await commandExecutor(
+        versionCommands[binary].split(' '),
+        'Get Binary Version',
+      );
+      if (versionResult.success && versionResult.output) {
+        const output = versionResult.output.trim();
         // For xcodebuild, include both version and build info
         if (binary === 'xcodebuild') {
           const lines = output.split('\n').slice(0, 2);
@@ -97,24 +101,43 @@ function checkBinaryAvailability(
 /**
  * Get information about the Xcode installation
  */
-function getXcodeInfo(
+async function getXcodeInfo(
   mockSystem?: MockSystem,
-):
-  | { version: string; path: string; selectedXcode: string; xcrunVersion: string }
-  | { error: string } {
-  const execSyncFn = mockSystem?.execSync || execSync;
+): Promise<
+  { version: string; path: string; selectedXcode: string; xcrunVersion: string } | { error: string }
+> {
+  const commandExecutor = mockSystem?.executeCommand || executeCommand;
 
   try {
     // Get Xcode version info
-    const xcodebuildOutput = execSyncFn('xcodebuild -version', { encoding: 'utf8' }).trim();
-    const version = xcodebuildOutput.split('\n').slice(0, 2).join(' - ');
+    const xcodebuildResult = await commandExecutor(['xcodebuild', '-version'], 'Get Xcode Version');
+    if (!xcodebuildResult.success) {
+      throw new Error('xcodebuild command failed');
+    }
+    const version = xcodebuildResult.output.trim().split('\n').slice(0, 2).join(' - ');
 
     // Get Xcode selection info
-    const path = execSyncFn('xcode-select -p', { encoding: 'utf8' }).trim();
-    const selectedXcode = execSyncFn('xcrun --find xcodebuild', { encoding: 'utf8' }).trim();
+    const pathResult = await commandExecutor(['xcode-select', '-p'], 'Get Xcode Path');
+    if (!pathResult.success) {
+      throw new Error('xcode-select command failed');
+    }
+    const path = pathResult.output.trim();
+
+    const selectedXcodeResult = await commandExecutor(
+      ['xcrun', '--find', 'xcodebuild'],
+      'Find Xcodebuild',
+    );
+    if (!selectedXcodeResult.success) {
+      throw new Error('xcrun --find command failed');
+    }
+    const selectedXcode = selectedXcodeResult.output.trim();
 
     // Get xcrun version info
-    const xcrunVersion = execSyncFn('xcrun --version', { encoding: 'utf8' }).trim();
+    const xcrunVersionResult = await commandExecutor(['xcrun', '--version'], 'Get Xcrun Version');
+    if (!xcrunVersionResult.success) {
+      throw new Error('xcrun --version command failed');
+    }
+    const xcrunVersion = xcrunVersionResult.output.trim();
 
     return { version, path, selectedXcode, xcrunVersion };
   } catch (error) {
@@ -291,11 +314,11 @@ async function runDiagnosticTool(
   const binaryStatus = {};
 
   for (const binary of requiredBinaries) {
-    binaryStatus[binary] = checkBinaryAvailability(binary, mockSystem);
+    binaryStatus[binary] = await checkBinaryAvailability(binary, mockSystem);
   }
 
   // Get Xcode information
-  const xcodeInfo = getXcodeInfo(mockSystem);
+  const xcodeInfo = await getXcodeInfo(mockSystem);
 
   // Get environment variables
   const envVars = getEnvironmentVariables();

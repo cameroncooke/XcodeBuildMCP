@@ -7,8 +7,10 @@ describe('build_run_sim_id_proj plugin', () => {
   let mockExecSyncCalls: { command: string; result: string }[];
   let mockExecuteXcodeBuildCommandCalls: any[];
 
-  mockExecSyncCalls = [];
-  mockExecuteXcodeBuildCommandCalls = [];
+  beforeEach(() => {
+    mockExecSyncCalls = [];
+    mockExecuteXcodeBuildCommandCalls = [];
+  });
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
@@ -229,7 +231,7 @@ describe('build_run_sim_id_proj plugin', () => {
         output: 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app',
       });
 
-      // Create mock execSync function with sequential returns
+      // Create mock sync function with sequential returns
       let execSyncCallCount = 0;
       const mockExecSync = (command: string) => {
         mockExecSyncCalls.push({ command, result: '' });

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import setSimulatorLocationPlugin from './set_simulator_location.ts';
-import { createMockExecutor } from '../../utils/command.js';
+import setSimulatorLocationPlugin from '../set_simulator_location.ts';
+import { createMockExecutor } from '../../../utils/command.js';
 
 describe('set_simulator_location tool', () => {
   describe('Export Field Validation (Literal)', () => {

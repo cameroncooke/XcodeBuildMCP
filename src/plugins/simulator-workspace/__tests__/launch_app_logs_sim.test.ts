@@ -6,7 +6,7 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import launchAppLogsSim from './launch_app_logs_sim.ts';
+import launchAppLogsSim from '../launch_app_logs_sim.ts';
 
 describe('launch_app_logs_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {

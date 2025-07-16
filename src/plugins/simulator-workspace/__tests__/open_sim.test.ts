@@ -6,8 +6,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, type CommandExecutor } from '../../utils/command.js';
-import openSim from './open_sim.ts';
+import { createMockExecutor, type CommandExecutor } from '../../../utils/command.js';
+import openSim from '../open_sim.ts';
 
 describe('open_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {

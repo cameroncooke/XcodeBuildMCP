@@ -101,6 +101,12 @@ describe('install_app_sim tool', () => {
           true,
           undefined,
         ],
+        [
+          ['defaults', 'read', '/path/to/app.app/Info', 'CFBundleIdentifier'],
+          'Extract Bundle ID',
+          false,
+          undefined,
+        ],
       ]);
     });
 
@@ -134,6 +140,12 @@ describe('install_app_sim tool', () => {
           ['xcrun', 'simctl', 'install', 'different-uuid-456', '/different/path/MyApp.app'],
           'Install App in Simulator',
           true,
+          undefined,
+        ],
+        [
+          ['defaults', 'read', '/different/path/MyApp.app/Info', 'CFBundleIdentifier'],
+          'Extract Bundle ID',
+          false,
           undefined,
         ],
       ]);
@@ -201,13 +213,26 @@ describe('install_app_sim tool', () => {
     });
 
     it('should handle successful install', async () => {
+      let callCount = 0;
       const mockExecutor = () => {
-        return Promise.resolve({
-          success: true,
-          output: 'App installed',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+        callCount++;
+        if (callCount === 1) {
+          // First call: simctl install
+          return Promise.resolve({
+            success: true,
+            output: 'App installed',
+            error: undefined,
+            process: { pid: 12345 },
+          });
+        } else {
+          // Second call: defaults read for bundle ID
+          return Promise.resolve({
+            success: true,
+            output: 'com.example.myapp',
+            error: undefined,
+            process: { pid: 12345 },
+          });
+        }
       };
 
       const mockFileSystem = createMockFileSystemExecutor({
@@ -233,7 +258,7 @@ describe('install_app_sim tool', () => {
             type: 'text',
             text: `Next Steps:
 1. Open the Simulator app: open_sim({ enabled: true })
-2. Launch the app: launch_app_sim({ simulatorUuid: "test-uuid-123", bundleId: "YOUR_APP_BUNDLE_ID" })`,
+2. Launch the app: launch_app_sim({ simulatorUuid: "test-uuid-123", bundleId: "com.example.myapp" })`,
           },
         ],
       });

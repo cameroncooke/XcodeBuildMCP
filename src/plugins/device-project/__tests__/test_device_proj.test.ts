@@ -76,7 +76,9 @@ describe('test_device_proj plugin', () => {
           mkdtempCalls.push(prefix);
           return '/tmp/xcodebuild-test-123456';
         },
-        rm: async (path: string, options: { recursive: boolean; force: boolean }) => {},
+        rm: async (path: string, options: { recursive: boolean; force: boolean }) => {
+          rmCalls.push({ path, options });
+        },
         tmpdir: () => '/tmp',
       };
 

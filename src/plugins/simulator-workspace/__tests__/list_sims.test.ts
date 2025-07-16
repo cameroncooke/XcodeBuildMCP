@@ -6,8 +6,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../utils/command.js';
-import listSims from './list_sims.ts';
+import { createMockExecutor } from '../../../utils/command.js';
+import listSims from '../list_sims.ts';
 
 describe('list_sims plugin', () => {
   describe('Export Field Validation (Literal)', () => {

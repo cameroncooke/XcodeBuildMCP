@@ -5,11 +5,21 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: [
-      'src/**/*.test.ts'
+      'src/**/__tests__/**/*.test.ts'  // Only __tests__ directories
     ],
     exclude: [
       'node_modules/**',
-      'build/**'
+      'build/**',
+      'coverage/**',
+      'bundled/**',
+      'example_projects/**',
+      '.git/**',
+      '**/*.d.ts',
+      '**/temp_*',
+      '**/full-output.txt',
+      '**/experiments/**',
+      '**/__pycache__/**',
+      '**/dist/**'
     ],
     pool: 'vmThreads',
     poolOptions: {
@@ -30,7 +40,7 @@ export default defineConfig({
         'node_modules/**',
         'build/**',
         'tests/**',
-        'experiments/**',
+        'example_projects/**',
         '**/*.config.*',
         '**/*.d.ts'
       ]

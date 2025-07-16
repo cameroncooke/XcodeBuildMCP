@@ -31,6 +31,11 @@ if (!SENTRY_ENABLED) {
  * @param message The message to log
  */
 export function log(level: string, message: string): void {
+  // Suppress logging during tests to keep test output clean
+  if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
+    return;
+  }
+
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
 

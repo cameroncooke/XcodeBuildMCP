@@ -8,7 +8,6 @@ import {
   CommandExecutor,
   FileSystemExecutor,
 } from '../../utils/index.ts';
-import { execSync } from 'child_process';
 
 export default {
   name: 'install_app_sim',
@@ -68,9 +67,16 @@ export default {
 
       let bundleId = '';
       try {
-        bundleId = execSync(`defaults read "${params.appPath}/Info" CFBundleIdentifier`)
-          .toString()
-          .trim();
+        const bundleIdResult = await executeCommand(
+          ['defaults', 'read', `${params.appPath}/Info`, 'CFBundleIdentifier'],
+          'Extract Bundle ID',
+          false,
+          undefined,
+          executor,
+        );
+        if (bundleIdResult.success) {
+          bundleId = bundleIdResult.output.trim();
+        }
       } catch (error) {
         log('warning', `Could not extract bundle ID from app: ${error}`);
       }

@@ -1,7 +1,7 @@
 import { vi, describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import launchAppSim from './launch_app_sim.ts';
-import { createMockExecutor } from '../../utils/command.js';
+import launchAppSim from '../launch_app_sim.ts';
+import { createMockExecutor } from '../../../utils/command.js';
 
 describe('launch_app_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {

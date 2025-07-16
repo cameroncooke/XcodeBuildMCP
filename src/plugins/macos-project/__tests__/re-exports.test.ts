@@ -7,9 +7,9 @@ import { describe, it, expect } from 'vitest';
 // Import all re-export tools
 import testMacosProj from '../test_macos_proj.ts';
 import buildMacProj from '../build_mac_proj.ts';
-import buildMacWs from './build_mac_ws.ts';
-import buildRunMacWs from './build_run_mac_ws.ts';
-import getMacAppPathWs from './get_mac_app_path_ws.ts';
+import buildMacWs from '../../macos-workspace/build_mac_ws.ts';
+import buildRunMacWs from '../../macos-workspace/build_run_mac_ws.ts';
+import getMacAppPathWs from '../../macos-workspace/get_mac_app_path_ws.ts';
 
 describe('macos-project re-exports', () => {
   describe('test_macos_proj re-export', () => {

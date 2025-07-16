@@ -188,7 +188,7 @@ describe('build_run_sim_name_proj plugin', () => {
         });
       };
 
-      // Mock execSync calls with manual tracking
+      // Mock sync calls with manual tracking
       const execSyncCalls: any[] = [];
       let execSyncCallIndex = 0;
 

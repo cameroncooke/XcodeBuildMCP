@@ -6,11 +6,15 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
+import { createMockExecutor } from '../../../utils/command.js';
 import diagnostic from '../diagnostic.ts';
 
 // Mock functions for dependency injection
 interface MockSystem {
-  execSync: (cmd: string, options?: any) => string;
+  executeCommand: (
+    command: string[],
+    logPrefix?: string,
+  ) => Promise<{ success: boolean; output: string; error?: string; process: any }>;
   platform: () => string;
   release: () => string;
   arch: () => string;
@@ -32,17 +36,44 @@ interface MockUtilities {
 
 function createMockSystem(overrides?: Partial<MockSystem>): MockSystem {
   return {
-    execSync: (cmd: string) => {
-      if (cmd === 'which axe') return '/usr/local/bin/axe';
-      if (cmd === 'which xcodemake') return '/usr/local/bin/xcodemake';
-      if (cmd === 'which mise') return '/usr/local/bin/mise';
-      if (cmd === 'axe --version') return 'axe version 1.0.0';
-      if (cmd === 'xcodebuild -version') return 'Xcode 15.0\nBuild version 15A240d';
-      if (cmd === 'xcode-select -p') return '/Applications/Xcode.app/Contents/Developer';
-      if (cmd === 'xcrun --find xcodebuild')
-        return '/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild';
-      if (cmd === 'xcrun --version') return 'xcrun version 65';
-      throw new Error(`Command not found: ${cmd}`);
+    executeCommand: async (command: string[], logPrefix?: string) => {
+      const cmdString = command.join(' ');
+
+      if (cmdString === 'which axe')
+        return { success: true, output: '/usr/local/bin/axe', process: { pid: 123 } };
+      if (cmdString === 'which xcodemake')
+        return { success: true, output: '/usr/local/bin/xcodemake', process: { pid: 123 } };
+      if (cmdString === 'which mise')
+        return { success: true, output: '/usr/local/bin/mise', process: { pid: 123 } };
+      if (cmdString === 'axe --version')
+        return { success: true, output: 'axe version 1.0.0', process: { pid: 123 } };
+      if (cmdString === 'xcodebuild -version')
+        return {
+          success: true,
+          output: 'Xcode 15.0\nBuild version 15A240d',
+          process: { pid: 123 },
+        };
+      if (cmdString === 'xcode-select -p')
+        return {
+          success: true,
+          output: '/Applications/Xcode.app/Contents/Developer',
+          process: { pid: 123 },
+        };
+      if (cmdString === 'xcrun --find xcodebuild')
+        return {
+          success: true,
+          output: '/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild',
+          process: { pid: 123 },
+        };
+      if (cmdString === 'xcrun --version')
+        return { success: true, output: 'xcrun version 65', process: { pid: 123 } };
+
+      return {
+        success: false,
+        output: '',
+        error: `Command not found: ${cmdString}`,
+        process: { pid: 123 },
+      };
     },
     platform: () => 'darwin',
     release: () => '21.0.0',
@@ -178,16 +209,32 @@ describe('diagnostic tool', () => {
 
     it('should handle xcode command failure', async () => {
       const mockSystem = createMockSystem({
-        execSync: (cmd: string) => {
-          if (cmd === 'which axe') return '/usr/local/bin/axe';
-          if (cmd === 'which xcodemake') return '/usr/local/bin/xcodemake';
-          if (cmd === 'which mise') return '/usr/local/bin/mise';
-          if (cmd === 'axe --version') return 'axe version 1.0.0';
-          if (cmd === 'xcodebuild -version') throw new Error('Xcode not found');
-          if (cmd === 'xcode-select -p') throw new Error('Xcode not found');
-          if (cmd === 'xcrun --find xcodebuild') throw new Error('Xcode not found');
-          if (cmd === 'xcrun --version') throw new Error('Xcode not found');
-          throw new Error(`Command not found: ${cmd}`);
+        executeCommand: async (command: string[], logPrefix?: string) => {
+          const cmdString = command.join(' ');
+
+          if (cmdString === 'which axe')
+            return { success: true, output: '/usr/local/bin/axe', process: { pid: 123 } };
+          if (cmdString === 'which xcodemake')
+            return { success: true, output: '/usr/local/bin/xcodemake', process: { pid: 123 } };
+          if (cmdString === 'which mise')
+            return { success: true, output: '/usr/local/bin/mise', process: { pid: 123 } };
+          if (cmdString === 'axe --version')
+            return { success: true, output: 'axe version 1.0.0', process: { pid: 123 } };
+          if (cmdString === 'xcodebuild -version')
+            return { success: false, output: '', error: 'Xcode not found', process: { pid: 123 } };
+          if (cmdString === 'xcode-select -p')
+            return { success: false, output: '', error: 'Xcode not found', process: { pid: 123 } };
+          if (cmdString === 'xcrun --find xcodebuild')
+            return { success: false, output: '', error: 'Xcode not found', process: { pid: 123 } };
+          if (cmdString === 'xcrun --version')
+            return { success: false, output: '', error: 'Xcode not found', process: { pid: 123 } };
+
+          return {
+            success: false,
+            output: '',
+            error: `Command not found: ${cmdString}`,
+            process: { pid: 123 },
+          };
         },
       });
       const mockUtilities = createMockUtilities();
@@ -223,17 +270,49 @@ describe('diagnostic tool', () => {
 
     it('should handle xcodemake check failure', async () => {
       const mockSystem = createMockSystem({
-        execSync: (cmd: string) => {
-          if (cmd === 'which axe') return '/usr/local/bin/axe';
-          if (cmd === 'which xcodemake') throw new Error('xcodemake not found');
-          if (cmd === 'which mise') return '/usr/local/bin/mise';
-          if (cmd === 'axe --version') return 'axe version 1.0.0';
-          if (cmd === 'xcodebuild -version') return 'Xcode 15.0\nBuild version 15A240d';
-          if (cmd === 'xcode-select -p') return '/Applications/Xcode.app/Contents/Developer';
-          if (cmd === 'xcrun --find xcodebuild')
-            return '/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild';
-          if (cmd === 'xcrun --version') return 'xcrun version 65';
-          throw new Error(`Command not found: ${cmd}`);
+        executeCommand: async (command: string[], logPrefix?: string) => {
+          const cmdString = command.join(' ');
+
+          if (cmdString === 'which axe')
+            return { success: true, output: '/usr/local/bin/axe', process: { pid: 123 } };
+          if (cmdString === 'which xcodemake')
+            return {
+              success: false,
+              output: '',
+              error: 'xcodemake not found',
+              process: { pid: 123 },
+            };
+          if (cmdString === 'which mise')
+            return { success: true, output: '/usr/local/bin/mise', process: { pid: 123 } };
+          if (cmdString === 'axe --version')
+            return { success: true, output: 'axe version 1.0.0', process: { pid: 123 } };
+          if (cmdString === 'xcodebuild -version')
+            return {
+              success: true,
+              output: 'Xcode 15.0\nBuild version 15A240d',
+              process: { pid: 123 },
+            };
+          if (cmdString === 'xcode-select -p')
+            return {
+              success: true,
+              output: '/Applications/Xcode.app/Contents/Developer',
+              process: { pid: 123 },
+            };
+          if (cmdString === 'xcrun --find xcodebuild')
+            return {
+              success: true,
+              output: '/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild',
+              process: { pid: 123 },
+            };
+          if (cmdString === 'xcrun --version')
+            return { success: true, output: 'xcrun version 65', process: { pid: 123 } };
+
+          return {
+            success: false,
+            output: '',
+            error: `Command not found: ${cmdString}`,
+            process: { pid: 123 },
+          };
         },
       });
       const mockUtilities = createMockUtilities();
@@ -269,17 +348,49 @@ describe('diagnostic tool', () => {
 
     it('should handle axe tools not available', async () => {
       const mockSystem = createMockSystem({
-        execSync: (cmd: string) => {
-          if (cmd === 'which axe') throw new Error('axe not found');
-          if (cmd === 'which xcodemake') throw new Error('xcodemake not found');
-          if (cmd === 'which mise') return '/usr/local/bin/mise';
-          if (cmd === 'axe --version') throw new Error('axe not found');
-          if (cmd === 'xcodebuild -version') return 'Xcode 15.0\nBuild version 15A240d';
-          if (cmd === 'xcode-select -p') return '/Applications/Xcode.app/Contents/Developer';
-          if (cmd === 'xcrun --find xcodebuild')
-            return '/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild';
-          if (cmd === 'xcrun --version') return 'xcrun version 65';
-          throw new Error(`Command not found: ${cmd}`);
+        executeCommand: async (command: string[], logPrefix?: string) => {
+          const cmdString = command.join(' ');
+
+          if (cmdString === 'which axe')
+            return { success: false, output: '', error: 'axe not found', process: { pid: 123 } };
+          if (cmdString === 'which xcodemake')
+            return {
+              success: false,
+              output: '',
+              error: 'xcodemake not found',
+              process: { pid: 123 },
+            };
+          if (cmdString === 'which mise')
+            return { success: true, output: '/usr/local/bin/mise', process: { pid: 123 } };
+          if (cmdString === 'axe --version')
+            return { success: false, output: '', error: 'axe not found', process: { pid: 123 } };
+          if (cmdString === 'xcodebuild -version')
+            return {
+              success: true,
+              output: 'Xcode 15.0\nBuild version 15A240d',
+              process: { pid: 123 },
+            };
+          if (cmdString === 'xcode-select -p')
+            return {
+              success: true,
+              output: '/Applications/Xcode.app/Contents/Developer',
+              process: { pid: 123 },
+            };
+          if (cmdString === 'xcrun --find xcodebuild')
+            return {
+              success: true,
+              output: '/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild',
+              process: { pid: 123 },
+            };
+          if (cmdString === 'xcrun --version')
+            return { success: true, output: 'xcrun version 65', process: { pid: 123 } };
+
+          return {
+            success: false,
+            output: '',
+            error: `Command not found: ${cmdString}`,
+            process: { pid: 123 },
+          };
         },
       });
       const mockUtilities = createMockUtilities({

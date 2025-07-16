@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../utils/command.js';
+import { createMockExecutor } from '../../../utils/command.js';
 
 // Import the plugin
-import setSimAppearancePlugin from './set_sim_appearance.ts';
+import setSimAppearancePlugin from '../set_sim_appearance.ts';
 
 describe('set_sim_appearance plugin', () => {
   // Clean setup for each test

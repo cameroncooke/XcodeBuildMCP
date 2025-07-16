@@ -4,8 +4,8 @@
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { createMockExecutor } from '../../utils/command.js';
-import testSimNameWs from './test_sim_name_ws.ts';
+import { createMockExecutor } from '../../../utils/command.js';
+import testSimNameWs from '../test_sim_name_ws.ts';
 
 describe('test_sim_name_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {

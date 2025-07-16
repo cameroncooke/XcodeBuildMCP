@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import resetSimulatorLocationPlugin from './reset_simulator_location.ts';
+import resetSimulatorLocationPlugin from '../reset_simulator_location.ts';
 
 describe('reset_simulator_location plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -44,57 +44,40 @@ describe('reset_simulator_location plugin', () => {
 
   describe('Command Generation', () => {
     it('should call correct command with valid parameters', async () => {
-      // Track executeCommand calls
-      const executeCommandCalls: any[] = [];
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'Location reset successfully',
-      });
-
-      // Override executeCommand to track calls
-      const originalExecuteCommand = (await import('../../../utils/command.js')).executeCommand;
-
-      // Create a tracking wrapper
-      const trackingExecuteCommand = async (
+      // Track command calls via the executor
+      const commandCalls: any[] = [];
+      const mockExecutor = async (
         command: string[],
-        description: string,
-        enableLogging?: boolean,
-        options?: Record<string, any>,
-        executor?: any,
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
       ) => {
-        executeCommandCalls.push({ command, description, enableLogging, options, executor });
-        return originalExecuteCommand(
-          command,
-          description,
-          enableLogging,
-          options,
-          executor || mockExecutor,
-        );
+        commandCalls.push({ command, logPrefix, useShell, env });
+        return {
+          success: true,
+          output: 'Location reset successfully',
+          error: undefined,
+          process: { pid: 12345 },
+        };
       };
 
-      // Monkey patch for this test
-      const utilsModule = await import('../../../utils/command.js');
-      const originalExec = utilsModule.executeCommand;
-      (utilsModule as any).executeCommand = trackingExecuteCommand;
-
-      try {
-        await resetSimulatorLocationPlugin.handler({
+      const result = await resetSimulatorLocationPlugin.handler(
+        {
           simulatorUuid: 'test-uuid-123',
-        });
+        },
+        mockExecutor,
+      );
 
-        expect(executeCommandCalls).toHaveLength(1);
-        expect(executeCommandCalls[0].command).toEqual([
-          'xcrun',
-          'simctl',
-          'location',
-          'test-uuid-123',
-          'clear',
-        ]);
-        expect(executeCommandCalls[0].description).toBe('Reset Simulator Location');
-      } finally {
-        // Restore original
-        (utilsModule as any).executeCommand = originalExec;
-      }
+      expect(commandCalls).toHaveLength(1);
+      expect(commandCalls[0].command).toEqual([
+        'xcrun',
+        'simctl',
+        'location',
+        'test-uuid-123',
+        'clear',
+      ]);
+      expect(commandCalls[0].logPrefix).toBe('Reset Simulator Location');
+      expect(result.isError).toBe(undefined); // Success case doesn't set isError
     });
   });
 

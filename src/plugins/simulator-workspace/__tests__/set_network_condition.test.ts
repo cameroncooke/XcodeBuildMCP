@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../utils/command.js';
+import { createMockExecutor } from '../../../utils/command.js';
 
 // Import the plugin
-import setNetworkCondition from './set_network_condition.ts';
+import setNetworkCondition from '../set_network_condition.ts';
 
 describe('set_network_condition tool', () => {
   // Clean setup for each test

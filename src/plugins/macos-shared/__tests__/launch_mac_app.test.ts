@@ -108,7 +108,7 @@ describe('launch_mac_app plugin', () => {
         content: [
           {
             type: 'text',
-            text: "File does not exist: '/path/to/NonExistent.app'. Please provide a valid file path.",
+            text: "File not found: '/path/to/NonExistent.app'. Please check the path and try again.",
           },
         ],
         isError: true,

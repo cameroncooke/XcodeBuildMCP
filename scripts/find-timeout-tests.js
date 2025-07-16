@@ -63,6 +63,8 @@ const VITEST_MOCKING_PATTERNS = [
   /mockLog/,                         // mockLog variables - BANNED
   /mockTemplateManager/,             // mockTemplateManager variables - BANNED
   /as MockedFunction/,               // Type casting to MockedFunction - BANNED
+  /\bexecSync\b/,                    // execSync usage - BANNED (use executeCommand instead)
+  /\bexecSyncFn\b/,                  // execSyncFn usage - BANNED (use executeCommand instead)
 ];
 
 // ALLOWED PATTERNS for cleanup (not mocking)
