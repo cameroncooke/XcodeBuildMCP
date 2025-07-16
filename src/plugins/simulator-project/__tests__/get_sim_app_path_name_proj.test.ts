@@ -1,13 +1,9 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import getSimAppPathNameProj from '../get_sim_app_path_name_proj.ts';
 
 describe('get_sim_app_path_name_proj plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
       expect(getSimAppPathNameProj.name).toBe('get_sim_app_path_name_proj');
@@ -252,12 +248,21 @@ describe('get_sim_app_path_name_proj plugin', () => {
     });
 
     it('should handle command generation with extra args', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: false,
-        error: 'Command failed',
-        output: '',
-        process: { pid: 12345 },
-      });
+      const calls: any[] = [];
+      const mockExecutor = async (
+        command: string[],
+        description: string,
+        silent: boolean,
+        timeout?: number,
+      ) => {
+        calls.push({ command, description, silent, timeout });
+        return {
+          success: false,
+          error: 'Command failed',
+          output: '',
+          process: { pid: 12345 },
+        };
+      };
 
       await getSimAppPathNameProj.handler(
         {
@@ -271,7 +276,8 @@ describe('get_sim_app_path_name_proj plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(calls).toHaveLength(1);
+      expect(calls[0].command).toEqual(
         expect.arrayContaining([
           'xcodebuild',
           '-showBuildSettings',
@@ -284,10 +290,10 @@ describe('get_sim_app_path_name_proj plugin', () => {
           '-destination',
           'platform=iOS Simulator,name=iPhone 16',
         ]),
-        'Get App Path',
-        true,
-        undefined,
       );
+      expect(calls[0].description).toBe('Get App Path');
+      expect(calls[0].silent).toBe(true);
+      expect(calls[0].timeout).toBe(undefined);
     });
   });
 });

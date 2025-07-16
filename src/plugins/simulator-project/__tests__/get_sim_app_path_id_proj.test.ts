@@ -1,13 +1,9 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import getSimAppPathIdProj from '../get_sim_app_path_id_proj.ts';
 
 describe('get_sim_app_path_id_proj plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
       expect(getSimAppPathIdProj.name).toBe('get_sim_app_path_id_proj');
@@ -252,12 +248,21 @@ describe('get_sim_app_path_id_proj plugin', () => {
     });
 
     it('should handle command generation with extra args', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: false,
-        error: 'Command failed',
-        output: '',
-        process: { pid: 12345 },
-      });
+      const calls: any[] = [];
+      const mockExecutor = async (
+        command: string[],
+        context: string,
+        logOutput: boolean,
+        timeout: number | undefined,
+      ) => {
+        calls.push({ command, context, logOutput, timeout });
+        return {
+          success: false,
+          error: 'Command failed',
+          output: '',
+          process: { pid: 12345 },
+        };
+      };
 
       await getSimAppPathIdProj.handler(
         {
@@ -271,23 +276,22 @@ describe('get_sim_app_path_id_proj plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          'xcodebuild',
-          '-showBuildSettings',
-          '-project',
-          '/path/to/project.xcodeproj',
-          '-scheme',
-          'MyScheme',
-          '-configuration',
-          'Release',
-          '-destination',
-          'platform=iOS Simulator,id=test-uuid',
-        ]),
-        'Get App Path',
-        true,
-        undefined,
-      );
+      expect(calls).toHaveLength(1);
+      expect(calls[0].command).toEqual([
+        'xcodebuild',
+        '-showBuildSettings',
+        '-project',
+        '/path/to/project.xcodeproj',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Release',
+        '-destination',
+        'platform=iOS Simulator,id=test-uuid',
+      ]);
+      expect(calls[0].context).toBe('Get App Path');
+      expect(calls[0].logOutput).toBe(true);
+      expect(calls[0].timeout).toBe(undefined);
     });
   });
 });

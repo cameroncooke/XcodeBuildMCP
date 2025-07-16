@@ -1,13 +1,9 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 import buildSimIdProj from '../build_sim_id_proj.ts';
 
 describe('build_sim_id_proj plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
       expect(buildSimIdProj.name).toBe('build_sim_id_proj');
@@ -178,11 +174,20 @@ describe('build_sim_id_proj plugin', () => {
     });
 
     it('should handle command generation with extra args', async () => {
-      const mockExecutor = vi.fn().mockResolvedValue({
-        success: false,
-        error: 'Build failed',
-        output: '',
-      });
+      const calls: any[] = [];
+      const mockExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useExpectedFormat?: boolean,
+        outputParser?: any,
+      ) => {
+        calls.push({ command, logPrefix, useExpectedFormat, outputParser });
+        return {
+          success: false,
+          error: 'Build failed',
+          output: '',
+        };
+      };
 
       await buildSimIdProj.handler(
         {
@@ -197,12 +202,13 @@ describe('build_sim_id_proj plugin', () => {
         mockExecutor,
       );
 
-      expect(mockExecutor).toHaveBeenCalledWith(
+      expect(calls).toHaveLength(1);
+      expect(calls[0].command).toEqual(
         expect.arrayContaining(['xcodebuild', '-project', '/path/to/project.xcodeproj']),
-        'iOS Simulator Build',
-        true,
-        undefined,
       );
+      expect(calls[0].logPrefix).toBe('iOS Simulator Build');
+      expect(calls[0].useExpectedFormat).toBe(true);
+      expect(calls[0].outputParser).toBeUndefined();
     });
   });
 });
