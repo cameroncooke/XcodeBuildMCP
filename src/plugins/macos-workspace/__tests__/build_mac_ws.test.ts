@@ -141,11 +141,11 @@ describe('build_mac_ws plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      // Mock createMockExecutor to throw an error during command execution
+      // Create executor that throws error during command execution
       // This will be caught by executeXcodeBuildCommand's try-catch block
-      const mockExecutor = vi.fn().mockImplementation(() => {
+      const mockExecutor = async () => {
         throw new Error('Network error');
-      });
+      };
 
       const result = await buildMacWs.handler(
         {
@@ -167,11 +167,11 @@ describe('build_mac_ws plugin', () => {
     });
 
     it('should return exact spawn error handling response', async () => {
-      // Mock createMockExecutor to throw a spawn error during command execution
+      // Create executor that throws spawn error during command execution
       // This will be caught by executeXcodeBuildCommand's try-catch block
-      const mockExecutor = vi.fn().mockImplementation(() => {
+      const mockExecutor = async () => {
         throw new Error('Spawn error');
-      });
+      };
 
       const result = await buildMacWs.handler(
         {
