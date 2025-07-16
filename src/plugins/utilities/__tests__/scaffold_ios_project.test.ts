@@ -7,7 +7,7 @@
  * Plugin location: plugins/utilities/scaffold_ios_project.js
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import scaffoldIosProject from '../scaffold_ios_project.ts';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/index.js';
@@ -17,8 +17,6 @@ describe('scaffold_ios_project plugin', () => {
   let mockFileSystemExecutor: any;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-
     // Create mock executors
     mockCommandExecutor = createMockExecutor({
       success: true,
@@ -343,9 +341,13 @@ describe('scaffold_ios_project plugin', () => {
     });
 
     it('should return error response for template extraction failure', async () => {
-      // Mock command executor to succeed for download but fail for extraction
+      // Manual call tracking for multi-step command execution
       let callCount = 0;
-      mockCommandExecutor = vi.fn().mockImplementation(() => {
+      const executorCalls: Array<{ command: string; args: string[] }> = [];
+
+      // Create custom executor stub that succeeds for download but fails for extraction
+      const customExecutor = (command: string, args: string[] = []) => {
+        executorCalls.push({ command, args });
         callCount++;
         if (callCount === 1) {
           // First call (download) succeeds
@@ -362,14 +364,14 @@ describe('scaffold_ios_project plugin', () => {
             error: 'Extraction failed',
           });
         }
-      });
+      };
 
       const result = await scaffoldIosProject.handler(
         {
           projectName: 'TestIOSApp',
           outputPath: '/tmp/test-projects',
         },
-        mockCommandExecutor,
+        customExecutor,
         mockFileSystemExecutor,
       );
 

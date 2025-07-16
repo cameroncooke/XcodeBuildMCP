@@ -161,7 +161,9 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should return exact exception handling response', async () => {
-      const mockExecutor = vi.fn().mockRejectedValue(new Error('Network error'));
+      const mockExecutor = async () => {
+        throw new Error('Network error');
+      };
 
       const result = await getMacAppPathWs.handler(
         {
