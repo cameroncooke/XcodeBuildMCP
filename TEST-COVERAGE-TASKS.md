@@ -121,25 +121,25 @@ Files that need command generation tests only
     - Gap: MISSING_COMMAND_GENERATION_TESTS
     - **Completed**: Added 4 command generation tests
 
-23. **D11: src/plugins/simulator-workspace/install_app_sim_id_ws.ts** ❌ PENDING
+23. **D11: src/plugins/simulator-workspace/install_app_sim_id_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Created test file with 4 command generation tests
 
-24. **D12: src/plugins/simulator-workspace/install_app_sim_name_ws.ts** ❌ PENDING
+24. **D12: src/plugins/simulator-workspace/install_app_sim_name_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: File doesn't exist (documentation corrected)
 
-25. **D13: src/plugins/simulator-workspace/launch_app_sim_id_ws.ts** ❌ PENDING
+25. **D13: src/plugins/simulator-workspace/launch_app_sim_id_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Added 4 command generation tests
 
-26. **D14: src/plugins/simulator-workspace/launch_app_sim_name_ws.ts** ❌ PENDING
+26. **D14: src/plugins/simulator-workspace/launch_app_sim_name_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Created plugin and test file with 4 command generation tests
 
-27. **D15: src/plugins/simulator-workspace/run_sim_id_ws.ts** ❌ PENDING
+27. **D15: src/plugins/simulator-workspace/run_sim_id_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Already had 4 command generation tests (documentation corrected)
 
 28. **D16: src/plugins/simulator-workspace/run_sim_name_ws.ts** ❌ PENDING
     - Gap: MISSING_COMMAND_GENERATION_TESTS
@@ -224,7 +224,7 @@ git commit -m "fix: add missing test patterns for tool_name"
 
 ## Progress Tracking
 
-### Completed Tasks: 22/41
+### Completed Tasks: 27/41
 - ✅ A1: test_sim_id_proj.ts (Created complete test file with 9 passing tests)
 - ✅ A2: test_sim_name_proj.ts (Created complete test file with 9 passing tests)
 - ✅ B1: build_run_sim_id_proj.ts (16 tests, 3 command generation, 3 success path)
@@ -247,6 +247,11 @@ git commit -m "fix: add missing test patterns for tool_name"
 - ✅ D8: build_sim_name_ws.ts (22 tests, 4 command generation)
 - ✅ D9: get_sim_app_path_id_ws.ts (23 tests, 4 command generation)
 - ✅ D10: get_sim_app_path_name_ws.ts (18 tests, 4 command generation)
+- ✅ D11: install_app_sim_id_ws.ts (15 tests, 4 command generation - created test file)
+- ✅ D12: install_app_sim_name_ws.ts (File doesn't exist - documentation corrected)
+- ✅ D13: launch_app_sim_id_ws.ts (14 tests, 4 command generation)
+- ✅ D14: launch_app_sim_name_ws.ts (16 tests, 4 command generation - created plugin+test)
+- ✅ D15: run_sim_id_ws.ts (13 tests, 4 command generation - already complete)
 
 ### In Progress: 0/41
 - None yet
