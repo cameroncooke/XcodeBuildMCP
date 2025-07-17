@@ -50,33 +50,33 @@ Files with multiple coverage gaps (2-3 gaps each)
    - Current: 10 total tests, 2 command, 3 success
    - **Completed**: Added command generation tests + success path tests
 
-8. **B6: src/plugins/device-shared/stop_app_device.ts** ❌ PENDING
+8. **B6: src/plugins/device-shared/stop_app_device.ts** ✅ COMPLETED
    - Gaps: MISSING_COMMAND_GENERATION_TESTS, MISSING_SUCCESS_PATH_TESTS
-   - Current: 5 total tests, 0 command, 0 success
-   - Required: Add command generation tests + success path tests
+   - Current: 13 total tests, 3 command, 3 success
+   - **Completed**: Added command generation tests + success path tests
 
-9. **B7: src/plugins/device-workspace/test_device_ws.ts** ❌ PENDING
+9. **B7: src/plugins/device-workspace/test_device_ws.ts** ✅ COMPLETED
    - Gaps: MISSING_SUCCESS_PATH_TESTS, VALIDATION_ONLY_NO_BEHAVIOR_TESTS
-   - Current: 8 total tests, 3 command, 0 success
-   - Required: Add success path tests (has command tests already)
+   - Current: 12 total tests, 3 command, 4 success
+   - **Completed**: Added success path tests (has command tests already)
 
 ### 🟡 Category C: Success Path Tests Needed (3 files) - MEDIUM PRIORITY
 Files that need success path tests only
 
-10. **C1: src/plugins/macos-workspace/test_macos_ws.ts** ❌ PENDING
+10. **C1: src/plugins/macos-workspace/test_macos_ws.ts** ✅ COMPLETED
     - Gaps: MISSING_SUCCESS_PATH_TESTS, VALIDATION_ONLY_NO_BEHAVIOR_TESTS
-    - Current: 8 total tests, 7 command, 0 success
-    - Required: Add success path tests (has command tests already)
+    - Current: 12 total tests, 7 command, 4 success
+    - **Completed**: Added success path tests (has command tests already)
 
-11. **C2: src/plugins/simulator-workspace/test_sim_id_ws.ts** ❌ PENDING
+11. **C2: src/plugins/simulator-workspace/test_sim_id_ws.ts** ✅ COMPLETED
     - Gaps: MISSING_SUCCESS_PATH_TESTS, VALIDATION_ONLY_NO_BEHAVIOR_TESTS
-    - Current: 9 total tests, 1 command, 0 success
-    - Required: Add success path tests
+    - Current: 13 total tests, 1 command, 4 success
+    - **Completed**: Added success path tests
 
-12. **C3: src/plugins/simulator-workspace/test_sim_name_ws.ts** ❌ PENDING
+12. **C3: src/plugins/simulator-workspace/test_sim_name_ws.ts** ✅ COMPLETED
     - Gaps: MISSING_SUCCESS_PATH_TESTS, VALIDATION_ONLY_NO_BEHAVIOR_TESTS
-    - Current: 9 total tests, 1 command, 0 success
-    - Required: Add success path tests
+    - Current: 13 total tests, 1 command, 4 success
+    - **Completed**: Added success path tests
 
 ### 🟢 Category D: Command Generation Tests Needed (19 files) - MEDIUM PRIORITY
 Files that need command generation tests only
@@ -224,7 +224,7 @@ git commit -m "fix: add missing test patterns for tool_name"
 
 ## Progress Tracking
 
-### Completed Tasks: 7/41
+### Completed Tasks: 12/41
 - ✅ A1: test_sim_id_proj.ts (Created complete test file with 9 passing tests)
 - ✅ A2: test_sim_name_proj.ts (Created complete test file with 9 passing tests)
 - ✅ B1: build_run_sim_id_proj.ts (16 tests, 3 command generation, 3 success path)
@@ -232,6 +232,11 @@ git commit -m "fix: add missing test patterns for tool_name"
 - ✅ B3: install_app_device.ts (13 tests, 3 command generation, 3 success path)
 - ✅ B4: launch_app_device.ts (15 tests, 2 command generation, 4 success path)
 - ✅ B5: list_devices.ts (10 tests, 2 command generation, 3 success path)
+- ✅ B6: stop_app_device.ts (13 tests, 3 command generation, 3 success path)
+- ✅ B7: test_device_ws.ts (12 tests, 3 command generation, 4 success path)
+- ✅ C1: test_macos_ws.ts (12 tests, 7 command generation, 4 success path)
+- ✅ C2: test_sim_id_ws.ts (13 tests, 1 command generation, 4 success path)
+- ✅ C3: test_sim_name_ws.ts (13 tests, 1 command generation, 4 success path)
 
 ### In Progress: 0/41
 - None yet

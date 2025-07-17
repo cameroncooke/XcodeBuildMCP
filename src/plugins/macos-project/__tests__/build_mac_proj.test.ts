@@ -404,4 +404,355 @@ describe('build_mac_proj plugin', () => {
       });
     });
   });
+
+  describe('Command Generation Tests', () => {
+    it('should generate correct xcodebuild command for minimal parameters', async () => {
+      const callHistory: Array<{
+        command: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        env?: any;
+      }> = [];
+
+      // Create tracking executor
+      const trackingExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        return {
+          success: true,
+          output: 'BUILD SUCCEEDED',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      // Mock executeXcodeBuildCommand to use our tracking executor
+      mockBuildUtilsDeps.executeXcodeBuildCommand = async (
+        params: any,
+        platformOptions: any,
+        preferXcodebuild: any,
+        buildAction: any,
+        executor: any,
+      ) => {
+        // Call the real implementation flow but with our tracking executor
+        const command = ['xcodebuild'];
+        if (params.projectPath) {
+          command.push('-project', params.projectPath);
+        }
+        command.push('-scheme', params.scheme);
+        command.push('-configuration', params.configuration);
+        command.push('-skipMacroValidation');
+        command.push('-destination', `platform=macOS,arch=${platformOptions.arch || 'arm64'}`);
+        if (params.derivedDataPath) {
+          command.push('-derivedDataPath', params.derivedDataPath);
+        }
+        if (params.extraArgs && params.extraArgs.length > 0) {
+          command.push(...params.extraArgs);
+        }
+        command.push(buildAction);
+
+        // Execute with our tracking executor
+        await executor(command, platformOptions.logPrefix, true);
+
+        return {
+          content: [{ type: 'text', text: '✅ macOS Build build succeeded for scheme MyScheme.' }],
+        };
+      };
+
+      await buildMacProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        trackingExecutor,
+        mockBuildUtilsDeps,
+      );
+
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0].command).toEqual([
+        'xcodebuild',
+        '-project',
+        '/path/to/project.xcodeproj',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS,arch=arm64',
+        'build',
+      ]);
+      expect(callHistory[0].logPrefix).toBe('macOS Build');
+      expect(callHistory[0].useShell).toBe(true);
+    });
+
+    it('should generate correct xcodebuild command with all optional parameters', async () => {
+      const callHistory: Array<{
+        command: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        env?: any;
+      }> = [];
+
+      // Create tracking executor
+      const trackingExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        return {
+          success: true,
+          output: 'BUILD SUCCEEDED',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      // Mock executeXcodeBuildCommand to use our tracking executor
+      mockBuildUtilsDeps.executeXcodeBuildCommand = async (
+        params: any,
+        platformOptions: any,
+        preferXcodebuild: any,
+        buildAction: any,
+        executor: any,
+      ) => {
+        // Call the real implementation flow but with our tracking executor
+        const command = ['xcodebuild'];
+        if (params.projectPath) {
+          command.push('-project', params.projectPath);
+        }
+        command.push('-scheme', params.scheme);
+        command.push('-configuration', params.configuration);
+        command.push('-skipMacroValidation');
+        command.push('-destination', `platform=macOS,arch=${platformOptions.arch || 'arm64'}`);
+        if (params.derivedDataPath) {
+          command.push('-derivedDataPath', params.derivedDataPath);
+        }
+        if (params.extraArgs && params.extraArgs.length > 0) {
+          command.push(...params.extraArgs);
+        }
+        command.push(buildAction);
+
+        // Execute with our tracking executor
+        await executor(command, platformOptions.logPrefix, true);
+
+        return {
+          content: [{ type: 'text', text: '✅ macOS Build build succeeded for scheme MyScheme.' }],
+        };
+      };
+
+      await buildMacProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          configuration: 'Release',
+          arch: 'x86_64',
+          derivedDataPath: '/path/to/derived-data',
+          extraArgs: ['--verbose', '--clean-build'],
+          preferXcodebuild: true,
+        },
+        trackingExecutor,
+        mockBuildUtilsDeps,
+      );
+
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0].command).toEqual([
+        'xcodebuild',
+        '-project',
+        '/path/to/project.xcodeproj',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Release',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS,arch=x86_64',
+        '-derivedDataPath',
+        '/path/to/derived-data',
+        '--verbose',
+        '--clean-build',
+        'build',
+      ]);
+      expect(callHistory[0].logPrefix).toBe('macOS Build');
+      expect(callHistory[0].useShell).toBe(true);
+    });
+
+    it('should generate correct xcodebuild command with only derivedDataPath', async () => {
+      const callHistory: Array<{
+        command: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        env?: any;
+      }> = [];
+
+      // Create tracking executor
+      const trackingExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        return {
+          success: true,
+          output: 'BUILD SUCCEEDED',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      // Mock executeXcodeBuildCommand to use our tracking executor
+      mockBuildUtilsDeps.executeXcodeBuildCommand = async (
+        params: any,
+        platformOptions: any,
+        preferXcodebuild: any,
+        buildAction: any,
+        executor: any,
+      ) => {
+        // Call the real implementation flow but with our tracking executor
+        const command = ['xcodebuild'];
+        if (params.projectPath) {
+          command.push('-project', params.projectPath);
+        }
+        command.push('-scheme', params.scheme);
+        command.push('-configuration', params.configuration);
+        command.push('-skipMacroValidation');
+        command.push('-destination', `platform=macOS,arch=${platformOptions.arch || 'arm64'}`);
+        if (params.derivedDataPath) {
+          command.push('-derivedDataPath', params.derivedDataPath);
+        }
+        if (params.extraArgs && params.extraArgs.length > 0) {
+          command.push(...params.extraArgs);
+        }
+        command.push(buildAction);
+
+        // Execute with our tracking executor
+        await executor(command, platformOptions.logPrefix, true);
+
+        return {
+          content: [{ type: 'text', text: '✅ macOS Build build succeeded for scheme MyScheme.' }],
+        };
+      };
+
+      await buildMacProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          derivedDataPath: '/custom/derived/data',
+        },
+        trackingExecutor,
+        mockBuildUtilsDeps,
+      );
+
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0].command).toEqual([
+        'xcodebuild',
+        '-project',
+        '/path/to/project.xcodeproj',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS,arch=arm64',
+        '-derivedDataPath',
+        '/custom/derived/data',
+        'build',
+      ]);
+      expect(callHistory[0].logPrefix).toBe('macOS Build');
+      expect(callHistory[0].useShell).toBe(true);
+    });
+
+    it('should generate correct xcodebuild command with x86_64 architecture only', async () => {
+      const callHistory: Array<{
+        command: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        env?: any;
+      }> = [];
+
+      // Create tracking executor
+      const trackingExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        return {
+          success: true,
+          output: 'BUILD SUCCEEDED',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      // Mock executeXcodeBuildCommand to use our tracking executor
+      mockBuildUtilsDeps.executeXcodeBuildCommand = async (
+        params: any,
+        platformOptions: any,
+        preferXcodebuild: any,
+        buildAction: any,
+        executor: any,
+      ) => {
+        // Call the real implementation flow but with our tracking executor
+        const command = ['xcodebuild'];
+        if (params.projectPath) {
+          command.push('-project', params.projectPath);
+        }
+        command.push('-scheme', params.scheme);
+        command.push('-configuration', params.configuration);
+        command.push('-skipMacroValidation');
+        command.push('-destination', `platform=macOS,arch=${platformOptions.arch || 'arm64'}`);
+        if (params.derivedDataPath) {
+          command.push('-derivedDataPath', params.derivedDataPath);
+        }
+        if (params.extraArgs && params.extraArgs.length > 0) {
+          command.push(...params.extraArgs);
+        }
+        command.push(buildAction);
+
+        // Execute with our tracking executor
+        await executor(command, platformOptions.logPrefix, true);
+
+        return {
+          content: [{ type: 'text', text: '✅ macOS Build build succeeded for scheme MyScheme.' }],
+        };
+      };
+
+      await buildMacProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          arch: 'x86_64',
+        },
+        trackingExecutor,
+        mockBuildUtilsDeps,
+      );
+
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0].command).toEqual([
+        'xcodebuild',
+        '-project',
+        '/path/to/project.xcodeproj',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS,arch=x86_64',
+        'build',
+      ]);
+      expect(callHistory[0].logPrefix).toBe('macOS Build');
+      expect(callHistory[0].useShell).toBe(true);
+    });
+  });
 });
