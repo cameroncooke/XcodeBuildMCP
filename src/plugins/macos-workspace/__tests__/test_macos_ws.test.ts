@@ -51,6 +51,87 @@ describe('test_macos_ws plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
+    it('should return successful test response when xcodebuild succeeds', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await testMacosWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Debug',
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should use default configuration when not provided', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await testMacosWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should handle optional parameters correctly', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await testMacosWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Release',
+          derivedDataPath: '/custom/derived',
+          extraArgs: ['--verbose'],
+          preferXcodebuild: true,
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should handle successful test execution with minimal parameters', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await testMacosWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyApp',
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
     it('should return exact successful test response', async () => {
       // Track command execution calls
       const commandCalls: any[] = [];
