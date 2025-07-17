@@ -10,6 +10,12 @@ import {
   getBundledAxeEnvironment,
 } from '../../utils/index.js';
 
+export interface AxeHelpers {
+  getAxePath: () => string | null;
+  getBundledAxeEnvironment: () => Record<string, string>;
+  createAxeNotAvailableResponse: () => ToolResponse;
+}
+
 const LOG_PREFIX = '[AXe]';
 
 // Session tracking for describe_ui warnings (shared across UI tools)
@@ -45,6 +51,11 @@ export default {
   async handler(
     args: Record<string, unknown>,
     executor: CommandExecutor = getDefaultCommandExecutor(),
+    axeHelpers: AxeHelpers = {
+      getAxePath,
+      getBundledAxeEnvironment,
+      createAxeNotAvailableResponse,
+    },
   ): Promise<ToolResponse> {
     const params = args;
     const toolName = 'tap';
@@ -67,7 +78,7 @@ export default {
     log('info', `${LOG_PREFIX}/${toolName}: Starting for (${x}, ${y}) on ${simulatorUuid}`);
 
     try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'tap', executor);
+      await executeAxeCommand(commandArgs, simulatorUuid, 'tap', executor, axeHelpers);
       log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
 
       const warning = getCoordinateWarning(simulatorUuid);
@@ -81,7 +92,7 @@ export default {
     } catch (error) {
       log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
       if (error instanceof DependencyError) {
-        return createAxeNotAvailableResponse();
+        return axeHelpers.createAxeNotAvailableResponse();
       } else if (error instanceof AxeError) {
         return createErrorResponse(
           `Failed to simulate tap at (${x}, ${y}): ${error.message}`,
@@ -110,9 +121,10 @@ async function executeAxeCommand(
   simulatorUuid: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
+  axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
-  const axeBinary = getAxePath();
+  const axeBinary = axeHelpers.getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -125,7 +137,7 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv = axeBinary !== 'axe' ? getBundledAxeEnvironment() : undefined;
+    const axeEnv = axeBinary !== 'axe' ? axeHelpers.getBundledAxeEnvironment() : undefined;
 
     const result = await executeCommand(
       fullCommand,

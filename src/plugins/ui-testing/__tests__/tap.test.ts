@@ -2,42 +2,18 @@
  * Tests for tap plugin
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 
-// Mock the axe helper functions before importing the plugin
-vi.mock('../../../utils/axe-helpers.js', () => ({
-  getAxePath: vi.fn(() => '/mocked/axe/path'),
-  getBundledAxeEnvironment: vi.fn(() => ({ SOME_ENV: 'value' })),
-  areAxeToolsAvailable: vi.fn(() => true),
-  createAxeNotAvailableResponse: vi.fn(() => ({
-    content: [
-      {
-        type: 'text',
-        text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
-      },
-    ],
-    isError: true,
-  })),
-}));
+import tapPlugin, { AxeHelpers } from '../tap.ts';
 
-import tapPlugin from '../tap.ts';
-import {
-  getAxePath,
-  getBundledAxeEnvironment,
-  areAxeToolsAvailable,
-  createAxeNotAvailableResponse,
-} from '../../../utils/axe-helpers.js';
-
-describe('Tap Plugin', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Reset mocks to their default values
-    vi.mocked(getAxePath).mockReturnValue('/mocked/axe/path');
-    vi.mocked(getBundledAxeEnvironment).mockReturnValue({ SOME_ENV: 'value' });
-    vi.mocked(areAxeToolsAvailable).mockReturnValue(true);
-    vi.mocked(createAxeNotAvailableResponse).mockReturnValue({
+// Helper function to create mock axe helpers
+function createMockAxeHelpers(): AxeHelpers {
+  return {
+    getAxePath: () => '/mocked/axe/path',
+    getBundledAxeEnvironment: () => ({ SOME_ENV: 'value' }),
+    createAxeNotAvailableResponse: () => ({
       content: [
         {
           type: 'text',
@@ -45,9 +21,28 @@ describe('Tap Plugin', () => {
         },
       ],
       isError: true,
-    });
-  });
+    }),
+  };
+}
 
+// Helper function to create mock axe helpers with null path (for dependency error tests)
+function createMockAxeHelpersWithNullPath(): AxeHelpers {
+  return {
+    getAxePath: () => null,
+    getBundledAxeEnvironment: () => ({ SOME_ENV: 'value' }),
+    createAxeNotAvailableResponse: () => ({
+      content: [
+        {
+          type: 'text',
+          text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+        },
+      ],
+      isError: true,
+    }),
+  };
+}
+
+describe('Tap Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(tapPlugin.name).toBe('tap');
@@ -166,6 +161,8 @@ describe('Tap Plugin', () => {
         return mockExecutor(command, logPrefix, useShell, env);
       };
 
+      const mockAxeHelpers = createMockAxeHelpers();
+
       await tapPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -173,6 +170,7 @@ describe('Tap Plugin', () => {
           y: 200,
         },
         wrappedExecutor,
+        mockAxeHelpers,
       );
 
       expect(callHistory).toHaveLength(1);
@@ -209,6 +207,8 @@ describe('Tap Plugin', () => {
         return mockExecutor(command, logPrefix, useShell, env);
       };
 
+      const mockAxeHelpers = createMockAxeHelpers();
+
       await tapPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -217,6 +217,7 @@ describe('Tap Plugin', () => {
           preDelay: 0.5,
         },
         wrappedExecutor,
+        mockAxeHelpers,
       );
 
       expect(callHistory).toHaveLength(1);
@@ -255,6 +256,8 @@ describe('Tap Plugin', () => {
         return mockExecutor(command, logPrefix, useShell, env);
       };
 
+      const mockAxeHelpers = createMockAxeHelpers();
+
       await tapPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -263,6 +266,7 @@ describe('Tap Plugin', () => {
           postDelay: 1.0,
         },
         wrappedExecutor,
+        mockAxeHelpers,
       );
 
       expect(callHistory).toHaveLength(1);
@@ -301,6 +305,8 @@ describe('Tap Plugin', () => {
         return mockExecutor(command, logPrefix, useShell, env);
       };
 
+      const mockAxeHelpers = createMockAxeHelpers();
+
       await tapPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -310,6 +316,7 @@ describe('Tap Plugin', () => {
           postDelay: 0.7,
         },
         wrappedExecutor,
+        mockAxeHelpers,
       );
 
       expect(callHistory).toHaveLength(1);
@@ -342,6 +349,8 @@ describe('Tap Plugin', () => {
         output: 'Tap completed',
       });
 
+      const mockAxeHelpers = createMockAxeHelpers();
+
       const result = await tapPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -349,6 +358,7 @@ describe('Tap Plugin', () => {
           y: 200,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -368,6 +378,8 @@ describe('Tap Plugin', () => {
         output: 'Tap completed',
       });
 
+      const mockAxeHelpers = createMockAxeHelpers();
+
       const result = await tapPlugin.handler(
         {
           simulatorUuid: '87654321-4321-4321-4321-210987654321',
@@ -375,6 +387,7 @@ describe('Tap Plugin', () => {
           y: 300,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -394,6 +407,8 @@ describe('Tap Plugin', () => {
         output: 'Tap completed',
       });
 
+      const mockAxeHelpers = createMockAxeHelpers();
+
       const result = await tapPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -403,6 +418,7 @@ describe('Tap Plugin', () => {
           postDelay: 1.0,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -422,6 +438,8 @@ describe('Tap Plugin', () => {
         output: 'Tap completed',
       });
 
+      const mockAxeHelpers = createMockAxeHelpers();
+
       const result = await tapPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -429,6 +447,7 @@ describe('Tap Plugin', () => {
           y: 0,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -448,6 +467,8 @@ describe('Tap Plugin', () => {
         output: 'Tap completed',
       });
 
+      const mockAxeHelpers = createMockAxeHelpers();
+
       const result = await tapPlugin.handler(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -455,6 +476,7 @@ describe('Tap Plugin', () => {
           y: 1080,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -472,6 +494,7 @@ describe('Tap Plugin', () => {
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const mockAxeHelpers = createMockAxeHelpers();
 
       const result = await tapPlugin.handler(
         {
@@ -479,6 +502,7 @@ describe('Tap Plugin', () => {
           y: 200,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -494,6 +518,7 @@ describe('Tap Plugin', () => {
 
     it('should return error for missing x coordinate', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const mockAxeHelpers = createMockAxeHelpers();
 
       const result = await tapPlugin.handler(
         {
@@ -501,6 +526,7 @@ describe('Tap Plugin', () => {
           y: 200,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -516,6 +542,7 @@ describe('Tap Plugin', () => {
 
     it('should return error for missing y coordinate', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const mockAxeHelpers = createMockAxeHelpers();
 
       const result = await tapPlugin.handler(
         {
@@ -523,6 +550,7 @@ describe('Tap Plugin', () => {
           x: 100,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -537,14 +565,13 @@ describe('Tap Plugin', () => {
     });
 
     it('should return DependencyError when axe binary is not found', async () => {
-      // Mock getAxePath to return null for this test
-      vi.mocked(getAxePath).mockReturnValueOnce(null);
-
       const mockExecutor = createMockExecutor({
         success: true,
         output: 'Tap completed',
         error: undefined,
       });
+
+      const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
       const result = await tapPlugin.handler(
         {
@@ -555,6 +582,7 @@ describe('Tap Plugin', () => {
           postDelay: 1.0,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -569,14 +597,13 @@ describe('Tap Plugin', () => {
     });
 
     it('should handle DependencyError when axe binary not found (second test)', async () => {
-      // Mock getAxePath to return null for this test
-      vi.mocked(getAxePath).mockReturnValueOnce(null);
-
       const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'Coordinates out of bounds',
       });
+
+      const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
       const result = await tapPlugin.handler(
         {
@@ -585,6 +612,7 @@ describe('Tap Plugin', () => {
           y: 200,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -599,14 +627,13 @@ describe('Tap Plugin', () => {
     });
 
     it('should handle DependencyError when axe binary not found (third test)', async () => {
-      // Mock getAxePath to return null for this test
-      vi.mocked(getAxePath).mockReturnValueOnce(null);
-
       const mockExecutor = createMockExecutor({
         success: false,
         output: '',
         error: 'System error occurred',
       });
+
+      const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
       const result = await tapPlugin.handler(
         {
@@ -615,6 +642,7 @@ describe('Tap Plugin', () => {
           y: 200,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -629,12 +657,11 @@ describe('Tap Plugin', () => {
     });
 
     it('should handle DependencyError when axe binary not found (fourth test)', async () => {
-      // Mock getAxePath to return null for this test
-      vi.mocked(getAxePath).mockReturnValueOnce(null);
-
       const mockExecutor = async () => {
         throw new Error('ENOENT: no such file or directory');
       };
+
+      const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
       const result = await tapPlugin.handler(
         {
@@ -643,6 +670,7 @@ describe('Tap Plugin', () => {
           y: 200,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -657,12 +685,11 @@ describe('Tap Plugin', () => {
     });
 
     it('should handle DependencyError when axe binary not found (fifth test)', async () => {
-      // Mock getAxePath to return null for this test
-      vi.mocked(getAxePath).mockReturnValueOnce(null);
-
       const mockExecutor = async () => {
         throw new Error('Unexpected error');
       };
+
+      const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
       const result = await tapPlugin.handler(
         {
@@ -671,6 +698,7 @@ describe('Tap Plugin', () => {
           y: 200,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -685,12 +713,11 @@ describe('Tap Plugin', () => {
     });
 
     it('should handle DependencyError when axe binary not found (sixth test)', async () => {
-      // Mock getAxePath to return null for this test
-      vi.mocked(getAxePath).mockReturnValueOnce(null);
-
       const mockExecutor = async () => {
         throw 'String error';
       };
+
+      const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
       const result = await tapPlugin.handler(
         {
@@ -699,6 +726,7 @@ describe('Tap Plugin', () => {
           y: 200,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
