@@ -88,7 +88,7 @@ export default {
       command.push('-destination', destinationString);
 
       // Execute the command directly
-      const result = await executeCommand(command, undefined, executor, 'Get App Path', true);
+      const result = await executeCommand(command, executor, 'Get App Path', true);
 
       if (!result.success) {
         return createTextResponse(`Failed to get app path: ${result.error}`, true);

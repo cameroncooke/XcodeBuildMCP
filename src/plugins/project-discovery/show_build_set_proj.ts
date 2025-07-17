@@ -34,7 +34,7 @@ async function _handleShowBuildSettingsLogic(
     command.push('-scheme', params.scheme);
 
     // Execute the command directly
-    const result = await executeCommand(command, undefined, executor, 'Show Build Settings', true);
+    const result = await executeCommand(command, executor, 'Show Build Settings', true);
 
     if (!result.success) {
       return createTextResponse(`Failed to show build settings: ${result.error}`, true);

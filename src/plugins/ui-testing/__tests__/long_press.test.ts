@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 import longPressPlugin from '../long_press.ts';
 
 describe('Long Press Plugin', () => {
@@ -254,7 +254,10 @@ describe('Long Press Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await longPressPlugin.handler({ x: 100, y: 200, duration: 1500 });
+      const result = await longPressPlugin.handler(
+        { x: 100, y: 200, duration: 1500 },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -268,11 +271,14 @@ describe('Long Press Plugin', () => {
     });
 
     it('should return error for missing x', async () => {
-      const result = await longPressPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        y: 200,
-        duration: 1500,
-      });
+      const result = await longPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          y: 200,
+          duration: 1500,
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -286,11 +292,14 @@ describe('Long Press Plugin', () => {
     });
 
     it('should return error for missing y', async () => {
-      const result = await longPressPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        duration: 1500,
-      });
+      const result = await longPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          duration: 1500,
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -304,11 +313,14 @@ describe('Long Press Plugin', () => {
     });
 
     it('should return error for missing duration', async () => {
-      const result = await longPressPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-        y: 200,
-      });
+      const result = await longPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

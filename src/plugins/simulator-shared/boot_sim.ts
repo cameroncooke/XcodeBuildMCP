@@ -21,7 +21,7 @@ async function bootSimToolHandler(
 
   try {
     const command = ['xcrun', 'simctl', 'boot', params.simulatorUuid];
-    const result = await executeCommand(command, undefined, executor, 'Boot Simulator', true);
+    const result = await executeCommand(command, executor, 'Boot Simulator', true);
 
     if (!result.success) {
       return {

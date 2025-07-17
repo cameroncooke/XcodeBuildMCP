@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 import buildDevWs from '../build_dev_ws.ts';
 
 describe('build_dev_ws plugin', () => {
@@ -46,9 +46,12 @@ describe('build_dev_ws plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation error response for workspacePath', async () => {
-      const result = await buildDevWs.handler({
-        scheme: 'MyScheme',
-      });
+      const result = await buildDevWs.handler(
+        {
+          scheme: 'MyScheme',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -62,9 +65,12 @@ describe('build_dev_ws plugin', () => {
     });
 
     it('should return exact validation error response for scheme', async () => {
-      const result = await buildDevWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-      });
+      const result = await buildDevWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

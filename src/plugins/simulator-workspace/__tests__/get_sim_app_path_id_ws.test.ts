@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 
 // Import the plugin
 import getSimAppPathIdWs from '../get_sim_app_path_id_ws.ts';
@@ -86,11 +86,14 @@ describe('get_sim_app_path_id_ws tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure for workspacePath', async () => {
-      const result = await getSimAppPathIdWs.handler({
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -430,11 +433,14 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle scheme validation failure', async () => {
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -448,11 +454,14 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle platform validation failure', async () => {
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -466,11 +475,14 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle simulatorId validation failure', async () => {
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-      });
+      const result = await getSimAppPathIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

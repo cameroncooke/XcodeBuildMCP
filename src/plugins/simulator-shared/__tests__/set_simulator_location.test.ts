@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 import setSimulatorLocation from '../set_simulator_location.ts';
 
 describe('set_simulator_location tool', () => {
@@ -203,11 +203,14 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle validation failure for missing simulatorUuid', async () => {
-      const result = await setSimulatorLocation.handler({
-        simulatorUuid: undefined,
-        latitude: 37.7749,
-        longitude: -122.4194,
-      });
+      const result = await setSimulatorLocation.handler(
+        {
+          simulatorUuid: undefined,
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -221,11 +224,14 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle latitude validation failure', async () => {
-      const result = await setSimulatorLocation.handler({
-        simulatorUuid: 'test-uuid-123',
-        latitude: 95,
-        longitude: -122.4194,
-      });
+      const result = await setSimulatorLocation.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          latitude: 95,
+          longitude: -122.4194,
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -238,11 +244,14 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle longitude validation failure', async () => {
-      const result = await setSimulatorLocation.handler({
-        simulatorUuid: 'test-uuid-123',
-        latitude: 37.7749,
-        longitude: -185,
-      });
+      const result = await setSimulatorLocation.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          latitude: 37.7749,
+          longitude: -185,
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

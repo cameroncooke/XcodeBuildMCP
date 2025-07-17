@@ -10,7 +10,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockFileSystemExecutor } from '../../../utils/command.js';
+import {
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+  createMockExecutor,
+} from '../../../utils/command.js';
 import plugin from '../scaffold_macos_project.js';
 import { TemplateManager } from '../../../utils/index.js';
 
@@ -329,7 +333,7 @@ describe('scaffold_macos_project plugin', () => {
           bundleIdentifier: 'com.test.macapp',
           customizeNames: false,
         },
-        undefined,
+        createNoopExecutor(),
         mockFileSystemExecutor,
       );
 
@@ -369,7 +373,7 @@ describe('scaffold_macos_project plugin', () => {
           outputPath: '/tmp/test-projects',
           customizeNames: false,
         },
-        undefined,
+        createNoopExecutor(),
         mockFileSystemExecutor,
       );
 
@@ -403,7 +407,7 @@ describe('scaffold_macos_project plugin', () => {
           projectName: '123InvalidName',
           outputPath: '/tmp/test-projects',
         },
-        undefined,
+        createNoopExecutor(),
         mockFileSystemExecutor,
       );
 
@@ -435,7 +439,7 @@ describe('scaffold_macos_project plugin', () => {
           projectName: 'TestMacApp',
           outputPath: '/tmp/test-projects',
         },
-        undefined,
+        createNoopExecutor(),
         mockFileSystemExecutor,
       );
 
@@ -465,7 +469,7 @@ describe('scaffold_macos_project plugin', () => {
           projectName: 'TestMacApp',
           outputPath: '/tmp/test-projects',
         },
-        undefined,
+        createNoopExecutor(),
         mockFileSystemExecutor,
       );
 
@@ -496,7 +500,7 @@ describe('scaffold_macos_project plugin', () => {
           outputPath: '/tmp/test',
           customizeNames: true,
         },
-        undefined,
+        createNoopExecutor(),
         mockFileSystemExecutor,
       );
 

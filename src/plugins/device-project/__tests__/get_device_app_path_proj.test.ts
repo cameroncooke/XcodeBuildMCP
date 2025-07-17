@@ -47,10 +47,13 @@ describe('get_device_app_path_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation failure response for missing projectPath', async () => {
-      const result = await getDeviceAppPathProj.handler({
-        projectPath: null,
-        scheme: 'MyScheme',
-      });
+      const result = await getDeviceAppPathProj.handler(
+        {
+          projectPath: null,
+          scheme: 'MyScheme',
+        },
+        createMockExecutor({ success: true }),
+      );
 
       expect(result).toEqual({
         content: [
@@ -64,10 +67,13 @@ describe('get_device_app_path_proj plugin', () => {
     });
 
     it('should return exact validation failure response for missing scheme', async () => {
-      const result = await getDeviceAppPathProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: null,
-      });
+      const result = await getDeviceAppPathProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: null,
+        },
+        createMockExecutor({ success: true }),
+      );
 
       expect(result).toEqual({
         content: [

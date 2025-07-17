@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 import buildDevProj from '../build_dev_proj.ts';
 
 describe('build_dev_proj plugin', () => {
@@ -49,10 +49,13 @@ describe('build_dev_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation failure response for missing projectPath', async () => {
-      const result = await buildDevProj.handler({
-        projectPath: null,
-        scheme: 'MyScheme',
-      });
+      const result = await buildDevProj.handler(
+        {
+          projectPath: null,
+          scheme: 'MyScheme',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -66,10 +69,13 @@ describe('build_dev_proj plugin', () => {
     });
 
     it('should return exact validation failure response for missing scheme', async () => {
-      const result = await buildDevProj.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: null,
-      });
+      const result = await buildDevProj.handler(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: null,
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

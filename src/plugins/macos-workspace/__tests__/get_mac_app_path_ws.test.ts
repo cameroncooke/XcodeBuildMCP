@@ -5,7 +5,11 @@
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { createMockExecutor, type CommandExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createNoopExecutor,
+  type CommandExecutor,
+} from '../../../utils/command.js';
 import getMacAppPathWs from '../get_mac_app_path_ws.ts';
 
 describe('get_mac_app_path_ws plugin', () => {
@@ -216,9 +220,12 @@ describe('get_mac_app_path_ws plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation error response for workspacePath', async () => {
-      const result = await getMacAppPathWs.handler({
-        scheme: 'MyScheme',
-      });
+      const result = await getMacAppPathWs.handler(
+        {
+          scheme: 'MyScheme',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -232,9 +239,12 @@ describe('get_mac_app_path_ws plugin', () => {
     });
 
     it('should return exact validation error response for scheme', async () => {
-      const result = await getMacAppPathWs.handler({
-        workspacePath: '/path/to/MyProject.xcworkspace',
-      });
+      const result = await getMacAppPathWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

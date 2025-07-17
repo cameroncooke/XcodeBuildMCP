@@ -31,10 +31,10 @@ async function executeSimctlCommandAndRespond(
     const command = ['xcrun', 'simctl', ...simctlSubCommand];
     const result = await executeCommand(
       command,
+      executor,
       operationDescriptionForXcodeCommand,
       true,
       {},
-      executor,
     );
 
     if (!result.success) {

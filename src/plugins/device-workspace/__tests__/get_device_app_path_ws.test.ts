@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 import getDeviceAppPathWs from '../get_device_app_path_ws.ts';
 
 describe('get_device_app_path_ws plugin', () => {
@@ -44,9 +44,12 @@ describe('get_device_app_path_ws plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation error response for workspacePath', async () => {
-      const result = await getDeviceAppPathWs.handler({
-        scheme: 'MyScheme',
-      });
+      const result = await getDeviceAppPathWs.handler(
+        {
+          scheme: 'MyScheme',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -60,9 +63,12 @@ describe('get_device_app_path_ws plugin', () => {
     });
 
     it('should return exact validation error response for scheme', async () => {
-      const result = await getDeviceAppPathWs.handler({
-        workspacePath: '/path/to/workspace.xcworkspace',
-      });
+      const result = await getDeviceAppPathWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

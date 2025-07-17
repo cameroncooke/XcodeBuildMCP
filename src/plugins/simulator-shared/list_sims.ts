@@ -15,7 +15,7 @@ async function listSimsToolHandler(
 
   try {
     const command = ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'];
-    const result = await executeCommand(command, undefined, executor, 'List Simulators', true);
+    const result = await executeCommand(command, executor, 'List Simulators', true);
 
     if (!result.success) {
       return {

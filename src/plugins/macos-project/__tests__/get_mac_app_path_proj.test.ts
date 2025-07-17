@@ -6,7 +6,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, type CommandExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createNoopExecutor,
+  type CommandExecutor,
+} from '../../../utils/command.js';
 import tool from '../get_mac_app_path_proj.ts';
 
 describe('get_mac_app_path_proj', () => {
@@ -114,7 +118,7 @@ describe('get_mac_app_path_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -132,7 +136,7 @@ describe('get_mac_app_path_proj', () => {
         projectPath: '/path/to/project.xcodeproj',
       };
 
-      const result = await tool.handler(args);
+      const result = await tool.handler(args, createNoopExecutor());
 
       expect(result).toEqual({
         content: [

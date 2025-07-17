@@ -282,6 +282,23 @@ export function createMockExecutor(
 }
 
 /**
+ * Create a no-op executor that throws an error if called
+ * Use this for tests where an executor is required but should never be called
+ * @returns CommandExecutor that throws on invocation
+ */
+export function createNoopExecutor(): CommandExecutor {
+  return async (command) => {
+    throw new Error(
+      `🚨 NOOP EXECUTOR CALLED! 🚨\n` +
+        `Command: ${command.join(' ')}\n` +
+        `This executor should never be called in this test context.\n` +
+        `If you see this error, it means the test is exercising a code path that wasn't expected.\n` +
+        `Either fix the test to avoid this code path, or use createMockExecutor() instead.`,
+    );
+  };
+}
+
+/**
  * Default file system executor implementation using Node.js fs/promises
  * Private instance - use getDefaultFileSystemExecutor() for access
  */

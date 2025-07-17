@@ -18,7 +18,7 @@ export default {
 
     try {
       const command = ['open', '-a', 'Simulator'];
-      const result = await executeCommand(command, undefined, executor, 'Open Simulator', true);
+      const result = await executeCommand(command, executor, 'Open Simulator', true);
 
       if (!result.success) {
         return {

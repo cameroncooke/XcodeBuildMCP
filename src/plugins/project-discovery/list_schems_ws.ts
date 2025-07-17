@@ -30,7 +30,7 @@ async function _handleListSchemesLogic(
       command.push('-project', params.projectPath);
     } // No else needed, one path is guaranteed by callers
 
-    const result = await executeCommand(command, undefined, executor, 'List Schemes', true);
+    const result = await executeCommand(command, executor, 'List Schemes', true);
 
     if (!result.success) {
       return createTextResponse(`Failed to list schemes: ${result.error}`, true);
