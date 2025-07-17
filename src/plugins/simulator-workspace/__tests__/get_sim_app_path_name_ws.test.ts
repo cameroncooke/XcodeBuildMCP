@@ -62,6 +62,231 @@ describe('get_sim_app_path_name_ws plugin', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct command with default parameters', async () => {
+      const calls: Array<{
+        args: unknown[];
+        taskName?: string;
+        safeToLog?: boolean;
+        logLevel?: unknown;
+      }> = [];
+
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Command failed',
+        output: '',
+        process: { pid: 12345 },
+      });
+
+      const executorWithTracking = (
+        args: unknown[],
+        taskName?: string,
+        safeToLog?: boolean,
+        logLevel?: unknown,
+      ) => {
+        calls.push({ args, taskName, safeToLog, logLevel });
+        return mockExecutor(args, taskName, safeToLog, logLevel);
+      };
+
+      await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Project.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        },
+        executorWithTracking,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/Project.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-destination',
+          'platform=iOS Simulator,name=iPhone 16,OS=latest',
+        ],
+        taskName: 'Get App Path',
+        safeToLog: true,
+        logLevel: undefined,
+      });
+    });
+
+    it('should generate correct command with configuration parameter', async () => {
+      const calls: Array<{
+        args: unknown[];
+        taskName?: string;
+        safeToLog?: boolean;
+        logLevel?: unknown;
+      }> = [];
+
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Command failed',
+        output: '',
+        process: { pid: 12345 },
+      });
+
+      const executorWithTracking = (
+        args: unknown[],
+        taskName?: string,
+        safeToLog?: boolean,
+        logLevel?: unknown,
+      ) => {
+        calls.push({ args, taskName, safeToLog, logLevel });
+        return mockExecutor(args, taskName, safeToLog, logLevel);
+      };
+
+      await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Project.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'tvOS Simulator',
+          simulatorName: 'Apple TV 4K',
+          configuration: 'Release',
+        },
+        executorWithTracking,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/Project.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Release',
+          '-destination',
+          'platform=tvOS Simulator,name=Apple TV 4K,OS=latest',
+        ],
+        taskName: 'Get App Path',
+        safeToLog: true,
+        logLevel: undefined,
+      });
+    });
+
+    it('should generate correct command for watchOS Simulator', async () => {
+      const calls: Array<{
+        args: unknown[];
+        taskName?: string;
+        safeToLog?: boolean;
+        logLevel?: unknown;
+      }> = [];
+
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Command failed',
+        output: '',
+        process: { pid: 12345 },
+      });
+
+      const executorWithTracking = (
+        args: unknown[],
+        taskName?: string,
+        safeToLog?: boolean,
+        logLevel?: unknown,
+      ) => {
+        calls.push({ args, taskName, safeToLog, logLevel });
+        return mockExecutor(args, taskName, safeToLog, logLevel);
+      };
+
+      await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Watch.xcworkspace',
+          scheme: 'WatchScheme',
+          platform: 'watchOS Simulator',
+          simulatorName: 'Apple Watch Series 10',
+        },
+        executorWithTracking,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/Watch.xcworkspace',
+          '-scheme',
+          'WatchScheme',
+          '-configuration',
+          'Debug',
+          '-destination',
+          'platform=watchOS Simulator,name=Apple Watch Series 10,OS=latest',
+        ],
+        taskName: 'Get App Path',
+        safeToLog: true,
+        logLevel: undefined,
+      });
+    });
+
+    it('should generate correct command for visionOS Simulator without OS=latest', async () => {
+      const calls: Array<{
+        args: unknown[];
+        taskName?: string;
+        safeToLog?: boolean;
+        logLevel?: unknown;
+      }> = [];
+
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Command failed',
+        output: '',
+        process: { pid: 12345 },
+      });
+
+      const executorWithTracking = (
+        args: unknown[],
+        taskName?: string,
+        safeToLog?: boolean,
+        logLevel?: unknown,
+      ) => {
+        calls.push({ args, taskName, safeToLog, logLevel });
+        return mockExecutor(args, taskName, safeToLog, logLevel);
+      };
+
+      await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Vision.xcworkspace',
+          scheme: 'VisionScheme',
+          platform: 'visionOS Simulator',
+          simulatorName: 'Apple Vision Pro',
+          configuration: 'Release',
+          useLatestOS: false,
+        },
+        executorWithTracking,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/Vision.xcworkspace',
+          '-scheme',
+          'VisionScheme',
+          '-configuration',
+          'Release',
+          '-destination',
+          'platform=visionOS Simulator,name=Apple Vision Pro',
+        ],
+        taskName: 'Get App Path',
+        safeToLog: true,
+        logLevel: undefined,
+      });
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return app path successfully for iOS Simulator', async () => {
       const mockExecutor = createMockExecutor({
