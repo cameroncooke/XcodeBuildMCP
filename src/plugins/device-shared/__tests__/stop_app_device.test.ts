@@ -1,24 +1,15 @@
 /**
- * Tests for stop_app_device plugin (device-project)
- * This tests the re-exported plugin from device-workspace
+ * Tests for stop_app_device plugin (device-shared)
  * Following CLAUDE.md testing standards with literal validation
- *
- * Note: This is a re-export test. Comprehensive handler tests are in device-workspace/stop_app_device.test.ts
+ * Using dependency injection for deterministic testing
  */
 
 import { describe, it, expect } from 'vitest';
-
-// Import the actual implementation from device-workspace
-import stopAppDeviceImpl from '../../device-workspace/stop_app_device.ts';
-// Import the re-export to verify it matches
+import { createMockExecutor } from '../../../utils/command.js';
 import stopAppDevice from '../stop_app_device.ts';
 
-describe('stop_app_device plugin (device-project re-export)', () => {
+describe('stop_app_device plugin', () => {
   describe('Export Field Validation (Literal)', () => {
-    it('should re-export the same plugin as device-workspace', () => {
-      expect(stopAppDevice).toBe(stopAppDeviceImpl);
-    });
-
     it('should have correct name', () => {
       expect(stopAppDevice.name).toBe('stop_app_device');
     });
@@ -33,12 +24,288 @@ describe('stop_app_device plugin (device-project re-export)', () => {
       expect(typeof stopAppDevice.handler).toBe('function');
     });
 
-    it('should have schema object', () => {
-      expect(typeof stopAppDevice.schema).toBe('object');
-      expect(stopAppDevice.schema).not.toBeNull();
+    it('should validate schema correctly', () => {
+      // Test required fields
+      expect(stopAppDevice.schema.deviceId.safeParse('test-device-123').success).toBe(true);
+      expect(stopAppDevice.schema.processId.safeParse(12345).success).toBe(true);
+
+      // Test invalid inputs
+      expect(stopAppDevice.schema.deviceId.safeParse(null).success).toBe(false);
+      expect(stopAppDevice.schema.deviceId.safeParse(123).success).toBe(false);
+      expect(stopAppDevice.schema.processId.safeParse(null).success).toBe(false);
+      expect(stopAppDevice.schema.processId.safeParse('not-number').success).toBe(false);
     });
   });
 
-  // Note: Handler functionality is thoroughly tested in device-workspace/stop_app_device.test.ts
-  // This test file only verifies the re-export works correctly
+  describe('Command Generation', () => {
+    it('should generate correct devicectl command with basic parameters', async () => {
+      // Manual call tracking with closure
+      let capturedCommand: unknown[] = [];
+      let capturedDescription: string = '';
+      let capturedUseShell: boolean = false;
+      let capturedEnv: unknown = undefined;
+
+      const mockExecutor = async (
+        command: unknown[],
+        description: string,
+        useShell: boolean,
+        env: unknown,
+      ) => {
+        capturedCommand = command;
+        capturedDescription = description;
+        capturedUseShell = useShell;
+        capturedEnv = env;
+        return {
+          success: true,
+          output: 'App terminated successfully',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await stopAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          processId: 12345,
+        },
+        mockExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcrun',
+        'devicectl',
+        'device',
+        'process',
+        'terminate',
+        '--device',
+        'test-device-123',
+        '--pid',
+        '12345',
+      ]);
+      expect(capturedDescription).toBe('Stop app on device');
+      expect(capturedUseShell).toBe(true);
+      expect(capturedEnv).toBe(undefined);
+    });
+
+    it('should generate correct command with different device ID and process ID', async () => {
+      // Manual call tracking with closure
+      let capturedCommand: unknown[] = [];
+
+      const mockExecutor = async (command: unknown[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Process terminated',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await stopAppDevice.handler(
+        {
+          deviceId: 'different-device-uuid',
+          processId: 99999,
+        },
+        mockExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcrun',
+        'devicectl',
+        'device',
+        'process',
+        'terminate',
+        '--device',
+        'different-device-uuid',
+        '--pid',
+        '99999',
+      ]);
+    });
+
+    it('should generate correct command with large process ID', async () => {
+      // Manual call tracking with closure
+      let capturedCommand: unknown[] = [];
+
+      const mockExecutor = async (command: unknown[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Process terminated',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await stopAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          processId: 2147483647,
+        },
+        mockExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcrun',
+        'devicectl',
+        'device',
+        'process',
+        'terminate',
+        '--device',
+        'test-device-123',
+        '--pid',
+        '2147483647',
+      ]);
+    });
+  });
+
+  describe('Success Path Tests', () => {
+    it('should return successful stop response', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'App terminated successfully',
+      });
+
+      const result = await stopAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          processId: 12345,
+        },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: '✅ App stopped successfully\n\nApp terminated successfully',
+          },
+        ],
+      });
+    });
+
+    it('should return successful stop with detailed output', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Terminating process...\nProcess ID: 12345\nTermination completed successfully',
+      });
+
+      const result = await stopAppDevice.handler(
+        {
+          deviceId: 'device-456',
+          processId: 67890,
+        },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: '✅ App stopped successfully\n\nTerminating process...\nProcess ID: 12345\nTermination completed successfully',
+          },
+        ],
+      });
+    });
+
+    it('should return successful stop with empty output', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+      });
+
+      const result = await stopAppDevice.handler(
+        {
+          deviceId: 'empty-output-device',
+          processId: 54321,
+        },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: '✅ App stopped successfully\n\n',
+          },
+        ],
+      });
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should return stop failure response', async () => {
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Terminate failed: Process not found',
+      });
+
+      const result = await stopAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          processId: 99999,
+        },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Failed to stop app: Terminate failed: Process not found',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return exception handling response', async () => {
+      // Manual stub function for error injection
+      const mockExecutor = async () => {
+        throw new Error('Network error');
+      };
+
+      const result = await stopAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          processId: 12345,
+        },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Failed to stop app on device: Network error',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return string error handling response', async () => {
+      // Manual stub function for string error injection
+      const mockExecutor = async () => {
+        throw 'String error';
+      };
+
+      const result = await stopAppDevice.handler(
+        {
+          deviceId: 'test-device-123',
+          processId: 12345,
+        },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Failed to stop app on device: String error',
+          },
+        ],
+        isError: true,
+      });
+    });
+  });
 });
