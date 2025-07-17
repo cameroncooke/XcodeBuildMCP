@@ -13,7 +13,8 @@ import { ToolResponse } from '../../types/common.js';
 import {
   CommandExecutor,
   FileSystemExecutor,
-  defaultFileSystemExecutor,
+  getDefaultCommandExecutor,
+  getDefaultFileSystemExecutor,
 } from '../../utils/command.js';
 
 // Common base schema for both iOS and macOS
@@ -164,7 +165,7 @@ async function processFile(
   sourcePath: string,
   destPath: string,
   params: Record<string, unknown>,
-  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  fileSystemExecutor: FileSystemExecutor,
 ): Promise<void> {
   // Determine the destination file path
   let finalDestPath = destPath;
@@ -239,7 +240,7 @@ async function processDirectory(
   sourceDir: string,
   destDir: string,
   params: Record<string, unknown>,
-  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  fileSystemExecutor: FileSystemExecutor,
 ): Promise<void> {
   const entries = await fileSystemExecutor.readdir(sourceDir, { withFileTypes: true });
 
@@ -276,8 +277,8 @@ async function processDirectory(
  */
 async function scaffoldProject(
   params: Record<string, unknown>,
-  commandExecutor?: CommandExecutor,
-  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  commandExecutor: CommandExecutor,
+  fileSystemExecutor: FileSystemExecutor,
 ): Promise<string> {
   const { projectName, outputPath, platform, customizeNames = true } = params;
 
@@ -337,8 +338,8 @@ export default {
   schema: ScaffoldmacOSProjectSchema.shape,
   async handler(
     args: Record<string, unknown>,
-    commandExecutor?: CommandExecutor,
-    fileSystemExecutor?: FileSystemExecutor,
+    commandExecutor: CommandExecutor = getDefaultCommandExecutor(),
+    fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
   ): Promise<ToolResponse> {
     const params = args;
     try {

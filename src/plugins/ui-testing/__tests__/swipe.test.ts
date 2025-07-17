@@ -91,6 +91,222 @@ describe('Swipe Plugin', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct axe command for basic swipe', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'swipe completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockDependencies = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'AXe tools not available' }],
+          isError: true,
+        }),
+      };
+
+      await swipePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x1: 100,
+          y1: 200,
+          x2: 300,
+          y2: 400,
+        },
+        trackingExecutor,
+        mockDependencies,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'swipe',
+        '--start-x',
+        '100',
+        '--start-y',
+        '200',
+        '--end-x',
+        '300',
+        '--end-y',
+        '400',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for swipe with duration', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'swipe completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockDependencies = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'AXe tools not available' }],
+          isError: true,
+        }),
+      };
+
+      await swipePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x1: 50,
+          y1: 75,
+          x2: 250,
+          y2: 350,
+          duration: 1.5,
+        },
+        trackingExecutor,
+        mockDependencies,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'swipe',
+        '--start-x',
+        '50',
+        '--start-y',
+        '75',
+        '--end-x',
+        '250',
+        '--end-y',
+        '350',
+        '--duration',
+        '1.5',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for swipe with all optional parameters', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'swipe completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockDependencies = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'AXe tools not available' }],
+          isError: true,
+        }),
+      };
+
+      await swipePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x1: 0,
+          y1: 0,
+          x2: 500,
+          y2: 800,
+          duration: 2.0,
+          delta: 10,
+          preDelay: 0.5,
+          postDelay: 0.3,
+        },
+        trackingExecutor,
+        mockDependencies,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'swipe',
+        '--start-x',
+        '0',
+        '--start-y',
+        '0',
+        '--end-x',
+        '500',
+        '--end-y',
+        '800',
+        '--duration',
+        '2',
+        '--delta',
+        '10',
+        '--pre-delay',
+        '0.5',
+        '--post-delay',
+        '0.3',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command with bundled axe path', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'swipe completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockDependencies = {
+        getAxePath: () => '/path/to/bundled/axe',
+        getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'AXe tools not available' }],
+          isError: true,
+        }),
+      };
+
+      await swipePlugin.handler(
+        {
+          simulatorUuid: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
+          x1: 150,
+          y1: 250,
+          x2: 400,
+          y2: 600,
+          delta: 5,
+        },
+        trackingExecutor,
+        mockDependencies,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/path/to/bundled/axe',
+        'swipe',
+        '--start-x',
+        '150',
+        '--start-y',
+        '250',
+        '--end-x',
+        '400',
+        '--end-y',
+        '600',
+        '--delta',
+        '5',
+        '--udid',
+        'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
+      ]);
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
       const result = await swipePlugin.handler({ x1: 100, y1: 200, x2: 300, y2: 400 });

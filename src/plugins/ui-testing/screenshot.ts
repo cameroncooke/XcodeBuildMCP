@@ -7,14 +7,15 @@ import * as fs from 'fs/promises';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { ToolResponse } from '../../types/common.js';
-import { log } from '../../utils/index.js';
-import { validateRequiredParam } from '../../utils/index.js';
-import { SystemError, createErrorResponse } from '../../utils/index.js';
+import { log, getDefaultCommandExecutor } from '../../utils/index.js';
+import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
+import { SystemError, createErrorResponse, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
   executeCommand,
   CommandExecutor,
   FileSystemExecutor,
   defaultFileSystemExecutor,
+  getDefaultCommandExecutor,
 } from '../../utils/index.js';
 
 const LOG_PREFIX = '[Screenshot]';
@@ -28,7 +29,7 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    executor?: CommandExecutor,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
     fileSystemExecutor?: FileSystemExecutor,
     pathDeps?: { tmpdir?: () => string; join?: (...paths: string[]) => string },
     uuidDeps?: { v4?: () => string },
@@ -55,9 +56,12 @@ export default {
 
     try {
       // Execute the screenshot command
-      const result = executor
-        ? await executor(commandArgs, `${LOG_PREFIX}: screenshot`, false)
-        : await executeCommand(commandArgs, `${LOG_PREFIX}: screenshot`, false);
+      const result = await executeCommand(
+        commandArgs,
+        executor,
+        `${LOG_PREFIX}: screenshot`,
+        false,
+      );
 
       if (!result.success) {
         throw new SystemError(`Failed to capture screenshot: ${result.error || result.output}`);

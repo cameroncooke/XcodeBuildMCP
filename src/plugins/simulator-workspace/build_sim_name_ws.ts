@@ -3,7 +3,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
-import { CommandExecutor } from '../../utils/command.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
 
 const XcodePlatform = {
   iOSSimulator: 'iOS Simulator',
@@ -12,7 +12,7 @@ const XcodePlatform = {
 // Helper function for simulator build logic
 async function _handleSimulatorBuildLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', `Building ${params.workspacePath || params.projectPath} for iOS Simulator`);
 
@@ -66,7 +66,10 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);

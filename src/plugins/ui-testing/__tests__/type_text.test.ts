@@ -87,6 +87,186 @@ describe('Type Text Plugin', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct axe command for basic text typing', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Text typed successfully',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: '/usr/local/bin/axe',
+        getBundledAxeEnvironmentReturn: {},
+      });
+
+      await typeTextPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          text: 'Hello World',
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'type',
+        'Hello World',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for text with special characters', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Text typed successfully',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: '/usr/local/bin/axe',
+        getBundledAxeEnvironmentReturn: {},
+      });
+
+      await typeTextPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          text: 'user@example.com',
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'type',
+        'user@example.com',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for text with numbers and symbols', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Text typed successfully',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: '/usr/local/bin/axe',
+        getBundledAxeEnvironmentReturn: {},
+      });
+
+      await typeTextPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          text: 'Password123!@#',
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'type',
+        'Password123!@#',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for long text', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Text typed successfully',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: '/usr/local/bin/axe',
+        getBundledAxeEnvironmentReturn: {},
+      });
+
+      const longText =
+        'This is a very long text that needs to be typed into the simulator for testing purposes.';
+
+      await typeTextPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          text: longText,
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'type',
+        longText,
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command with bundled axe path', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Text typed successfully',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: '/path/to/bundled/axe',
+        getBundledAxeEnvironmentReturn: { AXE_PATH: '/some/path' },
+      });
+
+      await typeTextPlugin.handler(
+        {
+          simulatorUuid: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
+          text: 'Test message',
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/path/to/bundled/axe',
+        'type',
+        'Test message',
+        '--udid',
+        'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
+      ]);
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
       const result = await typeTextPlugin.handler({

@@ -1,8 +1,12 @@
 import { z } from 'zod';
-import { log } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
-import { executeXcodeBuildCommand } from '../../utils/index.js';
+import { log, getDefaultCommandExecutor } from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import {
+  validateRequiredParam,
+  createTextResponse,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
+import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.js';
 import { execSync } from 'child_process';
 import { ToolResponse } from '../../types/common.js';
 
@@ -13,7 +17,7 @@ const XcodePlatform = {
 // Internal logic for building Simulator apps.
 async function _handleSimulatorBuildLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
@@ -37,7 +41,7 @@ async function _handleSimulatorBuildLogic(
 // Internal logic for building and running iOS Simulator apps.
 async function _handleIOSSimulatorBuildAndRunLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
   execSyncFn: (command: string) => string | Buffer = execSync,
 ): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build and run for scheme ${params.scheme} (internal)`);
@@ -91,7 +95,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     }
 
     // Execute the command directly
-    const result = await executeCommand(command, 'Get App Path', true, undefined, executor);
+    const result = await executeCommand(command, executor, 'Get App Path', true, undefined);
 
     // If there was an error with the command execution, return it
     if (!result.success) {
@@ -332,7 +336,7 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    executor?: CommandExecutor,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
     execSyncFn?: (command: string) => string | Buffer,
   ): Promise<ToolResponse> {
     const params = args;

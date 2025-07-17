@@ -15,7 +15,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { createTextResponse } from '../../utils/index.js';
-import { CommandExecutor } from '../../utils/command.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
 
 // Types for dependency injection
 export interface TempDirectoryDependencies {
@@ -72,7 +72,7 @@ const XcodePlatform = {
  */
 async function parseXcresultBundle(
   resultBundlePath: string,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<string> {
   try {
     let stdout: string;
@@ -176,7 +176,7 @@ function formatTestSummary(summary: Record<string, unknown>): string {
  */
 async function handleTestLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
   tempDirDeps: TempDirectoryDependencies = defaultTempDirectoryDependencies,
   buildUtilsDeps: BuildUtilsDependencies = defaultBuildUtilsDependencies,
   fileSystemDeps: FileSystemDependencies = defaultFileSystemDependencies,
@@ -285,7 +285,7 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    executor?: CommandExecutor,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
     tempDirDeps?: TempDirectoryDependencies,
     buildUtilsDeps?: BuildUtilsDependencies,
     fileSystemDeps?: FileSystemDependencies,

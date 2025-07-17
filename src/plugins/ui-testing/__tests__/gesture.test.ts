@@ -83,6 +83,172 @@ describe('Gesture Plugin', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct axe command for basic gesture', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'gesture completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      await gesturePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          preset: 'scroll-up',
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'gesture',
+        'scroll-up',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for gesture with screen dimensions', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'gesture completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      await gesturePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          preset: 'swipe-from-left-edge',
+          screenWidth: 375,
+          screenHeight: 667,
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'gesture',
+        'swipe-from-left-edge',
+        '--screen-width',
+        '375',
+        '--screen-height',
+        '667',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for gesture with all parameters', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'gesture completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      await gesturePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          preset: 'scroll-down',
+          screenWidth: 414,
+          screenHeight: 896,
+          duration: 2.0,
+          delta: 150,
+          preDelay: 0.5,
+          postDelay: 0.3,
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'gesture',
+        'scroll-down',
+        '--screen-width',
+        '414',
+        '--screen-height',
+        '896',
+        '--duration',
+        '2',
+        '--delta',
+        '150',
+        '--pre-delay',
+        '0.5',
+        '--post-delay',
+        '0.3',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command with different gesture presets', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'gesture completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      await gesturePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          preset: 'swipe-from-bottom-edge',
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'gesture',
+        'swipe-from-bottom-edge',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
       const result = await gesturePlugin.handler({ preset: 'scroll-up' });

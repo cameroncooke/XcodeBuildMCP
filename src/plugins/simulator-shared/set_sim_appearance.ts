@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log } from '../../utils/index.js';
-import { validateRequiredParam } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { log, getDefaultCommandExecutor } from '../../utils/index.js';
+import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
@@ -73,7 +73,10 @@ export default {
       .enum(['dark', 'light'])
       .describe('The appearance mode to set (either "dark" or "light")'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     log('info', `Setting simulator ${params.simulatorUuid} appearance to ${params.mode} mode`);
 

@@ -7,7 +7,12 @@
 
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log, executeCommand, CommandExecutor } from '../../utils/index.js';
+import {
+  log,
+  executeCommand,
+  CommandExecutor,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
 
 export default {
   name: 'stop_app_device',
@@ -17,7 +22,10 @@ export default {
     deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
     processId: z.number().describe('Process ID (PID) of the app to stop'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const { deviceId, processId } = args;
 
     log('info', `Stopping app with PID ${processId} on device ${deviceId}`);
@@ -35,10 +43,10 @@ export default {
           '--pid',
           processId.toString(),
         ],
+        executor,
         'Stop app on device',
         true, // useShell
         undefined, // env
-        executor,
       );
 
       if (!result.success) {

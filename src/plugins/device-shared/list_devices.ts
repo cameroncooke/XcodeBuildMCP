@@ -6,7 +6,12 @@
  */
 
 import { ToolResponse } from '../../types/common.js';
-import { log, executeCommand, CommandExecutor } from '../../utils/index.js';
+import {
+  log,
+  executeCommand,
+  CommandExecutor,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -18,7 +23,7 @@ export default {
   schema: {},
   async handler(
     args?: Record<string, unknown>,
-    executor?: CommandExecutor,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
     pathDeps?: { tmpdir?: () => string; join?: (...paths: string[]) => string },
     fsDeps?: {
       readFile?: (path: string, encoding?: string) => Promise<string>;
@@ -40,10 +45,10 @@ export default {
       try {
         const result = await executeCommand(
           ['xcrun', 'devicectl', 'list', 'devices', '--json-output', tempJsonPath],
+          executor,
           'List Devices (devicectl with JSON)',
           true,
           undefined,
-          executor,
         );
 
         if (result.success) {
@@ -135,10 +140,10 @@ export default {
       if (!useDevicectl || devices.length === 0) {
         const result = await executeCommand(
           ['xcrun', 'xctrace', 'list', 'devices'],
+          executor,
           'List Devices (xctrace)',
           true,
           undefined,
-          executor,
         );
 
         if (!result.success) {

@@ -7,7 +7,12 @@
 
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log, executeCommand, CommandExecutor } from '../../utils/index.js';
+import {
+  log,
+  executeCommand,
+  CommandExecutor,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -22,7 +27,10 @@ export default {
       .string()
       .describe('Bundle identifier of the app to launch (e.g., "com.example.MyApp")'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const { deviceId, bundleId } = args;
 
     log('info', `Launching app ${bundleId} on device ${deviceId}`);
@@ -45,10 +53,10 @@ export default {
           '--terminate-existing',
           bundleId,
         ],
+        executor,
         'Launch app on device',
         true, // useShell
         undefined, // env
-        executor,
       );
 
       if (!result.success) {

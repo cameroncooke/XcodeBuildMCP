@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
-import { CommandExecutor } from '../../utils/command.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -38,7 +38,10 @@ export default {
       .describe('Additional arguments to pass to xcodebuild'),
     preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
     if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;

@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
-import { CommandExecutor } from '../../utils/command.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
 
 // Types for dependency injection
 export interface BuildUtilsDependencies {
@@ -37,7 +37,7 @@ const XcodePlatform = {
  */
 async function _handleMacOSBuildLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
   buildUtilsDeps: BuildUtilsDependencies = defaultBuildUtilsDependencies,
 ): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
@@ -80,7 +80,7 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    executor?: CommandExecutor,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
     buildUtilsDeps?: BuildUtilsDependencies,
   ): Promise<ToolResponse> {
     const params = args;

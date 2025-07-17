@@ -6,6 +6,7 @@ import {
   createErrorResponse,
   log,
   CommandExecutor,
+  getDefaultCommandExecutor,
 } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
@@ -35,7 +36,10 @@ export default {
     architectures: swiftArchitecturesSchema,
     parseAsLibrary: parseAsLibrarySchema,
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
     if (!pkgValidation.isValid) return pkgValidation.errorResponse;
@@ -65,10 +69,10 @@ export default {
     try {
       const result = await executeCommand(
         ['swift', ...swiftArgs],
+        executor,
         'Swift Package Build',
         true,
         undefined,
-        executor,
       );
       if (!result.success) {
         const errorMessage = result.error || result.output || 'Unknown error';

@@ -6,9 +6,13 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { log, getDefaultCommandExecutor } from '../../utils/index.js';
+import {
+  validateRequiredParam,
+  createTextResponse,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
@@ -36,7 +40,10 @@ export default {
       .optional()
       .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
     if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
@@ -67,7 +74,7 @@ export default {
       command.push('-destination', destinationString);
 
       // Execute the command directly
-      const result = await executeCommand(command, 'Get App Path', true, undefined, executor);
+      const result = await executeCommand(command, executor, 'Get App Path', true, undefined);
 
       if (!result.success) {
         return createTextResponse(`Error retrieving app path: ${result.error}`, true);

@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -38,7 +38,7 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    executor?: CommandExecutor,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
     axeHelpers?: AxeHelpers,
   ): Promise<ToolResponse> {
     const params = args;
@@ -142,7 +142,7 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
   axeHelpers?: AxeHelpers,
 ): Promise<string> {
   // Use injected helpers or default to imported functions
@@ -166,10 +166,10 @@ async function executeAxeCommand(
 
     const result = await executeCommand(
       fullCommand,
+      executor,
       `${LOG_PREFIX}: ${commandName}`,
       false,
       axeEnv,
-      executor,
     );
 
     if (!result.success) {

@@ -9,7 +9,13 @@ import * as path from 'path';
 import * as os from 'os';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import { log, executeCommand, CommandExecutor, FileSystemExecutor } from '../../utils/index.js';
+import {
+  log,
+  executeCommand,
+  CommandExecutor,
+  FileSystemExecutor,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 /**
@@ -37,7 +43,7 @@ export async function startDeviceLogCapture(
     deviceUuid: string;
     bundleId: string;
   },
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
   fileSystemExecutor?: FileSystemExecutor,
   createWriteStream?: (path: string, options: { flags: string }) => any,
 ): Promise<{ sessionId: string; error?: string }> {
@@ -151,7 +157,7 @@ const startDeviceLogCapToolHandler = async (
     deviceId: string;
     bundleId: string;
   },
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
   fileSystemExecutor?: FileSystemExecutor,
   createWriteStream?: (path: string, options: { flags: string }) => any,
 ): Promise<ToolResponse> => {

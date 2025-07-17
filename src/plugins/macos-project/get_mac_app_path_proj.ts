@@ -6,9 +6,9 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../utils/index.js';
-import { validateRequiredParam } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { log, getDefaultCommandExecutor } from '../../utils/index.js';
+import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
@@ -41,7 +41,10 @@ export default {
       .optional()
       .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
     if (!projectValidation.isValid) return projectValidation.errorResponse;
@@ -75,7 +78,7 @@ export default {
       }
 
       // Execute the command directly with executor
-      const result = await executeCommand(command, 'Get App Path', true, undefined, executor);
+      const result = await executeCommand(command, executor, 'Get App Path', true, undefined);
 
       if (!result.success) {
         return {

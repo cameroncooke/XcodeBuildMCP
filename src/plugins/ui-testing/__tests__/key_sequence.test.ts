@@ -88,6 +88,142 @@ describe('Key Sequence Plugin', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct axe command for basic key sequence', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'key sequence completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await keySequencePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCodes: [40, 42, 44],
+        },
+        trackingExecutor,
+        () => '/usr/local/bin/axe',
+        () => ({}),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'key-sequence',
+        '--keycodes',
+        '40,42,44',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for key sequence with delay', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'key sequence completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await keySequencePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCodes: [58, 59, 60],
+          delay: 0.5,
+        },
+        trackingExecutor,
+        () => '/usr/local/bin/axe',
+        () => ({}),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'key-sequence',
+        '--keycodes',
+        '58,59,60',
+        '--delay',
+        '0.5',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for single key in sequence', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'key sequence completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await keySequencePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCodes: [255],
+        },
+        trackingExecutor,
+        () => '/usr/local/bin/axe',
+        () => ({}),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'key-sequence',
+        '--keycodes',
+        '255',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command with bundled axe path', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'key sequence completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await keySequencePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCodes: [0, 1, 2, 3, 4],
+          delay: 1.0,
+        },
+        trackingExecutor,
+        () => '/path/to/bundled/axe',
+        () => ({ AXE_PATH: '/some/path' }),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/path/to/bundled/axe',
+        'key-sequence',
+        '--keycodes',
+        '0,1,2,3,4',
+        '--delay',
+        '1',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
       const result = await keySequencePlugin.handler({

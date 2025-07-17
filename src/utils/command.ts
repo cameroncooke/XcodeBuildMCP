@@ -142,20 +142,20 @@ async function defaultExecutor(
 }
 
 /**
- * Execute a command with optional dependency injection for testing
+ * Execute a command with dependency injection for testing
  * @param command An array of command and arguments
+ * @param executor Command executor for dependency injection (required)
  * @param logPrefix Prefix for logging
  * @param useShell Whether to use shell execution (true) or direct execution (false)
  * @param env Additional environment variables
- * @param executor Optional command executor for dependency injection (testing)
  * @returns Promise resolving to command response with the process
  */
 export async function executeCommand(
   command: string[],
+  executor: CommandExecutor,
   logPrefix?: string,
   useShell: boolean = true,
   env?: Record<string, string>,
-  executor: CommandExecutor = defaultExecutor,
 ): Promise<CommandResponse> {
   return executor(command, logPrefix, useShell, env);
 }
@@ -167,16 +167,16 @@ export async function executeCommand(
  * @param useShell Whether to use shell execution (true) or direct execution (false)
  * @param env Additional environment variables
  * @param cwd Working directory for the command
- * @param executor Optional command executor for dependency injection (testing)
+ * @param executor Command executor for dependency injection (testing)
  * @returns Promise resolving to command response with the process
  */
 export async function executeCommandWithCwd(
   command: string[],
+  executor: CommandExecutor,
   logPrefix?: string,
   useShell: boolean = true,
   env?: Record<string, string>,
   cwd?: string,
-  executor: CommandExecutor = defaultExecutor,
 ): Promise<CommandResponse> {
   // Create a custom executor that handles cwd
   const cwdExecutor: CommandExecutor = async (cmd, prefix, shell, environment) => {
@@ -307,7 +307,7 @@ export const defaultFileSystemExecutor: FileSystemExecutor = {
 
   async readdir(path: string, options?: { withFileTypes?: boolean }): Promise<any[]> {
     const fs = await import('fs/promises');
-    return await fs.readdir(path, options);
+    return await fs.readdir(path, options as any);
   },
 
   async rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {

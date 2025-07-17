@@ -5,9 +5,9 @@
  */
 
 import { z } from 'zod';
-import { log, CommandExecutor } from '../../utils/index.js';
-import { executeXcodeBuildCommand } from '../../utils/index.js';
-import { createTextResponse } from '../../utils/index.js';
+import { log, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.js';
+import { createTextResponse, getDefaultCommandExecutor } from '../../utils/index.js';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
@@ -138,7 +138,7 @@ function formatTestSummary(summary: Record<string, unknown>): string {
 // Internal logic for running tests with platform-specific handling
 async function handleTestLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
   tempDirDeps?: {
     mkdtemp: (prefix: string) => Promise<string>;
     rm: (path: string, options?: { recursive?: boolean; force?: boolean }) => Promise<void>;
@@ -267,7 +267,7 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    executor?: CommandExecutor,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
     tempDirDeps?: {
       mkdtemp: (prefix: string) => Promise<string>;
       rm: (path: string, options?: { recursive?: boolean; force?: boolean }) => Promise<void>;

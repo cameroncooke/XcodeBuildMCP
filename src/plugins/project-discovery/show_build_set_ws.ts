@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
@@ -15,7 +15,7 @@ import { ToolResponse } from '../../types/common.js';
  */
 async function _handleShowBuildSettingsLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', `Showing build settings for scheme ${params.scheme}`);
 
@@ -34,7 +34,7 @@ async function _handleShowBuildSettingsLogic(
     command.push('-scheme', params.scheme);
 
     // Execute the command directly
-    const result = await executeCommand(command, 'Show Build Settings', true, undefined, executor);
+    const result = await executeCommand(command, undefined, executor, 'Show Build Settings', true);
 
     if (!result.success) {
       return createTextResponse(`Failed to retrieve build settings: ${result.error}`, true);
@@ -75,7 +75,10 @@ export default {
     workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
     scheme: z.string().describe('The scheme to use (Required)'),
   }),
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     const validated = this.schema.parse(params);
 

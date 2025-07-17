@@ -90,6 +90,168 @@ describe('Long Press Plugin', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct axe command for basic long press', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'long press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await longPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          duration: 1500,
+        },
+        trackingExecutor,
+        () => '/usr/local/bin/axe',
+        () => ({}),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'touch',
+        '-x',
+        '100',
+        '-y',
+        '200',
+        '--down',
+        '--up',
+        '--delay',
+        '1.5',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for long press with different coordinates', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'long press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await longPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 50,
+          y: 75,
+          duration: 2000,
+        },
+        trackingExecutor,
+        () => '/usr/local/bin/axe',
+        () => ({}),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'touch',
+        '-x',
+        '50',
+        '-y',
+        '75',
+        '--down',
+        '--up',
+        '--delay',
+        '2',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for short duration long press', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'long press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await longPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 300,
+          y: 400,
+          duration: 500,
+        },
+        trackingExecutor,
+        () => '/usr/local/bin/axe',
+        () => ({}),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'touch',
+        '-x',
+        '300',
+        '-y',
+        '400',
+        '--down',
+        '--up',
+        '--delay',
+        '0.5',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command with bundled axe path', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'long press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await longPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 150,
+          y: 250,
+          duration: 3000,
+        },
+        trackingExecutor,
+        () => '/path/to/bundled/axe',
+        () => ({ AXE_PATH: '/some/path' }),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/path/to/bundled/axe',
+        'touch',
+        '-x',
+        '150',
+        '-y',
+        '250',
+        '--down',
+        '--up',
+        '--delay',
+        '3',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
       const result = await longPressPlugin.handler({ x: 100, y: 200, duration: 1500 });

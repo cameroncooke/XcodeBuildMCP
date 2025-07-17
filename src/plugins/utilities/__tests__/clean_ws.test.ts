@@ -74,6 +74,197 @@ describe('clean_ws plugin tests', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct xcodebuild command for basic clean', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Clean succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await cleanWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        trackingExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS',
+        'clean',
+      ]);
+    });
+
+    it('should generate correct xcodebuild command with configuration', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Clean succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await cleanWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Release',
+        },
+        trackingExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Release',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS',
+        'clean',
+      ]);
+    });
+
+    it('should generate correct xcodebuild command with derived data path', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Clean succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await cleanWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          derivedDataPath: '/custom/derived/data',
+        },
+        trackingExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS',
+        '-derivedDataPath',
+        '/custom/derived/data',
+        'clean',
+      ]);
+    });
+
+    it('should generate correct xcodebuild command with extra args', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Clean succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await cleanWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          extraArgs: ['--verbose', '--jobs', '4'],
+        },
+        trackingExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS',
+        '--verbose',
+        '--jobs',
+        '4',
+        'clean',
+      ]);
+    });
+
+    it('should generate correct xcodebuild command with all parameters', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Clean succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await cleanWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Release',
+          derivedDataPath: '/custom/derived/data',
+          extraArgs: ['--verbose'],
+        },
+        trackingExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Release',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS',
+        '-derivedDataPath',
+        '/custom/derived/data',
+        '--verbose',
+        'clean',
+      ]);
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return success response for valid clean workspace request', async () => {
       const mockExecutor = createMockExecutor({

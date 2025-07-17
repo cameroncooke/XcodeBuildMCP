@@ -61,10 +61,6 @@ describe('scaffold_macos_project plugin', () => {
       },
     };
 
-    // Replace the real TemplateManager with our stub
-    (TemplateManager as any).getTemplatePath = templateManagerStub.getTemplatePath;
-    (TemplateManager as any).cleanup = templateManagerStub.cleanup;
-
     // Create fresh mock file system executor for each test
     mockFileSystemExecutor = createMockFileSystemExecutor({
       existsSync: () => false,
@@ -77,6 +73,10 @@ describe('scaffold_macos_project plugin', () => {
         { name: 'MyProject.swift', isDirectory: () => false, isFile: () => true },
       ],
     });
+
+    // Replace the real TemplateManager with our stub for most tests
+    (TemplateManager as any).getTemplatePath = templateManagerStub.getTemplatePath;
+    (TemplateManager as any).cleanup = templateManagerStub.cleanup;
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -102,6 +102,221 @@ describe('scaffold_macos_project plugin', () => {
       expect(plugin.schema.bundleIdentifier).toBeDefined();
       expect(plugin.schema.customizeNames).toBeDefined();
       expect(plugin.schema.deploymentTarget).toBeDefined();
+    });
+  });
+
+  describe('Command Generation', () => {
+    it('should generate correct curl command for macOS template download', async () => {
+      let capturedCommands: string[][] = [];
+      const trackingExecutor = async (command: string[]) => {
+        console.log('DEBUG: Command captured:', command);
+        capturedCommands.push(command);
+        return {
+          success: true,
+          output: 'Download successful',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      // Store original environment variable
+      const originalEnv = process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH;
+      delete process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH; // Force download path
+
+      // Mock file system to simulate successful extraction verification
+      mockFileSystemExecutor.existsSync = () => true;
+
+      // Restore original TemplateManager for command generation tests
+      const { TemplateManager: OriginalTemplateManager } = await import('../../../utils/index.js');
+      (TemplateManager as any).getTemplatePath = OriginalTemplateManager.getTemplatePath;
+      (TemplateManager as any).cleanup = OriginalTemplateManager.cleanup;
+
+      console.log('DEBUG: About to call plugin handler...');
+      await plugin.handler(
+        {
+          projectName: 'TestMacApp',
+          outputPath: '/tmp/test-projects',
+        },
+        trackingExecutor,
+        mockFileSystemExecutor,
+      );
+      console.log('DEBUG: plugin handler completed, capturedCommands:', capturedCommands);
+
+      // Should generate curl command for downloading template
+      expect(capturedCommands).toContainEqual(
+        expect.arrayContaining([
+          'curl',
+          '-L',
+          '-f',
+          '-o',
+          expect.stringContaining('template.zip'),
+          expect.stringContaining(
+            'https://github.com/cameroncooke/XcodeBuildMCP-macOS-Template/releases/download/',
+          ),
+        ]),
+      );
+
+      // Restore environment variable and stub after test
+      process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH = originalEnv;
+      (TemplateManager as any).getTemplatePath = templateManagerStub.getTemplatePath;
+      (TemplateManager as any).cleanup = templateManagerStub.cleanup;
+    });
+
+    it('should generate correct unzip command for template extraction', async () => {
+      let capturedCommands: string[][] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommands.push(command);
+        return {
+          success: true,
+          output: 'Command successful',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      // Store original environment variable
+      const originalEnv = process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH;
+      delete process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH; // Force download path
+
+      // Mock file system to simulate successful extraction verification
+      mockFileSystemExecutor.existsSync = () => true;
+
+      // Restore original TemplateManager for command generation tests
+      const { TemplateManager: OriginalTemplateManager } = await import('../../../utils/index.js');
+      (TemplateManager as any).getTemplatePath = OriginalTemplateManager.getTemplatePath;
+      (TemplateManager as any).cleanup = OriginalTemplateManager.cleanup;
+
+      await plugin.handler(
+        {
+          projectName: 'TestMacApp',
+          outputPath: '/tmp/test-projects',
+        },
+        trackingExecutor,
+        mockFileSystemExecutor,
+      );
+
+      // Should generate unzip command for extracting template
+      expect(capturedCommands).toContainEqual([
+        'unzip',
+        '-q',
+        expect.stringContaining('template.zip'),
+      ]);
+
+      // Restore environment variable and stub after test
+      process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH = originalEnv;
+      (TemplateManager as any).getTemplatePath = templateManagerStub.getTemplatePath;
+      (TemplateManager as any).cleanup = templateManagerStub.cleanup;
+    });
+
+    it('should generate correct commands for template with version', async () => {
+      let capturedCommands: string[][] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommands.push(command);
+        return {
+          success: true,
+          output: 'Command successful',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      // Store original environment variables
+      const originalEnv = process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH;
+      const originalVersion = process.env.XCODEBUILD_MCP_MACOS_TEMPLATE_VERSION;
+      delete process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH; // Force download path
+      process.env.XCODEBUILD_MCP_MACOS_TEMPLATE_VERSION = 'v1.0.0';
+
+      // Mock file system to simulate successful extraction verification
+      mockFileSystemExecutor.existsSync = () => true;
+
+      // Restore original TemplateManager for command generation tests
+      const { TemplateManager: OriginalTemplateManager } = await import('../../../utils/index.js');
+      (TemplateManager as any).getTemplatePath = OriginalTemplateManager.getTemplatePath;
+      (TemplateManager as any).cleanup = OriginalTemplateManager.cleanup;
+
+      await plugin.handler(
+        {
+          projectName: 'TestMacApp',
+          outputPath: '/tmp/test-projects',
+        },
+        trackingExecutor,
+        mockFileSystemExecutor,
+      );
+
+      // Should generate curl command with specific version
+      expect(capturedCommands).toContainEqual(
+        expect.arrayContaining([
+          'curl',
+          '-L',
+          '-f',
+          '-o',
+          expect.stringContaining('template.zip'),
+          expect.stringContaining(
+            'https://github.com/cameroncooke/XcodeBuildMCP-macOS-Template/releases/download/v1.0.0/',
+          ),
+        ]),
+      );
+
+      // Clean up environment variables
+      process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH = originalEnv;
+      process.env.XCODEBUILD_MCP_MACOS_TEMPLATE_VERSION = originalVersion;
+
+      // Restore stub after test
+      (TemplateManager as any).getTemplatePath = templateManagerStub.getTemplatePath;
+      (TemplateManager as any).cleanup = templateManagerStub.cleanup;
+    });
+
+    it('should not generate commands when using local template path', async () => {
+      let capturedCommands: string[][] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommands.push(command);
+        return {
+          success: true,
+          output: 'Command successful',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      // Store original environment variable
+      const originalEnv = process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH;
+
+      // Mock local template path exists
+      mockFileSystemExecutor.existsSync = (path: string) => {
+        return path === '/local/template/path' || path === '/local/template/path/template';
+      };
+
+      // Set environment variable for local template path
+      process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH = '/local/template/path';
+
+      // Restore original TemplateManager for command generation tests
+      const { TemplateManager: OriginalTemplateManager } = await import('../../../utils/index.js');
+      (TemplateManager as any).getTemplatePath = OriginalTemplateManager.getTemplatePath;
+      (TemplateManager as any).cleanup = OriginalTemplateManager.cleanup;
+
+      await plugin.handler(
+        {
+          projectName: 'TestMacApp',
+          outputPath: '/tmp/test-projects',
+        },
+        trackingExecutor,
+        mockFileSystemExecutor,
+      );
+
+      // Should not generate any curl or unzip commands when using local template
+      expect(capturedCommands).not.toContainEqual(
+        expect.arrayContaining(['curl', expect.anything(), expect.anything()]),
+      );
+      expect(capturedCommands).not.toContainEqual(
+        expect.arrayContaining(['unzip', expect.anything(), expect.anything()]),
+      );
+
+      // Clean up environment variable
+      process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH = originalEnv;
+
+      // Restore stub after test
+      (TemplateManager as any).getTemplatePath = templateManagerStub.getTemplatePath;
+      (TemplateManager as any).cleanup = templateManagerStub.cleanup;
     });
   });
 

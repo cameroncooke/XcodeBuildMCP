@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { handleTestLogic } from '../../utils/index.js';
 import { XcodePlatform } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
-import { CommandExecutor } from '../../utils/command.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
 
 export default {
   name: 'test_sim_name_proj',
@@ -31,7 +31,10 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     return handleTestLogic(
       {

@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
@@ -15,7 +15,7 @@ import { ToolResponse } from '../../types/common.js';
  */
 async function _handleListSchemesLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', 'Listing schemes');
 
@@ -30,7 +30,7 @@ async function _handleListSchemesLogic(
       command.push('-project', params.projectPath);
     } // No else needed, one path is guaranteed by callers
 
-    const result = await executeCommand(command, 'List Schemes', true, undefined, executor);
+    const result = await executeCommand(command, undefined, executor, 'List Schemes', true);
 
     if (!result.success) {
       return createTextResponse(`Failed to list schemes: ${result.error}`, true);
@@ -90,7 +90,10 @@ export default {
   schema: z.object({
     workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
   }),
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     const validated = this.schema.parse(params);
 

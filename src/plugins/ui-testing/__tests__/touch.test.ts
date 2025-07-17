@@ -101,6 +101,223 @@ describe('Touch Plugin', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct axe command for touch down', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'touch completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          down: true,
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'touch',
+        '-x',
+        '100',
+        '-y',
+        '200',
+        '--down',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for touch up', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'touch completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 150,
+          y: 250,
+          up: true,
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'touch',
+        '-x',
+        '150',
+        '-y',
+        '250',
+        '--up',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for touch down+up', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'touch completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 300,
+          y: 400,
+          down: true,
+          up: true,
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'touch',
+        '-x',
+        '300',
+        '-y',
+        '400',
+        '--down',
+        '--up',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for touch with delay', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'touch completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      await touchPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 50,
+          y: 75,
+          down: true,
+          up: true,
+          delay: 1.5,
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'touch',
+        '-x',
+        '50',
+        '-y',
+        '75',
+        '--down',
+        '--up',
+        '--delay',
+        '1.5',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command with bundled axe path', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'touch completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/path/to/bundled/axe',
+        getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
+      };
+
+      await touchPlugin.handler(
+        {
+          simulatorUuid: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
+          x: 0,
+          y: 0,
+          up: true,
+          delay: 0.5,
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/path/to/bundled/axe',
+        'touch',
+        '-x',
+        '0',
+        '-y',
+        '0',
+        '--up',
+        '--delay',
+        '0.5',
+        '--udid',
+        'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
+      ]);
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
       const mockExecutor = createMockExecutor({ success: true });

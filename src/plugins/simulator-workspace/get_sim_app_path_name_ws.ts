@@ -1,8 +1,12 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log } from '../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { log, getDefaultCommandExecutor } from '../../utils/index.js';
+import {
+  validateRequiredParam,
+  createTextResponse,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 
 const XcodePlatform = {
   macOS: 'macOS',
@@ -72,7 +76,7 @@ function constructDestinationString(
  */
 async function _handleGetAppPathLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', `Getting app path for scheme ${params.scheme} on platform ${params.platform}`);
 
@@ -135,7 +139,7 @@ async function _handleGetAppPathLogic(
     command.push('-destination', destinationString);
 
     // Execute the command directly
-    const result = await executeCommand(command, 'Get App Path', true, undefined, executor);
+    const result = await executeCommand(command, executor, 'Get App Path', true, undefined);
 
     if (!result.success) {
       return createTextResponse(`Failed to get app path: ${result.error}`, true);
@@ -228,7 +232,10 @@ export default {
       .optional()
       .describe('Whether to use the latest OS version for the named simulator'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
     if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;

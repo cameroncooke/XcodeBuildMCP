@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log } from '../../utils/index.js';
-import { validateRequiredParam } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { log, getDefaultCommandExecutor } from '../../utils/index.js';
+import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 
 export default {
   name: 'stop_app_sim',
@@ -13,7 +13,10 @@ export default {
       .string()
       .describe("Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
     if (!simulatorUuidValidation.isValid) {

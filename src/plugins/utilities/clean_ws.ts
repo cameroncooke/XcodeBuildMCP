@@ -5,12 +5,12 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../utils/index.js';
-import { XcodePlatform } from '../../utils/index.js';
-import { executeXcodeBuildCommand } from '../../utils/index.js';
-import { validateRequiredParam } from '../../utils/index.js';
+import { log, getDefaultCommandExecutor } from '../../utils/index.js';
+import { XcodePlatform, getDefaultCommandExecutor } from '../../utils/index.js';
+import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.js';
+import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
-import { CommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 
 const CleanWorkspaceSchema = z.object({
   workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
@@ -28,7 +28,7 @@ const CleanWorkspaceSchema = z.object({
 
 async function _handleCleanLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', 'Starting xcodebuild clean request (internal)');
 
@@ -51,7 +51,7 @@ async function _handleCleanLogic(
 
 async function cleanWorkspace(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   try {
     const validated = CleanWorkspaceSchema.parse(params);
@@ -96,7 +96,10 @@ export default {
       .describe('Optional: Path where derived data might be located'),
     extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     return cleanWorkspace(params, executor);
   },

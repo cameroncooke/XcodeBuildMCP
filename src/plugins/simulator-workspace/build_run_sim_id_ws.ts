@@ -1,9 +1,13 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log } from '../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
-import { executeXcodeBuildCommand } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { log, getDefaultCommandExecutor } from '../../utils/index.js';
+import {
+  validateRequiredParam,
+  createTextResponse,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
+import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { execSync } from 'child_process';
 
 const XcodePlatform = {
@@ -13,7 +17,7 @@ const XcodePlatform = {
 // Helper function for simulator build logic
 async function _handleSimulatorBuildLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', `Building ${params.workspacePath || params.projectPath} for iOS Simulator`);
 
@@ -43,7 +47,7 @@ async function _handleSimulatorBuildLogic(
 // Helper function for iOS Simulator build and run logic
 async function _handleIOSSimulatorBuildAndRunLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log(
     'info',
@@ -71,7 +75,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     command.push('-configuration', params.configuration);
     command.push('-destination', `platform=${XcodePlatform.iOSSimulator},id=${params.simulatorId}`);
 
-    const result = await executeCommand(command, 'Get App Path', true, undefined, executor);
+    const result = await executeCommand(command, executor, 'Get App Path', true, undefined);
 
     if (!result.success) {
       return createTextResponse(`Failed to get app path: ${result.error}`, true);
@@ -235,7 +239,10 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     // Validate required parameters
     const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/command.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
 import { execSync } from 'child_process';
 
 export default {
@@ -15,7 +15,10 @@ export default {
       .string()
       .describe("Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
     if (!simulatorNameValidation.isValid) {

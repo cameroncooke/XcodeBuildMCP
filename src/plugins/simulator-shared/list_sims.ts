@@ -1,16 +1,21 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log, executeCommand, CommandExecutor } from '../../utils/index.js';
+import {
+  log,
+  executeCommand,
+  CommandExecutor,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
 
 async function listSimsToolHandler(
   args: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', 'Starting xcrun simctl list devices request');
 
   try {
     const command = ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'];
-    const result = await executeCommand(command, 'List Simulators', true, undefined, executor);
+    const result = await executeCommand(command, undefined, executor, 'List Simulators', true);
 
     if (!result.success) {
       return {

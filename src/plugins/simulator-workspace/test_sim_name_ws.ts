@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { XcodePlatform } from '../../utils/index.js';
-import { CommandExecutor } from '../../utils/command.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
 import { handleTestLogic } from '../../utils/test-common.js';
 
 // Schema definitions
@@ -44,7 +44,10 @@ export default {
     useLatestOS: useLatestOSSchema,
     preferXcodebuild: preferXcodebuildSchema,
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     return handleTestLogic(
       {

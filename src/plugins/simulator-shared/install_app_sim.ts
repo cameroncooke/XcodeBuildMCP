@@ -7,6 +7,7 @@ import {
   executeCommand,
   CommandExecutor,
   FileSystemExecutor,
+  getDefaultCommandExecutor,
 } from '../../utils/index.ts';
 
 export default {
@@ -23,7 +24,7 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    executor?: CommandExecutor,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
     fileSystem?: FileSystemExecutor,
   ): Promise<ToolResponse> {
     const params = args;
@@ -48,10 +49,10 @@ export default {
       const command = ['xcrun', 'simctl', 'install', params.simulatorUuid, params.appPath];
       const result = await executeCommand(
         command,
+        executor,
         'Install App in Simulator',
         true,
         undefined,
-        executor,
       );
 
       if (!result.success) {
@@ -69,10 +70,10 @@ export default {
       try {
         const bundleIdResult = await executeCommand(
           ['defaults', 'read', `${params.appPath}/Info`, 'CFBundleIdentifier'],
+          executor,
           'Extract Bundle ID',
           false,
           undefined,
-          executor,
         );
         if (bundleIdResult.success) {
           bundleId = bundleIdResult.output.trim();

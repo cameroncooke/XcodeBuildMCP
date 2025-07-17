@@ -5,17 +5,17 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../utils/index.js';
-import { XcodePlatform } from '../../utils/index.js';
-import { executeXcodeBuildCommand } from '../../utils/index.js';
-import { validateRequiredParam } from '../../utils/index.js';
+import { log, getDefaultCommandExecutor } from '../../utils/index.js';
+import { XcodePlatform, getDefaultCommandExecutor } from '../../utils/index.js';
+import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.js';
+import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
-import { CommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 
 // Internal logic for cleaning build products.
 async function _handleCleanLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', 'Starting xcodebuild clean request (internal)');
 
@@ -39,7 +39,7 @@ async function _handleCleanLogic(
 // Cleans build products for a project
 async function cleanProject(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   try {
     const validated = z
@@ -104,7 +104,10 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     return cleanProject(params, executor);
   },

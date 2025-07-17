@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { log } from '../../utils/index.js';
-import { validateRequiredParam } from '../../utils/index.js';
-import { executeXcodeBuildCommand } from '../../utils/index.js';
-import { CommandExecutor } from '../../utils/index.js';
+import { log, getDefaultCommandExecutor } from '../../utils/index.js';
+import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
+import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
@@ -12,7 +12,7 @@ const XcodePlatform = {
 // Internal logic for building Simulator apps.
 async function _handleSimulatorBuildLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
   executeXcodeBuildCommandFn?: typeof executeXcodeBuildCommand,
 ): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
@@ -64,7 +64,7 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    executor?: CommandExecutor,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
     executeXcodeBuildCommandFn?: typeof executeXcodeBuildCommand,
   ): Promise<ToolResponse> {
     const params = args;

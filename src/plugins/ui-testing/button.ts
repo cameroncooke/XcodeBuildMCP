@@ -10,7 +10,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -35,7 +35,7 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    executor?: CommandExecutor,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
     axeHelpers?: AxeHelpers,
   ): Promise<ToolResponse> {
     const params = args;
@@ -93,7 +93,7 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
   axeHelpers?: AxeHelpers,
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
@@ -117,9 +117,13 @@ async function executeAxeCommand(
           : getBundledAxeEnvironment()
         : undefined;
 
-    const result = executor
-      ? await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv)
-      : await executeCommand(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
+    const result = await executeCommand(
+      fullCommand,
+      executor,
+      `${LOG_PREFIX}: ${commandName}`,
+      false,
+      axeEnv,
+    );
 
     if (!result.success) {
       throw new AxeError(

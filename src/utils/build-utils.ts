@@ -46,7 +46,7 @@ export async function executeXcodeBuildCommand(
   platformOptions: PlatformBuildOptions,
   preferXcodebuild: boolean = false,
   buildAction: string = 'build',
-  executor?: CommandExecutor,
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
   // Collect warnings, errors, and stderr messages from the build output
   const buildMessages: { type: 'text'; text: string }[] = [];
@@ -225,7 +225,7 @@ export async function executeXcodeBuildCommand(
       }
     } else {
       // Use standard xcodebuild
-      result = await executeCommand(command, platformOptions.logPrefix, true, undefined, executor);
+      result = await executeCommand(command, executor, platformOptions.logPrefix, true, undefined);
     }
 
     // Grep warnings and errors from stdout (build output)

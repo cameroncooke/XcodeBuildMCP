@@ -6,7 +6,6 @@ import { iOSTemplateVersion, macOSTemplateVersion } from '../version.js';
 import {
   CommandExecutor,
   FileSystemExecutor,
-  defaultFileSystemExecutor,
   executeCommand,
   executeCommandWithCwd,
 } from './command.js';
@@ -25,24 +24,36 @@ export class TemplateManager {
    */
   static async getTemplatePath(
     platform: 'iOS' | 'macOS',
-    commandExecutor?: CommandExecutor,
-    fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+    commandExecutor: CommandExecutor,
+    fileSystemExecutor: FileSystemExecutor,
   ): Promise<string> {
     // Check for local override
     const envVar =
       platform === 'iOS' ? 'XCODEBUILDMCP_IOS_TEMPLATE_PATH' : 'XCODEBUILDMCP_MACOS_TEMPLATE_PATH';
 
     const localPath = process.env[envVar];
-    if (localPath && fileSystemExecutor.existsSync(localPath)) {
-      const templateSubdir = join(localPath, 'template');
-      if (fileSystemExecutor.existsSync(templateSubdir)) {
-        log('info', `Using local ${platform} template from: ${templateSubdir}`);
-        return templateSubdir;
-      } else {
-        log('info', `Template directory not found in ${localPath}, using GitHub release`);
+    log('debug', `[TemplateManager] Checking env var '${envVar}'. Value: '${localPath}'`);
+
+    if (localPath) {
+      const pathExists = fileSystemExecutor.existsSync(localPath);
+      log('debug', `[TemplateManager] Env var set. Path '${localPath}' exists? ${pathExists}`);
+      if (pathExists) {
+        const templateSubdir = join(localPath, 'template');
+        const subdirExists = fileSystemExecutor.existsSync(templateSubdir);
+        log(
+          'debug',
+          `[TemplateManager] Checking for subdir '${templateSubdir}'. Exists? ${subdirExists}`,
+        );
+        if (subdirExists) {
+          log('info', `Using local ${platform} template from: ${templateSubdir}`);
+          return templateSubdir;
+        } else {
+          log('info', `Template directory not found in ${localPath}, using GitHub release`);
+        }
       }
     }
 
+    log('debug', '[TemplateManager] Env var not set or path invalid, proceeding to download.');
     // Download from GitHub release
     return await this.downloadTemplate(platform, commandExecutor, fileSystemExecutor);
   }
@@ -52,8 +63,8 @@ export class TemplateManager {
    */
   private static async downloadTemplate(
     platform: 'iOS' | 'macOS',
-    commandExecutor?: CommandExecutor,
-    fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+    commandExecutor: CommandExecutor,
+    fileSystemExecutor: FileSystemExecutor,
   ): Promise<string> {
     const repo = platform === 'iOS' ? this.IOS_TEMPLATE_REPO : this.MACOS_TEMPLATE_REPO;
     const defaultVersion = platform === 'iOS' ? iOSTemplateVersion : macOSTemplateVersion;
@@ -78,10 +89,10 @@ export class TemplateManager {
       // Download the release artifact
       const curlResult = await executeCommand(
         ['curl', '-L', '-f', '-o', zipPath, downloadUrl],
+        commandExecutor,
         'Download Template',
         true,
         undefined,
-        commandExecutor,
       );
 
       if (!curlResult.success) {
@@ -91,11 +102,11 @@ export class TemplateManager {
       // Extract the zip file
       const unzipResult = await executeCommandWithCwd(
         ['unzip', '-q', zipPath],
+        commandExecutor,
         'Extract Template',
         true,
         undefined,
         tempDir,
-        commandExecutor,
       );
 
       if (!unzipResult.success) {
@@ -123,7 +134,7 @@ export class TemplateManager {
    */
   static async cleanup(
     templatePath: string,
-    fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+    fileSystemExecutor: FileSystemExecutor,
   ): Promise<void> {
     // Only clean up if it's in temp directory
     if (templatePath.startsWith(tmpdir())) {

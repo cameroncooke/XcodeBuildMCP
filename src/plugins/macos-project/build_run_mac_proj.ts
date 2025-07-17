@@ -12,7 +12,7 @@ import { executeCommand } from '../../utils/index.js';
 import { createTextResponse } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
-import { CommandExecutor } from '../../utils/command.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -31,7 +31,7 @@ const XcodePlatform = {
  */
 async function _handleMacOSBuildLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
@@ -52,7 +52,7 @@ async function _handleMacOSBuildLogic(
 
 async function _getAppPathFromBuildSettings(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<{ appPath?: string; error?: string }> {
   try {
     // Create the command array for xcodebuild
@@ -117,7 +117,7 @@ async function _getAppPathFromBuildSettings(
  */
 async function _handleMacOSBuildAndRunLogic(
   params: Record<string, unknown>,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
   execAsync?: (cmd: string) => Promise<any>,
 ): Promise<ToolResponse> {
   log('info', 'Handling macOS build & run logic...');
@@ -212,7 +212,7 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    executor?: CommandExecutor,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
     execAsync?: (cmd: string) => Promise<any>,
   ): Promise<ToolResponse> {
     const params = args;

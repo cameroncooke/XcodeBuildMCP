@@ -45,6 +45,160 @@ describe('Screenshot Plugin', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct xcrun simctl command for basic screenshot', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Screenshot saved',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockImageBuffer = Buffer.from('fake-image-data', 'utf8');
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => mockImageBuffer.toString('utf8'),
+      });
+
+      await screenshotPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        trackingExecutor,
+        mockFileSystemExecutor,
+        { tmpdir: () => '/tmp', join: (...paths) => paths.join('/') },
+        { v4: () => 'test-uuid' },
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcrun',
+        'simctl',
+        'io',
+        '12345678-1234-1234-1234-123456789012',
+        'screenshot',
+        '/tmp/screenshot_test-uuid.png',
+      ]);
+    });
+
+    it('should generate correct xcrun simctl command with different simulator UUID', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Screenshot saved',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockImageBuffer = Buffer.from('fake-image-data', 'utf8');
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => mockImageBuffer.toString('utf8'),
+      });
+
+      await screenshotPlugin.handler(
+        {
+          simulatorUuid: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
+        },
+        trackingExecutor,
+        mockFileSystemExecutor,
+        { tmpdir: () => '/var/tmp', join: (...paths) => paths.join('/') },
+        { v4: () => 'another-uuid' },
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcrun',
+        'simctl',
+        'io',
+        'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
+        'screenshot',
+        '/var/tmp/screenshot_another-uuid.png',
+      ]);
+    });
+
+    it('should generate correct xcrun simctl command with custom path dependencies', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Screenshot saved',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockImageBuffer = Buffer.from('fake-image-data', 'utf8');
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => mockImageBuffer.toString('utf8'),
+      });
+
+      await screenshotPlugin.handler(
+        {
+          simulatorUuid: '98765432-1098-7654-3210-987654321098',
+        },
+        trackingExecutor,
+        mockFileSystemExecutor,
+        {
+          tmpdir: () => '/custom/temp/dir',
+          join: (...paths) => paths.join('\\'), // Windows-style path joining
+        },
+        { v4: () => 'custom-uuid' },
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcrun',
+        'simctl',
+        'io',
+        '98765432-1098-7654-3210-987654321098',
+        'screenshot',
+        '/custom/temp/dir\\screenshot_custom-uuid.png',
+      ]);
+    });
+
+    it('should generate correct xcrun simctl command with generated UUID when no UUID deps provided', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'Screenshot saved',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockImageBuffer = Buffer.from('fake-image-data', 'utf8');
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => mockImageBuffer.toString('utf8'),
+      });
+
+      await screenshotPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        trackingExecutor,
+        mockFileSystemExecutor,
+        { tmpdir: () => '/tmp', join: (...paths) => paths.join('/') },
+        // No UUID deps provided - should use real uuidv4()
+      );
+
+      // Verify the command structure but not the exact UUID since it's generated
+      expect(capturedCommand.slice(0, 5)).toEqual([
+        'xcrun',
+        'simctl',
+        'io',
+        '12345678-1234-1234-1234-123456789012',
+        'screenshot',
+      ]);
+      expect(capturedCommand[5]).toMatch(/^\/tmp\/screenshot_[a-f0-9-]+\.png$/);
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
       const result = await screenshotPlugin.handler({});

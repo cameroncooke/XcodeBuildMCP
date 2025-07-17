@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -36,7 +36,10 @@ export default {
       .optional()
       .describe('Target platform (defaults to iOS)'),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     const projectValidation = validateRequiredParam('projectPath', params.projectPath);
     if (!projectValidation.isValid) return projectValidation.errorResponse;
@@ -85,7 +88,7 @@ export default {
       command.push('-destination', destinationString);
 
       // Execute the command directly
-      const result = await executeCommand(command, 'Get App Path', true, undefined, executor);
+      const result = await executeCommand(command, undefined, executor, 'Get App Path', true);
 
       if (!result.success) {
         return createTextResponse(`Failed to get app path: ${result.error}`, true);
