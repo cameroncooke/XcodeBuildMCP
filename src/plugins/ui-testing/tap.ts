@@ -3,7 +3,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { createTextResponse, validateRequiredParam } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -42,7 +42,10 @@ export default {
     preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
     postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
   },
-  async handler(args: Record<string, unknown>, executor?: CommandExecutor): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<ToolResponse> {
     const params = args;
     const toolName = 'tap';
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -106,7 +109,7 @@ async function executeAxeCommand(
   commandArgs: string[],
   simulatorUuid: string,
   commandName: string,
-  executor?: CommandExecutor,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
   const axeBinary = getAxePath();

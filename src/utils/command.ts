@@ -10,6 +10,7 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
+import { existsSync } from 'fs';
 import { log } from './logger.js';
 
 /**
@@ -52,6 +53,7 @@ export interface FileSystemExecutor {
  * @param logPrefix Prefix for logging
  * @param useShell Whether to use shell execution (true) or direct execution (false)
  * @param env Additional environment variables
+ * @param spawnOptions Additional spawn options like cwd
  * @returns Promise resolving to command response with the process
  */
 async function defaultExecutor(
@@ -100,15 +102,15 @@ async function defaultExecutor(
     const executable = escapedCommand[0];
     const args = escapedCommand.slice(1);
 
-    const spawnOptions: Parameters<typeof spawn>[2] = {
+    const spawnOpts: Parameters<typeof spawn>[2] = {
       stdio: ['ignore', 'pipe', 'pipe'], // ignore stdin, pipe stdout/stderr
     };
 
     if (env) {
-      spawnOptions.env = { ...process.env, ...env };
+      spawnOpts.env = { ...process.env, ...env };
     }
 
-    const childProcess = spawn(executable, args, spawnOptions);
+    const childProcess = spawn(executable, args, spawnOpts);
 
     let stdout = '';
     let stderr = '';
@@ -159,6 +161,81 @@ export async function executeCommand(
 }
 
 /**
+ * Execute a command with working directory support
+ * @param command An array of command and arguments
+ * @param logPrefix Prefix for logging
+ * @param useShell Whether to use shell execution (true) or direct execution (false)
+ * @param env Additional environment variables
+ * @param cwd Working directory for the command
+ * @param executor Optional command executor for dependency injection (testing)
+ * @returns Promise resolving to command response with the process
+ */
+export async function executeCommandWithCwd(
+  command: string[],
+  logPrefix?: string,
+  useShell: boolean = true,
+  env?: Record<string, string>,
+  cwd?: string,
+  executor: CommandExecutor = defaultExecutor,
+): Promise<CommandResponse> {
+  // Create a custom executor that handles cwd
+  const cwdExecutor: CommandExecutor = async (cmd, prefix, shell, environment) => {
+    // We need to handle cwd at the spawn level
+    const originalExecutor = executor === defaultExecutor ? defaultExecutor : executor;
+
+    if (cwd && executor === defaultExecutor) {
+      // For default executor, we need to create a modified version that supports cwd
+      return new Promise((resolve, reject) => {
+        const escapedCommand = shell ? ['sh', '-c', cmd.join(' ')] : cmd;
+        const executable = escapedCommand[0];
+        const args = escapedCommand.slice(1);
+
+        const spawnOpts: Parameters<typeof spawn>[2] = {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          cwd: cwd,
+        };
+
+        if (environment) {
+          spawnOpts.env = { ...process.env, ...environment };
+        }
+
+        const childProcess = spawn(executable, args, spawnOpts);
+
+        let stdout = '';
+        let stderr = '';
+
+        childProcess.stdout?.on('data', (data) => {
+          stdout += data.toString();
+        });
+
+        childProcess.stderr?.on('data', (data) => {
+          stderr += data.toString();
+        });
+
+        childProcess.on('close', (code) => {
+          const success = code === 0;
+          resolve({
+            success,
+            output: stdout,
+            error: success ? undefined : stderr,
+            process: childProcess,
+          });
+        });
+
+        childProcess.on('error', (err) => {
+          reject(err);
+        });
+      });
+    } else {
+      // For other executors, just call them normally (they should handle cwd in their own way)
+      return originalExecutor(cmd, prefix, shell, environment);
+    }
+  };
+
+  return cwdExecutor(command, logPrefix, useShell, env);
+}
+
+/**
  * Create a mock executor for testing
  * @param result Mock command result or error to throw
  * @returns Mock executor function
@@ -195,7 +272,7 @@ export function createMockExecutor(
     spawnfile: 'sh',
   };
 
-  return async () => ({
+  return async (_command, _logPrefix, _useShell, _env) => ({
     success: result.success ?? true,
     output: result.output ?? '',
     error: result.error,
@@ -239,8 +316,7 @@ export const defaultFileSystemExecutor: FileSystemExecutor = {
   },
 
   existsSync(path: string): boolean {
-    const fs = require('fs'); // eslint-disable-line @typescript-eslint/no-require-imports
-    return fs.existsSync(path);
+    return existsSync(path);
   },
 
   async stat(path: string): Promise<{ isDirectory(): boolean }> {
@@ -256,14 +332,48 @@ export function createMockFileSystemExecutor(
   overrides?: Partial<FileSystemExecutor>,
 ): FileSystemExecutor {
   return {
-    mkdir: async () => {},
-    readFile: async () => 'mock file content',
-    writeFile: async () => {},
-    cp: async () => {},
-    readdir: async () => [],
-    rm: async () => {},
-    existsSync: () => false,
-    stat: async () => ({ isDirectory: () => true }),
+    mkdir: async (): Promise<void> => {},
+    readFile: async (): Promise<string> => 'mock file content',
+    writeFile: async (): Promise<void> => {},
+    cp: async (): Promise<void> => {},
+    readdir: async (): Promise<any[]> => [],
+    rm: async (): Promise<void> => {},
+    existsSync: (): boolean => false,
+    stat: async (): Promise<{ isDirectory(): boolean }> => ({ isDirectory: (): boolean => true }),
     ...overrides,
   };
+}
+
+/**
+ * Get default command executor with test safety
+ * Throws error if used in test environment to ensure proper mocking
+ */
+export function getDefaultCommandExecutor(): CommandExecutor {
+  if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
+    throw new Error(
+      `🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨\n` +
+        `This test is trying to use the default command executor instead of a mock.\n` +
+        `Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.\n` +
+        `Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)\n` +
+        `See TESTING.md for proper testing patterns.`,
+    );
+  }
+  return defaultExecutor;
+}
+
+/**
+ * Get default file system executor with test safety
+ * Throws error if used in test environment to ensure proper mocking
+ */
+export function getDefaultFileSystemExecutor(): FileSystemExecutor {
+  if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
+    throw new Error(
+      `🚨 REAL FILESYSTEM EXECUTOR DETECTED IN TEST! 🚨\n` +
+        `This test is trying to use the default filesystem executor instead of a mock.\n` +
+        `Fix: Pass createMockFileSystemExecutor() as the fileSystemExecutor parameter in your test.\n` +
+        `Example: await plugin.handler(args, mockCmd, createMockFileSystemExecutor())\n` +
+        `See TESTING.md for proper testing patterns.`,
+    );
+  }
+  return defaultFileSystemExecutor;
 }

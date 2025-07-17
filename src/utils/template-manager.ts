@@ -8,6 +8,7 @@ import {
   FileSystemExecutor,
   defaultFileSystemExecutor,
   executeCommand,
+  executeCommandWithCwd,
 } from './command.js';
 
 /**
@@ -88,11 +89,12 @@ export class TemplateManager {
       }
 
       // Extract the zip file
-      const unzipResult = await executeCommand(
+      const unzipResult = await executeCommandWithCwd(
         ['unzip', '-q', zipPath],
         'Extract Template',
         true,
-        { cwd: tempDir },
+        undefined,
+        tempDir,
         commandExecutor,
       );
 

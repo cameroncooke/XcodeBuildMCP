@@ -100,10 +100,15 @@ describe('Tap Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await tapPlugin.handler({
-        x: 100,
-        y: 200,
-      });
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+
+      const result = await tapPlugin.handler(
+        {
+          x: 100,
+          y: 200,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -117,10 +122,15 @@ describe('Tap Plugin', () => {
     });
 
     it('should return error for missing x coordinate', async () => {
-      const result = await tapPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        y: 200,
-      });
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+
+      const result = await tapPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          y: 200,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -134,10 +144,15 @@ describe('Tap Plugin', () => {
     });
 
     it('should return error for missing y coordinate', async () => {
-      const result = await tapPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        x: 100,
-      });
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+
+      const result = await tapPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [

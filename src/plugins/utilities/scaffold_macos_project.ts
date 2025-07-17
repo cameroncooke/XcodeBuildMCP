@@ -326,7 +326,7 @@ async function scaffoldProject(
     return projectPath;
   } finally {
     // Clean up downloaded template if needed
-    await TemplateManager.cleanup(templatePath);
+    await TemplateManager.cleanup(templatePath, fileSystemExecutor);
   }
 }
 
@@ -335,15 +335,11 @@ export default {
   description:
     'Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.',
   schema: ScaffoldmacOSProjectSchema.shape,
-  async handler(
-    args: Record<string, unknown>,
-    commandExecutor?: CommandExecutor,
-    fileSystemExecutor?: FileSystemExecutor,
-  ): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
     try {
       const projectParams = { ...params, platform: 'macOS' };
-      const projectPath = await scaffoldProject(projectParams, commandExecutor, fileSystemExecutor);
+      const projectPath = await scaffoldProject(projectParams);
 
       const response = {
         success: true,
