@@ -192,4 +192,147 @@ describe('build_mac_ws plugin', () => {
       });
     });
   });
+
+  describe('Command Generation', () => {
+    it('should generate correct xcodebuild command with minimal parameters', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
+
+      const result = await buildMacWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        spyExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS',
+        'build',
+      ]);
+    });
+
+    it('should generate correct xcodebuild command with all parameters', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
+
+      const result = await buildMacWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          configuration: 'Release',
+          arch: 'x86_64',
+          derivedDataPath: '/custom/derived',
+          extraArgs: ['--verbose'],
+          preferXcodebuild: true,
+        },
+        spyExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Release',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS,arch=x86_64',
+        '-derivedDataPath',
+        '/custom/derived',
+        '--verbose',
+        'build',
+      ]);
+    });
+
+    it('should generate correct xcodebuild command with arm64 architecture', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
+
+      const result = await buildMacWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          arch: 'arm64',
+        },
+        spyExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS,arch=arm64',
+        'build',
+      ]);
+    });
+
+    it('should handle paths with spaces in command generation', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
+
+      const result = await buildMacWs.handler(
+        {
+          workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        spyExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/Users/dev/My Project/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS',
+        'build',
+      ]);
+    });
+  });
 });

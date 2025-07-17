@@ -5,7 +5,7 @@
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, type CommandExecutor } from '../../../utils/command.js';
 import getMacAppPathWs from '../get_mac_app_path_ws.ts';
 
 describe('get_mac_app_path_ws plugin', () => {
@@ -40,6 +40,177 @@ describe('get_mac_app_path_ws plugin', () => {
       expect(getMacAppPathWs.schema.workspacePath.safeParse(null).success).toBe(false);
       expect(getMacAppPathWs.schema.scheme.safeParse(null).success).toBe(false);
       expect(getMacAppPathWs.schema.arch.safeParse('invalidArch').success).toBe(false);
+    });
+  });
+
+  describe('Command Generation', () => {
+    it('should generate correct command with minimal parameters', async () => {
+      // Manual call tracking for command verification
+      const calls: any[] = [];
+      const mockExecutor: CommandExecutor = async (...args) => {
+        calls.push(args);
+        return {
+          success: true,
+          output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const args = {
+        workspacePath: '/path/to/MyProject.xcworkspace',
+        scheme: 'MyScheme',
+      };
+
+      await getMacAppPathWs.handler(args, mockExecutor);
+
+      // Verify command generation with manual call tracking
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual([
+        [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-destination',
+          'platform=macOS',
+        ],
+        'Get App Path',
+        true,
+        undefined,
+      ]);
+    });
+
+    it('should generate correct command with all parameters', async () => {
+      // Manual call tracking for command verification
+      const calls: any[] = [];
+      const mockExecutor: CommandExecutor = async (...args) => {
+        calls.push(args);
+        return {
+          success: true,
+          output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const args = {
+        workspacePath: '/path/to/MyProject.xcworkspace',
+        scheme: 'MyScheme',
+        configuration: 'Release',
+        arch: 'arm64',
+      };
+
+      await getMacAppPathWs.handler(args, mockExecutor);
+
+      // Verify command generation with manual call tracking
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual([
+        [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Release',
+          '-destination',
+          'platform=macOS,arch=arm64',
+        ],
+        'Get App Path',
+        true,
+        undefined,
+      ]);
+    });
+
+    it('should generate correct command with x86_64 architecture', async () => {
+      // Manual call tracking for command verification
+      const calls: any[] = [];
+      const mockExecutor: CommandExecutor = async (...args) => {
+        calls.push(args);
+        return {
+          success: true,
+          output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const args = {
+        workspacePath: '/path/to/MyProject.xcworkspace',
+        scheme: 'MyScheme',
+        configuration: 'Debug',
+        arch: 'x86_64',
+      };
+
+      await getMacAppPathWs.handler(args, mockExecutor);
+
+      // Verify command generation with manual call tracking
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual([
+        [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-destination',
+          'platform=macOS,arch=x86_64',
+        ],
+        'Get App Path',
+        true,
+        undefined,
+      ]);
+    });
+
+    it('should use default configuration when not provided', async () => {
+      // Manual call tracking for command verification
+      const calls: any[] = [];
+      const mockExecutor: CommandExecutor = async (...args) => {
+        calls.push(args);
+        return {
+          success: true,
+          output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const args = {
+        workspacePath: '/path/to/MyProject.xcworkspace',
+        scheme: 'MyScheme',
+        arch: 'arm64',
+      };
+
+      await getMacAppPathWs.handler(args, mockExecutor);
+
+      // Verify command generation with manual call tracking
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual([
+        [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-destination',
+          'platform=macOS,arch=arm64',
+        ],
+        'Get App Path',
+        true,
+        undefined,
+      ]);
     });
   });
 
