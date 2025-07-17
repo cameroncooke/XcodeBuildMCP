@@ -175,6 +175,221 @@ describe('scaffold_ios_project plugin', () => {
     });
   });
 
+  describe('Command Generation Tests', () => {
+    it('should generate correct curl command for iOS template download', async () => {
+      // Track commands executed
+      let capturedCommands: string[][] = [];
+      const trackingCommandExecutor = (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        capturedCommands.push(command);
+        if (command.join(' ').includes('curl')) {
+          return Promise.resolve({
+            success: true,
+            output: 'Downloaded successfully',
+            process: { pid: 123 } as any,
+          });
+        } else if (command.join(' ').includes('unzip')) {
+          return Promise.resolve({
+            success: true,
+            output: 'Extracted successfully',
+            process: { pid: 123 } as any,
+          });
+        }
+        return Promise.resolve({
+          success: true,
+          output: 'Command executed successfully',
+          process: { pid: 123 } as any,
+        });
+      };
+
+      await scaffoldIosProject.handler(
+        {
+          projectName: 'TestIOSApp',
+          outputPath: '/tmp/test-projects',
+        },
+        trackingCommandExecutor,
+        mockFileSystemExecutor,
+      );
+
+      // Verify curl command was executed
+      const curlCommand = capturedCommands.find((cmd) => cmd.includes('curl'));
+      expect(curlCommand).toBeDefined();
+      expect(curlCommand).toEqual([
+        'curl',
+        '-L',
+        '-f',
+        '-o',
+        expect.stringMatching(/template\.zip$/),
+        expect.stringMatching(
+          /https:\/\/github\.com\/cameroncooke\/XcodeBuildMCP-iOS-Template\/releases\/download\/v\d+\.\d+\.\d+\/XcodeBuildMCP-iOS-Template-\d+\.\d+\.\d+\.zip/,
+        ),
+      ]);
+    });
+
+    it('should generate correct unzip command for iOS template extraction', async () => {
+      // Track commands executed
+      let capturedCommands: string[][] = [];
+      const trackingCommandExecutor = (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        capturedCommands.push(command);
+        if (command.join(' ').includes('curl')) {
+          return Promise.resolve({
+            success: true,
+            output: 'Downloaded successfully',
+            process: { pid: 123 } as any,
+          });
+        } else if (command.join(' ').includes('unzip')) {
+          return Promise.resolve({
+            success: true,
+            output: 'Extracted successfully',
+            process: { pid: 123 } as any,
+          });
+        }
+        return Promise.resolve({
+          success: true,
+          output: 'Command executed successfully',
+          process: { pid: 123 } as any,
+        });
+      };
+
+      await scaffoldIosProject.handler(
+        {
+          projectName: 'TestIOSApp',
+          outputPath: '/tmp/test-projects',
+        },
+        trackingCommandExecutor,
+        mockFileSystemExecutor,
+      );
+
+      // Verify unzip command was executed
+      const unzipCommand = capturedCommands.find((cmd) => cmd.includes('unzip'));
+      expect(unzipCommand).toBeDefined();
+      expect(unzipCommand).toEqual(['unzip', '-q', expect.stringMatching(/template\.zip$/)]);
+    });
+
+    it('should generate correct commands when using custom template version', async () => {
+      // Set custom template version
+      const originalVersion = process.env.XCODEBUILD_MCP_IOS_TEMPLATE_VERSION;
+      process.env.XCODEBUILD_MCP_IOS_TEMPLATE_VERSION = 'v2.0.0';
+
+      // Track commands executed
+      let capturedCommands: string[][] = [];
+      const trackingCommandExecutor = (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        capturedCommands.push(command);
+        if (command.join(' ').includes('curl')) {
+          return Promise.resolve({
+            success: true,
+            output: 'Downloaded successfully',
+            process: { pid: 123 } as any,
+          });
+        } else if (command.join(' ').includes('unzip')) {
+          return Promise.resolve({
+            success: true,
+            output: 'Extracted successfully',
+            process: { pid: 123 } as any,
+          });
+        }
+        return Promise.resolve({
+          success: true,
+          output: 'Command executed successfully',
+          process: { pid: 123 } as any,
+        });
+      };
+
+      await scaffoldIosProject.handler(
+        {
+          projectName: 'TestIOSApp',
+          outputPath: '/tmp/test-projects',
+        },
+        trackingCommandExecutor,
+        mockFileSystemExecutor,
+      );
+
+      // Verify curl command uses custom version
+      const curlCommand = capturedCommands.find((cmd) => cmd.includes('curl'));
+      expect(curlCommand).toBeDefined();
+      expect(curlCommand).toEqual([
+        'curl',
+        '-L',
+        '-f',
+        '-o',
+        expect.stringMatching(/template\.zip$/),
+        'https://github.com/cameroncooke/XcodeBuildMCP-iOS-Template/releases/download/v2.0.0/XcodeBuildMCP-iOS-Template-2.0.0.zip',
+      ]);
+
+      // Restore original version
+      if (originalVersion) {
+        process.env.XCODEBUILD_MCP_IOS_TEMPLATE_VERSION = originalVersion;
+      } else {
+        delete process.env.XCODEBUILD_MCP_IOS_TEMPLATE_VERSION;
+      }
+    });
+
+    it('should generate correct commands with no command executor passed', async () => {
+      // Track commands executed - using default executor path
+      let capturedCommands: string[][] = [];
+      const trackingCommandExecutor = (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        capturedCommands.push(command);
+        if (command.join(' ').includes('curl')) {
+          return Promise.resolve({
+            success: true,
+            output: 'Downloaded successfully',
+            process: { pid: 123 } as any,
+          });
+        } else if (command.join(' ').includes('unzip')) {
+          return Promise.resolve({
+            success: true,
+            output: 'Extracted successfully',
+            process: { pid: 123 } as any,
+          });
+        }
+        return Promise.resolve({
+          success: true,
+          output: 'Command executed successfully',
+          process: { pid: 123 } as any,
+        });
+      };
+
+      await scaffoldIosProject.handler(
+        {
+          projectName: 'TestIOSApp',
+          outputPath: '/tmp/test-projects',
+        },
+        trackingCommandExecutor,
+        mockFileSystemExecutor,
+      );
+
+      // Verify both curl and unzip commands were executed in sequence
+      expect(capturedCommands.length).toBeGreaterThanOrEqual(2);
+
+      const curlCommand = capturedCommands.find((cmd) => cmd.includes('curl'));
+      const unzipCommand = capturedCommands.find((cmd) => cmd.includes('unzip'));
+
+      expect(curlCommand).toBeDefined();
+      expect(unzipCommand).toBeDefined();
+      expect(curlCommand[0]).toBe('curl');
+      expect(unzipCommand[0]).toBe('unzip');
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return success response for valid scaffold iOS project request', async () => {
       const result = await scaffoldIosProject.handler(

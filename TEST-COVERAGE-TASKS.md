@@ -141,21 +141,21 @@ Files that need command generation tests only
     - Gap: MISSING_COMMAND_GENERATION_TESTS
     - **Completed**: Already had 4 command generation tests (documentation corrected)
 
-28. **D16: src/plugins/simulator-workspace/run_sim_name_ws.ts** ❌ PENDING
+28. **D16: src/plugins/simulator-workspace/run_sim_name_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: File doesn't exist (documentation corrected)
 
-29. **D17: src/plugins/simulator-workspace/stop_app_sim_id_ws.ts** ❌ PENDING
+29. **D17: src/plugins/simulator-workspace/stop_app_sim_id_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Created test file with 4 command generation tests
 
-30. **D18: src/plugins/simulator-workspace/stop_app_sim_name_ws.ts** ❌ PENDING
+30. **D18: src/plugins/simulator-workspace/stop_app_sim_name_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Created plugin and test file with 4 command generation tests
 
-31. **D19: src/plugins/utilities/scaffold_ios_project.ts** ❌ PENDING
+31. **D19: src/plugins/utilities/scaffold_ios_project.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Added 4 command generation tests
 
 ## Test Pattern Examples
 
@@ -224,7 +224,7 @@ git commit -m "fix: add missing test patterns for tool_name"
 
 ## Progress Tracking
 
-### Completed Tasks: 27/41
+### Completed Tasks: 32/41
 - ✅ A1: test_sim_id_proj.ts (Created complete test file with 9 passing tests)
 - ✅ A2: test_sim_name_proj.ts (Created complete test file with 9 passing tests)
 - ✅ B1: build_run_sim_id_proj.ts (16 tests, 3 command generation, 3 success path)
@@ -252,6 +252,11 @@ git commit -m "fix: add missing test patterns for tool_name"
 - ✅ D13: launch_app_sim_id_ws.ts (14 tests, 4 command generation)
 - ✅ D14: launch_app_sim_name_ws.ts (16 tests, 4 command generation - created plugin+test)
 - ✅ D15: run_sim_id_ws.ts (13 tests, 4 command generation - already complete)
+- ✅ D16: run_sim_name_ws.ts (File doesn't exist - documentation corrected)
+- ✅ D17: stop_app_sim_id_ws.ts (14 tests, 4 command generation - created test file)
+- ✅ D18: stop_app_sim_name_ws.ts (16 tests, 4 command generation - created plugin+test)
+- ✅ D19: scaffold_ios_project.ts (15 tests, 4 command generation)
+- ✅ D20: Audit remaining files (Identified 23 actual gaps vs 41 original tasks)
 
 ### In Progress: 0/41
 - None yet

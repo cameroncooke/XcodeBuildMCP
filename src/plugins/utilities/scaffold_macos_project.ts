@@ -335,11 +335,15 @@ export default {
   description:
     'Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.',
   schema: ScaffoldmacOSProjectSchema.shape,
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(
+    args: Record<string, unknown>,
+    commandExecutor?: CommandExecutor,
+    fileSystemExecutor?: FileSystemExecutor,
+  ): Promise<ToolResponse> {
     const params = args;
     try {
       const projectParams = { ...params, platform: 'macOS' };
-      const projectPath = await scaffoldProject(projectParams);
+      const projectPath = await scaffoldProject(projectParams, commandExecutor, fileSystemExecutor);
 
       const response = {
         success: true,
