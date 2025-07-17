@@ -153,5 +153,91 @@ describe('test_sim_id_ws plugin', () => {
       expect(Array.isArray(result.content)).toBe(true);
       expect(result.isError).toBeUndefined();
     });
+
+    it('should handle successful test execution with default configuration', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await testSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-456',
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should handle successful test execution with detailed output', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed\nExecuted 25 tests, with 0 failures',
+      });
+
+      const result = await testSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-789',
+          configuration: 'Debug',
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should handle successful test execution with release configuration', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await testSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-abc',
+          configuration: 'Release',
+          useLatestOS: true,
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should handle successful test execution with custom derived data path', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await testSimIdWs.handler(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-def',
+          configuration: 'Debug',
+          derivedDataPath: '/custom/derived/data',
+          extraArgs: ['--verbose', '--parallel-testing-enabled', 'NO'],
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
   });
 });
