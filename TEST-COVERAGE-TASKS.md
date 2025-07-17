@@ -81,33 +81,33 @@ Files that need success path tests only
 ### 🟢 Category D: Command Generation Tests Needed (19 files) - MEDIUM PRIORITY
 Files that need command generation tests only
 
-13. **D1: src/plugins/macos-project/build_mac_proj.ts** ❌ PENDING
+13. **D1: src/plugins/macos-project/build_mac_proj.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Added 4 command generation tests
 
-14. **D2: src/plugins/macos-workspace/build_mac_ws.ts** ❌ PENDING
+14. **D2: src/plugins/macos-workspace/build_mac_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Added 4 command generation tests
 
-15. **D3: src/plugins/macos-workspace/get_mac_app_path_ws.ts** ❌ PENDING
+15. **D3: src/plugins/macos-workspace/get_mac_app_path_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Added 4 command generation tests
 
-16. **D4: src/plugins/simulator-project/build_sim_name_proj.ts** ❌ PENDING
+16. **D4: src/plugins/simulator-project/build_sim_name_proj.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Added 4 command generation tests
 
-17. **D5: src/plugins/simulator-workspace/build_run_sim_id_ws.ts** ❌ PENDING
+17. **D5: src/plugins/simulator-workspace/build_run_sim_id_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Added 4 command generation tests
 
 18. **D6: src/plugins/simulator-workspace/build_run_sim_name_ws.ts** ❌ PENDING
     - Gap: MISSING_COMMAND_GENERATION_TESTS
     - Required: Add command generation tests
 
-19. **D7: src/plugins/simulator-workspace/build_sim_id_ws.ts** ❌ PENDING
+19. **D7: src/plugins/simulator-workspace/build_sim_id_ws.ts** ✅ COMPLETED
     - Gap: MISSING_COMMAND_GENERATION_TESTS
-    - Required: Add command generation tests
+    - **Completed**: Added 4 command generation tests
 
 20. **D8: src/plugins/simulator-workspace/build_sim_name_ws.ts** ❌ PENDING
     - Gap: MISSING_COMMAND_GENERATION_TESTS
@@ -224,7 +224,7 @@ git commit -m "fix: add missing test patterns for tool_name"
 
 ## Progress Tracking
 
-### Completed Tasks: 12/41
+### Completed Tasks: 18/41
 - ✅ A1: test_sim_id_proj.ts (Created complete test file with 9 passing tests)
 - ✅ A2: test_sim_name_proj.ts (Created complete test file with 9 passing tests)
 - ✅ B1: build_run_sim_id_proj.ts (16 tests, 3 command generation, 3 success path)
@@ -237,6 +237,12 @@ git commit -m "fix: add missing test patterns for tool_name"
 - ✅ C1: test_macos_ws.ts (12 tests, 7 command generation, 4 success path)
 - ✅ C2: test_sim_id_ws.ts (13 tests, 1 command generation, 4 success path)
 - ✅ C3: test_sim_name_ws.ts (13 tests, 1 command generation, 4 success path)
+- ✅ D1: build_mac_proj.ts (13 tests, 4 command generation)
+- ✅ D2: build_mac_ws.ts (13 tests, 4 command generation)
+- ✅ D3: get_mac_app_path_ws.ts (14 tests, 4 command generation)
+- ✅ D4: build_sim_name_proj.ts (14 tests, 4 command generation)
+- ✅ D5: build_run_sim_id_ws.ts (13 tests, 4 command generation)
+- ✅ D7: build_sim_id_ws.ts (21 tests, 4 command generation)
 
 ### In Progress: 0/41
 - None yet

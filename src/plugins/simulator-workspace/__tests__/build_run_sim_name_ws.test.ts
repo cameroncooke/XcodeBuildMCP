@@ -331,4 +331,296 @@ describe('build_run_sim_name_ws tool', () => {
       expect(Array.isArray(result.content)).toBe(true);
     });
   });
+
+  describe('Command Generation', () => {
+    it('should generate correct simctl list command with minimal parameters', async () => {
+      const callHistory: Array<{
+        command: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        env?: any;
+      }> = [];
+
+      // Create tracking executor
+      const trackingExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        return {
+          success: false,
+          output: '',
+          error: 'Test error to stop execution early',
+          process: { pid: 12345 },
+        };
+      };
+
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        trackingExecutor,
+      );
+
+      // Should generate the initial simulator list command
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0].command).toEqual([
+        'xcrun',
+        'simctl',
+        'list',
+        'devices',
+        'available',
+        '--json',
+      ]);
+      expect(callHistory[0].logPrefix).toBe('List Simulators');
+    });
+
+    it('should generate correct build command after finding simulator', async () => {
+      const callHistory: Array<{
+        command: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        env?: any;
+      }> = [];
+
+      let callCount = 0;
+      // Create tracking executor that succeeds on first call (list) and fails on second
+      const trackingExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        callCount++;
+
+        if (callCount === 1) {
+          // First call: simulator list succeeds
+          return {
+            success: true,
+            output: JSON.stringify({
+              devices: {
+                'iOS 16.0': [
+                  {
+                    udid: 'test-uuid-123',
+                    name: 'iPhone 16',
+                    state: 'Booted',
+                  },
+                ],
+              },
+            }),
+            error: undefined,
+            process: { pid: 12345 },
+          };
+        } else {
+          // Second call: build command fails to stop execution
+          return {
+            success: false,
+            output: '',
+            error: 'Test error to stop execution',
+            process: { pid: 12345 },
+          };
+        }
+      };
+
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        trackingExecutor,
+      );
+
+      // Should generate simulator list command and then build command
+      expect(callHistory).toHaveLength(2);
+
+      // First call: simulator list command
+      expect(callHistory[0].command).toEqual([
+        'xcrun',
+        'simctl',
+        'list',
+        'devices',
+        'available',
+        '--json',
+      ]);
+
+      // Second call: build command
+      expect(callHistory[1].command).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=iOS Simulator,name=iPhone 16,OS=latest',
+        'build',
+      ]);
+      expect(callHistory[1].logPrefix).toBe('Build');
+    });
+
+    it('should generate correct build settings command after successful build', async () => {
+      const callHistory: Array<{
+        command: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        env?: any;
+      }> = [];
+
+      let callCount = 0;
+      // Create tracking executor that succeeds on first two calls and fails on third
+      const trackingExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        callCount++;
+
+        if (callCount === 1) {
+          // First call: simulator list succeeds
+          return {
+            success: true,
+            output: JSON.stringify({
+              devices: {
+                'iOS 16.0': [
+                  {
+                    udid: 'test-uuid-123',
+                    name: 'iPhone 16',
+                    state: 'Booted',
+                  },
+                ],
+              },
+            }),
+            error: undefined,
+            process: { pid: 12345 },
+          };
+        } else if (callCount === 2) {
+          // Second call: build command succeeds
+          return {
+            success: true,
+            output: 'BUILD SUCCEEDED',
+            error: undefined,
+            process: { pid: 12345 },
+          };
+        } else {
+          // Third call: build settings command fails to stop execution
+          return {
+            success: false,
+            output: '',
+            error: 'Test error to stop execution',
+            process: { pid: 12345 },
+          };
+        }
+      };
+
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+          configuration: 'Release',
+          useLatestOS: false,
+        },
+        trackingExecutor,
+      );
+
+      // Should generate simulator list, build command, and build settings command
+      expect(callHistory).toHaveLength(3);
+
+      // First call: simulator list command
+      expect(callHistory[0].command).toEqual([
+        'xcrun',
+        'simctl',
+        'list',
+        'devices',
+        'available',
+        '--json',
+      ]);
+
+      // Second call: build command
+      expect(callHistory[1].command).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Release',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=iOS Simulator,name=iPhone 16',
+        'build',
+      ]);
+
+      // Third call: build settings command
+      expect(callHistory[2].command).toEqual([
+        'xcodebuild',
+        '-showBuildSettings',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Release',
+        '-destination',
+        'platform=iOS Simulator,name=iPhone 16',
+      ]);
+      expect(callHistory[2].logPrefix).toBe('Get App Path');
+    });
+
+    it('should handle paths with spaces in command generation', async () => {
+      const callHistory: Array<{
+        command: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        env?: any;
+      }> = [];
+
+      // Create tracking executor
+      const trackingExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        return {
+          success: false,
+          output: '',
+          error: 'Test error to stop execution early',
+          process: { pid: 12345 },
+        };
+      };
+
+      const result = await buildRunSimNameWs.handler(
+        {
+          workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
+          scheme: 'My Scheme',
+          simulatorName: 'iPhone 16 Pro',
+        },
+        trackingExecutor,
+      );
+
+      // Should generate simulator list command first
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0].command).toEqual([
+        'xcrun',
+        'simctl',
+        'list',
+        'devices',
+        'available',
+        '--json',
+      ]);
+      expect(callHistory[0].logPrefix).toBe('List Simulators');
+    });
+  });
 });
