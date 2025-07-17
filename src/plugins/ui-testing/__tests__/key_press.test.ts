@@ -86,6 +86,135 @@ describe('Key Press Plugin', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct axe command for basic key press', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'key press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 40,
+        },
+        trackingExecutor,
+        () => '/usr/local/bin/axe',
+        () => ({}),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'key',
+        '40',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for key press with duration', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'key press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 42,
+          duration: 1.5,
+        },
+        trackingExecutor,
+        () => '/usr/local/bin/axe',
+        () => ({}),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'key',
+        '42',
+        '--duration',
+        '1.5',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for different key codes', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'key press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 255,
+        },
+        trackingExecutor,
+        () => '/usr/local/bin/axe',
+        () => ({}),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'key',
+        '255',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command with bundled axe path', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'key press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          keyCode: 44,
+        },
+        trackingExecutor,
+        () => '/path/to/bundled/axe',
+        () => ({ AXE_PATH: '/some/path' }),
+      );
+
+      expect(capturedCommand).toEqual([
+        '/path/to/bundled/axe',
+        'key',
+        '44',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
       const result = await keyPressPlugin.handler({ keyCode: 40 });

@@ -81,6 +81,151 @@ describe('Button Plugin', () => {
     });
   });
 
+  describe('Command Generation', () => {
+    it('should generate correct axe command for basic button press', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'button press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          buttonType: 'home',
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'button',
+        'home',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for button press with duration', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'button press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          buttonType: 'side-button',
+          duration: 2.5,
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'button',
+        'side-button',
+        '--duration',
+        '2.5',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command for different button types', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'button press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+      };
+
+      await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          buttonType: 'apple-pay',
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/usr/local/bin/axe',
+        'button',
+        'apple-pay',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+
+    it('should generate correct axe command with bundled axe path', async () => {
+      let capturedCommand: string[] = [];
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return {
+          success: true,
+          output: 'button press completed',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const mockAxeHelpers = {
+        getAxePath: () => '/path/to/bundled/axe',
+        getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
+      };
+
+      await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          buttonType: 'siri',
+        },
+        trackingExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(capturedCommand).toEqual([
+        '/path/to/bundled/axe',
+        'button',
+        'siri',
+        '--udid',
+        '12345678-1234-1234-1234-123456789012',
+      ]);
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
       const result = await buttonPlugin.handler({ buttonType: 'home' });
