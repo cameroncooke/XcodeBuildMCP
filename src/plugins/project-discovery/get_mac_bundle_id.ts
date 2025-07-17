@@ -9,7 +9,7 @@ import { execSync } from 'child_process';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
-import { FileSystemExecutor, defaultFileSystemExecutor } from '../../utils/command.js';
+import { FileSystemExecutor, getDefaultFileSystemExecutor } from '../../utils/command.js';
 
 /**
  * Sync executor function type for dependency injection
@@ -37,7 +37,7 @@ export default {
   async handler(
     args: Record<string, unknown>,
     syncExecutor: SyncExecutor = defaultSyncExecutor,
-    fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+    fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
   ): Promise<ToolResponse> {
     const params = args;
 

@@ -49,6 +49,7 @@ export interface FileSystemExecutor {
 
 /**
  * Default executor implementation using spawn (current production behavior)
+ * Private instance - use getDefaultCommandExecutor() for access
  * @param command An array of command and arguments
  * @param logPrefix Prefix for logging
  * @param useShell Whether to use shell execution (true) or direct execution (false)
@@ -282,8 +283,9 @@ export function createMockExecutor(
 
 /**
  * Default file system executor implementation using Node.js fs/promises
+ * Private instance - use getDefaultFileSystemExecutor() for access
  */
-export const defaultFileSystemExecutor: FileSystemExecutor = {
+const defaultFileSystemExecutor: FileSystemExecutor = {
   async mkdir(path: string, options?: { recursive?: boolean }): Promise<void> {
     const fs = await import('fs/promises');
     await fs.mkdir(path, options);

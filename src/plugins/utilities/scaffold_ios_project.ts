@@ -12,7 +12,7 @@ import { TemplateManager } from '../../utils/index.js';
 import {
   CommandExecutor,
   FileSystemExecutor,
-  defaultFileSystemExecutor,
+  getDefaultFileSystemExecutor,
 } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
@@ -106,9 +106,13 @@ function deviceFamilyToNumeric(family: string): string {
 function updatePackageSwiftFile(content: string, params: Record<string, unknown>): string {
   let result = content;
 
+  const projectName = params.projectName as string;
+  const platform = params.platform as string;
+  const deploymentTarget = params.deploymentTarget as string | undefined;
+
   // Update ALL target name references in Package.swift
-  const featureName = `${params.projectName}Feature`;
-  const testName = `${params.projectName}FeatureTests`;
+  const featureName = `${projectName}Feature`;
+  const testName = `${projectName}FeatureTests`;
 
   // Replace ALL occurrences of MyProjectFeatureTests first (more specific)
   result = result.replace(/MyProjectFeatureTests/g, testName);
@@ -116,10 +120,10 @@ function updatePackageSwiftFile(content: string, params: Record<string, unknown>
   result = result.replace(/MyProjectFeature/g, featureName);
 
   // Update deployment targets based on platform
-  if (params.platform === 'iOS') {
-    if (params.deploymentTarget) {
+  if (platform === 'iOS') {
+    if (deploymentTarget) {
       // Extract major version (e.g., "17.0" -> "17")
-      const majorVersion = params.deploymentTarget.split('.')[0];
+      const majorVersion = deploymentTarget.split('.')[0];
       result = result.replace(/\.iOS\(\.v\d+\)/, `.iOS(.v${majorVersion})`);
     }
   }
@@ -133,38 +137,49 @@ function updatePackageSwiftFile(content: string, params: Record<string, unknown>
 function updateXCConfigFile(content: string, params: Record<string, unknown>): string {
   let result = content;
 
+  const projectName = params.projectName as string;
+  const displayName = params.displayName as string | undefined;
+  const bundleIdentifier = params.bundleIdentifier as string | undefined;
+  const marketingVersion = params.marketingVersion as string | undefined;
+  const currentProjectVersion = params.currentProjectVersion as string | undefined;
+  const platform = params.platform as string;
+  const deploymentTarget = params.deploymentTarget as string | undefined;
+  const targetedDeviceFamily = params.targetedDeviceFamily as string | undefined;
+  const supportedOrientations = params.supportedOrientations as string[] | undefined;
+  const supportedOrientationsIpad = params.supportedOrientationsIpad as string[] | undefined;
+
   // Update project identity settings
-  result = result.replace(/PRODUCT_NAME = .+/g, `PRODUCT_NAME = ${params.projectName}`);
+  result = result.replace(/PRODUCT_NAME = .+/g, `PRODUCT_NAME = ${projectName}`);
   result = result.replace(
     /PRODUCT_DISPLAY_NAME = .+/g,
-    `PRODUCT_DISPLAY_NAME = ${params.displayName || params.projectName}`,
+    `PRODUCT_DISPLAY_NAME = ${displayName || projectName}`,
   );
   result = result.replace(
     /PRODUCT_BUNDLE_IDENTIFIER = .+/g,
-    `PRODUCT_BUNDLE_IDENTIFIER = ${params.bundleIdentifier || `com.example.${params.projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`}`,
+    `PRODUCT_BUNDLE_IDENTIFIER = ${bundleIdentifier || `com.example.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`}`,
   );
   result = result.replace(
     /MARKETING_VERSION = .+/g,
-    `MARKETING_VERSION = ${params.marketingVersion || '1.0'}`,
+    `MARKETING_VERSION = ${marketingVersion || '1.0'}`,
   );
   result = result.replace(
     /CURRENT_PROJECT_VERSION = .+/g,
-    `CURRENT_PROJECT_VERSION = ${params.currentProjectVersion || '1'}`,
+    `CURRENT_PROJECT_VERSION = ${currentProjectVersion || '1'}`,
   );
 
   // Platform-specific updates
-  if (params.platform === 'iOS') {
+  if (platform === 'iOS') {
     // iOS deployment target
-    if (params.deploymentTarget) {
+    if (deploymentTarget) {
       result = result.replace(
         /IPHONEOS_DEPLOYMENT_TARGET = .+/g,
-        `IPHONEOS_DEPLOYMENT_TARGET = ${params.deploymentTarget}`,
+        `IPHONEOS_DEPLOYMENT_TARGET = ${deploymentTarget}`,
       );
     }
 
     // Device family
-    if (params.targetedDeviceFamily) {
-      const deviceFamilyValue = deviceFamilyToNumeric(params.targetedDeviceFamily);
+    if (targetedDeviceFamily) {
+      const deviceFamilyValue = deviceFamilyToNumeric(targetedDeviceFamily);
       result = result.replace(
         /TARGETED_DEVICE_FAMILY = .+/g,
         `TARGETED_DEVICE_FAMILY = ${deviceFamilyValue}`,
@@ -172,9 +187,9 @@ function updateXCConfigFile(content: string, params: Record<string, unknown>): s
     }
 
     // iPhone orientations
-    if (params.supportedOrientations && params.supportedOrientations.length > 0) {
+    if (supportedOrientations && supportedOrientations.length > 0) {
       // Filter out any empty strings and validate
-      const validOrientations = params.supportedOrientations.filter((o) => o && o.trim() !== '');
+      const validOrientations = supportedOrientations.filter((o: string) => o && o.trim() !== '');
       if (validOrientations.length > 0) {
         const orientations = validOrientations.map(orientationToIOSConstant).join(' ');
         result = result.replace(
@@ -185,10 +200,10 @@ function updateXCConfigFile(content: string, params: Record<string, unknown>): s
     }
 
     // iPad orientations
-    if (params.supportedOrientationsIpad && params.supportedOrientationsIpad.length > 0) {
+    if (supportedOrientationsIpad && supportedOrientationsIpad.length > 0) {
       // Filter out any empty strings and validate
-      const validOrientations = params.supportedOrientationsIpad.filter(
-        (o) => o && o.trim() !== '',
+      const validOrientations = supportedOrientationsIpad.filter(
+        (o: string) => o && o.trim() !== '',
       );
       if (validOrientations.length > 0) {
         const orientations = validOrientations.map(orientationToIOSConstant).join(' ');
@@ -202,18 +217,15 @@ function updateXCConfigFile(content: string, params: Record<string, unknown>): s
     // Update entitlements path for iOS
     result = result.replace(
       /CODE_SIGN_ENTITLEMENTS = .+/g,
-      `CODE_SIGN_ENTITLEMENTS = Config/${params.projectName}.entitlements`,
+      `CODE_SIGN_ENTITLEMENTS = Config/${projectName}.entitlements`,
     );
   }
 
   // Update test bundle identifier and target name
-  result = result.replace(/TEST_TARGET_NAME = .+/g, `TEST_TARGET_NAME = ${params.projectName}`);
+  result = result.replace(/TEST_TARGET_NAME = .+/g, `TEST_TARGET_NAME = ${projectName}`);
 
   // Update comments that reference MyProject in entitlements paths
-  result = result.replace(
-    /Config\/MyProject\.entitlements/g,
-    `Config/${params.projectName}.entitlements`,
-  );
+  result = result.replace(/Config\/MyProject\.entitlements/g, `Config/${projectName}.entitlements`);
 
   return result;
 }
@@ -247,15 +259,19 @@ async function processFile(
   sourcePath: string,
   destPath: string,
   params: Record<string, unknown>,
-  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<void> {
+  const projectName = params.projectName as string;
+  const bundleIdentifierParam = params.bundleIdentifier as string | undefined;
+  const customizeNames = params.customizeNames as boolean | undefined;
+
   // Determine the destination file path
   let finalDestPath = destPath;
-  if (params.customizeNames) {
+  if (customizeNames) {
     // Replace MyProject in file/directory names
     const fileName = basename(destPath);
     const dirName = dirname(destPath);
-    const newFileName = fileName.replace(/MyProject/g, params.projectName);
+    const newFileName = fileName.replace(/MyProject/g, projectName);
     finalDestPath = join(dirName, newFileName);
   }
 
@@ -286,7 +302,7 @@ async function processFile(
   const isXCConfig = sourcePath.endsWith('.xcconfig');
   const isPackageSwift = sourcePath.endsWith('Package.swift');
 
-  if (isTextFile && params.customizeNames) {
+  if (isTextFile && customizeNames) {
     // Read the file content
     const content = await fileSystemExecutor.readFile(sourcePath, 'utf-8');
 
@@ -301,9 +317,9 @@ async function processFile(
     } else {
       // Use standard placeholder replacement
       const bundleIdentifier =
-        params.bundleIdentifier ||
-        `com.example.${params.projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-      processedContent = replacePlaceholders(content, params.projectName, bundleIdentifier);
+        bundleIdentifierParam ||
+        `com.example.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      processedContent = replacePlaceholders(content, projectName, bundleIdentifier);
     }
 
     await fileSystemExecutor.mkdir(dirname(finalDestPath), { recursive: true });
@@ -311,7 +327,7 @@ async function processFile(
   } else {
     // Copy binary files as-is
     await fileSystemExecutor.mkdir(dirname(finalDestPath), { recursive: true });
-    await fileSystemExecutor.cp(sourcePath, finalDestPath, { preserveTimestamps: true });
+    await fileSystemExecutor.cp(sourcePath, finalDestPath);
   }
 }
 
@@ -322,7 +338,7 @@ async function processDirectory(
   sourceDir: string,
   destDir: string,
   params: Record<string, unknown>,
-  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<void> {
   const entries = await fileSystemExecutor.readdir(sourceDir, { withFileTypes: true });
 
@@ -360,9 +376,12 @@ async function processDirectory(
 async function scaffoldProject(
   params: Record<string, unknown>,
   commandExecutor?: CommandExecutor,
-  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<string> {
-  const { projectName, outputPath, platform, customizeNames = true } = params;
+  const projectName = params.projectName as string;
+  const outputPath = params.outputPath as string;
+  const platform = params.platform as 'iOS' | 'macOS';
+  const customizeNames = (params.customizeNames as boolean | undefined) ?? true;
 
   log('info', `Scaffolding project: ${projectName} (${platform}) at ${outputPath}`);
 
@@ -376,6 +395,12 @@ async function scaffoldProject(
   // Get template path from TemplateManager
   let templatePath;
   try {
+    // Import the default command executor if not provided
+    if (!commandExecutor) {
+      const { getDefaultCommandExecutor } = await import('../../utils/index.js');
+      commandExecutor = getDefaultCommandExecutor();
+    }
+
     templatePath = await TemplateManager.getTemplatePath(
       platform,
       commandExecutor,

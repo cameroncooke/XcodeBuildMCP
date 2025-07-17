@@ -14,7 +14,7 @@ import {
   executeCommand,
   CommandExecutor,
   FileSystemExecutor,
-  defaultFileSystemExecutor,
+  getDefaultFileSystemExecutor,
   getDefaultCommandExecutor,
 } from '../../utils/index.js';
 
@@ -47,7 +47,7 @@ export default {
     // Use xcrun simctl to take screenshot
     const commandArgs = ['xcrun', 'simctl', 'io', simulatorUuid, 'screenshot', screenshotPath];
 
-    const fsExecutor = fileSystemExecutor || defaultFileSystemExecutor;
+    const fsExecutor = fileSystemExecutor || getDefaultFileSystemExecutor();
 
     log(
       'info',

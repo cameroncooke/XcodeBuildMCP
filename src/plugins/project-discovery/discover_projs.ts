@@ -10,7 +10,7 @@ import path from 'node:path';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
-import { FileSystemExecutor, defaultFileSystemExecutor } from '../../utils/command.js';
+import { FileSystemExecutor, getDefaultFileSystemExecutor } from '../../utils/command.js';
 
 // Helper to create a standard text response content.
 function createTextContent(text: string): { type: string; text: string } {
@@ -30,7 +30,7 @@ async function _findProjectsRecursive(
   currentDepth: number,
   maxDepth: number,
   results: { projects: string[]; workspaces: string[] },
-  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<void> {
   // Explicit depth check (now simplified as maxDepth is always non-negative)
   if (currentDepth >= maxDepth) {
@@ -131,7 +131,7 @@ async function _findProjectsRecursive(
  */
 async function _handleDiscoveryLogic(
   params: Record<string, unknown>,
-  fileSystemExecutor: FileSystemExecutor = defaultFileSystemExecutor,
+  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<ToolResponse> {
   const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = params;
 
