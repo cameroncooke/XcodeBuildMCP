@@ -34,10 +34,10 @@ export default {
       const command = ['xcrun', 'simctl', 'terminate', params.simulatorUuid, params.bundleId];
       const result = await executeCommand(
         command,
+        executor,
         'Stop App in Simulator',
         true,
         undefined,
-        executor,
       );
 
       if (!result.success) {

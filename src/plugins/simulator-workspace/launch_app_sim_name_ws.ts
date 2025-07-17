@@ -102,10 +102,10 @@ export default {
       ];
       const getAppContainerResult = await executeCommand(
         getAppContainerCmd,
+        executor,
         'Check App Installed',
         true,
         undefined,
-        executor,
       );
       if (!getAppContainerResult.success) {
         return {
@@ -128,10 +128,10 @@ export default {
 
       const result = await executeCommand(
         command,
+        executor,
         'Launch App in Simulator',
         true,
         undefined,
-        executor,
       );
 
       if (!result.success) {

@@ -111,10 +111,10 @@ async function executeAxeCommand(
 
     const result = await executeCommand(
       fullCommand,
+      executor,
       `${LOG_PREFIX}: ${commandName}`,
       false,
       axeEnv,
-      executor,
     );
 
     if (!result.success) {

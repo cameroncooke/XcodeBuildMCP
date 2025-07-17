@@ -127,10 +127,10 @@ async function _handleIOSSimulatorBuildAndRunLogic(
       log('info', `Booting simulator ${targetSimulator.name}...`);
       const bootResult = await executeCommand(
         ['xcrun', 'simctl', 'boot', params.simulatorId],
+        executor,
         'Boot Simulator',
         true,
         undefined,
-        executor,
       );
 
       if (!bootResult.success) {

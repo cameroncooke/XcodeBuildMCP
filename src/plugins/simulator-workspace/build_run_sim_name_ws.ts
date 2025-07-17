@@ -150,10 +150,10 @@ async function _handleIOSSimulatorBuildAndRunLogic(
       log('info', `Booting simulator ${foundSimulator.name}...`);
       const bootResult = await executeCommand(
         ['xcrun', 'simctl', 'boot', simulatorUuid],
+        executor,
         'Boot Simulator',
         true,
         {},
-        executor,
       );
 
       if (!bootResult.success) {
@@ -197,10 +197,10 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     log('info', `Launching app with bundle ID ${bundleId}...`);
     const launchResult = await executeCommand(
       ['xcrun', 'simctl', 'launch', simulatorUuid, bundleId],
+      executor,
       'Launch App',
       true,
       {},
-      executor,
     );
 
     if (!launchResult.success) {

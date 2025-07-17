@@ -82,10 +82,10 @@ async function _getAppPathFromBuildSettings(
     // Execute the command directly
     const result = await executeCommand(
       command,
+      executor,
       'Get Build Settings for Launch',
       true,
       undefined,
-      executor,
     );
 
     if (!result.success) {

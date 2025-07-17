@@ -87,10 +87,10 @@ export async function startDeviceLogCapture(
         deviceUuid,
         bundleId,
       ],
+      executor,
       'Device Log Capture',
       true,
       undefined,
-      executor,
     );
 
     // For testing purposes, we'll simulate process management
