@@ -1,5 +1,16 @@
 import { log } from '../utils/logger.js';
+import { getDefaultCommandExecutor } from '../utils/command.js';
 import type { WorkflowGroup } from './plugin-types.js';
+
+/**
+ * Wrapper function to adapt MCP SDK handler calling convention to our dependency injection pattern
+ * MCP SDK calls handlers with just (args), but our handlers expect (args, executor)
+ */
+function wrapHandlerWithExecutor(handler: any) {
+  return async (args: any) => {
+    return handler(args, getDefaultCommandExecutor());
+  };
+}
 
 /**
  * Enable workflows by registering their tools dynamically
@@ -28,7 +39,12 @@ export async function enableWorkflows(
     // Register each tool in the workflow
     for (const tool of workflow.tools) {
       try {
-        server.tool(tool.name, tool.description || '', tool.schema, tool.handler);
+        server.tool(
+          tool.name,
+          tool.description || '',
+          tool.schema,
+          wrapHandlerWithExecutor(tool.handler),
+        );
         totalToolsAdded++;
         log('debug', `Registered tool: ${tool.name}`);
       } catch (error) {

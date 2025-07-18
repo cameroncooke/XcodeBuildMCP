@@ -63,18 +63,6 @@ async function defaultExecutor(
   useShell: boolean = true,
   env?: Record<string, string>,
 ): Promise<CommandResponse> {
-  // CRITICAL: Detect real system calls during tests
-  // TODO: Enable this guard after fixing all remaining test mocking issues
-  // if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
-  //   throw new Error(
-  //     `🚨 REAL SYSTEM CALL DETECTED IN TEST! 🚨\n` +
-  //     `Command: ${command.join(' ')}\n` +
-  //     `This test is making real system calls instead of using mocked child_process.spawn.\n` +
-  //     `Fix: Add 'vi.mock('child_process', () => ({ spawn: vi.fn() }))' to your test file.\n` +
-  //     `See CLAUDE.md for proper testing patterns.`
-  //   );
-  // }
-
   // Properly escape arguments for shell
   let escapedCommand = command;
   if (useShell) {

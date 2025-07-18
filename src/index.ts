@@ -22,6 +22,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Import utilities
 import { log } from './utils/logger.js';
+import { getDefaultCommandExecutor } from './utils/command.js';
 
 // Import version
 import { version } from './version.js';
@@ -29,6 +30,16 @@ import { loadPlugins } from './core/plugin-registry.js';
 
 // Import xcodemake utilities
 import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
+
+/**
+ * Wrapper function to adapt MCP SDK handler calling convention to our dependency injection pattern
+ * MCP SDK calls handlers with just (args), but our handlers expect (args, executor)
+ */
+function wrapHandlerWithExecutor(handler: any) {
+  return async (args: any) => {
+    return handler(args, getDefaultCommandExecutor());
+  };
+}
 
 /**
  * Main function to start the server
@@ -83,7 +94,7 @@ async function main(): Promise<void> {
         discoverTool.name,
         discoverTool.description || '',
         discoverTool.schema,
-        discoverTool.handler,
+        wrapHandlerWithExecutor(discoverTool.handler),
       );
       log('info', '   Use discover_tools to enable relevant workflows on-demand');
     } else {
@@ -92,7 +103,12 @@ async function main(): Promise<void> {
       const plugins = await loadPlugins();
       for (const plugin of plugins.values()) {
         if (plugin.name !== 'discover_tools') {
-          server.tool(plugin.name, plugin.description || '', plugin.schema, plugin.handler);
+          server.tool(
+            plugin.name,
+            plugin.description || '',
+            plugin.schema,
+            wrapHandlerWithExecutor(plugin.handler),
+          );
         }
       }
     }
