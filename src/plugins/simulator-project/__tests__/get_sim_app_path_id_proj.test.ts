@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import getSimAppPathIdProj from '../get_sim_app_path_id_proj.ts';
 
 describe('get_sim_app_path_id_proj plugin', () => {
@@ -88,11 +92,15 @@ describe('get_sim_app_path_id_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return validation error for missing projectPath', async () => {
-      const result = await getSimAppPathIdProj.handler({
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid',
-      });
+      const result = await getSimAppPathIdProj.handler(
+        {
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -106,11 +114,15 @@ describe('get_sim_app_path_id_proj plugin', () => {
     });
 
     it('should return validation error for missing scheme', async () => {
-      const result = await getSimAppPathIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid',
-      });
+      const result = await getSimAppPathIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -124,11 +136,15 @@ describe('get_sim_app_path_id_proj plugin', () => {
     });
 
     it('should return validation error for missing platform', async () => {
-      const result = await getSimAppPathIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid',
-      });
+      const result = await getSimAppPathIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -142,11 +158,15 @@ describe('get_sim_app_path_id_proj plugin', () => {
     });
 
     it('should return validation error for missing simulatorId', async () => {
-      const result = await getSimAppPathIdProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-      });
+      const result = await getSimAppPathIdProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -173,6 +193,7 @@ describe('get_sim_app_path_id_proj plugin', () => {
           simulatorId: 'test-uuid',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -200,6 +221,7 @@ describe('get_sim_app_path_id_proj plugin', () => {
           simulatorId: 'test-uuid',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -234,6 +256,7 @@ describe('get_sim_app_path_id_proj plugin', () => {
           simulatorId: 'test-uuid',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -274,6 +297,7 @@ describe('get_sim_app_path_id_proj plugin', () => {
           useLatestOS: false,
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);

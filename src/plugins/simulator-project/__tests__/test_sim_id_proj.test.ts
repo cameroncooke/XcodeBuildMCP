@@ -4,7 +4,7 @@
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
 import testSimIdProj from '../test_sim_id_proj.ts';
 
 describe('test_sim_id_proj plugin', () => {
@@ -61,6 +61,7 @@ describe('test_sim_id_proj plugin', () => {
           configuration: 'Debug',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();
@@ -82,6 +83,7 @@ describe('test_sim_id_proj plugin', () => {
           configuration: 'Debug',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();
@@ -102,6 +104,7 @@ describe('test_sim_id_proj plugin', () => {
           simulatorId: 'test-uuid-123',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result.isError).toBe(true);
@@ -122,6 +125,7 @@ describe('test_sim_id_proj plugin', () => {
           simulatorId: 'test-uuid-123',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();
@@ -147,6 +151,7 @@ describe('test_sim_id_proj plugin', () => {
           preferXcodebuild: true,
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();

@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import buildSimNameProj from '../build_sim_name_proj.ts';
 
 describe('build_sim_name_proj plugin', () => {
@@ -104,10 +108,14 @@ describe('build_sim_name_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return validation error for missing projectPath', async () => {
-      const result = await buildSimNameProj.handler({
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await buildSimNameProj.handler(
+        {
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -121,10 +129,14 @@ describe('build_sim_name_proj plugin', () => {
     });
 
     it('should return validation error for missing scheme', async () => {
-      const result = await buildSimNameProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await buildSimNameProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          simulatorName: 'iPhone 16',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -138,10 +150,14 @@ describe('build_sim_name_proj plugin', () => {
     });
 
     it('should return validation error for missing simulatorName', async () => {
-      const result = await buildSimNameProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-      });
+      const result = await buildSimNameProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -177,7 +193,7 @@ describe('build_sim_name_proj plugin', () => {
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
-        undefined,
+        createNoopExecutor(),
         mockExecuteXcodeBuildCommand,
       );
 
@@ -215,7 +231,7 @@ describe('build_sim_name_proj plugin', () => {
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
-        undefined,
+        createNoopExecutor(),
         mockExecuteXcodeBuildCommand,
       );
 
@@ -258,7 +274,7 @@ describe('build_sim_name_proj plugin', () => {
           extraArgs: ['--custom-arg'],
           preferXcodebuild: true,
         },
-        undefined,
+        createNoopExecutor(),
         mockExecuteXcodeBuildCommand,
       );
 
@@ -282,7 +298,7 @@ describe('build_sim_name_proj plugin', () => {
       );
       expect(capturedCallArgs[2]).toBe(true);
       expect(capturedCallArgs[3]).toBe('build');
-      expect(capturedCallArgs[4]).toBe(undefined);
+      expect(capturedCallArgs[4]).toBeDefined();
     });
   });
 
@@ -311,7 +327,7 @@ describe('build_sim_name_proj plugin', () => {
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
-        undefined,
+        createNoopExecutor(),
         mockExecuteXcodeBuildCommand,
       );
 
@@ -334,7 +350,7 @@ describe('build_sim_name_proj plugin', () => {
       );
       expect(capturedCallArgs[2]).toBe(false);
       expect(capturedCallArgs[3]).toBe('build');
-      expect(capturedCallArgs[4]).toBe(undefined);
+      expect(capturedCallArgs[4]).toBeDefined();
     });
 
     it('should generate correct xcodebuild command with all optional parameters', async () => {
@@ -366,7 +382,7 @@ describe('build_sim_name_proj plugin', () => {
           useLatestOS: false,
           preferXcodebuild: true,
         },
-        undefined,
+        createNoopExecutor(),
         mockExecuteXcodeBuildCommand,
       );
 
@@ -391,7 +407,7 @@ describe('build_sim_name_proj plugin', () => {
       );
       expect(capturedCallArgs[2]).toBe(true);
       expect(capturedCallArgs[3]).toBe('build');
-      expect(capturedCallArgs[4]).toBe(undefined);
+      expect(capturedCallArgs[4]).toBeDefined();
     });
 
     it('should generate correct command with default configuration when not specified', async () => {
@@ -419,7 +435,7 @@ describe('build_sim_name_proj plugin', () => {
           simulatorName: 'iPhone 16',
           // configuration intentionally omitted to test default
         },
-        undefined,
+        createNoopExecutor(),
         mockExecuteXcodeBuildCommand,
       );
 
@@ -468,7 +484,7 @@ describe('build_sim_name_proj plugin', () => {
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16 Pro Max',
         },
-        undefined,
+        createNoopExecutor(),
         mockExecuteXcodeBuildCommand,
       );
 

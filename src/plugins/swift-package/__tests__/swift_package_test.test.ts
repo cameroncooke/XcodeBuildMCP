@@ -5,7 +5,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import swiftPackageTest from '../swift_package_test.ts';
 
 describe('swift_package_test plugin', () => {
@@ -74,6 +78,7 @@ describe('swift_package_test plugin', () => {
           packagePath: '/test/package',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);
@@ -113,6 +118,7 @@ describe('swift_package_test plugin', () => {
           parseAsLibrary: true,
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);
@@ -142,7 +148,11 @@ describe('swift_package_test plugin', () => {
 
   describe('Response Logic Testing', () => {
     it('should return validation error for missing packagePath', async () => {
-      const result = await swiftPackageTest.handler({});
+      const result = await swiftPackageTest.handler(
+        {},
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -166,6 +176,7 @@ describe('swift_package_test plugin', () => {
           packagePath: '/test/package',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -191,6 +202,7 @@ describe('swift_package_test plugin', () => {
           packagePath: '/test/package',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -214,6 +226,7 @@ describe('swift_package_test plugin', () => {
           packagePath: '/test/package',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -244,6 +257,7 @@ describe('swift_package_test plugin', () => {
           parseAsLibrary: true,
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

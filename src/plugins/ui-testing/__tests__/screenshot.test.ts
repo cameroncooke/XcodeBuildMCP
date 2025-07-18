@@ -4,7 +4,11 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import screenshotPlugin from '../screenshot.ts';
 
 describe('Screenshot Plugin', () => {
@@ -201,7 +205,11 @@ describe('Screenshot Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await screenshotPlugin.handler({});
+      const result = await screenshotPlugin.handler(
+        {},
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -259,6 +267,7 @@ describe('Screenshot Plugin', () => {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -351,6 +360,7 @@ describe('Screenshot Plugin', () => {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -371,6 +381,7 @@ describe('Screenshot Plugin', () => {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -389,6 +400,7 @@ describe('Screenshot Plugin', () => {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

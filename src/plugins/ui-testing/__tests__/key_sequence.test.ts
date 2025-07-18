@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 import keySequencePlugin from '../key_sequence.ts';
 
 describe('Key Sequence Plugin', () => {
@@ -226,9 +226,12 @@ describe('Key Sequence Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await keySequencePlugin.handler({
-        keyCodes: [40],
-      });
+      const result = await keySequencePlugin.handler(
+        {
+          keyCodes: [40],
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -242,9 +245,12 @@ describe('Key Sequence Plugin', () => {
     });
 
     it('should return error for missing keyCodes', async () => {
-      const result = await keySequencePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await keySequencePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -319,7 +325,7 @@ describe('Key Sequence Plugin', () => {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
         },
-        undefined,
+        createNoopExecutor(),
         mockGetAxePath,
         mockGetBundledAxeEnvironment,
       );

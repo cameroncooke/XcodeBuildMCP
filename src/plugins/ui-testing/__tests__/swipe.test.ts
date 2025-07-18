@@ -4,11 +4,45 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 import { SystemError, DependencyError } from '../../../utils/index.js';
 
 // Import the plugin module to test
-import swipePlugin from '../swipe.ts';
+import swipePlugin, { AxeHelpers } from '../swipe.ts';
+
+// Helper function to create mock axe helpers
+function createMockAxeHelpers(): AxeHelpers {
+  return {
+    getAxePath: () => '/mocked/axe/path',
+    getBundledAxeEnvironment: () => ({ SOME_ENV: 'value' }),
+    createAxeNotAvailableResponse: () => ({
+      content: [
+        {
+          type: 'text',
+          text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+        },
+      ],
+      isError: true,
+    }),
+  };
+}
+
+// Helper function to create mock axe helpers with null path (for dependency error tests)
+function createMockAxeHelpersWithNullPath(): AxeHelpers {
+  return {
+    getAxePath: () => null,
+    getBundledAxeEnvironment: () => ({ SOME_ENV: 'value' }),
+    createAxeNotAvailableResponse: () => ({
+      content: [
+        {
+          type: 'text',
+          text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+        },
+      ],
+      isError: true,
+    }),
+  };
+}
 
 describe('Swipe Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -104,14 +138,7 @@ describe('Swipe Plugin', () => {
         };
       };
 
-      const mockDependencies = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'AXe tools not available' }],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createMockAxeHelpers();
 
       await swipePlugin.handler(
         {
@@ -122,11 +149,11 @@ describe('Swipe Plugin', () => {
           y2: 400,
         },
         trackingExecutor,
-        mockDependencies,
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
-        '/usr/local/bin/axe',
+        '/mocked/axe/path',
         'swipe',
         '--start-x',
         '100',
@@ -153,14 +180,7 @@ describe('Swipe Plugin', () => {
         };
       };
 
-      const mockDependencies = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'AXe tools not available' }],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createMockAxeHelpers();
 
       await swipePlugin.handler(
         {
@@ -172,11 +192,11 @@ describe('Swipe Plugin', () => {
           duration: 1.5,
         },
         trackingExecutor,
-        mockDependencies,
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
-        '/usr/local/bin/axe',
+        '/mocked/axe/path',
         'swipe',
         '--start-x',
         '50',
@@ -205,14 +225,7 @@ describe('Swipe Plugin', () => {
         };
       };
 
-      const mockDependencies = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'AXe tools not available' }],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createMockAxeHelpers();
 
       await swipePlugin.handler(
         {
@@ -227,11 +240,11 @@ describe('Swipe Plugin', () => {
           postDelay: 0.3,
         },
         trackingExecutor,
-        mockDependencies,
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
-        '/usr/local/bin/axe',
+        '/mocked/axe/path',
         'swipe',
         '--start-x',
         '0',
@@ -266,7 +279,7 @@ describe('Swipe Plugin', () => {
         };
       };
 
-      const mockDependencies = {
+      const mockAxeHelpers = {
         getAxePath: () => '/path/to/bundled/axe',
         getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
         createAxeNotAvailableResponse: () => ({
@@ -285,7 +298,7 @@ describe('Swipe Plugin', () => {
           delta: 5,
         },
         trackingExecutor,
-        mockDependencies,
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -309,7 +322,11 @@ describe('Swipe Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await swipePlugin.handler({ x1: 100, y1: 200, x2: 300, y2: 400 });
+      const result = await swipePlugin.handler(
+        { x1: 100, y1: 200, x2: 300, y2: 400 },
+        createNoopExecutor(),
+        createMockAxeHelpers(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -323,12 +340,16 @@ describe('Swipe Plugin', () => {
     });
 
     it('should return error for missing x1', async () => {
-      const result = await swipePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        y1: 200,
-        x2: 300,
-        y2: 400,
-      });
+      const result = await swipePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          y1: 200,
+          x2: 300,
+          y2: 400,
+        },
+        createNoopExecutor(),
+        createMockAxeHelpers(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -348,14 +369,7 @@ describe('Swipe Plugin', () => {
         error: '',
       });
 
-      const mockDependencies = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'AXe tools not available' }],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createMockAxeHelpers();
 
       const result = await swipePlugin.handler(
         {
@@ -366,7 +380,7 @@ describe('Swipe Plugin', () => {
           y2: 400,
         },
         mockExecutor,
-        mockDependencies,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -387,14 +401,7 @@ describe('Swipe Plugin', () => {
         error: '',
       });
 
-      const mockDependencies = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'AXe tools not available' }],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createMockAxeHelpers();
 
       const result = await swipePlugin.handler(
         {
@@ -406,7 +413,7 @@ describe('Swipe Plugin', () => {
           duration: 1.5,
         },
         mockExecutor,
-        mockDependencies,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -427,19 +434,7 @@ describe('Swipe Plugin', () => {
         error: '',
       });
 
-      const mockDependencies = {
-        getAxePath: () => null, // Simulate axe not available
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text',
-              text: 'AXe tools are not available. Please install AXe tools using the install_axe tool.',
-            },
-          ],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
       const result = await swipePlugin.handler(
         {
@@ -450,14 +445,14 @@ describe('Swipe Plugin', () => {
           y2: 400,
         },
         mockExecutor,
-        mockDependencies,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'AXe tools are not available. Please install AXe tools using the install_axe tool.',
+            text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
           },
         ],
         isError: true,
@@ -471,14 +466,7 @@ describe('Swipe Plugin', () => {
         error: 'axe command failed',
       });
 
-      const mockDependencies = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'AXe tools not available' }],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createMockAxeHelpers();
 
       const result = await swipePlugin.handler(
         {
@@ -489,7 +477,7 @@ describe('Swipe Plugin', () => {
           y2: 400,
         },
         mockExecutor,
-        mockDependencies,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -509,14 +497,7 @@ describe('Swipe Plugin', () => {
         throw new SystemError('System error occurred');
       };
 
-      const mockDependencies = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'AXe tools not available' }],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createMockAxeHelpers();
 
       const result = await swipePlugin.handler(
         {
@@ -527,7 +508,7 @@ describe('Swipe Plugin', () => {
           y2: 400,
         },
         systemErrorExecutor,
-        mockDependencies,
+        mockAxeHelpers,
       );
 
       expect(result.isError).toBe(true);
@@ -544,14 +525,7 @@ describe('Swipe Plugin', () => {
         throw new Error('Unexpected error');
       };
 
-      const mockDependencies = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'AXe tools not available' }],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createMockAxeHelpers();
 
       const result = await swipePlugin.handler(
         {
@@ -562,7 +536,7 @@ describe('Swipe Plugin', () => {
           y2: 400,
         },
         unexpectedErrorExecutor,
-        mockDependencies,
+        mockAxeHelpers,
       );
 
       expect(result.isError).toBe(true);
@@ -579,14 +553,7 @@ describe('Swipe Plugin', () => {
         throw 'String error';
       };
 
-      const mockDependencies = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'AXe tools not available' }],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createMockAxeHelpers();
 
       const result = await swipePlugin.handler(
         {
@@ -597,7 +564,7 @@ describe('Swipe Plugin', () => {
           y2: 400,
         },
         stringErrorExecutor,
-        mockDependencies,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({

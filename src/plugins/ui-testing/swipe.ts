@@ -16,6 +16,12 @@ import {
   getBundledAxeEnvironment,
 } from '../../utils/index.js';
 
+export interface AxeHelpers {
+  getAxePath: () => string | null;
+  getBundledAxeEnvironment: () => Record<string, string>;
+  createAxeNotAvailableResponse: () => ToolResponse;
+}
+
 const LOG_PREFIX = '[AXe]';
 
 export default {
@@ -36,10 +42,10 @@ export default {
   async handler(
     args: Record<string, unknown>,
     executor: CommandExecutor = getDefaultCommandExecutor(),
-    dependencies?: {
-      getAxePath?: () => string | null;
-      getBundledAxeEnvironment?: () => Record<string, string>;
-      createAxeNotAvailableResponse?: () => ToolResponse;
+    axeHelpers: AxeHelpers = {
+      getAxePath,
+      getBundledAxeEnvironment,
+      createAxeNotAvailableResponse,
     },
   ): Promise<ToolResponse> {
     const params = args;
@@ -87,7 +93,7 @@ export default {
     );
 
     try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'swipe', executor, dependencies);
+      await executeAxeCommand(commandArgs, simulatorUuid, 'swipe', executor, axeHelpers);
       log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
 
       const warning = getCoordinateWarning(simulatorUuid);
@@ -101,7 +107,7 @@ export default {
     } catch (error) {
       log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
       if (error instanceof DependencyError) {
-        return dependencies?.createAxeNotAvailableResponse?.() || createAxeNotAvailableResponse();
+        return axeHelpers.createAxeNotAvailableResponse();
       } else if (error instanceof AxeError) {
         return createErrorResponse(
           `Failed to simulate swipe: ${error.message}`,
@@ -151,14 +157,10 @@ async function executeAxeCommand(
   simulatorUuid: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
-  dependencies?: {
-    getAxePath?: () => string | null;
-    getBundledAxeEnvironment?: () => Record<string, string>;
-    createAxeNotAvailableResponse?: () => ToolResponse;
-  },
+  axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
 ): Promise<ToolResponse> {
   // Get the appropriate axe binary path
-  const axeBinary = dependencies?.getAxePath?.() || getAxePath();
+  const axeBinary = axeHelpers.getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -171,10 +173,7 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv =
-      axeBinary !== 'axe'
-        ? dependencies?.getBundledAxeEnvironment?.() || getBundledAxeEnvironment()
-        : undefined;
+    const axeEnv = axeBinary !== 'axe' ? axeHelpers.getBundledAxeEnvironment() : undefined;
 
     const result = await executeCommand(
       fullCommand,

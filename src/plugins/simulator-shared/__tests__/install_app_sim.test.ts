@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import installAppSim from '../install_app_sim.ts';
 
 describe('install_app_sim tool', () => {
@@ -154,10 +158,14 @@ describe('install_app_sim tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure for simulatorUuid', async () => {
-      const result = await installAppSim.handler({
-        simulatorUuid: undefined,
-        appPath: '/path/to/app.app',
-      });
+      const result = await installAppSim.handler(
+        {
+          simulatorUuid: undefined,
+          appPath: '/path/to/app.app',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -171,10 +179,14 @@ describe('install_app_sim tool', () => {
     });
 
     it('should handle validation failure for appPath', async () => {
-      const result = await installAppSim.handler({
-        simulatorUuid: 'test-uuid-123',
-        appPath: undefined,
-      });
+      const result = await installAppSim.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          appPath: undefined,
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -197,7 +209,7 @@ describe('install_app_sim tool', () => {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
         },
-        undefined,
+        createNoopExecutor(),
         mockFileSystem,
       );
 

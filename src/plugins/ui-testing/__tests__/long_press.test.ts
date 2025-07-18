@@ -257,6 +257,8 @@ describe('Long Press Plugin', () => {
       const result = await longPressPlugin.handler(
         { x: 100, y: 200, duration: 1500 },
         createNoopExecutor(),
+        () => '/usr/local/bin/axe',
+        () => ({}),
       );
 
       expect(result).toEqual({
@@ -278,6 +280,8 @@ describe('Long Press Plugin', () => {
           duration: 1500,
         },
         createNoopExecutor(),
+        () => '/usr/local/bin/axe',
+        () => ({}),
       );
 
       expect(result).toEqual({
@@ -299,6 +303,8 @@ describe('Long Press Plugin', () => {
           duration: 1500,
         },
         createNoopExecutor(),
+        () => '/usr/local/bin/axe',
+        () => ({}),
       );
 
       expect(result).toEqual({
@@ -320,6 +326,8 @@ describe('Long Press Plugin', () => {
           y: 200,
         },
         createNoopExecutor(),
+        () => '/usr/local/bin/axe',
+        () => ({}),
       );
 
       expect(result).toEqual({

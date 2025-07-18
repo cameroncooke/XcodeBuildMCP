@@ -60,7 +60,14 @@ describe('get_app_bundle_id plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error when appPath validation fails', async () => {
-      const result = await plugin.handler({ appPath: null });
+      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockFileSystemExecutor = createMockFileSystemExecutor({});
+
+      const result = await plugin.handler(
+        { appPath: null },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -267,7 +274,14 @@ describe('get_app_bundle_id plugin', () => {
 
     it('should handle schema validation error when appPath is null', async () => {
       // Schema validation will throw before reaching validateRequiredParam
-      const result = await plugin.handler({ appPath: null });
+      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockFileSystemExecutor = createMockFileSystemExecutor({});
+
+      const result = await plugin.handler(
+        { appPath: null },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -281,7 +295,10 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle schema validation with missing appPath', async () => {
-      const result = await plugin.handler({});
+      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockFileSystemExecutor = createMockFileSystemExecutor({});
+
+      const result = await plugin.handler({}, mockSyncExecutor, mockFileSystemExecutor);
 
       expect(result).toEqual({
         content: [
@@ -295,7 +312,14 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle schema validation with undefined appPath', async () => {
-      const result = await plugin.handler({ appPath: undefined });
+      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockFileSystemExecutor = createMockFileSystemExecutor({});
+
+      const result = await plugin.handler(
+        { appPath: undefined },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -309,7 +333,14 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle schema validation with number type appPath', async () => {
-      const result = await plugin.handler({ appPath: 123 });
+      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockFileSystemExecutor = createMockFileSystemExecutor({});
+
+      const result = await plugin.handler(
+        { appPath: 123 },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [

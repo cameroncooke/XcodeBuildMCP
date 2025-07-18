@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import getSimAppPathNameProj from '../get_sim_app_path_name_proj.ts';
 
 describe('get_sim_app_path_name_proj plugin', () => {
@@ -88,11 +92,15 @@ describe('get_sim_app_path_name_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return validation error for missing projectPath', async () => {
-      const result = await getSimAppPathNameProj.handler({
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await getSimAppPathNameProj.handler(
+        {
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -106,11 +114,15 @@ describe('get_sim_app_path_name_proj plugin', () => {
     });
 
     it('should return validation error for missing scheme', async () => {
-      const result = await getSimAppPathNameProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        platform: 'iOS Simulator',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await getSimAppPathNameProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -124,11 +136,15 @@ describe('get_sim_app_path_name_proj plugin', () => {
     });
 
     it('should return validation error for missing platform', async () => {
-      const result = await getSimAppPathNameProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await getSimAppPathNameProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -142,11 +158,15 @@ describe('get_sim_app_path_name_proj plugin', () => {
     });
 
     it('should return validation error for missing simulatorName', async () => {
-      const result = await getSimAppPathNameProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-      });
+      const result = await getSimAppPathNameProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -173,6 +193,7 @@ describe('get_sim_app_path_name_proj plugin', () => {
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -200,6 +221,7 @@ describe('get_sim_app_path_name_proj plugin', () => {
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -234,6 +256,7 @@ describe('get_sim_app_path_name_proj plugin', () => {
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -274,6 +297,7 @@ describe('get_sim_app_path_name_proj plugin', () => {
           useLatestOS: false,
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);

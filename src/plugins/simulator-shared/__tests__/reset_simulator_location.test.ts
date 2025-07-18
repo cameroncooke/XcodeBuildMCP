@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import resetSimulatorLocationPlugin from '../reset_simulator_location.ts';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
 
 describe('reset_simulator_location plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -91,7 +91,11 @@ describe('reset_simulator_location plugin', () => {
         output: 'Location reset successfully',
       });
 
-      const result = await resetSimulatorLocationPlugin.handler({}, mockExecutor);
+      const result = await resetSimulatorLocationPlugin.handler(
+        {},
+        mockExecutor,
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

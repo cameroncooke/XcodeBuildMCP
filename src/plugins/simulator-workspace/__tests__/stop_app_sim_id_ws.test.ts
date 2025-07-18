@@ -9,7 +9,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import stopAppSimIdWs from '../stop_app_sim.ts';
 
 describe('stop_app_sim_id_ws plugin', () => {
@@ -92,6 +96,7 @@ describe('stop_app_sim_id_ws plugin', () => {
           bundleId: 'com.example.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(commands).toHaveLength(1);
@@ -125,6 +130,7 @@ describe('stop_app_sim_id_ws plugin', () => {
           bundleId: 'com.apple.mobilesafari',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(commands[0].command).toEqual([
@@ -154,6 +160,7 @@ describe('stop_app_sim_id_ws plugin', () => {
           bundleId: 'com.company.product.subproduct.MyApp',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(commands[0].command).toEqual([
@@ -183,6 +190,7 @@ describe('stop_app_sim_id_ws plugin', () => {
           bundleId: 'com.testflight.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(commands[0].command).toEqual([
@@ -197,9 +205,13 @@ describe('stop_app_sim_id_ws plugin', () => {
 
   describe('Parameter Validation', () => {
     it('should handle validation failure for simulatorUuid', async () => {
-      const result = await stopAppSimIdWs.handler({
-        bundleId: 'com.example.app',
-      });
+      const result = await stopAppSimIdWs.handler(
+        {
+          bundleId: 'com.example.app',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -213,9 +225,13 @@ describe('stop_app_sim_id_ws plugin', () => {
     });
 
     it('should handle validation failure for bundleId', async () => {
-      const result = await stopAppSimIdWs.handler({
-        simulatorUuid: 'test-uuid-123',
-      });
+      const result = await stopAppSimIdWs.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -242,6 +258,7 @@ describe('stop_app_sim_id_ws plugin', () => {
           bundleId: 'com.example.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -266,6 +283,7 @@ describe('stop_app_sim_id_ws plugin', () => {
           bundleId: 'com.example.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -290,6 +308,7 @@ describe('stop_app_sim_id_ws plugin', () => {
           bundleId: 'com.example.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

@@ -10,7 +10,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import cleanProj from '../clean_proj.ts';
 
 describe('clean_proj plugin tests', () => {
@@ -289,6 +293,7 @@ describe('clean_proj plugin tests', () => {
           scheme: 'MyScheme',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -307,9 +312,13 @@ describe('clean_proj plugin tests', () => {
     });
 
     it('should return error response for validation failure', async () => {
-      const result = await cleanProj.handler({
-        projectPath: null,
-      });
+      const result = await cleanProj.handler(
+        {
+          projectPath: null,
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -331,6 +340,7 @@ describe('clean_proj plugin tests', () => {
           scheme: 'MyScheme',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -345,9 +355,13 @@ describe('clean_proj plugin tests', () => {
     });
 
     it('should handle invalid schema with zod validation', async () => {
-      const result = await cleanProj.handler({
-        projectPath: 123, // Invalid type
-      });
+      const result = await cleanProj.handler(
+        {
+          projectPath: 123, // Invalid type
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toBe("Expected string, received number at path 'projectPath'");

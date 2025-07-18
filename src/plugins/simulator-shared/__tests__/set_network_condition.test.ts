@@ -6,7 +6,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, type CommandExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  type CommandExecutor,
+} from '../../../utils/command.js';
 import setNetworkCondition from '../set_network_condition.ts';
 
 describe('set_network_condition tool', () => {
@@ -76,6 +80,7 @@ describe('set_network_condition tool', () => {
           profile: 'wifi',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -89,10 +94,14 @@ describe('set_network_condition tool', () => {
     });
 
     it('should handle validation failure', async () => {
-      const result = await setNetworkCondition.handler({
-        simulatorUuid: undefined,
-        profile: 'wifi',
-      });
+      const result = await setNetworkCondition.handler(
+        {
+          simulatorUuid: undefined,
+          profile: 'wifi',
+        },
+        createMockExecutor({ success: true }),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -117,6 +126,7 @@ describe('set_network_condition tool', () => {
           profile: '3g',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -140,6 +150,7 @@ describe('set_network_condition tool', () => {
           profile: 'edge',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -163,6 +174,7 @@ describe('set_network_condition tool', () => {
           profile: 'dsl',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -204,6 +216,7 @@ describe('set_network_condition tool', () => {
           profile: 'wifi',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);

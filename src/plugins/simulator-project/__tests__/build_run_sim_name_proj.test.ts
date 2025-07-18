@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createNoopExecutor,
+  createMockFileSystemExecutor,
+} from '../../../utils/command.js';
 import buildRunSimNameProj from '../build_run_sim_name_proj.ts';
 
 describe('build_run_sim_name_proj plugin', () => {
@@ -76,10 +80,14 @@ describe('build_run_sim_name_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return validation error for missing projectPath', async () => {
-      const result = await buildRunSimNameProj.handler({
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await buildRunSimNameProj.handler(
+        {
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -93,10 +101,14 @@ describe('build_run_sim_name_proj plugin', () => {
     });
 
     it('should return validation error for missing scheme', async () => {
-      const result = await buildRunSimNameProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await buildRunSimNameProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          simulatorName: 'iPhone 16',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -110,10 +122,14 @@ describe('build_run_sim_name_proj plugin', () => {
     });
 
     it('should return validation error for missing simulatorName', async () => {
-      const result = await buildRunSimNameProj.handler({
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyScheme',
-      });
+      const result = await buildRunSimNameProj.handler(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -139,6 +155,7 @@ describe('build_run_sim_name_proj plugin', () => {
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -279,6 +296,7 @@ describe('build_run_sim_name_proj plugin', () => {
           preferXcodebuild: true,
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(executorCalls).toHaveLength(1);

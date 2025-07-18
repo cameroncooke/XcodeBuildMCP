@@ -4,7 +4,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import typeTextPlugin from '../type_text.ts';
 
 // Mock axe helpers for dependency injection
@@ -269,9 +273,13 @@ describe('Type Text Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await typeTextPlugin.handler({
-        text: 'Hello World',
-      });
+      const result = await typeTextPlugin.handler(
+        {
+          text: 'Hello World',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -285,9 +293,13 @@ describe('Type Text Plugin', () => {
     });
 
     it('should return error for missing text', async () => {
-      const result = await typeTextPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await typeTextPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -337,7 +349,7 @@ describe('Type Text Plugin', () => {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: 'Hello World',
         },
-        undefined,
+        createNoopExecutor(),
         mockAxeHelpers,
       );
 

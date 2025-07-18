@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 
 // Import the plugin
 import setNetworkCondition from '../set_network_condition.ts';
@@ -74,6 +78,7 @@ describe('set_network_condition tool', () => {
           profile: 'wifi',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -115,6 +120,7 @@ describe('set_network_condition tool', () => {
           profile: '3g',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -136,6 +142,7 @@ describe('set_network_condition tool', () => {
           profile: 'edge',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -157,6 +164,7 @@ describe('set_network_condition tool', () => {
           profile: 'dsl',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -187,6 +195,7 @@ describe('set_network_condition tool', () => {
           profile: 'wifi',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);

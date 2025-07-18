@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 import buttonPlugin from '../button.ts';
 
 describe('Button Plugin', () => {
@@ -97,6 +97,10 @@ describe('Button Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       await buttonPlugin.handler(
@@ -132,6 +136,10 @@ describe('Button Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       await buttonPlugin.handler(
@@ -170,6 +178,10 @@ describe('Button Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       await buttonPlugin.handler(
@@ -228,7 +240,7 @@ describe('Button Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await buttonPlugin.handler({ buttonType: 'home' });
+      const result = await buttonPlugin.handler({ buttonType: 'home' }, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -242,9 +254,12 @@ describe('Button Plugin', () => {
     });
 
     it('should return error for missing buttonType', async () => {
-      const result = await buttonPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await buttonPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -268,6 +283,10 @@ describe('Button Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       const result = await buttonPlugin.handler(
@@ -295,6 +314,10 @@ describe('Button Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       const result = await buttonPlugin.handler(
@@ -316,6 +339,15 @@ describe('Button Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => null,
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       const result = await buttonPlugin.handler(
@@ -323,7 +355,7 @@ describe('Button Plugin', () => {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
         },
-        undefined,
+        createNoopExecutor(),
         mockAxeHelpers,
       );
 
@@ -349,6 +381,10 @@ describe('Button Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       const result = await buttonPlugin.handler(
@@ -379,6 +415,10 @@ describe('Button Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       const result = await buttonPlugin.handler(
@@ -404,6 +444,10 @@ describe('Button Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       const result = await buttonPlugin.handler(
@@ -429,6 +473,10 @@ describe('Button Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       const result = await buttonPlugin.handler(

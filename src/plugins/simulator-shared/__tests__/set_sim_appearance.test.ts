@@ -109,7 +109,11 @@ describe('set_sim_appearance plugin', () => {
         error: '',
       });
 
-      const result = await setSimAppearancePlugin.handler({ mode: 'dark' }, mockExecutor);
+      const result = await setSimAppearancePlugin.handler(
+        { mode: 'dark' },
+        mockExecutor,
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -131,6 +135,7 @@ describe('set_sim_appearance plugin', () => {
           mode: 'dark',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

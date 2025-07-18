@@ -20,6 +20,7 @@ import {
 interface AxeHelpers {
   getAxePath: () => string | null;
   getBundledAxeEnvironment: () => Record<string, string>;
+  createAxeNotAvailableResponse: () => ToolResponse;
 }
 
 const LOG_PREFIX = '[AXe]';
@@ -65,7 +66,9 @@ export default {
     } catch (error) {
       log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
       if (error instanceof DependencyError) {
-        return createAxeNotAvailableResponse();
+        return axeHelpers
+          ? axeHelpers.createAxeNotAvailableResponse()
+          : createAxeNotAvailableResponse();
       } else if (error instanceof AxeError) {
         return createErrorResponse(
           `Failed to press button '${buttonType}': ${error.message}`,

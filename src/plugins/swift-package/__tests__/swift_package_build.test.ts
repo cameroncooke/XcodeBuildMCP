@@ -5,7 +5,11 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import swiftPackageBuild from '../swift_package_build.ts';
 
 describe('swift_package_build plugin', () => {
@@ -69,6 +73,7 @@ describe('swift_package_build plugin', () => {
           packagePath: '/test/package',
         },
         executor,
+        createMockFileSystemExecutor(),
       );
 
       expect(executorCalls).toEqual([
@@ -98,6 +103,7 @@ describe('swift_package_build plugin', () => {
           configuration: 'release',
         },
         executor,
+        createMockFileSystemExecutor(),
       );
 
       expect(executorCalls).toEqual([
@@ -130,6 +136,7 @@ describe('swift_package_build plugin', () => {
           parseAsLibrary: true,
         },
         executor,
+        createMockFileSystemExecutor(),
       );
 
       expect(executorCalls).toEqual([
@@ -160,7 +167,11 @@ describe('swift_package_build plugin', () => {
 
   describe('Response Logic Testing', () => {
     it('should return validation error for missing packagePath', async () => {
-      const result = await swiftPackageBuild.handler({});
+      const result = await swiftPackageBuild.handler(
+        {},
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -184,6 +195,7 @@ describe('swift_package_build plugin', () => {
           packagePath: '/test/package',
         },
         executor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -210,6 +222,7 @@ describe('swift_package_build plugin', () => {
           packagePath: '/test/package',
         },
         executor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -233,6 +246,7 @@ describe('swift_package_build plugin', () => {
           packagePath: '/test/package',
         },
         executor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -261,6 +275,7 @@ describe('swift_package_build plugin', () => {
           parseAsLibrary: true,
         },
         executor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
 
 // Import the plugin
 import listSims from '../list_sims.ts';
@@ -128,7 +128,11 @@ Next Steps:
         process: { pid: 12345 },
       });
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      const result = await listSims.handler(
+        { enabled: true },
+        mockExecutor,
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -157,7 +161,11 @@ Next Steps:
         process: { pid: 12345 },
       });
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      const result = await listSims.handler(
+        { enabled: true },
+        mockExecutor,
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -177,7 +185,11 @@ Next Steps:
         process: { pid: 12345 },
       });
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      const result = await listSims.handler(
+        { enabled: true },
+        mockExecutor,
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -192,7 +204,11 @@ Next Steps:
     it('should handle exception with Error object', async () => {
       const mockExecutor = createMockExecutor(new Error('Command execution failed'));
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      const result = await listSims.handler(
+        { enabled: true },
+        mockExecutor,
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -207,7 +223,11 @@ Next Steps:
     it('should handle exception with string error', async () => {
       const mockExecutor = createMockExecutor('String error');
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      const result = await listSims.handler(
+        { enabled: true },
+        mockExecutor,
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

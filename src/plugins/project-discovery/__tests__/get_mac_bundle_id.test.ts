@@ -50,7 +50,14 @@ describe('get_mac_bundle_id plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error when appPath validation fails', async () => {
-      const result = await plugin.handler({ appPath: null });
+      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockFileSystemExecutor = createMockFileSystemExecutor({});
+
+      const result = await plugin.handler(
+        { appPath: null },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -242,7 +249,14 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should handle schema validation error when appPath is null', async () => {
-      const result = await plugin.handler({ appPath: null });
+      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockFileSystemExecutor = createMockFileSystemExecutor({});
+
+      const result = await plugin.handler(
+        { appPath: null },
+        mockSyncExecutor,
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [

@@ -6,7 +6,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import bootSim from '../boot_sim.ts';
 
 describe('boot_sim tool', () => {
@@ -70,7 +74,11 @@ describe('boot_sim tool', () => {
     });
 
     it('should handle validation failure', async () => {
-      const result = await bootSim.handler({ simulatorUuid: undefined });
+      const result = await bootSim.handler(
+        { simulatorUuid: undefined },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

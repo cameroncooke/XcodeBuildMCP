@@ -4,7 +4,11 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import gesturePlugin from '../gesture.ts';
 
 describe('Gesture Plugin', () => {
@@ -251,7 +255,11 @@ describe('Gesture Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await gesturePlugin.handler({ preset: 'scroll-up' });
+      const result = await gesturePlugin.handler(
+        { preset: 'scroll-up' },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -265,9 +273,13 @@ describe('Gesture Plugin', () => {
     });
 
     it('should return error for missing preset', async () => {
-      const result = await gesturePlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await gesturePlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -353,7 +365,7 @@ describe('Gesture Plugin', () => {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
         },
-        undefined,
+        createNoopExecutor(),
         mockAxeHelpers,
       );
 

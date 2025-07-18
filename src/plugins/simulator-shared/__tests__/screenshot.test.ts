@@ -220,7 +220,11 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle missing simulatorUuid', async () => {
-      const result = await screenshotPlugin.handler({});
+      const result = await screenshotPlugin.handler(
+        {},
+        createMockExecutor({ success: true }),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -254,7 +258,7 @@ describe('screenshot plugin', () => {
           simulatorUuid: 'test-uuid',
         },
         mockExecutor,
-        undefined,
+        createMockFileSystemExecutor(),
         mockPathDeps,
         mockUuidDeps,
       );
@@ -353,6 +357,7 @@ describe('screenshot plugin', () => {
         ['xcrun', 'simctl', 'io', 'test-uuid', 'screenshot', '/tmp/screenshot_mock-uuid-123.png'],
         '[Screenshot]: screenshot',
         false,
+        undefined,
       ]);
     });
 
@@ -376,7 +381,7 @@ describe('screenshot plugin', () => {
           simulatorUuid: 'test-uuid',
         },
         mockExecutor,
-        undefined,
+        createMockFileSystemExecutor(),
         mockPathDeps,
         mockUuidDeps,
       );
@@ -411,7 +416,7 @@ describe('screenshot plugin', () => {
           simulatorUuid: 'test-uuid',
         },
         mockExecutor,
-        undefined,
+        createMockFileSystemExecutor(),
         mockPathDeps,
         mockUuidDeps,
       );
@@ -446,7 +451,7 @@ describe('screenshot plugin', () => {
           simulatorUuid: 'test-uuid',
         },
         mockExecutor,
-        undefined,
+        createMockFileSystemExecutor(),
         mockPathDeps,
         mockUuidDeps,
       );

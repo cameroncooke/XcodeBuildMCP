@@ -10,7 +10,11 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import cleanWs from '../clean_ws.ts';
 
 describe('clean_ws plugin tests', () => {
@@ -280,6 +284,7 @@ describe('clean_ws plugin tests', () => {
           scheme: 'MyScheme',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -309,6 +314,7 @@ describe('clean_ws plugin tests', () => {
           extraArgs: ['--verbose'],
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -334,6 +340,7 @@ describe('clean_ws plugin tests', () => {
           workspacePath: '/path/to/MyProject.xcworkspace',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -358,6 +365,7 @@ describe('clean_ws plugin tests', () => {
           scheme: 'MyScheme',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -376,9 +384,13 @@ describe('clean_ws plugin tests', () => {
     });
 
     it('should return error response for validation failure', async () => {
-      const result = await cleanWs.handler({
-        workspacePath: null,
-      });
+      const result = await cleanWs.handler(
+        {
+          workspacePath: null,
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -400,6 +412,7 @@ describe('clean_ws plugin tests', () => {
           scheme: 'MyScheme',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -414,9 +427,13 @@ describe('clean_ws plugin tests', () => {
     });
 
     it('should handle invalid schema with zod validation', async () => {
-      const result = await cleanWs.handler({
-        workspacePath: 123, // Invalid type
-      });
+      const result = await cleanWs.handler(
+        {
+          workspacePath: 123, // Invalid type
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toBe(

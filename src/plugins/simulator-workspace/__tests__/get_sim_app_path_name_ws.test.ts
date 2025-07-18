@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import getSimAppPathNameWsTool from '../get_sim_app_path_name_ws.ts';
 
 describe('get_sim_app_path_name_ws plugin', () => {
@@ -305,6 +309,7 @@ FULL_PRODUCT_NAME = MyApp.app
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -438,11 +443,15 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should handle missing workspacePath', async () => {
-      const result = await getSimAppPathNameWsTool.handler({
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await getSimAppPathNameWsTool.handler(
+        {
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -456,11 +465,15 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should handle missing scheme', async () => {
-      const result = await getSimAppPathNameWsTool.handler({
-        workspacePath: '/path/to/Project.xcworkspace',
-        platform: 'iOS Simulator',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Project.xcworkspace',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -474,11 +487,15 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should handle missing platform', async () => {
-      const result = await getSimAppPathNameWsTool.handler({
-        workspacePath: '/path/to/Project.xcworkspace',
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-      });
+      const result = await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Project.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -492,11 +509,15 @@ FULL_PRODUCT_NAME = MyApp.app
     });
 
     it('should handle missing simulatorName', async () => {
-      const result = await getSimAppPathNameWsTool.handler({
-        workspacePath: '/path/to/Project.xcworkspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-      });
+      const result = await getSimAppPathNameWsTool.handler(
+        {
+          workspacePath: '/path/to/Project.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -523,6 +544,7 @@ FULL_PRODUCT_NAME = MyApp.app
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -550,6 +572,7 @@ FULL_PRODUCT_NAME = MyApp.app
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -577,6 +600,7 @@ FULL_PRODUCT_NAME = MyApp.app
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 
 // Import the plugin
 import setSimAppearancePlugin from '../set_sim_appearance.ts';
@@ -119,6 +123,7 @@ describe('set_sim_appearance plugin', () => {
           mode: 'dark',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -151,6 +156,7 @@ describe('set_sim_appearance plugin', () => {
           mode: 'dark',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(executorCalls).toEqual([
@@ -181,6 +187,7 @@ describe('set_sim_appearance plugin', () => {
           mode: 'light',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(executorCalls).toEqual([
@@ -211,6 +218,7 @@ describe('set_sim_appearance plugin', () => {
           mode: 'dark',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(executorCalls).toEqual([
@@ -238,6 +246,7 @@ describe('set_sim_appearance plugin', () => {
           mode: 'dark',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -262,6 +271,7 @@ describe('set_sim_appearance plugin', () => {
           mode: 'light',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -283,6 +293,7 @@ describe('set_sim_appearance plugin', () => {
           mode: 'dark',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -308,6 +319,7 @@ describe('set_sim_appearance plugin', () => {
           mode: 'light',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -332,6 +344,7 @@ describe('set_sim_appearance plugin', () => {
           mode: 'dark',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

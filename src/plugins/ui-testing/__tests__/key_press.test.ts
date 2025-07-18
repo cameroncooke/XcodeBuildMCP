@@ -4,7 +4,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import keyPressPlugin from '../key_press.ts';
 
 describe('Key Press Plugin', () => {
@@ -217,7 +221,7 @@ describe('Key Press Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await keyPressPlugin.handler({ keyCode: 40 });
+      const result = await keyPressPlugin.handler({ keyCode: 40 }, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -231,9 +235,12 @@ describe('Key Press Plugin', () => {
     });
 
     it('should return error for missing keyCode', async () => {
-      const result = await keyPressPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
-      });
+      const result = await keyPressPlugin.handler(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -306,7 +313,7 @@ describe('Key Press Plugin', () => {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
         },
-        undefined,
+        createNoopExecutor(),
         mockGetAxePath,
         mockGetBundledAxeEnvironment,
       );

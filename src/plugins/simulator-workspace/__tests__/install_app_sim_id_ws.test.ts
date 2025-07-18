@@ -248,10 +248,14 @@ describe('install_app_sim_id_ws tool', () => {
 
   describe('Parameter Validation', () => {
     it('should handle validation failure for simulatorUuid', async () => {
-      const result = await installAppSimIdWs.handler({
-        simulatorUuid: undefined,
-        appPath: '/path/to/app.app',
-      });
+      const result = await installAppSimIdWs.handler(
+        {
+          simulatorUuid: undefined,
+          appPath: '/path/to/app.app',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -265,10 +269,14 @@ describe('install_app_sim_id_ws tool', () => {
     });
 
     it('should handle validation failure for appPath', async () => {
-      const result = await installAppSimIdWs.handler({
-        simulatorUuid: 'test-uuid-123',
-        appPath: undefined,
-      });
+      const result = await installAppSimIdWs.handler(
+        {
+          simulatorUuid: 'test-uuid-123',
+          appPath: undefined,
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -291,7 +299,7 @@ describe('install_app_sim_id_ws tool', () => {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
         },
-        undefined,
+        createNoopExecutor(),
         mockFileSystem,
       );
 

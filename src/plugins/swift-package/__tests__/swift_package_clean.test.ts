@@ -5,7 +5,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import swiftPackageClean from '../swift_package_clean.ts';
 
 describe('swift_package_clean plugin', () => {
@@ -64,6 +68,7 @@ describe('swift_package_clean plugin', () => {
           packagePath: '/test/package',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);
@@ -78,7 +83,11 @@ describe('swift_package_clean plugin', () => {
 
   describe('Response Logic Testing', () => {
     it('should return validation error for missing packagePath', async () => {
-      const result = await swiftPackageClean.handler({});
+      const result = await swiftPackageClean.handler(
+        {},
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -102,6 +111,7 @@ describe('swift_package_clean plugin', () => {
           packagePath: '/test/package',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -127,6 +137,7 @@ describe('swift_package_clean plugin', () => {
           packagePath: '/test/package',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -152,6 +163,7 @@ describe('swift_package_clean plugin', () => {
           packagePath: '/test/package',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -175,6 +187,7 @@ describe('swift_package_clean plugin', () => {
           packagePath: '/test/package',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

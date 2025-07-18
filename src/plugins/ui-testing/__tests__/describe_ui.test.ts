@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 import describeUIPlugin from '../describe_ui.ts';
 
 describe('Describe UI Plugin', () => {
@@ -51,7 +51,7 @@ describe('Describe UI Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await describeUIPlugin.handler({});
+      const result = await describeUIPlugin.handler({}, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -131,7 +131,7 @@ describe('Describe UI Plugin', () => {
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
-        undefined,
+        createNoopExecutor(),
         mockAxeHelpers,
       );
 

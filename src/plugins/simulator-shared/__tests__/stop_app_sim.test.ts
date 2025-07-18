@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createNoopExecutor,
+} from '../../../utils/command.js';
 import plugin from '../stop_app_sim.ts';
 
 describe('stop_app_sim plugin', () => {
@@ -64,6 +68,7 @@ describe('stop_app_sim plugin', () => {
           bundleId: 'com.example.App',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -88,6 +93,7 @@ describe('stop_app_sim plugin', () => {
           bundleId: 'com.example.App',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -102,10 +108,14 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle missing simulatorUuid', async () => {
-      const result = await plugin.handler({
-        simulatorUuid: undefined,
-        bundleId: 'com.example.App',
-      });
+      const result = await plugin.handler(
+        {
+          simulatorUuid: undefined,
+          bundleId: 'com.example.App',
+        },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -119,7 +129,11 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle missing bundleId', async () => {
-      const result = await plugin.handler({ simulatorUuid: 'test-uuid', bundleId: undefined });
+      const result = await plugin.handler(
+        { simulatorUuid: 'test-uuid', bundleId: undefined },
+        createNoopExecutor(),
+        createMockFileSystemExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -143,6 +157,7 @@ describe('stop_app_sim plugin', () => {
           bundleId: 'com.example.App',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -179,6 +194,7 @@ describe('stop_app_sim plugin', () => {
           bundleId: 'com.example.App',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(calls).toEqual([
