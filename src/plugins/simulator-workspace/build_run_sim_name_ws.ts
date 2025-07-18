@@ -1,13 +1,14 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
+  log,
+  getDefaultCommandExecutor,
   validateRequiredParam,
   createTextResponse,
-  getDefaultCommandExecutor,
+  executeXcodeBuildCommand,
+  executeCommand,
+  CommandExecutor,
 } from '../../utils/index.js';
-import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { execSync } from 'child_process';
 
 const XcodePlatform = {
@@ -165,10 +166,10 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     log('info', `Installing app at ${appPath}...`);
     const installResult = await executeCommand(
       ['xcrun', 'simctl', 'install', simulatorUuid, appPath],
+      executor,
       'Install App',
       true,
       {},
-      executor,
     );
 
     if (!installResult.success) {
@@ -179,10 +180,10 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // Extract bundle ID from Info.plist
     const bundleIdResult = await executeCommand(
       ['plutil', '-extract', 'CFBundleIdentifier', 'raw', `${appPath}/Info.plist`],
+      executor,
       'Get Bundle ID',
       true,
       {},
-      executor,
     );
 
     if (!bundleIdResult.success) {

@@ -92,10 +92,13 @@ describe('set_network_condition tool', () => {
     });
 
     it('should handle validation failure', async () => {
-      const result = await setNetworkCondition.handler({
-        simulatorUuid: undefined,
-        profile: 'wifi',
-      });
+      const result = await setNetworkCondition.handler(
+        {
+          simulatorUuid: undefined,
+          profile: 'wifi',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

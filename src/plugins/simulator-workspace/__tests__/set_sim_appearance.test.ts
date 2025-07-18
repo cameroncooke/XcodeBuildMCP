@@ -62,9 +62,12 @@ describe('set_sim_appearance plugin', () => {
 
   describe('Input Validation', () => {
     it('should handle missing simulatorUuid parameter', async () => {
-      const result = await setSimAppearancePlugin.handler({
-        mode: 'dark',
-      });
+      const result = await setSimAppearancePlugin.handler(
+        {
+          mode: 'dark',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -78,10 +81,13 @@ describe('set_sim_appearance plugin', () => {
     });
 
     it('should handle undefined simulatorUuid parameter', async () => {
-      const result = await setSimAppearancePlugin.handler({
-        simulatorUuid: undefined,
-        mode: 'dark',
-      });
+      const result = await setSimAppearancePlugin.handler(
+        {
+          simulatorUuid: undefined,
+          mode: 'dark',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [
@@ -95,10 +101,13 @@ describe('set_sim_appearance plugin', () => {
     });
 
     it('should handle null simulatorUuid parameter', async () => {
-      const result = await setSimAppearancePlugin.handler({
-        simulatorUuid: null,
-        mode: 'dark',
-      });
+      const result = await setSimAppearancePlugin.handler(
+        {
+          simulatorUuid: null,
+          mode: 'dark',
+        },
+        createNoopExecutor(),
+      );
 
       expect(result).toEqual({
         content: [

@@ -260,6 +260,13 @@ describe('build_run_sim_name_ws tool', () => {
             output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n',
             process: { pid: 12345 },
           };
+        } else if (command.includes('xcodebuild') && command.includes('build')) {
+          // Build command
+          return {
+            success: true,
+            output: 'BUILD SUCCEEDED',
+            process: { pid: 12345 },
+          };
         } else if (command.includes('plutil')) {
           // Bundle ID extraction
           return {

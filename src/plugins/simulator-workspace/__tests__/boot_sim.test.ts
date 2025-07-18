@@ -70,7 +70,7 @@ describe('boot_sim tool', () => {
     });
 
     it('should handle validation failure', async () => {
-      const result = await bootSim.handler({ simulatorUuid: undefined });
+      const result = await bootSim.handler({ simulatorUuid: undefined }, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
