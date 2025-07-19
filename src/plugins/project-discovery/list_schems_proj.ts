@@ -87,9 +87,9 @@ export default {
   name: 'list_schems_proj',
   description:
     "Lists available schemes in the project file. IMPORTANT: Requires projectPath. Example: list_schems_proj({ projectPath: '/path/to/MyProject.xcodeproj' })",
-  schema: z.object({
+  schema: {
     projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
-  }),
+  },
   async handler(
     args: Record<string, unknown>,
     executor: CommandExecutor = getDefaultCommandExecutor(),

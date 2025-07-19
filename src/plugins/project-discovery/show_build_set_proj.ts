@@ -64,10 +64,10 @@ export default {
   name: 'show_build_set_proj',
   description:
     "Shows build settings from a project file using xcodebuild. IMPORTANT: Requires projectPath and scheme. Example: show_build_set_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-  schema: z.object({
+  schema: {
     projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
     scheme: z.string().describe('Scheme name to show build settings for (Required)'),
-  }),
+  },
   async handler(
     args: Record<string, unknown>,
     executor: CommandExecutor = getDefaultCommandExecutor(),

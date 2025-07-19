@@ -87,9 +87,9 @@ export default {
   name: 'list_schems_ws',
   description:
     "Lists available schemes in the workspace. IMPORTANT: Requires workspacePath. Example: list_schems_ws({ workspacePath: '/path/to/MyProject.xcworkspace' })",
-  schema: z.object({
+  schema: {
     workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-  }),
+  },
   async handler(
     args: Record<string, unknown>,
     executor: CommandExecutor = getDefaultCommandExecutor(),
