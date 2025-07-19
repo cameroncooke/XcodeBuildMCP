@@ -95,12 +95,11 @@ export default {
     executor: CommandExecutor = getDefaultCommandExecutor(),
   ): Promise<ToolResponse> {
     const params = args;
-    const validated = this.schema.parse(params);
 
     // Validate required parameters
-    const projectValidation = validateRequiredParam('projectPath', validated.projectPath);
+    const projectValidation = validateRequiredParam('projectPath', params.projectPath);
     if (!projectValidation.isValid) return projectValidation.errorResponse;
 
-    return _handleListSchemesLogic(validated, executor);
+    return _handleListSchemesLogic(params, executor);
   },
 };

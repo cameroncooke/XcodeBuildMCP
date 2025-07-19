@@ -23,6 +23,85 @@ const defaultSyncExecutor: SyncExecutor = (command: string): string => {
   return execSync(command).toString().trim();
 };
 
+/**
+ * Internal logic for extracting bundle ID from macOS app.
+ */
+async function _processExtraction(
+  validated: { appPath: string },
+  syncExecutor: SyncExecutor,
+  fileSystemExecutor: FileSystemExecutor,
+): Promise<ToolResponse> {
+  if (!fileSystemExecutor.existsSync(validated.appPath)) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `File not found: '${validated.appPath}'. Please check the path and try again.`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  log('info', `Starting bundle ID extraction for macOS app: ${validated.appPath}`);
+
+  try {
+    let bundleId;
+
+    try {
+      bundleId = syncExecutor(
+        `defaults read "${validated.appPath}/Contents/Info" CFBundleIdentifier`,
+      );
+    } catch {
+      try {
+        bundleId = syncExecutor(
+          `/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${validated.appPath}/Contents/Info.plist"`,
+        );
+      } catch (innerError) {
+        throw new Error(
+          `Could not extract bundle ID from Info.plist: ${innerError instanceof Error ? innerError.message : String(innerError)}`,
+        );
+      }
+    }
+
+    log('info', `Extracted macOS bundle ID: ${bundleId}`);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `✅ Bundle ID: ${bundleId}`,
+        },
+        {
+          type: 'text',
+          text: `Next Steps:
+- Launch the app: launch_mac_app({ appPath: "${validated.appPath}" })
+- Build from workspace: macos_build_workspace({ workspacePath: "PATH_TO_WORKSPACE", scheme: "SCHEME_NAME" })
+- Build from project: macos_build_project({ projectPath: "PATH_TO_PROJECT", scheme: "SCHEME_NAME" })`,
+        },
+      ],
+      isError: false,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('error', `Error extracting macOS bundle ID: ${errorMessage}`);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Error extracting macOS bundle ID: ${errorMessage}`,
+        },
+        {
+          type: 'text',
+          text: `Make sure the path points to a valid macOS app bundle (.app directory).`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
 export default {
   name: 'get_mac_bundle_id',
   description:
@@ -41,105 +120,12 @@ export default {
   ): Promise<ToolResponse> {
     const params = args;
 
-    // Handle schema validation errors
-    try {
-      const validated = this.schema.parse(params);
-
-      const appPathValidation = validateRequiredParam('appPath', validated.appPath);
-      if (!appPathValidation.isValid) {
-        return appPathValidation.errorResponse;
-      }
-
-      return await this.processExtraction(validated, syncExecutor, fileSystemExecutor);
-    } catch (error) {
-      if (error instanceof Error && error.name === 'ZodError') {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
-            },
-          ],
-          isError: true,
-        };
-      }
-      throw error;
-    }
-  },
-
-  async processExtraction(
-    validated: { appPath: string },
-    syncExecutor: SyncExecutor,
-    fileSystemExecutor: FileSystemExecutor,
-  ): Promise<ToolResponse> {
-    if (!fileSystemExecutor.existsSync(validated.appPath)) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `File not found: '${validated.appPath}'. Please check the path and try again.`,
-          },
-        ],
-        isError: true,
-      };
+    const appPathValidation = validateRequiredParam('appPath', params.appPath);
+    if (!appPathValidation.isValid) {
+      return appPathValidation.errorResponse;
     }
 
-    log('info', `Starting bundle ID extraction for macOS app: ${validated.appPath}`);
-
-    try {
-      let bundleId;
-
-      try {
-        bundleId = syncExecutor(
-          `defaults read "${validated.appPath}/Contents/Info" CFBundleIdentifier`,
-        );
-      } catch {
-        try {
-          bundleId = syncExecutor(
-            `/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${validated.appPath}/Contents/Info.plist"`,
-          );
-        } catch (innerError) {
-          throw new Error(
-            `Could not extract bundle ID from Info.plist: ${innerError instanceof Error ? innerError.message : String(innerError)}`,
-          );
-        }
-      }
-
-      log('info', `Extracted macOS bundle ID: ${bundleId}`);
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `✅ Bundle ID: ${bundleId}`,
-          },
-          {
-            type: 'text',
-            text: `Next Steps:
-- Launch the app: launch_mac_app({ appPath: "${validated.appPath}" })
-- Build from workspace: macos_build_workspace({ workspacePath: "PATH_TO_WORKSPACE", scheme: "SCHEME_NAME" })
-- Build from project: macos_build_project({ projectPath: "PATH_TO_PROJECT", scheme: "SCHEME_NAME" })`,
-          },
-        ],
-        isError: false,
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      log('error', `Error extracting macOS bundle ID: ${errorMessage}`);
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Error extracting macOS bundle ID: ${errorMessage}`,
-          },
-          {
-            type: 'text',
-            text: `Make sure the path points to a valid macOS app bundle (.app directory).`,
-          },
-        ],
-        isError: true,
-      };
-    }
+    const validated = { appPath: params.appPath as string };
+    return await _processExtraction(validated, syncExecutor, fileSystemExecutor);
   },
 };

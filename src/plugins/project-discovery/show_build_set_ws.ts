@@ -80,15 +80,14 @@ export default {
     executor: CommandExecutor = getDefaultCommandExecutor(),
   ): Promise<ToolResponse> {
     const params = args;
-    const validated = this.schema.parse(params);
 
     // Validate required parameters
-    const workspaceValidation = validateRequiredParam('workspacePath', validated.workspacePath);
+    const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
     if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
 
-    const schemeValidation = validateRequiredParam('scheme', validated.scheme);
+    const schemeValidation = validateRequiredParam('scheme', params.scheme);
     if (!schemeValidation.isValid) return schemeValidation.errorResponse;
 
-    return _handleShowBuildSettingsLogic(validated, executor);
+    return _handleShowBuildSettingsLogic(params, executor);
   },
 };
