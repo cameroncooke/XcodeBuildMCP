@@ -22,7 +22,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Import utilities
 import { log } from './utils/logger.js';
-import { getDefaultCommandExecutor } from './utils/command.js';
+import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from './utils/command.js';
 
 // Import version
 import { version } from './version.js';
@@ -34,9 +34,23 @@ import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
 /**
  * Wrapper function to adapt MCP SDK handler calling convention to our dependency injection pattern
  * MCP SDK calls handlers with just (args), but our handlers expect (args, executor)
+ *
+ * This function intelligently detects the required executor type based on the handler's parameter names.
  */
 function wrapHandlerWithExecutor(handler: any) {
   return async (args: any) => {
+    // Get the handler function's parameter names to determine what executor type it expects
+    const handlerString = handler.toString();
+
+    // Check if the handler expects FileSystemExecutor
+    if (
+      handlerString.includes('fileSystemExecutor') ||
+      handlerString.includes('FileSystemExecutor')
+    ) {
+      return handler(args, getDefaultFileSystemExecutor());
+    }
+
+    // Default to CommandExecutor for most tools
     return handler(args, getDefaultCommandExecutor());
   };
 }
