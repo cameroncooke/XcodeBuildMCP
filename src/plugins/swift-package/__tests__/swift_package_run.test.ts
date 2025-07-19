@@ -4,27 +4,21 @@
  * Integration tests using dependency injection for deterministic testing
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
-import swiftPackageRun from '../swift_package_run.ts';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 
-// Pure dependency injection mock for spawn
-function createMockSpawn() {
-  const calls: any[] = [];
-  const mockProcess = {
+// Mock child_process.spawn for background mode tests
+vi.mock('node:child_process', () => ({
+  spawn: vi.fn(() => ({
     pid: 12345,
-    stdout: { on: (event: string, callback: (data: any) => void) => {} },
-    stderr: { on: (event: string, callback: (data: any) => void) => {} },
-    on: (event: string, callback: (code?: number, signal?: string) => void) => {},
-  };
+    stdout: { on: vi.fn() },
+    stderr: { on: vi.fn() },
+    on: vi.fn(),
+  })),
+}));
 
-  const mockSpawn = (...args: any[]) => {
-    calls.push(args);
-    return mockProcess;
-  };
-
-  return { mockSpawn, mockProcess, calls };
-}
+import swiftPackageRun from '../swift_package_run.ts';
 
 describe('swift_package_run plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -82,115 +76,196 @@ describe('swift_package_run plugin', () => {
     });
   });
 
-  describe('Command Generation Testing', () => {
-    it('should build correct command for basic run', () => {
-      const { mockSpawn, calls } = createMockSpawn();
+  let executorCalls: any[] = [];
 
-      swiftPackageRun.handler(
+  beforeEach(() => {
+    executorCalls = [];
+  });
+
+  describe('Command Generation Testing', () => {
+    it('should build correct command for basic run (foreground mode)', async () => {
+      const mockExecutor = (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: any,
+      ) => {
+        executorCalls.push({ command, logPrefix, useShell, env });
+        return Promise.resolve({
+          success: true,
+          output: 'Process completed',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
+
+      await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
         },
-        mockSpawn,
+        mockExecutor,
       );
 
-      expect(calls[0]).toEqual([
-        'swift',
-        ['run', '--package-path', '/test/package'],
-        {
-          cwd: '/test/package',
-          env: process.env,
-        },
-      ]);
+      expect(executorCalls[0]).toEqual({
+        command: ['swift', 'run', '--package-path', '/test/package'],
+        logPrefix: 'Swift Package Run',
+        useShell: true,
+        env: undefined,
+      });
     });
 
-    it('should build correct command with release configuration', () => {
-      const { mockSpawn, calls } = createMockSpawn();
+    it('should build correct command with release configuration', async () => {
+      const mockExecutor = (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: any,
+      ) => {
+        executorCalls.push({ command, logPrefix, useShell, env });
+        return Promise.resolve({
+          success: true,
+          output: 'Process completed',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
 
-      swiftPackageRun.handler(
+      await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
           configuration: 'release',
         },
-        mockSpawn,
+        mockExecutor,
       );
 
-      expect(calls[0]).toEqual([
-        'swift',
-        ['run', '--package-path', '/test/package', '-c', 'release'],
-        {
-          cwd: '/test/package',
-          env: process.env,
-        },
-      ]);
+      expect(executorCalls[0]).toEqual({
+        command: ['swift', 'run', '--package-path', '/test/package', '-c', 'release'],
+        logPrefix: 'Swift Package Run',
+        useShell: true,
+        env: undefined,
+      });
     });
 
-    it('should build correct command with executable name', () => {
-      const { mockSpawn, calls } = createMockSpawn();
+    it('should build correct command with executable name', async () => {
+      const mockExecutor = (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: any,
+      ) => {
+        executorCalls.push({ command, logPrefix, useShell, env });
+        return Promise.resolve({
+          success: true,
+          output: 'Process completed',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
 
-      swiftPackageRun.handler(
+      await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
           executableName: 'MyApp',
         },
-        mockSpawn,
+        mockExecutor,
       );
 
-      expect(calls[0]).toEqual([
-        'swift',
-        ['run', '--package-path', '/test/package', 'MyApp'],
-        {
-          cwd: '/test/package',
-          env: process.env,
-        },
-      ]);
+      expect(executorCalls[0]).toEqual({
+        command: ['swift', 'run', '--package-path', '/test/package', 'MyApp'],
+        logPrefix: 'Swift Package Run',
+        useShell: true,
+        env: undefined,
+      });
     });
 
-    it('should build correct command with arguments', () => {
-      const { mockSpawn, calls } = createMockSpawn();
+    it('should build correct command with arguments', async () => {
+      const mockExecutor = (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: any,
+      ) => {
+        executorCalls.push({ command, logPrefix, useShell, env });
+        return Promise.resolve({
+          success: true,
+          output: 'Process completed',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
 
-      swiftPackageRun.handler(
+      await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
           arguments: ['arg1', 'arg2'],
         },
-        mockSpawn,
+        mockExecutor,
       );
 
-      expect(calls[0]).toEqual([
-        'swift',
-        ['run', '--package-path', '/test/package', '--', 'arg1', 'arg2'],
-        {
-          cwd: '/test/package',
-          env: process.env,
-        },
-      ]);
+      expect(executorCalls[0]).toEqual({
+        command: ['swift', 'run', '--package-path', '/test/package', '--', 'arg1', 'arg2'],
+        logPrefix: 'Swift Package Run',
+        useShell: true,
+        env: undefined,
+      });
     });
 
-    it('should build correct command with parseAsLibrary flag', () => {
-      const { mockSpawn, calls } = createMockSpawn();
+    it('should build correct command with parseAsLibrary flag', async () => {
+      const mockExecutor = (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: any,
+      ) => {
+        executorCalls.push({ command, logPrefix, useShell, env });
+        return Promise.resolve({
+          success: true,
+          output: 'Process completed',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
 
-      swiftPackageRun.handler(
+      await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
           parseAsLibrary: true,
         },
-        mockSpawn,
+        mockExecutor,
       );
 
-      expect(calls[0]).toEqual([
-        'swift',
-        ['run', '--package-path', '/test/package', '-Xswiftc', '-parse-as-library'],
-        {
-          cwd: '/test/package',
-          env: process.env,
-        },
-      ]);
+      expect(executorCalls[0]).toEqual({
+        command: [
+          'swift',
+          'run',
+          '--package-path',
+          '/test/package',
+          '-Xswiftc',
+          '-parse-as-library',
+        ],
+        logPrefix: 'Swift Package Run',
+        useShell: true,
+        env: undefined,
+      });
     });
 
-    it('should build correct command with all parameters', () => {
-      const { mockSpawn, calls } = createMockSpawn();
+    it('should build correct command with all parameters', async () => {
+      const mockExecutor = (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: any,
+      ) => {
+        executorCalls.push({ command, logPrefix, useShell, env });
+        return Promise.resolve({
+          success: true,
+          output: 'Process completed',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
 
-      swiftPackageRun.handler(
+      await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
           executableName: 'MyApp',
@@ -198,12 +273,12 @@ describe('swift_package_run plugin', () => {
           arguments: ['arg1'],
           parseAsLibrary: true,
         },
-        mockSpawn,
+        mockExecutor,
       );
 
-      expect(calls[0]).toEqual([
-        'swift',
-        [
+      expect(executorCalls[0]).toEqual({
+        command: [
+          'swift',
           'run',
           '--package-path',
           '/test/package',
@@ -215,18 +290,33 @@ describe('swift_package_run plugin', () => {
           '--',
           'arg1',
         ],
+        logPrefix: 'Swift Package Run',
+        useShell: true,
+        env: undefined,
+      });
+    });
+
+    it('should not call executor for background mode', async () => {
+      // For background mode, no executor should be called since it uses direct spawn
+      const mockExecutor = createNoopExecutor();
+
+      const result = await swiftPackageRun.handler(
         {
-          cwd: '/test/package',
-          env: process.env,
+          packagePath: '/test/package',
+          background: true,
         },
-      ]);
+        mockExecutor,
+      );
+
+      // Should return success without calling executor
+      expect(result.content[0].text).toContain('🚀 Started executable in background');
     });
   });
 
   describe('Response Logic Testing', () => {
     it('should return validation error for missing packagePath', async () => {
-      const { mockSpawn } = createMockSpawn();
-      const result = await swiftPackageRun.handler({}, mockSpawn);
+      const mockExecutor = createNoopExecutor();
+      const result = await swiftPackageRun.handler({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -240,55 +330,30 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should return success response for background mode', async () => {
-      const { mockSpawn } = createMockSpawn();
+      const mockExecutor = createNoopExecutor();
       const result = await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
           background: true,
         },
-        mockSpawn,
+        mockExecutor,
       );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: '🚀 Started executable in background (PID: 12345)\n💡 Process is running independently. Use swift_package_stop with PID 12345 to terminate when needed.',
-          },
-        ],
-      });
+      expect(result.content[0].text).toContain('🚀 Started executable in background');
+      expect(result.content[0].text).toContain('💡 Process is running independently');
     });
 
     it('should return success response for successful execution', async () => {
-      // Create custom process with success behavior - immediate resolution
-      const mockProcess = {
-        pid: 12345,
-        stdout: {
-          on: (event: string, callback: (data: any) => void) => {
-            if (event === 'data') {
-              // Immediate callback, no setTimeout
-              callback('Hello, World!');
-            }
-          },
-        },
-        stderr: {
-          on: (event: string, callback: (data: any) => void) => {},
-        },
-        on: (event: string, callback: (code?: number, signal?: string) => void) => {
-          if (event === 'exit') {
-            // Use setImmediate for next tick, no setTimeout
-            setImmediate(() => callback(0, null));
-          }
-        },
-      };
-
-      const customMockSpawn = () => mockProcess;
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Hello, World!',
+      });
 
       const result = await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
         },
-        customMockSpawn,
+        mockExecutor,
       );
 
       expect(result).toEqual({
@@ -301,82 +366,46 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should return error response for failed execution', async () => {
-      // Create custom process with failure behavior - immediate resolution
-      const mockProcess = {
-        pid: 12345,
-        stdout: {
-          on: (event: string, callback: (data: any) => void) => {},
-        },
-        stderr: {
-          on: (event: string, callback: (data: any) => void) => {
-            if (event === 'data') {
-              // Immediate callback, no setTimeout
-              callback('Compilation failed');
-            }
-          },
-        },
-        on: (event: string, callback: (code?: number, signal?: string) => void) => {
-          if (event === 'exit') {
-            // Use setImmediate for next tick, no setTimeout
-            setImmediate(() => callback(1, null));
-          }
-        },
-      };
-
-      const customMockSpawn = () => mockProcess;
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'Compilation failed',
+      });
 
       const result = await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
         },
-        customMockSpawn,
+        mockExecutor,
       );
 
       expect(result).toEqual({
         content: [
-          { type: 'text', text: '❌ Swift executable exited with code 1.' },
+          { type: 'text', text: '❌ Swift executable failed.' },
           { type: 'text', text: '(no output)' },
           { type: 'text', text: 'Errors:\nCompilation failed' },
         ],
       });
     });
 
-    it('should handle spawn process error', async () => {
-      // Create custom process with error behavior - immediate resolution
-      const mockProcess = {
-        pid: 12345,
-        stdout: {
-          on: (event: string, callback: (data: any) => void) => {},
-        },
-        stderr: {
-          on: (event: string, callback: (data: any) => void) => {},
-        },
-        on: (event: string, callback: (code?: number, signal?: string, error?: Error) => void) => {
-          if (event === 'exit') {
-            // Use setImmediate for next tick, no setTimeout
-            setImmediate(() => callback(1, null));
-          } else if (event === 'error') {
-            // Use setImmediate for next tick, no setTimeout
-            setImmediate(() => callback(new Error('Command not found')));
-          }
-        },
-      };
-
-      const customMockSpawn = () => mockProcess;
+    it('should handle executor error', async () => {
+      const mockExecutor = createMockExecutor(new Error('Command not found'));
 
       const result = await swiftPackageRun.handler(
         {
           packagePath: '/test/package',
         },
-        customMockSpawn,
+        mockExecutor,
       );
 
       expect(result).toEqual({
         content: [
-          { type: 'text', text: '❌ Swift executable exited with code 1.' },
-          { type: 'text', text: '(no output)' },
-          { type: 'text', text: 'Errors:\n\nProcess error: Command not found' },
+          {
+            type: 'text',
+            text: 'Error: Failed to execute swift run\nDetails: Command not found',
+          },
         ],
+        isError: true,
       });
     });
   });

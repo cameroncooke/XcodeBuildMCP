@@ -21,7 +21,6 @@ import { createServer, startServer } from './server/server.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Import utilities
-import { spawn } from 'node:child_process';
 import { log } from './utils/logger.js';
 import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from './utils/command.js';
 
@@ -47,11 +46,6 @@ function wrapHandlerWithExecutor(handler: any) {
     const handlerString = handler.toString();
 
     // Check for Swift package tools that need special dependency injection
-    if (handlerString.includes('spawnFn')) {
-      // swift_package_run expects spawn function
-      return handler(args, spawn);
-    }
-
     if (handlerString.includes('processManager')) {
       // swift_package_stop expects ProcessManager
       const processManager = { getProcess, removeProcess };

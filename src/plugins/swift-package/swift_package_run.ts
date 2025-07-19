@@ -4,10 +4,9 @@ import { spawn } from 'node:child_process';
 import { createTextResponse, validateRequiredParam } from '../../utils/index.js';
 import { createErrorResponse } from '../../utils/index.js';
 import { log } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
-
-// Store active processes so we can manage them - keyed by PID for uniqueness
-const activeProcesses = new Map();
+import { addProcess } from './active-processes.js';
 
 // Inlined schemas from src/tools/common/index.ts
 const swiftConfigurationSchema = z
@@ -40,7 +39,7 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    spawnFn: typeof spawn = spawn,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
   ): Promise<ToolResponse> {
     const params = args;
     const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
@@ -74,57 +73,23 @@ export default {
     log('info', `Running swift ${swiftArgs.join(' ')}`);
 
     try {
-      const child = spawnFn('swift', swiftArgs, {
-        cwd: resolvedPath,
-        env: { ...process.env },
-      });
-
-      let output = '';
-      let errorOutput = '';
-      let processExited = false;
-      let timeoutHandle = null;
-
-      // Set up output collection
-      child.stdout?.on('data', (data) => {
-        const text = data.toString();
-        output += text;
-      });
-
-      child.stderr?.on('data', (data) => {
-        const text = data.toString();
-        errorOutput += text;
-      });
-
-      // Handle process exit
-      child.on('exit', (_code, _signal) => {
-        processExited = true;
-        if (child.pid) {
-          activeProcesses.delete(child.pid);
-        }
-        if (timeoutHandle) clearTimeout(timeoutHandle);
-      });
-
-      child.on('error', (error) => {
-        processExited = true;
-        if (child.pid) {
-          activeProcesses.delete(child.pid);
-        }
-        if (timeoutHandle) clearTimeout(timeoutHandle);
-        errorOutput += `\nProcess error: ${error.message}`;
-      });
-
-      // Store the process by PID
-      if (child.pid) {
-        activeProcesses.set(child.pid, {
-          process: child,
-          startedAt: new Date(),
-          packagePath: resolvedPath,
-          executableName: params.executableName,
-        });
-      }
-
+      // For background processes, we need direct access to the ChildProcess
+      // So we'll use spawn directly but in a way that integrates with CommandExecutor for foreground processes
       if (params.background) {
-        // Background mode: return immediately
+        // Background mode: use direct spawn for process management
+        const child = spawn('swift', swiftArgs, {
+          cwd: resolvedPath,
+          env: { ...process.env },
+        });
+
+        // Store the process in active processes system
+        if (child.pid) {
+          addProcess(child.pid, {
+            process: child,
+            startedAt: new Date(),
+          });
+        }
+
         return {
           content: [
             {
@@ -136,75 +101,84 @@ export default {
           ],
         };
       } else {
-        // Foreground mode: wait for completion or timeout, but always complete tool call
-        return await new Promise((resolve) => {
-          let resolved = false;
+        // Foreground mode: use CommandExecutor but handle long-running processes
+        const command = ['swift', ...swiftArgs];
 
-          // Set up timeout - this will fire and complete the tool call
-          timeoutHandle = setTimeout(() => {
-            if (!resolved && !processExited) {
-              resolved = true;
-              // Don't kill the process - let it continue running
-              const content = [
-                {
-                  type: 'text',
-                  text: `⏱️ Process timed out after ${timeout / 1000} seconds but continues running.`,
-                },
-                {
-                  type: 'text',
-                  text: `PID: ${child.pid}`,
-                },
-                {
-                  type: 'text',
-                  text: `💡 Process is still running. Use swift_package_stop with PID ${child.pid} to terminate when needed.`,
-                },
-                { type: 'text', text: output || '(no output so far)' },
-              ];
-              if (errorOutput) {
-                content.push({ type: 'text', text: `Errors:\n${errorOutput}` });
-              }
-              resolve({ content });
-            }
+        // Create a promise that will either complete with the command result or timeout
+        const commandPromise = executor(command, 'Swift Package Run', true, undefined);
+
+        const timeoutPromise = new Promise<any>((resolve) => {
+          setTimeout(() => {
+            resolve({
+              success: false,
+              output: '',
+              error: `Process timed out after ${timeout / 1000} seconds`,
+              timedOut: true,
+            });
           }, timeout);
-
-          // Wait for process to exit (only if it happens before timeout)
-          child.on('exit', (code, signal) => {
-            if (!resolved) {
-              resolved = true;
-              if (timeoutHandle) clearTimeout(timeoutHandle);
-
-              if (code === 0) {
-                resolve({
-                  content: [
-                    { type: 'text', text: '✅ Swift executable completed successfully.' },
-                    {
-                      type: 'text',
-                      text: '💡 Process finished cleanly. Check output for results.',
-                    },
-                    { type: 'text', text: output || '(no output)' },
-                  ],
-                });
-              } else {
-                const exitReason = signal
-                  ? `killed by signal ${signal}`
-                  : `exited with code ${code}`;
-                const content = [
-                  { type: 'text', text: `❌ Swift executable ${exitReason}.` },
-                  { type: 'text', text: output || '(no output)' },
-                ];
-                if (errorOutput) {
-                  content.push({ type: 'text', text: `Errors:\n${errorOutput}` });
-                }
-                resolve({ content });
-              }
-            }
-          });
         });
+
+        // Race between command completion and timeout
+        const result = await Promise.race([commandPromise, timeoutPromise]);
+
+        if (result.timedOut) {
+          // For timeout case, we need to start the process in background mode for continued monitoring
+          const child = spawn('swift', swiftArgs, {
+            cwd: resolvedPath,
+            env: { ...process.env },
+          });
+
+          if (child.pid) {
+            addProcess(child.pid, {
+              process: child,
+              startedAt: new Date(),
+            });
+          }
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `⏱️ Process timed out after ${timeout / 1000} seconds but continues running.`,
+              },
+              {
+                type: 'text',
+                text: `PID: ${child.pid}`,
+              },
+              {
+                type: 'text',
+                text: `💡 Process is still running. Use swift_package_stop with PID ${child.pid} to terminate when needed.`,
+              },
+              { type: 'text', text: result.output || '(no output so far)' },
+            ],
+          };
+        }
+
+        if (result.success) {
+          return {
+            content: [
+              { type: 'text', text: '✅ Swift executable completed successfully.' },
+              {
+                type: 'text',
+                text: '💡 Process finished cleanly. Check output for results.',
+              },
+              { type: 'text', text: result.output || '(no output)' },
+            ],
+          };
+        } else {
+          const content = [
+            { type: 'text', text: '❌ Swift executable failed.' },
+            { type: 'text', text: result.output || '(no output)' },
+          ];
+          if (result.error) {
+            content.push({ type: 'text', text: `Errors:\n${result.error}` });
+          }
+          return { content };
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       log('error', `Swift run failed: ${message}`);
-      // Note: No need to delete from activeProcesses since child.pid won't exist if spawn failed
       return createErrorResponse('Failed to execute swift run', message, 'SystemError');
     }
   },
