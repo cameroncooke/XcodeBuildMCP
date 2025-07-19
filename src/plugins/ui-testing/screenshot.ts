@@ -6,11 +6,12 @@ import * as path from 'path';
 import * as fs from 'fs/promises';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import { ToolResponse } from '../../types/common.js';
-import { log, getDefaultCommandExecutor } from '../../utils/index.js';
-import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
-import { SystemError, createErrorResponse, getDefaultCommandExecutor } from '../../utils/index.js';
+import { ToolResponse, createImageContent } from '../../types/common.js';
 import {
+  log,
+  validateRequiredParam,
+  SystemError,
+  createErrorResponse,
   executeCommand,
   CommandExecutor,
   FileSystemExecutor,
@@ -34,9 +35,9 @@ export default {
     pathDeps?: { tmpdir?: () => string; join?: (...paths: string[]) => string },
     uuidDeps?: { v4?: () => string },
   ): Promise<ToolResponse> {
-    const params = args;
+    const params = args as { simulatorUuid: string };
     const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-    if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+    if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
 
     const { simulatorUuid } = params;
     const tempDir = pathDeps?.tmpdir ? pathDeps.tmpdir() : os.tmpdir();
@@ -45,7 +46,14 @@ export default {
       ? pathDeps.join(tempDir, screenshotFilename)
       : path.join(tempDir, screenshotFilename);
     // Use xcrun simctl to take screenshot
-    const commandArgs = ['xcrun', 'simctl', 'io', simulatorUuid, 'screenshot', screenshotPath];
+    const commandArgs: string[] = [
+      'xcrun',
+      'simctl',
+      'io',
+      simulatorUuid,
+      'screenshot',
+      screenshotPath,
+    ];
 
     const fsExecutor = fileSystemExecutor || getDefaultFileSystemExecutor();
 
@@ -95,13 +103,7 @@ export default {
 
         // Return the image directly in the tool response
         return {
-          content: [
-            {
-              type: 'image',
-              data: base64Image,
-              mimeType: 'image/png',
-            },
-          ],
+          content: [createImageContent(base64Image, 'image/png')],
         };
       } catch (fileError) {
         log('error', `${LOG_PREFIX}/screenshot: Failed to process image file: ${fileError}`);

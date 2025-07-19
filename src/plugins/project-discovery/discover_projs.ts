@@ -9,13 +9,8 @@ import { z } from 'zod';
 import path from 'node:path';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
-import { ToolResponse } from '../../types/common.js';
+import { ToolResponse, createTextContent } from '../../types/common.js';
 import { FileSystemExecutor, getDefaultFileSystemExecutor } from '../../utils/command.js';
-
-// Helper to create a standard text response content.
-function createTextContent(text: string): { type: string; text: string } {
-  return { type: 'text', text };
-}
 
 // Constants
 const DEFAULT_MAX_DEPTH = 5;
@@ -133,7 +128,15 @@ async function _handleDiscoveryLogic(
   params: Record<string, unknown>,
   fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<ToolResponse> {
-  const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = params;
+  const {
+    scanPath: relativeScanPath,
+    maxDepth,
+    workspaceRoot,
+  } = params as {
+    scanPath?: string;
+    maxDepth: number;
+    workspaceRoot: string;
+  };
 
   // Calculate and validate the absolute scan path
   const requestedScanPath = path.resolve(workspaceRoot, relativeScanPath || '.');
@@ -235,8 +238,6 @@ async function _handleDiscoveryLogic(
 
   return {
     content: responseContent,
-    projects: results.projects,
-    workspaces: results.workspaces,
     isError: false,
   };
 }
@@ -268,7 +269,7 @@ export default {
     const params = args;
     const workspaceRootValidation = validateRequiredParam('workspaceRoot', params.workspaceRoot);
     if (!workspaceRootValidation.isValid) {
-      return workspaceRootValidation.errorResponse;
+      return workspaceRootValidation.errorResponse!;
     }
 
     return _handleDiscoveryLogic(params, fileSystemExecutor);

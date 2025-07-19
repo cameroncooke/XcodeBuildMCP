@@ -1,0 +1,2957 @@
+{
+    "tools": [
+        {
+            "name": "scaffold_macos_project",
+            "description": "Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Name of the new project"
+                    },
+                    "outputPath": {
+                        "type": "string",
+                        "description": "Path where the project should be created"
+                    },
+                    "bundleIdentifier": {
+                        "type": "string",
+                        "description": "Bundle identifier (e.g., com.example.myapp). If not provided, will use com.example.projectname"
+                    },
+                    "displayName": {
+                        "type": "string",
+                        "description": "App display name (shown on home screen/dock). If not provided, will use projectName"
+                    },
+                    "marketingVersion": {
+                        "type": "string",
+                        "description": "Marketing version (e.g., 1.0, 2.1.3). If not provided, will use 1.0"
+                    },
+                    "currentProjectVersion": {
+                        "type": "string",
+                        "description": "Build number (e.g., 1, 42, 100). If not provided, will use 1"
+                    },
+                    "customizeNames": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether to customize project names and identifiers. Default is true."
+                    },
+                    "deploymentTarget": {
+                        "type": "string",
+                        "description": "macOS deployment target (e.g., 15.4, 14.0). If not provided, will use 15.4"
+                    }
+                },
+                "required": [
+                    "projectName",
+                    "outputPath"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "scaffold_ios_project",
+            "description": "Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Name of the new project"
+                    },
+                    "outputPath": {
+                        "type": "string",
+                        "description": "Path where the project should be created"
+                    },
+                    "bundleIdentifier": {
+                        "type": "string",
+                        "description": "Bundle identifier (e.g., com.example.myapp). If not provided, will use com.example.projectname"
+                    },
+                    "displayName": {
+                        "type": "string",
+                        "description": "App display name (shown on home screen/dock). If not provided, will use projectName"
+                    },
+                    "marketingVersion": {
+                        "type": "string",
+                        "description": "Marketing version (e.g., 1.0, 2.1.3). If not provided, will use 1.0"
+                    },
+                    "currentProjectVersion": {
+                        "type": "string",
+                        "description": "Build number (e.g., 1, 42, 100). If not provided, will use 1"
+                    },
+                    "customizeNames": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Whether to customize project names and identifiers. Default is true."
+                    },
+                    "deploymentTarget": {
+                        "type": "string",
+                        "description": "iOS deployment target (e.g., 18.4, 17.0). If not provided, will use 18.4"
+                    },
+                    "targetedDeviceFamily": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "iphone",
+                                "ipad",
+                                "universal"
+                            ]
+                        },
+                        "description": "Targeted device families"
+                    },
+                    "supportedOrientations": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "portrait",
+                                "landscape-left",
+                                "landscape-right",
+                                "portrait-upside-down"
+                            ]
+                        },
+                        "description": "Supported orientations for iPhone"
+                    },
+                    "supportedOrientationsIpad": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "portrait",
+                                "landscape-left",
+                                "landscape-right",
+                                "portrait-upside-down"
+                            ]
+                        },
+                        "description": "Supported orientations for iPad"
+                    }
+                },
+                "required": [
+                    "projectName",
+                    "outputPath"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "clean_ws",
+            "description": "Cleans build products for a specific workspace using xcodebuild. IMPORTANT: Requires workspacePath. Scheme/Configuration are optional. Example: clean_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "Optional: The scheme to clean"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Optional: Build configuration to clean (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Optional: Path where derived data might be located"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    }
+                },
+                "required": [
+                    "workspacePath"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "clean_proj",
+            "description": "Cleans build products and intermediate files from a project. IMPORTANT: Requires projectPath. Example: clean_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to clean"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "projectPath"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "type_text",
+            "description": "Type text (supports US keyboard characters). Use describe_ui to find text field, tap to focus, then type.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "text": {
+                        "type": "string",
+                        "minLength": 1
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "text"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "touch",
+            "description": "Perform touch down/up events at specific coordinates. Use describe_ui for precise coordinates (don't guess from screenshots).",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "x": {
+                        "type": "integer"
+                    },
+                    "y": {
+                        "type": "integer"
+                    },
+                    "down": {
+                        "type": "boolean"
+                    },
+                    "up": {
+                        "type": "boolean"
+                    },
+                    "delay": {
+                        "type": "number",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "x",
+                    "y"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "tap",
+            "description": "Tap at specific coordinates. Use describe_ui to get precise element coordinates (don't guess from screenshots). Supports optional timing delays.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "x": {
+                        "type": "integer"
+                    },
+                    "y": {
+                        "type": "integer"
+                    },
+                    "preDelay": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "postDelay": {
+                        "type": "number",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "x",
+                    "y"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "swipe",
+            "description": "Swipe from one point to another. Use describe_ui for precise coordinates (don't guess from screenshots). Supports configurable timing.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "x1": {
+                        "type": "integer"
+                    },
+                    "y1": {
+                        "type": "integer"
+                    },
+                    "x2": {
+                        "type": "integer"
+                    },
+                    "y2": {
+                        "type": "integer"
+                    },
+                    "duration": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "delta": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "preDelay": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "postDelay": {
+                        "type": "number",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "x1",
+                    "y1",
+                    "x2",
+                    "y2"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "screenshot",
+            "description": "Captures screenshot for visual verification. For UI coordinates, use describe_ui instead (don't determine coordinates from screenshots).",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    }
+                },
+                "required": [
+                    "simulatorUuid"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "long_press",
+            "description": "Long press at specific coordinates for given duration (ms). Use describe_ui for precise coordinates (don't guess from screenshots).",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "x": {
+                        "type": "integer"
+                    },
+                    "y": {
+                        "type": "integer"
+                    },
+                    "duration": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "x",
+                    "y",
+                    "duration"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "key_sequence",
+            "description": "Press key sequence using HID keycodes on iOS simulator with configurable delay",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "keyCodes": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 255
+                        },
+                        "minItems": 1
+                    },
+                    "delay": {
+                        "type": "number",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "keyCodes"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "key_press",
+            "description": "Press a single key by keycode on the simulator. Common keycodes: 40=Return, 42=Backspace, 43=Tab, 44=Space, 58-67=F1-F10.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "keyCode": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 255
+                    },
+                    "duration": {
+                        "type": "number",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "keyCode"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "gesture",
+            "description": "Perform gesture on iOS simulator using preset gestures: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "preset": {
+                        "type": "string",
+                        "enum": [
+                            "scroll-up",
+                            "scroll-down",
+                            "scroll-left",
+                            "scroll-right",
+                            "swipe-from-left-edge",
+                            "swipe-from-right-edge",
+                            "swipe-from-top-edge",
+                            "swipe-from-bottom-edge"
+                        ],
+                        "description": "The gesture preset to perform. Must be one of: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge."
+                    },
+                    "screenWidth": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Optional: Screen width in pixels. Used for gesture calculations. Auto-detected if not provided."
+                    },
+                    "screenHeight": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Optional: Screen height in pixels. Used for gesture calculations. Auto-detected if not provided."
+                    },
+                    "duration": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Optional: Duration of the gesture in seconds."
+                    },
+                    "delta": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Optional: Distance to move in pixels."
+                    },
+                    "preDelay": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Optional: Delay before starting the gesture in seconds."
+                    },
+                    "postDelay": {
+                        "type": "number",
+                        "minimum": 0,
+                        "description": "Optional: Delay after completing the gesture in seconds."
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "preset"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "describe_ui",
+            "description": "Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    }
+                },
+                "required": [
+                    "simulatorUuid"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "button",
+            "description": "Press hardware button on iOS simulator. Supported buttons: apple-pay, home, lock, side-button, siri",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "buttonType": {
+                        "type": "string",
+                        "enum": [
+                            "apple-pay",
+                            "home",
+                            "lock",
+                            "side-button",
+                            "siri"
+                        ]
+                    },
+                    "duration": {
+                        "type": "number",
+                        "minimum": 0
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "buttonType"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "swift_package_test",
+            "description": "Runs tests for a Swift Package with swift test",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "packagePath": {
+                        "type": "string",
+                        "description": "Path to the Swift package root (Required)"
+                    },
+                    "testProduct": {
+                        "type": "string",
+                        "description": "Optional specific test product to run"
+                    },
+                    "filter": {
+                        "type": "string",
+                        "description": "Filter tests by name (regex pattern)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "enum": [
+                            "debug",
+                            "release"
+                        ],
+                        "description": "Swift package configuration (debug, release)"
+                    },
+                    "parallel": {
+                        "type": "boolean",
+                        "description": "Run tests in parallel (default: true)"
+                    },
+                    "showCodecov": {
+                        "type": "boolean",
+                        "description": "Show code coverage (default: false)"
+                    },
+                    "parseAsLibrary": {
+                        "type": "boolean",
+                        "description": "Add -parse-as-library flag for @main support (default: false)"
+                    }
+                },
+                "required": [
+                    "packagePath"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "swift_package_stop",
+            "description": "Stops a running Swift Package executable started with swift_package_run",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "pid": {
+                        "type": "number",
+                        "description": "Process ID (PID) of the running executable"
+                    }
+                },
+                "required": [
+                    "pid"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "swift_package_run",
+            "description": "Runs an executable target from a Swift Package with swift run",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "packagePath": {
+                        "type": "string",
+                        "description": "Path to the Swift package root (Required)"
+                    },
+                    "executableName": {
+                        "type": "string",
+                        "description": "Name of executable to run (defaults to package name)"
+                    },
+                    "arguments": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Arguments to pass to the executable"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "enum": [
+                            "debug",
+                            "release"
+                        ],
+                        "description": "Build configuration: 'debug' (default) or 'release'"
+                    },
+                    "timeout": {
+                        "type": "number",
+                        "description": "Timeout in seconds (default: 30, max: 300)"
+                    },
+                    "background": {
+                        "type": "boolean",
+                        "description": "Run in background and return immediately (default: false)"
+                    },
+                    "parseAsLibrary": {
+                        "type": "boolean",
+                        "description": "Add -parse-as-library flag for @main support (default: false)"
+                    }
+                },
+                "required": [
+                    "packagePath"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "swift_package_list",
+            "description": "Lists currently running Swift Package processes",
+            "inputSchema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "swift_package_clean",
+            "description": "Cleans Swift Package build artifacts and derived data",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "packagePath": {
+                        "type": "string",
+                        "description": "Path to the Swift package root (Required)"
+                    }
+                },
+                "required": [
+                    "packagePath"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "swift_package_build",
+            "description": "Builds a Swift Package with swift build",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "packagePath": {
+                        "type": "string",
+                        "description": "Path to the Swift package root (Required)"
+                    },
+                    "targetName": {
+                        "type": "string",
+                        "description": "Optional target to build"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "enum": [
+                            "debug",
+                            "release"
+                        ],
+                        "description": "Swift package configuration (debug, release)"
+                    },
+                    "architectures": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Target architectures to build for"
+                    },
+                    "parseAsLibrary": {
+                        "type": "boolean",
+                        "description": "Build as library instead of executable"
+                    }
+                },
+                "required": [
+                    "packagePath"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "test_sim_name_ws",
+            "description": "Runs tests for a workspace on a simulator by name using xcodebuild test and parses xcresult output.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorName": {
+                        "type": "string",
+                        "description": "Name of the simulator to use (e.g., 'iPhone 16') (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme",
+                    "simulatorName"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "test_sim_id_ws",
+            "description": "Runs tests for a workspace on a simulator by UUID using xcodebuild test and parses xcresult output.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorId": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from listSimulators) (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme",
+                    "simulatorId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "stop_app_sim_name_ws",
+            "description": "Stops an app running in an iOS simulator by simulator name. IMPORTANT: You MUST provide both the simulatorName and bundleId parameters.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorName": {
+                        "type": "string",
+                        "description": "Name of the simulator to use (e.g., 'iPhone 16')"
+                    },
+                    "bundleId": {
+                        "type": "string",
+                        "description": "Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"
+                    }
+                },
+                "required": [
+                    "simulatorName",
+                    "bundleId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "launch_app_sim_name_ws",
+            "description": "Launches an app in an iOS simulator by simulator name. IMPORTANT: You MUST provide both the simulatorName and bundleId parameters.\n\nNote: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_sim_name_ws({ simulatorName: 'iPhone 16', bundleId: 'com.example.MyApp' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorName": {
+                        "type": "string",
+                        "description": "Name of the simulator to use (e.g., 'iPhone 16')"
+                    },
+                    "bundleId": {
+                        "type": "string",
+                        "description": "Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"
+                    },
+                    "args": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional arguments to pass to the app"
+                    }
+                },
+                "required": [
+                    "simulatorName",
+                    "bundleId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "get_sim_app_path_name_ws",
+            "description": "Gets the app bundle path for a simulator by name using a workspace. IMPORTANT: Requires workspacePath, scheme, platform, and simulatorName. Example: get_sim_app_path_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "enum": [
+                            "iOS Simulator",
+                            "watchOS Simulator",
+                            "tvOS Simulator",
+                            "visionOS Simulator"
+                        ],
+                        "description": "Target simulator platform (Required)"
+                    },
+                    "simulatorName": {
+                        "type": "string",
+                        "description": "Name of the simulator to use (e.g., 'iPhone 16') (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme",
+                    "platform",
+                    "simulatorName"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "get_sim_app_path_id_ws",
+            "description": "Gets the app bundle path for a simulator by UUID using a workspace. IMPORTANT: Requires workspacePath, scheme, platform, and simulatorId. Example: get_sim_app_path_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorId: 'SIMULATOR_UUID' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "enum": [
+                            "iOS Simulator",
+                            "watchOS Simulator",
+                            "tvOS Simulator",
+                            "visionOS Simulator"
+                        ],
+                        "description": "Target simulator platform (Required)"
+                    },
+                    "simulatorId": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the simulator"
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme",
+                    "platform",
+                    "simulatorId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_sim_name_ws",
+            "description": "Builds an app from a workspace for a specific simulator by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_sim_name_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorName": {
+                        "type": "string",
+                        "description": "Name of the simulator to use (e.g., 'iPhone 16') (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme",
+                    "simulatorName"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_sim_id_ws",
+            "description": "Builds an app from a workspace for a specific simulator by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_sim_id_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorId": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from listSimulators) (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme",
+                    "simulatorId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_run_sim_name_ws",
+            "description": "Builds and runs an app from a workspace on a simulator specified by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_run_sim_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorName": {
+                        "type": "string",
+                        "description": "Name of the simulator to use (e.g., 'iPhone 16') (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme",
+                    "simulatorName"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_run_sim_id_ws",
+            "description": "Builds and runs an app from a workspace on a simulator specified by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_run_sim_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorId": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from listSimulators) (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme",
+                    "simulatorId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "stop_app_sim",
+            "description": "Stops an app running in an iOS simulator. Requires simulatorUuid and bundleId.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "description": "UUID of the simulator (obtained from list_simulators)"
+                    },
+                    "bundleId": {
+                        "type": "string",
+                        "description": "Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "bundleId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "set_simulator_location",
+            "description": "Sets a custom GPS location for the simulator.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from list_simulators)"
+                    },
+                    "latitude": {
+                        "type": "number",
+                        "description": "The latitude for the custom location."
+                    },
+                    "longitude": {
+                        "type": "number",
+                        "description": "The longitude for the custom location."
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "latitude",
+                    "longitude"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "set_sim_appearance",
+            "description": "Sets the appearance mode (dark/light) of an iOS simulator.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from list_simulators)"
+                    },
+                    "mode": {
+                        "type": "string",
+                        "enum": [
+                            "dark",
+                            "light"
+                        ],
+                        "description": "The appearance mode to set (either \"dark\" or \"light\")"
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "mode"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "set_network_condition",
+            "description": "Simulates different network conditions (e.g., wifi, 3g, edge, high-latency, dsl, 100%loss, 3g-lossy, very-lossy) in the simulator.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from list_simulators)"
+                    },
+                    "profile": {
+                        "type": "string",
+                        "enum": [
+                            "wifi",
+                            "3g",
+                            "edge",
+                            "high-latency",
+                            "dsl",
+                            "100%loss",
+                            "3g-lossy",
+                            "very-lossy"
+                        ],
+                        "description": "The network profile to simulate. Must be one of: wifi, 3g, edge, high-latency, dsl, 100%loss, 3g-lossy, very-lossy."
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "profile"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "reset_simulator_location",
+            "description": "Resets the simulator's location to default.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from list_simulators)"
+                    }
+                },
+                "required": [
+                    "simulatorUuid"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "reset_network_condition",
+            "description": "Resets network conditions to default in the simulator.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from list_simulators)"
+                    }
+                },
+                "required": [
+                    "simulatorUuid"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "open_sim",
+            "description": "Opens the iOS Simulator app.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "list_sims",
+            "description": "Lists available iOS simulators with their UUIDs. ",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "Optional flag to enable the listing operation."
+                    }
+                },
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "launch_app_sim",
+            "description": "Launches an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and bundleId parameters.\n\nNote: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_sim({ simulatorUuid: 'YOUR_UUID_HERE', bundleId: 'com.example.MyApp' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from list_simulators)"
+                    },
+                    "bundleId": {
+                        "type": "string",
+                        "description": "Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"
+                    },
+                    "args": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional arguments to pass to the app"
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "bundleId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "launch_app_logs_sim",
+            "description": "Launches an app in an iOS simulator and captures its logs.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from list_simulators)"
+                    },
+                    "bundleId": {
+                        "type": "string",
+                        "description": "Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"
+                    },
+                    "args": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional arguments to pass to the app"
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "bundleId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "install_app_sim",
+            "description": "Installs an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and appPath parameters. Example: install_app_sim({ simulatorUuid: 'YOUR_UUID_HERE', appPath: '/path/to/your/app.app' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from list_simulators)"
+                    },
+                    "appPath": {
+                        "type": "string",
+                        "description": "Path to the .app bundle to install (full path to the .app directory)"
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "appPath"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "boot_sim",
+            "description": "Boots an iOS simulator. IMPORTANT: You MUST provide the simulatorUuid parameter. Example: boot_sim({ simulatorUuid: 'YOUR_UUID_HERE' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from list_simulators)"
+                    }
+                },
+                "required": [
+                    "simulatorUuid"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "test_sim_name_proj",
+            "description": "Runs tests for a project on a simulator by name using xcodebuild test and parses xcresult output.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorName": {
+                        "type": "string",
+                        "description": "Name of the simulator to use (e.g., 'iPhone 16') (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme",
+                    "simulatorName"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "test_sim_id_proj",
+            "description": "Runs tests for a project on a simulator by UUID using xcodebuild test and parses xcresult output.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorId": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from listSimulators) (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme",
+                    "simulatorId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "get_sim_app_path_name_proj",
+            "description": "Gets the app bundle path for a simulator by name using a project file. IMPORTANT: Requires projectPath, scheme, platform, and simulatorName. Example: get_sim_app_path_name_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "enum": [
+                            "iOS Simulator",
+                            "watchOS Simulator",
+                            "tvOS Simulator",
+                            "visionOS Simulator"
+                        ],
+                        "description": "Target simulator platform (Required)"
+                    },
+                    "simulatorName": {
+                        "type": "string",
+                        "description": "Name of the simulator to use (e.g., 'iPhone 16') (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme",
+                    "platform",
+                    "simulatorName"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "get_sim_app_path_id_proj",
+            "description": "Gets the app bundle path for a simulator by UUID using a project file. IMPORTANT: Requires projectPath, scheme, platform, and simulatorId. Example: get_sim_app_path_id_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorId: 'SIMULATOR_UUID' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "enum": [
+                            "iOS Simulator",
+                            "watchOS Simulator",
+                            "tvOS Simulator",
+                            "visionOS Simulator"
+                        ],
+                        "description": "The target simulator platform (Required)"
+                    },
+                    "simulatorId": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from listSimulators) (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme",
+                    "platform",
+                    "simulatorId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_sim_name_proj",
+            "description": "Builds an app from a project file for a specific simulator by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_sim_name_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorName": {
+                        "type": "string",
+                        "description": "Name of the simulator to use (e.g., 'iPhone 16') (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme",
+                    "simulatorName"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_sim_id_proj",
+            "description": "Builds an app from a project file for a specific simulator by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: build_sim_id_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorId": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from listSimulators) (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme",
+                    "simulatorId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_run_sim_name_proj",
+            "description": "Builds and runs an app from a project file on a simulator specified by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_run_sim_name_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorName": {
+                        "type": "string",
+                        "description": "Name of the simulator to use (e.g., 'iPhone 16') (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme",
+                    "simulatorName"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_run_sim_id_proj",
+            "description": "Builds and runs an app from a project file on a simulator specified by UUID. IMPORTANT: Requires projectPath, scheme, and simulatorId. Example: build_run_sim_id_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "simulatorId": {
+                        "type": "string",
+                        "description": "UUID of the simulator to use (obtained from listSimulators) (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "useLatestOS": {
+                        "type": "boolean",
+                        "description": "Whether to use the latest OS version for the named simulator"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme",
+                    "simulatorId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "show_build_set_ws",
+            "description": "Shows build settings from a workspace using xcodebuild. IMPORTANT: Requires workspacePath and scheme. Example: show_build_set_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
+            "inputSchema": {
+                "type": "object"
+            },
+            "annotations": {
+                "_def": {
+                    "unknownKeys": "strip",
+                    "catchall": {
+                        "_def": {
+                            "typeName": "ZodNever"
+                        },
+                        "~standard": {
+                            "version": 1,
+                            "vendor": "zod"
+                        }
+                    },
+                    "typeName": "ZodObject"
+                },
+                "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                },
+                "_cached": null
+            }
+        },
+        {
+            "name": "show_build_set_proj",
+            "description": "Shows build settings from a project file using xcodebuild. IMPORTANT: Requires projectPath and scheme. Example: show_build_set_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+            "inputSchema": {
+                "type": "object"
+            },
+            "annotations": {
+                "_def": {
+                    "unknownKeys": "strip",
+                    "catchall": {
+                        "_def": {
+                            "typeName": "ZodNever"
+                        },
+                        "~standard": {
+                            "version": 1,
+                            "vendor": "zod"
+                        }
+                    },
+                    "typeName": "ZodObject"
+                },
+                "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                },
+                "_cached": null
+            }
+        },
+        {
+            "name": "list_schems_ws",
+            "description": "Lists available schemes in the workspace. IMPORTANT: Requires workspacePath. Example: list_schems_ws({ workspacePath: '/path/to/MyProject.xcworkspace' })",
+            "inputSchema": {
+                "type": "object"
+            },
+            "annotations": {
+                "_def": {
+                    "unknownKeys": "strip",
+                    "catchall": {
+                        "_def": {
+                            "typeName": "ZodNever"
+                        },
+                        "~standard": {
+                            "version": 1,
+                            "vendor": "zod"
+                        }
+                    },
+                    "typeName": "ZodObject"
+                },
+                "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                },
+                "_cached": null
+            }
+        },
+        {
+            "name": "list_schems_proj",
+            "description": "Lists available schemes in the project file. IMPORTANT: Requires projectPath. Example: list_schems_proj({ projectPath: '/path/to/MyProject.xcodeproj' })",
+            "inputSchema": {
+                "type": "object"
+            },
+            "annotations": {
+                "_def": {
+                    "unknownKeys": "strip",
+                    "catchall": {
+                        "_def": {
+                            "typeName": "ZodNever"
+                        },
+                        "~standard": {
+                            "version": 1,
+                            "vendor": "zod"
+                        }
+                    },
+                    "typeName": "ZodObject"
+                },
+                "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                },
+                "_cached": null
+            }
+        },
+        {
+            "name": "get_mac_bundle_id",
+            "description": "Extracts the bundle identifier from a macOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_mac_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_macos_bundle_id.",
+            "inputSchema": {
+                "type": "object"
+            },
+            "annotations": {
+                "_def": {
+                    "unknownKeys": "strip",
+                    "catchall": {
+                        "_def": {
+                            "typeName": "ZodNever"
+                        },
+                        "~standard": {
+                            "version": 1,
+                            "vendor": "zod"
+                        }
+                    },
+                    "typeName": "ZodObject"
+                },
+                "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                },
+                "_cached": null
+            }
+        },
+        {
+            "name": "get_app_bundle_id",
+            "description": "Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, iPadOS, watchOS, tvOS, visionOS). IMPORTANT: You MUST provide the appPath parameter. Example: get_app_bundle_id({ appPath: '/path/to/your/app.app' })",
+            "inputSchema": {
+                "type": "object"
+            },
+            "annotations": {
+                "_def": {
+                    "unknownKeys": "strip",
+                    "catchall": {
+                        "_def": {
+                            "typeName": "ZodNever"
+                        },
+                        "~standard": {
+                            "version": 1,
+                            "vendor": "zod"
+                        }
+                    },
+                    "typeName": "ZodObject"
+                },
+                "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                },
+                "_cached": null
+            }
+        },
+        {
+            "name": "discover_projs",
+            "description": "Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.",
+            "inputSchema": {
+                "type": "object"
+            },
+            "annotations": {
+                "_def": {
+                    "unknownKeys": "strip",
+                    "catchall": {
+                        "_def": {
+                            "typeName": "ZodNever"
+                        },
+                        "~standard": {
+                            "version": 1,
+                            "vendor": "zod"
+                        }
+                    },
+                    "typeName": "ZodObject"
+                },
+                "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                },
+                "_cached": null
+            }
+        },
+        {
+            "name": "test_macos_ws",
+            "description": "Runs tests for a macOS workspace using xcodebuild test and parses xcresult output.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "get_mac_app_path_ws",
+            "description": "Gets the app bundle path for a macOS application using a workspace. IMPORTANT: Requires workspacePath and scheme. Example: get_mac_app_path_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "arch": {
+                        "type": "string",
+                        "enum": [
+                            "arm64",
+                            "x86_64"
+                        ],
+                        "description": "Architecture to build for (arm64 or x86_64). For macOS only."
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_run_mac_ws",
+            "description": "Builds and runs a macOS app from a workspace in one step.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "arch": {
+                        "type": "string",
+                        "enum": [
+                            "arm64",
+                            "x86_64"
+                        ],
+                        "description": "Architecture to build for (arm64 or x86_64). For macOS only."
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_mac_ws",
+            "description": "Builds a macOS app using xcodebuild from a workspace.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "arch": {
+                        "type": "string",
+                        "enum": [
+                            "arm64",
+                            "x86_64"
+                        ],
+                        "description": "Architecture to build for (arm64 or x86_64). For macOS only."
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "stop_mac_app",
+            "description": "Stops a running macOS application. Can stop by app name or process ID.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "appName": {
+                        "type": "string",
+                        "description": "Name of the application to stop (e.g., \"Calculator\" or \"MyApp\")"
+                    },
+                    "processId": {
+                        "type": "number",
+                        "description": "Process ID (PID) of the application to stop"
+                    }
+                },
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "launch_mac_app",
+            "description": "Launches a macOS application. IMPORTANT: You MUST provide the appPath parameter. Example: launch_mac_app({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_launch_macos_app.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "appPath": {
+                        "type": "string",
+                        "description": "Path to the macOS .app bundle to launch (full path to the .app directory)"
+                    },
+                    "args": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional arguments to pass to the app"
+                    }
+                },
+                "required": [
+                    "appPath"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "test_macos_proj",
+            "description": "Runs tests for a macOS project using xcodebuild test and parses xcresult output.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system"
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "get_mac_app_path_proj",
+            "description": "Gets the app bundle path for a macOS application using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_mac_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path to derived data directory"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional arguments to pass to xcodebuild"
+                    },
+                    "arch": {
+                        "type": "string",
+                        "enum": [
+                            "arm64",
+                            "x86_64"
+                        ],
+                        "description": "Architecture to build for (arm64 or x86_64). For macOS only."
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_run_mac_proj",
+            "description": "Builds and runs a macOS app from a project file in one step.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "arch": {
+                        "type": "string",
+                        "enum": [
+                            "arm64",
+                            "x86_64"
+                        ],
+                        "description": "Architecture to build for (arm64 or x86_64). For macOS only."
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system"
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_mac_proj",
+            "description": "Builds a macOS app using xcodebuild from a project file.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "arch": {
+                        "type": "string",
+                        "enum": [
+                            "arm64",
+                            "x86_64"
+                        ],
+                        "description": "Architecture to build for (arm64 or x86_64). For macOS only."
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system"
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "stop_sim_log_cap",
+            "description": "Stops an active simulator log capture session and returns the captured logs.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "logSessionId": {
+                        "type": "string",
+                        "description": "The session ID returned by start_sim_log_cap."
+                    }
+                },
+                "required": [
+                    "logSessionId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "stop_device_log_cap",
+            "description": "Stops an active Apple device log capture session and returns the captured logs.",
+            "inputSchema": {
+                "type": "object"
+            },
+            "annotations": {
+                "_def": {
+                    "unknownKeys": "strip",
+                    "catchall": {
+                        "_def": {
+                            "typeName": "ZodNever"
+                        },
+                        "~standard": {
+                            "version": 1,
+                            "vendor": "zod"
+                        }
+                    },
+                    "typeName": "ZodObject"
+                },
+                "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                },
+                "_cached": null
+            }
+        },
+        {
+            "name": "start_sim_log_cap",
+            "description": "Starts capturing logs from a specified simulator. Returns a session ID. By default, captures only structured logs.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "simulatorUuid": {
+                        "type": "string",
+                        "description": "UUID of the simulator to capture logs from (obtained from list_simulators)."
+                    },
+                    "bundleId": {
+                        "type": "string",
+                        "description": "Bundle identifier of the app to capture logs for."
+                    },
+                    "captureConsole": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether to capture console output (requires app relaunch)."
+                    }
+                },
+                "required": [
+                    "simulatorUuid",
+                    "bundleId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "start_device_log_cap",
+            "description": "Starts capturing logs from a specified Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) by launching the app with console output. Returns a session ID.",
+            "inputSchema": {
+                "type": "object"
+            },
+            "annotations": {
+                "_def": {
+                    "unknownKeys": "strip",
+                    "catchall": {
+                        "_def": {
+                            "typeName": "ZodNever"
+                        },
+                        "~standard": {
+                            "version": 1,
+                            "vendor": "zod"
+                        }
+                    },
+                    "typeName": "ZodObject"
+                },
+                "~standard": {
+                    "version": 1,
+                    "vendor": "zod"
+                },
+                "_cached": null
+            }
+        },
+        {
+            "name": "diagnostic",
+            "description": "Provides comprehensive information about the MCP server environment, available dependencies, and configuration status.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean",
+                        "description": "Optional: dummy parameter to satisfy MCP protocol"
+                    }
+                },
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "test_device_ws",
+            "description": "Runs tests for an Apple workspace on a physical device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) using xcodebuild test and parses xcresult output. IMPORTANT: Requires workspacePath, scheme, and deviceId.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file (Required)"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use (Required)"
+                    },
+                    "deviceId": {
+                        "type": "string",
+                        "description": "UDID of the device (obtained from list_devices)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path where build products and other derived data will go"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional xcodebuild arguments"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "If true, prefers xcodebuild over the experimental incremental build system"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "enum": [
+                            "iOS",
+                            "watchOS",
+                            "tvOS",
+                            "visionOS"
+                        ],
+                        "description": "Target platform (defaults to iOS)"
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme",
+                    "deviceId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "get_device_app_path_ws",
+            "description": "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using a workspace. IMPORTANT: Requires workspacePath and scheme. Example: get_device_app_path_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "enum": [
+                            "iOS",
+                            "watchOS",
+                            "tvOS",
+                            "visionOS"
+                        ],
+                        "description": "Target platform (defaults to iOS)"
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_dev_ws",
+            "description": "Builds an app from a workspace for a physical Apple device. IMPORTANT: Requires workspacePath and scheme. Example: build_dev_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "workspacePath": {
+                        "type": "string",
+                        "description": "Path to the .xcworkspace file"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to build"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path to derived data directory"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional arguments to pass to xcodebuild"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "Prefer xcodebuild over faster alternatives"
+                    }
+                },
+                "required": [
+                    "workspacePath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "stop_app_device",
+            "description": "Stops an app running on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and processId.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "deviceId": {
+                        "type": "string",
+                        "description": "UDID of the device (obtained from list_devices)"
+                    },
+                    "processId": {
+                        "type": "number",
+                        "description": "Process ID (PID) of the app to stop"
+                    }
+                },
+                "required": [
+                    "deviceId",
+                    "processId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "list_devices",
+            "description": "Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "launch_app_device",
+            "description": "Launches an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and bundleId.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "deviceId": {
+                        "type": "string",
+                        "description": "UDID of the device (obtained from list_devices)"
+                    },
+                    "bundleId": {
+                        "type": "string",
+                        "description": "Bundle identifier of the app to launch (e.g., \"com.example.MyApp\")"
+                    }
+                },
+                "required": [
+                    "deviceId",
+                    "bundleId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "install_app_device",
+            "description": "Installs an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and appPath.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "deviceId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "UDID of the device (obtained from list_devices)"
+                    },
+                    "appPath": {
+                        "type": "string",
+                        "description": "Path to the .app bundle to install (full path to the .app directory)"
+                    }
+                },
+                "required": [
+                    "deviceId",
+                    "appPath"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "test_device_proj",
+            "description": "Runs tests for an Apple project on a physical device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) using xcodebuild test and parses xcresult output. IMPORTANT: Requires projectPath, scheme, and deviceId.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to test"
+                    },
+                    "deviceId": {
+                        "type": "string",
+                        "description": "UDID of the device (obtained from list_devices)"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path to derived data directory"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional arguments to pass to xcodebuild"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "Prefer xcodebuild over faster alternatives"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "enum": [
+                            "iOS",
+                            "watchOS",
+                            "tvOS",
+                            "visionOS"
+                        ],
+                        "description": "Target platform (defaults to iOS)"
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme",
+                    "deviceId"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "get_device_app_path_proj",
+            "description": "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_device_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to use"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release, etc.)"
+                    },
+                    "platform": {
+                        "type": "string",
+                        "enum": [
+                            "iOS",
+                            "watchOS",
+                            "tvOS",
+                            "visionOS"
+                        ],
+                        "description": "Target platform (defaults to iOS)"
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        },
+        {
+            "name": "build_dev_proj",
+            "description": "Builds an app from a project file for a physical Apple device. IMPORTANT: Requires projectPath and scheme. Example: build_dev_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "projectPath": {
+                        "type": "string",
+                        "description": "Path to the .xcodeproj file"
+                    },
+                    "scheme": {
+                        "type": "string",
+                        "description": "The scheme to build"
+                    },
+                    "configuration": {
+                        "type": "string",
+                        "description": "Build configuration (Debug, Release)"
+                    },
+                    "derivedDataPath": {
+                        "type": "string",
+                        "description": "Path to derived data directory"
+                    },
+                    "extraArgs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Additional arguments to pass to xcodebuild"
+                    },
+                    "preferXcodebuild": {
+                        "type": "boolean",
+                        "description": "Prefer xcodebuild over faster alternatives"
+                    }
+                },
+                "required": [
+                    "projectPath",
+                    "scheme"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#"
+            }
+        }
+    ]
+}

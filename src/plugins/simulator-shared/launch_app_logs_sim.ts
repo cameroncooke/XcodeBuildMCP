@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ToolResponse } from '../../types/common.js';
+import { ToolResponse, createTextContent } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { startLogCapture } from '../../utils/index.js';
@@ -7,26 +7,19 @@ import { startLogCapture } from '../../utils/index.js';
 // Type for startLogCapture dependency injection
 type StartLogCaptureFunction = typeof startLogCapture;
 
-function createTextContent(text: string): { type: string; text: string } {
-  return {
-    type: 'text',
-    text,
-  };
-}
-
 async function launchAppLogsSimHandler(
   args: Record<string, unknown>,
   startLogCaptureFunc: StartLogCaptureFunction = startLogCapture,
 ): Promise<ToolResponse> {
-  const params = args;
+  const params = args as { simulatorUuid: string; bundleId: string };
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse;
+    return simulatorUuidValidation.errorResponse!;
   }
 
   const bundleIdValidation = validateRequiredParam('bundleId', params.bundleId);
   if (!bundleIdValidation.isValid) {
-    return bundleIdValidation.errorResponse;
+    return bundleIdValidation.errorResponse!;
   }
 
   log('info', `Starting app launch with logs for simulator ${params.simulatorUuid}`);

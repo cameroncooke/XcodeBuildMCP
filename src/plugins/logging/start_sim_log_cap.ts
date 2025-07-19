@@ -7,12 +7,7 @@
 import { z } from 'zod';
 import { startLogCapture } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
-import { ToolResponse } from '../../types/common.js';
-
-// Helper to create a standard text response content.
-function createTextContent(text: string): { type: string; text: string } {
-  return { type: 'text', text };
-}
+import { ToolResponse, createTextContent } from '../../types/common.js';
 
 async function startSimLogCapToolHandler(
   params: {
@@ -33,7 +28,7 @@ async function startSimLogCapToolHandler(
 ): Promise<ToolResponse> {
   const validationResult = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!validationResult.isValid) {
-    return validationResult.errorResponse;
+    return validationResult.errorResponse!;
   }
 
   const logCaptureFunction = startLogCaptureFunction || startLogCapture;

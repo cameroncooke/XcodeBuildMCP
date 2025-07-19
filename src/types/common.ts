@@ -54,6 +54,17 @@ export type ToolResponseContent =
       [key: string]: unknown; // Index signature to match ContentItem
     };
 
+export function createTextContent(text: string): { type: 'text'; text: string } {
+  return { type: 'text', text };
+}
+
+export function createImageContent(
+  data: string,
+  mimeType: string,
+): { type: 'image'; data: string; mimeType: string } {
+  return { type: 'image', data, mimeType };
+}
+
 /**
  * ValidationResult - Result of parameter validation operations
  */
