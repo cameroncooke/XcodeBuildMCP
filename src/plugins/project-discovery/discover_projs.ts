@@ -242,29 +242,27 @@ async function _handleDiscoveryLogic(
   };
 }
 
-const schema = z.object({
-  workspaceRoot: z.string().describe('The absolute path of the workspace root to scan within.'),
-  scanPath: z
-    .string()
-    .optional()
-    .describe('Optional: Path relative to workspace root to scan. Defaults to workspace root.'),
-  maxDepth: z
-    .number()
-    .int()
-    .nonnegative()
-    .optional()
-    .default(DEFAULT_MAX_DEPTH)
-    .describe(`Optional: Maximum directory depth to scan. Defaults to ${DEFAULT_MAX_DEPTH}.`),
-});
-
 export default {
   name: 'discover_projs',
   description:
     'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
-  schema: schema,
+  schema: {
+    workspaceRoot: z.string().describe('The absolute path of the workspace root to scan within.'),
+    scanPath: z
+      .string()
+      .optional()
+      .describe('Optional: Path relative to workspace root to scan. Defaults to workspace root.'),
+    maxDepth: z
+      .number()
+      .int()
+      .nonnegative()
+      .optional()
+      .default(DEFAULT_MAX_DEPTH)
+      .describe(`Optional: Maximum directory depth to scan. Defaults to ${DEFAULT_MAX_DEPTH}.`),
+  },
   async handler(
     args: Record<string, unknown>,
-    fileSystemExecutor?: FileSystemExecutor,
+    fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
   ): Promise<ToolResponse> {
     const params = args;
     const workspaceRootValidation = validateRequiredParam('workspaceRoot', params.workspaceRoot);
