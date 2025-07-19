@@ -4,20 +4,9 @@
  * Integration tests using dependency injection for deterministic testing
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
-
-// Mock child_process.spawn for background mode tests
-vi.mock('node:child_process', () => ({
-  spawn: vi.fn(() => ({
-    pid: 12345,
-    stdout: { on: vi.fn() },
-    stderr: { on: vi.fn() },
-    on: vi.fn(),
-  })),
-}));
-
 import swiftPackageRun from '../swift_package_run.ts';
 
 describe('swift_package_run plugin', () => {
