@@ -37,16 +37,16 @@ describe('discover_projs plugin', () => {
     });
 
     it('should validate schema with valid inputs', () => {
-      expect(plugin.schema.safeParse({ workspaceRoot: '/path/to/workspace' }).success).toBe(true);
+      const schema = z.object(plugin.schema);
+      expect(schema.safeParse({ workspaceRoot: '/path/to/workspace' }).success).toBe(true);
       expect(
-        plugin.schema.safeParse({ workspaceRoot: '/path/to/workspace', scanPath: 'subdir' })
-          .success,
+        schema.safeParse({ workspaceRoot: '/path/to/workspace', scanPath: 'subdir' }).success,
       ).toBe(true);
+      expect(schema.safeParse({ workspaceRoot: '/path/to/workspace', maxDepth: 3 }).success).toBe(
+        true,
+      );
       expect(
-        plugin.schema.safeParse({ workspaceRoot: '/path/to/workspace', maxDepth: 3 }).success,
-      ).toBe(true);
-      expect(
-        plugin.schema.safeParse({
+        schema.safeParse({
           workspaceRoot: '/path/to/workspace',
           scanPath: 'subdir',
           maxDepth: 5,
@@ -55,18 +55,13 @@ describe('discover_projs plugin', () => {
     });
 
     it('should validate schema with invalid inputs', () => {
-      expect(plugin.schema.safeParse({}).success).toBe(false);
-      expect(plugin.schema.safeParse({ workspaceRoot: 123 }).success).toBe(false);
-      expect(plugin.schema.safeParse({ workspaceRoot: '/path', scanPath: 123 }).success).toBe(
-        false,
-      );
-      expect(plugin.schema.safeParse({ workspaceRoot: '/path', maxDepth: 'invalid' }).success).toBe(
-        false,
-      );
-      expect(plugin.schema.safeParse({ workspaceRoot: '/path', maxDepth: -1 }).success).toBe(false);
-      expect(plugin.schema.safeParse({ workspaceRoot: '/path', maxDepth: 1.5 }).success).toBe(
-        false,
-      );
+      const schema = z.object(plugin.schema);
+      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({ workspaceRoot: 123 }).success).toBe(false);
+      expect(schema.safeParse({ workspaceRoot: '/path', scanPath: 123 }).success).toBe(false);
+      expect(schema.safeParse({ workspaceRoot: '/path', maxDepth: 'invalid' }).success).toBe(false);
+      expect(schema.safeParse({ workspaceRoot: '/path', maxDepth: -1 }).success).toBe(false);
+      expect(schema.safeParse({ workspaceRoot: '/path', maxDepth: 1.5 }).success).toBe(false);
     });
   });
 
@@ -140,8 +135,6 @@ describe('discover_projs plugin', () => {
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' }],
-        projects: [],
-        workspaces: [],
         isError: false,
       });
     });
@@ -167,8 +160,6 @@ describe('discover_projs plugin', () => {
           { type: 'text', text: 'Projects found:\n - /workspace/MyApp.xcodeproj' },
           { type: 'text', text: 'Workspaces found:\n - /workspace/MyWorkspace.xcworkspace' },
         ],
-        projects: ['/workspace/MyApp.xcodeproj'],
-        workspaces: ['/workspace/MyWorkspace.xcworkspace'],
         isError: false,
       });
     });
@@ -254,8 +245,6 @@ describe('discover_projs plugin', () => {
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' }],
-        projects: [],
-        workspaces: [],
         isError: false,
       });
     });
@@ -314,8 +303,6 @@ describe('discover_projs plugin', () => {
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' }],
-        projects: [],
-        workspaces: [],
         isError: false,
       });
     });
@@ -340,8 +327,6 @@ describe('discover_projs plugin', () => {
       // Test that skipped directories and files are correctly filtered out
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' }],
-        projects: [],
-        workspaces: [],
         isError: false,
       });
     });
@@ -365,8 +350,6 @@ describe('discover_projs plugin', () => {
       // The function should handle the error gracefully and continue
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' }],
-        projects: [],
-        workspaces: [],
         isError: false,
       });
     });

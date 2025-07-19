@@ -334,7 +334,9 @@ describe('get_app_bundle_id plugin', () => {
 
     it('should handle schema validation with number type appPath', async () => {
       const mockSyncExecutor = createMockSyncExecutor({});
-      const mockFileSystemExecutor = createMockFileSystemExecutor({});
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: () => false,
+      });
 
       const result = await plugin.handler(
         { appPath: 123 },
@@ -346,7 +348,7 @@ describe('get_app_bundle_id plugin', () => {
         content: [
           {
             type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+            text: "File not found: '123'. Please check the path and try again.",
           },
         ],
         isError: true,
