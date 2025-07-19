@@ -21,8 +21,12 @@ import { createServer, startServer } from './server/server.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Import utilities
+import { spawn } from 'node:child_process';
 import { log } from './utils/logger.js';
 import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from './utils/command.js';
+
+// Import Swift package process manager
+import { getProcess, removeProcess } from './plugins/swift-package/active-processes.js';
 
 // Import version
 import { version } from './version.js';
@@ -41,6 +45,18 @@ function wrapHandlerWithExecutor(handler: any) {
   return async (args: any) => {
     // Get the handler function's parameter names to determine what executor type it expects
     const handlerString = handler.toString();
+
+    // Check for Swift package tools that need special dependency injection
+    if (handlerString.includes('spawnFn')) {
+      // swift_package_run expects spawn function
+      return handler(args, spawn);
+    }
+
+    if (handlerString.includes('processManager')) {
+      // swift_package_stop expects ProcessManager
+      const processManager = { getProcess, removeProcess };
+      return handler(args, processManager);
+    }
 
     // Check if the handler expects FileSystemExecutor
     if (
