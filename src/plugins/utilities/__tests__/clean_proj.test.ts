@@ -15,7 +15,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import cleanProj from '../clean_proj.ts';
+import cleanProj, { clean_projLogic } from '../clean_proj.ts';
 
 describe('clean_proj plugin tests', () => {
   let executorCalls: Array<{
@@ -118,7 +118,7 @@ describe('clean_proj plugin tests', () => {
         return await mockExecutor(command, logPrefix, useShell, env);
       };
 
-      const result = await cleanProj.handler(
+      const result = await clean_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -176,7 +176,7 @@ describe('clean_proj plugin tests', () => {
         return await mockExecutor(command, logPrefix, useShell, env);
       };
 
-      const result = await cleanProj.handler(
+      const result = await clean_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -241,7 +241,7 @@ describe('clean_proj plugin tests', () => {
         return await mockExecutor(command, logPrefix, useShell, env);
       };
 
-      const result = await cleanProj.handler(
+      const result = await clean_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
         },
@@ -287,13 +287,12 @@ describe('clean_proj plugin tests', () => {
         process: { pid: 12345 },
       });
 
-      const result = await cleanProj.handler(
+      const result = await clean_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -312,12 +311,11 @@ describe('clean_proj plugin tests', () => {
     });
 
     it('should return error response for validation failure', async () => {
-      const result = await cleanProj.handler(
+      const result = await clean_projLogic(
         {
           projectPath: null,
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -334,13 +332,12 @@ describe('clean_proj plugin tests', () => {
     it('should handle spawn process error', async () => {
       const mockExecutor = createMockExecutor(new Error('spawn failed'));
 
-      const result = await cleanProj.handler(
+      const result = await clean_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -355,12 +352,11 @@ describe('clean_proj plugin tests', () => {
     });
 
     it('should handle invalid schema with zod validation', async () => {
-      const result = await cleanProj.handler(
+      const result = await clean_projLogic(
         {
           projectPath: 123, // Invalid type
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result.isError).toBe(true);

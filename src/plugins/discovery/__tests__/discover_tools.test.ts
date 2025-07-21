@@ -6,7 +6,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
-import discoverTools from '../discover_tools.ts';
+import discoverTools, { discover_toolsLogic } from '../discover_tools.ts';
 
 // Mock dependencies interface for dependency injection
 interface MockDependencies {
@@ -102,7 +102,7 @@ describe('discover_tools', () => {
     });
 
     it('should have handler function', () => {
-      expect(typeof discoverTools.handler).toBe('function');
+      expect(typeof discover_toolsLogic).toBe('function');
     });
 
     it('should have correct schema with task_description string field', () => {
@@ -125,7 +125,7 @@ describe('discover_tools', () => {
       // Mock server without sampling capability
       mockServer.server._clientCapabilities = {};
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' });
+      const result = await discover_toolsLogic({ task_description: 'Build my app' });
 
       expect(result).toEqual({
         content: [
@@ -164,10 +164,7 @@ describe('discover_tools', () => {
         };
       };
 
-      const result = await discoverTools.handler(
-        { task_description: 'Build my iOS app' },
-        mockDeps,
-      );
+      const result = await discover_toolsLogic({ task_description: 'Build my iOS app' }, mockDeps);
 
       expect(result.isError).toBeFalsy();
       expect(callTracker.loadWorkflowGroupsCalls).toHaveLength(1);
@@ -212,7 +209,7 @@ describe('discover_tools', () => {
         };
       };
 
-      await discoverTools.handler({ task_description: 'Build my iOS app' }, mockDeps);
+      await discover_toolsLogic({ task_description: 'Build my iOS app' }, mockDeps);
 
       // Verify workflow groups were loaded
       expect(callTracker.loadWorkflowGroupsCalls).toHaveLength(1);
@@ -270,7 +267,7 @@ describe('discover_tools', () => {
         };
       };
 
-      await discoverTools.handler({ task_description: 'Build my iOS app and test it' }, mockDeps);
+      await discover_toolsLogic({ task_description: 'Build my iOS app and test it' }, mockDeps);
 
       expect(requestCalls).toHaveLength(1);
       const requestCall = requestCalls[0];
@@ -303,7 +300,7 @@ describe('discover_tools', () => {
         };
       };
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
 
       expect(result.isError).toBeFalsy();
       expect(localCallTracker.enableWorkflowsCalls).toHaveLength(1);
@@ -325,7 +322,7 @@ describe('discover_tools', () => {
         };
       };
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
 
       expect(result.isError).toBeFalsy();
       expect(localCallTracker.enableWorkflowsCalls).toHaveLength(1);
@@ -352,7 +349,7 @@ describe('discover_tools', () => {
         };
       };
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
 
       expect(result.isError).toBeFalsy();
       expect(localCallTracker.enableWorkflowsCalls).toHaveLength(1);
@@ -371,7 +368,7 @@ describe('discover_tools', () => {
         };
       };
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
 
       expect(result).toEqual({
         content: [
@@ -392,7 +389,7 @@ describe('discover_tools', () => {
         };
       };
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
 
       expect(result).toEqual({
         content: [
@@ -416,10 +413,7 @@ describe('discover_tools', () => {
         };
       };
 
-      const result = await discoverTools.handler(
-        { task_description: 'Just saying hello' },
-        mockDeps,
-      );
+      const result = await discover_toolsLogic({ task_description: 'Just saying hello' }, mockDeps);
 
       expect(result).toEqual({
         content: [
@@ -475,10 +469,7 @@ describe('discover_tools', () => {
         };
       };
 
-      const result = await discoverTools.handler(
-        { task_description: 'Build my iOS app' },
-        mockDeps,
-      );
+      const result = await discover_toolsLogic({ task_description: 'Build my iOS app' }, mockDeps);
 
       expect(workflowCallTracker.enableWorkflowsCalls).toHaveLength(1);
       expect(workflowCallTracker.enableWorkflowsCalls[0]).toEqual([
@@ -519,7 +510,7 @@ describe('discover_tools', () => {
         };
       };
 
-      const result = await discoverTools.handler(
+      const result = await discover_toolsLogic(
         { task_description: 'Build my app' },
         mockDepsWithError,
       );
@@ -540,7 +531,7 @@ describe('discover_tools', () => {
     it('should handle missing server instance', async () => {
       (globalThis as any).mcpServer = undefined;
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' });
+      const result = await discover_toolsLogic({ task_description: 'Build my app' });
 
       expect(result).toEqual({
         content: [
@@ -566,7 +557,7 @@ describe('discover_tools', () => {
         errorCallTracker,
       );
 
-      const result = await discoverTools.handler(
+      const result = await discover_toolsLogic(
         { task_description: 'Build my app' },
         mockDepsWithError,
       );
@@ -595,7 +586,7 @@ describe('discover_tools', () => {
         throw new Error('LLM request failed');
       };
 
-      const result = await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
 
       expect(result).toEqual({
         content: [
@@ -649,7 +640,7 @@ describe('discover_tools', () => {
       const taskDescription =
         'I need to build my React Native iOS app for the simulator and run tests';
 
-      await discoverTools.handler({ task_description: taskDescription }, mockDeps);
+      await discover_toolsLogic({ task_description: taskDescription }, mockDeps);
 
       expect(requestCalls).toHaveLength(1);
       const requestCall = requestCalls[0];
@@ -680,7 +671,7 @@ describe('discover_tools', () => {
         };
       };
 
-      await discoverTools.handler({ task_description: 'Build my app' }, mockDeps);
+      await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
 
       expect(requestCalls).toHaveLength(1);
       const requestCall = requestCalls[0];

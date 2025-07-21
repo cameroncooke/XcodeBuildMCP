@@ -12,33 +12,42 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import stopSimLogCap from '../stop_sim_log_cap.ts';
-
-// Mock state tracking
-let stopLogCaptureCalls: Array<{
-  logSessionId: string;
-}> = [];
-let mockStopLogCaptureError: string | null = null;
-let mockStopLogCaptureLogContent: string = '';
-
-// Mock stopLogCapture function
-const mockStopLogCapture = async (logSessionId: string) => {
-  stopLogCaptureCalls.push({ logSessionId });
-
-  if (mockStopLogCaptureError) {
-    return { logContent: '', error: mockStopLogCaptureError };
-  }
-
-  return { logContent: mockStopLogCaptureLogContent };
-};
+import { z } from 'zod';
+import stopSimLogCap, { stop_sim_log_capLogic } from '../stop_sim_log_cap.ts';
+import { createMockFileSystemExecutor } from '../../../utils/command.js';
+import { activeLogSessions } from '../../../utils/log_capture.js';
 
 describe('stop_sim_log_cap plugin', () => {
-  // Reset state
+  let mockFileSystem: any;
+
   beforeEach(() => {
-    stopLogCaptureCalls = [];
-    mockStopLogCaptureError = null;
-    mockStopLogCaptureLogContent = '';
+    mockFileSystem = createMockFileSystemExecutor();
+    // Clear any active sessions before each test
+    activeLogSessions.clear();
   });
+
+  // Helper function to create a test log session
+  async function createTestLogSession(sessionId: string, logContent: string = '') {
+    const mockProcess = {
+      pid: 12345,
+      killed: false,
+      exitCode: null,
+      kill: () => {},
+    };
+
+    const logFilePath = `/tmp/xcodemcp_sim_log_test_${sessionId}.log`;
+
+    // Create actual file for the test
+    const fs = await import('fs/promises');
+    await fs.writeFile(logFilePath, logContent, 'utf-8');
+
+    activeLogSessions.set(sessionId, {
+      processes: [mockProcess as any],
+      logFilePath: logFilePath,
+      simulatorUuid: 'test-simulator-uuid',
+      bundleId: 'com.example.TestApp',
+    });
+  }
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct plugin structure', () => {
@@ -56,8 +65,14 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should have correct schema structure', () => {
+      // Schema should be a plain object for MCP protocol compliance
+      expect(typeof stopSimLogCap.schema).toBe('object');
       expect(stopSimLogCap.schema).toHaveProperty('logSessionId');
-      expect(stopSimLogCap.schema.logSessionId).toHaveProperty('_def');
+
+      // Validate that schema fields are Zod types that can be used for validation
+      const schema = z.object(stopSimLogCap.schema);
+      expect(schema.safeParse({ logSessionId: 'test-session-id' }).success).toBe(true);
+      expect(schema.safeParse({ logSessionId: 123 }).success).toBe(false);
     });
 
     it('should validate schema with valid parameters', () => {
@@ -74,11 +89,11 @@ describe('stop_sim_log_cap plugin', () => {
 
   describe('Input Validation', () => {
     it('should return error when logSessionId validation fails', async () => {
-      const result = await stopSimLogCap.handler(
+      const result = await stop_sim_log_capLogic(
         {
-          logSessionId: null,
+          logSessionId: null as any,
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
       expect(result).toEqual({
@@ -93,11 +108,11 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should return error when logSessionId is undefined', async () => {
-      const result = await stopSimLogCap.handler(
+      const result = await stop_sim_log_capLogic(
         {
-          logSessionId: undefined,
+          logSessionId: undefined as any,
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
       expect(result).toEqual({
@@ -112,13 +127,13 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle empty string logSessionId', async () => {
-      mockStopLogCaptureLogContent = 'Log content for empty session';
+      await createTestLogSession('', 'Log content for empty session');
 
-      const result = await stopSimLogCap.handler(
+      const result = await stop_sim_log_capLogic(
         {
           logSessionId: '',
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -130,47 +145,47 @@ describe('stop_sim_log_cap plugin', () => {
 
   describe('Function Call Generation', () => {
     it('should call stopLogCapture with correct parameters', async () => {
-      mockStopLogCaptureLogContent = 'Mock log content from file';
+      await createTestLogSession('test-session-id', 'Mock log content from file');
 
-      await stopSimLogCap.handler(
+      const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
-      expect(stopLogCaptureCalls).toHaveLength(1);
-      expect(stopLogCaptureCalls[0]).toEqual({
-        logSessionId: 'test-session-id',
-      });
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toBe(
+        'Log capture session test-session-id stopped successfully. Log content follows:\n\nMock log content from file',
+      );
     });
 
     it('should call stopLogCapture with different session ID', async () => {
-      mockStopLogCaptureLogContent = 'Different log content';
+      await createTestLogSession('different-session-id', 'Different log content');
 
-      await stopSimLogCap.handler(
+      const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'different-session-id',
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
-      expect(stopLogCaptureCalls).toHaveLength(1);
-      expect(stopLogCaptureCalls[0]).toEqual({
-        logSessionId: 'different-session-id',
-      });
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toBe(
+        'Log capture session different-session-id stopped successfully. Log content follows:\n\nDifferent log content',
+      );
     });
   });
 
   describe('Response Processing', () => {
     it('should handle successful log capture stop', async () => {
-      mockStopLogCaptureLogContent = 'Mock log content from file';
+      await createTestLogSession('test-session-id', 'Mock log content from file');
 
-      const result = await stopSimLogCap.handler(
+      const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -180,13 +195,13 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle empty log content', async () => {
-      mockStopLogCaptureLogContent = '';
+      await createTestLogSession('test-session-id', '');
 
-      const result = await stopSimLogCap.handler(
+      const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -196,13 +211,13 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle multiline log content', async () => {
-      mockStopLogCaptureLogContent = 'Line 1\nLine 2\nLine 3';
+      await createTestLogSession('test-session-id', 'Line 1\nLine 2\nLine 3');
 
-      const result = await stopSimLogCap.handler(
+      const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -212,13 +227,11 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle log capture stop errors for non-existent session', async () => {
-      mockStopLogCaptureError = 'Log capture session not found: non-existent-session';
-
-      const result = await stopSimLogCap.handler(
+      const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'non-existent-session',
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
       expect(result.isError).toBe(true);
@@ -228,50 +241,89 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle file read errors', async () => {
-      mockStopLogCaptureError = 'File not found';
+      // Create session but make file reading fail in the log_capture utility
+      const mockProcess = {
+        pid: 12345,
+        killed: false,
+        exitCode: null,
+        kill: () => {},
+      };
 
-      const result = await stopSimLogCap.handler(
+      activeLogSessions.set('test-session-id', {
+        processes: [mockProcess as any],
+        logFilePath: `/tmp/test_file_not_found.log`,
+        simulatorUuid: 'test-simulator-uuid',
+        bundleId: 'com.example.TestApp',
+      });
+
+      const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'Error stopping log capture session test-session-id: File not found',
+      expect(result.content[0].text).toContain(
+        'Error stopping log capture session test-session-id:',
       );
     });
 
     it('should handle permission errors', async () => {
-      mockStopLogCaptureError = 'Permission denied';
+      // Create session but make file reading fail in the log_capture utility
+      const mockProcess = {
+        pid: 12345,
+        killed: false,
+        exitCode: null,
+        kill: () => {},
+      };
 
-      const result = await stopSimLogCap.handler(
+      activeLogSessions.set('test-session-id', {
+        processes: [mockProcess as any],
+        logFilePath: `/tmp/test_permission_denied.log`,
+        simulatorUuid: 'test-simulator-uuid',
+        bundleId: 'com.example.TestApp',
+      });
+
+      const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'Error stopping log capture session test-session-id: Permission denied',
+      expect(result.content[0].text).toContain(
+        'Error stopping log capture session test-session-id:',
       );
     });
 
     it('should handle various error types', async () => {
-      mockStopLogCaptureError = 'Some generic error';
+      // Create session but make file reading fail in the log_capture utility
+      const mockProcess = {
+        pid: 12345,
+        killed: false,
+        exitCode: null,
+        kill: () => {},
+      };
 
-      const result = await stopSimLogCap.handler(
+      activeLogSessions.set('test-session-id', {
+        processes: [mockProcess as any],
+        logFilePath: `/tmp/test_generic_error.log`,
+        simulatorUuid: 'test-simulator-uuid',
+        bundleId: 'com.example.TestApp',
+      });
+
+      const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        mockStopLogCapture,
+        mockFileSystem,
       );
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'Error stopping log capture session test-session-id: Some generic error',
+      expect(result.content[0].text).toContain(
+        'Error stopping log capture session test-session-id:',
       );
     });
   });

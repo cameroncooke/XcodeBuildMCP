@@ -1,16 +1,13 @@
 /**
- * Pure dependency injection test for launch_app_device plugin
- *
- * Tests plugin structure and app launching functionality including parameter validation,
- * command generation, file operations, and response formatting.
- *
- * Uses createMockExecutor for command execution and manual stubs for file operations.
+ * Tests for launch_app_device plugin (re-exported from device-shared)
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import launchAppDevice from '../launch_app_device.ts';
+import launchAppDevice, { launch_app_deviceLogic } from '../../device-shared/launch_app_device.js';
 
 describe('launch_app_device plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -87,7 +84,7 @@ describe('launch_app_device plugin', () => {
         };
       };
 
-      await launchAppDevice.handler(
+      await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
@@ -126,7 +123,7 @@ describe('launch_app_device plugin', () => {
         };
       };
 
-      await launchAppDevice.handler(
+      await launch_app_deviceLogic(
         {
           deviceId: '00008030-001E14BE2288802E',
           bundleId: 'com.apple.mobilesafari',
@@ -157,7 +154,7 @@ describe('launch_app_device plugin', () => {
         output: 'App launched successfully',
       });
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
@@ -181,7 +178,7 @@ describe('launch_app_device plugin', () => {
         output: 'Launch succeeded with detailed output',
       });
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
@@ -205,7 +202,7 @@ describe('launch_app_device plugin', () => {
         error: 'Launch failed: App not found',
       });
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.nonexistent.app',
@@ -230,7 +227,7 @@ describe('launch_app_device plugin', () => {
         error: 'Device not found: test-device-invalid',
       });
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-invalid',
           bundleId: 'com.example.app',
@@ -256,7 +253,7 @@ describe('launch_app_device plugin', () => {
         throw new Error('Network error');
       };
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
@@ -283,7 +280,7 @@ describe('launch_app_device plugin', () => {
         throw 'String error';
       };
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
@@ -315,7 +312,7 @@ describe('launch_app_device plugin', () => {
         };
       };
 
-      await launchAppDevice.handler(
+      await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',

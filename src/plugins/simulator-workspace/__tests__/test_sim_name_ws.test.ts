@@ -5,7 +5,7 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
-import testSimNameWs from '../test_sim_name_ws.ts';
+import testSimNameWs, { test_sim_name_wsLogic } from '../test_sim_name_ws.ts';
 
 describe('test_sim_name_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -53,7 +53,7 @@ describe('test_sim_name_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -74,7 +74,7 @@ describe('test_sim_name_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -95,7 +95,7 @@ describe('test_sim_name_ws plugin', () => {
         error: 'xcodebuild: error: Scheme not found',
       });
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'NonExistentScheme',
@@ -115,7 +115,7 @@ describe('test_sim_name_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -135,7 +135,7 @@ describe('test_sim_name_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -160,7 +160,7 @@ describe('test_sim_name_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -180,7 +180,7 @@ describe('test_sim_name_ws plugin', () => {
         output: 'Test Suite All Tests passed\nExecuted 25 tests, with 0 failures',
       });
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -201,7 +201,7 @@ describe('test_sim_name_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -223,7 +223,7 @@ describe('test_sim_name_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -266,7 +266,7 @@ describe('test_sim_name_ws plugin', () => {
         };
       };
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -320,7 +320,7 @@ describe('test_sim_name_ws plugin', () => {
         };
       };
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -375,7 +375,7 @@ describe('test_sim_name_ws plugin', () => {
         };
       };
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -430,7 +430,7 @@ describe('test_sim_name_ws plugin', () => {
         };
       };
 
-      const result = await testSimNameWs.handler(
+      const result = await test_sim_name_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',

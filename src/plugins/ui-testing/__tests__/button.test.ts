@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
-import buttonPlugin from '../button.ts';
+import buttonPlugin, { buttonLogic } from '../button.ts';
 
 describe('Button Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -103,7 +103,7 @@ describe('Button Plugin', () => {
         }),
       };
 
-      await buttonPlugin.handler(
+      await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
@@ -142,7 +142,7 @@ describe('Button Plugin', () => {
         }),
       };
 
-      await buttonPlugin.handler(
+      await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'side-button',
@@ -184,7 +184,7 @@ describe('Button Plugin', () => {
         }),
       };
 
-      await buttonPlugin.handler(
+      await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'apple-pay',
@@ -219,7 +219,7 @@ describe('Button Plugin', () => {
         getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
       };
 
-      await buttonPlugin.handler(
+      await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'siri',
@@ -240,7 +240,7 @@ describe('Button Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await buttonPlugin.handler({ buttonType: 'home' }, createNoopExecutor());
+      const result = await buttonLogic({ buttonType: 'home' }, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -254,7 +254,7 @@ describe('Button Plugin', () => {
     });
 
     it('should return error for missing buttonType', async () => {
-      const result = await buttonPlugin.handler(
+      const result = await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -289,7 +289,7 @@ describe('Button Plugin', () => {
         }),
       };
 
-      const result = await buttonPlugin.handler(
+      const result = await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
@@ -320,7 +320,7 @@ describe('Button Plugin', () => {
         }),
       };
 
-      const result = await buttonPlugin.handler(
+      const result = await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'side-button',
@@ -350,7 +350,7 @@ describe('Button Plugin', () => {
         }),
       };
 
-      const result = await buttonPlugin.handler(
+      const result = await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
@@ -387,7 +387,7 @@ describe('Button Plugin', () => {
         }),
       };
 
-      const result = await buttonPlugin.handler(
+      const result = await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
@@ -421,7 +421,7 @@ describe('Button Plugin', () => {
         }),
       };
 
-      const result = await buttonPlugin.handler(
+      const result = await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
@@ -450,7 +450,7 @@ describe('Button Plugin', () => {
         }),
       };
 
-      const result = await buttonPlugin.handler(
+      const result = await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
@@ -479,7 +479,7 @@ describe('Button Plugin', () => {
         }),
       };
 
-      const result = await buttonPlugin.handler(
+      const result = await buttonLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',

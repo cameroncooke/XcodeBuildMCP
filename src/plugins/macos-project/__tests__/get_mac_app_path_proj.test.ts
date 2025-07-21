@@ -11,7 +11,7 @@ import {
   createNoopExecutor,
   type CommandExecutor,
 } from '../../../utils/command.js';
-import tool from '../get_mac_app_path_proj.ts';
+import tool, { get_mac_app_path_projLogic } from '../get_mac_app_path_proj.js';
 
 describe('get_mac_app_path_proj', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -88,7 +88,7 @@ describe('get_mac_app_path_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await get_mac_app_path_projLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -118,7 +118,7 @@ describe('get_mac_app_path_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, createNoopExecutor());
+      const result = await get_mac_app_path_projLogic(args, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -136,7 +136,7 @@ describe('get_mac_app_path_proj', () => {
         projectPath: '/path/to/project.xcodeproj',
       };
 
-      const result = await tool.handler(args, createNoopExecutor());
+      const result = await get_mac_app_path_projLogic(args, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -160,7 +160,7 @@ describe('get_mac_app_path_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await get_mac_app_path_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -184,7 +184,7 @@ describe('get_mac_app_path_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await get_mac_app_path_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -215,7 +215,7 @@ describe('get_mac_app_path_proj', () => {
         scheme: 'MyApp',
       };
 
-      await tool.handler(args, mockExecutor);
+      await get_mac_app_path_projLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -257,7 +257,7 @@ describe('get_mac_app_path_proj', () => {
         extraArgs: ['--verbose'],
       };
 
-      await tool.handler(args, mockExecutor);
+      await get_mac_app_path_projLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -292,7 +292,7 @@ describe('get_mac_app_path_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await get_mac_app_path_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [

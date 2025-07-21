@@ -6,10 +6,19 @@
  */
 
 import { z } from 'zod';
-import { log, getDefaultCommandExecutor } from '../../utils/index.js';
-import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { log } from '../../utils/index.js';
+import { validateRequiredParam } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
+
+interface GetMacAppPathProjParams {
+  projectPath: unknown;
+  scheme: unknown;
+  configuration?: unknown;
+  derivedDataPath?: unknown;
+  extraArgs?: unknown;
+  arch?: unknown;
+}
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -22,6 +31,106 @@ const XcodePlatform = {
   visionOSSimulator: 'visionOS Simulator',
   macOS: 'macOS',
 };
+
+export async function get_mac_app_path_projLogic(
+  params: GetMacAppPathProjParams,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+
+  const configuration = params.configuration ?? 'Debug';
+
+  log('info', `Getting app path for scheme ${params.scheme} on platform ${XcodePlatform.macOS}`);
+
+  try {
+    // Create the command array for xcodebuild with -showBuildSettings option
+    const command = ['xcodebuild', '-showBuildSettings'];
+
+    // Add the project
+    command.push('-project', params.projectPath as string);
+
+    // Add the scheme and configuration
+    command.push('-scheme', params.scheme as string);
+    command.push('-configuration', configuration as string);
+
+    // Add optional derived data path
+    if (params.derivedDataPath) {
+      command.push('-derivedDataPath', params.derivedDataPath as string);
+    }
+
+    // Add extra arguments if provided
+    if (params.extraArgs && Array.isArray(params.extraArgs)) {
+      command.push(...(params.extraArgs as string[]));
+    }
+
+    // Execute the command directly with executor
+    const result = await executor(command, 'Get App Path', true, undefined);
+
+    if (!result.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Error: Failed to get macOS app path\nDetails: ${result.error}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    if (!result.output) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Failed to get macOS app path\nDetails: Failed to extract build settings output from the result',
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const buildSettingsOutput = result.output;
+    const builtProductsDirMatch = buildSettingsOutput.match(/BUILT_PRODUCTS_DIR = (.+)$/m);
+    const fullProductNameMatch = buildSettingsOutput.match(/FULL_PRODUCT_NAME = (.+)$/m);
+
+    if (!builtProductsDirMatch || !fullProductNameMatch) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Failed to get macOS app path\nDetails: Could not extract app path from build settings',
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const builtProductsDir = builtProductsDirMatch[1].trim();
+    const fullProductName = fullProductNameMatch[1].trim();
+    const appPath = `${builtProductsDir}/${fullProductName}`;
+
+    return {
+      content: [{ type: 'text', text: `✅ macOS app path: ${appPath}` }],
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('error', `Error retrieving app path: ${errorMessage}`);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Error: Failed to get macOS app path\nDetails: ${errorMessage}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
 
 export default {
   name: 'get_mac_app_path_proj',
@@ -41,104 +150,7 @@ export default {
       .optional()
       .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-    if (!projectValidation.isValid) return projectValidation.errorResponse;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse;
-
-    const configuration = params.configuration ?? 'Debug';
-
-    log('info', `Getting app path for scheme ${params.scheme} on platform ${XcodePlatform.macOS}`);
-
-    try {
-      // Create the command array for xcodebuild with -showBuildSettings option
-      const command = ['xcodebuild', '-showBuildSettings'];
-
-      // Add the project
-      command.push('-project', params.projectPath);
-
-      // Add the scheme and configuration
-      command.push('-scheme', params.scheme);
-      command.push('-configuration', configuration);
-
-      // Add optional derived data path
-      if (params.derivedDataPath) {
-        command.push('-derivedDataPath', params.derivedDataPath);
-      }
-
-      // Add extra arguments if provided
-      if (params.extraArgs && Array.isArray(params.extraArgs)) {
-        command.push(...(params.extraArgs as string[]));
-      }
-
-      // Execute the command directly with executor
-      const result = await executeCommand(command, executor, 'Get App Path', true, undefined);
-
-      if (!result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Error: Failed to get macOS app path\nDetails: ${result.error}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      if (!result.output) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Error: Failed to get macOS app path\nDetails: Failed to extract build settings output from the result',
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      const buildSettingsOutput = result.output;
-      const builtProductsDirMatch = buildSettingsOutput.match(/BUILT_PRODUCTS_DIR = (.+)$/m);
-      const fullProductNameMatch = buildSettingsOutput.match(/FULL_PRODUCT_NAME = (.+)$/m);
-
-      if (!builtProductsDirMatch || !fullProductNameMatch) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Error: Failed to get macOS app path\nDetails: Could not extract app path from build settings',
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      const builtProductsDir = builtProductsDirMatch[1].trim();
-      const fullProductName = fullProductNameMatch[1].trim();
-      const appPath = `${builtProductsDir}/${fullProductName}`;
-
-      return {
-        content: [{ type: 'text', text: `✅ macOS app path: ${appPath}` }],
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      log('error', `Error retrieving app path: ${errorMessage}`);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Error: Failed to get macOS app path\nDetails: ${errorMessage}`,
-          },
-        ],
-        isError: true,
-      };
-    }
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return get_mac_app_path_projLogic(args, getDefaultCommandExecutor());
   },
 };

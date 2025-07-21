@@ -6,7 +6,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
-import buildRunSimNameWs from '../build_run_sim_name_ws.ts';
+import buildRunSimNameWs, { build_run_sim_name_wsLogic } from '../build_run_sim_name_ws.ts';
 
 describe('build_run_sim_name_ws tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -105,7 +105,7 @@ describe('build_run_sim_name_ws tool', () => {
         output: 'Mock output',
       });
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: undefined,
           scheme: 'MyScheme',
@@ -131,7 +131,7 @@ describe('build_run_sim_name_ws tool', () => {
         output: 'Mock output',
       });
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: undefined,
@@ -157,7 +157,7 @@ describe('build_run_sim_name_ws tool', () => {
         output: 'Mock output',
       });
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -193,7 +193,7 @@ describe('build_run_sim_name_ws tool', () => {
         }),
       });
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -219,7 +219,7 @@ describe('build_run_sim_name_ws tool', () => {
         error: 'Build failed with error',
       });
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -284,7 +284,7 @@ describe('build_run_sim_name_ws tool', () => {
         }
       };
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -304,7 +304,7 @@ describe('build_run_sim_name_ws tool', () => {
         error: 'Command failed',
       });
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -324,7 +324,7 @@ describe('build_run_sim_name_ws tool', () => {
         error: 'String error',
       });
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -364,7 +364,7 @@ describe('build_run_sim_name_ws tool', () => {
         };
       };
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -434,7 +434,7 @@ describe('build_run_sim_name_ws tool', () => {
         }
       };
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -529,7 +529,7 @@ describe('build_run_sim_name_ws tool', () => {
         }
       };
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -608,7 +608,7 @@ describe('build_run_sim_name_ws tool', () => {
         };
       };
 
-      const result = await buildRunSimNameWs.handler(
+      const result = await build_run_sim_name_wsLogic(
         {
           workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
           scheme: 'My Scheme',

@@ -12,7 +12,7 @@ interface Dependencies {
   enableWorkflows?: (server: any, workflows: string[], groups: Map<string, any>) => Promise<void>;
 }
 
-async function discoverToolsHandler(
+export async function discover_toolsLogic(
   args: Record<string, unknown>,
   deps?: Dependencies,
 ): Promise<ToolResponse> {
@@ -195,5 +195,7 @@ export default {
           "For example: 'I need to build my iOS app and run it on the iPhone 15 Pro simulator.'",
       ),
   },
-  handler: discoverToolsHandler,
+  handler: async (args: Record<string, unknown>) => {
+    return discover_toolsLogic(args);
+  },
 };

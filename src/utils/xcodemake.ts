@@ -14,7 +14,7 @@
  */
 
 import { log } from './logger.js';
-import { executeCommand, CommandResponse, getDefaultCommandExecutor } from './command.js';
+import { CommandResponse, getDefaultCommandExecutor } from './command.js';
 import { existsSync, readdirSync } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -116,7 +116,7 @@ export async function isXcodemakeAvailable(): Promise<boolean> {
     }
 
     // Check if xcodemake is available in PATH
-    const result = await executeCommand(['which', 'xcodemake'], getDefaultCommandExecutor());
+    const result = await getDefaultCommandExecutor()(['which', 'xcodemake']);
     if (result.success) {
       log('debug', 'xcodemake found in PATH');
       return true;
@@ -213,7 +213,7 @@ export async function executeXcodemakeCommand(
   // Remove projectDir from arguments
   const command = xcodemakeCommand.map((arg) => arg.replace(projectDir + '/', ''));
 
-  return executeCommand(command, getDefaultCommandExecutor(), logPrefix);
+  return getDefaultCommandExecutor()(command, logPrefix);
 }
 
 /**
@@ -227,5 +227,5 @@ export async function executeMakeCommand(
   logPrefix: string,
 ): Promise<CommandResponse> {
   const command = ['cd', projectDir, '&&', 'make'];
-  return executeCommand(command, getDefaultCommandExecutor(), logPrefix);
+  return getDefaultCommandExecutor()(command, logPrefix);
 }

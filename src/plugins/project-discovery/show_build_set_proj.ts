@@ -6,16 +6,28 @@
 
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 /**
- * Internal logic for showing build settings.
+ * Parameters for show_build_set_proj operation
  */
-async function _handleShowBuildSettingsLogic(
-  params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+interface ShowBuildSetProjParams {
+  projectPath: string;
+  scheme: string;
+}
+
+/**
+ * Business logic for showing build settings from a project file.
+ *
+ * @param params - The validated parameters for the operation
+ * @param executor - The command executor for running xcodebuild commands
+ * @returns Promise resolving to a ToolResponse with build settings or error information
+ */
+export async function show_build_set_projLogic(
+  params: ShowBuildSetProjParams,
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', `Showing build settings for scheme ${params.scheme}`);
 
@@ -23,18 +35,14 @@ async function _handleShowBuildSettingsLogic(
     // Create the command array for xcodebuild
     const command = ['xcodebuild', '-showBuildSettings']; // -showBuildSettings as an option, not an action
 
-    // Add the workspace or project
-    if (params.workspacePath) {
-      command.push('-workspace', params.workspacePath);
-    } else if (params.projectPath) {
-      command.push('-project', params.projectPath);
-    }
+    // Add the project
+    command.push('-project', params.projectPath);
 
     // Add the scheme
     command.push('-scheme', params.scheme);
 
     // Execute the command directly
-    const result = await executeCommand(command, executor, 'Show Build Settings', true);
+    const result = await executor(command, 'Show Build Settings', true);
 
     if (!result.success) {
       return createTextResponse(`Failed to show build settings: ${result.error}`, true);
@@ -64,10 +72,10 @@ export default {
   name: 'show_build_set_proj',
   description:
     "Shows build settings from a project file using xcodebuild. IMPORTANT: Requires projectPath and scheme. Example: show_build_set_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-  schema: {
+  schema: z.object({
     projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
     scheme: z.string().describe('Scheme name to show build settings for (Required)'),
-  },
+  }),
   async handler(
     args: Record<string, unknown>,
     executor: CommandExecutor = getDefaultCommandExecutor(),
@@ -81,6 +89,12 @@ export default {
     const schemeValidation = validateRequiredParam('scheme', params.scheme);
     if (!schemeValidation.isValid) return schemeValidation.errorResponse;
 
-    return _handleShowBuildSettingsLogic(params, executor);
+    // Cast to proper type after validation
+    const typedParams: ShowBuildSetProjParams = {
+      projectPath: params.projectPath as string,
+      scheme: params.scheme as string,
+    };
+
+    return show_build_set_projLogic(typedParams, executor);
   },
 };

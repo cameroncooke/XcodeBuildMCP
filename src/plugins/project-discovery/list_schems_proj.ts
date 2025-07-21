@@ -6,16 +6,17 @@
 
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 /**
- * Internal logic for listing schemes.
+ * Business logic for listing schemes in a project.
+ * Exported for direct testing and reuse.
  */
-async function _handleListSchemesLogic(
+export async function list_schems_projLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', 'Listing schemes');
 
@@ -30,7 +31,7 @@ async function _handleListSchemesLogic(
       command.push('-project', params.projectPath);
     } // No else needed, one path is guaranteed by callers
 
-    const result = await executeCommand(command, executor, 'List Schemes', true);
+    const result = await executor(command, 'List Schemes', true);
 
     if (!result.success) {
       return createTextResponse(`Failed to list schemes: ${result.error}`, true);
@@ -90,16 +91,10 @@ export default {
   schema: {
     projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-
-    // Validate required parameters
-    const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    const projectValidation = validateRequiredParam('projectPath', args.projectPath);
     if (!projectValidation.isValid) return projectValidation.errorResponse;
 
-    return _handleListSchemesLogic(params, executor);
+    return list_schems_projLogic(args, getDefaultCommandExecutor());
   },
 };

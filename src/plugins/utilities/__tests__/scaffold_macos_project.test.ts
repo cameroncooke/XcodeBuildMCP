@@ -15,7 +15,7 @@ import {
   createNoopExecutor,
   createMockExecutor,
 } from '../../../utils/command.js';
-import plugin from '../scaffold_macos_project.js';
+import plugin, { scaffold_macos_projectLogic } from '../scaffold_macos_project.js';
 import { TemplateManager } from '../../../utils/index.js';
 
 // ONLY ALLOWED MOCKING: createMockFileSystemExecutor
@@ -195,7 +195,7 @@ describe('scaffold_macos_project plugin', () => {
       (TemplateManager as any).getTemplatePath = OriginalTemplateManager.getTemplatePath;
       (TemplateManager as any).cleanup = OriginalTemplateManager.cleanup;
 
-      await plugin.handler(
+      await scaffold_macos_projectLogic(
         {
           projectName: 'TestMacApp',
           outputPath: '/tmp/test-projects',
@@ -223,7 +223,7 @@ describe('scaffold_macos_project plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return success response for valid scaffold macOS project request', async () => {
-      const result = await plugin.handler(
+      const result = await scaffold_macos_projectLogic(
         {
           projectName: 'TestMacApp',
           outputPath: '/tmp/test-projects',
@@ -264,7 +264,7 @@ describe('scaffold_macos_project plugin', () => {
     });
 
     it('should return success response with customizeNames false', async () => {
-      const result = await plugin.handler(
+      const result = await scaffold_macos_projectLogic(
         {
           projectName: 'TestMacApp',
           outputPath: '/tmp/test-projects',
@@ -299,7 +299,7 @@ describe('scaffold_macos_project plugin', () => {
     });
 
     it('should return error response for invalid project name', async () => {
-      const result = await plugin.handler(
+      const result = await scaffold_macos_projectLogic(
         {
           projectName: '123InvalidName',
           outputPath: '/tmp/test-projects',
@@ -331,7 +331,7 @@ describe('scaffold_macos_project plugin', () => {
       // Override existsSync to return true for workspace file
       mockFileSystemExecutor.existsSync = () => true;
 
-      const result = await plugin.handler(
+      const result = await scaffold_macos_projectLogic(
         {
           projectName: 'TestMacApp',
           outputPath: '/tmp/test-projects',
@@ -361,7 +361,7 @@ describe('scaffold_macos_project plugin', () => {
     it('should return error response for template manager failure', async () => {
       templateManagerStub.setError(new Error('Template not found'));
 
-      const result = await plugin.handler(
+      const result = await scaffold_macos_projectLogic(
         {
           projectName: 'TestMacApp',
           outputPath: '/tmp/test-projects',
@@ -391,7 +391,7 @@ describe('scaffold_macos_project plugin', () => {
 
   describe('File System Operations', () => {
     it('should create directories and process files correctly', async () => {
-      await plugin.handler(
+      await scaffold_macos_projectLogic(
         {
           projectName: 'TestApp',
           outputPath: '/tmp/test',

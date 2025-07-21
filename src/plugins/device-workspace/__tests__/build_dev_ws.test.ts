@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
-import buildDevWs from '../build_dev_ws.ts';
+import buildDevWs, { build_dev_wsLogic } from '../build_dev_ws.ts';
 
 describe('build_dev_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -46,7 +46,7 @@ describe('build_dev_ws plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation error response for workspacePath', async () => {
-      const result = await buildDevWs.handler(
+      const result = await build_dev_wsLogic(
         {
           scheme: 'MyScheme',
         },
@@ -65,7 +65,7 @@ describe('build_dev_ws plugin', () => {
     });
 
     it('should return exact validation error response for scheme', async () => {
-      const result = await buildDevWs.handler(
+      const result = await build_dev_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
         },
@@ -100,7 +100,7 @@ describe('build_dev_ws plugin', () => {
         };
       };
 
-      await buildDevWs.handler(
+      await build_dev_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -137,7 +137,7 @@ describe('build_dev_ws plugin', () => {
         output: 'BUILD SUCCEEDED',
       });
 
-      const result = await buildDevWs.handler(
+      const result = await build_dev_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -163,7 +163,7 @@ describe('build_dev_ws plugin', () => {
         error: 'xcodebuild: error: Scheme NonExistentScheme not found',
       });
 
-      const result = await buildDevWs.handler(
+      const result = await build_dev_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'NonExistentScheme',
@@ -203,7 +203,7 @@ describe('build_dev_ws plugin', () => {
         };
       };
 
-      await buildDevWs.handler(
+      await build_dev_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',

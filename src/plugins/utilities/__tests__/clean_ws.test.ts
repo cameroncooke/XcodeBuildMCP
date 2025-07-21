@@ -15,7 +15,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import cleanWs from '../clean_ws.ts';
+import cleanWs, { clean_wsLogic } from '../clean_ws.ts';
 
 describe('clean_ws plugin tests', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -91,7 +91,7 @@ describe('clean_ws plugin tests', () => {
         };
       };
 
-      await cleanWs.handler(
+      await clean_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -126,7 +126,7 @@ describe('clean_ws plugin tests', () => {
         };
       };
 
-      await cleanWs.handler(
+      await clean_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -162,7 +162,7 @@ describe('clean_ws plugin tests', () => {
         };
       };
 
-      await cleanWs.handler(
+      await clean_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -200,7 +200,7 @@ describe('clean_ws plugin tests', () => {
         };
       };
 
-      await cleanWs.handler(
+      await clean_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -239,7 +239,7 @@ describe('clean_ws plugin tests', () => {
         };
       };
 
-      await cleanWs.handler(
+      await clean_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -278,13 +278,12 @@ describe('clean_ws plugin tests', () => {
         process: { pid: 12345 },
       });
 
-      const result = await cleanWs.handler(
+      const result = await clean_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -305,7 +304,7 @@ describe('clean_ws plugin tests', () => {
         process: { pid: 12345 },
       });
 
-      const result = await cleanWs.handler(
+      const result = await clean_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -314,7 +313,6 @@ describe('clean_ws plugin tests', () => {
           extraArgs: ['--verbose'],
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -335,12 +333,11 @@ describe('clean_ws plugin tests', () => {
         process: { pid: 12345 },
       });
 
-      const result = await cleanWs.handler(
+      const result = await clean_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -359,13 +356,12 @@ describe('clean_ws plugin tests', () => {
         error: 'Clean failed',
       });
 
-      const result = await cleanWs.handler(
+      const result = await clean_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -384,12 +380,11 @@ describe('clean_ws plugin tests', () => {
     });
 
     it('should return error response for validation failure', async () => {
-      const result = await cleanWs.handler(
+      const result = await clean_wsLogic(
         {
           workspacePath: null,
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -406,13 +401,12 @@ describe('clean_ws plugin tests', () => {
     it('should handle spawn process error', async () => {
       const mockExecutor = createMockExecutor(new Error('spawn failed'));
 
-      const result = await cleanWs.handler(
+      const result = await clean_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -427,12 +421,11 @@ describe('clean_ws plugin tests', () => {
     });
 
     it('should handle invalid schema with zod validation', async () => {
-      const result = await cleanWs.handler(
+      const result = await clean_wsLogic(
         {
           workspacePath: 123, // Invalid type
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result.isError).toBe(true);

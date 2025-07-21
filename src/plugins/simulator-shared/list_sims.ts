@@ -1,21 +1,20 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import {
-  log,
-  executeCommand,
-  CommandExecutor,
-  getDefaultCommandExecutor,
-} from '../../utils/index.js';
+import { log, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 
-async function listSimsToolHandler(
-  args: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+interface ListSimsParams {
+  enabled?: boolean;
+}
+
+export async function list_simsLogic(
+  params: ListSimsParams,
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', 'Starting xcrun simctl list devices request');
 
   try {
     const command = ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'];
-    const result = await executeCommand(command, executor, 'List Simulators', true);
+    const result = await executor(command, 'List Simulators', true);
 
     if (!result.success) {
       return {
@@ -94,5 +93,7 @@ export default {
   schema: {
     enabled: z.boolean().optional().describe('Optional flag to enable the listing operation.'),
   },
-  handler: listSimsToolHandler,
+  handler: async (args: Record<string, unknown>) => {
+    return list_simsLogic(args as ListSimsParams, getDefaultCommandExecutor());
+  },
 };

@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
-import swiftPackageRun from '../swift_package_run.ts';
+import swiftPackageRun, { swift_package_runLogic } from '../swift_package_run.ts';
 
 describe('swift_package_run plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -88,7 +88,7 @@ describe('swift_package_run plugin', () => {
         });
       };
 
-      await swiftPackageRun.handler(
+      await swift_package_runLogic(
         {
           packagePath: '/test/package',
         },
@@ -119,7 +119,7 @@ describe('swift_package_run plugin', () => {
         });
       };
 
-      await swiftPackageRun.handler(
+      await swift_package_runLogic(
         {
           packagePath: '/test/package',
           configuration: 'release',
@@ -151,7 +151,7 @@ describe('swift_package_run plugin', () => {
         });
       };
 
-      await swiftPackageRun.handler(
+      await swift_package_runLogic(
         {
           packagePath: '/test/package',
           executableName: 'MyApp',
@@ -183,7 +183,7 @@ describe('swift_package_run plugin', () => {
         });
       };
 
-      await swiftPackageRun.handler(
+      await swift_package_runLogic(
         {
           packagePath: '/test/package',
           arguments: ['arg1', 'arg2'],
@@ -215,7 +215,7 @@ describe('swift_package_run plugin', () => {
         });
       };
 
-      await swiftPackageRun.handler(
+      await swift_package_runLogic(
         {
           packagePath: '/test/package',
           parseAsLibrary: true,
@@ -254,7 +254,7 @@ describe('swift_package_run plugin', () => {
         });
       };
 
-      await swiftPackageRun.handler(
+      await swift_package_runLogic(
         {
           packagePath: '/test/package',
           executableName: 'MyApp',
@@ -289,7 +289,7 @@ describe('swift_package_run plugin', () => {
       // For background mode, no executor should be called since it uses direct spawn
       const mockExecutor = createNoopExecutor();
 
-      const result = await swiftPackageRun.handler(
+      const result = await swift_package_runLogic(
         {
           packagePath: '/test/package',
           background: true,
@@ -305,7 +305,7 @@ describe('swift_package_run plugin', () => {
   describe('Response Logic Testing', () => {
     it('should return validation error for missing packagePath', async () => {
       const mockExecutor = createNoopExecutor();
-      const result = await swiftPackageRun.handler({}, mockExecutor);
+      const result = await swift_package_runLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -320,7 +320,7 @@ describe('swift_package_run plugin', () => {
 
     it('should return success response for background mode', async () => {
       const mockExecutor = createNoopExecutor();
-      const result = await swiftPackageRun.handler(
+      const result = await swift_package_runLogic(
         {
           packagePath: '/test/package',
           background: true,
@@ -338,7 +338,7 @@ describe('swift_package_run plugin', () => {
         output: 'Hello, World!',
       });
 
-      const result = await swiftPackageRun.handler(
+      const result = await swift_package_runLogic(
         {
           packagePath: '/test/package',
         },
@@ -361,7 +361,7 @@ describe('swift_package_run plugin', () => {
         error: 'Compilation failed',
       });
 
-      const result = await swiftPackageRun.handler(
+      const result = await swift_package_runLogic(
         {
           packagePath: '/test/package',
         },
@@ -380,7 +380,7 @@ describe('swift_package_run plugin', () => {
     it('should handle executor error', async () => {
       const mockExecutor = createMockExecutor(new Error('Command not found'));
 
-      const result = await swiftPackageRun.handler(
+      const result = await swift_package_runLogic(
         {
           packagePath: '/test/package',
         },

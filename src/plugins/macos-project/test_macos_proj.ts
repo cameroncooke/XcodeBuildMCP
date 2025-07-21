@@ -5,9 +5,13 @@
  */
 
 import { z } from 'zod';
-import { log, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.ts';
-import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.ts';
-import { createTextResponse, getDefaultCommandExecutor } from '../../utils/index.ts';
+import {
+  log,
+  CommandExecutor,
+  getDefaultCommandExecutor,
+  executeXcodeBuildCommand,
+  createTextResponse,
+} from '../../utils/index.ts';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
@@ -26,6 +30,15 @@ const XcodePlatform = {
   visionOSSimulator: 'visionOS Simulator',
   macOS: 'macOS',
 };
+
+interface TestMacosProjParams {
+  projectPath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+}
 
 /**
  * Type definition for test summary structure from xcresulttool
@@ -125,18 +138,15 @@ function formatTestSummary(summary: Record<string, unknown>): string {
   return lines.join('\n');
 }
 
-// Internal logic for running tests with platform-specific handling
-async function handleTestLogic(
-  params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
-  _tempDirDeps?: any,
-  _buildUtilsDeps?: any,
-  _fileSystemDeps?: any,
+/**
+ * Business logic for testing a macOS project
+ * Extracted for better separation of concerns and testability
+ */
+export async function test_macos_projLogic(
+  params: TestMacosProjParams,
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  log(
-    'info',
-    `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
-  );
+  log('info', `Starting test run for scheme ${params.scheme} on platform macOS (internal)`);
 
   try {
     // Create temporary directory for xcresult bundle
@@ -150,17 +160,14 @@ async function handleTestLogic(
     const testResult = await executeXcodeBuildCommand(
       {
         ...params,
+        configuration: params.configuration ?? 'Debug',
         extraArgs,
       },
       {
-        platform: params.platform,
-        simulatorName: params.simulatorName,
-        simulatorId: params.simulatorId,
-        deviceId: params.deviceId,
-        useLatestOS: params.useLatestOS,
+        platform: XcodePlatform.macOS,
         logPrefix: 'Test Run',
       },
-      params.preferXcodebuild,
+      params.preferXcodebuild ?? false,
       'test',
       executor,
     );
@@ -234,25 +241,7 @@ export default {
       .optional()
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    tempDirDeps?: any,
-    buildUtilsDeps?: any,
-    fileSystemDeps?: any,
-  ): Promise<ToolResponse> {
-    const params = args;
-    return handleTestLogic(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
-        platform: XcodePlatform.macOS,
-      },
-      executor,
-      tempDirDeps,
-      buildUtilsDeps,
-      fileSystemDeps,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return test_macos_projLogic(args as TestMacosProjParams, getDefaultCommandExecutor());
   },
 };

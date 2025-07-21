@@ -17,6 +17,13 @@ import { FileSystemExecutor, getDefaultFileSystemExecutor } from '../../utils/co
 export type SyncExecutor = (command: string) => string;
 
 /**
+ * Parameters for get mac bundle ID tool
+ */
+export interface GetMacBundleIdParams {
+  appPath: string;
+}
+
+/**
  * Default sync executor implementation using execSync
  */
 const defaultSyncExecutor: SyncExecutor = (command: string): string => {
@@ -24,13 +31,20 @@ const defaultSyncExecutor: SyncExecutor = (command: string): string => {
 };
 
 /**
- * Internal logic for extracting bundle ID from macOS app.
+ * Business logic for extracting macOS bundle ID
  */
-async function _processExtraction(
-  validated: { appPath: string },
+export async function get_mac_bundle_idLogic(
+  params: Record<string, unknown>,
   syncExecutor: SyncExecutor,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
+  const appPathValidation = validateRequiredParam('appPath', params.appPath);
+  if (!appPathValidation.isValid) {
+    return appPathValidation.errorResponse;
+  }
+
+  const validated = { appPath: params.appPath as string };
+
   if (!fileSystemExecutor.existsSync(validated.appPath)) {
     return {
       content: [
@@ -106,26 +120,18 @@ export default {
   name: 'get_mac_bundle_id',
   description:
     "Extracts the bundle identifier from a macOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_mac_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_macos_bundle_id.",
-  schema: z.object({
+  schema: {
     appPath: z
       .string()
       .describe(
         'Path to the macOS .app bundle to extract bundle ID from (full path to the .app directory)',
       ),
-  }),
+  },
   async handler(
     args: Record<string, unknown>,
     syncExecutor: SyncExecutor = defaultSyncExecutor,
     fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
   ): Promise<ToolResponse> {
-    const params = args;
-
-    const appPathValidation = validateRequiredParam('appPath', params.appPath);
-    if (!appPathValidation.isValid) {
-      return appPathValidation.errorResponse;
-    }
-
-    const validated = { appPath: params.appPath as string };
-    return await _processExtraction(validated, syncExecutor, fileSystemExecutor);
+    return get_mac_bundle_idLogic(args, syncExecutor, fileSystemExecutor);
   },
 };

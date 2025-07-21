@@ -9,24 +9,44 @@ const XcodePlatform = {
   iOSSimulator: 'iOS Simulator',
 };
 
-// Helper function for simulator build logic
-async function _handleSimulatorBuildLogic(
+export async function build_sim_name_wsLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  log('info', `Building ${params.workspacePath || params.projectPath} for iOS Simulator`);
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
+
+  // Provide defaults
+  const processedParams = {
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  };
+
+  log(
+    'info',
+    `Building ${processedParams.workspacePath || processedParams.projectPath} for iOS Simulator`,
+  );
 
   try {
     const buildResult = await executeXcodeBuildCommand(
-      params,
+      processedParams,
       {
         platform: XcodePlatform.iOSSimulator,
-        simulatorName: params.simulatorName,
-        simulatorId: params.simulatorId,
-        useLatestOS: params.useLatestOS,
+        simulatorName: processedParams.simulatorName,
+        simulatorId: processedParams.simulatorId,
+        useLatestOS: processedParams.useLatestOS,
         logPrefix: 'Build',
       },
-      params.preferXcodebuild,
+      processedParams.preferXcodebuild,
       'build',
       executor,
     );
@@ -66,30 +86,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    // Validate required parameters
-    const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse;
-
-    const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-    if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
-
-    // Provide defaults
-    return _handleSimulatorBuildLogic(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      },
-      executor,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return build_sim_name_wsLogic(args, getDefaultCommandExecutor());
   },
 };

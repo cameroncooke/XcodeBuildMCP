@@ -4,14 +4,31 @@ import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { startLogCapture } from '../../utils/index.js';
 
-// Type for startLogCapture dependency injection
-type StartLogCaptureFunction = typeof startLogCapture;
+/**
+ * Log capture function type for dependency injection
+ */
+export type LogCaptureFunction = (params: {
+  simulatorUuid: string;
+  bundleId: string;
+  captureConsole?: boolean;
+}) => Promise<{ sessionId: string; logFilePath: string; processes: any[]; error?: string }>;
 
-async function launchAppLogsSimHandler(
-  args: Record<string, unknown>,
-  startLogCaptureFunc: StartLogCaptureFunction = startLogCapture,
+/**
+ * Parameters for launching app with logs in simulator
+ */
+export interface LaunchAppLogsSimParams {
+  simulatorUuid: string;
+  bundleId: string;
+  args?: string[];
+}
+
+/**
+ * Business logic for launching app with logs in simulator
+ */
+export async function launch_app_logs_simLogic(
+  params: LaunchAppLogsSimParams,
+  logCaptureFunction: LogCaptureFunction = startLogCapture,
 ): Promise<ToolResponse> {
-  const params = args as { simulatorUuid: string; bundleId: string };
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
     return simulatorUuidValidation.errorResponse!;
@@ -25,7 +42,7 @@ async function launchAppLogsSimHandler(
   log('info', `Starting app launch with logs for simulator ${params.simulatorUuid}`);
 
   // Start log capture session
-  const { sessionId, error } = await startLogCaptureFunc({
+  const { sessionId, error } = await logCaptureFunction({
     simulatorUuid: params.simulatorUuid,
     bundleId: params.bundleId,
     captureConsole: true,
@@ -58,10 +75,7 @@ export default {
       .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
     args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    startLogCaptureFunc?: StartLogCaptureFunction,
-  ): Promise<ToolResponse> {
-    return launchAppLogsSimHandler(args, startLogCaptureFunc);
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return launch_app_logs_simLogic(args as LaunchAppLogsSimParams);
   },
 };

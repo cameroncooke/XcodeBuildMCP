@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import path from 'node:path';
 import {
-  executeCommand,
   validateRequiredParam,
   createErrorResponse,
   log,
@@ -26,6 +25,68 @@ const parseAsLibrarySchema = z
   .optional()
   .describe('Build as library instead of executable');
 
+interface SwiftPackageBuildParams {
+  packagePath: unknown;
+  targetName?: unknown;
+  configuration?: unknown;
+  architectures?: unknown;
+  parseAsLibrary?: unknown;
+}
+
+export async function swift_package_buildLogic(
+  params: SwiftPackageBuildParams,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
+  if (!pkgValidation.isValid) return pkgValidation.errorResponse;
+
+  const resolvedPath = path.resolve(params.packagePath as string);
+  const swiftArgs = ['build', '--package-path', resolvedPath];
+
+  if (params.configuration && (params.configuration as string).toLowerCase() === 'release') {
+    swiftArgs.push('-c', 'release');
+  }
+
+  if (params.targetName) {
+    swiftArgs.push('--target', params.targetName as string);
+  }
+
+  if (params.architectures) {
+    for (const arch of params.architectures as string[]) {
+      swiftArgs.push('--arch', arch);
+    }
+  }
+
+  if (params.parseAsLibrary) {
+    swiftArgs.push('-Xswiftc', '-parse-as-library');
+  }
+
+  log('info', `Running swift ${swiftArgs.join(' ')}`);
+  try {
+    const result = await executor(['swift', ...swiftArgs], 'Swift Package Build', true, undefined);
+    if (!result.success) {
+      const errorMessage = result.error || result.output || 'Unknown error';
+      return createErrorResponse('Swift package build failed', errorMessage, 'BuildError');
+    }
+
+    return {
+      content: [
+        { type: 'text', text: '✅ Swift package build succeeded.' },
+        {
+          type: 'text',
+          text: '💡 Next: Run tests with swift_package_test or execute with swift_package_run',
+        },
+        { type: 'text', text: result.output },
+      ],
+      isError: false,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    log('error', `Swift package build failed: ${message}`);
+    return createErrorResponse('Failed to execute swift build', message, 'SystemError');
+  }
+}
+
 export default {
   name: 'swift_package_build',
   description: 'Builds a Swift Package with swift build',
@@ -36,64 +97,7 @@ export default {
     architectures: swiftArchitecturesSchema,
     parseAsLibrary: parseAsLibrarySchema,
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
-    if (!pkgValidation.isValid) return pkgValidation.errorResponse;
-
-    const resolvedPath = path.resolve(params.packagePath);
-    const swiftArgs = ['build', '--package-path', resolvedPath];
-
-    if (params.configuration && params.configuration.toLowerCase() === 'release') {
-      swiftArgs.push('-c', 'release');
-    }
-
-    if (params.targetName) {
-      swiftArgs.push('--target', params.targetName);
-    }
-
-    if (params.architectures) {
-      for (const arch of params.architectures) {
-        swiftArgs.push('--arch', arch);
-      }
-    }
-
-    if (params.parseAsLibrary) {
-      swiftArgs.push('-Xswiftc', '-parse-as-library');
-    }
-
-    log('info', `Running swift ${swiftArgs.join(' ')}`);
-    try {
-      const result = await executeCommand(
-        ['swift', ...swiftArgs],
-        executor,
-        'Swift Package Build',
-        true,
-        undefined,
-      );
-      if (!result.success) {
-        const errorMessage = result.error || result.output || 'Unknown error';
-        return createErrorResponse('Swift package build failed', errorMessage, 'BuildError');
-      }
-
-      return {
-        content: [
-          { type: 'text', text: '✅ Swift package build succeeded.' },
-          {
-            type: 'text',
-            text: '💡 Next: Run tests with swift_package_test or execute with swift_package_run',
-          },
-          { type: 'text', text: result.output },
-        ],
-        isError: false,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      log('error', `Swift package build failed: ${message}`);
-      return createErrorResponse('Failed to execute swift build', message, 'SystemError');
-    }
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return swift_package_buildLogic(args, getDefaultCommandExecutor());
   },
 };

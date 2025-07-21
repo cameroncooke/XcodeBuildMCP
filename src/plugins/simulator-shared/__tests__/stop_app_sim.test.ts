@@ -5,7 +5,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import plugin from '../stop_app_sim.ts';
+import plugin, { stop_app_simLogic } from '../stop_app_sim.ts';
 
 describe('stop_app_sim plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -62,13 +62,12 @@ describe('stop_app_sim plugin', () => {
         output: '',
       });
 
-      const result = await plugin.handler(
+      const result = await stop_app_simLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.App',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -87,13 +86,12 @@ describe('stop_app_sim plugin', () => {
         error: 'Simulator not found',
       });
 
-      const result = await plugin.handler(
+      const result = await stop_app_simLogic(
         {
           simulatorUuid: 'invalid-uuid',
           bundleId: 'com.example.App',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -108,13 +106,12 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle missing simulatorUuid', async () => {
-      const result = await plugin.handler(
+      const result = await stop_app_simLogic(
         {
           simulatorUuid: undefined,
           bundleId: 'com.example.App',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -129,10 +126,9 @@ describe('stop_app_sim plugin', () => {
     });
 
     it('should handle missing bundleId', async () => {
-      const result = await plugin.handler(
+      const result = await stop_app_simLogic(
         { simulatorUuid: 'test-uuid', bundleId: undefined },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -151,13 +147,12 @@ describe('stop_app_sim plugin', () => {
         throw new Error('Unexpected error');
       };
 
-      const result = await plugin.handler(
+      const result = await stop_app_simLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.App',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -188,13 +183,12 @@ describe('stop_app_sim plugin', () => {
         };
       };
 
-      await plugin.handler(
+      await stop_app_simLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.App',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(calls).toEqual([

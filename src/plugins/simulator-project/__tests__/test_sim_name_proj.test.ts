@@ -5,7 +5,7 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
-import testSimNameProj from '../test_sim_name_proj.ts';
+import testSimNameProj, { test_sim_name_projLogic } from '../test_sim_name_proj.ts';
 
 describe('test_sim_name_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -48,14 +48,14 @@ describe('test_sim_name_proj plugin', () => {
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
+  describe('Logic Function Behavior (Complete Literal Returns)', () => {
     it('should handle missing parameters and generate test command', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimNameProj.handler(
+      const result = await test_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -63,7 +63,6 @@ describe('test_sim_name_proj plugin', () => {
           configuration: 'Debug',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();
@@ -77,7 +76,7 @@ describe('test_sim_name_proj plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimNameProj.handler(
+      const result = await test_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -85,7 +84,6 @@ describe('test_sim_name_proj plugin', () => {
           configuration: 'Debug',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();
@@ -99,14 +97,13 @@ describe('test_sim_name_proj plugin', () => {
         error: 'xcodebuild: error: Scheme not found',
       });
 
-      const result = await testSimNameProj.handler(
+      const result = await test_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'NonExistentScheme',
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result.isError).toBe(true);
@@ -120,14 +117,13 @@ describe('test_sim_name_proj plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimNameProj.handler(
+      const result = await test_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();
@@ -141,7 +137,7 @@ describe('test_sim_name_proj plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimNameProj.handler(
+      const result = await test_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -153,7 +149,6 @@ describe('test_sim_name_proj plugin', () => {
           preferXcodebuild: true,
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();

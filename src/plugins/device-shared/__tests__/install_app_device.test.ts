@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
-import installAppDevice from '../install_app_device.ts';
+import installAppDevice, { install_app_deviceLogic } from '../install_app_device.ts';
 
 describe('install_app_device plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -62,7 +62,7 @@ describe('install_app_device plugin', () => {
         };
       };
 
-      await installAppDevice.handler(
+      await install_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           appPath: '/path/to/test.app',
@@ -99,7 +99,7 @@ describe('install_app_device plugin', () => {
         };
       };
 
-      await installAppDevice.handler(
+      await install_app_deviceLogic(
         {
           deviceId: 'different-device-uuid',
           appPath: '/apps/MyApp.app',
@@ -133,7 +133,7 @@ describe('install_app_device plugin', () => {
         };
       };
 
-      await installAppDevice.handler(
+      await install_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           appPath: '/path/to/My App.app',
@@ -161,7 +161,7 @@ describe('install_app_device plugin', () => {
         output: 'App installation successful',
       });
 
-      const result = await installAppDevice.handler(
+      const result = await install_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           appPath: '/path/to/test.app',
@@ -186,7 +186,7 @@ describe('install_app_device plugin', () => {
           'Installing app...\nApp bundle: /path/to/test.app\nInstallation completed successfully',
       });
 
-      const result = await installAppDevice.handler(
+      const result = await install_app_deviceLogic(
         {
           deviceId: 'device-456',
           appPath: '/apps/TestApp.app',
@@ -210,7 +210,7 @@ describe('install_app_device plugin', () => {
         output: '',
       });
 
-      const result = await installAppDevice.handler(
+      const result = await install_app_deviceLogic(
         {
           deviceId: 'empty-output-device',
           appPath: '/path/to/app.app',
@@ -236,7 +236,7 @@ describe('install_app_device plugin', () => {
         error: 'Installation failed: App not found',
       });
 
-      const result = await installAppDevice.handler(
+      const result = await install_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           appPath: '/path/to/nonexistent.app',
@@ -261,7 +261,7 @@ describe('install_app_device plugin', () => {
         throw new Error('Network error');
       };
 
-      const result = await installAppDevice.handler(
+      const result = await install_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           appPath: '/path/to/test.app',
@@ -286,7 +286,7 @@ describe('install_app_device plugin', () => {
         throw 'String error';
       };
 
-      const result = await installAppDevice.handler(
+      const result = await install_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           appPath: '/path/to/test.app',

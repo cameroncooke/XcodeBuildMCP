@@ -6,7 +6,9 @@
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
-import getDeviceAppPathProj from '../get_device_app_path_proj.ts';
+import getDeviceAppPathProj, {
+  get_device_app_path_projLogic,
+} from '../get_device_app_path_proj.ts';
 
 describe('get_device_app_path_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -47,7 +49,7 @@ describe('get_device_app_path_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation failure response for missing projectPath', async () => {
-      const result = await getDeviceAppPathProj.handler(
+      const result = await get_device_app_path_projLogic(
         {
           projectPath: null,
           scheme: 'MyScheme',
@@ -67,7 +69,7 @@ describe('get_device_app_path_proj plugin', () => {
     });
 
     it('should return exact validation failure response for missing scheme', async () => {
-      const result = await getDeviceAppPathProj.handler(
+      const result = await get_device_app_path_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: null,
@@ -110,7 +112,7 @@ describe('get_device_app_path_proj plugin', () => {
         });
       };
 
-      await getDeviceAppPathProj.handler(
+      await get_device_app_path_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -162,7 +164,7 @@ describe('get_device_app_path_proj plugin', () => {
         });
       };
 
-      await getDeviceAppPathProj.handler(
+      await get_device_app_path_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -198,7 +200,7 @@ describe('get_device_app_path_proj plugin', () => {
           'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
       });
 
-      const result = await getDeviceAppPathProj.handler(
+      const result = await get_device_app_path_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -226,7 +228,7 @@ describe('get_device_app_path_proj plugin', () => {
         error: 'xcodebuild: error: The project does not exist.',
       });
 
-      const result = await getDeviceAppPathProj.handler(
+      const result = await get_device_app_path_projLogic(
         {
           projectPath: '/path/to/nonexistent.xcodeproj',
           scheme: 'MyScheme',
@@ -251,7 +253,7 @@ describe('get_device_app_path_proj plugin', () => {
         output: 'Build settings without required fields',
       });
 
-      const result = await getDeviceAppPathProj.handler(
+      const result = await get_device_app_path_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -294,7 +296,7 @@ describe('get_device_app_path_proj plugin', () => {
         });
       };
 
-      await getDeviceAppPathProj.handler(
+      await get_device_app_path_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -328,7 +330,7 @@ describe('get_device_app_path_proj plugin', () => {
         return Promise.reject(new Error('Network error'));
       };
 
-      const result = await getDeviceAppPathProj.handler(
+      const result = await get_device_app_path_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -352,7 +354,7 @@ describe('get_device_app_path_proj plugin', () => {
         return Promise.reject('String error');
       };
 
-      const result = await getDeviceAppPathProj.handler(
+      const result = await get_device_app_path_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',

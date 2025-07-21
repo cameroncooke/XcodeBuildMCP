@@ -11,7 +11,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import bootSim from '../boot_sim.ts';
+import bootSim, { boot_simLogic } from '../boot_sim.ts';
 
 describe('boot_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -51,7 +51,7 @@ describe('boot_sim tool', () => {
         output: 'Simulator booted successfully',
       });
 
-      const result = await bootSim.handler({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
+      const result = await boot_simLogic({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -74,11 +74,7 @@ describe('boot_sim tool', () => {
     });
 
     it('should handle validation failure', async () => {
-      const result = await bootSim.handler(
-        { simulatorUuid: undefined },
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
-      );
+      const result = await boot_simLogic({ simulatorUuid: undefined }, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -97,7 +93,7 @@ describe('boot_sim tool', () => {
         error: 'Simulator not found',
       });
 
-      const result = await bootSim.handler({ simulatorUuid: 'invalid-uuid' }, mockExecutor);
+      const result = await boot_simLogic({ simulatorUuid: 'invalid-uuid' }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -114,7 +110,7 @@ describe('boot_sim tool', () => {
         throw new Error('Connection failed');
       };
 
-      const result = await bootSim.handler({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
+      const result = await boot_simLogic({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -131,7 +127,7 @@ describe('boot_sim tool', () => {
         throw 'String error';
       };
 
-      const result = await bootSim.handler({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
+      const result = await boot_simLogic({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -160,7 +156,7 @@ describe('boot_sim tool', () => {
         };
       };
 
-      await bootSim.handler({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
+      await boot_simLogic({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
 
       expect(calls).toHaveLength(1);
       expect(calls[0]).toEqual({

@@ -11,7 +11,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import {
   log,
-  executeCommand,
   CommandExecutor,
   FileSystemExecutor,
   getDefaultCommandExecutor,
@@ -45,7 +44,6 @@ export async function startDeviceLogCapture(
   },
   executor: CommandExecutor = getDefaultCommandExecutor(),
   fileSystemExecutor?: FileSystemExecutor,
-  createWriteStream?: (path: string, options: { flags: string }) => any,
 ): Promise<{ sessionId: string; error?: string }> {
   // Clean up old logs before starting a new session
   await cleanOldDeviceLogs();
@@ -58,23 +56,21 @@ export async function startDeviceLogCapture(
   try {
     // Use injected file system executor or default
     if (fileSystemExecutor) {
-      await fileSystemExecutor.mkdir(os.tmpdir(), { recursive: true });
+      await fileSystemExecutor.mkdir(fileSystemExecutor.tmpdir(), { recursive: true });
       await fileSystemExecutor.writeFile(logFilePath, '');
     } else {
       await fs.promises.mkdir(os.tmpdir(), { recursive: true });
       await fs.promises.writeFile(logFilePath, '');
     }
 
-    const logStream = createWriteStream
-      ? createWriteStream(logFilePath, { flags: 'a' })
-      : fs.createWriteStream(logFilePath, { flags: 'a' });
+    const logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
 
     logStream.write(
       `\n--- Device log capture for bundle ID: ${bundleId} on device: ${deviceUuid} ---\n`,
     );
 
-    // Use executeCommand with dependency injection instead of spawn directly
-    const result = await executeCommand(
+    // Use executor with dependency injection instead of spawn directly
+    const result = await executor(
       [
         'xcrun',
         'devicectl',
@@ -87,14 +83,13 @@ export async function startDeviceLogCapture(
         deviceUuid,
         bundleId,
       ],
-      executor,
       'Device Log Capture',
       true,
       undefined,
     );
 
     // For testing purposes, we'll simulate process management
-    // In actual usage, the process would be managed by the executeCommand result
+    // In actual usage, the process would be managed by the executor result
     activeDeviceLogSessions.set(logSessionId, {
       process: result.process,
       logFilePath,
@@ -152,16 +147,18 @@ async function cleanOldDeviceLogs(): Promise<void> {
   );
 }
 
-const startDeviceLogCapToolHandler = async (
-  args: {
+/**
+ * Core business logic for starting device log capture.
+ */
+export async function start_device_log_capLogic(
+  params: {
     deviceId: string;
     bundleId: string;
   },
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
   fileSystemExecutor?: FileSystemExecutor,
-  createWriteStream?: (path: string, options: { flags: string }) => any,
-): Promise<ToolResponse> => {
-  const { deviceId, bundleId } = args;
+): Promise<ToolResponse> {
+  const { deviceId, bundleId } = params;
 
   const { sessionId, error } = await startDeviceLogCapture(
     {
@@ -170,7 +167,6 @@ const startDeviceLogCapToolHandler = async (
     },
     executor,
     fileSystemExecutor,
-    createWriteStream,
   );
 
   if (error) {
@@ -193,15 +189,20 @@ const startDeviceLogCapToolHandler = async (
       },
     ],
   };
-};
+}
 
 export default {
   name: 'start_device_log_cap',
   description:
     'Starts capturing logs from a specified Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) by launching the app with console output. Returns a session ID.',
-  schema: z.object({
+  schema: {
     deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
     bundleId: z.string().describe('Bundle identifier of the app to launch and capture logs for.'),
-  }),
-  handler: startDeviceLogCapToolHandler,
+  },
+  handler: async (args: Record<string, unknown>) => {
+    return start_device_log_capLogic(
+      args as { deviceId: string; bundleId: string },
+      getDefaultCommandExecutor(),
+    );
+  },
 };

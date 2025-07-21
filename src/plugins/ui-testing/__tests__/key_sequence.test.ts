@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
-import keySequencePlugin from '../key_sequence.ts';
+import keySequencePlugin, { key_sequenceLogic } from '../key_sequence.ts';
 
 describe('Key Sequence Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -101,7 +101,7 @@ describe('Key Sequence Plugin', () => {
         };
       };
 
-      await keySequencePlugin.handler(
+      await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40, 42, 44],
@@ -133,7 +133,7 @@ describe('Key Sequence Plugin', () => {
         };
       };
 
-      await keySequencePlugin.handler(
+      await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [58, 59, 60],
@@ -168,7 +168,7 @@ describe('Key Sequence Plugin', () => {
         };
       };
 
-      await keySequencePlugin.handler(
+      await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [255],
@@ -200,7 +200,7 @@ describe('Key Sequence Plugin', () => {
         };
       };
 
-      await keySequencePlugin.handler(
+      await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [0, 1, 2, 3, 4],
@@ -226,7 +226,7 @@ describe('Key Sequence Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await keySequencePlugin.handler(
+      const result = await key_sequenceLogic(
         {
           keyCodes: [40],
         },
@@ -245,7 +245,7 @@ describe('Key Sequence Plugin', () => {
     });
 
     it('should return error for missing keyCodes', async () => {
-      const result = await keySequencePlugin.handler(
+      const result = await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -273,7 +273,7 @@ describe('Key Sequence Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keySequencePlugin.handler(
+      const result = await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40, 42, 44],
@@ -300,7 +300,7 @@ describe('Key Sequence Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keySequencePlugin.handler(
+      const result = await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
@@ -320,7 +320,7 @@ describe('Key Sequence Plugin', () => {
       const mockGetAxePath = () => null;
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keySequencePlugin.handler(
+      const result = await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
@@ -351,7 +351,7 @@ describe('Key Sequence Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keySequencePlugin.handler(
+      const result = await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
@@ -380,7 +380,7 @@ describe('Key Sequence Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keySequencePlugin.handler(
+      const result = await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
@@ -404,7 +404,7 @@ describe('Key Sequence Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keySequencePlugin.handler(
+      const result = await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
@@ -428,7 +428,7 @@ describe('Key Sequence Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keySequencePlugin.handler(
+      const result = await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],

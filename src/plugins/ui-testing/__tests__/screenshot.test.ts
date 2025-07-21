@@ -9,7 +9,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import screenshotPlugin from '../screenshot.ts';
+import screenshotPlugin, { screenshotLogic } from '../screenshot.ts';
 
 describe('Screenshot Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -51,9 +51,9 @@ describe('Screenshot Plugin', () => {
 
   describe('Command Generation', () => {
     it('should generate correct xcrun simctl command for basic screenshot', async () => {
-      let capturedCommand: string[] = [];
+      const capturedCommands: string[][] = [];
       const trackingExecutor = async (command: string[]) => {
-        capturedCommand = command;
+        capturedCommands.push(command);
         return {
           success: true,
           output: 'Screenshot saved',
@@ -67,7 +67,7 @@ describe('Screenshot Plugin', () => {
         readFile: async () => mockImageBuffer.toString('utf8'),
       });
 
-      await screenshotPlugin.handler(
+      await screenshotLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -77,7 +77,8 @@ describe('Screenshot Plugin', () => {
         { v4: () => 'test-uuid' },
       );
 
-      expect(capturedCommand).toEqual([
+      // Should capture the screenshot command first
+      expect(capturedCommands[0]).toEqual([
         'xcrun',
         'simctl',
         'io',
@@ -88,9 +89,9 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should generate correct xcrun simctl command with different simulator UUID', async () => {
-      let capturedCommand: string[] = [];
+      const capturedCommands: string[][] = [];
       const trackingExecutor = async (command: string[]) => {
-        capturedCommand = command;
+        capturedCommands.push(command);
         return {
           success: true,
           output: 'Screenshot saved',
@@ -104,7 +105,7 @@ describe('Screenshot Plugin', () => {
         readFile: async () => mockImageBuffer.toString('utf8'),
       });
 
-      await screenshotPlugin.handler(
+      await screenshotLogic(
         {
           simulatorUuid: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
         },
@@ -114,7 +115,7 @@ describe('Screenshot Plugin', () => {
         { v4: () => 'another-uuid' },
       );
 
-      expect(capturedCommand).toEqual([
+      expect(capturedCommands[0]).toEqual([
         'xcrun',
         'simctl',
         'io',
@@ -125,9 +126,9 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should generate correct xcrun simctl command with custom path dependencies', async () => {
-      let capturedCommand: string[] = [];
+      const capturedCommands: string[][] = [];
       const trackingExecutor = async (command: string[]) => {
-        capturedCommand = command;
+        capturedCommands.push(command);
         return {
           success: true,
           output: 'Screenshot saved',
@@ -141,7 +142,7 @@ describe('Screenshot Plugin', () => {
         readFile: async () => mockImageBuffer.toString('utf8'),
       });
 
-      await screenshotPlugin.handler(
+      await screenshotLogic(
         {
           simulatorUuid: '98765432-1098-7654-3210-987654321098',
         },
@@ -154,7 +155,7 @@ describe('Screenshot Plugin', () => {
         { v4: () => 'custom-uuid' },
       );
 
-      expect(capturedCommand).toEqual([
+      expect(capturedCommands[0]).toEqual([
         'xcrun',
         'simctl',
         'io',
@@ -165,9 +166,9 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should generate correct xcrun simctl command with generated UUID when no UUID deps provided', async () => {
-      let capturedCommand: string[] = [];
+      const capturedCommands: string[][] = [];
       const trackingExecutor = async (command: string[]) => {
-        capturedCommand = command;
+        capturedCommands.push(command);
         return {
           success: true,
           output: 'Screenshot saved',
@@ -181,7 +182,7 @@ describe('Screenshot Plugin', () => {
         readFile: async () => mockImageBuffer.toString('utf8'),
       });
 
-      await screenshotPlugin.handler(
+      await screenshotLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -192,21 +193,21 @@ describe('Screenshot Plugin', () => {
       );
 
       // Verify the command structure but not the exact UUID since it's generated
-      expect(capturedCommand.slice(0, 5)).toEqual([
+      expect(capturedCommands[0].slice(0, 5)).toEqual([
         'xcrun',
         'simctl',
         'io',
         '12345678-1234-1234-1234-123456789012',
         'screenshot',
       ]);
-      expect(capturedCommand[5]).toMatch(/^\/tmp\/screenshot_[a-f0-9-]+\.png$/);
+      expect(capturedCommands[0][5]).toMatch(/^\/tmp\/screenshot_[a-f0-9-]+\.png$/);
     });
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await screenshotPlugin.handler(
-        {},
+      const result = await screenshotLogic(
+        {} as any,
         createNoopExecutor(),
         createMockFileSystemExecutor(),
       );
@@ -224,7 +225,6 @@ describe('Screenshot Plugin', () => {
 
     it('should return success for valid screenshot capture', async () => {
       const mockImageBuffer = Buffer.from('fake-image-data', 'utf8');
-      const expectedBase64 = mockImageBuffer.toString('base64');
 
       const mockExecutor = createMockExecutor({
         success: true,
@@ -236,7 +236,7 @@ describe('Screenshot Plugin', () => {
         readFile: async () => mockImageBuffer.toString('utf8'),
       });
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -248,8 +248,8 @@ describe('Screenshot Plugin', () => {
         content: [
           {
             type: 'image',
-            data: expectedBase64,
-            mimeType: 'image/png',
+            data: 'fake-image-data',
+            mimeType: 'image/jpeg',
           },
         ],
       });
@@ -262,7 +262,7 @@ describe('Screenshot Plugin', () => {
         error: 'Simulator not found',
       });
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -294,7 +294,7 @@ describe('Screenshot Plugin', () => {
         },
       });
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -315,7 +315,6 @@ describe('Screenshot Plugin', () => {
 
     it('should handle file cleanup errors gracefully', async () => {
       const mockImageBuffer = Buffer.from('fake-image-data', 'utf8');
-      const expectedBase64 = mockImageBuffer.toString('base64');
 
       const mockExecutor = createMockExecutor({
         success: true,
@@ -329,7 +328,7 @@ describe('Screenshot Plugin', () => {
         // which simulates the cleanup failure being caught and logged
       });
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -342,8 +341,8 @@ describe('Screenshot Plugin', () => {
         content: [
           {
             type: 'image',
-            data: expectedBase64,
-            mimeType: 'image/png',
+            data: 'fake-image-data',
+            mimeType: 'image/jpeg',
           },
         ],
       });
@@ -355,7 +354,7 @@ describe('Screenshot Plugin', () => {
         throw new SystemError('System error occurred');
       };
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -376,7 +375,7 @@ describe('Screenshot Plugin', () => {
         throw new Error('Unexpected error');
       };
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -395,7 +394,7 @@ describe('Screenshot Plugin', () => {
         throw 'String error';
       };
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },

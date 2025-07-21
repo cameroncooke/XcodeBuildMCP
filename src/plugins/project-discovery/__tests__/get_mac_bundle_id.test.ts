@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { z } from 'zod';
-import plugin, { type SyncExecutor } from '../get_mac_bundle_id.ts';
+import plugin, { type SyncExecutor, get_mac_bundle_idLogic } from '../get_mac_bundle_id.ts';
 import { createMockFileSystemExecutor } from '../../../utils/command.js';
 
 describe('get_mac_bundle_id plugin', () => {
@@ -36,15 +36,17 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should validate schema with valid inputs', () => {
-      expect(plugin.schema.safeParse({ appPath: '/Applications/TextEdit.app' }).success).toBe(true);
-      expect(plugin.schema.safeParse({ appPath: '/Users/dev/MyApp.app' }).success).toBe(true);
+      const schema = z.object(plugin.schema);
+      expect(schema.safeParse({ appPath: '/Applications/TextEdit.app' }).success).toBe(true);
+      expect(schema.safeParse({ appPath: '/Users/dev/MyApp.app' }).success).toBe(true);
     });
 
     it('should validate schema with invalid inputs', () => {
-      expect(plugin.schema.safeParse({}).success).toBe(false);
-      expect(plugin.schema.safeParse({ appPath: 123 }).success).toBe(false);
-      expect(plugin.schema.safeParse({ appPath: null }).success).toBe(false);
-      expect(plugin.schema.safeParse({ appPath: undefined }).success).toBe(false);
+      const schema = z.object(plugin.schema);
+      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({ appPath: 123 }).success).toBe(false);
+      expect(schema.safeParse({ appPath: null }).success).toBe(false);
+      expect(schema.safeParse({ appPath: undefined }).success).toBe(false);
     });
   });
 
@@ -53,7 +55,7 @@ describe('get_mac_bundle_id plugin', () => {
       const mockSyncExecutor = createMockSyncExecutor({});
       const mockFileSystemExecutor = createMockFileSystemExecutor({});
 
-      const result = await plugin.handler(
+      const result = await get_mac_bundle_idLogic(
         { appPath: null },
         mockSyncExecutor,
         mockFileSystemExecutor,
@@ -76,7 +78,7 @@ describe('get_mac_bundle_id plugin', () => {
         existsSync: () => false,
       });
 
-      const result = await plugin.handler(
+      const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
         mockSyncExecutor,
         mockFileSystemExecutor,
@@ -102,7 +104,7 @@ describe('get_mac_bundle_id plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await plugin.handler(
+      const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
         mockSyncExecutor,
         mockFileSystemExecutor,
@@ -138,7 +140,7 @@ describe('get_mac_bundle_id plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await plugin.handler(
+      const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
         mockSyncExecutor,
         mockFileSystemExecutor,
@@ -174,7 +176,7 @@ describe('get_mac_bundle_id plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await plugin.handler(
+      const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
         mockSyncExecutor,
         mockFileSystemExecutor,
@@ -204,7 +206,7 @@ describe('get_mac_bundle_id plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await plugin.handler(
+      const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
         mockSyncExecutor,
         mockFileSystemExecutor,
@@ -230,7 +232,7 @@ describe('get_mac_bundle_id plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await plugin.handler(
+      const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
         mockSyncExecutor,
         mockFileSystemExecutor,
@@ -252,7 +254,7 @@ describe('get_mac_bundle_id plugin', () => {
       const mockSyncExecutor = createMockSyncExecutor({});
       const mockFileSystemExecutor = createMockFileSystemExecutor({});
 
-      const result = await plugin.handler(
+      const result = await get_mac_bundle_idLogic(
         { appPath: null },
         mockSyncExecutor,
         mockFileSystemExecutor,

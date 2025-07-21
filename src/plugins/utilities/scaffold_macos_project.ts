@@ -331,63 +331,74 @@ async function scaffoldProject(
   }
 }
 
+/**
+ * Business logic for scaffolding macOS projects
+ * Extracted for testability and Separation of Concerns
+ */
+export async function scaffold_macos_projectLogic(
+  params: Record<string, unknown>,
+  commandExecutor: CommandExecutor,
+  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
+): Promise<ToolResponse> {
+  try {
+    const projectParams = { ...params, platform: 'macOS' };
+    const projectPath = await scaffoldProject(projectParams, commandExecutor, fileSystemExecutor);
+
+    const response = {
+      success: true,
+      projectPath,
+      platform: 'macOS',
+      message: `Successfully scaffolded macOS project "${params.projectName}" in ${projectPath}`,
+      nextSteps: [
+        `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
+        `Build for macOS: build_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
+        `Run and run on macOS: build_run_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
+      ],
+    };
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(response, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    log(
+      'error',
+      `Failed to scaffold macOS project: ${error instanceof Error ? error.message : String(error)}`,
+    );
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(
+            {
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error occurred',
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
 export default {
   name: 'scaffold_macos_project',
   description:
     'Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.',
   schema: ScaffoldmacOSProjectSchema.shape,
-  async handler(
-    args: Record<string, unknown>,
-    commandExecutor: CommandExecutor = getDefaultCommandExecutor(),
-    fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    try {
-      const projectParams = { ...params, platform: 'macOS' };
-      const projectPath = await scaffoldProject(projectParams, commandExecutor, fileSystemExecutor);
-
-      const response = {
-        success: true,
-        projectPath,
-        platform: 'macOS',
-        message: `Successfully scaffolded macOS project "${params.projectName}" in ${projectPath}`,
-        nextSteps: [
-          `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
-          `Build for macOS: build_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
-          `Run and run on macOS: build_run_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
-        ],
-      };
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(response, null, 2),
-          },
-        ],
-      };
-    } catch (error) {
-      log(
-        'error',
-        `Failed to scaffold macOS project: ${error instanceof Error ? error.message : String(error)}`,
-      );
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              {
-                success: false,
-                error: error instanceof Error ? error.message : 'Unknown error occurred',
-              },
-              null,
-              2,
-            ),
-          },
-        ],
-        isError: true,
-      };
-    }
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return scaffold_macos_projectLogic(
+      args,
+      getDefaultCommandExecutor(),
+      getDefaultFileSystemExecutor(),
+    );
   },
 };

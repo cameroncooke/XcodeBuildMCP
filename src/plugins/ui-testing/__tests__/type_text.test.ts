@@ -9,7 +9,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import typeTextPlugin from '../type_text.ts';
+import typeTextPlugin, { type_textLogic } from '../type_text.ts';
 
 // Mock axe helpers for dependency injection
 function createMockAxeHelpers(
@@ -109,7 +109,7 @@ describe('Type Text Plugin', () => {
         getBundledAxeEnvironmentReturn: {},
       });
 
-      await typeTextPlugin.handler(
+      await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: 'Hello World',
@@ -144,7 +144,7 @@ describe('Type Text Plugin', () => {
         getBundledAxeEnvironmentReturn: {},
       });
 
-      await typeTextPlugin.handler(
+      await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: 'user@example.com',
@@ -179,7 +179,7 @@ describe('Type Text Plugin', () => {
         getBundledAxeEnvironmentReturn: {},
       });
 
-      await typeTextPlugin.handler(
+      await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: 'Password123!@#',
@@ -217,7 +217,7 @@ describe('Type Text Plugin', () => {
       const longText =
         'This is a very long text that needs to be typed into the simulator for testing purposes.';
 
-      await typeTextPlugin.handler(
+      await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: longText,
@@ -252,7 +252,7 @@ describe('Type Text Plugin', () => {
         getBundledAxeEnvironmentReturn: { AXE_PATH: '/some/path' },
       });
 
-      await typeTextPlugin.handler(
+      await type_textLogic(
         {
           simulatorUuid: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
           text: 'Test message',
@@ -273,7 +273,7 @@ describe('Type Text Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await typeTextPlugin.handler(
+      const result = await type_textLogic(
         {
           text: 'Hello World',
         },
@@ -293,7 +293,7 @@ describe('Type Text Plugin', () => {
     });
 
     it('should return error for missing text', async () => {
-      const result = await typeTextPlugin.handler(
+      const result = await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -324,7 +324,7 @@ describe('Type Text Plugin', () => {
         error: undefined,
       });
 
-      const result = await typeTextPlugin.handler(
+      const result = await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: 'Hello World',
@@ -344,7 +344,7 @@ describe('Type Text Plugin', () => {
         getAxePathReturn: null,
       });
 
-      const result = await typeTextPlugin.handler(
+      const result = await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: 'Hello World',
@@ -376,7 +376,7 @@ describe('Type Text Plugin', () => {
         error: 'Text field not found',
       });
 
-      const result = await typeTextPlugin.handler(
+      const result = await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: 'Hello World',
@@ -404,7 +404,7 @@ describe('Type Text Plugin', () => {
 
       const mockExecutor = createRejectingExecutor(new Error('ENOENT: no such file or directory'));
 
-      const result = await typeTextPlugin.handler(
+      const result = await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: 'Hello World',
@@ -434,7 +434,7 @@ describe('Type Text Plugin', () => {
 
       const mockExecutor = createRejectingExecutor(new Error('Unexpected error'));
 
-      const result = await typeTextPlugin.handler(
+      const result = await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: 'Hello World',
@@ -464,7 +464,7 @@ describe('Type Text Plugin', () => {
 
       const mockExecutor = createRejectingExecutor('String error');
 
-      const result = await typeTextPlugin.handler(
+      const result = await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: 'Hello World',

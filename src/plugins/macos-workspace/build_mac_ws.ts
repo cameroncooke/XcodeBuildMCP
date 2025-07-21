@@ -23,24 +23,26 @@ const XcodePlatform = {
 };
 
 /**
- * Internal logic for building macOS apps.
+ * Core business logic for building macOS apps from workspace
  */
-async function _handleMacOSBuildLogic(
+export async function build_mac_wsLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
     {
       ...params,
+      configuration: params.configuration ?? 'Debug',
+      preferXcodebuild: params.preferXcodebuild ?? false,
     },
     {
       platform: XcodePlatform.macOS,
       arch: params.arch,
       logPrefix: 'macOS Build',
     },
-    params.preferXcodebuild,
+    params.preferXcodebuild ?? false,
     'build',
     executor,
   );
@@ -69,18 +71,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    return _handleMacOSBuildLogic(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      },
-      executor,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return build_mac_wsLogic(args, getDefaultCommandExecutor());
   },
 };

@@ -5,7 +5,9 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import getSimAppPathNameProj from '../get_sim_app_path_name_proj.ts';
+import getSimAppPathNameProj, {
+  get_sim_app_path_name_projLogic,
+} from '../get_sim_app_path_name_proj.ts';
 
 describe('get_sim_app_path_name_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -92,14 +94,13 @@ describe('get_sim_app_path_name_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return validation error for missing projectPath', async () => {
-      const result = await getSimAppPathNameProj.handler(
+      const result = await get_sim_app_path_name_projLogic(
         {
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorName: 'iPhone 16',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -114,14 +115,13 @@ describe('get_sim_app_path_name_proj plugin', () => {
     });
 
     it('should return validation error for missing scheme', async () => {
-      const result = await getSimAppPathNameProj.handler(
+      const result = await get_sim_app_path_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           platform: 'iOS Simulator',
           simulatorName: 'iPhone 16',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -136,14 +136,13 @@ describe('get_sim_app_path_name_proj plugin', () => {
     });
 
     it('should return validation error for missing platform', async () => {
-      const result = await getSimAppPathNameProj.handler(
+      const result = await get_sim_app_path_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -158,14 +157,13 @@ describe('get_sim_app_path_name_proj plugin', () => {
     });
 
     it('should return validation error for missing simulatorName', async () => {
-      const result = await getSimAppPathNameProj.handler(
+      const result = await get_sim_app_path_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -185,7 +183,7 @@ describe('get_sim_app_path_name_proj plugin', () => {
         error: 'Command failed with error',
       });
 
-      const result = await getSimAppPathNameProj.handler(
+      const result = await get_sim_app_path_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -193,7 +191,6 @@ describe('get_sim_app_path_name_proj plugin', () => {
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -213,7 +210,7 @@ describe('get_sim_app_path_name_proj plugin', () => {
         output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
       });
 
-      const result = await getSimAppPathNameProj.handler(
+      const result = await get_sim_app_path_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -221,7 +218,6 @@ describe('get_sim_app_path_name_proj plugin', () => {
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -248,7 +244,7 @@ describe('get_sim_app_path_name_proj plugin', () => {
         output: 'No BUILT_PRODUCTS_DIR found\n',
       });
 
-      const result = await getSimAppPathNameProj.handler(
+      const result = await get_sim_app_path_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -256,7 +252,6 @@ describe('get_sim_app_path_name_proj plugin', () => {
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -287,7 +282,7 @@ describe('get_sim_app_path_name_proj plugin', () => {
         };
       };
 
-      await getSimAppPathNameProj.handler(
+      await get_sim_app_path_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -297,7 +292,6 @@ describe('get_sim_app_path_name_proj plugin', () => {
           useLatestOS: false,
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import tool from '../build_run_mac_proj.ts';
+import tool, { build_run_mac_projLogic } from '../build_run_mac_proj.ts';
 
 describe('build_run_mac_proj', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -111,9 +111,11 @@ describe('build_run_mac_proj', () => {
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
+        configuration: 'Debug',
+        preferXcodebuild: false,
       };
 
-      const result = await tool.handler(args, mockExecutor, mockExecAsync);
+      const result = await build_run_mac_projLogic(args, mockExecutor, mockExecAsync);
 
       // Verify build command was called
       expect(executorCalls[0]).toEqual({
@@ -180,9 +182,11 @@ describe('build_run_mac_proj', () => {
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
+        configuration: 'Debug',
+        preferXcodebuild: false,
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await build_run_mac_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -224,9 +228,11 @@ describe('build_run_mac_proj', () => {
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
+        configuration: 'Debug',
+        preferXcodebuild: false,
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await build_run_mac_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -283,9 +289,11 @@ describe('build_run_mac_proj', () => {
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
+        configuration: 'Debug',
+        preferXcodebuild: false,
       };
 
-      const result = await tool.handler(args, mockExecutor, mockExecAsync);
+      const result = await build_run_mac_projLogic(args, mockExecutor, mockExecAsync);
 
       expect(result).toEqual({
         content: [
@@ -319,9 +327,11 @@ describe('build_run_mac_proj', () => {
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
+        configuration: 'Debug',
+        preferXcodebuild: false,
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await build_run_mac_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -370,9 +380,11 @@ describe('build_run_mac_proj', () => {
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
+        configuration: 'Debug',
+        preferXcodebuild: false,
       };
 
-      await tool.handler(args, mockExecutor, mockExecAsync);
+      await build_run_mac_projLogic(args, mockExecutor, mockExecAsync);
 
       expect(executorCalls[0]).toEqual({
         command: [

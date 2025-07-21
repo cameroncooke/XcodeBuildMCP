@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 
-// Import the plugin
-import buildSimIdWs from '../build_sim_id_ws.ts';
+// Import the plugin and logic function
+import buildSimIdWs, { build_sim_id_wsLogic } from '../build_sim_id_ws.ts';
 
 describe('build_sim_id_ws tool', () => {
   // Only clear any remaining mocks if needed
@@ -101,7 +101,7 @@ describe('build_sim_id_ws tool', () => {
     it('should handle missing workspacePath parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           scheme: 'MyScheme',
           simulatorId: 'test-uuid-123',
@@ -123,7 +123,7 @@ describe('build_sim_id_ws tool', () => {
     it('should handle empty workspacePath parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '',
           scheme: 'MyScheme',
@@ -148,7 +148,7 @@ describe('build_sim_id_ws tool', () => {
     it('should handle missing scheme parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           simulatorId: 'test-uuid-123',
@@ -170,7 +170,7 @@ describe('build_sim_id_ws tool', () => {
     it('should handle empty scheme parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: '',
@@ -195,7 +195,7 @@ describe('build_sim_id_ws tool', () => {
     it('should handle missing simulatorId parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -221,7 +221,7 @@ describe('build_sim_id_ws tool', () => {
         error: 'error: Unable to find a destination matching the provided destination specifier',
       });
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -249,7 +249,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -283,7 +283,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -323,7 +323,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -357,7 +357,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -379,7 +379,7 @@ describe('build_sim_id_ws tool', () => {
         output: 'BUILD SUCCEEDED',
       });
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -402,7 +402,7 @@ describe('build_sim_id_ws tool', () => {
         error: 'error: Build input file cannot be found',
       });
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -422,7 +422,7 @@ describe('build_sim_id_ws tool', () => {
         output: 'warning: deprecated method used\nBUILD SUCCEEDED',
       });
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -444,7 +444,7 @@ describe('build_sim_id_ws tool', () => {
         throw new Error('spawn xcodebuild ENOENT');
       };
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -469,7 +469,7 @@ describe('build_sim_id_ws tool', () => {
         throw 'String error message';
       };
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -501,7 +501,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -525,7 +525,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await buildSimIdWs.handler(
+      const result = await build_sim_id_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',

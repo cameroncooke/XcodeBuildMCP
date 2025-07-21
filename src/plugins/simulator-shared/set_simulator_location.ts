@@ -1,8 +1,17 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log, getDefaultCommandExecutor } from '../../utils/index.js';
-import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import {
+  log,
+  validateRequiredParam,
+  CommandExecutor,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
+
+interface SetSimulatorLocationParams {
+  simulatorUuid: string;
+  latitude: number;
+  longitude: number;
+}
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
@@ -29,13 +38,7 @@ async function executeSimctlCommandAndRespond(
 
   try {
     const command = ['xcrun', 'simctl', ...simctlSubCommand];
-    const result = await executeCommand(
-      command,
-      executor,
-      operationDescriptionForXcodeCommand,
-      true,
-      {},
-    );
+    const result = await executor(command, operationDescriptionForXcodeCommand, true, {});
 
     if (!result.success) {
       const fullFailureMessage = `${failureMessagePrefix}: ${result.error}`;
@@ -68,6 +71,54 @@ async function executeSimctlCommandAndRespond(
   }
 }
 
+export async function set_simulator_locationLogic(
+  params: SetSimulatorLocationParams,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  const extraValidation = (): {
+    content: Array<{ type: string; text: string }>;
+    isError?: boolean;
+  } | null => {
+    if (params.latitude < -90 || params.latitude > 90) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'Latitude must be between -90 and 90 degrees',
+          },
+        ],
+      };
+    }
+    if (params.longitude < -180 || params.longitude > 180) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: 'Longitude must be between -180 and 180 degrees',
+          },
+        ],
+      };
+    }
+    return null;
+  };
+
+  log(
+    'info',
+    `Setting simulator ${params.simulatorUuid} location to ${params.latitude},${params.longitude}`,
+  );
+
+  return executeSimctlCommandAndRespond(
+    params,
+    ['location', params.simulatorUuid, 'set', `${params.latitude},${params.longitude}`],
+    'Set Simulator Location',
+    `Successfully set simulator ${params.simulatorUuid} location to ${params.latitude},${params.longitude}`,
+    'Failed to set simulator location',
+    'set simulator location',
+    executor,
+    extraValidation,
+  );
+}
+
 export default {
   name: 'set_simulator_location',
   description: 'Sets a custom GPS location for the simulator.',
@@ -78,52 +129,10 @@ export default {
     latitude: z.number().describe('The latitude for the custom location.'),
     longitude: z.number().describe('The longitude for the custom location.'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    const extraValidation = (): {
-      content: Array<{ type: string; text: string }>;
-      isError?: boolean;
-    } | null => {
-      if (params.latitude < -90 || params.latitude > 90) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Latitude must be between -90 and 90 degrees',
-            },
-          ],
-        };
-      }
-      if (params.longitude < -180 || params.longitude > 180) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Longitude must be between -180 and 180 degrees',
-            },
-          ],
-        };
-      }
-      return null;
-    };
-
-    log(
-      'info',
-      `Setting simulator ${params.simulatorUuid} location to ${params.latitude},${params.longitude}`,
-    );
-
-    return executeSimctlCommandAndRespond(
-      params,
-      ['location', params.simulatorUuid, 'set', `${params.latitude},${params.longitude}`],
-      'Set Simulator Location',
-      `Successfully set simulator ${params.simulatorUuid} location to ${params.latitude},${params.longitude}`,
-      'Failed to set simulator location',
-      'set simulator location',
-      executor,
-      extraValidation,
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return set_simulator_locationLogic(
+      args as SetSimulatorLocationParams,
+      getDefaultCommandExecutor(),
     );
   },
 };

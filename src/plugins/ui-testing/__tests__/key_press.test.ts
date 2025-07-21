@@ -9,7 +9,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import keyPressPlugin from '../key_press.ts';
+import keyPressPlugin, { key_pressLogic } from '../key_press.js';
 
 describe('Key Press Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -103,7 +103,7 @@ describe('Key Press Plugin', () => {
         };
       };
 
-      await keyPressPlugin.handler(
+      await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
@@ -134,7 +134,7 @@ describe('Key Press Plugin', () => {
         };
       };
 
-      await keyPressPlugin.handler(
+      await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 42,
@@ -168,7 +168,7 @@ describe('Key Press Plugin', () => {
         };
       };
 
-      await keyPressPlugin.handler(
+      await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 255,
@@ -199,7 +199,7 @@ describe('Key Press Plugin', () => {
         };
       };
 
-      await keyPressPlugin.handler(
+      await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 44,
@@ -221,7 +221,7 @@ describe('Key Press Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await keyPressPlugin.handler({ keyCode: 40 }, createNoopExecutor());
+      const result = await key_pressLogic({ keyCode: 40 }, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -235,7 +235,7 @@ describe('Key Press Plugin', () => {
     });
 
     it('should return error for missing keyCode', async () => {
-      const result = await keyPressPlugin.handler(
+      const result = await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -263,7 +263,7 @@ describe('Key Press Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keyPressPlugin.handler(
+      const result = await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
@@ -288,7 +288,7 @@ describe('Key Press Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keyPressPlugin.handler(
+      const result = await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 42,
@@ -308,7 +308,7 @@ describe('Key Press Plugin', () => {
       const mockGetAxePath = () => null;
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keyPressPlugin.handler(
+      const result = await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
@@ -342,7 +342,7 @@ describe('Key Press Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keyPressPlugin.handler(
+      const result = await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
@@ -371,7 +371,7 @@ describe('Key Press Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keyPressPlugin.handler(
+      const result = await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
@@ -395,7 +395,7 @@ describe('Key Press Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keyPressPlugin.handler(
+      const result = await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
@@ -419,7 +419,7 @@ describe('Key Press Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await keyPressPlugin.handler(
+      const result = await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,

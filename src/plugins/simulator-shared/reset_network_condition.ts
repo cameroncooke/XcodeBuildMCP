@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
@@ -29,13 +29,7 @@ async function executeSimctlCommandAndRespond(
 
   try {
     const command = ['xcrun', 'simctl', ...simctlSubCommand];
-    const result = await executeCommand(
-      command,
-      executor,
-      operationDescriptionForXcodeCommand,
-      true,
-      undefined,
-    );
+    const result = await executor(command, operationDescriptionForXcodeCommand, true, undefined);
 
     if (!result.success) {
       const fullFailureMessage = `${failureMessagePrefix}: ${result.error}`;
@@ -68,6 +62,24 @@ async function executeSimctlCommandAndRespond(
   }
 }
 
+export async function reset_network_conditionLogic(
+  params: Record<string, unknown>,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  log('info', `Resetting simulator ${params.simulatorUuid} network condition`);
+
+  return executeSimctlCommandAndRespond(
+    params,
+    ['status_bar', params.simulatorUuid, 'clear'],
+    'Reset Network Condition',
+    `Successfully reset simulator ${params.simulatorUuid} network conditions.`,
+    'Failed to reset network condition',
+    'reset network condition',
+    executor,
+    undefined,
+  );
+}
+
 export default {
   name: 'reset_network_condition',
   description: 'Resets network conditions to default in the simulator.',
@@ -76,22 +88,7 @@ export default {
       .string()
       .describe('UUID of the simulator to use (obtained from list_simulators)'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    log('info', `Resetting simulator ${params.simulatorUuid} network condition`);
-
-    return executeSimctlCommandAndRespond(
-      params,
-      ['status_bar', params.simulatorUuid, 'clear'],
-      'Reset Network Condition',
-      `Successfully reset simulator ${params.simulatorUuid} network conditions.`,
-      'Failed to reset network condition',
-      'reset network condition',
-      executor,
-      undefined,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return reset_network_conditionLogic(args, getDefaultCommandExecutor());
   },
 };

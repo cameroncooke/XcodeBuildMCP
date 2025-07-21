@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
-import plugin from '../list_schems_ws.ts';
+import plugin, { list_schems_wsLogic, ListSchemsWsParams } from '../list_schems_ws.ts';
 
 describe('list_schems_ws plugin', () => {
   // Manual call tracking for dependency injection testing
@@ -17,7 +17,9 @@ describe('list_schems_ws plugin', () => {
     cwd: string | undefined;
   }>;
 
-  executorCalls = [];
+  beforeEach(() => {
+    executorCalls = [];
+  });
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
@@ -52,9 +54,18 @@ describe('list_schems_ws plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should handle schema validation error when workspacePath is null', async () => {
-      // Schema validation will throw before reaching validateRequiredParam
-      await expect(plugin.handler({ workspacePath: null })).rejects.toThrow();
+    it('should handle missing workspacePath parameter', async () => {
+      const result = await plugin.handler({ workspacePath: null });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
     });
 
     it('should return success with schemes found', async () => {
@@ -87,10 +98,11 @@ describe('list_schems_ws plugin', () => {
         return mockExecutor(command, description, hideOutput, cwd);
       };
 
-      const result = await plugin.handler(
-        { workspacePath: '/path/to/MyProject.xcworkspace' },
-        trackingExecutor,
-      );
+      const params: ListSchemsWsParams = {
+        workspacePath: '/path/to/MyProject.xcworkspace',
+      };
+
+      const result = await list_schems_wsLogic(params, trackingExecutor);
 
       expect(executorCalls).toHaveLength(1);
       expect(executorCalls[0]).toEqual({
@@ -130,10 +142,11 @@ describe('list_schems_ws plugin', () => {
         process: { pid: 12345 },
       });
 
-      const result = await plugin.handler(
-        { workspacePath: '/path/to/MyProject.xcworkspace' },
-        mockExecutor,
-      );
+      const params: ListSchemsWsParams = {
+        workspacePath: '/path/to/MyProject.xcworkspace',
+      };
+
+      const result = await list_schems_wsLogic(params, mockExecutor);
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Failed to list schemes: Workspace not found' }],
@@ -149,10 +162,11 @@ describe('list_schems_ws plugin', () => {
         process: { pid: 12345 },
       });
 
-      const result = await plugin.handler(
-        { workspacePath: '/path/to/MyProject.xcworkspace' },
-        mockExecutor,
-      );
+      const params: ListSchemsWsParams = {
+        workspacePath: '/path/to/MyProject.xcworkspace',
+      };
+
+      const result = await list_schems_wsLogic(params, mockExecutor);
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'No schemes found in the output' }],
@@ -178,10 +192,11 @@ describe('list_schems_ws plugin', () => {
         process: { pid: 12345 },
       });
 
-      const result = await plugin.handler(
-        { workspacePath: '/path/to/MyProject.xcworkspace' },
-        mockExecutor,
-      );
+      const params: ListSchemsWsParams = {
+        workspacePath: '/path/to/MyProject.xcworkspace',
+      };
+
+      const result = await list_schems_wsLogic(params, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -205,10 +220,11 @@ describe('list_schems_ws plugin', () => {
     it('should handle Error objects in catch blocks', async () => {
       const mockExecutor = createMockExecutor(new Error('Command execution failed'));
 
-      const result = await plugin.handler(
-        { workspacePath: '/path/to/MyProject.xcworkspace' },
-        mockExecutor,
-      );
+      const params: ListSchemsWsParams = {
+        workspacePath: '/path/to/MyProject.xcworkspace',
+      };
+
+      const result = await list_schems_wsLogic(params, mockExecutor);
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Error listing schemes: Command execution failed' }],

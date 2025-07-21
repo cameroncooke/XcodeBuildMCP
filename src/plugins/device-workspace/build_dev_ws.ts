@@ -23,6 +23,31 @@ const XcodePlatform = {
   macOS: 'macOS',
 };
 
+export async function build_dev_wsLogic(
+  params: Record<string, unknown>,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+
+  return executeXcodeBuildCommand(
+    {
+      ...params,
+      configuration: params.configuration ?? 'Debug', // Default config
+    },
+    {
+      platform: XcodePlatform.iOS,
+      logPrefix: 'iOS Device Build',
+    },
+    params.preferXcodebuild,
+    'build',
+    executor,
+  );
+}
+
 export default {
   name: 'build_dev_ws',
   description:
@@ -38,29 +63,7 @@ export default {
       .describe('Additional arguments to pass to xcodebuild'),
     preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse;
-
-    return executeXcodeBuildCommand(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug', // Default config
-      },
-      {
-        platform: XcodePlatform.iOS,
-        logPrefix: 'iOS Device Build',
-      },
-      params.preferXcodebuild,
-      'build',
-      executor,
-    );
+  handler: async (args: Record<string, unknown>) => {
+    return build_dev_wsLogic(args, getDefaultCommandExecutor());
   },
 };

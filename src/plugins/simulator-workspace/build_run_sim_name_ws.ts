@@ -6,7 +6,6 @@ import {
   validateRequiredParam,
   createTextResponse,
   executeXcodeBuildCommand,
-  executeCommand,
   CommandExecutor,
 } from '../../utils/index.js';
 import { execSync } from 'child_process';
@@ -18,7 +17,7 @@ const XcodePlatform = {
 // Helper function for simulator build logic
 async function _handleSimulatorBuildLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', `Building ${params.workspacePath || params.projectPath} for iOS Simulator`);
 
@@ -45,14 +44,32 @@ async function _handleSimulatorBuildLogic(
   }
 }
 
-// Helper function for iOS Simulator build and run logic (by name)
-async function _handleIOSSimulatorBuildAndRunLogic(
+// Exported business logic function
+export async function build_run_sim_name_wsLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
+
+  // Provide defaults
+  const processedParams = {
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  };
+
   log(
     'info',
-    `Building and running ${params.workspacePath || params.projectPath} on iOS Simulator`,
+    `Building and running ${processedParams.workspacePath || processedParams.projectPath} on iOS Simulator`,
   );
 
   try {
@@ -79,7 +96,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     for (const runtime in simulatorsData.devices) {
       if (simulatorsData.devices[runtime]) {
         for (const device of simulatorsData.devices[runtime]) {
-          if (device.name === params.simulatorName) {
+          if (device.name === processedParams.simulatorName) {
             foundSimulator = device;
             break;
           }
@@ -90,7 +107,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
     if (!foundSimulator) {
       return createTextResponse(
-        `Build succeeded, but could not find an available simulator named '${params.simulatorName}'. Use list_simulators({}) to check available devices.`,
+        `Build succeeded, but could not find an available simulator named '${processedParams.simulatorName}'. Use list_simulators({}) to check available devices.`,
         true,
       );
     }
@@ -99,7 +116,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     log('info', `Found simulator for run: ${foundSimulator.name} (${simulatorUuid})`);
 
     // Step 2: Build
-    const buildResult = await _handleSimulatorBuildLogic(params, executor);
+    const buildResult = await _handleSimulatorBuildLogic(processedParams, executor);
 
     if (buildResult.isError) {
       return buildResult;
@@ -108,20 +125,20 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // Step 3: Get App Path
     const command = ['xcodebuild', '-showBuildSettings'];
 
-    if (params.workspacePath) {
-      command.push('-workspace', params.workspacePath);
-    } else if (params.projectPath) {
-      command.push('-project', params.projectPath);
+    if (processedParams.workspacePath) {
+      command.push('-workspace', processedParams.workspacePath);
+    } else if (processedParams.projectPath) {
+      command.push('-project', processedParams.projectPath);
     }
 
-    command.push('-scheme', params.scheme);
-    command.push('-configuration', params.configuration);
+    command.push('-scheme', processedParams.scheme);
+    command.push('-configuration', processedParams.configuration);
     command.push(
       '-destination',
-      `platform=${XcodePlatform.iOSSimulator},name=${params.simulatorName}${params.useLatestOS ? ',OS=latest' : ''}`,
+      `platform=${XcodePlatform.iOSSimulator},name=${processedParams.simulatorName}${processedParams.useLatestOS ? ',OS=latest' : ''}`,
     );
 
-    const result = await executeCommand(command, executor, 'Get App Path', true, {});
+    const result = await executor(command, 'Get App Path', true, {});
 
     if (!result.success) {
       return createTextResponse(`Failed to get app path: ${result.error}`, true);
@@ -149,9 +166,8 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // Step 4: Boot if needed
     if (foundSimulator.state !== 'Booted') {
       log('info', `Booting simulator ${foundSimulator.name}...`);
-      const bootResult = await executeCommand(
+      const bootResult = await executor(
         ['xcrun', 'simctl', 'boot', simulatorUuid],
-        executor,
         'Boot Simulator',
         true,
         {},
@@ -164,9 +180,8 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
     // Step 5: Install App
     log('info', `Installing app at ${appPath}...`);
-    const installResult = await executeCommand(
+    const installResult = await executor(
       ['xcrun', 'simctl', 'install', simulatorUuid, appPath],
-      executor,
       'Install App',
       true,
       {},
@@ -178,9 +193,8 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
     // Step 6: Launch App
     // Extract bundle ID from Info.plist
-    const bundleIdResult = await executeCommand(
+    const bundleIdResult = await executor(
       ['plutil', '-extract', 'CFBundleIdentifier', 'raw', `${appPath}/Info.plist`],
-      executor,
       'Get Bundle ID',
       true,
       {},
@@ -196,9 +210,8 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     }
 
     log('info', `Launching app with bundle ID ${bundleId}...`);
-    const launchResult = await executeCommand(
+    const launchResult = await executor(
       ['xcrun', 'simctl', 'launch', simulatorUuid, bundleId],
-      executor,
       'Launch App',
       true,
       {},
@@ -263,30 +276,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    // Validate required parameters
-    const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse;
-
-    const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-    if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
-
-    // Provide defaults
-    return _handleIOSSimulatorBuildAndRunLogic(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      },
-      executor,
-    );
+  handler: async (args: Record<string, unknown>) => {
+    return build_run_sim_name_wsLogic(args, getDefaultCommandExecutor());
   },
 };

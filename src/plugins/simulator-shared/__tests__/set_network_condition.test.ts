@@ -11,7 +11,7 @@ import {
   createMockFileSystemExecutor,
   type CommandExecutor,
 } from '../../../utils/command.js';
-import setNetworkCondition from '../set_network_condition.ts';
+import setNetworkCondition, { set_network_conditionLogic } from '../set_network_condition.ts';
 
 describe('set_network_condition tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -74,13 +74,12 @@ describe('set_network_condition tool', () => {
         output: 'Network condition set successfully',
       });
 
-      const result = await setNetworkCondition.handler(
+      const result = await set_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
           profile: 'wifi',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -94,13 +93,12 @@ describe('set_network_condition tool', () => {
     });
 
     it('should handle validation failure', async () => {
-      const result = await setNetworkCondition.handler(
+      const result = await set_network_conditionLogic(
         {
-          simulatorUuid: undefined,
+          simulatorUuid: undefined as any,
           profile: 'wifi',
         },
         createMockExecutor({ success: true }),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -120,13 +118,12 @@ describe('set_network_condition tool', () => {
         error: 'Simulator not found',
       });
 
-      const result = await setNetworkCondition.handler(
+      const result = await set_network_conditionLogic(
         {
           simulatorUuid: 'invalid-uuid',
           profile: '3g',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -144,13 +141,12 @@ describe('set_network_condition tool', () => {
         throw new Error('Connection failed');
       };
 
-      const result = await setNetworkCondition.handler(
+      const result = await set_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
           profile: 'edge',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -168,13 +164,12 @@ describe('set_network_condition tool', () => {
         throw 'String error';
       };
 
-      const result = await setNetworkCondition.handler(
+      const result = await set_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
           profile: 'dsl',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -210,13 +205,12 @@ describe('set_network_condition tool', () => {
         };
       };
 
-      await setNetworkCondition.handler(
+      await set_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
           profile: 'wifi',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);

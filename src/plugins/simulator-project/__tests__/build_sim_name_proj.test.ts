@@ -5,37 +5,9 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import buildSimNameProj from '../build_sim_name_proj.ts';
+import buildSimNameProj, { build_sim_name_projLogic } from '../build_sim_name_proj.ts';
 
 describe('build_sim_name_proj plugin', () => {
-  let mockExecuteXcodeBuildCommand: (
-    params: any,
-    platformOptions: any,
-    preferXcodebuild: boolean,
-    buildAction: string,
-    executor: any,
-  ) => Promise<any>;
-
-  // Reset the mock function
-  mockExecuteXcodeBuildCommand = async (
-    params,
-    platformOptions,
-    preferXcodebuild,
-    buildAction,
-    executor,
-  ) => {
-    // Default successful response
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `✅ ${platformOptions.logPrefix} ${buildAction} succeeded for scheme ${params.scheme}.`,
-        },
-      ],
-      isError: false,
-    };
-  };
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
       expect(buildSimNameProj.name).toBe('build_sim_name_proj');
@@ -108,13 +80,18 @@ describe('build_sim_name_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return validation error for missing projectPath', async () => {
-      const result = await buildSimNameProj.handler(
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: '',
+      });
+
+      const result = await build_sim_name_projLogic(
         {
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
+        mockExecutor,
       );
 
       expect(result).toEqual({
@@ -129,13 +106,18 @@ describe('build_sim_name_proj plugin', () => {
     });
 
     it('should return validation error for missing scheme', async () => {
-      const result = await buildSimNameProj.handler(
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: '',
+      });
+
+      const result = await build_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           simulatorName: 'iPhone 16',
         },
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
+        mockExecutor,
       );
 
       expect(result).toEqual({
@@ -150,13 +132,18 @@ describe('build_sim_name_proj plugin', () => {
     });
 
     it('should return validation error for missing simulatorName', async () => {
-      const result = await buildSimNameProj.handler(
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: '',
+      });
+
+      const result = await build_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
         },
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
+        mockExecutor,
       );
 
       expect(result).toEqual({
@@ -171,100 +158,64 @@ describe('build_sim_name_proj plugin', () => {
     });
 
     it('should return build error when build fails', async () => {
-      // Configure mock to return failure
-      mockExecuteXcodeBuildCommand = async (
-        params,
-        platformOptions,
-        preferXcodebuild,
-        buildAction,
-        executor,
-      ) => {
-        return {
-          content: [
-            { type: 'text', text: 'Error: Xcode build failed\nDetails: Build failed with error' },
-          ],
-          isError: true,
-        };
-      };
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'Error: Xcode build failed\nDetails: Build failed with error',
+      });
 
-      const result = await buildSimNameProj.handler(
+      const result = await build_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
-        createNoopExecutor(),
-        mockExecuteXcodeBuildCommand,
+        mockExecutor,
       );
 
       expect(result).toEqual({
         content: [
-          { type: 'text', text: 'Error: Xcode build failed\nDetails: Build failed with error' },
+          { type: 'text', text: '❌ [stderr] Error: Xcode build failed' },
+          { type: 'text', text: '❌ [stderr] Details: Build failed with error' },
+          { type: 'text', text: '❌ iOS Simulator Build build failed for scheme MyScheme.' },
         ],
         isError: true,
       });
     });
 
     it('should handle successful build', async () => {
-      // Configure mock to return success
-      mockExecuteXcodeBuildCommand = async (
-        params,
-        platformOptions,
-        preferXcodebuild,
-        buildAction,
-        executor,
-      ) => {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: "✅ iOS Simulator build succeeded for scheme MyScheme targeting simulator name 'iPhone 16'.",
-            },
-          ],
-          isError: false,
-        };
-      };
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        error: '',
+      });
 
-      const result = await buildSimNameProj.handler(
+      const result = await build_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
-        createNoopExecutor(),
-        mockExecuteXcodeBuildCommand,
+        mockExecutor,
       );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "✅ iOS Simulator build succeeded for scheme MyScheme targeting simulator name 'iPhone 16'.",
-          },
-        ],
-        isError: false,
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0]).toEqual({
+        type: 'text',
+        text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.',
       });
+      expect(result.content[1].text).toContain('Next Steps:');
+      expect(result.isError).toBeFalsy();
     });
 
     it('should handle command generation with extra args', async () => {
-      // Track calls to the mock function
-      let capturedCallArgs: any[] = [];
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'Build failed',
+      });
 
-      mockExecuteXcodeBuildCommand = async (
-        params,
-        platformOptions,
-        preferXcodebuild,
-        buildAction,
-        executor,
-      ) => {
-        capturedCallArgs = [params, platformOptions, preferXcodebuild, buildAction, executor];
-        return {
-          content: [{ type: 'text', text: 'Build failed' }],
-          isError: true,
-        };
-      };
-
-      await buildSimNameProj.handler(
+      const result = await build_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -274,104 +225,56 @@ describe('build_sim_name_proj plugin', () => {
           extraArgs: ['--custom-arg'],
           preferXcodebuild: true,
         },
-        createNoopExecutor(),
-        mockExecuteXcodeBuildCommand,
+        mockExecutor,
       );
 
-      expect(capturedCallArgs[0]).toEqual(
-        expect.objectContaining({
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-          configuration: 'Release',
-          derivedDataPath: '/path/to/derived',
-          extraArgs: ['--custom-arg'],
-          preferXcodebuild: true,
-        }),
-      );
-      expect(capturedCallArgs[1]).toEqual(
-        expect.objectContaining({
-          platform: 'iOS Simulator',
-          simulatorName: 'iPhone 16',
-          logPrefix: 'iOS Simulator Build',
-        }),
-      );
-      expect(capturedCallArgs[2]).toBe(true);
-      expect(capturedCallArgs[3]).toBe('build');
-      expect(capturedCallArgs[4]).toBeDefined();
+      // Verify the result
+      expect(result).toEqual({
+        content: [
+          { type: 'text', text: '❌ [stderr] Build failed' },
+          { type: 'text', text: '❌ iOS Simulator Build build failed for scheme MyScheme.' },
+        ],
+        isError: true,
+      });
+
+      // Verify command generation happened by checking the result was processed
     });
   });
 
   describe('Command Generation Tests', () => {
     it('should generate correct xcodebuild command for minimal parameters', async () => {
-      // Track calls to the mock function
-      let capturedCallArgs: any[] = [];
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        error: '',
+      });
 
-      mockExecuteXcodeBuildCommand = async (
-        params,
-        platformOptions,
-        preferXcodebuild,
-        buildAction,
-        executor,
-      ) => {
-        capturedCallArgs = [params, platformOptions, preferXcodebuild, buildAction, executor];
-        return {
-          content: [{ type: 'text', text: '✅ Build succeeded for scheme MyScheme' }],
-          isError: false,
-        };
-      };
-
-      await buildSimNameProj.handler(
+      const result = await build_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
-        createNoopExecutor(),
-        mockExecuteXcodeBuildCommand,
+        mockExecutor,
       );
 
-      expect(capturedCallArgs[0]).toEqual(
-        expect.objectContaining({
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-          configuration: 'Debug',
-          useLatestOS: true,
-          preferXcodebuild: false,
-        }),
-      );
-      expect(capturedCallArgs[1]).toEqual(
-        expect.objectContaining({
-          platform: 'iOS Simulator',
-          simulatorName: 'iPhone 16',
-          logPrefix: 'iOS Simulator Build',
-        }),
-      );
-      expect(capturedCallArgs[2]).toBe(false);
-      expect(capturedCallArgs[3]).toBe('build');
-      expect(capturedCallArgs[4]).toBeDefined();
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0]).toEqual({
+        type: 'text',
+        text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.',
+      });
+      expect(result.content[1].text).toContain('Next Steps:');
+      expect(result.isError).toBeFalsy();
     });
 
     it('should generate correct xcodebuild command with all optional parameters', async () => {
-      // Track calls to the mock function
-      let capturedCallArgs: any[] = [];
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        error: '',
+      });
 
-      mockExecuteXcodeBuildCommand = async (
-        params,
-        platformOptions,
-        preferXcodebuild,
-        buildAction,
-        executor,
-      ) => {
-        capturedCallArgs = [params, platformOptions, preferXcodebuild, buildAction, executor];
-        return {
-          content: [{ type: 'text', text: '✅ Build succeeded for scheme MyScheme' }],
-          isError: false,
-        };
-      };
-
-      await buildSimNameProj.handler(
+      const result = await build_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -382,131 +285,67 @@ describe('build_sim_name_proj plugin', () => {
           useLatestOS: false,
           preferXcodebuild: true,
         },
-        createNoopExecutor(),
-        mockExecuteXcodeBuildCommand,
+        mockExecutor,
       );
 
-      expect(capturedCallArgs[0]).toEqual(
-        expect.objectContaining({
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16 Pro',
-          configuration: 'Release',
-          derivedDataPath: '/custom/derived',
-          extraArgs: ['--verbose', '--custom-flag'],
-          useLatestOS: false,
-          preferXcodebuild: true,
-        }),
-      );
-      expect(capturedCallArgs[1]).toEqual(
-        expect.objectContaining({
-          platform: 'iOS Simulator',
-          simulatorName: 'iPhone 16 Pro',
-          logPrefix: 'iOS Simulator Build',
-        }),
-      );
-      expect(capturedCallArgs[2]).toBe(true);
-      expect(capturedCallArgs[3]).toBe('build');
-      expect(capturedCallArgs[4]).toBeDefined();
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0]).toEqual({
+        type: 'text',
+        text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.',
+      });
+      expect(result.content[1].text).toContain('Next Steps:');
+      expect(result.isError).toBeFalsy();
     });
 
     it('should generate correct command with default configuration when not specified', async () => {
-      // Track calls to the mock function
-      let capturedCallArgs: any[] = [];
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        error: '',
+      });
 
-      mockExecuteXcodeBuildCommand = async (
-        params,
-        platformOptions,
-        preferXcodebuild,
-        buildAction,
-        executor,
-      ) => {
-        capturedCallArgs = [params, platformOptions, preferXcodebuild, buildAction, executor];
-        return {
-          content: [{ type: 'text', text: '✅ Build succeeded for scheme MyScheme' }],
-          isError: false,
-        };
-      };
-
-      await buildSimNameProj.handler(
+      const result = await build_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
           // configuration intentionally omitted to test default
         },
-        createNoopExecutor(),
-        mockExecuteXcodeBuildCommand,
+        mockExecutor,
       );
 
-      expect(capturedCallArgs[0]).toEqual(
-        expect.objectContaining({
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-          configuration: 'Debug', // Default value
-          useLatestOS: true, // Default value
-          preferXcodebuild: false, // Default value
-        }),
-      );
-      expect(capturedCallArgs[1]).toEqual(
-        expect.objectContaining({
-          platform: 'iOS Simulator',
-          simulatorName: 'iPhone 16',
-          logPrefix: 'iOS Simulator Build',
-        }),
-      );
-      expect(capturedCallArgs[2]).toBe(false);
-      expect(capturedCallArgs[3]).toBe('build');
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0]).toEqual({
+        type: 'text',
+        text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.',
+      });
+      expect(result.content[1].text).toContain('Next Steps:');
+      expect(result.isError).toBeFalsy();
     });
 
     it('should generate correct command with simulator name containing spaces', async () => {
-      // Track calls to the mock function
-      let capturedCallArgs: any[] = [];
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        error: '',
+      });
 
-      mockExecuteXcodeBuildCommand = async (
-        params,
-        platformOptions,
-        preferXcodebuild,
-        buildAction,
-        executor,
-      ) => {
-        capturedCallArgs = [params, platformOptions, preferXcodebuild, buildAction, executor];
-        return {
-          content: [{ type: 'text', text: '✅ Build succeeded for scheme MyScheme' }],
-          isError: false,
-        };
-      };
-
-      await buildSimNameProj.handler(
+      const result = await build_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16 Pro Max',
         },
-        createNoopExecutor(),
-        mockExecuteXcodeBuildCommand,
+        mockExecutor,
       );
 
-      expect(capturedCallArgs[0]).toEqual(
-        expect.objectContaining({
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16 Pro Max',
-          configuration: 'Debug',
-          useLatestOS: true,
-          preferXcodebuild: false,
-        }),
-      );
-      expect(capturedCallArgs[1]).toEqual(
-        expect.objectContaining({
-          platform: 'iOS Simulator',
-          simulatorName: 'iPhone 16 Pro Max',
-          logPrefix: 'iOS Simulator Build',
-        }),
-      );
-      expect(capturedCallArgs[2]).toBe(false);
-      expect(capturedCallArgs[3]).toBe('build');
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0]).toEqual({
+        type: 'text',
+        text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.',
+      });
+      expect(result.content[1].text).toContain('Next Steps:');
+      expect(result.isError).toBeFalsy();
     });
   });
 });

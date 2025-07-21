@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
 
-// Import the plugin
-import listSims from '../list_sims.ts';
+// Import the plugin and logic function
+import listSims, { list_simsLogic } from '../list_sims.ts';
 
 describe('list_sims tool', () => {
   let callHistory: Array<{
@@ -77,7 +77,7 @@ describe('list_sims tool', () => {
         return mockExecutor(command, logPrefix, useShell, env);
       };
 
-      const result = await listSims.handler({ enabled: true }, wrappedExecutor);
+      const result = await list_simsLogic({ enabled: true }, wrappedExecutor);
 
       // Verify command was called correctly
       expect(callHistory).toHaveLength(1);
@@ -128,11 +128,7 @@ Next Steps:
         process: { pid: 12345 },
       });
 
-      const result = await listSims.handler(
-        { enabled: true },
-        mockExecutor,
-        createMockFileSystemExecutor(),
-      );
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -161,11 +157,7 @@ Next Steps:
         process: { pid: 12345 },
       });
 
-      const result = await listSims.handler(
-        { enabled: true },
-        mockExecutor,
-        createMockFileSystemExecutor(),
-      );
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -185,11 +177,7 @@ Next Steps:
         process: { pid: 12345 },
       });
 
-      const result = await listSims.handler(
-        { enabled: true },
-        mockExecutor,
-        createMockFileSystemExecutor(),
-      );
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -204,11 +192,7 @@ Next Steps:
     it('should handle exception with Error object', async () => {
       const mockExecutor = createMockExecutor(new Error('Command execution failed'));
 
-      const result = await listSims.handler(
-        { enabled: true },
-        mockExecutor,
-        createMockFileSystemExecutor(),
-      );
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -223,11 +207,7 @@ Next Steps:
     it('should handle exception with string error', async () => {
       const mockExecutor = createMockExecutor('String error');
 
-      const result = await listSims.handler(
-        { enabled: true },
-        mockExecutor,
-        createMockFileSystemExecutor(),
-      );
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [

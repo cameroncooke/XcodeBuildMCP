@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import setSimAppearancePlugin from '../set_sim_appearance.ts';
+import setSimAppearancePlugin, { set_sim_appearanceLogic } from '../set_sim_appearance.ts';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
 
 describe('set_sim_appearance plugin', () => {
@@ -60,7 +60,7 @@ describe('set_sim_appearance plugin', () => {
         error: '',
       });
 
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           simulatorUuid: 'test-uuid-123',
           mode: 'dark',
@@ -84,7 +84,7 @@ describe('set_sim_appearance plugin', () => {
         error: 'Invalid device: invalid-uuid',
       });
 
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           simulatorUuid: 'invalid-uuid',
           mode: 'light',
@@ -109,11 +109,7 @@ describe('set_sim_appearance plugin', () => {
         error: '',
       });
 
-      const result = await setSimAppearancePlugin.handler(
-        { mode: 'dark' },
-        mockExecutor,
-        createMockFileSystemExecutor(),
-      );
+      const result = await set_sim_appearanceLogic({ mode: 'dark' } as any, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -129,13 +125,12 @@ describe('set_sim_appearance plugin', () => {
     it('should handle exception during execution', async () => {
       const mockExecutor = createMockExecutor(new Error('Network error'));
 
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           simulatorUuid: 'test-uuid-123',
           mode: 'dark',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -160,7 +155,7 @@ describe('set_sim_appearance plugin', () => {
         });
       };
 
-      await setSimAppearancePlugin.handler(
+      await set_sim_appearanceLogic(
         {
           simulatorUuid: 'test-uuid-123',
           mode: 'dark',

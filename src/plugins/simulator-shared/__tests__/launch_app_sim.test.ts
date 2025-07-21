@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import launchAppSim from '../launch_app_sim.ts';
+import launchAppSim, { launch_app_simLogic } from '../launch_app_sim.ts';
 
 describe('launch_app_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -80,7 +80,7 @@ describe('launch_app_sim tool', () => {
         }
       };
 
-      const result = await launchAppSim.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
@@ -138,7 +138,7 @@ describe('launch_app_sim tool', () => {
         }
       };
 
-      const result = await launchAppSim.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
@@ -165,7 +165,7 @@ describe('launch_app_sim tool', () => {
         error: 'App not found',
       });
 
-      const result = await launchAppSim.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
@@ -208,7 +208,7 @@ describe('launch_app_sim tool', () => {
         }
       };
 
-      const result = await launchAppSim.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
@@ -233,7 +233,7 @@ describe('launch_app_sim tool', () => {
         error: '',
       });
 
-      const result = await launchAppSim.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: undefined,
           bundleId: 'com.example.testapp',
@@ -259,7 +259,7 @@ describe('launch_app_sim tool', () => {
         error: '',
       });
 
-      const result = await launchAppSim.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: undefined,
@@ -285,7 +285,7 @@ describe('launch_app_sim tool', () => {
         error: 'Network error',
       });
 
-      const result = await launchAppSim.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
@@ -328,7 +328,7 @@ describe('launch_app_sim tool', () => {
         }
       };
 
-      const result = await launchAppSim.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',

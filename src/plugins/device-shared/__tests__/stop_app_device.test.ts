@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
-import stopAppDevice from '../stop_app_device.ts';
+import stopAppDevice, { stop_app_deviceLogic } from '../stop_app_device.ts';
 
 describe('stop_app_device plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -63,7 +63,7 @@ describe('stop_app_device plugin', () => {
         };
       };
 
-      await stopAppDevice.handler(
+      await stop_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           processId: 12345,
@@ -101,7 +101,7 @@ describe('stop_app_device plugin', () => {
         };
       };
 
-      await stopAppDevice.handler(
+      await stop_app_deviceLogic(
         {
           deviceId: 'different-device-uuid',
           processId: 99999,
@@ -136,7 +136,7 @@ describe('stop_app_device plugin', () => {
         };
       };
 
-      await stopAppDevice.handler(
+      await stop_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           processId: 2147483647,
@@ -165,7 +165,7 @@ describe('stop_app_device plugin', () => {
         output: 'App terminated successfully',
       });
 
-      const result = await stopAppDevice.handler(
+      const result = await stop_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           processId: 12345,
@@ -189,7 +189,7 @@ describe('stop_app_device plugin', () => {
         output: 'Terminating process...\nProcess ID: 12345\nTermination completed successfully',
       });
 
-      const result = await stopAppDevice.handler(
+      const result = await stop_app_deviceLogic(
         {
           deviceId: 'device-456',
           processId: 67890,
@@ -213,7 +213,7 @@ describe('stop_app_device plugin', () => {
         output: '',
       });
 
-      const result = await stopAppDevice.handler(
+      const result = await stop_app_deviceLogic(
         {
           deviceId: 'empty-output-device',
           processId: 54321,
@@ -239,7 +239,7 @@ describe('stop_app_device plugin', () => {
         error: 'Terminate failed: Process not found',
       });
 
-      const result = await stopAppDevice.handler(
+      const result = await stop_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           processId: 99999,
@@ -264,7 +264,7 @@ describe('stop_app_device plugin', () => {
         throw new Error('Network error');
       };
 
-      const result = await stopAppDevice.handler(
+      const result = await stop_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           processId: 12345,
@@ -289,7 +289,7 @@ describe('stop_app_device plugin', () => {
         throw 'String error';
       };
 
-      const result = await stopAppDevice.handler(
+      const result = await stop_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           processId: 12345,

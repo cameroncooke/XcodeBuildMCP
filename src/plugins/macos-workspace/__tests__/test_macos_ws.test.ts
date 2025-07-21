@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import testMacosWs from '../test_macos_ws.ts';
+import testMacosWs, { test_macos_wsLogic } from '../test_macos_ws.ts';
 
 describe('test_macos_ws plugin', () => {
   // Clear any state if needed
@@ -57,7 +57,7 @@ describe('test_macos_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testMacosWs.handler(
+      const result = await test_macos_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -77,7 +77,7 @@ describe('test_macos_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testMacosWs.handler(
+      const result = await test_macos_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -96,7 +96,7 @@ describe('test_macos_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testMacosWs.handler(
+      const result = await test_macos_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -119,7 +119,7 @@ describe('test_macos_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testMacosWs.handler(
+      const result = await test_macos_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyApp',
@@ -180,7 +180,7 @@ describe('test_macos_ws plugin', () => {
         stat: async () => ({}),
       };
 
-      const result = await testMacosWs.handler(
+      const result = await test_macos_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -258,7 +258,7 @@ describe('test_macos_ws plugin', () => {
         stat: async () => ({}),
       };
 
-      const result = await testMacosWs.handler(
+      const result = await test_macos_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -320,7 +320,7 @@ describe('test_macos_ws plugin', () => {
         stat: async () => ({}),
       };
 
-      const result = await testMacosWs.handler(
+      const result = await test_macos_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -384,7 +384,7 @@ describe('test_macos_ws plugin', () => {
         stat: async () => ({}),
       };
 
-      const result = await testMacosWs.handler(
+      const result = await test_macos_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',

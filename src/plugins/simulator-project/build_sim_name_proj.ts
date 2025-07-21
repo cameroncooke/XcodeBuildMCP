@@ -1,35 +1,51 @@
 import { z } from 'zod';
-import { log, getDefaultCommandExecutor } from '../../utils/index.js';
-import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
-import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.js';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import {
+  log,
+  validateRequiredParam,
+  executeXcodeBuildCommand,
+  getDefaultCommandExecutor,
+  CommandExecutor,
+} from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 const XcodePlatform = {
   iOSSimulator: 'iOS Simulator',
 };
 
-// Internal logic for building Simulator apps.
-async function _handleSimulatorBuildLogic(
+export async function build_sim_name_projLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
-  executeXcodeBuildCommandFn?: typeof executeXcodeBuildCommand,
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
+  // Validate required parameters
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse;
 
-  const buildCommandFn = executeXcodeBuildCommandFn || executeXcodeBuildCommand;
-  return buildCommandFn(
-    {
-      ...params,
-    },
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
+
+  // Provide defaults
+  const finalParams = {
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  };
+
+  log('info', `Starting iOS Simulator build for scheme ${finalParams.scheme} (internal)`);
+
+  return executeXcodeBuildCommand(
+    finalParams,
     {
       platform: XcodePlatform.iOSSimulator,
-      simulatorName: params.simulatorName,
-      simulatorId: params.simulatorId,
-      useLatestOS: params.useLatestOS,
+      simulatorName: finalParams.simulatorName,
+      simulatorId: finalParams.simulatorId,
+      useLatestOS: finalParams.useLatestOS,
       logPrefix: 'iOS Simulator Build',
     },
-    params.preferXcodebuild,
+    finalParams.preferXcodebuild,
     'build',
     executor,
   );
@@ -62,32 +78,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    executeXcodeBuildCommandFn?: typeof executeXcodeBuildCommand,
-  ): Promise<ToolResponse> {
-    const params = args;
-    // Validate required parameters
-    const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-    if (!projectValidation.isValid) return projectValidation.errorResponse;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse;
-
-    const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-    if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
-
-    // Provide defaults
-    return _handleSimulatorBuildLogic(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      },
-      executor,
-      executeXcodeBuildCommandFn,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return build_sim_name_projLogic(args, getDefaultCommandExecutor());
   },
 };

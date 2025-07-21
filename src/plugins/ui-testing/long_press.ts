@@ -10,14 +10,101 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../utils/index.js';
 
+interface LongPressParams {
+  simulatorUuid: unknown;
+  x: unknown;
+  y: unknown;
+  duration: unknown;
+}
+
 const LOG_PREFIX = '[AXe]';
+
+export async function long_pressLogic(
+  params: LongPressParams,
+  executor: CommandExecutor,
+  getAxePathFn?: () => string | null,
+  getBundledAxeEnvironmentFn?: () => Record<string, string>,
+): Promise<ToolResponse> {
+  const toolName = 'long_press';
+  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  const xValidation = validateRequiredParam('x', params.x);
+  if (!xValidation.isValid) return xValidation.errorResponse;
+  const yValidation = validateRequiredParam('y', params.y);
+  if (!yValidation.isValid) return yValidation.errorResponse;
+  const durationValidation = validateRequiredParam('duration', params.duration);
+  if (!durationValidation.isValid) return durationValidation.errorResponse;
+
+  const { simulatorUuid, x, y, duration } = params;
+  // AXe uses touch command with --down, --up, and --delay for long press
+  const delayInSeconds = Number(duration) / 1000; // Convert ms to seconds
+  const commandArgs = [
+    'touch',
+    '-x',
+    String(x),
+    '-y',
+    String(y),
+    '--down',
+    '--up',
+    '--delay',
+    String(delayInSeconds),
+  ];
+
+  log(
+    'info',
+    `${LOG_PREFIX}/${toolName}: Starting for (${x}, ${y}), ${duration}ms on ${simulatorUuid}`,
+  );
+
+  try {
+    await executeAxeCommand(
+      commandArgs,
+      String(simulatorUuid),
+      'touch',
+      executor,
+      getAxePathFn,
+      getBundledAxeEnvironmentFn,
+    );
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+
+    const warning = getCoordinateWarning(String(simulatorUuid));
+    const message = `Long press at (${x}, ${y}) for ${duration}ms simulated successfully.`;
+
+    if (warning) {
+      return createTextResponse(`${message}\n\n${warning}`);
+    }
+
+    return createTextResponse(message);
+  } catch (error) {
+    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
+    if (error instanceof DependencyError) {
+      return createAxeNotAvailableResponse();
+    } else if (error instanceof AxeError) {
+      return createErrorResponse(
+        `Failed to simulate long press at (${x}, ${y}): ${error.message}`,
+        error.axeOutput,
+        error.name,
+      );
+    } else if (error instanceof SystemError) {
+      return createErrorResponse(
+        `System error executing axe: ${error.message}`,
+        error.originalError?.stack,
+        error.name,
+      );
+    }
+    return createErrorResponse(
+      `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
+      undefined,
+      'UnexpectedError',
+    );
+  }
+}
 
 export default {
   name: 'long_press',
@@ -29,85 +116,8 @@ export default {
     y: z.number().int('Y coordinate for the long press'),
     duration: z.number().positive('Duration of the long press in milliseconds'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    getAxePathFn?: () => string | null,
-    getBundledAxeEnvironmentFn?: () => Record<string, string>,
-  ): Promise<ToolResponse> {
-    const params = args;
-    const toolName = 'long_press';
-    const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-    if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
-    const xValidation = validateRequiredParam('x', params.x);
-    if (!xValidation.isValid) return xValidation.errorResponse;
-    const yValidation = validateRequiredParam('y', params.y);
-    if (!yValidation.isValid) return yValidation.errorResponse;
-    const durationValidation = validateRequiredParam('duration', params.duration);
-    if (!durationValidation.isValid) return durationValidation.errorResponse;
-
-    const { simulatorUuid, x, y, duration } = params;
-    // AXe uses touch command with --down, --up, and --delay for long press
-    const delayInSeconds = duration / 1000; // Convert ms to seconds
-    const commandArgs = [
-      'touch',
-      '-x',
-      String(x),
-      '-y',
-      String(y),
-      '--down',
-      '--up',
-      '--delay',
-      String(delayInSeconds),
-    ];
-
-    log(
-      'info',
-      `${LOG_PREFIX}/${toolName}: Starting for (${x}, ${y}), ${duration}ms on ${simulatorUuid}`,
-    );
-
-    try {
-      await executeAxeCommand(
-        commandArgs,
-        simulatorUuid,
-        'touch',
-        executor,
-        getAxePathFn,
-        getBundledAxeEnvironmentFn,
-      );
-      log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-
-      const warning = getCoordinateWarning(simulatorUuid);
-      const message = `Long press at (${x}, ${y}) for ${duration}ms simulated successfully.`;
-
-      if (warning) {
-        return createTextResponse(`${message}\n\n${warning}`);
-      }
-
-      return createTextResponse(message);
-    } catch (error) {
-      log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
-      if (error instanceof DependencyError) {
-        return createAxeNotAvailableResponse();
-      } else if (error instanceof AxeError) {
-        return createErrorResponse(
-          `Failed to simulate long press at (${x}, ${y}): ${error.message}`,
-          error.axeOutput,
-          error.name,
-        );
-      } else if (error instanceof SystemError) {
-        return createErrorResponse(
-          `System error executing axe: ${error.message}`,
-          error.originalError?.stack,
-          error.name,
-        );
-      }
-      return createErrorResponse(
-        `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-        undefined,
-        'UnexpectedError',
-      );
-    }
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return long_pressLogic(args, getDefaultCommandExecutor());
   },
 };
 
@@ -162,13 +172,7 @@ async function executeAxeCommand(
           : getBundledAxeEnvironment()
         : undefined;
 
-    const result = await executeCommand(
-      fullCommand,
-      executor,
-      `${LOG_PREFIX}: ${commandName}`,
-      false,
-      axeEnv,
-    );
+    const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 
     if (!result.success) {
       throw new AxeError(

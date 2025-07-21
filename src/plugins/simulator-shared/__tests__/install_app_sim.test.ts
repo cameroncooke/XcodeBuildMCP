@@ -5,7 +5,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import installAppSim from '../install_app_sim.ts';
+import installAppSim, { install_app_simLogic } from '../install_app_sim.ts';
 
 describe('install_app_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -89,7 +89,7 @@ describe('install_app_sim tool', () => {
         existsSync: () => true,
       });
 
-      await installAppSim.handler(
+      await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
@@ -130,7 +130,7 @@ describe('install_app_sim tool', () => {
         existsSync: () => true,
       });
 
-      await installAppSim.handler(
+      await install_app_simLogic(
         {
           simulatorUuid: 'different-uuid-456',
           appPath: '/different/path/MyApp.app',
@@ -158,7 +158,7 @@ describe('install_app_sim tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure for simulatorUuid', async () => {
-      const result = await installAppSim.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: undefined,
           appPath: '/path/to/app.app',
@@ -179,7 +179,7 @@ describe('install_app_sim tool', () => {
     });
 
     it('should handle validation failure for appPath', async () => {
-      const result = await installAppSim.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: undefined,
@@ -204,7 +204,7 @@ describe('install_app_sim tool', () => {
         existsSync: () => false,
       });
 
-      const result = await installAppSim.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
@@ -251,7 +251,7 @@ describe('install_app_sim tool', () => {
         existsSync: () => true,
       });
 
-      const result = await installAppSim.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
@@ -290,7 +290,7 @@ describe('install_app_sim tool', () => {
         existsSync: () => true,
       });
 
-      const result = await installAppSim.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
@@ -318,7 +318,7 @@ describe('install_app_sim tool', () => {
         existsSync: () => true,
       });
 
-      const result = await installAppSim.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
@@ -346,7 +346,7 @@ describe('install_app_sim tool', () => {
         existsSync: () => true,
       });
 
-      const result = await installAppSim.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',

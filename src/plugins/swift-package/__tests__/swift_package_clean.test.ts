@@ -10,7 +10,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import swiftPackageClean from '../swift_package_clean.ts';
+import swiftPackageClean, { swift_package_cleanLogic } from '../swift_package_clean.ts';
 
 describe('swift_package_clean plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -63,12 +63,11 @@ describe('swift_package_clean plugin', () => {
         };
       };
 
-      await swiftPackageClean.handler(
+      await swift_package_cleanLogic(
         {
           packagePath: '/test/package',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);
@@ -83,11 +82,7 @@ describe('swift_package_clean plugin', () => {
 
   describe('Response Logic Testing', () => {
     it('should return validation error for missing packagePath', async () => {
-      const result = await swiftPackageClean.handler(
-        {},
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
-      );
+      const result = await swift_package_cleanLogic({}, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -106,12 +101,11 @@ describe('swift_package_clean plugin', () => {
         output: 'Package cleaned successfully',
       });
 
-      const result = await swiftPackageClean.handler(
+      const result = await swift_package_cleanLogic(
         {
           packagePath: '/test/package',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -132,12 +126,11 @@ describe('swift_package_clean plugin', () => {
         output: '',
       });
 
-      const result = await swiftPackageClean.handler(
+      const result = await swift_package_cleanLogic(
         {
           packagePath: '/test/package',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -158,12 +151,11 @@ describe('swift_package_clean plugin', () => {
         error: 'Permission denied',
       });
 
-      const result = await swiftPackageClean.handler(
+      const result = await swift_package_cleanLogic(
         {
           packagePath: '/test/package',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -182,12 +174,11 @@ describe('swift_package_clean plugin', () => {
         throw new Error('spawn ENOENT');
       };
 
-      const result = await swiftPackageClean.handler(
+      const result = await swift_package_cleanLogic(
         {
           packagePath: '/test/package',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

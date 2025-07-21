@@ -7,12 +7,61 @@
 
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import {
-  log,
-  executeCommand,
-  CommandExecutor,
-  getDefaultCommandExecutor,
-} from '../../utils/index.js';
+import { log, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+
+/**
+ * Business logic for installing an app on a physical Apple device
+ */
+export async function install_app_deviceLogic(
+  params: Record<string, unknown>,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  const { deviceId, appPath } = params;
+
+  log('info', `Installing app on device ${deviceId}`);
+
+  try {
+    const result = await executor(
+      ['xcrun', 'devicectl', 'device', 'install', 'app', '--device', deviceId, appPath],
+      'Install app on device',
+      true, // useShell
+      undefined, // env
+    );
+
+    if (!result.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Failed to install app: ${result.error}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `✅ App installed successfully on device ${deviceId}\n\n${result.output}`,
+        },
+      ],
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('error', `Error installing app on device: ${errorMessage}`);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Failed to install app on device: ${errorMessage}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
 
 export default {
   name: 'install_app_device',
@@ -27,55 +76,7 @@ export default {
       .string()
       .describe('Path to the .app bundle to install (full path to the .app directory)'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const { deviceId, appPath } = args;
-
-    log('info', `Installing app on device ${deviceId}`);
-
-    try {
-      const result = await executeCommand(
-        ['xcrun', 'devicectl', 'device', 'install', 'app', '--device', deviceId, appPath],
-        executor,
-        'Install app on device',
-        true, // useShell
-        undefined, // env
-      );
-
-      if (!result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to install app: ${result.error}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `✅ App installed successfully on device ${deviceId}\n\n${result.output}`,
-          },
-        ],
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      log('error', `Error installing app on device: ${errorMessage}`);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Failed to install app on device: ${errorMessage}`,
-          },
-        ],
-        isError: true,
-      };
-    }
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return install_app_deviceLogic(args, getDefaultCommandExecutor());
   },
 };

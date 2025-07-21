@@ -2,7 +2,11 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+
+interface ResetSimulatorLocationParams {
+  simulatorUuid: unknown;
+}
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
@@ -29,13 +33,7 @@ async function executeSimctlCommandAndRespond(
 
   try {
     const command = ['xcrun', 'simctl', ...simctlSubCommand];
-    const result = await executeCommand(
-      command,
-      executor,
-      operationDescriptionForXcodeCommand,
-      true,
-      {},
-    );
+    const result = await executor(command, operationDescriptionForXcodeCommand, true, {});
 
     if (!result.success) {
       const fullFailureMessage = `${failureMessagePrefix}: ${result.error}`;
@@ -68,6 +66,23 @@ async function executeSimctlCommandAndRespond(
   }
 }
 
+export async function reset_simulator_locationLogic(
+  params: ResetSimulatorLocationParams,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  log('info', `Resetting simulator ${params.simulatorUuid} location`);
+
+  return executeSimctlCommandAndRespond(
+    params,
+    ['location', params.simulatorUuid, 'clear'],
+    'Reset Simulator Location',
+    `Successfully reset simulator ${params.simulatorUuid} location.`,
+    'Failed to reset simulator location',
+    'reset simulator location',
+    executor,
+  );
+}
+
 export default {
   name: 'reset_simulator_location',
   description: "Resets the simulator's location to default.",
@@ -76,21 +91,7 @@ export default {
       .string()
       .describe('UUID of the simulator to use (obtained from list_simulators)'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    log('info', `Resetting simulator ${params.simulatorUuid} location`);
-
-    return executeSimctlCommandAndRespond(
-      params,
-      ['location', params.simulatorUuid, 'clear'],
-      'Reset Simulator Location',
-      `Successfully reset simulator ${params.simulatorUuid} location.`,
-      'Failed to reset simulator location',
-      'reset simulator location',
-      executor,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return reset_simulator_locationLogic(args, getDefaultCommandExecutor());
   },
 };

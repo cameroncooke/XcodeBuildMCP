@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import plugin from '../discover_projs.ts';
+import plugin, { discover_projsLogic } from '../discover_projs.ts';
 import { createMockFileSystemExecutor } from '../../../utils/index.js';
 
 describe('discover_projs plugin', () => {
@@ -67,7 +67,7 @@ describe('discover_projs plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error when workspaceRoot validation fails', async () => {
-      const result = await plugin.handler({ workspaceRoot: null }, mockFileSystemExecutor);
+      const result = await plugin.handler({ workspaceRoot: null });
 
       expect(result).toEqual({
         content: [
@@ -85,10 +85,11 @@ describe('discover_projs plugin', () => {
         throw new Error('ENOENT: no such file or directory');
       };
 
-      const result = await plugin.handler(
+      const result = await discover_projsLogic(
         {
           workspaceRoot: '/workspace',
           scanPath: '.',
+          maxDepth: 5,
         },
         mockFileSystemExecutor,
       );
@@ -107,10 +108,11 @@ describe('discover_projs plugin', () => {
     it('should return error when scan path is not a directory', async () => {
       mockFileSystemExecutor.stat = async () => ({ isDirectory: () => false });
 
-      const result = await plugin.handler(
+      const result = await discover_projsLogic(
         {
           workspaceRoot: '/workspace',
           scanPath: '.',
+          maxDepth: 5,
         },
         mockFileSystemExecutor,
       );
@@ -125,10 +127,11 @@ describe('discover_projs plugin', () => {
       mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
       mockFileSystemExecutor.readdir = async () => [];
 
-      const result = await plugin.handler(
+      const result = await discover_projsLogic(
         {
           workspaceRoot: '/workspace',
           scanPath: '.',
+          maxDepth: 5,
         },
         mockFileSystemExecutor,
       );
@@ -146,10 +149,11 @@ describe('discover_projs plugin', () => {
         { name: 'MyWorkspace.xcworkspace', isDirectory: () => true, isSymbolicLink: () => false },
       ];
 
-      const result = await plugin.handler(
+      const result = await discover_projsLogic(
         {
           workspaceRoot: '/workspace',
           scanPath: '.',
+          maxDepth: 5,
         },
         mockFileSystemExecutor,
       );
@@ -171,10 +175,11 @@ describe('discover_projs plugin', () => {
         throw error;
       };
 
-      const result = await plugin.handler(
+      const result = await discover_projsLogic(
         {
           workspaceRoot: '/workspace',
           scanPath: '.',
+          maxDepth: 5,
         },
         mockFileSystemExecutor,
       );
@@ -195,10 +200,11 @@ describe('discover_projs plugin', () => {
         throw 'String error';
       };
 
-      const result = await plugin.handler(
+      const result = await discover_projsLogic(
         {
           workspaceRoot: '/workspace',
           scanPath: '.',
+          maxDepth: 5,
         },
         mockFileSystemExecutor,
       );
@@ -212,12 +218,9 @@ describe('discover_projs plugin', () => {
     });
 
     it('should handle validation error when workspaceRoot is null', async () => {
-      const result = await plugin.handler(
-        {
-          workspaceRoot: null,
-        },
-        mockFileSystemExecutor,
-      );
+      const result = await plugin.handler({
+        workspaceRoot: null,
+      });
 
       expect(result).toEqual({
         content: [
@@ -235,10 +238,11 @@ describe('discover_projs plugin', () => {
       mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
       mockFileSystemExecutor.readdir = async () => [];
 
-      const result = await plugin.handler(
+      const result = await discover_projsLogic(
         {
           workspaceRoot: '/workspace',
           scanPath: '../outside',
+          maxDepth: 5,
         },
         mockFileSystemExecutor,
       );
@@ -258,10 +262,11 @@ describe('discover_projs plugin', () => {
         throw errorObject;
       };
 
-      const result = await plugin.handler(
+      const result = await discover_projsLogic(
         {
           workspaceRoot: '/workspace',
           scanPath: '.',
+          maxDepth: 5,
         },
         mockFileSystemExecutor,
       );
@@ -292,7 +297,7 @@ describe('discover_projs plugin', () => {
         return [];
       };
 
-      const result = await plugin.handler(
+      const result = await discover_projsLogic(
         {
           workspaceRoot: '/workspace',
           scanPath: '.',
@@ -316,10 +321,11 @@ describe('discover_projs plugin', () => {
         { name: 'regular.txt', isDirectory: () => false, isSymbolicLink: () => false },
       ];
 
-      const result = await plugin.handler(
+      const result = await discover_projsLogic(
         {
           workspaceRoot: '/workspace',
           scanPath: '.',
+          maxDepth: 5,
         },
         mockFileSystemExecutor,
       );
@@ -339,10 +345,11 @@ describe('discover_projs plugin', () => {
         throw readError;
       };
 
-      const result = await plugin.handler(
+      const result = await discover_projsLogic(
         {
           workspaceRoot: '/workspace',
           scanPath: '.',
+          maxDepth: 5,
         },
         mockFileSystemExecutor,
       );

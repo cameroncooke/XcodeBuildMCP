@@ -1,8 +1,16 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log, getDefaultCommandExecutor } from '../../utils/index.js';
-import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import {
+  log,
+  validateRequiredParam,
+  CommandExecutor,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
+
+interface SetNetworkConditionParams {
+  simulatorUuid: string;
+  profile: 'wifi' | '3g' | 'edge' | 'high-latency' | 'dsl' | '100%loss' | '3g-lossy' | 'very-lossy';
+}
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
@@ -13,7 +21,7 @@ async function executeSimctlCommandAndRespond(
   failureMessagePrefix: string,
   operationLogContext: string,
   extraValidation?: Record<string, unknown>,
-  executor: CommandExecutor = executeCommand,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
@@ -62,6 +70,24 @@ async function executeSimctlCommandAndRespond(
   }
 }
 
+export async function set_network_conditionLogic(
+  params: SetNetworkConditionParams,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  log('info', `Setting simulator ${params.simulatorUuid} network condition to ${params.profile}`);
+
+  return executeSimctlCommandAndRespond(
+    params,
+    ['status_bar', params.simulatorUuid, 'override', '--dataNetwork', params.profile],
+    'Set Network Condition',
+    `Successfully set simulator ${params.simulatorUuid} network condition to ${params.profile} profile`,
+    'Failed to set network condition',
+    'set network condition',
+    undefined,
+    executor,
+  );
+}
+
 export default {
   name: 'set_network_condition',
   description:
@@ -76,22 +102,10 @@ export default {
         'The network profile to simulate. Must be one of: wifi, 3g, edge, high-latency, dsl, 100%loss, 3g-lossy, very-lossy.',
       ),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    log('info', `Setting simulator ${params.simulatorUuid} network condition to ${params.profile}`);
-
-    return executeSimctlCommandAndRespond(
-      params,
-      ['status_bar', params.simulatorUuid, 'override', '--dataNetwork', params.profile],
-      'Set Network Condition',
-      `Successfully set simulator ${params.simulatorUuid} network condition to ${params.profile} profile`,
-      'Failed to set network condition',
-      'set network condition',
-      undefined,
-      executor,
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return set_network_conditionLogic(
+      args as SetNetworkConditionParams,
+      getDefaultCommandExecutor(),
     );
   },
 };

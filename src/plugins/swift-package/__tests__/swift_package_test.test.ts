@@ -10,7 +10,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import swiftPackageTest from '../swift_package_test.ts';
+import swiftPackageTest, { swift_package_testLogic } from '../swift_package_test.ts';
 
 describe('swift_package_test plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -73,12 +73,11 @@ describe('swift_package_test plugin', () => {
         };
       };
 
-      await swiftPackageTest.handler(
+      await swift_package_testLogic(
         {
           packagePath: '/test/package',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);
@@ -107,7 +106,7 @@ describe('swift_package_test plugin', () => {
         };
       };
 
-      await swiftPackageTest.handler(
+      await swift_package_testLogic(
         {
           packagePath: '/test/package',
           testProduct: 'MyTests',
@@ -118,7 +117,6 @@ describe('swift_package_test plugin', () => {
           parseAsLibrary: true,
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);
@@ -148,11 +146,7 @@ describe('swift_package_test plugin', () => {
 
   describe('Response Logic Testing', () => {
     it('should return validation error for missing packagePath', async () => {
-      const result = await swiftPackageTest.handler(
-        {},
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
-      );
+      const result = await swift_package_testLogic({}, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -171,12 +165,11 @@ describe('swift_package_test plugin', () => {
         output: 'All tests passed.',
       });
 
-      const result = await swiftPackageTest.handler(
+      const result = await swift_package_testLogic(
         {
           packagePath: '/test/package',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -197,12 +190,11 @@ describe('swift_package_test plugin', () => {
         error: '2 tests failed',
       });
 
-      const result = await swiftPackageTest.handler(
+      const result = await swift_package_testLogic(
         {
           packagePath: '/test/package',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -221,12 +213,11 @@ describe('swift_package_test plugin', () => {
         throw new Error('spawn ENOENT');
       };
 
-      const result = await swiftPackageTest.handler(
+      const result = await swift_package_testLogic(
         {
           packagePath: '/test/package',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -246,7 +237,7 @@ describe('swift_package_test plugin', () => {
         output: 'Tests completed.',
       });
 
-      const result = await swiftPackageTest.handler(
+      const result = await swift_package_testLogic(
         {
           packagePath: '/test/package',
           testProduct: 'MyTests',
@@ -257,7 +248,6 @@ describe('swift_package_test plugin', () => {
           parseAsLibrary: true,
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

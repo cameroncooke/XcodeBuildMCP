@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
 
-// Import the plugin
-import getSimAppPathIdWs from '../get_sim_app_path_id_ws.ts';
+// Import the plugin and logic function
+import getSimAppPathIdWs, { get_sim_app_path_id_wsLogic } from '../get_sim_app_path_id_ws.ts';
 
 describe('get_sim_app_path_id_ws tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -86,14 +86,11 @@ describe('get_sim_app_path_id_ws tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure for workspacePath', async () => {
-      const result = await getSimAppPathIdWs.handler(
-        {
-          scheme: 'MyScheme',
-          platform: 'iOS Simulator',
-          simulatorId: 'test-uuid-123',
-        },
-        createNoopExecutor(),
-      );
+      const result = await getSimAppPathIdWs.handler({
+        scheme: 'MyScheme',
+        platform: 'iOS Simulator',
+        simulatorId: 'test-uuid-123',
+      });
 
       expect(result).toEqual({
         content: [
@@ -112,12 +109,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n',
       });
 
-      const result = await getSimAppPathIdWs.handler(
+      const result = await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
         },
         mockExecutor,
       );
@@ -146,12 +145,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         output: 'BUILT_PRODUCTS_DIR = /path/to/watch/build\nFULL_PRODUCT_NAME = WatchApp.app\n',
       });
 
-      const result = await getSimAppPathIdWs.handler(
+      const result = await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'WatchScheme',
           platform: 'watchOS Simulator',
           simulatorId: 'watch-uuid-456',
+          configuration: 'Debug',
+          useLatestOS: true,
         },
         mockExecutor,
       );
@@ -180,13 +181,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         output: 'BUILT_PRODUCTS_DIR = /path/to/tv/build\nFULL_PRODUCT_NAME = TVApp.app\n',
       });
 
-      const result = await getSimAppPathIdWs.handler(
+      const result = await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'TVScheme',
           platform: 'tvOS Simulator',
           simulatorId: 'tv-uuid-789',
           configuration: 'Release',
+          useLatestOS: true,
         },
         mockExecutor,
       );
@@ -215,12 +217,13 @@ describe('get_sim_app_path_id_ws tool', () => {
         output: 'BUILT_PRODUCTS_DIR = /path/to/vision/build\nFULL_PRODUCT_NAME = VisionApp.app\n',
       });
 
-      const result = await getSimAppPathIdWs.handler(
+      const result = await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'VisionScheme',
           platform: 'visionOS Simulator',
           simulatorId: 'vision-uuid-101',
+          configuration: 'Debug',
           useLatestOS: true,
         },
         mockExecutor,
@@ -251,12 +254,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         error: 'Build settings command failed',
       });
 
-      const result = await getSimAppPathIdWs.handler(
+      const result = await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
         },
         mockExecutor,
       );
@@ -278,12 +283,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         error: 'Command execution failed',
       });
 
-      const result = await getSimAppPathIdWs.handler(
+      const result = await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
         },
         mockExecutor,
       );
@@ -305,12 +312,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         error: 'String error',
       });
 
-      const result = await getSimAppPathIdWs.handler(
+      const result = await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
         },
         mockExecutor,
       );
@@ -326,18 +335,20 @@ describe('get_sim_app_path_id_ws tool', () => {
       });
     });
 
-    it('should handle missing output from executeCommand', async () => {
+    it('should handle missing output from executor', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
         output: null,
       });
 
-      const result = await getSimAppPathIdWs.handler(
+      const result = await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
         },
         mockExecutor,
       );
@@ -359,12 +370,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         output: 'Some output without build settings',
       });
 
-      const result = await getSimAppPathIdWs.handler(
+      const result = await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
         },
         mockExecutor,
       );
@@ -385,12 +398,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         throw new Error('Test exception');
       };
 
-      const result = await getSimAppPathIdWs.handler(
+      const result = await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
         },
         mockExecutor,
       );
@@ -411,12 +426,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         throw 'String exception';
       };
 
-      const result = await getSimAppPathIdWs.handler(
+      const result = await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
         },
         mockExecutor,
       );
@@ -433,14 +450,11 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle scheme validation failure', async () => {
-      const result = await getSimAppPathIdWs.handler(
-        {
-          workspacePath: '/path/to/workspace',
-          platform: 'iOS Simulator',
-          simulatorId: 'test-uuid-123',
-        },
-        createNoopExecutor(),
-      );
+      const result = await getSimAppPathIdWs.handler({
+        workspacePath: '/path/to/workspace',
+        platform: 'iOS Simulator',
+        simulatorId: 'test-uuid-123',
+      });
 
       expect(result).toEqual({
         content: [
@@ -454,14 +468,11 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle platform validation failure', async () => {
-      const result = await getSimAppPathIdWs.handler(
-        {
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorId: 'test-uuid-123',
-        },
-        createNoopExecutor(),
-      );
+      const result = await getSimAppPathIdWs.handler({
+        workspacePath: '/path/to/workspace',
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid-123',
+      });
 
       expect(result).toEqual({
         content: [
@@ -475,14 +486,11 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle simulatorId validation failure', async () => {
-      const result = await getSimAppPathIdWs.handler(
-        {
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          platform: 'iOS Simulator',
-        },
-        createNoopExecutor(),
-      );
+      const result = await getSimAppPathIdWs.handler({
+        workspacePath: '/path/to/workspace',
+        scheme: 'MyScheme',
+        platform: 'iOS Simulator',
+      });
 
       expect(result).toEqual({
         content: [
@@ -522,12 +530,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await getSimAppPathIdWs.handler(
+      await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
         },
         executorWithTracking,
       );
@@ -577,13 +587,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await getSimAppPathIdWs.handler(
+      await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
           platform: 'tvOS Simulator',
           simulatorId: 'tv-uuid-456',
           configuration: 'Release',
+          useLatestOS: true,
         },
         executorWithTracking,
       );
@@ -633,12 +644,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await getSimAppPathIdWs.handler(
+      await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/Watch.xcworkspace',
           scheme: 'WatchScheme',
           platform: 'watchOS Simulator',
           simulatorId: 'watch-uuid-789',
+          configuration: 'Debug',
+          useLatestOS: true,
         },
         executorWithTracking,
       );
@@ -688,7 +701,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await getSimAppPathIdWs.handler(
+      await get_sim_app_path_id_wsLogic(
         {
           workspacePath: '/path/to/Vision.xcworkspace',
           scheme: 'VisionScheme',

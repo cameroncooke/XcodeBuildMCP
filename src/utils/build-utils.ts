@@ -19,7 +19,7 @@
 
 import { log } from './logger.js';
 import { XcodePlatform, constructDestinationString } from './xcode.js';
-import { executeCommand, CommandExecutor } from './command.js';
+import { CommandExecutor } from './command.js';
 import { ToolResponse, SharedBuildParams, PlatformBuildOptions } from '../types/common.js';
 import { createTextResponse } from './validation.js';
 import {
@@ -225,7 +225,7 @@ export async function executeXcodeBuildCommand(
       }
     } else {
       // Use standard xcodebuild
-      result = await executeCommand(command, executor, platformOptions.logPrefix, true, undefined);
+      result = await executor(command, platformOptions.logPrefix, true, undefined);
     }
 
     // Grep warnings and errors from stdout (build output)

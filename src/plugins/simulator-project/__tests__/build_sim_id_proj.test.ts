@@ -5,7 +5,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import buildSimIdProj from '../build_sim_id_proj.ts';
+import buildSimIdProj, { build_sim_id_projLogic } from '../build_sim_id_proj.ts';
 
 describe('build_sim_id_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -80,13 +80,12 @@ describe('build_sim_id_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return validation error for missing projectPath', async () => {
-      const result = await buildSimIdProj.handler(
+      const result = await build_sim_id_projLogic(
         {
           scheme: 'MyScheme',
           simulatorId: 'test-uuid',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -101,13 +100,12 @@ describe('build_sim_id_proj plugin', () => {
     });
 
     it('should return validation error for missing scheme', async () => {
-      const result = await buildSimIdProj.handler(
+      const result = await build_sim_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           simulatorId: 'test-uuid',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -122,13 +120,12 @@ describe('build_sim_id_proj plugin', () => {
     });
 
     it('should return validation error for missing simulatorId', async () => {
-      const result = await buildSimIdProj.handler(
+      const result = await build_sim_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -149,14 +146,13 @@ describe('build_sim_id_proj plugin', () => {
         output: '',
       });
 
-      const result = await buildSimIdProj.handler(
+      const result = await build_sim_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorId: 'test-uuid',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -175,14 +171,13 @@ describe('build_sim_id_proj plugin', () => {
         error: undefined,
       });
 
-      const result = await buildSimIdProj.handler(
+      const result = await build_sim_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorId: 'test-uuid',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result.isError).toBeFalsy();
@@ -207,7 +202,7 @@ describe('build_sim_id_proj plugin', () => {
         };
       };
 
-      await buildSimIdProj.handler(
+      await build_sim_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -218,7 +213,6 @@ describe('build_sim_id_proj plugin', () => {
           preferXcodebuild: true,
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);

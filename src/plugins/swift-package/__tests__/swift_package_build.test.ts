@@ -10,7 +10,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import swiftPackageBuild from '../swift_package_build.ts';
+import swiftPackageBuild, { swift_package_buildLogic } from '../swift_package_build.ts';
 
 describe('swift_package_build plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -68,12 +68,11 @@ describe('swift_package_build plugin', () => {
         };
       };
 
-      await swiftPackageBuild.handler(
+      await swift_package_buildLogic(
         {
           packagePath: '/test/package',
         },
         executor,
-        createMockFileSystemExecutor(),
       );
 
       expect(executorCalls).toEqual([
@@ -97,13 +96,12 @@ describe('swift_package_build plugin', () => {
         };
       };
 
-      await swiftPackageBuild.handler(
+      await swift_package_buildLogic(
         {
           packagePath: '/test/package',
           configuration: 'release',
         },
         executor,
-        createMockFileSystemExecutor(),
       );
 
       expect(executorCalls).toEqual([
@@ -127,7 +125,7 @@ describe('swift_package_build plugin', () => {
         };
       };
 
-      await swiftPackageBuild.handler(
+      await swift_package_buildLogic(
         {
           packagePath: '/test/package',
           targetName: 'MyTarget',
@@ -136,7 +134,6 @@ describe('swift_package_build plugin', () => {
           parseAsLibrary: true,
         },
         executor,
-        createMockFileSystemExecutor(),
       );
 
       expect(executorCalls).toEqual([
@@ -167,11 +164,7 @@ describe('swift_package_build plugin', () => {
 
   describe('Response Logic Testing', () => {
     it('should return validation error for missing packagePath', async () => {
-      const result = await swiftPackageBuild.handler(
-        {},
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
-      );
+      const result = await swift_package_buildLogic({}, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -190,12 +183,11 @@ describe('swift_package_build plugin', () => {
         output: 'Build complete.',
       });
 
-      const result = await swiftPackageBuild.handler(
+      const result = await swift_package_buildLogic(
         {
           packagePath: '/test/package',
         },
         executor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -217,12 +209,11 @@ describe('swift_package_build plugin', () => {
         error: 'Compilation failed: error in main.swift',
       });
 
-      const result = await swiftPackageBuild.handler(
+      const result = await swift_package_buildLogic(
         {
           packagePath: '/test/package',
         },
         executor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -241,12 +232,11 @@ describe('swift_package_build plugin', () => {
         throw new Error('spawn ENOENT');
       };
 
-      const result = await swiftPackageBuild.handler(
+      const result = await swift_package_buildLogic(
         {
           packagePath: '/test/package',
         },
         executor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -266,7 +256,7 @@ describe('swift_package_build plugin', () => {
         output: 'Build complete.',
       });
 
-      const result = await swiftPackageBuild.handler(
+      const result = await swift_package_buildLogic(
         {
           packagePath: '/test/package',
           targetName: 'MyTarget',
@@ -275,7 +265,6 @@ describe('swift_package_build plugin', () => {
           parseAsLibrary: true,
         },
         executor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

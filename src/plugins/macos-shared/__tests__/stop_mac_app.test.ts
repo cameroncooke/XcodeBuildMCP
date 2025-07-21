@@ -11,7 +11,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 
-import stopMacApp from '../stop_mac_app.ts';
+import stopMacApp, { stop_mac_appLogic } from '../stop_mac_app.ts';
 
 describe('stop_mac_app plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -45,7 +45,8 @@ describe('stop_mac_app plugin', () => {
 
   describe('Input Validation', () => {
     it('should return exact validation error for missing parameters', async () => {
-      const result = await stopMacApp.handler({});
+      const mockExecutor = async () => ({ success: true, output: '', process: {} as any });
+      const result = await stop_mac_appLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -62,12 +63,12 @@ describe('stop_mac_app plugin', () => {
   describe('Command Generation', () => {
     it('should generate correct command for process ID', async () => {
       const calls: any[] = [];
-      const mockExecutor = async (command: string) => {
+      const mockExecutor = async (command: string[]) => {
         calls.push({ command });
-        return { stdout: '', stderr: '' };
+        return { success: true, output: '', process: {} as any };
       };
 
-      await stopMacApp.handler(
+      await stop_mac_appLogic(
         {
           processId: 1234,
         },
@@ -75,17 +76,17 @@ describe('stop_mac_app plugin', () => {
       );
 
       expect(calls).toHaveLength(1);
-      expect(calls[0].command).toBe('kill 1234');
+      expect(calls[0].command).toEqual(['kill', '1234']);
     });
 
     it('should generate correct command for app name', async () => {
       const calls: any[] = [];
-      const mockExecutor = async (command: string) => {
+      const mockExecutor = async (command: string[]) => {
         calls.push({ command });
-        return { stdout: '', stderr: '' };
+        return { success: true, output: '', process: {} as any };
       };
 
-      await stopMacApp.handler(
+      await stop_mac_appLogic(
         {
           appName: 'Calculator',
         },
@@ -93,19 +94,21 @@ describe('stop_mac_app plugin', () => {
       );
 
       expect(calls).toHaveLength(1);
-      expect(calls[0].command).toBe(
+      expect(calls[0].command).toEqual([
+        'sh',
+        '-c',
         'pkill -f "Calculator" || osascript -e \'tell application "Calculator" to quit\'',
-      );
+      ]);
     });
 
     it('should prioritize processId over appName', async () => {
       const calls: any[] = [];
-      const mockExecutor = async (command: string) => {
+      const mockExecutor = async (command: string[]) => {
         calls.push({ command });
-        return { stdout: '', stderr: '' };
+        return { success: true, output: '', process: {} as any };
       };
 
-      await stopMacApp.handler(
+      await stop_mac_appLogic(
         {
           appName: 'Calculator',
           processId: 1234,
@@ -114,15 +117,15 @@ describe('stop_mac_app plugin', () => {
       );
 
       expect(calls).toHaveLength(1);
-      expect(calls[0].command).toBe('kill 1234');
+      expect(calls[0].command).toEqual(['kill', '1234']);
     });
   });
 
   describe('Response Processing', () => {
     it('should return exact successful stop response by app name', async () => {
-      const mockExecutor = async () => ({ stdout: '', stderr: '' });
+      const mockExecutor = async () => ({ success: true, output: '', process: {} as any });
 
-      const result = await stopMacApp.handler(
+      const result = await stop_mac_appLogic(
         {
           appName: 'Calculator',
         },
@@ -140,9 +143,9 @@ describe('stop_mac_app plugin', () => {
     });
 
     it('should return exact successful stop response by process ID', async () => {
-      const mockExecutor = async () => ({ stdout: '', stderr: '' });
+      const mockExecutor = async () => ({ success: true, output: '', process: {} as any });
 
-      const result = await stopMacApp.handler(
+      const result = await stop_mac_appLogic(
         {
           processId: 1234,
         },
@@ -160,9 +163,9 @@ describe('stop_mac_app plugin', () => {
     });
 
     it('should return exact successful stop response with both parameters (processId takes precedence)', async () => {
-      const mockExecutor = async () => ({ stdout: '', stderr: '' });
+      const mockExecutor = async () => ({ success: true, output: '', process: {} as any });
 
-      const result = await stopMacApp.handler(
+      const result = await stop_mac_appLogic(
         {
           appName: 'Calculator',
           processId: 1234,
@@ -185,7 +188,7 @@ describe('stop_mac_app plugin', () => {
         throw new Error('Process not found');
       };
 
-      const result = await stopMacApp.handler(
+      const result = await stop_mac_appLogic(
         {
           processId: 9999,
         },

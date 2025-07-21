@@ -30,6 +30,23 @@ const preferXcodebuildSchema = z
     'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
   );
 
+export async function test_sim_name_wsLogic(
+  params: Record<string, unknown>,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  return handleTestLogic(
+    {
+      ...params,
+      configuration: params.configuration ?? 'Debug',
+      useLatestOS: params.useLatestOS ?? false,
+      preferXcodebuild: params.preferXcodebuild ?? false,
+      platform: XcodePlatform.iOSSimulator,
+      simulatorName: params.simulatorName,
+    },
+    executor,
+  );
+}
+
 export default {
   name: 'test_sim_name_ws',
   description:
@@ -44,21 +61,7 @@ export default {
     useLatestOS: useLatestOSSchema,
     preferXcodebuild: preferXcodebuildSchema,
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    return handleTestLogic(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? false,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-        platform: XcodePlatform.iOSSimulator,
-        simulatorName: params.simulatorName,
-      },
-      executor,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return test_sim_name_wsLogic(args, getDefaultCommandExecutor());
   },
 };

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import path from 'node:path';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { createTextResponse, validateRequiredParam } from '../../utils/index.js';
 import { createErrorResponse } from '../../utils/index.js';
 import { log } from '../../utils/index.js';
@@ -17,6 +17,77 @@ const parseAsLibrarySchema = z
   .optional()
   .describe('Add -parse-as-library flag for @main support (default: false)');
 
+interface SwiftPackageTestParams {
+  packagePath: unknown;
+  testProduct?: unknown;
+  filter?: unknown;
+  configuration?: unknown;
+  parallel?: unknown;
+  showCodecov?: unknown;
+  parseAsLibrary?: unknown;
+}
+
+export async function swift_package_testLogic(
+  params: SwiftPackageTestParams,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
+  if (!pkgValidation.isValid) return pkgValidation.errorResponse;
+
+  const resolvedPath = path.resolve(params.packagePath as string);
+  const swiftArgs = ['test', '--package-path', resolvedPath];
+
+  if (params.configuration && (params.configuration as string).toLowerCase() === 'release') {
+    swiftArgs.push('-c', 'release');
+  } else if (params.configuration && (params.configuration as string).toLowerCase() !== 'debug') {
+    return createTextResponse("Invalid configuration. Use 'debug' or 'release'.", true);
+  }
+
+  if (params.testProduct) {
+    swiftArgs.push('--test-product', params.testProduct as string);
+  }
+
+  if (params.filter) {
+    swiftArgs.push('--filter', params.filter as string);
+  }
+
+  if (params.parallel === false) {
+    swiftArgs.push('--no-parallel');
+  }
+
+  if (params.showCodecov) {
+    swiftArgs.push('--show-code-coverage');
+  }
+
+  if (params.parseAsLibrary) {
+    swiftArgs.push('-Xswiftc', '-parse-as-library');
+  }
+
+  log('info', `Running swift ${swiftArgs.join(' ')}`);
+  try {
+    const result = await executor(['swift', ...swiftArgs], 'Swift Package Test', true, undefined);
+    if (!result.success) {
+      const errorMessage = result.error || result.output || 'Unknown error';
+      return createErrorResponse('Swift package tests failed', errorMessage, 'TestError');
+    }
+
+    return {
+      content: [
+        { type: 'text', text: '✅ Swift package tests completed.' },
+        {
+          type: 'text',
+          text: '💡 Next: Execute your app with swift_package_run if tests passed',
+        },
+        { type: 'text', text: result.output },
+      ],
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    log('error', `Swift package test failed: ${message}`);
+    return createErrorResponse('Failed to execute swift test', message, 'SystemError');
+  }
+}
+
 export default {
   name: 'swift_package_test',
   description: 'Runs tests for a Swift Package with swift test',
@@ -29,71 +100,7 @@ export default {
     showCodecov: z.boolean().optional().describe('Show code coverage (default: false)'),
     parseAsLibrary: parseAsLibrarySchema,
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
-    if (!pkgValidation.isValid) return pkgValidation.errorResponse;
-
-    const resolvedPath = path.resolve(params.packagePath);
-    const swiftArgs = ['test', '--package-path', resolvedPath];
-
-    if (params.configuration && params.configuration.toLowerCase() === 'release') {
-      swiftArgs.push('-c', 'release');
-    } else if (params.configuration && params.configuration.toLowerCase() !== 'debug') {
-      return createTextResponse("Invalid configuration. Use 'debug' or 'release'.", true);
-    }
-
-    if (params.testProduct) {
-      swiftArgs.push('--test-product', params.testProduct);
-    }
-
-    if (params.filter) {
-      swiftArgs.push('--filter', params.filter);
-    }
-
-    if (params.parallel === false) {
-      swiftArgs.push('--no-parallel');
-    }
-
-    if (params.showCodecov) {
-      swiftArgs.push('--show-code-coverage');
-    }
-
-    if (params.parseAsLibrary) {
-      swiftArgs.push('-Xswiftc', '-parse-as-library');
-    }
-
-    log('info', `Running swift ${swiftArgs.join(' ')}`);
-    try {
-      const result = await executeCommand(
-        ['swift', ...swiftArgs],
-        executor,
-        'Swift Package Test',
-        true,
-        undefined,
-      );
-      if (!result.success) {
-        const errorMessage = result.error || result.output || 'Unknown error';
-        return createErrorResponse('Swift package tests failed', errorMessage, 'TestError');
-      }
-
-      return {
-        content: [
-          { type: 'text', text: '✅ Swift package tests completed.' },
-          {
-            type: 'text',
-            text: '💡 Next: Execute your app with swift_package_run if tests passed',
-          },
-          { type: 'text', text: result.output },
-        ],
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      log('error', `Swift package test failed: ${message}`);
-      return createErrorResponse('Failed to execute swift test', message, 'SystemError');
-    }
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return swift_package_testLogic(args, getDefaultCommandExecutor());
   },
 };

@@ -10,19 +10,95 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../utils/index.js';
 
-interface AxeHelpers {
+export interface AxeHelpers {
   getAxePath: () => string | null;
   getBundledAxeEnvironment: () => Record<string, string>;
 }
 
+interface GestureParams {
+  simulatorUuid: string;
+  preset: string;
+  screenWidth?: number;
+  screenHeight?: number;
+  duration?: number;
+  delta?: number;
+  preDelay?: number;
+  postDelay?: number;
+}
+
 const LOG_PREFIX = '[AXe]';
+
+export async function gestureLogic(
+  params: GestureParams,
+  executor: CommandExecutor,
+  axeHelpers?: AxeHelpers,
+): Promise<ToolResponse> {
+  const toolName = 'gesture';
+  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  const presetValidation = validateRequiredParam('preset', params.preset);
+  if (!presetValidation.isValid) return presetValidation.errorResponse;
+
+  const { simulatorUuid, preset, screenWidth, screenHeight, duration, delta, preDelay, postDelay } =
+    params;
+  const commandArgs = ['gesture', preset];
+
+  if (screenWidth !== undefined) {
+    commandArgs.push('--screen-width', String(screenWidth));
+  }
+  if (screenHeight !== undefined) {
+    commandArgs.push('--screen-height', String(screenHeight));
+  }
+  if (duration !== undefined) {
+    commandArgs.push('--duration', String(duration));
+  }
+  if (delta !== undefined) {
+    commandArgs.push('--delta', String(delta));
+  }
+  if (preDelay !== undefined) {
+    commandArgs.push('--pre-delay', String(preDelay));
+  }
+  if (postDelay !== undefined) {
+    commandArgs.push('--post-delay', String(postDelay));
+  }
+
+  log('info', `${LOG_PREFIX}/${toolName}: Starting gesture '${preset}' on ${simulatorUuid}`);
+
+  try {
+    await executeAxeCommand(commandArgs, simulatorUuid, 'gesture', executor, axeHelpers);
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+    return createTextResponse(`Gesture '${preset}' executed successfully.`);
+  } catch (error) {
+    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
+    if (error instanceof DependencyError) {
+      return createAxeNotAvailableResponse();
+    } else if (error instanceof AxeError) {
+      return createErrorResponse(
+        `Failed to execute gesture '${preset}': ${error.message}`,
+        error.axeOutput,
+        error.name,
+      );
+    } else if (error instanceof SystemError) {
+      return createErrorResponse(
+        `System error executing axe: ${error.message}`,
+        error.originalError?.stack,
+        error.name,
+      );
+    }
+    return createErrorResponse(
+      `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
+      undefined,
+      'UnexpectedError',
+    );
+  }
+}
 
 export default {
   name: 'gesture',
@@ -83,76 +159,10 @@ export default {
   },
   async handler(
     args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
+    executor?: CommandExecutor,
     axeHelpers?: AxeHelpers,
   ): Promise<ToolResponse> {
-    const params = args;
-    const toolName = 'gesture';
-    const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-    if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
-    const presetValidation = validateRequiredParam('preset', params.preset);
-    if (!presetValidation.isValid) return presetValidation.errorResponse;
-
-    const {
-      simulatorUuid,
-      preset,
-      screenWidth,
-      screenHeight,
-      duration,
-      delta,
-      preDelay,
-      postDelay,
-    } = params;
-    const commandArgs = ['gesture', preset];
-
-    if (screenWidth !== undefined) {
-      commandArgs.push('--screen-width', String(screenWidth));
-    }
-    if (screenHeight !== undefined) {
-      commandArgs.push('--screen-height', String(screenHeight));
-    }
-    if (duration !== undefined) {
-      commandArgs.push('--duration', String(duration));
-    }
-    if (delta !== undefined) {
-      commandArgs.push('--delta', String(delta));
-    }
-    if (preDelay !== undefined) {
-      commandArgs.push('--pre-delay', String(preDelay));
-    }
-    if (postDelay !== undefined) {
-      commandArgs.push('--post-delay', String(postDelay));
-    }
-
-    log('info', `${LOG_PREFIX}/${toolName}: Starting gesture '${preset}' on ${simulatorUuid}`);
-
-    try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'gesture', executor, axeHelpers);
-      log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-      return createTextResponse(`Gesture '${preset}' executed successfully.`);
-    } catch (error) {
-      log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
-      if (error instanceof DependencyError) {
-        return createAxeNotAvailableResponse();
-      } else if (error instanceof AxeError) {
-        return createErrorResponse(
-          `Failed to execute gesture '${preset}': ${error.message}`,
-          error.axeOutput,
-          error.name,
-        );
-      } else if (error instanceof SystemError) {
-        return createErrorResponse(
-          `System error executing axe: ${error.message}`,
-          error.originalError?.stack,
-          error.name,
-        );
-      }
-      return createErrorResponse(
-        `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-        undefined,
-        'UnexpectedError',
-      );
-    }
+    return gestureLogic(args as GestureParams, executor || getDefaultCommandExecutor(), axeHelpers);
   },
 };
 
@@ -185,9 +195,7 @@ async function executeAxeCommand(
           : getBundledAxeEnvironment()
         : undefined;
 
-    const result = executor
-      ? await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv)
-      : await executeCommand(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
+    const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 
     if (!result.success) {
       throw new AxeError(

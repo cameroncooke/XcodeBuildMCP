@@ -33,25 +33,29 @@ const XcodePlatform = {
 };
 
 /**
- * Internal logic for building macOS apps.
+ * Business logic for building macOS apps with dependency injection.
  */
-async function _handleMacOSBuildLogic(
+export async function build_mac_projLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
   buildUtilsDeps: BuildUtilsDependencies = defaultBuildUtilsDependencies,
 ): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
+  const processedParams = {
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  };
+
   return buildUtilsDeps.executeXcodeBuildCommand(
-    {
-      ...params,
-    },
+    processedParams,
     {
       platform: XcodePlatform.macOS,
       arch: params.arch,
       logPrefix: 'macOS Build',
     },
-    params.preferXcodebuild,
+    processedParams.preferXcodebuild,
     'build',
     executor,
   );
@@ -78,20 +82,7 @@ export default {
       .optional()
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    buildUtilsDeps?: BuildUtilsDependencies,
-  ): Promise<ToolResponse> {
-    const params = args;
-    return _handleMacOSBuildLogic(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      },
-      executor,
-      buildUtilsDeps,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return build_mac_projLogic(args, getDefaultCommandExecutor());
   },
 };

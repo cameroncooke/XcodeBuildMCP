@@ -2,41 +2,55 @@ import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
 import { log } from '../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
+import { validateRequiredParam } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 
 const XcodePlatform = {
   iOSSimulator: 'iOS Simulator',
 };
 
-// Helper function for simulator build logic
-async function _handleSimulatorBuildLogic(
+export async function build_sim_id_wsLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  log('info', `Building ${params.workspacePath || params.projectPath} for iOS Simulator`);
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
 
-  try {
-    const buildResult = await executeXcodeBuildCommand(
-      params,
-      {
-        platform: XcodePlatform.iOSSimulator,
-        simulatorName: params.simulatorName,
-        simulatorId: params.simulatorId,
-        useLatestOS: params.useLatestOS,
-        logPrefix: 'Build',
-      },
-      params.preferXcodebuild,
-      'build',
-      executor,
-    );
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
 
-    return buildResult;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    log('error', `Error building for iOS Simulator: ${errorMessage}`);
-    return createTextResponse(`Error building for iOS Simulator: ${errorMessage}`, true);
-  }
+  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
+  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse;
+
+  // Provide defaults
+  const processedParams = {
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true, // May be ignored by xcodebuild
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  };
+
+  log(
+    'info',
+    `Building ${processedParams.workspacePath || processedParams.projectPath} for iOS Simulator`,
+  );
+
+  const buildResult = await executeXcodeBuildCommand(
+    processedParams,
+    {
+      platform: XcodePlatform.iOSSimulator,
+      simulatorName: processedParams.simulatorName,
+      simulatorId: processedParams.simulatorId,
+      useLatestOS: processedParams.useLatestOS,
+      logPrefix: 'Build',
+    },
+    processedParams.preferXcodebuild,
+    'build',
+    executor,
+  );
+
+  return buildResult;
 }
 
 export default {
@@ -66,30 +80,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    // Validate required parameters
-    const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse;
-
-    const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-    if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse;
-
-    // Provide defaults
-    return _handleSimulatorBuildLogic(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true, // May be ignored by xcodebuild
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      },
-      executor,
-    );
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
+    return build_sim_id_wsLogic(args, getDefaultCommandExecutor());
   },
 };

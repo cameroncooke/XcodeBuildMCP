@@ -25,13 +25,21 @@ const defaultSyncExecutor: SyncExecutor = (command: string): string => {
 };
 
 /**
- * Internal logic for extracting bundle ID from app.
+ * Business logic for extracting bundle ID from app.
+ * Separated for testing and reusability.
  */
-async function _processExtraction(
-  validated: { appPath: string },
+export async function get_app_bundle_idLogic(
+  params: Record<string, unknown>,
   syncExecutor: SyncExecutor,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
+  const appPathValidation = validateRequiredParam('appPath', params.appPath);
+  if (!appPathValidation.isValid) {
+    return appPathValidation.errorResponse;
+  }
+
+  const validated = { appPath: params.appPath as string };
+
   if (!fileSystemExecutor.existsSync(validated.appPath)) {
     return {
       content: [
@@ -106,26 +114,18 @@ export default {
   name: 'get_app_bundle_id',
   description:
     "Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, iPadOS, watchOS, tvOS, visionOS). IMPORTANT: You MUST provide the appPath parameter. Example: get_app_bundle_id({ appPath: '/path/to/your/app.app' })",
-  schema: z.object({
+  schema: {
     appPath: z
       .string()
       .describe(
         'Path to the .app bundle to extract bundle ID from (full path to the .app directory)',
       ),
-  }),
+  },
   async handler(
     args: Record<string, unknown>,
     syncExecutor: SyncExecutor = defaultSyncExecutor,
     fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
   ): Promise<ToolResponse> {
-    const params = args;
-
-    const appPathValidation = validateRequiredParam('appPath', params.appPath);
-    if (!appPathValidation.isValid) {
-      return appPathValidation.errorResponse;
-    }
-
-    const validated = { appPath: params.appPath as string };
-    return await _processExtraction(validated, syncExecutor, fileSystemExecutor);
+    return get_app_bundle_idLogic(args, syncExecutor, fileSystemExecutor);
   },
 };

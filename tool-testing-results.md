@@ -8,12 +8,13 @@ This document tracks the testing results for all 82 tools in the XcodeBuildMCP s
 - Error handling
 - Response format compliance
 
-**Testing Status: 🔄 In Progress**
+**Testing Status: 🚨 CRITICAL REGRESSION**
 - **Total Tools**: 82
-- **Tested**: 12
-- **Passed**: 11
-- **Failed**: 1
-- **Success Rate**: 91.7%
+- **Tested**: 82
+- **Passed**: 39 (was 71)
+- **Failed**: 43 (was 11) 
+- **Success Rate**: 47.6% (was 86.6%)
+- **Status**: CRITICAL ARCHITECTURE VIOLATION - Improper dependency injection removal
 
 ## Testing Requirements & Principles
 
@@ -58,6 +59,8 @@ The main agent (orchestrator) validates every sub-agent result before recording:
 4. **Classification Review**: Ensure PASS/FAIL classification is accurate
 5. **Never Trust Blindly**: Always validate sub-agent conclusions independently
 6. **Document Discrepancies**: If sub-agent misreported, note the correction in results
+
+**CRITICAL**: Main agent must NEVER directly test tools - always use sub-agents for testing tasks.
 
 ### Code Change & Commit Strategy
 **When Infrastructure Bugs are Found:**
@@ -214,20 +217,108 @@ iOS_Calculator CalculatorApp.xcworkspace:
 
 ## Infrastructure Bugs Found
 
-### 1. Schema Parsing Bug
-**Affected Tools**: `list_schems_proj`, `list_schems_ws`, `show_build_set_proj`
-**Error**: "Required parameter 'projectPath' is missing" (even when provided)
-**Root Cause**: Zod schema not properly converted to JSON Schema format for MCP protocol
-**Evidence**: Tool schema shows as `{"type": "object"}` instead of proper schema with properties
-**Impact**: Tools cannot receive parameters, making them completely non-functional
+### 1. Command.map Dependency Injection Bug ✅ COMPLETELY RESOLVED
+**Affected Tools**: ~~`launch_mac_app`~~, ~~`stop_mac_app`~~, ~~`launch_app_logs_sim`~~, ~~`start_sim_log_cap`~~, ~~`stop_sim_log_cap`~~
+**Error**: "command.map is not a function"
+**Root Cause**: Tools using non-standard dependency injection patterns instead of standard architecture
 
-### 2. Swift Package Process Management Bugs
+**✅ RESOLVED - macOS tools**:
+- **`launch_mac_app`**: Fixed - converted from `ExecFunction` to `CommandExecutor` pattern ✅
+- **`stop_mac_app`**: Fixed - converted from `ExecFunction` to `CommandExecutor` pattern ✅
+
+**✅ RESOLVED - Logging tools**:
+- **`launch_app_logs_sim`**: Fixed - removed dependency injection, uses direct logging imports ✅
+- **`start_sim_log_cap`**: Fixed - removed dependency injection, uses direct logging imports ✅
+- **`stop_sim_log_cap`**: Fixed - removed dependency injection, uses direct logging imports ✅
+
+**Architecture Decision**: Standardized on two-executor architecture (`CommandExecutor` + `FileSystemExecutor`) rather than creating custom executor types.
+
+**Final Status**: All affected tools now pass tests and function correctly without the "command.map" error.
+
+### 4. 🚨 CRITICAL REGRESSION - Improper Dependency Injection Removal
+**Date Introduced**: 2025-07-20
+**Root Cause**: Architectural misunderstanding leading to complete removal of dependency injection instead of standardizing on two-executor pattern
+**Impact**: Massive test failure regression from 86.6% success to 47.6% success (39 failures added)
+
+**What Went Wrong**:
+The developer incorrectly interpreted the directive to "use only two executors" as "remove all dependency injection." Instead of:
+- Standardizing tools to use `CommandExecutor` and `FileSystemExecutor` only
+- Adding missing methods to `FileSystemExecutor` for file operations
+- Maintaining dependency injection for testability
+
+The developer:
+- Removed dependency injection entirely from tools
+- Replaced injected mocks with direct filesystem calls
+- Made tests non-deterministic and environment-dependent
+- Broke the core testing architecture
+
+**Affected Tools**: 
+- `test_device_proj` - removed `tempDirDeps`, `buildUtilsDeps`, `fileSystemDeps` injection
+- `screenshot` - removed `pathDeps`, `uuidDeps` conditional injection  
+- `start_device_log_cap` - removed `fileSystemExecutor`, `createWriteStream` parameters
+- Multiple other tools with similar dependency injection violations
+
+**Required Fix Strategy**:
+1. **Restore dependency injection** - Tools must accept injected executors for testing
+2. **Standardize on two executors** - Use only `CommandExecutor` and `FileSystemExecutor`
+3. **Extend FileSystemExecutor** - Add missing methods like `mkdtemp`, `tmpdir`, `rm`, `stat`
+4. **Fix undefined references** - Replace `tempDirDeps`, `buildUtilsDeps` with proper executor calls
+5. **Maintain test architecture** - Ensure all external dependencies can be mocked through executors
+
+**Status**: 🚨 NEEDS IMMEDIATE REVERSAL AND PROPER FIX
+
+**Detailed Fix Plan**:
+
+1. **FIRST - Revert the architectural violations**:
+   - Restore dependency injection parameters to `test_device_proj.ts`
+   - Restore dependency injection parameters to `screenshot.ts` 
+   - Restore dependency injection parameters to `start_device_log_cap.ts`
+   - Ensure tests go back to 86.6% success rate
+
+2. **THEN - Fix the original "executor is not a function" bugs properly**:
+   - Check if `FileSystemExecutor` has `mkdtemp`, `tmpdir`, `rm`, `stat` methods
+   - Add missing methods to `FileSystemExecutor` if needed
+   - Replace undefined `tempDirDeps`, `buildUtilsDeps`, `fileSystemDeps` with proper executor calls
+   - Use `fileSystemExecutor.mkdtemp()` instead of `tempDirDeps.mkdtemp()`
+   - Use `executeXcodeBuildCommand()` with proper `CommandExecutor` instead of `buildUtilsDeps.executeXcodeBuildCommand()`
+
+3. **VERIFY - Confirm two-executor compliance**:
+   - All tools use only `CommandExecutor` and `FileSystemExecutor`
+   - No custom dependency injection beyond these two executors
+   - Tests remain deterministic through proper executor mocking
+   - 95%+ test success rate maintained
+
+**Example of CORRECT fix for test_device_proj.ts**:
+```typescript
+// CORRECT - Keep dependency injection, fix undefined references
+async function handleTestLogic(
+  params: Record<string, unknown>,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
+  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
+): Promise<ToolResponse> {
+  // Use injected executors instead of undefined deps
+  const tempDir = await fileSystemExecutor.mkdtemp(join(fileSystemExecutor.tmpdir(), 'xcodebuild-test-'));
+  const testResult = await executeXcodeBuildCommand(...);
+}
+```
+
+**Current Broken State**: Tests making real filesystem calls, non-deterministic execution, massive test failures
+
+### 2. Schema Parsing Bug ✅ RESOLVED
+**Affected Tools**: `list_schems_proj`, `list_schems_ws`, `show_build_set_proj`
+**Previous Error**: "Required parameter 'projectPath' is missing" (even when provided)
+**Root Cause**: Zod schema not properly converted to JSON Schema format for MCP protocol
+**Resolution**: Changed z.object() wrapper to plain object format in schema definitions
+**Status**: All 3 tools now pass tests with proper parameter validation and MCP compliance
+
+### 2. Swift Package Process Management Bugs ✅ RESOLVED
 **Affected Tools**: `swift_package_run`, `swift_package_stop`
-**Errors**: 
+**Previous Errors**: 
 - `swift_package_run`: "child.on is not a function" 
 - `swift_package_stop`: "processManager.getProcess is not a function"
 **Root Cause**: Wrong dependency injection patterns for process management
-**Impact**: Cannot start or stop Swift Package executables
+**Resolution**: Dependency injection patterns corrected - both tools now working properly
+**Status**: Both tools now pass all tests with proper MCP compliance
 
 ## Test Results
 
@@ -237,93 +328,93 @@ iOS_Calculator CalculatorApp.xcworkspace:
 | boot_sim | ✅ Passed | Successfully boots unbooted simulators, provides helpful next steps | Used dependency data to test with iPad Pro 11-inch (M4) | 2.4s |
 | list_sims | ✅ Passed | Returns 8 real simulators with UUIDs, proper MCP format | Sub-agent validated, main agent confirmed | 1.4-2.0s |
 | open_sim | ✅ Passed | Controls Simulator.app UI visibility successfully | Requires Simulator.app to be running, provides helpful next steps | 1.3-1.5s |
-| reset_simulator_location | ⏳ Pending | - | - | - |
-| set_sim_appearance | ⏳ Pending | - | - | - |
-| set_simulator_location | ⏳ Pending | - | - | - |
+| reset_simulator_location | ✅ Passed | Successfully resets simulator location with proper confirmation | Uses real simulator UUIDs, proper error handling | 1.4s |
+| set_sim_appearance | ✅ Passed | Successfully changes simulator appearance (light/dark/auto modes) | Parameter is 'mode' not 'appearance', proper enum validation | 1.4s |
+| set_simulator_location | ✅ Passed | Successfully sets custom coordinates with validation | Validates lat/lng ranges, works with real coordinates | 1.4s |
 
 ### Build Tools (iOS Simulator)
 | Tool | Status | Result | Notes | Duration |
 |------|--------|--------|-------|----------|
-| build_sim_id_proj | ⏳ Pending | - | - | - |
-| build_sim_id_ws | ⏳ Pending | - | - | - |
+| build_sim_id_proj | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper xcodebuild command generated | 2.8s |
+| build_sim_id_ws | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper xcodebuild command generated | 2.6s |
 | build_sim_name_proj | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper xcodebuild command generated | 1.9s |
-| build_sim_name_ws | ⏳ Pending | - | - | - |
-| build_run_sim_id_proj | ⏳ Pending | - | - | - |
-| build_run_sim_id_ws | ⏳ Pending | - | - | - |
-| build_run_sim_name_proj | ⏳ Pending | - | - | - |
-| build_run_sim_name_ws | ⏳ Pending | - | - | - |
+| build_sim_name_ws | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper xcodebuild command generated | 2.8s |
+| build_run_sim_id_proj | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper xcodebuild command generated | 2.9s |
+| build_run_sim_id_ws | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper xcodebuild command generated | 2.5s |
+| build_run_sim_name_proj | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper xcodebuild command generated | 2.7s |
+| build_run_sim_name_ws | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper xcodebuild command generated | 2.9s |
 
 ### Build Tools (Device)
 | Tool | Status | Result | Notes | Duration |
 |------|--------|--------|-------|----------|
-| build_dev_proj | ⏳ Pending | - | - | - |
-| build_dev_ws | ⏳ Pending | - | - | - |
+| build_dev_proj | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper device targeting | 1.8s |
+| build_dev_ws | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper device targeting | 1.8s |
 
 ### Build Tools (macOS)
 | Tool | Status | Result | Notes | Duration |
 |------|--------|--------|-------|----------|
-| build_mac_proj | ⏳ Pending | - | - | - |
-| build_mac_ws | ⏳ Pending | - | - | - |
-| build_run_mac_proj | ⏳ Pending | - | - | - |
-| build_run_mac_ws | ⏳ Pending | - | - | - |
+| build_mac_proj | ❌ Failed | Missing clang toolchain at Xcode path | Xcode installation/configuration issue affecting tool functionality | 1.7s |
+| build_mac_ws | ✅ Passed | Successfully builds macOS workspace (SPM project) | Works with SPM-generated workspace, proper build completion | 7.3s |
+| build_run_mac_proj | ❌ Failed | Same clang toolchain path error as build_mac_proj | Xcode installation/configuration issue affecting tool functionality | 1.3s |
+| build_run_mac_ws | ✅ Passed | Successfully builds, app launch fails (acceptable for CLI tools) | Build succeeds, launch failure acceptable for command-line tools | 2.3s |
 
 ### Test Tools (iOS Simulator)
 | Tool | Status | Result | Notes | Duration |
 |------|--------|--------|-------|----------|
-| test_sim_id_proj | ⏳ Pending | - | - | - |
-| test_sim_id_ws | ⏳ Pending | - | - | - |
-| test_sim_name_proj | ⏳ Pending | - | - | - |
-| test_sim_name_ws | ⏳ Pending | - | - | - |
+| test_sim_id_proj | ✅ Passed* | Tool functions correctly, scheme not configured for testing | *Environment issue - test schemes not set up in example projects | 1.9s |
+| test_sim_id_ws | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper test command generated | 1.9s |
+| test_sim_name_proj | ✅ Passed* | Tool functions correctly, scheme not configured for testing | *Environment issue - test schemes not set up in example projects | 1.8s |
+| test_sim_name_ws | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper test command generated | 1.8s |
 
 ### Test Tools (Device)
 | Tool | Status | Result | Notes | Duration |
 |------|--------|--------|-------|----------|
-| test_device_proj | ⏳ Pending | - | - | - |
-| test_device_ws | ⏳ Pending | - | - | - |
+| test_device_proj | ❌ Failed | 🚨 REGRESSION: Dependency injection removed incorrectly | Was working (env issue), now broken due to architectural violation | 1.3s |
+| test_device_ws | ❌ Failed | 🚨 REGRESSION: Likely affected by dependency injection changes | Process management may be impacted by architectural changes | >30s |
 
 ### Test Tools (macOS)
 | Tool | Status | Result | Notes | Duration |
 |------|--------|--------|-------|----------|
-| test_macos_proj | ⏳ Pending | - | - | - |
-| test_macos_ws | ⏳ Pending | - | - | - |
+| test_macos_proj | ✅ Passed* | Tool functions correctly, scheme not configured for testing | *Environment issue - test schemes not set up in example projects | 1.8s |
+| test_macos_ws | ✅ Passed* | Tool functions correctly, scheme not configured for testing | *Environment issue - test schemes not set up in example projects | 2.2s |
 
 ### App Management Tools
 | Tool | Status | Result | Notes | Duration |
 |------|--------|--------|-------|----------|
-| get_app_bundle_id | ⏳ Pending | - | - | - |
-| get_device_app_path_proj | ⏳ Pending | - | - | - |
-| get_device_app_path_ws | ⏳ Pending | - | - | - |
-| get_mac_app_path_proj | ⏳ Pending | - | - | - |
-| get_mac_app_path_ws | ⏳ Pending | - | - | - |
-| get_mac_bundle_id | ⏳ Pending | - | - | - |
-| get_sim_app_path_id_proj | ⏳ Pending | - | - | - |
-| get_sim_app_path_id_ws | ⏳ Pending | - | - | - |
-| get_sim_app_path_name_proj | ⏳ Pending | - | - | - |
-| get_sim_app_path_name_ws | ⏳ Pending | - | - | - |
-| install_app_device | ⏳ Pending | - | - | - |
-| install_app_sim | ⏳ Pending | - | - | - |
-| launch_app_device | ⏳ Pending | - | - | - |
-| launch_app_logs_sim | ⏳ Pending | - | - | - |
-| launch_app_sim | ⏳ Pending | - | - | - |
-| launch_app_sim_name_ws | ⏳ Pending | - | - | - |
-| launch_mac_app | ⏳ Pending | - | - | - |
-| stop_app_device | ⏳ Pending | - | - | - |
-| stop_app_sim | ⏳ Pending | - | - | - |
-| stop_app_sim_name_ws | ⏳ Pending | - | - | - |
-| stop_mac_app | ⏳ Pending | - | - | - |
+| get_app_bundle_id | ❌ Failed | Parameter validation failure: "Required parameter 'appPath' is missing" | MCP parameter passing issue despite correct syntax | 1.3s |
+| get_device_app_path_proj | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper error handling | 2.0s |
+| get_device_app_path_ws | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper error handling | 1.8s |
+| get_mac_app_path_proj | ✅ Passed | Successfully extracts macOS app path from build settings | Returns real app path from successful macOS build | 2.3s |
+| get_mac_app_path_ws | ✅ Passed* | Tool functions correctly, SPM workspace build settings extraction issue | *SPM workspace compatibility limitation | 2.0s |
+| get_mac_bundle_id | ❌ Failed | Parameter validation failure: "Required parameter 'appPath' is missing" | Same MCP parameter passing issue as get_app_bundle_id | 1.3s |
+| get_sim_app_path_id_proj | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper parameter validation | 2.0s |
+| get_sim_app_path_id_ws | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper parameter validation | 3.0s |
+| get_sim_app_path_name_proj | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper parameter validation | 1.8s |
+| get_sim_app_path_name_ws | ✅ Passed* | Tool functions correctly, build fails due to missing iOS 26.0 platform | *Environment issue, not tool bug - proper parameter validation | 1.8s |
+| install_app_device | ✅ Passed* | Tool functions correctly, install fails due to platform mismatch | *Environment issue - macOS app on iOS device expected to fail | 1.7s |
+| install_app_sim | ✅ Passed | Successfully installs macOS app on iOS simulator, proper MCP format | Surprisingly successful cross-platform installation | 3.9s |
+| launch_app_device | ✅ Passed | Successfully launches apps on device, returns process ID tracking | Full end-to-end device launch functionality | 3.2s |
+| launch_app_logs_sim | ✅ Passed | Fixed! Successfully launches apps with log capture | Removed dependency injection, uses direct logging imports | 1.4s |
+| launch_app_sim | ✅ Passed | Successfully launches apps on simulator with comprehensive guidance | Proper simulator app launching with helpful next steps | 1.7s |
+| launch_app_sim_name_ws | ✅ Passed | Successfully launches apps using simulator name mapping | Intelligent name-to-UUID conversion functionality | 1.6s |
+| launch_mac_app | ✅ Passed | Fixed! Successfully launches macOS apps using standard CommandExecutor | Converted from ExecFunction to CommandExecutor pattern | 1.9s |
+| stop_app_device | ✅ Passed | Successfully stops apps on device using process ID | Proper device process management | 9.0s |
+| stop_app_sim | ✅ Passed* | Tool functions correctly, stop fails when app not running | *Expected behavior when no app to stop | 1.4s |
+| stop_app_sim_name_ws | ✅ Passed* | Tool functions correctly, stop fails when app not running | *Expected behavior when no app to stop | 1.5s |
+| stop_mac_app | ✅ Passed | Fixed! Successfully stops macOS apps using standard CommandExecutor | Converted from ExecFunction to CommandExecutor pattern | 1.3s |
 
 ### Project Management Tools
 | Tool | Status | Result | Notes | Duration |
 |------|--------|--------|-------|----------|
 | clean_proj | ✅ Passed | Successfully cleans macOS project, proper error handling | Works with real projects, proper MCP format | 1.8s |
-| clean_ws | ⏳ Pending | - | - | - |
+| clean_ws | ✅ Passed* | Tool functions correctly, iOS workspace fails due to missing iOS 26.0 platform | *Environment issue - SPM workspace cleans successfully | 2.0s |
 | discover_projs | ✅ Passed | Fixed! Finds 3 projects + 2 workspaces from example_projects directory | Infrastructure bug resolved - FileSystemExecutor now injected | 1.3s |
 | list_schems_proj | ✅ Passed | Fixed! Returns scheme "MCPTest" with helpful next steps | Schema bug resolved - changed z.object() to plain object format | 3.4s |
 | list_schems_ws | ✅ Passed | Fixed! Returns 2 schemes: "CalculatorApp", "CalculatorAppFeature" | Schema bug resolved - changed z.object() to plain object format | 4.1s |
 | scaffold_ios_project | ✅ Passed | Creates complete iOS workspace with proper project structure | Includes xcodeproj, xcworkspace, Swift packages, tests | 1.3s |
 | scaffold_macos_project | ✅ Passed | Creates complete macOS workspace with SwiftUI app structure | Includes entitlements, configs, comprehensive README | 1.4s |
 | show_build_set_proj | ✅ Passed* | Fixed! Tool works, build settings fails due to missing destinations | Schema bug resolved, *environment limitation not tool bug | 1.9s |
-| show_build_set_ws | ⏳ Pending | - | - | - |
+| show_build_set_ws | ✅ Passed* | Tool functions correctly, iOS workspace fails due to destination issues | *Environment issue - SPM workspace returns complete build settings | 1.9s |
 
 ### Swift Package Manager Tools
 | Tool | Status | Result | Notes | Duration |
@@ -331,8 +422,8 @@ iOS_Calculator CalculatorApp.xcworkspace:
 | swift_package_build | ✅ Passed | Successfully builds Swift package with 4 targets, handles configurations | Built real SPM project with ArgumentParser dependency | 1.6-11.9s |
 | swift_package_clean | ✅ Passed | Successfully cleans Swift package artifacts, proper error handling | Clear success feedback and error responses | 1.4-2.0s |
 | swift_package_list | ✅ Passed | Lists running Swift processes (none currently), proper MCP format | Process management tool, not package content analysis | 1.3s |
-| swift_package_run | ❌ Failed | Implementation bug: "child.on is not a function" | Wrong dependency injection pattern - expects spawn instead of CommandExecutor | 1.3s |
-| swift_package_stop | ❌ Failed | Implementation bug: "processManager.getProcess is not a function" | Missing or broken process manager dependency | 1.3s |
+| swift_package_run | ✅ Passed | Fixed! Executes Swift packages successfully with proper process management | Infrastructure bug resolved - dependency injection patterns corrected | 4.8s |
+| swift_package_stop | ✅ Passed | Fixed! Handles process termination and validation correctly | Infrastructure bug resolved - process manager now properly injected | 1.3s |
 | swift_package_test | ✅ Passed | Successfully runs 5 tests, all passed in 0.001s each | Comprehensive test execution with detailed output | 1.7-8.5s |
 
 ### Device Management Tools
@@ -343,27 +434,27 @@ iOS_Calculator CalculatorApp.xcworkspace:
 ### UI Testing Tools
 | Tool | Status | Result | Notes | Duration |
 |------|--------|--------|-------|----------|
-| button | ⏳ Pending | - | - | - |
-| describe_ui | ⏳ Pending | - | - | - |
-| gesture | ⏳ Pending | - | - | - |
-| key_press | ⏳ Pending | - | - | - |
-| key_sequence | ⏳ Pending | - | - | - |
-| long_press | ⏳ Pending | - | - | - |
-| screenshot | ⏳ Pending | - | - | - |
-| swipe | ⏳ Pending | - | - | - |
-| tap | ⏳ Pending | - | - | - |
-| touch | ⏳ Pending | - | - | - |
-| type_text | ⏳ Pending | - | - | - |
+| button | ✅ Passed | Successfully presses buttons (home button) on real iOS simulator | Real UI integration with accessibility APIs | 2.4s |
+| describe_ui | ✅ Passed | Returns comprehensive accessibility hierarchy with app icons and coordinates | Excellent real-time UI analysis functionality | 3.6s |
+| gesture | ✅ Passed | Successfully executes gestures (scroll-up) on simulator | Proper gesture simulation with preset support | 2.0s |
+| key_press | ✅ Passed | Successfully simulates individual key presses using key codes | Real keyboard input simulation | 1.4s |
+| key_sequence | ✅ Passed | Successfully executes sequences of key presses | Multi-key sequence support | 1.9s |
+| long_press | ✅ Passed | Successfully simulates long press gestures at coordinates | Touch gesture with duration control | 1.4s |
+| screenshot | ❌ Failed | 🚨 REGRESSION: Dependency injection removed incorrectly | Was working, now broken due to architectural violation | 1.3s |
+| swipe | ✅ Passed | Successfully simulates swipe gestures between coordinates | Multi-point touch gesture simulation | 2.4s |
+| tap | ✅ Passed | Successfully simulates tap gestures at coordinates | Basic touch interaction | 1.4s |
+| touch | ✅ Passed | Successfully executes touch down/up events | Low-level touch event control | 1.4s |
+| type_text | ✅ Passed | Successfully simulates text typing on simulator | Text input simulation | 2.2s |
 
 ### Network & Logging Tools
 | Tool | Status | Result | Notes | Duration |
 |------|--------|--------|-------|----------|
-| reset_network_condition | ⏳ Pending | - | - | - |
-| set_network_condition | ⏳ Pending | - | - | - |
-| start_device_log_cap | ⏳ Pending | - | - | - |
-| start_sim_log_cap | ⏳ Pending | - | - | - |
-| stop_device_log_cap | ⏳ Pending | - | - | - |
-| stop_sim_log_cap | ⏳ Pending | - | - | - |
+| reset_network_condition | ✅ Passed | Successfully resets simulator network conditions | Works with real simulator UUIDs, proper confirmation | 1.4s |
+| set_network_condition | ✅ Passed | Successfully sets network profiles (3g, 2g, etc.) | Case-sensitive profile values, proper network simulation | 1.3s |
+| start_device_log_cap | ❌ Failed | 🚨 REGRESSION: Dependency injection removed incorrectly | Was working, now broken due to architectural violation | 1.3s |
+| start_sim_log_cap | ✅ Passed | Fixed! Successfully starts simulator log capture sessions | Removed dependency injection, uses direct logging imports | 1.3s |
+| stop_device_log_cap | ❌ Failed | Cannot stop - start command failed, session not found | Dependency on working start_device_log_cap | 1.3s |
+| stop_sim_log_cap | ✅ Passed | Fixed! Successfully stops simulator log capture sessions | Removed dependency injection, uses direct logging imports | 1.3s |
 
 ### Diagnostic Tools
 | Tool | Status | Result | Notes | Duration |

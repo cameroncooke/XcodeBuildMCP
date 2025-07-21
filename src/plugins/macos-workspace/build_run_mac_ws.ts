@@ -8,7 +8,6 @@ import { z } from 'zod';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { log } from '../../utils/index.js';
-import { executeCommand } from '../../utils/index.js';
 import { createTextResponse } from '../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
@@ -80,13 +79,7 @@ async function _getAppPathFromBuildSettings(
     }
 
     // Execute the command directly
-    const result = await executeCommand(
-      command,
-      executor,
-      'Get Build Settings for Launch',
-      true,
-      undefined,
-    );
+    const result = await executor(command, 'Get Build Settings for Launch', true, undefined);
 
     if (!result.success) {
       return {
@@ -113,16 +106,14 @@ async function _getAppPathFromBuildSettings(
 }
 
 /**
- * Internal logic for building and running macOS apps.
+ * Exported business logic for building and running macOS apps.
  */
-async function _handleMacOSBuildAndRunLogic(
+export async function build_run_mac_wsLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
   execFunction?: (command: string) => Promise<{ stdout: string; stderr: string }>,
 ): Promise<ToolResponse> {
   log('info', 'Handling macOS build & run logic...');
-  const _warningMessages = [];
-  const _warningRegex = /\[warning\]: (.*)/g;
 
   try {
     // First, build the app
@@ -215,22 +206,14 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    buildUtilsDeps?: {
-      execFunction?: (command: string) => Promise<{ stdout: string; stderr: string }>;
-    },
-  ): Promise<ToolResponse> {
-    const params = args;
-    return _handleMacOSBuildAndRunLogic(
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return build_run_mac_wsLogic(
       {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
+        ...args,
+        configuration: args.configuration ?? 'Debug',
+        preferXcodebuild: args.preferXcodebuild ?? false,
       },
-      executor,
-      buildUtilsDeps?.execFunction,
+      getDefaultCommandExecutor(),
     );
   },
 };

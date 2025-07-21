@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 
-import tapPlugin, { AxeHelpers } from '../tap.ts';
+import tapPlugin, { AxeHelpers, tapLogic } from '../tap.ts';
 
 // Helper function to create mock axe helpers
 function createMockAxeHelpers(): AxeHelpers {
@@ -163,7 +163,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      await tapPlugin.handler(
+      await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -209,7 +209,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      await tapPlugin.handler(
+      await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 150,
@@ -258,7 +258,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      await tapPlugin.handler(
+      await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 250,
@@ -307,7 +307,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      await tapPlugin.handler(
+      await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 350,
@@ -351,7 +351,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -380,7 +380,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '87654321-4321-4321-4321-210987654321',
           x: 150,
@@ -409,7 +409,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 250,
@@ -440,7 +440,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 0,
@@ -469,7 +469,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 1920,
@@ -496,11 +496,11 @@ describe('Tap Plugin', () => {
       const mockExecutor = createMockExecutor({ success: true, output: '' });
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           x: 100,
           y: 200,
-        },
+        } as any,
         mockExecutor,
         mockAxeHelpers,
       );
@@ -520,11 +520,11 @@ describe('Tap Plugin', () => {
       const mockExecutor = createMockExecutor({ success: true, output: '' });
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           y: 200,
-        },
+        } as any,
         mockExecutor,
         mockAxeHelpers,
       );
@@ -544,11 +544,11 @@ describe('Tap Plugin', () => {
       const mockExecutor = createMockExecutor({ success: true, output: '' });
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
-        },
+        } as any,
         mockExecutor,
         mockAxeHelpers,
       );
@@ -573,7 +573,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -605,7 +605,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -635,7 +635,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -663,7 +663,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -691,7 +691,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -719,7 +719,7 @@ describe('Tap Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
-      const result = await tapPlugin.handler(
+      const result = await tapLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,

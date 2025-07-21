@@ -1,17 +1,13 @@
 /**
- * Pure dependency injection test for stop_mac_app plugin (re-export from macos-shared)
- *
- * Tests plugin structure and macOS app stopping functionality including parameter validation,
- * command generation, and response formatting.
- *
- * Uses manual call tracking instead of vitest mocking.
- * NO VITEST MOCKING ALLOWED - Only manual stubs
+ * Tests for stop_mac_app plugin (re-exported from macos-shared)
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
  */
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 
-import stopMacApp from '../stop_mac_app.ts';
+import stopMacApp, { stop_mac_appLogic } from '../../macos-shared/stop_mac_app.js';
 
 describe('stop_mac_app plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -45,7 +41,7 @@ describe('stop_mac_app plugin', () => {
 
   describe('Input Validation', () => {
     it('should return exact validation error for missing parameters', async () => {
-      const result = await stopMacApp.handler({});
+      const result = await stop_mac_appLogic({});
 
       expect(result).toEqual({
         content: [
@@ -62,12 +58,17 @@ describe('stop_mac_app plugin', () => {
   describe('Command Generation', () => {
     it('should generate correct command for process ID', async () => {
       const calls: any[] = [];
-      const mockExecutor = async (command: string) => {
-        calls.push({ command });
-        return { stdout: '', stderr: '' };
+      const mockExecutor = async (command: string[], description?: string) => {
+        calls.push({ command, description });
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: { pid: 12345 },
+        };
       };
 
-      await stopMacApp.handler(
+      await stop_mac_appLogic(
         {
           processId: 1234,
         },
@@ -75,17 +76,23 @@ describe('stop_mac_app plugin', () => {
       );
 
       expect(calls).toHaveLength(1);
-      expect(calls[0].command).toBe('kill 1234');
+      expect(calls[0].command).toEqual(['kill', '1234']);
+      expect(calls[0].description).toBe('Stop macOS App');
     });
 
     it('should generate correct command for app name', async () => {
       const calls: any[] = [];
-      const mockExecutor = async (command: string) => {
-        calls.push({ command });
-        return { stdout: '', stderr: '' };
+      const mockExecutor = async (command: string[], description?: string) => {
+        calls.push({ command, description });
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: { pid: 12345 },
+        };
       };
 
-      await stopMacApp.handler(
+      await stop_mac_appLogic(
         {
           appName: 'Calculator',
         },
@@ -93,19 +100,27 @@ describe('stop_mac_app plugin', () => {
       );
 
       expect(calls).toHaveLength(1);
-      expect(calls[0].command).toBe(
+      expect(calls[0].command).toEqual([
+        'sh',
+        '-c',
         'pkill -f "Calculator" || osascript -e \'tell application "Calculator" to quit\'',
-      );
+      ]);
+      expect(calls[0].description).toBe('Stop macOS App');
     });
 
     it('should prioritize processId over appName', async () => {
       const calls: any[] = [];
-      const mockExecutor = async (command: string) => {
-        calls.push({ command });
-        return { stdout: '', stderr: '' };
+      const mockExecutor = async (command: string[], description?: string) => {
+        calls.push({ command, description });
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: { pid: 12345 },
+        };
       };
 
-      await stopMacApp.handler(
+      await stop_mac_appLogic(
         {
           appName: 'Calculator',
           processId: 1234,
@@ -114,15 +129,21 @@ describe('stop_mac_app plugin', () => {
       );
 
       expect(calls).toHaveLength(1);
-      expect(calls[0].command).toBe('kill 1234');
+      expect(calls[0].command).toEqual(['kill', '1234']);
+      expect(calls[0].description).toBe('Stop macOS App');
     });
   });
 
   describe('Response Processing', () => {
     it('should return exact successful stop response by app name', async () => {
-      const mockExecutor = async () => ({ stdout: '', stderr: '' });
+      const mockExecutor = async () => ({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
-      const result = await stopMacApp.handler(
+      const result = await stop_mac_appLogic(
         {
           appName: 'Calculator',
         },
@@ -140,9 +161,14 @@ describe('stop_mac_app plugin', () => {
     });
 
     it('should return exact successful stop response by process ID', async () => {
-      const mockExecutor = async () => ({ stdout: '', stderr: '' });
+      const mockExecutor = async () => ({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
-      const result = await stopMacApp.handler(
+      const result = await stop_mac_appLogic(
         {
           processId: 1234,
         },
@@ -160,9 +186,14 @@ describe('stop_mac_app plugin', () => {
     });
 
     it('should return exact successful stop response with both parameters (processId takes precedence)', async () => {
-      const mockExecutor = async () => ({ stdout: '', stderr: '' });
+      const mockExecutor = async () => ({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
 
-      const result = await stopMacApp.handler(
+      const result = await stop_mac_appLogic(
         {
           appName: 'Calculator',
           processId: 1234,
@@ -185,7 +216,7 @@ describe('stop_mac_app plugin', () => {
         throw new Error('Process not found');
       };
 
-      const result = await stopMacApp.handler(
+      const result = await stop_mac_appLogic(
         {
           processId: 9999,
         },

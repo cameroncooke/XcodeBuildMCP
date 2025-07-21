@@ -1,7 +1,13 @@
+/**
+ * Tests for stop_app_sim plugin (re-exported from simulator-shared)
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
+
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, CommandExecutor } from '../../../utils/command.js';
-import plugin from '../stop_app_sim.ts';
+import plugin, { stop_app_simLogic } from '../../simulator-shared/stop_app_sim.js';
 
 describe('stop_app_sim plugin', () => {
   let mockExecutor: CommandExecutor;
@@ -60,7 +66,7 @@ describe('stop_app_sim plugin', () => {
         output: '',
       });
 
-      const result = await plugin.handler(
+      const result = await stop_app_simLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.App',
@@ -84,7 +90,7 @@ describe('stop_app_sim plugin', () => {
         error: 'Simulator not found',
       });
 
-      const result = await plugin.handler(
+      const result = await stop_app_simLogic(
         {
           simulatorUuid: 'invalid-uuid',
           bundleId: 'com.example.App',
@@ -106,7 +112,7 @@ describe('stop_app_sim plugin', () => {
     it('should handle missing simulatorUuid', async () => {
       mockExecutor = createMockExecutor({ success: true });
 
-      const result = await plugin.handler(
+      const result = await stop_app_simLogic(
         {
           simulatorUuid: undefined,
           bundleId: 'com.example.App',
@@ -128,7 +134,7 @@ describe('stop_app_sim plugin', () => {
     it('should handle missing bundleId', async () => {
       mockExecutor = createMockExecutor({ success: true });
 
-      const result = await plugin.handler(
+      const result = await stop_app_simLogic(
         { simulatorUuid: 'test-uuid', bundleId: undefined },
         mockExecutor,
       );
@@ -149,7 +155,7 @@ describe('stop_app_sim plugin', () => {
         throw new Error('Unexpected error');
       };
 
-      const result = await plugin.handler(
+      const result = await stop_app_simLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.App',
@@ -178,7 +184,7 @@ describe('stop_app_sim plugin', () => {
         };
       };
 
-      await plugin.handler(
+      await stop_app_simLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.App',

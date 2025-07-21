@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import swiftPackageList from '../swift_package_list.js';
+import swiftPackageList, { swift_package_listLogic } from '../swift_package_list.js';
 
 describe('swift_package_list plugin', () => {
   // No mocks to clear with pure dependency injection
@@ -39,7 +39,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = () => [];
       const mockDateNow = () => Date.now();
 
-      const result = await swiftPackageList.handler(
+      const result = await swift_package_listLogic(
         {},
         {
           processMap: mockProcessMap,
@@ -64,7 +64,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = () => [];
       const mockDateNow = () => Date.now();
 
-      const result = await swiftPackageList.handler(
+      const result = await swift_package_listLogic(
         {},
         {
           processMap: mockProcessMap,
@@ -89,7 +89,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = () => [];
       const mockDateNow = () => Date.now();
 
-      const result = await swiftPackageList.handler(null, {
+      const result = await swift_package_listLogic(null, {
         processMap: mockProcessMap,
         arrayFrom: mockArrayFrom,
         dateNow: mockDateNow,
@@ -111,7 +111,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = () => [];
       const mockDateNow = () => Date.now();
 
-      const result = await swiftPackageList.handler(undefined, {
+      const result = await swift_package_listLogic(undefined, {
         processMap: mockProcessMap,
         arrayFrom: mockArrayFrom,
         dateNow: mockDateNow,
@@ -133,7 +133,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = () => [];
       const mockDateNow = () => Date.now();
 
-      const result = await swiftPackageList.handler(
+      const result = await swift_package_listLogic(
         {
           extraProperty: 'value',
           anotherProperty: 123,
@@ -168,7 +168,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
       const mockDateNow = () => startedAt.getTime() + 5000; // 5 seconds after start
 
-      const result = await swiftPackageList.handler(
+      const result = await swift_package_listLogic(
         {},
         {
           processMap: mockProcessMap,
@@ -212,7 +212,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
       const mockDateNow = () => startedAt1.getTime() + 10000; // 10 seconds after first start
 
-      const result = await swiftPackageList.handler(
+      const result = await swift_package_listLogic(
         {},
         {
           processMap: mockProcessMap,
@@ -246,7 +246,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
       const mockDateNow = () => startedAt.getTime() + 1000; // 1 second after start
 
-      const result = await swiftPackageList.handler(
+      const result = await swift_package_listLogic(
         {},
         {
           processMap: mockProcessMap,
@@ -279,7 +279,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
       const mockDateNow = () => startedAt.getTime() + 2000; // 2 seconds after start
 
-      const result = await swiftPackageList.handler(
+      const result = await swift_package_listLogic(
         {},
         {
           processMap: mockProcessMap,
@@ -312,7 +312,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
       const mockDateNow = () => startedAt.getTime() + 500; // 500ms after start
 
-      const result = await swiftPackageList.handler(
+      const result = await swift_package_listLogic(
         {},
         {
           processMap: mockProcessMap,
@@ -345,7 +345,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
       const mockDateNow = () => startedAt.getTime(); // Same time as start
 
-      const result = await swiftPackageList.handler(
+      const result = await swift_package_listLogic(
         {},
         {
           processMap: mockProcessMap,
@@ -378,7 +378,7 @@ describe('swift_package_list plugin', () => {
       const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);
       const mockDateNow = () => startedAt.getTime() + 7200000; // 2 hours later
 
-      const result = await swiftPackageList.handler(
+      const result = await swift_package_listLogic(
         {},
         {
           processMap: mockProcessMap,

@@ -37,6 +37,7 @@ async function _findProjectsRecursive(
   const normalizedWorkspaceRoot = path.normalize(workspaceRootAbs);
 
   try {
+    // Use the injected fileSystemExecutor
     const entries = await fileSystemExecutor.readdir(currentDirAbs, { withFileTypes: true });
     for (const entry of entries) {
       const absoluteEntryPath = path.join(currentDirAbs, entry.name);
@@ -121,22 +122,22 @@ async function _findProjectsRecursive(
   }
 }
 
+// Type definition for the parameters
+type DiscoverProjsParams = {
+  workspaceRoot: string;
+  scanPath?: string;
+  maxDepth: number;
+};
+
 /**
- * Internal logic for discovering projects.
+ * Business logic for discovering projects.
+ * Exported for testing purposes.
  */
-async function _handleDiscoveryLogic(
-  params: Record<string, unknown>,
-  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
+export async function discover_projsLogic(
+  params: DiscoverProjsParams,
+  fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
-  const {
-    scanPath: relativeScanPath,
-    maxDepth,
-    workspaceRoot,
-  } = params as {
-    scanPath?: string;
-    maxDepth: number;
-    workspaceRoot: string;
-  };
+  const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = params;
 
   // Calculate and validate the absolute scan path
   const requestedScanPath = path.resolve(workspaceRoot, relativeScanPath || '.');
@@ -260,16 +261,18 @@ export default {
       .default(DEFAULT_MAX_DEPTH)
       .describe(`Optional: Maximum directory depth to scan. Defaults to ${DEFAULT_MAX_DEPTH}.`),
   },
-  async handler(
-    args: Record<string, unknown>,
-    fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    const workspaceRootValidation = validateRequiredParam('workspaceRoot', params.workspaceRoot);
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    const workspaceRootValidation = validateRequiredParam('workspaceRoot', args.workspaceRoot);
     if (!workspaceRootValidation.isValid) {
       return workspaceRootValidation.errorResponse!;
     }
 
-    return _handleDiscoveryLogic(params, fileSystemExecutor);
+    const params: DiscoverProjsParams = {
+      workspaceRoot: args.workspaceRoot as string,
+      scanPath: args.scanPath as string | undefined,
+      maxDepth: (args.maxDepth as number) || DEFAULT_MAX_DEPTH,
+    };
+
+    return discover_projsLogic(params, getDefaultFileSystemExecutor());
   },
 };

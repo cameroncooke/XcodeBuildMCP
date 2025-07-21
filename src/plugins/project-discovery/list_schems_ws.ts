@@ -6,16 +6,24 @@
 
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 /**
- * Internal logic for listing schemes.
+ * Parameters for listing schemes in workspace
  */
-async function _handleListSchemesLogic(
-  params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+export interface ListSchemsWsParams {
+  workspacePath: string;
+}
+
+/**
+ * Business logic for listing schemes in workspace.
+ * Extracted for separation of concerns and testability.
+ */
+export async function list_schems_wsLogic(
+  params: ListSchemsWsParams,
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', 'Listing schemes');
 
@@ -24,13 +32,10 @@ async function _handleListSchemesLogic(
     // We need to create a custom command with -list flag
     const command = ['xcodebuild', '-list'];
 
-    if (params.workspacePath) {
-      command.push('-workspace', params.workspacePath);
-    } else if (params.projectPath) {
-      command.push('-project', params.projectPath);
-    } // No else needed, one path is guaranteed by callers
+    // Add workspace parameter (guaranteed to exist by validation)
+    command.push('-workspace', params.workspacePath);
 
-    const result = await executeCommand(command, executor, 'List Schemes', true);
+    const result = await executor(command, 'List Schemes', true);
 
     if (!result.success) {
       return createTextResponse(`Failed to list schemes: ${result.error}`, true);
@@ -50,13 +55,11 @@ async function _handleListSchemesLogic(
     let nextStepsText = '';
     if (schemes.length > 0) {
       const firstScheme = schemes[0];
-      const projectOrWorkspace = params.workspacePath ? 'workspace' : 'project';
-      const path = params.workspacePath || params.projectPath;
 
       nextStepsText = `Next Steps:
-1. Build the app: ${projectOrWorkspace === 'workspace' ? 'macos_build_workspace' : 'macos_build_project'}({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })
-   or for iOS: ${projectOrWorkspace === 'workspace' ? 'ios_simulator_build_by_name_workspace' : 'ios_simulator_build_by_name_project'}({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
-2. Show build settings: ${projectOrWorkspace === 'workspace' ? 'show_build_set_ws' : 'show_build_set_proj'}({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })`;
+1. Build the app: macos_build_workspace({ workspacePath: "${params.workspacePath}", scheme: "${firstScheme}" })
+   or for iOS: ios_simulator_build_by_name_workspace({ workspacePath: "${params.workspacePath}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
+2. Show build settings: show_build_set_ws({ workspacePath: "${params.workspacePath}", scheme: "${firstScheme}" })`;
     }
 
     return {
@@ -87,19 +90,19 @@ export default {
   name: 'list_schems_ws',
   description:
     "Lists available schemes in the workspace. IMPORTANT: Requires workspacePath. Example: list_schems_ws({ workspacePath: '/path/to/MyProject.xcworkspace' })",
-  schema: {
+  schema: z.object({
     workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-  },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-
+  }),
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     // Validate required parameters
-    const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+    const workspaceValidation = validateRequiredParam('workspacePath', args.workspacePath);
     if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
 
-    return _handleListSchemesLogic(params, executor);
+    // Transform args to typed parameters
+    const params: ListSchemsWsParams = {
+      workspacePath: args.workspacePath as string,
+    };
+
+    return list_schems_wsLogic(params, getDefaultCommandExecutor());
   },
 };

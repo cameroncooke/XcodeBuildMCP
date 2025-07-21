@@ -3,7 +3,8 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import plugin from '../start_sim_log_cap.ts';
+import plugin, { start_sim_log_capLogic } from '../start_sim_log_cap.ts';
+import { createMockExecutor } from '../../../utils/command.js';
 
 describe('start_sim_log_cap plugin', () => {
   // Reset any test state if needed
@@ -82,7 +83,11 @@ describe('start_sim_log_cap plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await plugin.handler({ bundleId: 'com.example.app' });
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const result = await start_sim_log_capLogic(
+        { bundleId: 'com.example.app' } as any,
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -96,6 +101,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should handle null bundleId parameter', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
       const logCaptureStub = (params: any) => {
         return Promise.resolve({
           sessionId: 'test-uuid-123',
@@ -105,11 +111,12 @@ describe('start_sim_log_cap plugin', () => {
         });
       };
 
-      const result = await plugin.handler(
+      const result = await start_sim_log_capLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: null,
-        },
+        } as any,
+        mockExecutor,
         logCaptureStub,
       );
 
@@ -120,6 +127,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should return error when log capture fails', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
       const logCaptureStub = (params: any) => {
         return Promise.resolve({
           sessionId: '',
@@ -129,11 +137,12 @@ describe('start_sim_log_cap plugin', () => {
         });
       };
 
-      const result = await plugin.handler(
+      const result = await start_sim_log_capLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.app',
         },
+        mockExecutor,
         logCaptureStub,
       );
 
@@ -142,6 +151,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should return success with session ID when log capture starts successfully', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
       const logCaptureStub = (params: any) => {
         return Promise.resolve({
           sessionId: 'test-uuid-123',
@@ -151,11 +161,12 @@ describe('start_sim_log_cap plugin', () => {
         });
       };
 
-      const result = await plugin.handler(
+      const result = await start_sim_log_capLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.app',
         },
+        mockExecutor,
         logCaptureStub,
       );
 
@@ -166,6 +177,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should indicate console capture when captureConsole is true', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
       const logCaptureStub = (params: any) => {
         return Promise.resolve({
           sessionId: 'test-uuid-123',
@@ -175,12 +187,13 @@ describe('start_sim_log_cap plugin', () => {
         });
       };
 
-      const result = await plugin.handler(
+      const result = await start_sim_log_capLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.app',
           captureConsole: true,
         },
+        mockExecutor,
         logCaptureStub,
       );
 
@@ -190,6 +203,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should create correct spawn commands for console capture', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
       const spawnCalls: Array<{
         command: string;
         args: string[];
@@ -233,12 +247,13 @@ describe('start_sim_log_cap plugin', () => {
         });
       };
 
-      await plugin.handler(
+      await start_sim_log_capLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.app',
           captureConsole: true,
         },
+        mockExecutor,
         logCaptureStub,
       );
 
@@ -271,6 +286,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should create correct spawn commands for structured logs only', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
       const spawnCalls: Array<{
         command: string;
         args: string[];
@@ -300,12 +316,13 @@ describe('start_sim_log_cap plugin', () => {
         });
       };
 
-      await plugin.handler(
+      await start_sim_log_capLogic(
         {
           simulatorUuid: 'test-uuid',
           bundleId: 'com.example.app',
           captureConsole: false,
         },
+        mockExecutor,
         logCaptureStub,
       );
 

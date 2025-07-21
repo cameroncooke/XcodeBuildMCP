@@ -9,7 +9,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -17,6 +17,65 @@ import {
 } from '../../utils/index.js';
 
 const LOG_PREFIX = '[AXe]';
+
+export async function key_sequenceLogic(
+  params: Record<string, unknown>,
+  executor: CommandExecutor,
+  getAxePathFn?: () => string | null,
+  getBundledAxeEnvironmentFn?: () => Record<string, string>,
+): Promise<ToolResponse> {
+  const toolName = 'key_sequence';
+  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  const keyCodesValidation = validateRequiredParam('keyCodes', params.keyCodes);
+  if (!keyCodesValidation.isValid) return keyCodesValidation.errorResponse;
+
+  const { simulatorUuid, keyCodes, delay } = params;
+  const commandArgs = ['key-sequence', '--keycodes', keyCodes.join(',')];
+  if (delay !== undefined) {
+    commandArgs.push('--delay', String(delay));
+  }
+
+  log(
+    'info',
+    `${LOG_PREFIX}/${toolName}: Starting key sequence [${keyCodes.join(',')}] on ${simulatorUuid}`,
+  );
+
+  try {
+    await executeAxeCommand(
+      commandArgs,
+      simulatorUuid,
+      'key-sequence',
+      executor,
+      getAxePathFn,
+      getBundledAxeEnvironmentFn,
+    );
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+    return createTextResponse(`Key sequence [${keyCodes.join(',')}] executed successfully.`);
+  } catch (error) {
+    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
+    if (error instanceof DependencyError) {
+      return createAxeNotAvailableResponse();
+    } else if (error instanceof AxeError) {
+      return createErrorResponse(
+        `Failed to execute key sequence: ${error.message}`,
+        error.axeOutput,
+        error.name,
+      );
+    } else if (error instanceof SystemError) {
+      return createErrorResponse(
+        `System error executing axe: ${error.message}`,
+        error.originalError?.stack,
+        error.name,
+      );
+    }
+    return createErrorResponse(
+      `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
+      undefined,
+      'UnexpectedError',
+    );
+  }
+}
 
 export default {
   name: 'key_sequence',
@@ -26,64 +85,8 @@ export default {
     keyCodes: z.array(z.number().int().min(0).max(255)).min(1, 'At least one keycode required'),
     delay: z.number().min(0, 'Delay must be non-negative').optional(),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    getAxePathFn?: () => string | null,
-    getBundledAxeEnvironmentFn?: () => Record<string, string>,
-  ): Promise<ToolResponse> {
-    const params = args;
-    const toolName = 'key_sequence';
-    const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-    if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
-    const keyCodesValidation = validateRequiredParam('keyCodes', params.keyCodes);
-    if (!keyCodesValidation.isValid) return keyCodesValidation.errorResponse;
-
-    const { simulatorUuid, keyCodes, delay } = params;
-    const commandArgs = ['key-sequence', '--keycodes', keyCodes.join(',')];
-    if (delay !== undefined) {
-      commandArgs.push('--delay', String(delay));
-    }
-
-    log(
-      'info',
-      `${LOG_PREFIX}/${toolName}: Starting key sequence [${keyCodes.join(',')}] on ${simulatorUuid}`,
-    );
-
-    try {
-      await executeAxeCommand(
-        commandArgs,
-        simulatorUuid,
-        'key-sequence',
-        executor,
-        getAxePathFn,
-        getBundledAxeEnvironmentFn,
-      );
-      log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-      return createTextResponse(`Key sequence [${keyCodes.join(',')}] executed successfully.`);
-    } catch (error) {
-      log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
-      if (error instanceof DependencyError) {
-        return createAxeNotAvailableResponse();
-      } else if (error instanceof AxeError) {
-        return createErrorResponse(
-          `Failed to execute key sequence: ${error.message}`,
-          error.axeOutput,
-          error.name,
-        );
-      } else if (error instanceof SystemError) {
-        return createErrorResponse(
-          `System error executing axe: ${error.message}`,
-          error.originalError?.stack,
-          error.name,
-        );
-      }
-      return createErrorResponse(
-        `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-        undefined,
-        'UnexpectedError',
-      );
-    }
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return key_sequenceLogic(args, getDefaultCommandExecutor());
   },
 };
 
@@ -117,13 +120,7 @@ async function executeAxeCommand(
           : getBundledAxeEnvironment()
         : undefined;
 
-    const result = await executeCommand(
-      fullCommand,
-      executor,
-      `${LOG_PREFIX}: ${commandName}`,
-      false,
-      axeEnv,
-    );
+    const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 
     if (!result.success) {
       throw new AxeError(

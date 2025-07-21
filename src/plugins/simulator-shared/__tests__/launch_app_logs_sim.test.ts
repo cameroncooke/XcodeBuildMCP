@@ -6,7 +6,10 @@
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import launchAppLogsSim from '../launch_app_logs_sim.ts';
+import launchAppLogsSim, {
+  launch_app_logs_simLogic,
+  LogCaptureFunction,
+} from '../launch_app_logs_sim.ts';
 
 describe('launch_app_logs_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -76,7 +79,7 @@ describe('launch_app_logs_sim tool', () => {
     it('should handle successful app launch with log capture', async () => {
       // Create pure mock function without vitest mocking
       let capturedParams: any = null;
-      const logCaptureStub = async (params: any) => {
+      const logCaptureStub: LogCaptureFunction = async (params: any) => {
         capturedParams = params;
         return {
           sessionId: 'test-session-123',
@@ -86,7 +89,7 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
-      const result = await launchAppLogsSim.handler(
+      const result = await launch_app_logs_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
@@ -113,7 +116,7 @@ describe('launch_app_logs_sim tool', () => {
     it('should handle app launch with additional arguments', async () => {
       // Create pure mock function for this test case
       let capturedParams: any = null;
-      const logCaptureStub = async (params: any) => {
+      const logCaptureStub: LogCaptureFunction = async (params: any) => {
         capturedParams = params;
         return {
           sessionId: 'test-session-456',
@@ -123,7 +126,7 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
-      const result = await launchAppLogsSim.handler(
+      const result = await launch_app_logs_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
@@ -140,7 +143,7 @@ describe('launch_app_logs_sim tool', () => {
     });
 
     it('should handle log capture failure', async () => {
-      const logCaptureStub = async () => {
+      const logCaptureStub: LogCaptureFunction = async () => {
         return {
           sessionId: '',
           logFilePath: '',
@@ -149,7 +152,7 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
-      const result = await launchAppLogsSim.handler(
+      const result = await launch_app_logs_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
@@ -169,8 +172,8 @@ describe('launch_app_logs_sim tool', () => {
     });
 
     it('should handle validation failures for simulatorUuid', async () => {
-      const result = await launchAppLogsSim.handler({
-        simulatorUuid: undefined,
+      const result = await launch_app_logs_simLogic({
+        simulatorUuid: undefined as any,
         bundleId: 'com.example.testapp',
       });
 
@@ -186,9 +189,9 @@ describe('launch_app_logs_sim tool', () => {
     });
 
     it('should handle validation failures for bundleId', async () => {
-      const result = await launchAppLogsSim.handler({
+      const result = await launch_app_logs_simLogic({
         simulatorUuid: 'test-uuid-123',
-        bundleId: undefined,
+        bundleId: undefined as any,
       });
 
       expect(result).toEqual({
@@ -204,7 +207,7 @@ describe('launch_app_logs_sim tool', () => {
 
     it('should pass correct parameters to startLogCapture', async () => {
       let capturedParams: any = null;
-      const logCaptureStub = async (params: any) => {
+      const logCaptureStub: LogCaptureFunction = async (params: any) => {
         capturedParams = params;
         return {
           sessionId: 'test-session-789',
@@ -214,7 +217,7 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
-      await launchAppLogsSim.handler(
+      await launch_app_logs_simLogic(
         {
           simulatorUuid: 'uuid-456',
           bundleId: 'com.test.myapp',
@@ -230,7 +233,7 @@ describe('launch_app_logs_sim tool', () => {
     });
 
     it('should include session ID and next steps in success message', async () => {
-      const logCaptureStub = async () => {
+      const logCaptureStub: LogCaptureFunction = async () => {
         return {
           sessionId: 'session-abc-def',
           logFilePath: '/tmp/xcodemcp_sim_log_session-abc-def.log',
@@ -239,7 +242,7 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
-      const result = await launchAppLogsSim.handler(
+      const result = await launch_app_logs_simLogic(
         {
           simulatorUuid: 'test-uuid-789',
           bundleId: 'com.example.testapp',
@@ -258,7 +261,8 @@ describe('launch_app_logs_sim tool', () => {
     });
 
     it('should handle missing required parameters', async () => {
-      const resultMissingSimulator = await launchAppLogsSim.handler({
+      const resultMissingSimulator = await launch_app_logs_simLogic({
+        simulatorUuid: undefined as any,
         bundleId: 'com.example.testapp',
       });
 
@@ -272,8 +276,9 @@ describe('launch_app_logs_sim tool', () => {
         isError: true,
       });
 
-      const resultMissingBundle = await launchAppLogsSim.handler({
+      const resultMissingBundle = await launch_app_logs_simLogic({
         simulatorUuid: 'test-uuid-123',
+        bundleId: undefined as any,
       });
 
       expect(resultMissingBundle).toEqual({

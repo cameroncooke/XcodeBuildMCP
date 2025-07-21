@@ -4,6 +4,40 @@ import { XcodePlatform } from '../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
 import { handleTestLogic } from '../../utils/test-common.js';
 
+interface TestDeviceWsParams {
+  workspacePath?: string;
+  scheme?: string;
+  deviceId?: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+  platform?: 'iOS' | 'watchOS' | 'tvOS' | 'visionOS';
+}
+
+export async function test_device_wsLogic(
+  params: TestDeviceWsParams,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  const platformMap = {
+    iOS: XcodePlatform.iOS,
+    watchOS: XcodePlatform.watchOS,
+    tvOS: XcodePlatform.tvOS,
+    visionOS: XcodePlatform.visionOS,
+  };
+
+  return handleTestLogic(
+    {
+      ...params,
+      configuration: params.configuration ?? 'Debug',
+      preferXcodebuild: params.preferXcodebuild ?? false,
+      platform: platformMap[params.platform ?? 'iOS'],
+      deviceId: params.deviceId,
+    },
+    executor,
+  );
+}
+
 export default {
   name: 'test_device_ws',
   description:
@@ -27,27 +61,7 @@ export default {
       .optional()
       .describe('Target platform (defaults to iOS)'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    const platformMap = {
-      iOS: XcodePlatform.iOS,
-      watchOS: XcodePlatform.watchOS,
-      tvOS: XcodePlatform.tvOS,
-      visionOS: XcodePlatform.visionOS,
-    };
-
-    return handleTestLogic(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
-        platform: platformMap[params.platform ?? 'iOS'],
-        deviceId: params.deviceId,
-      },
-      executor,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return test_device_wsLogic(args, getDefaultCommandExecutor());
   },
 };

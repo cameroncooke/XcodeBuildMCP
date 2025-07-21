@@ -2,90 +2,18 @@
  * Tests for stop_device_log_cap plugin
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import plugin from '../stop_device_log_cap.ts';
+import { z } from 'zod';
+import plugin, { stop_device_log_capLogic } from '../stop_device_log_cap.ts';
 import { activeDeviceLogSessions } from '../start_device_log_cap.ts';
+import { createMockFileSystemExecutor } from '../../../utils/command.js';
 
 // Note: Logger is allowed to execute normally (integration testing pattern)
 
-// Test file system interface
-interface TestFileSystem {
-  promises: {
-    access: (path: string, mode: number) => Promise<void>;
-    readFile: (path: string, encoding: string) => Promise<string>;
-  };
-  constants: {
-    R_OK: number;
-  };
-}
-
-// Create test file system executor
-function createTestFileSystemExecutor(): TestFileSystem {
-  let accessCalls: any[] = [];
-  let accessShouldThrow = false;
-  let accessError: any = null;
-
-  let readFileCalls: any[] = [];
-  let readFileShouldThrow = false;
-  let readFileError: any = null;
-  let readFileContent = '';
-
-  const testFs: TestFileSystem = {
-    promises: {
-      access: function (path: string, mode: number) {
-        // Track calls manually
-        accessCalls.push({ path, mode });
-
-        if (accessShouldThrow) {
-          return Promise.reject(accessError);
-        }
-        return Promise.resolve();
-      },
-      readFile: function (path: string, encoding: string) {
-        // Track calls manually
-        readFileCalls.push({ path, encoding });
-
-        if (readFileShouldThrow) {
-          return Promise.reject(readFileError);
-        }
-        return Promise.resolve(readFileContent || '');
-      },
-    },
-    constants: {
-      R_OK: 4,
-    },
-  };
-
-  // Add configuration methods
-  (testFs.promises.access as any).configure = function (shouldThrow: boolean, error: any) {
-    accessShouldThrow = shouldThrow;
-    accessError = error;
-  };
-
-  (testFs.promises.readFile as any).configure = function (
-    shouldThrow: boolean,
-    error: any,
-    content: string,
-  ) {
-    readFileShouldThrow = shouldThrow;
-    readFileError = error;
-    readFileContent = content;
-  };
-
-  (testFs.promises.access as any).getCalls = () => accessCalls;
-  (testFs.promises.readFile as any).getCalls = () => readFileCalls;
-
-  return testFs;
-}
-
 describe('stop_device_log_cap plugin', () => {
-  let testFileSystem: TestFileSystem;
-
-  testFileSystem = createTestFileSystemExecutor();
-  // Reset test state
-  (testFileSystem.promises.access as any).configure(false, null);
-  (testFileSystem.promises.readFile as any).configure(false, null, '');
-  // Clear actual active sessions
-  activeDeviceLogSessions.clear();
+  beforeEach(() => {
+    // Clear actual active sessions before each test
+    activeDeviceLogSessions.clear();
+  });
 
   describe('Plugin Structure', () => {
     it('should export an object with required properties', () => {
@@ -106,8 +34,14 @@ describe('stop_device_log_cap plugin', () => {
     });
 
     it('should have correct schema structure', () => {
-      expect(plugin.schema).toHaveProperty('_def');
-      expect(plugin.schema._def.shape()).toHaveProperty('logSessionId');
+      // Schema should be a plain object for MCP protocol compliance
+      expect(typeof plugin.schema).toBe('object');
+      expect(plugin.schema).toHaveProperty('logSessionId');
+
+      // Validate that schema fields are Zod types that can be used for validation
+      const schema = z.object(plugin.schema);
+      expect(schema.safeParse({ logSessionId: 'test-session-id' }).success).toBe(true);
+      expect(schema.safeParse({ logSessionId: 123 }).success).toBe(false);
     });
 
     it('should have handler as a function', () => {
@@ -137,11 +71,13 @@ describe('stop_device_log_cap plugin', () => {
     }
 
     it('should handle stop log capture when session not found', async () => {
-      const result = await plugin.handler(
+      const mockFileSystem = createMockFileSystemExecutor();
+
+      const result = await stop_device_log_capLogic(
         {
           logSessionId: 'device-log-00008110-001A2C3D4E5F-com.example.MyApp',
         },
-        testFileSystem,
+        mockFileSystem,
       );
 
       expect(result.content[0].text).toBe(
@@ -169,14 +105,16 @@ describe('stop_device_log_cap plugin', () => {
       });
 
       // Configure test file system for successful operation
-      (testFileSystem.promises.access as any).configure(false, null);
-      (testFileSystem.promises.readFile as any).configure(false, null, testLogContent);
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+        readFile: async () => testLogContent,
+      });
 
-      const result = await plugin.handler(
+      const result = await stop_device_log_capLogic(
         {
           logSessionId: testSessionId,
         },
-        testFileSystem,
+        mockFileSystem,
       );
 
       expect(result).toEqual({
@@ -211,14 +149,16 @@ describe('stop_device_log_cap plugin', () => {
       });
 
       // Configure test file system for successful operation
-      (testFileSystem.promises.access as any).configure(false, null);
-      (testFileSystem.promises.readFile as any).configure(false, null, testLogContent);
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+        readFile: async () => testLogContent,
+      });
 
-      const result = await plugin.handler(
+      const result = await stop_device_log_capLogic(
         {
           logSessionId: testSessionId,
         },
-        testFileSystem,
+        mockFileSystem,
       );
 
       expect(result).toEqual({
@@ -249,21 +189,23 @@ describe('stop_device_log_cap plugin', () => {
         bundleId: 'com.example.MyApp',
       });
 
-      // Configure test file system for access failure
-      (testFileSystem.promises.access as any).configure(true, new Error('File not found'));
+      // Configure test file system for access failure (file doesn't exist)
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => false,
+      });
 
-      const result = await plugin.handler(
+      const result = await stop_device_log_capLogic(
         {
           logSessionId: testSessionId,
         },
-        testFileSystem,
+        mockFileSystem,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: `Failed to stop device log capture session ${testSessionId}: File not found`,
+            text: `Failed to stop device log capture session ${testSessionId}: Log file not found: ${testLogFilePath}`,
           },
         ],
         isError: true,
@@ -289,18 +231,18 @@ describe('stop_device_log_cap plugin', () => {
       });
 
       // Configure test file system for successful access but failed read
-      (testFileSystem.promises.access as any).configure(false, null);
-      (testFileSystem.promises.readFile as any).configure(
-        true,
-        new Error('Read permission denied'),
-        '',
-      );
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+        readFile: async () => {
+          throw new Error('Read permission denied');
+        },
+      });
 
-      const result = await plugin.handler(
+      const result = await stop_device_log_capLogic(
         {
           logSessionId: testSessionId,
         },
-        testFileSystem,
+        mockFileSystem,
       );
 
       expect(result).toEqual({
@@ -332,13 +274,18 @@ describe('stop_device_log_cap plugin', () => {
       });
 
       // Configure test file system for access failure with string error
-      (testFileSystem.promises.access as any).configure(true, 'String error message');
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+        readFile: async () => {
+          throw 'String error message';
+        },
+      });
 
-      const result = await plugin.handler(
+      const result = await stop_device_log_capLogic(
         {
           logSessionId: testSessionId,
         },
-        testFileSystem,
+        mockFileSystem,
       );
 
       expect(result).toEqual({

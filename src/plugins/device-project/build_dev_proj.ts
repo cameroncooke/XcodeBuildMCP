@@ -23,6 +23,46 @@ const XcodePlatform = {
   macOS: 'macOS',
 };
 
+/**
+ * Parameters for build device project tool
+ */
+export interface BuildDevProjParams {
+  projectPath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+}
+
+/**
+ * Business logic for building device project
+ */
+export async function build_dev_projLogic(
+  params: Record<string, unknown>,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  return executeXcodeBuildCommand(
+    {
+      ...params,
+      configuration: params.configuration ?? 'Debug', // Default config
+    },
+    {
+      platform: XcodePlatform.iOS,
+      logPrefix: 'iOS Device Build',
+    },
+    params.preferXcodebuild,
+    'build',
+    executor,
+  );
+}
+
 export default {
   name: 'build_dev_proj',
   description:
@@ -38,28 +78,7 @@ export default {
       .describe('Additional arguments to pass to xcodebuild'),
     preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const projectValidation = validateRequiredParam('projectPath', args.projectPath);
-    if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-    const schemeValidation = validateRequiredParam('scheme', args.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-    return executeXcodeBuildCommand(
-      {
-        ...args,
-        configuration: args.configuration ?? 'Debug', // Default config
-      },
-      {
-        platform: XcodePlatform.iOS,
-        logPrefix: 'iOS Device Build',
-      },
-      args.preferXcodebuild,
-      'build',
-      executor,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return build_dev_projLogic(args, getDefaultCommandExecutor());
   },
 };

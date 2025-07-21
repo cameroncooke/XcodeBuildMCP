@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, CommandExecutor } from '../../../utils/command.js';
-import openSim from '../open_sim.ts';
+import openSim, { open_simLogic } from '../open_sim.ts';
 
 describe('open_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -51,7 +51,7 @@ describe('open_sim tool', () => {
         output: '',
       });
 
-      const result = await openSim.handler({}, mockExecutor);
+      const result = await open_simLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -82,7 +82,7 @@ describe('open_sim tool', () => {
         error: 'Command failed',
       });
 
-      const result = await openSim.handler({}, mockExecutor);
+      const result = await open_simLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -99,7 +99,7 @@ describe('open_sim tool', () => {
         throw new Error('Test error');
       };
 
-      const result = await openSim.handler({}, mockExecutor);
+      const result = await open_simLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -116,7 +116,7 @@ describe('open_sim tool', () => {
         throw 'String error';
       };
 
-      const result = await openSim.handler({}, mockExecutor);
+      const result = await open_simLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -151,7 +151,7 @@ describe('open_sim tool', () => {
         };
       };
 
-      await openSim.handler({}, mockExecutor);
+      await open_simLogic({}, mockExecutor);
 
       expect(calls).toHaveLength(1);
       expect(calls[0]).toEqual({

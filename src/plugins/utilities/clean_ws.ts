@@ -5,12 +5,15 @@
  */
 
 import { z } from 'zod';
-import { log, getDefaultCommandExecutor } from '../../utils/index.js';
-import { XcodePlatform, getDefaultCommandExecutor } from '../../utils/index.js';
-import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.js';
-import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
+import {
+  log,
+  getDefaultCommandExecutor,
+  executeXcodeBuildCommand,
+  validateRequiredParam,
+} from '../../utils/index.js';
+import { XcodePlatform } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor } from '../../utils/index.js';
 
 const CleanWorkspaceSchema = z.object({
   workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
@@ -26,32 +29,9 @@ const CleanWorkspaceSchema = z.object({
   extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
 });
 
-async function _handleCleanLogic(
+export async function clean_wsLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
-): Promise<ToolResponse> {
-  log('info', 'Starting xcodebuild clean request (internal)');
-
-  // For clean operations, we need to provide a default platform and configuration
-  return executeXcodeBuildCommand(
-    {
-      ...params,
-      scheme: params.scheme || '', // Empty string if not provided
-      configuration: params.configuration || 'Debug', // Default to Debug if not provided
-    },
-    {
-      platform: XcodePlatform.macOS, // Default to macOS, but this doesn't matter much for clean
-      logPrefix: 'Clean',
-    },
-    false,
-    'clean', // Specify 'clean' as the build action
-    executor,
-  );
-}
-
-async function cleanWorkspace(
-  params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
   try {
     const validated = CleanWorkspaceSchema.parse(params);
@@ -61,7 +41,23 @@ async function cleanWorkspace(
       return workspacePathValidation.errorResponse;
     }
 
-    return _handleCleanLogic(validated, executor);
+    log('info', 'Starting xcodebuild clean request (internal)');
+
+    // For clean operations, we need to provide a default platform and configuration
+    return executeXcodeBuildCommand(
+      {
+        ...validated,
+        scheme: validated.scheme || '', // Empty string if not provided
+        configuration: validated.configuration || 'Debug', // Default to Debug if not provided
+      },
+      {
+        platform: XcodePlatform.macOS, // Default to macOS, but this doesn't matter much for clean
+        logPrefix: 'Clean',
+      },
+      false,
+      'clean', // Specify 'clean' as the build action
+      executor,
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
       const firstError = error.errors[0];
@@ -96,11 +92,7 @@ export default {
       .describe('Optional: Path where derived data might be located'),
     extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    return cleanWorkspace(params, executor);
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return clean_wsLogic(args, getDefaultCommandExecutor());
   },
 };

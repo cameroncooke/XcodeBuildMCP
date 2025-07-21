@@ -7,7 +7,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
-import buildMacProj, { type BuildUtilsDependencies } from '../build_mac_proj.ts';
+import buildMacProj, {
+  build_mac_projLogic,
+  type BuildUtilsDependencies,
+} from '../build_mac_proj.ts';
 import { ToolResponse } from '../../../types/common.js';
 
 describe('build_mac_proj plugin', () => {
@@ -115,7 +118,7 @@ describe('build_mac_proj plugin', () => {
         output: 'Build succeeded',
       });
 
-      const result = await buildMacProj.handler(
+      const result = await build_mac_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -192,7 +195,7 @@ describe('build_mac_proj plugin', () => {
         error: 'error: Compilation error in main.swift',
       });
 
-      const result = await buildMacProj.handler(
+      const result = await build_mac_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -251,7 +254,7 @@ describe('build_mac_proj plugin', () => {
         output: 'Build succeeded',
       });
 
-      const result = await buildMacProj.handler(
+      const result = await build_mac_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -332,7 +335,7 @@ describe('build_mac_proj plugin', () => {
         error: 'Network error',
       });
 
-      const result = await buildMacProj.handler(
+      const result = await build_mac_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -384,7 +387,7 @@ describe('build_mac_proj plugin', () => {
         error: 'Spawn error',
       });
 
-      const result = await buildMacProj.handler(
+      const result = await build_mac_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -463,7 +466,7 @@ describe('build_mac_proj plugin', () => {
         };
       };
 
-      await buildMacProj.handler(
+      await build_mac_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -547,7 +550,7 @@ describe('build_mac_proj plugin', () => {
         };
       };
 
-      await buildMacProj.handler(
+      await build_mac_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -640,7 +643,7 @@ describe('build_mac_proj plugin', () => {
         };
       };
 
-      await buildMacProj.handler(
+      await build_mac_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -727,7 +730,7 @@ describe('build_mac_proj plugin', () => {
         };
       };
 
-      await buildMacProj.handler(
+      await build_mac_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',

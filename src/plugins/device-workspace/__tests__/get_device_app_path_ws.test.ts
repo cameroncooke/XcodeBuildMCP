@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
-import getDeviceAppPathWs from '../get_device_app_path_ws.ts';
+import getDeviceAppPathWs, { get_device_app_path_wsLogic } from '../get_device_app_path_ws.ts';
 
 describe('get_device_app_path_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -44,7 +44,7 @@ describe('get_device_app_path_ws plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation error response for workspacePath', async () => {
-      const result = await getDeviceAppPathWs.handler(
+      const result = await get_device_app_path_wsLogic(
         {
           scheme: 'MyScheme',
         },
@@ -63,7 +63,7 @@ describe('get_device_app_path_ws plugin', () => {
     });
 
     it('should return exact validation error response for scheme', async () => {
-      const result = await getDeviceAppPathWs.handler(
+      const result = await get_device_app_path_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
         },
@@ -98,7 +98,7 @@ describe('get_device_app_path_ws plugin', () => {
         });
       };
 
-      await getDeviceAppPathWs.handler(
+      await get_device_app_path_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -134,7 +134,7 @@ describe('get_device_app_path_ws plugin', () => {
         output: 'BUILT_PRODUCTS_DIR = /path/to/build/products/dir\nFULL_PRODUCT_NAME = MyApp.app',
       });
 
-      const result = await getDeviceAppPathWs.handler(
+      const result = await get_device_app_path_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -164,7 +164,7 @@ describe('get_device_app_path_ws plugin', () => {
         error: 'xcodebuild: error: Scheme NonExistentScheme not found',
       });
 
-      const result = await getDeviceAppPathWs.handler(
+      const result = await get_device_app_path_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'NonExistentScheme',
@@ -189,7 +189,7 @@ describe('get_device_app_path_ws plugin', () => {
         output: 'Some output without build settings',
       });
 
-      const result = await getDeviceAppPathWs.handler(
+      const result = await get_device_app_path_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -213,7 +213,7 @@ describe('get_device_app_path_ws plugin', () => {
         return Promise.reject(new Error('Network error'));
       };
 
-      const result = await getDeviceAppPathWs.handler(
+      const result = await get_device_app_path_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',

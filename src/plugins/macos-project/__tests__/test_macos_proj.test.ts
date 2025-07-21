@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import tool from '../test_macos_proj.ts';
+import tool, { test_macos_projLogic } from '../test_macos_proj.ts';
 import { ToolResponse } from '../../../types/common.js';
 
 describe('test_macos_proj', () => {
@@ -96,7 +96,7 @@ describe('test_macos_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await test_macos_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyApp.' }],
@@ -120,7 +120,7 @@ describe('test_macos_proj', () => {
         preferXcodebuild: true,
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await test_macos_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyApp.' }],
@@ -138,7 +138,7 @@ describe('test_macos_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await test_macos_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -157,7 +157,7 @@ describe('test_macos_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await test_macos_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Error during Test Run test: spawn xcodebuild ENOENT' }],
@@ -178,7 +178,7 @@ describe('test_macos_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await test_macos_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyApp.' }],
@@ -196,7 +196,7 @@ describe('test_macos_proj', () => {
         scheme: 'MyApp',
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await test_macos_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -221,7 +221,7 @@ describe('test_macos_proj', () => {
         preferXcodebuild: false,
       };
 
-      const result = await tool.handler(args, mockExecutor);
+      const result = await test_macos_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [{ type: 'text', text: '✅ Test Run test succeeded for scheme MyApp.' }],

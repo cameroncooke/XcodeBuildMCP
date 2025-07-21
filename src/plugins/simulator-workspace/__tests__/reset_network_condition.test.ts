@@ -1,7 +1,15 @@
+/**
+ * Tests for reset_network_condition plugin (re-exported from simulator-shared)
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
+
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import resetNetworkConditionPlugin from '../reset_network_condition.ts';
+import resetNetworkConditionPlugin, {
+  reset_network_conditionLogic,
+} from '../../simulator-shared/reset_network_condition.js';
 
 describe('reset_network_condition plugin', () => {
   let mockExecutor: ReturnType<typeof createMockExecutor>;
@@ -47,7 +55,7 @@ describe('reset_network_condition plugin', () => {
         output: 'Network condition reset successfully',
       });
 
-      const result = await resetNetworkConditionPlugin.handler(
+      const result = await reset_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },
@@ -70,7 +78,7 @@ describe('reset_network_condition plugin', () => {
         error: 'Command failed',
       });
 
-      const result = await resetNetworkConditionPlugin.handler(
+      const result = await reset_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },
@@ -90,10 +98,7 @@ describe('reset_network_condition plugin', () => {
     it('should handle missing simulatorUuid', async () => {
       mockExecutor = createMockExecutor({ success: true });
 
-      const result = await resetNetworkConditionPlugin.handler(
-        { simulatorUuid: undefined },
-        mockExecutor,
-      );
+      const result = await reset_network_conditionLogic({ simulatorUuid: undefined }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -111,7 +116,7 @@ describe('reset_network_condition plugin', () => {
         throw new Error('Network error');
       };
 
-      const result = await resetNetworkConditionPlugin.handler(
+      const result = await reset_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },
@@ -138,7 +143,7 @@ describe('reset_network_condition plugin', () => {
         };
       };
 
-      await resetNetworkConditionPlugin.handler(
+      await reset_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },

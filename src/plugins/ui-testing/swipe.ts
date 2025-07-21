@@ -9,12 +9,24 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../utils/index.js';
+
+export interface SwipeParams {
+  simulatorUuid: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  duration?: number;
+  delta?: number;
+  preDelay?: number;
+  postDelay?: number;
+}
 
 export interface AxeHelpers {
   getAxePath: () => string | null;
@@ -23,6 +35,98 @@ export interface AxeHelpers {
 }
 
 const LOG_PREFIX = '[AXe]';
+
+/**
+ * Core swipe logic implementation
+ */
+export async function swipeLogic(
+  params: SwipeParams,
+  executor: CommandExecutor,
+  axeHelpers: AxeHelpers = {
+    getAxePath,
+    getBundledAxeEnvironment,
+    createAxeNotAvailableResponse,
+  },
+): Promise<ToolResponse> {
+  const toolName = 'swipe';
+  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  const x1Validation = validateRequiredParam('x1', params.x1);
+  if (!x1Validation.isValid) return x1Validation.errorResponse;
+  const y1Validation = validateRequiredParam('y1', params.y1);
+  if (!y1Validation.isValid) return y1Validation.errorResponse;
+  const x2Validation = validateRequiredParam('x2', params.x2);
+  if (!x2Validation.isValid) return x2Validation.errorResponse;
+  const y2Validation = validateRequiredParam('y2', params.y2);
+  if (!y2Validation.isValid) return y2Validation.errorResponse;
+
+  const { simulatorUuid, x1, y1, x2, y2, duration, delta, preDelay, postDelay } = params;
+  const commandArgs = [
+    'swipe',
+    '--start-x',
+    String(x1),
+    '--start-y',
+    String(y1),
+    '--end-x',
+    String(x2),
+    '--end-y',
+    String(y2),
+  ];
+  if (duration !== undefined) {
+    commandArgs.push('--duration', String(duration));
+  }
+  if (delta !== undefined) {
+    commandArgs.push('--delta', String(delta));
+  }
+  if (preDelay !== undefined) {
+    commandArgs.push('--pre-delay', String(preDelay));
+  }
+  if (postDelay !== undefined) {
+    commandArgs.push('--post-delay', String(postDelay));
+  }
+
+  const optionsText = duration ? ` duration=${duration}s` : '';
+  log(
+    'info',
+    `${LOG_PREFIX}/${toolName}: Starting swipe (${x1},${y1})->(${x2},${y2})${optionsText} on ${simulatorUuid}`,
+  );
+
+  try {
+    await executeAxeCommand(commandArgs, simulatorUuid, 'swipe', executor, axeHelpers);
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+
+    const warning = getCoordinateWarning(simulatorUuid);
+    const message = `Swipe from (${x1}, ${y1}) to (${x2}, ${y2})${optionsText} simulated successfully.`;
+
+    if (warning) {
+      return createTextResponse(`${message}\n\n${warning}`);
+    }
+
+    return createTextResponse(message);
+  } catch (error) {
+    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
+    if (error instanceof DependencyError) {
+      return axeHelpers.createAxeNotAvailableResponse();
+    } else if (error instanceof AxeError) {
+      return createErrorResponse(
+        `Failed to simulate swipe: ${error.message}`,
+        error.axeOutput,
+        error.name,
+      );
+    } else if (error instanceof SystemError) {
+      return createErrorResponse(
+        `System error executing axe: ${error.message}`,
+        error.originalError?.stack,
+        error.name,
+      );
+    }
+    return createErrorResponse(
+      `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
+      undefined,
+      'UnexpectedError',
+    );
+  }
+}
 
 export default {
   name: 'swipe',
@@ -39,94 +143,8 @@ export default {
     preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
     postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    axeHelpers: AxeHelpers = {
-      getAxePath,
-      getBundledAxeEnvironment,
-      createAxeNotAvailableResponse,
-    },
-  ): Promise<ToolResponse> {
-    const params = args;
-    const toolName = 'swipe';
-    const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-    if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
-    const x1Validation = validateRequiredParam('x1', params.x1);
-    if (!x1Validation.isValid) return x1Validation.errorResponse;
-    const y1Validation = validateRequiredParam('y1', params.y1);
-    if (!y1Validation.isValid) return y1Validation.errorResponse;
-    const x2Validation = validateRequiredParam('x2', params.x2);
-    if (!x2Validation.isValid) return x2Validation.errorResponse;
-    const y2Validation = validateRequiredParam('y2', params.y2);
-    if (!y2Validation.isValid) return y2Validation.errorResponse;
-
-    const { simulatorUuid, x1, y1, x2, y2, duration, delta, preDelay, postDelay } = params;
-    const commandArgs = [
-      'swipe',
-      '--start-x',
-      String(x1),
-      '--start-y',
-      String(y1),
-      '--end-x',
-      String(x2),
-      '--end-y',
-      String(y2),
-    ];
-    if (duration !== undefined) {
-      commandArgs.push('--duration', String(duration));
-    }
-    if (delta !== undefined) {
-      commandArgs.push('--delta', String(delta));
-    }
-    if (preDelay !== undefined) {
-      commandArgs.push('--pre-delay', String(preDelay));
-    }
-    if (postDelay !== undefined) {
-      commandArgs.push('--post-delay', String(postDelay));
-    }
-
-    const optionsText = duration ? ` duration=${duration}s` : '';
-    log(
-      'info',
-      `${LOG_PREFIX}/${toolName}: Starting swipe (${x1},${y1})->(${x2},${y2})${optionsText} on ${simulatorUuid}`,
-    );
-
-    try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'swipe', executor, axeHelpers);
-      log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-
-      const warning = getCoordinateWarning(simulatorUuid);
-      const message = `Swipe from (${x1}, ${y1}) to (${x2}, ${y2})${optionsText} simulated successfully.`;
-
-      if (warning) {
-        return createTextResponse(`${message}\n\n${warning}`);
-      }
-
-      return createTextResponse(message);
-    } catch (error) {
-      log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
-      if (error instanceof DependencyError) {
-        return axeHelpers.createAxeNotAvailableResponse();
-      } else if (error instanceof AxeError) {
-        return createErrorResponse(
-          `Failed to simulate swipe: ${error.message}`,
-          error.axeOutput,
-          error.name,
-        );
-      } else if (error instanceof SystemError) {
-        return createErrorResponse(
-          `System error executing axe: ${error.message}`,
-          error.originalError?.stack,
-          error.name,
-        );
-      }
-      return createErrorResponse(
-        `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-        undefined,
-        'UnexpectedError',
-      );
-    }
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return swipeLogic(args as SwipeParams, getDefaultCommandExecutor());
   },
 };
 
@@ -175,13 +193,7 @@ async function executeAxeCommand(
     // Determine environment variables for bundled AXe
     const axeEnv = axeBinary !== 'axe' ? axeHelpers.getBundledAxeEnvironment() : undefined;
 
-    const result = await executeCommand(
-      fullCommand,
-      executor,
-      `${LOG_PREFIX}: ${commandName}`,
-      false,
-      axeEnv,
-    );
+    const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 
     if (!result.success) {
       throw new AxeError(

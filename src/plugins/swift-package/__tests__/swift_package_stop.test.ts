@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import swiftPackageStop, {
   createMockProcessManager,
+  swift_package_stopLogic,
   type ProcessManager,
 } from '../swift_package_stop.js';
 
@@ -85,7 +86,7 @@ describe('swift_package_stop plugin', () => {
         getProcess: () => undefined,
       });
 
-      const result = await swiftPackageStop.handler({ pid: 99999 }, mockProcessManager);
+      const result = await swift_package_stopLogic({ pid: 99999 }, mockProcessManager);
 
       expect(result).toEqual({
         content: [
@@ -123,7 +124,7 @@ describe('swift_package_stop plugin', () => {
         }
       };
 
-      const result = await swiftPackageStop.handler(
+      const result = await swift_package_stopLogic(
         { pid: 12345 },
         mockProcessManager,
         10, // Very short timeout for testing
@@ -175,7 +176,7 @@ describe('swift_package_stop plugin', () => {
         // Do NOT call the callback to simulate hanging process
       };
 
-      const result = await swiftPackageStop.handler(
+      const result = await swift_package_stopLogic(
         { pid: 67890 },
         mockProcessManager,
         10, // Very short timeout for testing
@@ -214,7 +215,7 @@ describe('swift_package_stop plugin', () => {
             : undefined,
       });
 
-      const result = await swiftPackageStop.handler({ pid: 54321 }, mockProcessManager);
+      const result = await swift_package_stopLogic({ pid: 54321 }, mockProcessManager);
 
       expect(result).toEqual({
         content: [
@@ -245,7 +246,7 @@ describe('swift_package_stop plugin', () => {
             : undefined,
       });
 
-      const result = await swiftPackageStop.handler({ pid: 11111 }, mockProcessManager);
+      const result = await swift_package_stopLogic({ pid: 11111 }, mockProcessManager);
 
       expect(result).toEqual({
         content: [
@@ -287,7 +288,7 @@ describe('swift_package_stop plugin', () => {
         // Handler is registered but callback never called (simulates hanging process)
       };
 
-      const result = await swiftPackageStop.handler(
+      const result = await swift_package_stopLogic(
         { pid: 22222 },
         mockProcessManager,
         10, // Very short timeout for testing
@@ -313,7 +314,7 @@ describe('swift_package_stop plugin', () => {
         getProcess: () => undefined,
       });
 
-      const result = await swiftPackageStop.handler({ pid: 0 }, mockProcessManager);
+      const result = await swift_package_stopLogic({ pid: 0 }, mockProcessManager);
 
       expect(result).toEqual({
         content: [
@@ -331,7 +332,7 @@ describe('swift_package_stop plugin', () => {
         getProcess: () => undefined,
       });
 
-      const result = await swiftPackageStop.handler({ pid: -1 }, mockProcessManager);
+      const result = await swift_package_stopLogic({ pid: -1 }, mockProcessManager);
 
       expect(result).toEqual({
         content: [
@@ -376,7 +377,7 @@ describe('swift_package_stop plugin', () => {
         }
       };
 
-      const result = await swiftPackageStop.handler(
+      const result = await swift_package_stopLogic(
         { pid: 33333 },
         mockProcessManager,
         10, // Very short timeout for testing
@@ -402,7 +403,7 @@ describe('swift_package_stop plugin', () => {
         getProcess: () => undefined,
       });
 
-      const result = await swiftPackageStop.handler({}, mockProcessManager);
+      const result = await swift_package_stopLogic({} as any, mockProcessManager);
 
       expect(result).toEqual({
         content: [

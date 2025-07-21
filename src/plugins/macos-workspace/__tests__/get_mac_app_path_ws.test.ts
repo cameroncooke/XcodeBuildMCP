@@ -10,7 +10,7 @@ import {
   createNoopExecutor,
   type CommandExecutor,
 } from '../../../utils/command.js';
-import getMacAppPathWs from '../get_mac_app_path_ws.ts';
+import getMacAppPathWs, { get_mac_app_path_wsLogic } from '../get_mac_app_path_ws.ts';
 
 describe('get_mac_app_path_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -66,7 +66,7 @@ describe('get_mac_app_path_ws plugin', () => {
         scheme: 'MyScheme',
       };
 
-      await getMacAppPathWs.handler(args, mockExecutor);
+      await get_mac_app_path_wsLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -109,7 +109,7 @@ describe('get_mac_app_path_ws plugin', () => {
         arch: 'arm64',
       };
 
-      await getMacAppPathWs.handler(args, mockExecutor);
+      await get_mac_app_path_wsLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -152,7 +152,7 @@ describe('get_mac_app_path_ws plugin', () => {
         arch: 'x86_64',
       };
 
-      await getMacAppPathWs.handler(args, mockExecutor);
+      await get_mac_app_path_wsLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -194,7 +194,7 @@ describe('get_mac_app_path_ws plugin', () => {
         arch: 'arm64',
       };
 
-      await getMacAppPathWs.handler(args, mockExecutor);
+      await get_mac_app_path_wsLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -220,7 +220,7 @@ describe('get_mac_app_path_ws plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation error response for workspacePath', async () => {
-      const result = await getMacAppPathWs.handler(
+      const result = await get_mac_app_path_wsLogic(
         {
           scheme: 'MyScheme',
         },
@@ -239,7 +239,7 @@ describe('get_mac_app_path_ws plugin', () => {
     });
 
     it('should return exact validation error response for scheme', async () => {
-      const result = await getMacAppPathWs.handler(
+      const result = await get_mac_app_path_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
         },
@@ -265,7 +265,7 @@ FULL_PRODUCT_NAME = MyApp.app
         `,
       });
 
-      const result = await getMacAppPathWs.handler(
+      const result = await get_mac_app_path_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -293,7 +293,7 @@ FULL_PRODUCT_NAME = MyApp.app
         error: 'error: No such scheme',
       });
 
-      const result = await getMacAppPathWs.handler(
+      const result = await get_mac_app_path_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -318,7 +318,7 @@ FULL_PRODUCT_NAME = MyApp.app
         output: 'OTHER_SETTING = value',
       });
 
-      const result = await getMacAppPathWs.handler(
+      const result = await get_mac_app_path_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -342,7 +342,7 @@ FULL_PRODUCT_NAME = MyApp.app
         throw new Error('Network error');
       };
 
-      const result = await getMacAppPathWs.handler(
+      const result = await get_mac_app_path_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',

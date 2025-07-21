@@ -1,5 +1,5 @@
 /**
- * Tests for open_sim plugin
+ * Tests for open_sim plugin (re-exported from simulator-shared)
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, type CommandExecutor } from '../../../utils/command.js';
-import openSim from '../open_sim.ts';
+import openSim, { open_simLogic } from '../../simulator-shared/open_sim.js';
 
 describe('open_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -43,7 +43,7 @@ describe('open_sim tool', () => {
         output: '',
       });
 
-      const result = await openSim.handler({}, mockExecutor);
+      const result = await open_simLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -68,13 +68,13 @@ describe('open_sim tool', () => {
       });
     });
 
-    it('should handle executeCommand failure', async () => {
+    it('should handle executor failure', async () => {
       const mockExecutor = createMockExecutor({
         success: false,
         error: 'Command failed',
       });
 
-      const result = await openSim.handler({}, mockExecutor);
+      const result = await open_simLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -91,7 +91,7 @@ describe('open_sim tool', () => {
         throw new Error('Test error');
       };
 
-      const result = await openSim.handler({}, mockExecutor);
+      const result = await open_simLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -108,7 +108,7 @@ describe('open_sim tool', () => {
         throw 'String error';
       };
 
-      const result = await openSim.handler({}, mockExecutor);
+      const result = await open_simLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -138,7 +138,7 @@ describe('open_sim tool', () => {
         };
       };
 
-      await openSim.handler({}, mockExecutor);
+      await open_simLogic({}, mockExecutor);
 
       expect(calls).toHaveLength(1);
       expect(calls[0]).toEqual({

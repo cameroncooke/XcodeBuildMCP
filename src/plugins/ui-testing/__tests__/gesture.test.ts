@@ -9,7 +9,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import gesturePlugin from '../gesture.ts';
+import gesturePlugin, { gestureLogic } from '../gesture.ts';
 
 describe('Gesture Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -105,7 +105,7 @@ describe('Gesture Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      await gesturePlugin.handler(
+      await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
@@ -140,7 +140,7 @@ describe('Gesture Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      await gesturePlugin.handler(
+      await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'swipe-from-left-edge',
@@ -181,7 +181,7 @@ describe('Gesture Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      await gesturePlugin.handler(
+      await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-down',
@@ -234,7 +234,7 @@ describe('Gesture Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      await gesturePlugin.handler(
+      await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'swipe-from-bottom-edge',
@@ -255,11 +255,7 @@ describe('Gesture Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await gesturePlugin.handler(
-        { preset: 'scroll-up' },
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
-      );
+      const result = await gestureLogic({ preset: 'scroll-up' } as any, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -273,12 +269,11 @@ describe('Gesture Plugin', () => {
     });
 
     it('should return error for missing preset', async () => {
-      const result = await gesturePlugin.handler(
+      const result = await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        },
+        } as any,
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -305,7 +300,7 @@ describe('Gesture Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await gesturePlugin.handler(
+      const result = await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
@@ -333,7 +328,7 @@ describe('Gesture Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await gesturePlugin.handler(
+      const result = await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'swipe-from-left-edge',
@@ -360,7 +355,7 @@ describe('Gesture Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await gesturePlugin.handler(
+      const result = await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
@@ -393,7 +388,7 @@ describe('Gesture Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await gesturePlugin.handler(
+      const result = await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
@@ -421,7 +416,7 @@ describe('Gesture Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await gesturePlugin.handler(
+      const result = await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
@@ -444,7 +439,7 @@ describe('Gesture Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await gesturePlugin.handler(
+      const result = await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
@@ -467,7 +462,7 @@ describe('Gesture Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await gesturePlugin.handler(
+      const result = await gestureLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',

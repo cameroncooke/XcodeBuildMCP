@@ -3,12 +3,7 @@ import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 import { log } from './logger.js';
 import { iOSTemplateVersion, macOSTemplateVersion } from '../version.js';
-import {
-  CommandExecutor,
-  FileSystemExecutor,
-  executeCommand,
-  executeCommandWithCwd,
-} from './command.js';
+import { CommandExecutor, FileSystemExecutor } from './command.js';
 
 /**
  * Template manager for downloading and managing project templates
@@ -87,9 +82,8 @@ export class TemplateManager {
       log('info', `Download URL: ${downloadUrl}`);
 
       // Download the release artifact
-      const curlResult = await executeCommand(
+      const curlResult = await commandExecutor(
         ['curl', '-L', '-f', '-o', zipPath, downloadUrl],
-        commandExecutor,
         'Download Template',
         true,
         undefined,
@@ -100,17 +94,22 @@ export class TemplateManager {
       }
 
       // Extract the zip file
-      const unzipResult = await executeCommandWithCwd(
-        ['unzip', '-q', zipPath],
-        commandExecutor,
-        'Extract Template',
-        true,
-        undefined,
-        tempDir,
-      );
+      // Temporarily change to temp directory for extraction
+      const originalCwd = process.cwd();
+      try {
+        process.chdir(tempDir);
+        const unzipResult = await commandExecutor(
+          ['unzip', '-q', zipPath],
+          'Extract Template',
+          true,
+          undefined,
+        );
 
-      if (!unzipResult.success) {
-        throw new Error(`Failed to extract template: ${unzipResult.error}`);
+        if (!unzipResult.success) {
+          throw new Error(`Failed to extract template: ${unzipResult.error}`);
+        }
+      } finally {
+        process.chdir(originalCwd);
       }
 
       // Find the extracted directory and return the template subdirectory

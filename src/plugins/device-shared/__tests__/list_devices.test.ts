@@ -9,15 +9,13 @@
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
 
-// Import the actual implementation from device-workspace
-import listDevicesImpl from '../../device-workspace/list_devices.ts';
-// Import the re-export to verify it matches
-import listDevices from '../list_devices.ts';
+// Import the logic function and re-export
+import listDevices, { list_devicesLogic } from '../list_devices.ts';
 
-describe('list_devices plugin (device-shared re-export)', () => {
+describe('list_devices plugin (device-shared)', () => {
   describe('Export Field Validation (Literal)', () => {
-    it('should re-export the same plugin as device-workspace', () => {
-      expect(listDevices).toBe(listDevicesImpl);
+    it('should export list_devicesLogic function', () => {
+      expect(typeof list_devicesLogic).toBe('function');
     });
 
     it('should have correct name', () => {
@@ -105,7 +103,7 @@ describe('list_devices plugin (device-shared re-export)', () => {
         },
       };
 
-      await listDevices.handler({}, trackingExecutor, mockPathDeps, mockFsDeps);
+      await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
       expect(commandCalls).toHaveLength(1);
       expect(commandCalls[0].command).toEqual([
@@ -176,7 +174,7 @@ describe('list_devices plugin (device-shared re-export)', () => {
         },
       };
 
-      await listDevices.handler({}, trackingExecutor, mockPathDeps, mockFsDeps);
+      await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
       expect(commandCalls).toHaveLength(2);
       expect(commandCalls[1].command).toEqual(['xcrun', 'xctrace', 'list', 'devices']);
@@ -233,7 +231,7 @@ describe('list_devices plugin (device-shared re-export)', () => {
         },
       };
 
-      const result = await listDevices.handler({}, mockExecutor, mockPathDeps, mockFsDeps);
+      const result = await list_devicesLogic({}, mockExecutor, mockPathDeps, mockFsDeps);
 
       expect(result).toEqual({
         content: [
@@ -290,7 +288,7 @@ describe('list_devices plugin (device-shared re-export)', () => {
         },
       };
 
-      const result = await listDevices.handler({}, mockExecutor, mockPathDeps, mockFsDeps);
+      const result = await list_devicesLogic({}, mockExecutor, mockPathDeps, mockFsDeps);
 
       expect(result).toEqual({
         content: [
@@ -353,7 +351,7 @@ describe('list_devices plugin (device-shared re-export)', () => {
         },
       };
 
-      const result = await listDevices.handler({}, mockExecutor, mockPathDeps, mockFsDeps);
+      const result = await list_devicesLogic({}, mockExecutor, mockPathDeps, mockFsDeps);
 
       expect(result).toEqual({
         content: [

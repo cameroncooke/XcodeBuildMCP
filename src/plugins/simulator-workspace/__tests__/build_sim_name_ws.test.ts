@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
 
-// Import the plugin
-import buildSimNameWs from '../build_sim_name_ws.ts';
+// Import the plugin and logic function
+import buildSimNameWs, { build_sim_name_wsLogic } from '../build_sim_name_ws.ts';
 
 describe('build_sim_name_ws tool', () => {
   // Only clear any remaining mocks if needed
@@ -101,7 +101,7 @@ describe('build_sim_name_ws tool', () => {
     it('should handle missing workspacePath parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
@@ -123,7 +123,7 @@ describe('build_sim_name_ws tool', () => {
     it('should handle empty workspacePath parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '',
           scheme: 'MyScheme',
@@ -148,7 +148,7 @@ describe('build_sim_name_ws tool', () => {
     it('should handle missing scheme parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           simulatorName: 'iPhone 16',
@@ -170,7 +170,7 @@ describe('build_sim_name_ws tool', () => {
     it('should handle empty scheme parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: '',
@@ -195,7 +195,7 @@ describe('build_sim_name_ws tool', () => {
     it('should handle missing simulatorName parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -221,7 +221,7 @@ describe('build_sim_name_ws tool', () => {
         error: 'For iOS Simulator platform, either simulatorId or simulatorName must be provided',
       });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -263,7 +263,7 @@ describe('build_sim_name_ws tool', () => {
         };
       };
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -314,7 +314,7 @@ describe('build_sim_name_ws tool', () => {
         };
       };
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -372,7 +372,7 @@ describe('build_sim_name_ws tool', () => {
         };
       };
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
           scheme: 'My Scheme',
@@ -423,7 +423,7 @@ describe('build_sim_name_ws tool', () => {
         };
       };
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -456,7 +456,7 @@ describe('build_sim_name_ws tool', () => {
     it('should handle successful build', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -480,7 +480,7 @@ describe('build_sim_name_ws tool', () => {
     it('should handle successful build with all optional parameters', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -513,7 +513,7 @@ describe('build_sim_name_ws tool', () => {
         error: 'Build failed: Compilation error',
       });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -543,7 +543,7 @@ describe('build_sim_name_ws tool', () => {
         output: 'warning: deprecated method used\nBUILD SUCCEEDED',
       });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -576,7 +576,7 @@ describe('build_sim_name_ws tool', () => {
         error: 'spawn xcodebuild ENOENT',
       });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -596,7 +596,7 @@ describe('build_sim_name_ws tool', () => {
         error: 'Build failed',
       });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -629,7 +629,7 @@ describe('build_sim_name_ws tool', () => {
     it('should use default configuration when not provided', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -658,7 +658,7 @@ describe('build_sim_name_ws tool', () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
       // Mock the handler to throw an error by passing invalid parameters to internal functions
-      const result = await buildSimNameWs.handler(
+      const result = await build_sim_name_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',

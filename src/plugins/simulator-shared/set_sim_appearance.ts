@@ -1,8 +1,16 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../types/common.js';
-import { log, getDefaultCommandExecutor } from '../../utils/index.js';
-import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import {
+  log,
+  validateRequiredParam,
+  CommandExecutor,
+  getDefaultCommandExecutor,
+} from '../../utils/index.js';
+
+interface SetSimAppearanceParams {
+  simulatorUuid: string;
+  mode: 'dark' | 'light';
+}
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
@@ -13,7 +21,7 @@ async function executeSimctlCommandAndRespond(
   failureMessagePrefix: string,
   operationLogContext: string,
   extraValidation?: Record<string, unknown>,
-  executor: CommandExecutor = executeCommand,
+  executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
@@ -62,6 +70,24 @@ async function executeSimctlCommandAndRespond(
   }
 }
 
+export async function set_sim_appearanceLogic(
+  params: SetSimAppearanceParams,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  log('info', `Setting simulator ${params.simulatorUuid} appearance to ${params.mode} mode`);
+
+  return executeSimctlCommandAndRespond(
+    params,
+    ['ui', params.simulatorUuid, 'appearance', params.mode],
+    'Set Simulator Appearance',
+    `Successfully set simulator ${params.simulatorUuid} appearance to ${params.mode} mode`,
+    'Failed to set simulator appearance',
+    'set simulator appearance',
+    undefined,
+    executor,
+  );
+}
+
 export default {
   name: 'set_sim_appearance',
   description: 'Sets the appearance mode (dark/light) of an iOS simulator.',
@@ -73,22 +99,7 @@ export default {
       .enum(['dark', 'light'])
       .describe('The appearance mode to set (either "dark" or "light")'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    log('info', `Setting simulator ${params.simulatorUuid} appearance to ${params.mode} mode`);
-
-    return executeSimctlCommandAndRespond(
-      params,
-      ['ui', params.simulatorUuid, 'appearance', params.mode],
-      'Set Simulator Appearance',
-      `Successfully set simulator ${params.simulatorUuid} appearance to ${params.mode} mode`,
-      'Failed to set simulator appearance',
-      'set simulator appearance',
-      undefined,
-      executor,
-    );
+  handler: async (args: Record<string, unknown>) => {
+    return set_sim_appearanceLogic(args as SetSimAppearanceParams, getDefaultCommandExecutor());
   },
 };

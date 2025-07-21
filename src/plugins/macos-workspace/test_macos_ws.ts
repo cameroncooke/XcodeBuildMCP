@@ -136,9 +136,9 @@ function formatTestSummary(summary: Record<string, unknown>): string {
 }
 
 // Internal logic for running tests with platform-specific handling
-async function handleTestLogic(
+export async function test_macos_wsLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
   tempDirDeps?: {
     mkdtemp: (prefix: string) => Promise<string>;
     rm: (path: string, options?: { recursive?: boolean; force?: boolean }) => Promise<void>;
@@ -156,9 +156,17 @@ async function handleTestLogic(
     stat: (path: string) => Promise<{ isDirectory: () => boolean }>;
   },
 ): Promise<ToolResponse> {
+  // Process parameters with defaults
+  const processedParams = {
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    preferXcodebuild: params.preferXcodebuild ?? false,
+    platform: XcodePlatform.macOS,
+  };
+
   log(
     'info',
-    `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
+    `Starting test run for scheme ${processedParams.scheme} on platform ${processedParams.platform} (internal)`,
   );
 
   try {
@@ -171,23 +179,23 @@ async function handleTestLogic(
     const resultBundlePath = joinFn(tempDir, 'TestResults.xcresult');
 
     // Add resultBundlePath to extraArgs
-    const extraArgs = [...(params.extraArgs || []), `-resultBundlePath`, resultBundlePath];
+    const extraArgs = [...(processedParams.extraArgs || []), `-resultBundlePath`, resultBundlePath];
 
     // Run the test command
     const testResult = await executeXcodeBuildCommand(
       {
-        ...params,
+        ...processedParams,
         extraArgs,
       },
       {
-        platform: params.platform,
-        simulatorName: params.simulatorName,
-        simulatorId: params.simulatorId,
-        deviceId: params.deviceId,
-        useLatestOS: params.useLatestOS,
+        platform: processedParams.platform,
+        simulatorName: processedParams.simulatorName,
+        simulatorId: processedParams.simulatorId,
+        deviceId: processedParams.deviceId,
+        useLatestOS: processedParams.useLatestOS,
         logPrefix: 'Test Run',
       },
-      params.preferXcodebuild,
+      processedParams.preferXcodebuild,
       'test',
       executor,
     );
@@ -265,38 +273,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    tempDirDeps?: {
-      mkdtemp: (prefix: string) => Promise<string>;
-      rm: (path: string, options?: { recursive?: boolean; force?: boolean }) => Promise<void>;
-      join: (...paths: string[]) => string;
-      tmpdir: () => string;
-    },
-    utilDeps?: {
-      promisify: <T extends (...args: any[]) => any>(
-        fn: T,
-      ) => T extends (...args: infer Args) => infer Return
-        ? (...args: Args) => Promise<Return>
-        : never;
-    },
-    fileSystemDeps?: {
-      stat: (path: string) => Promise<{ isDirectory: () => boolean }>;
-    },
-  ): Promise<ToolResponse> {
-    const params = args;
-    return handleTestLogic(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        preferXcodebuild: params.preferXcodebuild ?? false,
-        platform: XcodePlatform.macOS,
-      },
-      executor,
-      tempDirDeps,
-      utilDeps,
-      fileSystemDeps,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return test_macos_wsLogic(args, getDefaultCommandExecutor());
   },
 };

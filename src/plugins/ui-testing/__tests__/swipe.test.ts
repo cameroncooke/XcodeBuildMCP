@@ -8,7 +8,7 @@ import { createMockExecutor, createNoopExecutor } from '../../../utils/command.j
 import { SystemError, DependencyError } from '../../../utils/index.js';
 
 // Import the plugin module to test
-import swipePlugin, { AxeHelpers } from '../swipe.ts';
+import swipePlugin, { AxeHelpers, swipeLogic, SwipeParams } from '../swipe.ts';
 
 // Helper function to create mock axe helpers
 function createMockAxeHelpers(): AxeHelpers {
@@ -140,7 +140,7 @@ describe('Swipe Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      await swipePlugin.handler(
+      await swipeLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x1: 100,
@@ -182,7 +182,7 @@ describe('Swipe Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      await swipePlugin.handler(
+      await swipeLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x1: 50,
@@ -227,7 +227,7 @@ describe('Swipe Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      await swipePlugin.handler(
+      await swipeLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x1: 0,
@@ -288,7 +288,7 @@ describe('Swipe Plugin', () => {
         }),
       };
 
-      await swipePlugin.handler(
+      await swipeLogic(
         {
           simulatorUuid: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
           x1: 150,
@@ -322,8 +322,8 @@ describe('Swipe Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await swipePlugin.handler(
-        { x1: 100, y1: 200, x2: 300, y2: 400 },
+      const result = await swipeLogic(
+        { x1: 100, y1: 200, x2: 300, y2: 400 } as SwipeParams,
         createNoopExecutor(),
         createMockAxeHelpers(),
       );
@@ -340,13 +340,13 @@ describe('Swipe Plugin', () => {
     });
 
     it('should return error for missing x1', async () => {
-      const result = await swipePlugin.handler(
+      const result = await swipeLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           y1: 200,
           x2: 300,
           y2: 400,
-        },
+        } as SwipeParams,
         createNoopExecutor(),
         createMockAxeHelpers(),
       );
@@ -371,7 +371,7 @@ describe('Swipe Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await swipePlugin.handler(
+      const result = await swipeLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x1: 100,
@@ -403,7 +403,7 @@ describe('Swipe Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await swipePlugin.handler(
+      const result = await swipeLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x1: 100,
@@ -436,7 +436,7 @@ describe('Swipe Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpersWithNullPath();
 
-      const result = await swipePlugin.handler(
+      const result = await swipeLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x1: 100,
@@ -468,7 +468,7 @@ describe('Swipe Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await swipePlugin.handler(
+      const result = await swipeLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x1: 100,
@@ -499,7 +499,7 @@ describe('Swipe Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await swipePlugin.handler(
+      const result = await swipeLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x1: 100,
@@ -527,7 +527,7 @@ describe('Swipe Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await swipePlugin.handler(
+      const result = await swipeLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x1: 100,
@@ -555,7 +555,7 @@ describe('Swipe Plugin', () => {
 
       const mockAxeHelpers = createMockAxeHelpers();
 
-      const result = await swipePlugin.handler(
+      const result = await swipeLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x1: 100,

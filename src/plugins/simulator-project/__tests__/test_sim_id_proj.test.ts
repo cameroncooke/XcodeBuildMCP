@@ -4,8 +4,8 @@
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
-import testSimIdProj from '../test_sim_id_proj.ts';
+import { createMockExecutor } from '../../../utils/command.js';
+import testSimIdProj, { test_sim_id_projLogic } from '../test_sim_id_proj.ts';
 
 describe('test_sim_id_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -53,7 +53,7 @@ describe('test_sim_id_proj plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimIdProj.handler(
+      const result = await test_sim_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -61,7 +61,6 @@ describe('test_sim_id_proj plugin', () => {
           configuration: 'Debug',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();
@@ -75,7 +74,7 @@ describe('test_sim_id_proj plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimIdProj.handler(
+      const result = await test_sim_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -83,7 +82,6 @@ describe('test_sim_id_proj plugin', () => {
           configuration: 'Debug',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();
@@ -97,14 +95,13 @@ describe('test_sim_id_proj plugin', () => {
         error: 'xcodebuild: error: Scheme not found',
       });
 
-      const result = await testSimIdProj.handler(
+      const result = await test_sim_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'NonExistentScheme',
           simulatorId: 'test-uuid-123',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result.isError).toBe(true);
@@ -118,14 +115,13 @@ describe('test_sim_id_proj plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimIdProj.handler(
+      const result = await test_sim_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorId: 'test-uuid-123',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();
@@ -139,7 +135,7 @@ describe('test_sim_id_proj plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testSimIdProj.handler(
+      const result = await test_sim_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -151,7 +147,6 @@ describe('test_sim_id_proj plugin', () => {
           preferXcodebuild: true,
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result.content).toBeDefined();

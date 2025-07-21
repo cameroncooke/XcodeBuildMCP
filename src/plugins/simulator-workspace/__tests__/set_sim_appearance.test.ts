@@ -1,3 +1,9 @@
+/**
+ * Tests for set_sim_appearance plugin (re-exported from simulator-shared)
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
+
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import {
@@ -6,8 +12,10 @@ import {
   createNoopExecutor,
 } from '../../../utils/command.js';
 
-// Import the plugin
-import setSimAppearancePlugin from '../set_sim_appearance.ts';
+// Import the plugin and logic function from original source
+import setSimAppearancePlugin, {
+  set_sim_appearanceLogic,
+} from '../../simulator-shared/set_sim_appearance.js';
 
 describe('set_sim_appearance plugin', () => {
   // Clean setup for each test
@@ -62,7 +70,7 @@ describe('set_sim_appearance plugin', () => {
 
   describe('Input Validation', () => {
     it('should handle missing simulatorUuid parameter', async () => {
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           mode: 'dark',
         },
@@ -81,7 +89,7 @@ describe('set_sim_appearance plugin', () => {
     });
 
     it('should handle undefined simulatorUuid parameter', async () => {
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           simulatorUuid: undefined,
           mode: 'dark',
@@ -101,7 +109,7 @@ describe('set_sim_appearance plugin', () => {
     });
 
     it('should handle null simulatorUuid parameter', async () => {
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           simulatorUuid: null,
           mode: 'dark',
@@ -126,7 +134,7 @@ describe('set_sim_appearance plugin', () => {
         error: 'Invalid device: empty string',
       });
 
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           simulatorUuid: '',
           mode: 'dark',
@@ -159,7 +167,7 @@ describe('set_sim_appearance plugin', () => {
         });
       };
 
-      await setSimAppearancePlugin.handler(
+      await set_sim_appearanceLogic(
         {
           simulatorUuid: 'test-uuid-123',
           mode: 'dark',
@@ -190,7 +198,7 @@ describe('set_sim_appearance plugin', () => {
         });
       };
 
-      await setSimAppearancePlugin.handler(
+      await set_sim_appearanceLogic(
         {
           simulatorUuid: 'ABC123-DEF456',
           mode: 'light',
@@ -221,7 +229,7 @@ describe('set_sim_appearance plugin', () => {
         });
       };
 
-      await setSimAppearancePlugin.handler(
+      await set_sim_appearanceLogic(
         {
           simulatorUuid: 'ABCD1234-5678-9012-3456-789012345678',
           mode: 'dark',
@@ -249,7 +257,7 @@ describe('set_sim_appearance plugin', () => {
         error: '',
       });
 
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           simulatorUuid: 'test-uuid-123',
           mode: 'dark',
@@ -274,7 +282,7 @@ describe('set_sim_appearance plugin', () => {
         error: 'Invalid device: invalid-uuid',
       });
 
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           simulatorUuid: 'invalid-uuid',
           mode: 'light',
@@ -296,7 +304,7 @@ describe('set_sim_appearance plugin', () => {
     it('should handle exception during execution', async () => {
       const mockExecutor = createMockExecutor(new Error('Network error'));
 
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           simulatorUuid: 'test-uuid-123',
           mode: 'dark',
@@ -322,7 +330,7 @@ describe('set_sim_appearance plugin', () => {
         error: '',
       });
 
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           simulatorUuid: 'ABC123-DEF456',
           mode: 'light',
@@ -347,7 +355,7 @@ describe('set_sim_appearance plugin', () => {
         error: 'Device not found',
       });
 
-      const result = await setSimAppearancePlugin.handler(
+      const result = await set_sim_appearanceLogic(
         {
           simulatorUuid: 'missing-uuid',
           mode: 'dark',

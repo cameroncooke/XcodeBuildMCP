@@ -3,8 +3,9 @@
  * Following CLAUDE.md testing standards with pure dependency injection
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
-import plugin from '../start_device_log_cap.ts';
+import plugin, { start_device_log_capLogic } from '../start_device_log_cap.ts';
 
 describe('start_device_log_cap plugin', () => {
   // Mock state tracking
@@ -16,22 +17,11 @@ describe('start_device_log_cap plugin', () => {
   }> = [];
   let mkdirCalls: string[] = [];
   let writeFileCalls: Array<{ path: string; content: string }> = [];
-  let createWriteStreamCalls: Array<{ path: string; flags: string }> = [];
-  let writeStreamWriteCalls: string[] = [];
-  let mockWriteStream: any;
 
   // Reset state
   commandCalls = [];
   mkdirCalls = [];
   writeFileCalls = [];
-  createWriteStreamCalls = [];
-  writeStreamWriteCalls = [];
-  mockWriteStream = {
-    write: (data: string) => {
-      writeStreamWriteCalls.push(data);
-    },
-    flags: 'a',
-  };
 
   describe('Plugin Structure', () => {
     it('should export an object with required properties', () => {
@@ -52,9 +42,17 @@ describe('start_device_log_cap plugin', () => {
     });
 
     it('should have correct schema structure', () => {
-      expect(plugin.schema).toHaveProperty('_def');
-      expect(plugin.schema._def.shape()).toHaveProperty('deviceId');
-      expect(plugin.schema._def.shape()).toHaveProperty('bundleId');
+      // Schema should be a plain object for MCP protocol compliance
+      expect(typeof plugin.schema).toBe('object');
+      expect(plugin.schema).toHaveProperty('deviceId');
+      expect(plugin.schema).toHaveProperty('bundleId');
+
+      // Validate that schema fields are Zod types that can be used for validation
+      const schema = z.object(plugin.schema);
+      expect(schema.safeParse({ deviceId: 'test-device', bundleId: 'com.test.app' }).success).toBe(
+        true,
+      );
+      expect(schema.safeParse({ deviceId: 123, bundleId: 'com.test.app' }).success).toBe(false);
     });
 
     it('should have handler as a function', () => {
@@ -79,19 +77,13 @@ describe('start_device_log_cap plugin', () => {
         },
       });
 
-      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
-        createWriteStreamCalls.push({ path, flags: options.flags });
-        return mockWriteStream;
-      };
-
-      const result = await plugin.handler(
+      const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
-        mockCreateWriteStream,
       );
 
       expect(result.content[0].text).toMatch(/✅ Device log capture started successfully/);
@@ -115,19 +107,13 @@ describe('start_device_log_cap plugin', () => {
         },
       });
 
-      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
-        createWriteStreamCalls.push({ path, flags: options.flags });
-        return mockWriteStream;
-      };
-
-      const result = await plugin.handler(
+      const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
-        mockCreateWriteStream,
       );
 
       expect(result.content[0].text).toContain('Next Steps:');
@@ -149,19 +135,13 @@ describe('start_device_log_cap plugin', () => {
         },
       });
 
-      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
-        createWriteStreamCalls.push({ path, flags: options.flags });
-        return mockWriteStream;
-      };
-
-      const result = await plugin.handler(
+      const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
-        mockCreateWriteStream,
       );
 
       expect(result).toEqual({
@@ -193,19 +173,13 @@ describe('start_device_log_cap plugin', () => {
         },
       });
 
-      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
-        createWriteStreamCalls.push({ path, flags: options.flags });
-        return mockWriteStream;
-      };
-
-      const result = await plugin.handler(
+      const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
-        mockCreateWriteStream,
       );
 
       expect(result).toEqual({
@@ -232,19 +206,13 @@ describe('start_device_log_cap plugin', () => {
         },
       });
 
-      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
-        createWriteStreamCalls.push({ path, flags: options.flags });
-        return mockWriteStream;
-      };
-
-      const result = await plugin.handler(
+      const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
-        mockCreateWriteStream,
       );
 
       expect(result).toEqual({
@@ -271,19 +239,13 @@ describe('start_device_log_cap plugin', () => {
         },
       });
 
-      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
-        createWriteStreamCalls.push({ path, flags: options.flags });
-        return mockWriteStream;
-      };
-
-      const result = await plugin.handler(
+      const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
           bundleId: 'com.example.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
-        mockCreateWriteStream,
       );
 
       expect(result).toEqual({
@@ -291,49 +253,6 @@ describe('start_device_log_cap plugin', () => {
           {
             type: 'text',
             text: 'Failed to start device log capture: String error message',
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle createWriteStream failure', async () => {
-      // Mock createWriteStream to fail
-      const mockExecutor = createMockExecutor({
-        success: false,
-        output: '',
-        error: 'Command failed',
-      });
-
-      const mockFileSystemExecutor = createMockFileSystemExecutor({
-        mkdir: async (path: string) => {
-          mkdirCalls.push(path);
-        },
-        writeFile: async (path: string, content: string) => {
-          writeFileCalls.push({ path, content });
-        },
-      });
-
-      const mockCreateWriteStream = (path: string, options: { flags: string }) => {
-        createWriteStreamCalls.push({ path, flags: options.flags });
-        throw new Error('Stream creation failed');
-      };
-
-      const result = await plugin.handler(
-        {
-          deviceId: '00008110-001A2C3D4E5F',
-          bundleId: 'com.example.MyApp',
-        },
-        mockExecutor,
-        mockFileSystemExecutor,
-        mockCreateWriteStream,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Failed to start device log capture: Stream creation failed',
           },
         ],
         isError: true,

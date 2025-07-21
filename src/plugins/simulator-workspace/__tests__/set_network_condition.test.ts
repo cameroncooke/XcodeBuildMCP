@@ -1,3 +1,9 @@
+/**
+ * Tests for set_network_condition plugin (re-exported from simulator-shared)
+ * Following CLAUDE.md testing standards with literal validation
+ * Using dependency injection for deterministic testing
+ */
+
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import {
@@ -6,8 +12,10 @@ import {
   createNoopExecutor,
 } from '../../../utils/command.js';
 
-// Import the plugin
-import setNetworkCondition from '../set_network_condition.ts';
+// Import the plugin and logic function from original source
+import setNetworkCondition, {
+  set_network_conditionLogic,
+} from '../../simulator-shared/set_network_condition.js';
 
 describe('set_network_condition tool', () => {
   // Clean setup for each test
@@ -72,7 +80,7 @@ describe('set_network_condition tool', () => {
         output: 'Network condition set successfully',
       });
 
-      const result = await setNetworkCondition.handler(
+      const result = await set_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
           profile: 'wifi',
@@ -92,7 +100,7 @@ describe('set_network_condition tool', () => {
     });
 
     it('should handle validation failure', async () => {
-      const result = await setNetworkCondition.handler(
+      const result = await set_network_conditionLogic(
         {
           simulatorUuid: undefined,
           profile: 'wifi',
@@ -117,7 +125,7 @@ describe('set_network_condition tool', () => {
         error: 'Simulator not found',
       });
 
-      const result = await setNetworkCondition.handler(
+      const result = await set_network_conditionLogic(
         {
           simulatorUuid: 'invalid-uuid',
           profile: '3g',
@@ -139,7 +147,7 @@ describe('set_network_condition tool', () => {
     it('should handle exception with Error object', async () => {
       const mockExecutor = createMockExecutor(new Error('Connection failed'));
 
-      const result = await setNetworkCondition.handler(
+      const result = await set_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
           profile: 'edge',
@@ -161,7 +169,7 @@ describe('set_network_condition tool', () => {
     it('should handle exception with string error', async () => {
       const mockExecutor = createMockExecutor('String error');
 
-      const result = await setNetworkCondition.handler(
+      const result = await set_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
           profile: 'dsl',
@@ -192,7 +200,7 @@ describe('set_network_condition tool', () => {
         });
       };
 
-      await setNetworkCondition.handler(
+      await set_network_conditionLogic(
         {
           simulatorUuid: 'test-uuid-123',
           profile: 'wifi',

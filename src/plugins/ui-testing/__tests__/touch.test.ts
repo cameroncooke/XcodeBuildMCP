@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import touchPlugin from '../touch.ts';
+import touchPlugin, { touchLogic } from '../touch.ts';
 
 describe('Touch Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -119,7 +119,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      await touchPlugin.handler(
+      await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -160,7 +160,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      await touchPlugin.handler(
+      await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 150,
@@ -201,7 +201,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      await touchPlugin.handler(
+      await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 300,
@@ -244,7 +244,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      await touchPlugin.handler(
+      await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 50,
@@ -290,7 +290,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
       };
 
-      await touchPlugin.handler(
+      await touchLogic(
         {
           simulatorUuid: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
           x: 0,
@@ -322,7 +322,7 @@ describe('Touch Plugin', () => {
     it('should return error for missing simulatorUuid', async () => {
       const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await touchPlugin.handler({ x: 100, y: 200, down: true }, mockExecutor);
+      const result = await touchLogic({ x: 100, y: 200, down: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -338,7 +338,7 @@ describe('Touch Plugin', () => {
     it('should return error for missing x', async () => {
       const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await touchPlugin.handler(
+      const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           y: 200,
@@ -361,7 +361,7 @@ describe('Touch Plugin', () => {
     it('should return error for missing y', async () => {
       const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await touchPlugin.handler(
+      const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -384,7 +384,7 @@ describe('Touch Plugin', () => {
     it('should return error when neither down nor up is specified', async () => {
       const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await touchPlugin.handler(
+      const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -411,7 +411,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await touchPlugin.handler(
+      const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -445,7 +445,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await touchPlugin.handler(
+      const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -479,7 +479,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await touchPlugin.handler(
+      const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -510,7 +510,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await touchPlugin.handler(
+      const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -544,7 +544,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await touchPlugin.handler(
+      const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -576,7 +576,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await touchPlugin.handler(
+      const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -610,7 +610,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await touchPlugin.handler(
+      const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -644,7 +644,7 @@ describe('Touch Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await touchPlugin.handler(
+      const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,

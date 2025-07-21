@@ -10,7 +10,7 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -25,6 +25,58 @@ interface AxeHelpers {
 
 const LOG_PREFIX = '[AXe]';
 
+export async function buttonLogic(
+  params: Record<string, unknown>,
+  executor: CommandExecutor,
+  axeHelpers?: AxeHelpers,
+): Promise<ToolResponse> {
+  const toolName = 'button';
+  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  const buttonTypeValidation = validateRequiredParam('buttonType', params.buttonType);
+  if (!buttonTypeValidation.isValid) return buttonTypeValidation.errorResponse;
+
+  const { simulatorUuid, buttonType, duration } = params;
+  const commandArgs = ['button', buttonType];
+  if (duration !== undefined) {
+    commandArgs.push('--duration', String(duration));
+  }
+
+  log('info', `${LOG_PREFIX}/${toolName}: Starting ${buttonType} button press on ${simulatorUuid}`);
+
+  try {
+    await executeAxeCommand(commandArgs, simulatorUuid, 'button', executor, axeHelpers);
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+    return {
+      content: [{ type: 'text', text: `Hardware button '${buttonType}' pressed successfully.` }],
+    };
+  } catch (error) {
+    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
+    if (error instanceof DependencyError) {
+      return axeHelpers
+        ? axeHelpers.createAxeNotAvailableResponse()
+        : createAxeNotAvailableResponse();
+    } else if (error instanceof AxeError) {
+      return createErrorResponse(
+        `Failed to press button '${buttonType}': ${error.message}`,
+        error.axeOutput,
+        error.name,
+      );
+    } else if (error instanceof SystemError) {
+      return createErrorResponse(
+        `System error executing axe: ${error.message}`,
+        error.originalError?.stack,
+        error.name,
+      );
+    }
+    return createErrorResponse(
+      `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
+      undefined,
+      'UnexpectedError',
+    );
+  }
+}
+
 export default {
   name: 'button',
   description:
@@ -34,60 +86,8 @@ export default {
     buttonType: z.enum(['apple-pay', 'home', 'lock', 'side-button', 'siri']),
     duration: z.number().min(0, 'Duration must be non-negative').optional(),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    axeHelpers?: AxeHelpers,
-  ): Promise<ToolResponse> {
-    const params = args;
-    const toolName = 'button';
-    const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-    if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
-    const buttonTypeValidation = validateRequiredParam('buttonType', params.buttonType);
-    if (!buttonTypeValidation.isValid) return buttonTypeValidation.errorResponse;
-
-    const { simulatorUuid, buttonType, duration } = params;
-    const commandArgs = ['button', buttonType];
-    if (duration !== undefined) {
-      commandArgs.push('--duration', String(duration));
-    }
-
-    log(
-      'info',
-      `${LOG_PREFIX}/${toolName}: Starting ${buttonType} button press on ${simulatorUuid}`,
-    );
-
-    try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'button', executor, axeHelpers);
-      log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-      return {
-        content: [{ type: 'text', text: `Hardware button '${buttonType}' pressed successfully.` }],
-      };
-    } catch (error) {
-      log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
-      if (error instanceof DependencyError) {
-        return axeHelpers
-          ? axeHelpers.createAxeNotAvailableResponse()
-          : createAxeNotAvailableResponse();
-      } else if (error instanceof AxeError) {
-        return createErrorResponse(
-          `Failed to press button '${buttonType}': ${error.message}`,
-          error.axeOutput,
-          error.name,
-        );
-      } else if (error instanceof SystemError) {
-        return createErrorResponse(
-          `System error executing axe: ${error.message}`,
-          error.originalError?.stack,
-          error.name,
-        );
-      }
-      return createErrorResponse(
-        `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-        undefined,
-        'UnexpectedError',
-      );
-    }
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return buttonLogic(args, getDefaultCommandExecutor());
   },
 };
 
@@ -120,13 +120,7 @@ async function executeAxeCommand(
           : getBundledAxeEnvironment()
         : undefined;
 
-    const result = await executeCommand(
-      fullCommand,
-      executor,
-      `${LOG_PREFIX}: ${commandName}`,
-      false,
-      axeEnv,
-    );
+    const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 
     if (!result.success) {
       throw new AxeError(

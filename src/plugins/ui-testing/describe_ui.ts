@@ -3,12 +3,17 @@ import { ToolResponse } from '../../types/common.js';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../utils/index.js';
+
+// Parameter types
+interface DescribeUiParams {
+  simulatorUuid: string;
+}
 
 const LOG_PREFIX = '[AXe]';
 
@@ -22,6 +27,80 @@ function recordDescribeUICall(simulatorUuid: string): void {
   });
 }
 
+/**
+ * Core business logic for describe_ui functionality
+ */
+export async function describe_uiLogic(
+  params: DescribeUiParams,
+  executor: CommandExecutor,
+  axeHelpers?: {
+    getAxePath: () => string | null;
+    getBundledAxeEnvironment: () => Record<string, string>;
+  },
+): Promise<ToolResponse> {
+  const toolName = 'describe_ui';
+  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+
+  const { simulatorUuid } = params;
+  const commandArgs = ['describe-ui'];
+
+  log('info', `${LOG_PREFIX}/${toolName}: Starting for ${simulatorUuid}`);
+
+  try {
+    const responseText = await executeAxeCommand(
+      commandArgs,
+      simulatorUuid,
+      'describe-ui',
+      executor,
+      axeHelpers,
+    );
+
+    // Record the describe_ui call for warning system
+    recordDescribeUICall(simulatorUuid);
+
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+    return {
+      content: [
+        {
+          type: 'text',
+          text:
+            'Accessibility hierarchy retrieved successfully:\n```json\n' + responseText + '\n```',
+        },
+        {
+          type: 'text',
+          text: `Next Steps:
+- Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)
+- Re-run describe_ui after layout changes
+- Screenshots are for visual verification only`,
+        },
+      ],
+    };
+  } catch (error) {
+    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
+    if (error instanceof DependencyError) {
+      return createAxeNotAvailableResponse();
+    } else if (error instanceof AxeError) {
+      return createErrorResponse(
+        `Failed to get accessibility hierarchy: ${error.message}`,
+        error.axeOutput,
+        error.name,
+      );
+    } else if (error instanceof SystemError) {
+      return createErrorResponse(
+        `System error executing axe: ${error.message}`,
+        error.originalError?.stack,
+        error.name,
+      );
+    }
+    return createErrorResponse(
+      `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
+      undefined,
+      'UnexpectedError',
+    );
+  }
+}
+
 export default {
   name: 'describe_ui',
   description:
@@ -29,76 +108,8 @@ export default {
   schema: {
     simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    axeHelpers?: {
-      getAxePath: () => string | null;
-      getBundledAxeEnvironment: () => Record<string, string>;
-    },
-  ): Promise<ToolResponse> {
-    const params = args;
-    const toolName = 'describe_ui';
-    const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-    if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
-
-    const { simulatorUuid } = params;
-    const commandArgs = ['describe-ui'];
-
-    log('info', `${LOG_PREFIX}/${toolName}: Starting for ${simulatorUuid}`);
-
-    try {
-      const responseText = await executeAxeCommand(
-        commandArgs,
-        simulatorUuid,
-        'describe-ui',
-        executor,
-        axeHelpers,
-      );
-
-      // Record the describe_ui call for warning system
-      recordDescribeUICall(simulatorUuid);
-
-      log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-      return {
-        content: [
-          {
-            type: 'text',
-            text:
-              'Accessibility hierarchy retrieved successfully:\n```json\n' + responseText + '\n```',
-          },
-          {
-            type: 'text',
-            text: `Next Steps:
-- Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)
-- Re-run describe_ui after layout changes
-- Screenshots are for visual verification only`,
-          },
-        ],
-      };
-    } catch (error) {
-      log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
-      if (error instanceof DependencyError) {
-        return createAxeNotAvailableResponse();
-      } else if (error instanceof AxeError) {
-        return createErrorResponse(
-          `Failed to get accessibility hierarchy: ${error.message}`,
-          error.axeOutput,
-          error.name,
-        );
-      } else if (error instanceof SystemError) {
-        return createErrorResponse(
-          `System error executing axe: ${error.message}`,
-          error.originalError?.stack,
-          error.name,
-        );
-      }
-      return createErrorResponse(
-        `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-        undefined,
-        'UnexpectedError',
-      );
-    }
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return describe_uiLogic(args as DescribeUiParams, getDefaultCommandExecutor());
   },
 };
 
@@ -134,13 +145,7 @@ async function executeAxeCommand(
           : getBundledAxeEnvironment()
         : undefined;
 
-    const result = await executeCommand(
-      fullCommand,
-      executor,
-      `${LOG_PREFIX}: ${commandName}`,
-      false,
-      axeEnv,
-    );
+    const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 
     if (!result.success) {
       throw new AxeError(

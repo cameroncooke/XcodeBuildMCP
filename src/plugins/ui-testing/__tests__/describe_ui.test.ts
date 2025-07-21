@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
-import describeUIPlugin from '../describe_ui.ts';
+import describeUIPlugin, { describe_uiLogic } from '../describe_ui.ts';
 
 describe('Describe UI Plugin', () => {
   let mockCalls: any[] = [];
@@ -51,7 +51,7 @@ describe('Describe UI Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await describeUIPlugin.handler({}, createNoopExecutor());
+      const result = await describe_uiLogic({} as any, createNoopExecutor());
 
       expect(result).toEqual({
         content: [
@@ -88,7 +88,7 @@ describe('Describe UI Plugin', () => {
         return mockExecutor(...args);
       };
 
-      const result = await describeUIPlugin.handler(
+      const result = await describe_uiLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -127,7 +127,7 @@ describe('Describe UI Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await describeUIPlugin.handler(
+      const result = await describe_uiLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -160,7 +160,7 @@ describe('Describe UI Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await describeUIPlugin.handler(
+      const result = await describe_uiLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -188,7 +188,7 @@ describe('Describe UI Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await describeUIPlugin.handler(
+      const result = await describe_uiLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -218,7 +218,7 @@ describe('Describe UI Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await describeUIPlugin.handler(
+      const result = await describe_uiLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },
@@ -248,7 +248,7 @@ describe('Describe UI Plugin', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await describeUIPlugin.handler(
+      const result = await describe_uiLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
         },

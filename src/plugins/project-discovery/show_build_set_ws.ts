@@ -6,17 +6,24 @@
 
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
 
 /**
- * Internal logic for showing build settings.
+ * Business logic for showing build settings from a workspace.
  */
-async function _handleShowBuildSettingsLogic(
+export async function show_build_set_wsLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+
   log('info', `Showing build settings for scheme ${params.scheme}`);
 
   try {
@@ -34,7 +41,7 @@ async function _handleShowBuildSettingsLogic(
     command.push('-scheme', params.scheme);
 
     // Execute the command directly
-    const result = await executeCommand(command, executor, 'Show Build Settings', true);
+    const result = await executor(command, 'Show Build Settings', true);
 
     if (!result.success) {
       return createTextResponse(`Failed to retrieve build settings: ${result.error}`, true);
@@ -71,23 +78,11 @@ export default {
   name: 'show_build_set_ws',
   description:
     "Shows build settings from a workspace using xcodebuild. IMPORTANT: Requires workspacePath and scheme. Example: show_build_set_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
-  schema: {
+  schema: z.object({
     workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
     scheme: z.string().describe('The scheme to use (Required)'),
-  },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-
-    // Validate required parameters
-    const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse;
-
-    return _handleShowBuildSettingsLogic(params, executor);
+  }),
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return show_build_set_wsLogic(args, getDefaultCommandExecutor());
   },
 };

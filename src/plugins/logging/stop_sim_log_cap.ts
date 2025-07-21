@@ -9,19 +9,18 @@ import { stopLogCapture as _stopLogCapture } from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { ToolResponse, createTextContent } from '../../types/common.js';
 
-async function stopSimLogCapToolHandler(
-  params: { logSessionId: string },
-  stopLogCapture?: (logSessionId: string) => Promise<{ logContent: string; error?: string }>,
-): Promise<ToolResponse> {
+/**
+ * Business logic for stopping simulator log capture session
+ */
+export async function stop_sim_log_capLogic(params: {
+  logSessionId: string;
+}): Promise<ToolResponse> {
   const validationResult = validateRequiredParam('logSessionId', params.logSessionId);
   if (!validationResult.isValid) {
     return validationResult.errorResponse!;
   }
 
-  // Use injected dependency or default import
-  const stopLogCaptureFunc = stopLogCapture || _stopLogCapture;
-
-  const { logContent, error } = await stopLogCaptureFunc(params.logSessionId);
+  const { logContent, error } = await _stopLogCapture(params.logSessionId);
   if (error) {
     return {
       content: [
@@ -45,5 +44,7 @@ export default {
   schema: {
     logSessionId: z.string().describe('The session ID returned by start_sim_log_cap.'),
   },
-  handler: stopSimLogCapToolHandler,
+  handler: async (args: Record<string, unknown>) => {
+    return stop_sim_log_capLogic(args as { logSessionId: string });
+  },
 };

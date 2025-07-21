@@ -5,33 +5,30 @@
  */
 
 import { z } from 'zod';
-import { startLogCapture } from '../../utils/index.js';
+import {
+  startLogCapture,
+  getDefaultCommandExecutor,
+  type CommandExecutor,
+} from '../../utils/index.js';
 import { validateRequiredParam } from '../../utils/index.js';
 import { ToolResponse, createTextContent } from '../../types/common.js';
 
-async function startSimLogCapToolHandler(
-  params: {
-    simulatorUuid: string;
-    bundleId: string;
-    captureConsole?: boolean;
-  },
-  startLogCaptureFunction?: (params: {
-    simulatorUuid: string;
-    bundleId: string;
-    captureConsole?: boolean;
-  }) => Promise<{
-    sessionId: string;
-    logFilePath: string;
-    processes: any[];
-    error?: string;
-  }>,
+interface StartSimLogCapParams {
+  simulatorUuid: string;
+  bundleId: string;
+  captureConsole?: boolean;
+}
+
+export async function start_sim_log_capLogic(
+  params: StartSimLogCapParams,
+  _executor: CommandExecutor = getDefaultCommandExecutor(),
+  logCaptureFunction: typeof startLogCapture = startLogCapture,
 ): Promise<ToolResponse> {
   const validationResult = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!validationResult.isValid) {
     return validationResult.errorResponse!;
   }
 
-  const logCaptureFunction = startLogCaptureFunction || startLogCapture;
   const { sessionId, error } = await logCaptureFunction(params);
   if (error) {
     return {
@@ -63,5 +60,7 @@ export default {
       .default(false)
       .describe('Whether to capture console output (requires app relaunch).'),
   },
-  handler: startSimLogCapToolHandler,
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return start_sim_log_capLogic(args as StartSimLogCapParams);
+  },
 };

@@ -1,11 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import {
-  createMockExecutor,
-  createMockFileSystemExecutor,
-  createNoopExecutor,
-} from '../../../utils/command.js';
-import getSimAppPathIdProj from '../get_sim_app_path_id_proj.ts';
+import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
+import getSimAppPathIdProj, { get_sim_app_path_id_projLogic } from '../get_sim_app_path_id_proj.ts';
 
 describe('get_sim_app_path_id_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -90,16 +86,15 @@ describe('get_sim_app_path_id_proj plugin', () => {
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
+  describe('Logic Function Behavior (Complete Literal Returns)', () => {
     it('should return validation error for missing projectPath', async () => {
-      const result = await getSimAppPathIdProj.handler(
+      const result = await get_sim_app_path_id_projLogic(
         {
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -114,14 +109,13 @@ describe('get_sim_app_path_id_proj plugin', () => {
     });
 
     it('should return validation error for missing scheme', async () => {
-      const result = await getSimAppPathIdProj.handler(
+      const result = await get_sim_app_path_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -136,14 +130,13 @@ describe('get_sim_app_path_id_proj plugin', () => {
     });
 
     it('should return validation error for missing platform', async () => {
-      const result = await getSimAppPathIdProj.handler(
+      const result = await get_sim_app_path_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorId: 'test-uuid',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -158,14 +151,13 @@ describe('get_sim_app_path_id_proj plugin', () => {
     });
 
     it('should return validation error for missing simulatorId', async () => {
-      const result = await getSimAppPathIdProj.handler(
+      const result = await get_sim_app_path_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -185,7 +177,7 @@ describe('get_sim_app_path_id_proj plugin', () => {
         error: 'Command failed with error',
       });
 
-      const result = await getSimAppPathIdProj.handler(
+      const result = await get_sim_app_path_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -193,7 +185,6 @@ describe('get_sim_app_path_id_proj plugin', () => {
           simulatorId: 'test-uuid',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -213,7 +204,7 @@ describe('get_sim_app_path_id_proj plugin', () => {
         output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n',
       });
 
-      const result = await getSimAppPathIdProj.handler(
+      const result = await get_sim_app_path_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -221,7 +212,6 @@ describe('get_sim_app_path_id_proj plugin', () => {
           simulatorId: 'test-uuid',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -248,7 +238,7 @@ describe('get_sim_app_path_id_proj plugin', () => {
         output: 'No BUILT_PRODUCTS_DIR or FULL_PRODUCT_NAME found\n',
       });
 
-      const result = await getSimAppPathIdProj.handler(
+      const result = await get_sim_app_path_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -256,7 +246,6 @@ describe('get_sim_app_path_id_proj plugin', () => {
           simulatorId: 'test-uuid',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -287,7 +276,7 @@ describe('get_sim_app_path_id_proj plugin', () => {
         };
       };
 
-      await getSimAppPathIdProj.handler(
+      await get_sim_app_path_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -297,7 +286,6 @@ describe('get_sim_app_path_id_proj plugin', () => {
           useLatestOS: false,
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);

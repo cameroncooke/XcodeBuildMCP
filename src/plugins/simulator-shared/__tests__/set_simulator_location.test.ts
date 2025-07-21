@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
-import setSimulatorLocation from '../set_simulator_location.ts';
+import setSimulatorLocation, { set_simulator_locationLogic } from '../set_simulator_location.ts';
 
 describe('set_simulator_location tool', () => {
   // No mocks to clear since we use pure dependency injection
@@ -91,7 +91,7 @@ describe('set_simulator_location tool', () => {
         };
       };
 
-      await setSimulatorLocation.handler(
+      await set_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,
@@ -123,7 +123,7 @@ describe('set_simulator_location tool', () => {
         };
       };
 
-      await setSimulatorLocation.handler(
+      await set_simulator_locationLogic(
         {
           simulatorUuid: 'different-uuid',
           latitude: 45.5,
@@ -155,7 +155,7 @@ describe('set_simulator_location tool', () => {
         };
       };
 
-      await setSimulatorLocation.handler(
+      await set_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid',
           latitude: -90,
@@ -183,7 +183,7 @@ describe('set_simulator_location tool', () => {
         error: undefined,
       });
 
-      const result = await setSimulatorLocation.handler(
+      const result = await set_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,
@@ -203,9 +203,9 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle validation failure for missing simulatorUuid', async () => {
-      const result = await setSimulatorLocation.handler(
+      const result = await set_simulator_locationLogic(
         {
-          simulatorUuid: undefined,
+          simulatorUuid: undefined as any,
           latitude: 37.7749,
           longitude: -122.4194,
         },
@@ -224,7 +224,7 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle latitude validation failure', async () => {
-      const result = await setSimulatorLocation.handler(
+      const result = await set_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 95,
@@ -244,7 +244,7 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle longitude validation failure', async () => {
-      const result = await setSimulatorLocation.handler(
+      const result = await set_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,
@@ -270,7 +270,7 @@ describe('set_simulator_location tool', () => {
         error: 'Simulator not found',
       });
 
-      const result = await setSimulatorLocation.handler(
+      const result = await set_simulator_locationLogic(
         {
           simulatorUuid: 'invalid-uuid',
           latitude: 37.7749,
@@ -292,7 +292,7 @@ describe('set_simulator_location tool', () => {
     it('should handle exception with Error object', async () => {
       const mockExecutor = createMockExecutor(new Error('Connection failed'));
 
-      const result = await setSimulatorLocation.handler(
+      const result = await set_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,
@@ -314,7 +314,7 @@ describe('set_simulator_location tool', () => {
     it('should handle exception with string error', async () => {
       const mockExecutor = createMockExecutor('String error');
 
-      const result = await setSimulatorLocation.handler(
+      const result = await set_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,
@@ -340,7 +340,7 @@ describe('set_simulator_location tool', () => {
         error: undefined,
       });
 
-      const result = await setSimulatorLocation.handler(
+      const result = await set_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 90,
@@ -366,7 +366,7 @@ describe('set_simulator_location tool', () => {
         error: undefined,
       });
 
-      const result = await setSimulatorLocation.handler(
+      const result = await set_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: -90,
@@ -392,7 +392,7 @@ describe('set_simulator_location tool', () => {
         error: undefined,
       });
 
-      const result = await setSimulatorLocation.handler(
+      const result = await set_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 0,
@@ -424,7 +424,7 @@ describe('set_simulator_location tool', () => {
         };
       };
 
-      await setSimulatorLocation.handler(
+      await set_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,

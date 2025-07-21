@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import resetSimulatorLocationPlugin from '../reset_simulator_location.ts';
+import resetSimulatorLocationPlugin, {
+  reset_simulator_locationLogic,
+} from '../reset_simulator_location.ts';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
 
 describe('reset_simulator_location plugin', () => {
@@ -45,7 +47,7 @@ describe('reset_simulator_location plugin', () => {
         output: 'Location reset successfully',
       });
 
-      const result = await resetSimulatorLocationPlugin.handler(
+      const result = await reset_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },
@@ -68,7 +70,7 @@ describe('reset_simulator_location plugin', () => {
         error: 'Command failed',
       });
 
-      const result = await resetSimulatorLocationPlugin.handler(
+      const result = await reset_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },
@@ -91,11 +93,7 @@ describe('reset_simulator_location plugin', () => {
         output: 'Location reset successfully',
       });
 
-      const result = await resetSimulatorLocationPlugin.handler(
-        {},
-        mockExecutor,
-        createMockFileSystemExecutor(),
-      );
+      const result = await reset_simulator_locationLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -111,7 +109,7 @@ describe('reset_simulator_location plugin', () => {
     it('should handle exception during execution', async () => {
       const mockExecutor = createMockExecutor(new Error('Network error'));
 
-      const result = await resetSimulatorLocationPlugin.handler(
+      const result = await reset_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },
@@ -144,7 +142,7 @@ describe('reset_simulator_location plugin', () => {
         return mockExecutor(command, logPrefix);
       };
 
-      await resetSimulatorLocationPlugin.handler(
+      await reset_simulator_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },

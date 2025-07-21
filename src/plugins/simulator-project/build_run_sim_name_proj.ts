@@ -1,12 +1,8 @@
 import { z } from 'zod';
-import { log, getDefaultCommandExecutor } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
-import {
-  validateRequiredParam,
-  createTextResponse,
-  getDefaultCommandExecutor,
-} from '../../utils/index.js';
-import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.js';
+import { log } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
+import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
+import { executeXcodeBuildCommand } from '../../utils/index.js';
 import { execSync } from 'child_process';
 import { ToolResponse } from '../../types/common.js';
 
@@ -38,11 +34,38 @@ async function _handleSimulatorBuildLogic(
   );
 }
 
+// Main business logic for building and running iOS Simulator apps
+export async function build_run_sim_name_projLogic(
+  params: Record<string, unknown>,
+  executor: CommandExecutor,
+  execSyncFn: (command: string) => string | Buffer = execSync,
+): Promise<ToolResponse> {
+  // Validate required parameters
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
+
+  // Provide defaults for the core logic
+  const processedParams = {
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  };
+
+  return _handleIOSSimulatorBuildAndRunLogic(processedParams, executor, execSyncFn);
+}
+
 // Internal logic for building and running iOS Simulator apps.
 async function _handleIOSSimulatorBuildAndRunLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
-  execSyncFn: (command: string) => string | Buffer = execSync,
+  executor: CommandExecutor,
+  execSyncFn: (command: string) => string | Buffer,
 ): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build and run for scheme ${params.scheme} (internal)`);
 
@@ -95,7 +118,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     }
 
     // Execute the command directly
-    const result = await executeCommand(command, executor, 'Get App Path', true, undefined);
+    const result = await executor(command, 'Get App Path', true, undefined);
 
     // If there was an error with the command execution, return it
     if (!result.success) {
@@ -334,32 +357,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    execSyncFn?: (command: string) => string | Buffer,
-  ): Promise<ToolResponse> {
-    const params = args;
-    // Validate required parameters
-    const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-    if (!projectValidation.isValid) return projectValidation.errorResponse;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse;
-
-    const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-    if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
-
-    // Provide defaults
-    return _handleIOSSimulatorBuildAndRunLogic(
-      {
-        ...params,
-        configuration: params.configuration ?? 'Debug',
-        useLatestOS: params.useLatestOS ?? true,
-        preferXcodebuild: params.preferXcodebuild ?? false,
-      },
-      executor,
-      execSyncFn,
-    );
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return build_run_sim_name_projLogic(args, getDefaultCommandExecutor());
   },
 };

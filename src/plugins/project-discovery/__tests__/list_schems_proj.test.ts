@@ -5,8 +5,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import plugin from '../list_schems_proj.ts';
+import plugin, { list_schems_projLogic } from '../list_schems_proj.ts';
 
 describe('list_schems_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -25,19 +26,17 @@ describe('list_schems_proj plugin', () => {
     });
 
     it('should validate schema with valid inputs', () => {
-      expect(plugin.schema.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(
-        true,
-      );
-      expect(plugin.schema.safeParse({ projectPath: '/Users/dev/App.xcodeproj' }).success).toBe(
-        true,
-      );
+      const schema = z.object(plugin.schema);
+      expect(schema.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(true);
+      expect(schema.safeParse({ projectPath: '/Users/dev/App.xcodeproj' }).success).toBe(true);
     });
 
     it('should validate schema with invalid inputs', () => {
-      expect(plugin.schema.safeParse({}).success).toBe(false);
-      expect(plugin.schema.safeParse({ projectPath: 123 }).success).toBe(false);
-      expect(plugin.schema.safeParse({ projectPath: null }).success).toBe(false);
-      expect(plugin.schema.safeParse({ projectPath: undefined }).success).toBe(false);
+      const schema = z.object(plugin.schema);
+      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({ projectPath: 123 }).success).toBe(false);
+      expect(schema.safeParse({ projectPath: null }).success).toBe(false);
+      expect(schema.safeParse({ projectPath: undefined }).success).toBe(false);
     });
   });
 
@@ -59,7 +58,7 @@ describe('list_schems_proj plugin', () => {
         MyProjectTests`,
       });
 
-      const result = await plugin.handler(
+      const result = await list_schems_projLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -92,7 +91,7 @@ describe('list_schems_proj plugin', () => {
         error: 'Project not found',
       });
 
-      const result = await plugin.handler(
+      const result = await list_schems_projLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -109,7 +108,7 @@ describe('list_schems_proj plugin', () => {
         output: 'Information about project "MyProject":\n    Targets:\n        MyProject',
       });
 
-      const result = await plugin.handler(
+      const result = await list_schems_projLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -136,7 +135,7 @@ describe('list_schems_proj plugin', () => {
 `,
       });
 
-      const result = await plugin.handler(
+      const result = await list_schems_projLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -165,7 +164,7 @@ describe('list_schems_proj plugin', () => {
         throw new Error('Command execution failed');
       };
 
-      const result = await plugin.handler(
+      const result = await list_schems_projLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -181,7 +180,7 @@ describe('list_schems_proj plugin', () => {
         throw 'String error';
       };
 
-      const result = await plugin.handler(
+      const result = await list_schems_projLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -218,7 +217,7 @@ describe('list_schems_proj plugin', () => {
         };
       };
 
-      await plugin.handler({ projectPath: '/path/to/MyProject.xcodeproj' }, mockExecutor);
+      await list_schems_projLogic({ projectPath: '/path/to/MyProject.xcodeproj' }, mockExecutor);
 
       expect(calls).toEqual([
         [
@@ -230,9 +229,18 @@ describe('list_schems_proj plugin', () => {
       ]);
     });
 
-    it('should handle schema validation error when projectPath is null', async () => {
-      // Schema validation will throw before reaching validateRequiredParam
-      await expect(plugin.handler({ projectPath: null })).rejects.toThrow();
+    it('should handle validation error when projectPath is missing', async () => {
+      // Handler will return error response for missing required parameter
+      const result = await plugin.handler({});
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
     });
   });
 });

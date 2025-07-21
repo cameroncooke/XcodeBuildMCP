@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
-import buildDevProj from '../build_dev_proj.ts';
+import buildDevProj, { build_dev_projLogic } from '../build_dev_proj.ts';
 
 describe('build_dev_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -49,7 +49,7 @@ describe('build_dev_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation failure response for missing projectPath', async () => {
-      const result = await buildDevProj.handler(
+      const result = await build_dev_projLogic(
         {
           projectPath: null,
           scheme: 'MyScheme',
@@ -69,7 +69,7 @@ describe('build_dev_proj plugin', () => {
     });
 
     it('should return exact validation failure response for missing scheme', async () => {
-      const result = await buildDevProj.handler(
+      const result = await build_dev_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: null,
@@ -111,7 +111,7 @@ describe('build_dev_proj plugin', () => {
         };
       };
 
-      await buildDevProj.handler(
+      await build_dev_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -146,7 +146,7 @@ describe('build_dev_proj plugin', () => {
         output: 'Build succeeded',
       });
 
-      const result = await buildDevProj.handler(
+      const result = await build_dev_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -174,7 +174,7 @@ describe('build_dev_proj plugin', () => {
         error: 'Compilation error',
       });
 
-      const result = await buildDevProj.handler(
+      const result = await build_dev_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -220,7 +220,7 @@ describe('build_dev_proj plugin', () => {
         };
       };
 
-      await buildDevProj.handler(
+      await build_dev_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',

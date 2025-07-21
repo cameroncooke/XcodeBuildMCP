@@ -5,7 +5,7 @@ import {
   createNoopExecutor,
   createMockFileSystemExecutor,
 } from '../../../utils/command.js';
-import buildRunSimNameProj from '../build_run_sim_name_proj.ts';
+import buildRunSimNameProj, { build_run_sim_name_projLogic } from '../build_run_sim_name_proj.ts';
 
 describe('build_run_sim_name_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -80,7 +80,7 @@ describe('build_run_sim_name_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return validation error for missing projectPath', async () => {
-      const result = await buildRunSimNameProj.handler(
+      const result = await build_run_sim_name_projLogic(
         {
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
@@ -101,7 +101,7 @@ describe('build_run_sim_name_proj plugin', () => {
     });
 
     it('should return validation error for missing scheme', async () => {
-      const result = await buildRunSimNameProj.handler(
+      const result = await build_run_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           simulatorName: 'iPhone 16',
@@ -122,7 +122,7 @@ describe('build_run_sim_name_proj plugin', () => {
     });
 
     it('should return validation error for missing simulatorName', async () => {
-      const result = await buildRunSimNameProj.handler(
+      const result = await build_run_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -148,7 +148,7 @@ describe('build_run_sim_name_proj plugin', () => {
         error: 'Build failed with error',
       });
 
-      const result = await buildRunSimNameProj.handler(
+      const result = await build_run_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -256,7 +256,7 @@ describe('build_run_sim_name_proj plugin', () => {
         return '';
       };
 
-      const result = await buildRunSimNameProj.handler(
+      const result = await build_run_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -285,7 +285,7 @@ describe('build_run_sim_name_proj plugin', () => {
         });
       };
 
-      await buildRunSimNameProj.handler(
+      await build_run_sim_name_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',

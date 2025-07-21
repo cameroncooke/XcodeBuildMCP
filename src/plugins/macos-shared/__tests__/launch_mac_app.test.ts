@@ -10,7 +10,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockFileSystemExecutor } from '../../../utils/command.js';
-import launchMacApp from '../launch_mac_app.ts';
+import launchMacApp, { launch_mac_appLogic } from '../launch_mac_app.ts';
 
 describe('launch_mac_app plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -62,7 +62,9 @@ describe('launch_mac_app plugin', () => {
 
   describe('Input Validation', () => {
     it('should handle missing appPath parameter', async () => {
-      const result = await launchMacApp.handler({});
+      const mockExecutor = async () => Promise.resolve({ stdout: '', stderr: '' });
+
+      const result = await launch_mac_appLogic({}, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -76,9 +78,14 @@ describe('launch_mac_app plugin', () => {
     });
 
     it('should handle missing appPath with other parameters', async () => {
-      const result = await launchMacApp.handler({
-        args: ['--debug'],
-      });
+      const mockExecutor = async () => Promise.resolve({ stdout: '', stderr: '' });
+
+      const result = await launch_mac_appLogic(
+        {
+          args: ['--debug'],
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
@@ -92,15 +99,16 @@ describe('launch_mac_app plugin', () => {
     });
 
     it('should handle non-existent app path', async () => {
+      const mockExecutor = async () => Promise.resolve({ stdout: '', stderr: '' });
       const mockFileSystem = createMockFileSystemExecutor({
         existsSync: () => false,
       });
 
-      const result = await launchMacApp.handler(
+      const result = await launch_mac_appLogic(
         {
           appPath: '/path/to/NonExistent.app',
         },
-        undefined,
+        mockExecutor,
         mockFileSystem,
       );
 
@@ -119,7 +127,7 @@ describe('launch_mac_app plugin', () => {
   describe('Command Generation', () => {
     it('should generate correct command with minimal parameters', async () => {
       const calls: any[] = [];
-      const mockExecutor = async (command: string) => {
+      const mockExecutor = async (command: string[]) => {
         calls.push({ command });
         return { stdout: '', stderr: '' };
       };
@@ -128,7 +136,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      await launchMacApp.handler(
+      await launch_mac_appLogic(
         {
           appPath: '/path/to/MyApp.app',
         },
@@ -137,12 +145,12 @@ describe('launch_mac_app plugin', () => {
       );
 
       expect(calls).toHaveLength(1);
-      expect(calls[0].command).toBe('open "/path/to/MyApp.app"');
+      expect(calls[0].command).toEqual(['open', '/path/to/MyApp.app']);
     });
 
     it('should generate correct command with args parameter', async () => {
       const calls: any[] = [];
-      const mockExecutor = async (command: string) => {
+      const mockExecutor = async (command: string[]) => {
         calls.push({ command });
         return { stdout: '', stderr: '' };
       };
@@ -151,7 +159,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      await launchMacApp.handler(
+      await launch_mac_appLogic(
         {
           appPath: '/path/to/MyApp.app',
           args: ['--debug', '--verbose'],
@@ -161,12 +169,18 @@ describe('launch_mac_app plugin', () => {
       );
 
       expect(calls).toHaveLength(1);
-      expect(calls[0].command).toBe('open "/path/to/MyApp.app" --args --debug --verbose');
+      expect(calls[0].command).toEqual([
+        'open',
+        '/path/to/MyApp.app',
+        '--args',
+        '--debug',
+        '--verbose',
+      ]);
     });
 
     it('should generate correct command with empty args array', async () => {
       const calls: any[] = [];
-      const mockExecutor = async (command: string) => {
+      const mockExecutor = async (command: string[]) => {
         calls.push({ command });
         return { stdout: '', stderr: '' };
       };
@@ -175,7 +189,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      await launchMacApp.handler(
+      await launch_mac_appLogic(
         {
           appPath: '/path/to/MyApp.app',
           args: [],
@@ -185,12 +199,12 @@ describe('launch_mac_app plugin', () => {
       );
 
       expect(calls).toHaveLength(1);
-      expect(calls[0].command).toBe('open "/path/to/MyApp.app"');
+      expect(calls[0].command).toEqual(['open', '/path/to/MyApp.app']);
     });
 
     it('should handle paths with spaces correctly', async () => {
       const calls: any[] = [];
-      const mockExecutor = async (command: string) => {
+      const mockExecutor = async (command: string[]) => {
         calls.push({ command });
         return { stdout: '', stderr: '' };
       };
@@ -199,7 +213,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      await launchMacApp.handler(
+      await launch_mac_appLogic(
         {
           appPath: '/Applications/My App.app',
         },
@@ -208,7 +222,7 @@ describe('launch_mac_app plugin', () => {
       );
 
       expect(calls).toHaveLength(1);
-      expect(calls[0].command).toBe('open "/Applications/My App.app"');
+      expect(calls[0].command).toEqual(['open', '/Applications/My App.app']);
     });
   });
 
@@ -220,7 +234,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await launchMacApp.handler(
+      const result = await launch_mac_appLogic(
         {
           appPath: '/path/to/MyApp.app',
         },
@@ -245,7 +259,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await launchMacApp.handler(
+      const result = await launch_mac_appLogic(
         {
           appPath: '/path/to/MyApp.app',
           args: ['--debug', '--verbose'],
@@ -273,7 +287,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await launchMacApp.handler(
+      const result = await launch_mac_appLogic(
         {
           appPath: '/path/to/MyApp.app',
         },
@@ -301,7 +315,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await launchMacApp.handler(
+      const result = await launch_mac_appLogic(
         {
           appPath: '/path/to/MyApp.app',
         },
@@ -329,7 +343,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await launchMacApp.handler(
+      const result = await launch_mac_appLogic(
         {
           appPath: '/path/to/MyApp.app',
         },

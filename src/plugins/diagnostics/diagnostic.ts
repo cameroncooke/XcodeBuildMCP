@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { log } from '../../utils/index.js';
-import { executeCommand, CommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import { version } from '../../utils/index.js';
 import { areAxeToolsAvailable } from '../../utils/index.js';
 import { isXcodemakeEnabled, isXcodemakeAvailable, doesMakefileExist } from '../../utils/index.js';
@@ -16,7 +16,7 @@ import { ToolResponse } from '../../types/common.js';
 
 // Mock system interface for dependency injection
 interface MockSystem {
-  executeCommand: CommandExecutor;
+  executor: CommandExecutor;
   platform: () => string;
   release: () => string;
   arch: () => string;
@@ -47,11 +47,21 @@ async function checkBinaryAvailability(
   binary: string,
   mockSystem?: MockSystem,
 ): Promise<{ available: boolean; version?: string }> {
-  const commandExecutor = mockSystem?.executeCommand || executeCommand;
+  const commandExecutor = mockSystem?.executor;
+
+  // Fallback executor for when no mock is provided
+  const fallbackExecutor = async (_command: string[], _logPrefix?: string) => ({
+    success: false,
+    output: '',
+    error: 'Binary not found',
+  });
 
   // First check if the binary exists at all
   try {
-    const whichResult = await commandExecutor(['which', binary], 'Check Binary Availability');
+    const whichResult = await (commandExecutor || fallbackExecutor)(
+      ['which', binary],
+      'Check Binary Availability',
+    );
     if (!whichResult.success) {
       return { available: false };
     }
@@ -72,7 +82,7 @@ async function checkBinaryAvailability(
   // Try to get version using binary-specific commands
   if (binary in versionCommands) {
     try {
-      const versionResult = await commandExecutor(
+      const versionResult = await (commandExecutor || fallbackExecutor)(
         versionCommands[binary].split(' '),
         'Get Binary Version',
       );
@@ -106,24 +116,37 @@ async function getXcodeInfo(
 ): Promise<
   { version: string; path: string; selectedXcode: string; xcrunVersion: string } | { error: string }
 > {
-  const commandExecutor = mockSystem?.executeCommand || executeCommand;
+  const commandExecutor = mockSystem?.executor;
+
+  // Fallback executor for when no mock is provided
+  const fallbackExecutor = async (_command: string[], _logPrefix?: string) => ({
+    success: false,
+    output: '',
+    error: 'Xcode tool not found',
+  });
 
   try {
     // Get Xcode version info
-    const xcodebuildResult = await commandExecutor(['xcodebuild', '-version'], 'Get Xcode Version');
+    const xcodebuildResult = await (commandExecutor || fallbackExecutor)(
+      ['xcodebuild', '-version'],
+      'Get Xcode Version',
+    );
     if (!xcodebuildResult.success) {
       throw new Error('xcodebuild command failed');
     }
     const version = xcodebuildResult.output.trim().split('\n').slice(0, 2).join(' - ');
 
     // Get Xcode selection info
-    const pathResult = await commandExecutor(['xcode-select', '-p'], 'Get Xcode Path');
+    const pathResult = await (commandExecutor || fallbackExecutor)(
+      ['xcode-select', '-p'],
+      'Get Xcode Path',
+    );
     if (!pathResult.success) {
       throw new Error('xcode-select command failed');
     }
     const path = pathResult.output.trim();
 
-    const selectedXcodeResult = await commandExecutor(
+    const selectedXcodeResult = await (commandExecutor || fallbackExecutor)(
       ['xcrun', '--find', 'xcodebuild'],
       'Find Xcodebuild',
     );
@@ -133,7 +156,10 @@ async function getXcodeInfo(
     const selectedXcode = selectedXcodeResult.output.trim();
 
     // Get xcrun version info
-    const xcrunVersionResult = await commandExecutor(['xcrun', '--version'], 'Get Xcrun Version');
+    const xcrunVersionResult = await (commandExecutor || fallbackExecutor)(
+      ['xcrun', '--version'],
+      'Get Xcrun Version',
+    );
     if (!xcrunVersionResult.success) {
       throw new Error('xcrun --version command failed');
     }
@@ -256,7 +282,7 @@ async function getPluginSystemInfo(mockUtilities?: MockUtilities): Promise<
     }
   | { error: string; systemMode: string }
 > {
-  const loadPluginsFn = mockUtilities?.loadPlugins || loadPlugins;
+  const loadPluginsFn = mockUtilities?.loadPlugins ?? loadPlugins;
 
   try {
     const plugins = await loadPluginsFn();
@@ -302,10 +328,24 @@ function getIndividuallyEnabledTools(): string[] {
 /**
  * Run the diagnostic tool and return the results
  */
-async function runDiagnosticTool(
-  mockSystem?: MockSystem,
+export async function diagnosticLogic(
+  params: Record<string, unknown>,
+  executor: CommandExecutor,
   mockUtilities?: MockUtilities,
 ): Promise<ToolResponse> {
+  // Create mock system that uses the provided executor
+  const mockSystem: MockSystem = {
+    executor,
+    platform: os.platform,
+    release: os.release,
+    arch: os.arch,
+    cpus: os.cpus,
+    totalmem: os.totalmem,
+    hostname: os.hostname,
+    userInfo: os.userInfo,
+    homedir: os.homedir,
+    tmpdir: os.tmpdir,
+  };
   log('info', `${LOG_PREFIX}: Running diagnostic tool`);
 
   // Check for required binaries
@@ -330,7 +370,7 @@ async function runDiagnosticTool(
   const nodeInfo = getNodeInfo();
 
   // Check for axe tools availability
-  const axeAvailable = mockUtilities?.areAxeToolsAvailable() || areAxeToolsAvailable();
+  const axeAvailable = mockUtilities?.areAxeToolsAvailable?.() ?? areAxeToolsAvailable();
 
   // Get plugin system information
   const pluginSystemInfo = await getPluginSystemInfo(mockUtilities);
@@ -339,10 +379,10 @@ async function runDiagnosticTool(
   const individuallyEnabledTools = getIndividuallyEnabledTools();
 
   // Check for xcodemake configuration
-  const xcodemakeEnabled = mockUtilities?.isXcodemakeEnabled() || isXcodemakeEnabled();
-  const xcodemakeAvailable = await (mockUtilities?.isXcodemakeAvailable() ||
+  const xcodemakeEnabled = mockUtilities?.isXcodemakeEnabled?.() ?? isXcodemakeEnabled();
+  const xcodemakeAvailable = await (mockUtilities?.isXcodemakeAvailable?.() ??
     isXcodemakeAvailable());
-  const makefileExists = mockUtilities?.doesMakefileExist('./') || doesMakefileExist('./');
+  const makefileExists = mockUtilities?.doesMakefileExist?.('./') ?? doesMakefileExist('./');
 
   // Compile the diagnostic information
   const diagnosticInfo = {
@@ -461,11 +501,7 @@ export default {
   schema: {
     enabled: z.boolean().optional().describe('Optional: dummy parameter to satisfy MCP protocol'),
   },
-  async handler(
-    _args: Record<string, unknown>,
-    mockSystem?: MockSystem,
-    mockUtilities?: MockUtilities,
-  ): Promise<ToolResponse> {
-    return runDiagnosticTool(mockSystem, mockUtilities);
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return diagnosticLogic(args, getDefaultCommandExecutor());
   },
 };

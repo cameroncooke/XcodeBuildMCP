@@ -1,12 +1,12 @@
 /**
- * Tests for list_devices plugin
+ * Tests for list_devices plugin (re-exported from device-shared)
  * Following CLAUDE.md testing standards with literal validation
- * Using pure dependency injection for deterministic testing
+ * Using dependency injection for deterministic testing
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
-import listDevices from '../list_devices.ts';
+import listDevices, { list_devicesLogic } from '../../device-shared/list_devices.js';
 
 describe('list_devices plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -113,7 +113,7 @@ describe('list_devices plugin', () => {
         },
       };
 
-      await listDevices.handler({}, trackingExecutor, mockPathDeps, mockFsDeps);
+      await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
       expect(commandCalls).toHaveLength(1);
       expect(commandCalls[0].command).toEqual([
@@ -192,7 +192,7 @@ describe('list_devices plugin', () => {
         },
       };
 
-      const result = await listDevices.handler({}, trackingExecutor, mockPathDeps, mockFsDeps);
+      const result = await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
       expect(result).toEqual({
         content: [
@@ -252,7 +252,7 @@ describe('list_devices plugin', () => {
         },
       };
 
-      const result = await listDevices.handler({}, trackingExecutor, mockPathDeps, mockFsDeps);
+      const result = await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
       expect(result).toEqual({
         content: [
@@ -298,7 +298,7 @@ describe('list_devices plugin', () => {
         },
       };
 
-      const result = await listDevices.handler({}, trackingExecutor, mockPathDeps, mockFsDeps);
+      const result = await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
       expect(result).toEqual({
         content: [
@@ -370,7 +370,7 @@ describe('list_devices plugin', () => {
         },
       };
 
-      const result = await listDevices.handler({}, trackingExecutor, mockPathDeps, mockFsDeps);
+      const result = await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
       expect(result).toEqual({
         content: [
@@ -411,7 +411,7 @@ describe('list_devices plugin', () => {
         },
       };
 
-      const result = await listDevices.handler({}, trackingExecutor, mockPathDeps, mockFsDeps);
+      const result = await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
       expect(result).toEqual({
         content: [

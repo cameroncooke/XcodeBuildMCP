@@ -1,5 +1,5 @@
 /**
- * Tests for launch_mac_app plugin
+ * Tests for launch_mac_app plugin (re-exported from macos-shared)
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
@@ -7,22 +7,26 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockFileSystemExecutor } from '../../../utils/command.js';
-import launchMacApp from '../launch_mac_app.ts';
+import launchMacApp, { launch_mac_appLogic } from '../../macos-shared/launch_mac_app.js';
 
 // Manual execution stub for testing
 interface ExecutionStub {
-  command: string;
   success: boolean;
   error?: string;
 }
 
 function createExecutionStub(stub: ExecutionStub) {
-  const calls: string[] = [];
+  const calls: string[][] = [];
 
-  const execStub = async (command: string) => {
+  const execStub = async (command: string[], description?: string) => {
     calls.push(command);
     if (stub.success) {
-      return { stdout: '', stderr: '' };
+      return {
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      };
     } else {
       throw new Error(stub.error || 'Command failed');
     }
@@ -64,7 +68,6 @@ describe('launch_mac_app plugin', () => {
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact successful launch response', async () => {
       const { execStub, calls } = createExecutionStub({
-        command: 'open "/path/to/MyApp.app"',
         success: true,
       });
 
@@ -72,7 +75,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await launchMacApp.handler(
+      const result = await launch_mac_appLogic(
         {
           appPath: '/path/to/MyApp.app',
         },
@@ -80,7 +83,7 @@ describe('launch_mac_app plugin', () => {
         mockFileSystem,
       );
 
-      expect(calls).toEqual(['open "/path/to/MyApp.app"']);
+      expect(calls).toEqual([['open', '/path/to/MyApp.app']]);
       expect(result).toEqual({
         content: [
           {
@@ -93,7 +96,6 @@ describe('launch_mac_app plugin', () => {
 
     it('should return exact successful launch response with args', async () => {
       const { execStub, calls } = createExecutionStub({
-        command: 'open "/path/to/MyApp.app" --args --debug --verbose',
         success: true,
       });
 
@@ -101,7 +103,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await launchMacApp.handler(
+      const result = await launch_mac_appLogic(
         {
           appPath: '/path/to/MyApp.app',
           args: ['--debug', '--verbose'],
@@ -110,7 +112,7 @@ describe('launch_mac_app plugin', () => {
         mockFileSystem,
       );
 
-      expect(calls).toEqual(['open "/path/to/MyApp.app" --args --debug --verbose']);
+      expect(calls).toEqual([['open', '/path/to/MyApp.app', '--args', '--debug', '--verbose']]);
       expect(result).toEqual({
         content: [
           {
@@ -123,7 +125,6 @@ describe('launch_mac_app plugin', () => {
 
     it('should return exact launch failure response', async () => {
       const { execStub, calls } = createExecutionStub({
-        command: 'open "/path/to/MyApp.app"',
         success: false,
         error: 'App not found',
       });
@@ -132,7 +133,7 @@ describe('launch_mac_app plugin', () => {
         existsSync: () => true,
       });
 
-      const result = await launchMacApp.handler(
+      const result = await launch_mac_appLogic(
         {
           appPath: '/path/to/MyApp.app',
         },
@@ -140,7 +141,7 @@ describe('launch_mac_app plugin', () => {
         mockFileSystem,
       );
 
-      expect(calls).toEqual(['open "/path/to/MyApp.app"']);
+      expect(calls).toEqual([['open', '/path/to/MyApp.app']]);
       expect(result).toEqual({
         content: [
           {
@@ -153,7 +154,7 @@ describe('launch_mac_app plugin', () => {
     });
 
     it('should return exact missing appPath validation response', async () => {
-      const result = await launchMacApp.handler({});
+      const result = await launch_mac_appLogic({});
 
       expect(result).toEqual({
         content: [

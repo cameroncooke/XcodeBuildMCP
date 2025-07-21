@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../utils/command.js';
-import longPressPlugin from '../long_press.ts';
+import longPressPlugin, { long_pressLogic } from '../long_press.ts';
 
 describe('Long Press Plugin', () => {
   // Setup for each test - no vitest mocks to clear
@@ -103,7 +103,7 @@ describe('Long Press Plugin', () => {
         };
       };
 
-      await longPressPlugin.handler(
+      await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -143,7 +143,7 @@ describe('Long Press Plugin', () => {
         };
       };
 
-      await longPressPlugin.handler(
+      await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 50,
@@ -183,7 +183,7 @@ describe('Long Press Plugin', () => {
         };
       };
 
-      await longPressPlugin.handler(
+      await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 300,
@@ -223,7 +223,7 @@ describe('Long Press Plugin', () => {
         };
       };
 
-      await longPressPlugin.handler(
+      await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 150,
@@ -254,7 +254,7 @@ describe('Long Press Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await longPressPlugin.handler(
+      const result = await long_pressLogic(
         { x: 100, y: 200, duration: 1500 },
         createNoopExecutor(),
         () => '/usr/local/bin/axe',
@@ -273,7 +273,7 @@ describe('Long Press Plugin', () => {
     });
 
     it('should return error for missing x', async () => {
-      const result = await longPressPlugin.handler(
+      const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           y: 200,
@@ -296,7 +296,7 @@ describe('Long Press Plugin', () => {
     });
 
     it('should return error for missing y', async () => {
-      const result = await longPressPlugin.handler(
+      const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -319,7 +319,7 @@ describe('Long Press Plugin', () => {
     });
 
     it('should return error for missing duration', async () => {
-      const result = await longPressPlugin.handler(
+      const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -351,7 +351,7 @@ describe('Long Press Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await longPressPlugin.handler(
+      const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -386,7 +386,7 @@ describe('Long Press Plugin', () => {
       const mockGetAxePath = () => null;
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await longPressPlugin.handler(
+      const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -421,7 +421,7 @@ describe('Long Press Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await longPressPlugin.handler(
+      const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -452,7 +452,7 @@ describe('Long Press Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await longPressPlugin.handler(
+      const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -485,7 +485,7 @@ describe('Long Press Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await longPressPlugin.handler(
+      const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
@@ -518,7 +518,7 @@ describe('Long Press Plugin', () => {
       const mockGetAxePath = () => '/usr/local/bin/axe';
       const mockGetBundledAxeEnvironment = () => ({});
 
-      const result = await longPressPlugin.handler(
+      const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,

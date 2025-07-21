@@ -1,5 +1,5 @@
 /**
- * Tests for list_sims plugin
+ * Tests for list_sims plugin (re-exported from simulator-shared)
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import listSims from '../list_sims.ts';
+import listSims, { list_simsLogic } from '../../simulator-shared/list_sims.js';
 
 describe('list_sims plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -59,7 +59,7 @@ describe('list_sims plugin', () => {
         output: mockOutput,
       });
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -99,7 +99,7 @@ Next Steps:
         output: mockOutput,
       });
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -126,7 +126,7 @@ Next Steps:
         error: 'Command failed',
       });
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -144,7 +144,7 @@ Next Steps:
         output: 'invalid json',
       });
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -161,7 +161,7 @@ Next Steps:
         throw new Error('Command execution failed');
       };
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -178,7 +178,7 @@ Next Steps:
         throw 'String error';
       };
 
-      const result = await listSims.handler({ enabled: true }, mockExecutor);
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -215,14 +215,13 @@ Next Steps:
         };
       };
 
-      await listSims.handler({ enabled: true }, mockExecutor);
+      await list_simsLogic({ enabled: true }, mockExecutor);
 
       expect(executorCalls).toHaveLength(1);
       expect(executorCalls[0]).toEqual([
         ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
         'List Simulators',
         true,
-        undefined,
       ]);
     });
   });

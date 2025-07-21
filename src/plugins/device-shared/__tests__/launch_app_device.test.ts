@@ -10,7 +10,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import launchAppDevice from '../launch_app_device.ts';
+import launchAppDevice, { launch_app_deviceLogic } from '../launch_app_device.ts';
 
 describe('launch_app_device plugin (device-shared)', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -87,7 +87,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         };
       };
 
-      await launchAppDevice.handler(
+      await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
@@ -126,7 +126,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         };
       };
 
-      await launchAppDevice.handler(
+      await launch_app_deviceLogic(
         {
           deviceId: '00008030-001E14BE2288802E',
           bundleId: 'com.apple.mobilesafari',
@@ -157,7 +157,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         output: 'App launched successfully',
       });
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
@@ -181,7 +181,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         output: 'Launch succeeded with detailed output',
       });
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
@@ -231,7 +231,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         output: 'App launched successfully',
       });
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
@@ -259,7 +259,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         output: 'App "com.example.app" launched on device "test-device-123"',
       });
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
@@ -285,7 +285,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         error: 'Launch failed: App not found',
       });
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.nonexistent.app',
@@ -310,7 +310,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         error: 'Device not found: test-device-invalid',
       });
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-invalid',
           bundleId: 'com.example.app',
@@ -336,7 +336,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         throw new Error('Network error');
       };
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
@@ -363,7 +363,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         throw 'String error';
       };
 
-      const result = await launchAppDevice.handler(
+      const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',

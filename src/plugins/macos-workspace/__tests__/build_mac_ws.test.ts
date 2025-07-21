@@ -7,7 +7,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import buildMacWs from '../build_mac_ws.ts';
+import buildMacWs, { build_mac_wsLogic } from '../build_mac_ws.ts';
 
 describe('build_mac_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -56,7 +56,7 @@ describe('build_mac_ws plugin', () => {
         output: 'BUILD SUCCEEDED',
       });
 
-      const result = await buildMacWs.handler(
+      const result = await build_mac_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -84,7 +84,7 @@ describe('build_mac_ws plugin', () => {
         error: 'error: Compilation error in main.swift',
       });
 
-      const result = await buildMacWs.handler(
+      const result = await build_mac_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -113,7 +113,7 @@ describe('build_mac_ws plugin', () => {
         output: 'BUILD SUCCEEDED',
       });
 
-      const result = await buildMacWs.handler(
+      const result = await build_mac_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -147,7 +147,7 @@ describe('build_mac_ws plugin', () => {
         throw new Error('Network error');
       };
 
-      const result = await buildMacWs.handler(
+      const result = await build_mac_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -173,7 +173,7 @@ describe('build_mac_ws plugin', () => {
         throw new Error('Spawn error');
       };
 
-      const result = await buildMacWs.handler(
+      const result = await build_mac_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -204,7 +204,7 @@ describe('build_mac_ws plugin', () => {
         return mockExecutor(command);
       };
 
-      const result = await buildMacWs.handler(
+      const result = await build_mac_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -237,7 +237,7 @@ describe('build_mac_ws plugin', () => {
         return mockExecutor(command);
       };
 
-      const result = await buildMacWs.handler(
+      const result = await build_mac_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -278,7 +278,7 @@ describe('build_mac_ws plugin', () => {
         return mockExecutor(command);
       };
 
-      const result = await buildMacWs.handler(
+      const result = await build_mac_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -312,7 +312,7 @@ describe('build_mac_ws plugin', () => {
         return mockExecutor(command);
       };
 
-      const result = await buildMacWs.handler(
+      const result = await build_mac_wsLogic(
         {
           workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
           scheme: 'MyScheme',

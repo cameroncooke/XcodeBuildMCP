@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { log } from '../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../utils/index.js';
 import { DependencyError, AxeError, SystemError, createErrorResponse } from '../../utils/index.js';
-import { executeCommand, CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -24,6 +24,84 @@ interface AxeHelpers {
 
 const LOG_PREFIX = '[AXe]';
 
+export async function touchLogic(
+  params: Record<string, unknown>,
+  executor: CommandExecutor,
+  axeHelpers?: AxeHelpers,
+): Promise<ToolResponse> {
+  const toolName = 'touch';
+  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  const xValidation = validateRequiredParam('x', params.x);
+  if (!xValidation.isValid) return xValidation.errorResponse;
+  const yValidation = validateRequiredParam('y', params.y);
+  if (!yValidation.isValid) return yValidation.errorResponse;
+
+  const { simulatorUuid, x, y, down, up, delay } = params;
+
+  // Validate that at least one of down or up is specified
+  if (!down && !up) {
+    return createErrorResponse(
+      'At least one of "down" or "up" must be true',
+      undefined,
+      'ValidationError',
+    );
+  }
+
+  const commandArgs = ['touch', '-x', String(x), '-y', String(y)];
+  if (down) {
+    commandArgs.push('--down');
+  }
+  if (up) {
+    commandArgs.push('--up');
+  }
+  if (delay !== undefined) {
+    commandArgs.push('--delay', String(delay));
+  }
+
+  const actionText = down && up ? 'touch down+up' : down ? 'touch down' : 'touch up';
+  log(
+    'info',
+    `${LOG_PREFIX}/${toolName}: Starting ${actionText} at (${x}, ${y}) on ${simulatorUuid}`,
+  );
+
+  try {
+    await executeAxeCommand(commandArgs, simulatorUuid, 'touch', executor, axeHelpers);
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+
+    const warning = getCoordinateWarning(simulatorUuid);
+    const message = `Touch event (${actionText}) at (${x}, ${y}) executed successfully.`;
+
+    if (warning) {
+      return createTextResponse(`${message}\n\n${warning}`);
+    }
+
+    return createTextResponse(message);
+  } catch (error) {
+    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
+    if (error instanceof DependencyError) {
+      return createAxeNotAvailableResponse();
+    } else if (error instanceof AxeError) {
+      return createErrorResponse(
+        `Failed to execute touch event: ${error.message}`,
+        error.axeOutput,
+        error.name,
+      );
+    } else if (error instanceof SystemError) {
+      return createErrorResponse(
+        `System error executing axe: ${error.message}`,
+        error.originalError?.stack,
+        error.name,
+      );
+    }
+    return createErrorResponse(
+      `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
+      undefined,
+      'UnexpectedError',
+    );
+  }
+}
+
 export default {
   name: 'touch',
   description:
@@ -36,83 +114,8 @@ export default {
     up: z.boolean().optional(),
     delay: z.number().min(0, 'Delay must be non-negative').optional(),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    axeHelpers?: AxeHelpers,
-  ): Promise<ToolResponse> {
-    const params = args;
-    const toolName = 'touch';
-    const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-    if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
-    const xValidation = validateRequiredParam('x', params.x);
-    if (!xValidation.isValid) return xValidation.errorResponse;
-    const yValidation = validateRequiredParam('y', params.y);
-    if (!yValidation.isValid) return yValidation.errorResponse;
-
-    const { simulatorUuid, x, y, down, up, delay } = params;
-
-    // Validate that at least one of down or up is specified
-    if (!down && !up) {
-      return createErrorResponse(
-        'At least one of "down" or "up" must be true',
-        undefined,
-        'ValidationError',
-      );
-    }
-
-    const commandArgs = ['touch', '-x', String(x), '-y', String(y)];
-    if (down) {
-      commandArgs.push('--down');
-    }
-    if (up) {
-      commandArgs.push('--up');
-    }
-    if (delay !== undefined) {
-      commandArgs.push('--delay', String(delay));
-    }
-
-    const actionText = down && up ? 'touch down+up' : down ? 'touch down' : 'touch up';
-    log(
-      'info',
-      `${LOG_PREFIX}/${toolName}: Starting ${actionText} at (${x}, ${y}) on ${simulatorUuid}`,
-    );
-
-    try {
-      await executeAxeCommand(commandArgs, simulatorUuid, 'touch', executor, axeHelpers);
-      log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-
-      const warning = getCoordinateWarning(simulatorUuid);
-      const message = `Touch event (${actionText}) at (${x}, ${y}) executed successfully.`;
-
-      if (warning) {
-        return createTextResponse(`${message}\n\n${warning}`);
-      }
-
-      return createTextResponse(message);
-    } catch (error) {
-      log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
-      if (error instanceof DependencyError) {
-        return createAxeNotAvailableResponse();
-      } else if (error instanceof AxeError) {
-        return createErrorResponse(
-          `Failed to execute touch event: ${error.message}`,
-          error.axeOutput,
-          error.name,
-        );
-      } else if (error instanceof SystemError) {
-        return createErrorResponse(
-          `System error executing axe: ${error.message}`,
-          error.originalError?.stack,
-          error.name,
-        );
-      }
-      return createErrorResponse(
-        `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-        undefined,
-        'UnexpectedError',
-      );
-    }
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return touchLogic(args, getDefaultCommandExecutor());
   },
 };
 
@@ -164,13 +167,7 @@ async function executeAxeCommand(
     // Determine environment variables for bundled AXe
     const axeEnv = axeBinary !== 'axe' ? helpers.getBundledAxeEnvironment() : undefined;
 
-    const result = await executeCommand(
-      fullCommand,
-      executor,
-      `${LOG_PREFIX}: ${commandName}`,
-      false,
-      axeEnv,
-    );
+    const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 
     if (!result.success) {
       throw new AxeError(

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import buildRunSimIdWs from '../build_run_sim_id_ws.ts';
+import buildRunSimIdWs, { build_run_sim_id_wsLogic } from '../build_run_sim_id_ws.ts';
 
 describe('build_run_sim_id_ws tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -105,7 +105,7 @@ describe('build_run_sim_id_ws tool', () => {
         };
       };
 
-      const result = await buildRunSimIdWs.handler(
+      const result = await build_run_sim_id_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -156,7 +156,7 @@ describe('build_run_sim_id_ws tool', () => {
         };
       };
 
-      const result = await buildRunSimIdWs.handler(
+      const result = await build_run_sim_id_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -228,7 +228,7 @@ describe('build_run_sim_id_ws tool', () => {
         }
       };
 
-      const result = await buildRunSimIdWs.handler(
+      const result = await build_run_sim_id_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -295,7 +295,7 @@ describe('build_run_sim_id_ws tool', () => {
         };
       };
 
-      const result = await buildRunSimIdWs.handler(
+      const result = await build_run_sim_id_wsLogic(
         {
           workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
           scheme: 'My Scheme',
@@ -326,7 +326,7 @@ describe('build_run_sim_id_ws tool', () => {
     it('should handle validation failure for workspacePath', async () => {
       const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await buildRunSimIdWs.handler(
+      const result = await build_run_sim_id_wsLogic(
         {
           workspacePath: undefined,
           scheme: 'MyScheme',
@@ -349,7 +349,7 @@ describe('build_run_sim_id_ws tool', () => {
     it('should handle validation failure for scheme', async () => {
       const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await buildRunSimIdWs.handler(
+      const result = await build_run_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: undefined,
@@ -372,7 +372,7 @@ describe('build_run_sim_id_ws tool', () => {
     it('should handle validation failure for simulatorId', async () => {
       const mockExecutor = createMockExecutor({ success: true });
 
-      const result = await buildRunSimIdWs.handler(
+      const result = await build_run_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -399,7 +399,7 @@ describe('build_run_sim_id_ws tool', () => {
         output: '',
       });
 
-      const result = await buildRunSimIdWs.handler(
+      const result = await build_run_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -429,7 +429,7 @@ describe('build_run_sim_id_ws tool', () => {
         output: 'BUILD SUCCEEDED',
       });
 
-      const result = await buildRunSimIdWs.handler(
+      const result = await build_run_sim_id_wsLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',

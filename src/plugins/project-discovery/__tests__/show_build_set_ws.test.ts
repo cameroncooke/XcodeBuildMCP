@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
-import plugin from '../show_build_set_ws.ts';
+import plugin, { show_build_set_wsLogic } from '../show_build_set_ws.ts';
 
 describe('show_build_set_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -55,17 +55,50 @@ describe('show_build_set_ws plugin', () => {
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should handle schema validation error when workspacePath is null', async () => {
-      // Schema validation will throw before reaching validateRequiredParam
-      await expect(plugin.handler({ workspacePath: null, scheme: 'MyScheme' })).rejects.toThrow();
+  describe('Logic Function Behavior', () => {
+    it('should handle missing workspacePath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
+
+      const result = await show_build_set_wsLogic({ scheme: 'MyScheme' }, mockExecutor);
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
     });
 
-    it('should handle schema validation error when scheme is null', async () => {
-      // Schema validation will throw before reaching validateRequiredParam
-      await expect(
-        plugin.handler({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: null }),
-      ).rejects.toThrow();
+    it('should handle missing scheme', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
+
+      const result = await show_build_set_wsLogic(
+        { workspacePath: '/path/to/MyProject.xcworkspace' },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
+          },
+        ],
+        isError: true,
+      });
     });
 
     it('should return success with build settings', async () => {
@@ -91,7 +124,7 @@ describe('show_build_set_ws plugin', () => {
         return originalExecutor(...args);
       };
 
-      const result = await plugin.handler(
+      const result = await show_build_set_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -111,7 +144,6 @@ describe('show_build_set_ws plugin', () => {
         ],
         'Show Build Settings',
         true,
-        undefined,
       ]);
 
       expect(result).toEqual({
@@ -151,7 +183,7 @@ describe('show_build_set_ws plugin', () => {
         process: { pid: 12345 },
       });
 
-      const result = await plugin.handler(
+      const result = await show_build_set_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'InvalidScheme',
@@ -170,7 +202,7 @@ describe('show_build_set_ws plugin', () => {
         throw new Error('Command execution failed');
       };
 
-      const result = await plugin.handler(
+      const result = await show_build_set_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',

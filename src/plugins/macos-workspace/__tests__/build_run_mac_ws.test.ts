@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../utils/command.js';
-import buildRunMacWs from '../build_run_mac_ws.ts';
+import buildRunMacWs, { build_run_mac_wsLogic } from '../build_run_mac_ws.ts';
 
 describe('build_run_mac_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -50,7 +50,7 @@ describe('build_run_mac_ws plugin', () => {
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
+  describe('Logic Function Behavior', () => {
     it('should successfully build and run macOS app', async () => {
       // Mock successful build first, then successful build settings
       let callCount = 0;
@@ -78,13 +78,15 @@ describe('build_run_mac_ws plugin', () => {
       // Mock exec function through dependency injection
       const mockExecFunction = () => Promise.resolve({ stdout: '', stderr: '' });
 
-      const result = await buildRunMacWs.handler(
+      const result = await build_run_mac_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
+          configuration: 'Debug',
+          preferXcodebuild: false,
         },
         mockExecutor,
-        { execFunction: mockExecFunction },
+        mockExecFunction,
       );
 
       expect(result.content).toEqual([
@@ -110,10 +112,12 @@ describe('build_run_mac_ws plugin', () => {
         error: 'error: Compilation error in main.swift',
       });
 
-      const result = await buildRunMacWs.handler(
+      const result = await build_run_mac_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
+          configuration: 'Debug',
+          preferXcodebuild: false,
         },
         mockExecutor,
       );
@@ -140,10 +144,12 @@ describe('build_run_mac_ws plugin', () => {
         return Promise.reject(new Error('Network error'));
       };
 
-      const result = await buildRunMacWs.handler(
+      const result = await build_run_mac_wsLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
+          configuration: 'Debug',
+          preferXcodebuild: false,
         },
         mockExecutor,
       );

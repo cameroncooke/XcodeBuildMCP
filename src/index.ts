@@ -22,10 +22,6 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Import utilities
 import { log } from './utils/logger.js';
-import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from './utils/command.js';
-
-// Import Swift package process manager
-import { getProcess, removeProcess } from './plugins/swift-package/active-processes.js';
 
 // Import version
 import { version } from './version.js';
@@ -33,37 +29,6 @@ import { loadPlugins } from './core/plugin-registry.js';
 
 // Import xcodemake utilities
 import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
-
-/**
- * Wrapper function to adapt MCP SDK handler calling convention to our dependency injection pattern
- * MCP SDK calls handlers with just (args), but our handlers expect (args, executor)
- *
- * This function intelligently detects the required executor type based on the handler's parameter names.
- */
-function wrapHandlerWithExecutor(handler: any) {
-  return async (args: any) => {
-    // Get the handler function's parameter names to determine what executor type it expects
-    const handlerString = handler.toString();
-
-    // Check for Swift package tools that need special dependency injection
-    if (handlerString.includes('processManager')) {
-      // swift_package_stop expects ProcessManager
-      const processManager = { getProcess, removeProcess };
-      return handler(args, processManager);
-    }
-
-    // Check if the handler expects FileSystemExecutor
-    if (
-      handlerString.includes('fileSystemExecutor') ||
-      handlerString.includes('FileSystemExecutor')
-    ) {
-      return handler(args, getDefaultFileSystemExecutor());
-    }
-
-    // Default to CommandExecutor for most tools
-    return handler(args, getDefaultCommandExecutor());
-  };
-}
 
 /**
  * Main function to start the server
@@ -118,7 +83,7 @@ async function main(): Promise<void> {
         discoverTool.name,
         discoverTool.description || '',
         discoverTool.schema,
-        wrapHandlerWithExecutor(discoverTool.handler),
+        discoverTool.handler,
       );
       log('info', '   Use discover_tools to enable relevant workflows on-demand');
     } else {
@@ -127,12 +92,7 @@ async function main(): Promise<void> {
       const plugins = await loadPlugins();
       for (const plugin of plugins.values()) {
         if (plugin.name !== 'discover_tools') {
-          server.tool(
-            plugin.name,
-            plugin.description || '',
-            plugin.schema,
-            wrapHandlerWithExecutor(plugin.handler),
-          );
+          server.tool(plugin.name, plugin.description || '', plugin.schema, plugin.handler);
         }
       }
     }

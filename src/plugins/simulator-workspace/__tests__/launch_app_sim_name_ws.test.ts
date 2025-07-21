@@ -14,7 +14,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../utils/command.js';
-import launchAppSimNameWs from '../launch_app_sim_name_ws.ts';
+import launchAppSimNameWs, { launch_app_sim_name_wsLogic } from '../launch_app_sim_name_ws.ts';
 
 describe('launch_app_sim_name_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -122,13 +122,12 @@ describe('launch_app_sim_name_ws plugin', () => {
         }
       };
 
-      await launchAppSimNameWs.handler(
+      await launch_app_sim_name_wsLogic(
         {
           simulatorName: 'iPhone 16',
           bundleId: 'com.example.app',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(commands).toHaveLength(3);
@@ -208,14 +207,13 @@ describe('launch_app_sim_name_ws plugin', () => {
         }
       };
 
-      await launchAppSimNameWs.handler(
+      await launch_app_sim_name_wsLogic(
         {
           simulatorName: 'iPhone 16',
           bundleId: 'com.example.app',
           args: ['--debug', '--verbose'],
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(commands[2].command).toEqual([
@@ -272,13 +270,12 @@ describe('launch_app_sim_name_ws plugin', () => {
         }
       };
 
-      await launchAppSimNameWs.handler(
+      await launch_app_sim_name_wsLogic(
         {
           simulatorName: 'iPhone 16 Pro',
           bundleId: 'com.apple.mobilesafari',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(commands[0].command).toEqual([
@@ -349,14 +346,13 @@ describe('launch_app_sim_name_ws plugin', () => {
         }
       };
 
-      await launchAppSimNameWs.handler(
+      await launch_app_sim_name_wsLogic(
         {
           simulatorName: 'iPhone 16',
           bundleId: 'com.example.app',
           args: ['--config', '/path/to/config.json', '--log-level', 'debug', '--port', '8080'],
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(commands[2].command).toEqual([
@@ -377,12 +373,11 @@ describe('launch_app_sim_name_ws plugin', () => {
 
   describe('Parameter Validation', () => {
     it('should handle validation failure for simulatorName', async () => {
-      const result = await launchAppSimNameWs.handler(
+      const result = await launch_app_sim_name_wsLogic(
         {
           bundleId: 'com.example.app',
-        },
+        } as any,
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -397,12 +392,11 @@ describe('launch_app_sim_name_ws plugin', () => {
     });
 
     it('should handle validation failure for bundleId', async () => {
-      const result = await launchAppSimNameWs.handler(
+      const result = await launch_app_sim_name_wsLogic(
         {
           simulatorName: 'iPhone 16',
-        },
+        } as any,
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -459,13 +453,12 @@ describe('launch_app_sim_name_ws plugin', () => {
         }
       };
 
-      const result = await launchAppSimNameWs.handler(
+      const result = await launch_app_sim_name_wsLogic(
         {
           simulatorName: 'iPhone 16',
           bundleId: 'com.example.app',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -512,13 +505,12 @@ describe('launch_app_sim_name_ws plugin', () => {
         };
       };
 
-      const result = await launchAppSimNameWs.handler(
+      const result = await launch_app_sim_name_wsLogic(
         {
           simulatorName: 'iPhone 16',
           bundleId: 'com.example.app',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -565,13 +557,12 @@ describe('launch_app_sim_name_ws plugin', () => {
         }
       };
 
-      const result = await launchAppSimNameWs.handler(
+      const result = await launch_app_sim_name_wsLogic(
         {
           simulatorName: 'iPhone 16',
           bundleId: 'com.example.app',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -626,13 +617,12 @@ describe('launch_app_sim_name_ws plugin', () => {
         }
       };
 
-      const result = await launchAppSimNameWs.handler(
+      const result = await launch_app_sim_name_wsLogic(
         {
           simulatorName: 'iPhone 16',
           bundleId: 'com.example.app',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -651,13 +641,12 @@ describe('launch_app_sim_name_ws plugin', () => {
         error: 'Failed to list simulators',
       });
 
-      const result = await launchAppSimNameWs.handler(
+      const result = await launch_app_sim_name_wsLogic(
         {
           simulatorName: 'iPhone 16',
           bundleId: 'com.example.app',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

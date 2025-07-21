@@ -1,12 +1,14 @@
 /**
- * Tests for launch_app_logs_sim plugin (re-export from simulator-shared)
+ * Tests for launch_app_logs_sim plugin (re-exported from simulator-shared)
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
 
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import launchAppLogsSim from '../launch_app_logs_sim.ts';
+import launchAppLogsSim, {
+  launch_app_logs_simLogic,
+} from '../../simulator-shared/launch_app_logs_sim.js';
 
 describe('launch_app_logs_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -86,7 +88,7 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
-      const result = await launchAppLogsSim.handler(
+      const result = await launch_app_logs_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
@@ -120,7 +122,7 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
-      const result = await launchAppLogsSim.handler(
+      const result = await launch_app_logs_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',

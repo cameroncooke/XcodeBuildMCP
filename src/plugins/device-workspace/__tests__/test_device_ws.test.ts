@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../utils/command.js';
-import testDeviceWs from '../test_device_ws.ts';
+import testDeviceWs, { test_device_wsLogic } from '../test_device_ws.ts';
 
 describe('test_device_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -46,7 +46,7 @@ describe('test_device_ws plugin', () => {
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
+  describe('Logic Function Behavior (Complete Literal Returns)', () => {
     it('should handle missing parameters and generate xcodebuild command', async () => {
       const executorCalls: any[] = [];
       const mockExecutor = async (
@@ -64,7 +64,7 @@ describe('test_device_ws plugin', () => {
         };
       };
 
-      const result = await testDeviceWs.handler(
+      const result = await test_device_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -97,7 +97,7 @@ describe('test_device_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testDeviceWs.handler(
+      const result = await test_device_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -117,7 +117,7 @@ describe('test_device_ws plugin', () => {
         error: 'xcodebuild: error: Scheme not found',
       });
 
-      const result = await testDeviceWs.handler(
+      const result = await test_device_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'NonExistentScheme',
@@ -147,7 +147,7 @@ describe('test_device_ws plugin', () => {
         };
       };
 
-      await testDeviceWs.handler(
+      await test_device_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -179,7 +179,7 @@ describe('test_device_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testDeviceWs.handler(
+      const result = await test_device_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -198,7 +198,7 @@ describe('test_device_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testDeviceWs.handler(
+      const result = await test_device_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -223,7 +223,7 @@ describe('test_device_ws plugin', () => {
         output: 'Test Suite All Tests passed\nExecuted 25 tests, with 0 failures',
       });
 
-      const result = await testDeviceWs.handler(
+      const result = await test_device_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -244,7 +244,7 @@ describe('test_device_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await testDeviceWs.handler(
+      const result = await test_device_wsLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -258,6 +258,14 @@ describe('test_device_ws plugin', () => {
       expect(result.content).toBeDefined();
       expect(Array.isArray(result.content)).toBe(true);
       expect(result.isError).toBeUndefined();
+    });
+  });
+
+  describe('Handler Integration', () => {
+    it('should have handler function that returns a promise', () => {
+      expect(typeof testDeviceWs.handler).toBe('function');
+      // We can't test the actual execution in test environment due to executor restrictions
+      // The logic function tests above provide full coverage of the actual functionality
     });
   });
 });

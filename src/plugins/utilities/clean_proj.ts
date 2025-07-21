@@ -5,41 +5,20 @@
  */
 
 import { z } from 'zod';
-import { log, getDefaultCommandExecutor } from '../../utils/index.js';
-import { XcodePlatform, getDefaultCommandExecutor } from '../../utils/index.js';
-import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../utils/index.js';
-import { validateRequiredParam, getDefaultCommandExecutor } from '../../utils/index.js';
+import {
+  log,
+  XcodePlatform,
+  executeXcodeBuildCommand,
+  validateRequiredParam,
+  getDefaultCommandExecutor,
+  CommandExecutor,
+} from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/index.js';
 
-// Internal logic for cleaning build products.
-async function _handleCleanLogic(
+// Exported business logic function for clean project
+export async function clean_projLogic(
   params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
-): Promise<ToolResponse> {
-  log('info', 'Starting xcodebuild clean request (internal)');
-
-  // For clean operations, we need to provide a default platform and configuration
-  return executeXcodeBuildCommand(
-    {
-      ...params,
-      scheme: params.scheme || '', // Empty string if not provided
-      configuration: params.configuration || 'Debug', // Default to Debug if not provided
-    },
-    {
-      platform: XcodePlatform.macOS, // Default to macOS, but this doesn't matter much for clean
-      logPrefix: 'Clean',
-    },
-    false,
-    'clean', // Specify 'clean' as the build action
-    executor,
-  );
-}
-
-// Cleans build products for a project
-async function cleanProject(
-  params: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
   try {
     const validated = z
@@ -66,7 +45,23 @@ async function cleanProject(
       return projectPathValidation.errorResponse;
     }
 
-    return _handleCleanLogic(validated, executor);
+    log('info', 'Starting xcodebuild clean request');
+
+    // For clean operations, we need to provide a default platform and configuration
+    return executeXcodeBuildCommand(
+      {
+        ...validated,
+        scheme: validated.scheme || '', // Empty string if not provided
+        configuration: validated.configuration || 'Debug', // Default to Debug if not provided
+      },
+      {
+        platform: XcodePlatform.macOS, // Default to macOS, but this doesn't matter much for clean
+        logPrefix: 'Clean',
+      },
+      false,
+      'clean', // Specify 'clean' as the build action
+      executor,
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
       const firstError = error.errors[0];
@@ -104,11 +99,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
-    const params = args;
-    return cleanProject(params, executor);
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return clean_projLogic(args, getDefaultCommandExecutor());
   },
 };
