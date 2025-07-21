@@ -381,7 +381,7 @@ XcodeBuildMCP includes comprehensive documentation to help you understand and ex
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
 
 For AI assistants and automated tools:
-- **[CLAUDE.md](docs/CLAUDE.md)** - Guidelines for AI assistants working with this codebase
+- **[CLAUDE.md](CLAUDE.md)** - Guidelines for AI assistants working with this codebase
 
 ## Contributing
 
