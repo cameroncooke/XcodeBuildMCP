@@ -76,10 +76,7 @@ export default {
     projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
     scheme: z.string().describe('Scheme name to show build settings for (Required)'),
   }),
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = args;
 
     // Validate required parameters
@@ -95,6 +92,6 @@ export default {
       scheme: params.scheme as string,
     };
 
-    return show_build_set_projLogic(typedParams, executor);
+    return show_build_set_projLogic(typedParams, getDefaultCommandExecutor());
   },
 };

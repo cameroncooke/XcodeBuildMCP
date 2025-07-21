@@ -53,20 +53,17 @@ async function checkSeparationOfConcerns() {
                           content.includes(`export function ${expectedLogicFunction}`);
   
   // Check if handler has optional parameters (old pattern)
-  const handlerRegex = /handler\s*[:(]\s*async?\s*\([^)]*\)\s*(?::|=>)[^{]*{/s;
-  const handlerMatch = content.match(handlerRegex);
+  // Use multiline regex to handle handlers that span multiple lines
+  const handlerBlockRegex = /async\s+handler\s*\(([\s\S]*?)\)\s*:/g;
+  const handlerMatch = content.match(handlerBlockRegex);
   
   let hasOptionalParams = false;
   if (handlerMatch) {
-    // Look for parameters with default values in handler signature
-    const handlerSignatureRegex = /handler\s*[:(]\s*async?\s*\(([^)]+)\)/s;
-    const signatureMatch = content.match(handlerSignatureRegex);
-    if (signatureMatch) {
-      const params = signatureMatch[1];
-      // Check for = getDefault... or other default value patterns
-      hasOptionalParams = params.includes('=') && 
-                         (params.includes('getDefault') || params.includes('?:'));
-    }
+    const fullHandlerSignature = handlerMatch[0];
+    // Check for default parameter patterns
+    hasOptionalParams = fullHandlerSignature.includes('= getDefaultCommandExecutor()') ||
+                       fullHandlerSignature.includes('= getDefaultFileSystemExecutor()') ||
+                       (fullHandlerSignature.includes('=') && fullHandlerSignature.includes('?:'));
   }
   
   // Check if handler is a thin wrapper (should be less than 5 lines)

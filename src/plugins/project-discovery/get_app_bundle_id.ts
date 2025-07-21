@@ -121,11 +121,7 @@ export default {
         'Path to the .app bundle to extract bundle ID from (full path to the .app directory)',
       ),
   },
-  async handler(
-    args: Record<string, unknown>,
-    syncExecutor: SyncExecutor = defaultSyncExecutor,
-    fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
-  ): Promise<ToolResponse> {
-    return get_app_bundle_idLogic(args, syncExecutor, fileSystemExecutor);
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return get_app_bundle_idLogic(args, defaultSyncExecutor, getDefaultFileSystemExecutor());
   },
 };

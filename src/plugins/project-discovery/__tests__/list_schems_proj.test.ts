@@ -231,7 +231,8 @@ describe('list_schems_proj plugin', () => {
 
     it('should handle validation error when projectPath is missing', async () => {
       // Handler will return error response for missing required parameter
-      const result = await plugin.handler({});
+      const mockExecutor = createMockExecutor({ success: true, output: 'mock output' });
+      const result = await list_schems_projLogic({}, mockExecutor);
       expect(result).toEqual({
         content: [
           {

@@ -157,12 +157,8 @@ export default {
       .optional()
       .describe('Optional: Delay after completing the gesture in seconds.'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor?: CommandExecutor,
-    axeHelpers?: AxeHelpers,
-  ): Promise<ToolResponse> {
-    return gestureLogic(args as GestureParams, executor || getDefaultCommandExecutor(), axeHelpers);
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return gestureLogic(args as GestureParams, getDefaultCommandExecutor());
   },
 };
 

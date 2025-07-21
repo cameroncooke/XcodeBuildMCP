@@ -203,19 +203,14 @@ export default {
       .optional()
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
-  async handler(
-    args: Record<string, unknown>,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-    execAsync?: (cmd: string) => Promise<any>,
-  ): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     return build_run_mac_projLogic(
       {
         ...args,
         configuration: args.configuration ?? 'Debug',
         preferXcodebuild: args.preferXcodebuild ?? false,
       },
-      executor,
-      execAsync,
+      getDefaultCommandExecutor(),
     );
   },
 };

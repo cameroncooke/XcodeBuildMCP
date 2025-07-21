@@ -20,6 +20,10 @@ export async function list_schems_projLogic(
 ): Promise<ToolResponse> {
   log('info', 'Listing schemes');
 
+  // Validate required parameter
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse;
+
   try {
     // For listing schemes, we can't use executeXcodeBuild directly since it's not a standard action
     // We need to create a custom command with -list flag
@@ -92,9 +96,6 @@ export default {
     projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    const projectValidation = validateRequiredParam('projectPath', args.projectPath);
-    if (!projectValidation.isValid) return projectValidation.errorResponse;
-
     return list_schems_projLogic(args, getDefaultCommandExecutor());
   },
 };

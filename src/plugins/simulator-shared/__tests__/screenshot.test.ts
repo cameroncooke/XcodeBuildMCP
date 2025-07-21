@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
-import screenshotPlugin from '../../ui-testing/screenshot.ts';
+import screenshotPlugin, { screenshotLogic } from '../../ui-testing/screenshot.ts';
 
 describe('screenshot plugin', () => {
   // No mocks to clear since we use pure dependency injection
@@ -73,7 +73,7 @@ describe('screenshot plugin', () => {
         v4: () => 'mock-uuid-123',
       };
 
-      await screenshotPlugin.handler(
+      await screenshotLogic(
         {
           simulatorUuid: 'test-uuid',
         },
@@ -119,7 +119,7 @@ describe('screenshot plugin', () => {
         v4: () => 'different-uuid-456',
       };
 
-      await screenshotPlugin.handler(
+      await screenshotLogic(
         {
           simulatorUuid: 'another-uuid',
         },
@@ -156,7 +156,7 @@ describe('screenshot plugin', () => {
         readFile: async () => 'fake-image-data',
       });
 
-      await screenshotPlugin.handler(
+      await screenshotLogic(
         {
           simulatorUuid: 'test-uuid',
         },
@@ -198,7 +198,7 @@ describe('screenshot plugin', () => {
         v4: () => 'mock-uuid-123',
       };
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: 'test-uuid',
         },
@@ -220,7 +220,7 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle missing simulatorUuid', async () => {
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {},
         createMockExecutor({ success: true }),
         createMockFileSystemExecutor(),
@@ -253,7 +253,7 @@ describe('screenshot plugin', () => {
         v4: () => 'mock-uuid-123',
       };
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: 'test-uuid',
         },
@@ -296,7 +296,7 @@ describe('screenshot plugin', () => {
         v4: () => 'mock-uuid-123',
       };
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: 'test-uuid',
         },
@@ -343,7 +343,7 @@ describe('screenshot plugin', () => {
         v4: () => 'mock-uuid-123',
       };
 
-      await screenshotPlugin.handler(
+      await screenshotLogic(
         {
           simulatorUuid: 'test-uuid',
         },
@@ -376,7 +376,7 @@ describe('screenshot plugin', () => {
         v4: () => 'mock-uuid-123',
       };
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: 'test-uuid',
         },
@@ -411,7 +411,7 @@ describe('screenshot plugin', () => {
         v4: () => 'mock-uuid-123',
       };
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: 'test-uuid',
         },
@@ -446,7 +446,7 @@ describe('screenshot plugin', () => {
         v4: () => 'mock-uuid-123',
       };
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: 'test-uuid',
         },
@@ -489,7 +489,7 @@ describe('screenshot plugin', () => {
         v4: () => 'mock-uuid-123',
       };
 
-      const result = await screenshotPlugin.handler(
+      const result = await screenshotLogic(
         {
           simulatorUuid: 'test-uuid',
         },
