@@ -1,5 +1,5 @@
 import { defineConfig } from 'tsup';
-import { chmodSync } from 'fs';
+import { chmodSync, existsSync } from 'fs';
 import { globSync } from 'glob';
 import path from 'path';
 
@@ -84,7 +84,13 @@ export default defineConfig({
   esbuildPlugins: [pluginLoaderPlugin],
   onSuccess: async () => {
     console.log('✅ Build complete!');
-    chmodSync('build/index.js', '755');
-    chmodSync('build/diagnostic-cli.js', '755');
+    
+    // Set executable permissions for built files
+    if (existsSync('build/index.js')) {
+      chmodSync('build/index.js', '755');
+    }
+    if (existsSync('build/diagnostic-cli.js')) {
+      chmodSync('build/diagnostic-cli.js', '755');
+    }
   },
 });
