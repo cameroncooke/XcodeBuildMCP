@@ -15,6 +15,7 @@ import {
   createNoopExecutor,
 } from '../../../utils/command.js';
 import launchAppSimIdWs from '../launch_app_sim.ts';
+import { launch_app_simLogic } from '../../simulator-shared/launch_app_sim.js';
 
 describe('launch_app_sim_id_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -104,13 +105,12 @@ describe('launch_app_sim_id_ws plugin', () => {
         }
       };
 
-      await launchAppSimIdWs.handler(
+      await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.app',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(commands).toHaveLength(2);
@@ -161,14 +161,13 @@ describe('launch_app_sim_id_ws plugin', () => {
         }
       };
 
-      await launchAppSimIdWs.handler(
+      await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.app',
           args: ['--debug', '--verbose'],
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(commands[1].command).toEqual([
@@ -207,13 +206,12 @@ describe('launch_app_sim_id_ws plugin', () => {
         }
       };
 
-      await launchAppSimIdWs.handler(
+      await launch_app_simLogic(
         {
           simulatorUuid: 'F2B4A8E7-9C3D-4E5F-A1B2-C3D4E5F6A7B8',
           bundleId: 'com.apple.mobilesafari',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(commands[0].command).toEqual([
@@ -258,14 +256,13 @@ describe('launch_app_sim_id_ws plugin', () => {
         }
       };
 
-      await launchAppSimIdWs.handler(
+      await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.app',
           args: ['--config', '/path/to/config.json', '--log-level', 'debug', '--port', '8080'],
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(commands[1].command).toEqual([
@@ -286,12 +283,11 @@ describe('launch_app_sim_id_ws plugin', () => {
 
   describe('Parameter Validation', () => {
     it('should handle validation failure for simulatorUuid', async () => {
-      const result = await launchAppSimIdWs.handler(
+      const result = await launch_app_simLogic(
         {
           bundleId: 'com.example.app',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -306,12 +302,11 @@ describe('launch_app_sim_id_ws plugin', () => {
     });
 
     it('should handle validation failure for bundleId', async () => {
-      const result = await launchAppSimIdWs.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -350,13 +345,12 @@ describe('launch_app_sim_id_ws plugin', () => {
         }
       };
 
-      const result = await launchAppSimIdWs.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.app',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -389,13 +383,12 @@ describe('launch_app_sim_id_ws plugin', () => {
         error: 'App not found',
       });
 
-      const result = await launchAppSimIdWs.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.app',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -432,13 +425,12 @@ describe('launch_app_sim_id_ws plugin', () => {
         }
       };
 
-      const result = await launchAppSimIdWs.handler(
+      const result = await launch_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.app',
         },
         mockExecutor,
-        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
