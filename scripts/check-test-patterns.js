@@ -1,19 +1,20 @@
 #!/usr/bin/env node
 
 /**
- * Script to find all test files that use setTimeout-based mocking approach
- * These tests need to be converted to dependency injection pattern
+ * XcodeBuildMCP Test Pattern Violations Checker
  * 
- * ORCHESTRATION WORKFLOW:
- * 1. Run this script to identify violating test files
- * 2. Launch 5 parallel sub-agents, each working on unique test files
- * 3. Each sub-agent converts ONE test file to pure dependency injection
- * 4. Main agent validates each sub-agent's work by running the specific test
- * 5. Only when test passes, re-run this script to confirm compliance
- * 6. Commit ONLY the validated file to source control (selective commit)
- * 7. Continue until all violations are fixed
+ * Validates that all test files follow established testing patterns and
+ * identifies violations of the project's testing guidelines.
  * 
- * CRITICAL: No vitest mocking allowed - only createMockExecutor() and createMockFileSystemExecutor()
+ * USAGE:
+ *   node scripts/check-test-patterns.js [--pattern=vitest|timeout|all]
+ *   node scripts/check-test-patterns.js --help
+ * 
+ * TESTING GUIDELINES ENFORCED:
+ * 1. NO vitest mocking patterns (vi.mock, vi.fn, .mockResolvedValue, etc.)
+ * 2. NO setTimeout-based mocking patterns
+ * 3. ONLY dependency injection with createMockExecutor() and createMockFileSystemExecutor()
+ * 4. Proper test architecture compliance
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
@@ -24,6 +25,35 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, '..');
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+const patternFilter = args.find(arg => arg.startsWith('--pattern='))?.split('=')[1] || 'all';
+const showHelp = args.includes('--help') || args.includes('-h');
+
+if (showHelp) {
+  console.log(`
+XcodeBuildMCP Test Pattern Violations Checker
+
+USAGE:
+  node scripts/check-test-patterns.js [options]
+
+OPTIONS:
+  --pattern=TYPE    Check specific pattern type (vitest|timeout|all) [default: all]
+  --help, -h        Show this help message
+
+PATTERN TYPES:
+  vitest           Check only vitest mocking violations (vi.mock, vi.fn, etc.)
+  timeout          Check only setTimeout-based mocking patterns  
+  all              Check all pattern violations (default)
+
+EXAMPLES:
+  node scripts/check-test-patterns.js
+  node scripts/check-test-patterns.js --pattern=vitest
+  node scripts/check-test-patterns.js --pattern=timeout
+`);
+  process.exit(0);
+}
 
 // Patterns that indicate setTimeout-based mocking approach
 const TIMEOUT_PATTERNS = [
@@ -170,13 +200,35 @@ function analyzeTestFile(filePath) {
 }
 
 function main() {
-  console.log('🚨 CRITICAL: VITEST MOCKING AUDIT - ALL VITEST MOCKING IS BANNED 🚨\n');
-  console.log('ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()\n');
+  console.log('🔍 XcodeBuildMCP Test Pattern Violations Checker\n');
+  console.log(`🎯 Checking pattern type: ${patternFilter.toUpperCase()}\n`);
+  console.log('TESTING GUIDELINES ENFORCED:');
+  console.log('✅ ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()');
+  console.log('❌ BANNED: vitest mocking patterns (vi.mock, vi.fn, .mockResolvedValue, etc.)');
+  console.log('❌ BANNED: setTimeout-based mocking patterns\n');
   
   const testFiles = findTestFiles(join(projectRoot, 'src'));
   const results = testFiles.map(analyzeTestFile).filter(Boolean);
   
-  const needsConversion = results.filter(r => r.needsConversion);
+  // Filter results based on pattern type
+  let filteredResults;
+  switch (patternFilter) {
+    case 'vitest':
+      filteredResults = results.filter(r => r.hasVitestMockingPatterns);
+      console.log(`Filtering to show only vitest mocking violations (${filteredResults.length} files)`);
+      break;
+    case 'timeout':
+      filteredResults = results.filter(r => r.hasTimeoutPatterns);
+      console.log(`Filtering to show only setTimeout violations (${filteredResults.length} files)`);
+      break;
+    case 'all':
+    default:
+      filteredResults = results.filter(r => r.needsConversion);
+      console.log(`Showing all pattern violations (${filteredResults.length} files)`);
+      break;
+  }
+  
+  const needsConversion = filteredResults;
   const converted = results.filter(r => r.isConverted);
   const mixed = results.filter(r => r.isMixed);
   const timeoutOnly = results.filter(r => r.hasTimeoutPatterns && !r.hasVitestMockingPatterns && !r.hasDIPatterns);
