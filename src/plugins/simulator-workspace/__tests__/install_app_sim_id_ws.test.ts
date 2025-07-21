@@ -6,6 +6,7 @@ import {
   createNoopExecutor,
 } from '../../../utils/command.js';
 import installAppSimIdWs from '../install_app_sim.ts';
+import { install_app_simLogic } from '../../simulator-shared/install_app_sim.ts';
 
 describe('install_app_sim_id_ws tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -89,7 +90,7 @@ describe('install_app_sim_id_ws tool', () => {
         existsSync: () => true,
       });
 
-      await installAppSimIdWs.handler(
+      await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
@@ -130,7 +131,7 @@ describe('install_app_sim_id_ws tool', () => {
         existsSync: () => true,
       });
 
-      await installAppSimIdWs.handler(
+      await install_app_simLogic(
         {
           simulatorUuid: 'different-uuid-456',
           appPath: '/different/path/MyApp.app',
@@ -171,7 +172,7 @@ describe('install_app_sim_id_ws tool', () => {
         existsSync: () => true,
       });
 
-      await installAppSimIdWs.handler(
+      await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/Users/dev/My Project/MyApp.app',
@@ -212,7 +213,7 @@ describe('install_app_sim_id_ws tool', () => {
         existsSync: () => true,
       });
 
-      await installAppSimIdWs.handler(
+      await install_app_simLogic(
         {
           simulatorUuid: 'F2B4A8E7-9C3D-4E5F-A1B2-C3D4E5F6A7B8',
           appPath:
@@ -252,7 +253,7 @@ describe('install_app_sim_id_ws tool', () => {
 
   describe('Parameter Validation', () => {
     it('should handle validation failure for simulatorUuid', async () => {
-      const result = await installAppSimIdWs.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: undefined,
           appPath: '/path/to/app.app',
@@ -273,7 +274,7 @@ describe('install_app_sim_id_ws tool', () => {
     });
 
     it('should handle validation failure for appPath', async () => {
-      const result = await installAppSimIdWs.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: undefined,
@@ -298,7 +299,7 @@ describe('install_app_sim_id_ws tool', () => {
         existsSync: () => false,
       });
 
-      const result = await installAppSimIdWs.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
@@ -347,7 +348,7 @@ describe('install_app_sim_id_ws tool', () => {
         existsSync: () => true,
       });
 
-      const result = await installAppSimIdWs.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
@@ -386,7 +387,7 @@ describe('install_app_sim_id_ws tool', () => {
         existsSync: () => true,
       });
 
-      const result = await installAppSimIdWs.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
@@ -414,7 +415,7 @@ describe('install_app_sim_id_ws tool', () => {
         existsSync: () => true,
       });
 
-      const result = await installAppSimIdWs.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',
@@ -442,7 +443,7 @@ describe('install_app_sim_id_ws tool', () => {
         existsSync: () => true,
       });
 
-      const result = await installAppSimIdWs.handler(
+      const result = await install_app_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           appPath: '/path/to/app.app',

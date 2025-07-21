@@ -142,10 +142,20 @@ describe('launch_app_logs_sim tool', () => {
     });
 
     it('should handle validation failures for missing parameters', async () => {
-      const resultMissingSimulator = await launchAppLogsSim.handler({
-        simulatorUuid: undefined,
-        bundleId: 'com.example.testapp',
+      const logCaptureStub = async () => ({
+        sessionId: 'test-session',
+        logFilePath: '/tmp/test.log',
+        processes: [],
+        error: undefined,
       });
+
+      const resultMissingSimulator = await launch_app_logs_simLogic(
+        {
+          simulatorUuid: undefined as any,
+          bundleId: 'com.example.testapp',
+        },
+        logCaptureStub,
+      );
 
       expect(resultMissingSimulator).toEqual({
         content: [
@@ -157,10 +167,13 @@ describe('launch_app_logs_sim tool', () => {
         isError: true,
       });
 
-      const resultMissingBundle = await launchAppLogsSim.handler({
-        simulatorUuid: 'test-uuid-123',
-        bundleId: undefined,
-      });
+      const resultMissingBundle = await launch_app_logs_simLogic(
+        {
+          simulatorUuid: 'test-uuid-123',
+          bundleId: undefined as any,
+        },
+        logCaptureStub,
+      );
 
       expect(resultMissingBundle).toEqual({
         content: [

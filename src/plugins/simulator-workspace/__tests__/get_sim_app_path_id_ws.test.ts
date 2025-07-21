@@ -86,17 +86,27 @@ describe('get_sim_app_path_id_ws tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure for workspacePath', async () => {
-      const result = await getSimAppPathIdWs.handler({
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Command failed without workspace path',
       });
+
+      const result = await get_sim_app_path_id_wsLogic(
+        {
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
+            text: 'Failed to get app path: Command failed without workspace path',
           },
         ],
         isError: true,
@@ -450,17 +460,27 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle scheme validation failure', async () => {
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        platform: 'iOS Simulator',
-        simulatorId: 'test-uuid-123',
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Command failed without scheme',
       });
+
+      const result = await get_sim_app_path_id_wsLogic(
+        {
+          workspacePath: '/path/to/workspace',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
+            text: 'Failed to get app path: Command failed without scheme',
           },
         ],
         isError: true,
@@ -468,17 +488,24 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle platform validation failure', async () => {
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+      const mockExecutor = createNoopExecutor();
+
+      const result = await get_sim_app_path_id_wsLogic(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+          configuration: 'Debug',
+          useLatestOS: true,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'platform' is missing. Please provide a value for this parameter.",
+            text: 'Unsupported platform: undefined',
           },
         ],
         isError: true,
@@ -486,17 +513,24 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
 
     it('should handle simulatorId validation failure', async () => {
-      const result = await getSimAppPathIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        platform: 'iOS Simulator',
-      });
+      const mockExecutor = createNoopExecutor();
+
+      const result = await get_sim_app_path_id_wsLogic(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          configuration: 'Debug',
+          useLatestOS: true,
+        },
+        mockExecutor,
+      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
+            text: 'For iOS Simulator platform, either simulatorId or simulatorName must be provided',
           },
         ],
         isError: true,

@@ -55,7 +55,14 @@ describe('list_schems_ws plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle missing workspacePath parameter', async () => {
-      const result = await plugin.handler({ workspacePath: null });
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
+
+      const result = await list_schems_wsLogic({ workspacePath: null }, mockExecutor);
 
       expect(result).toEqual({
         content: [

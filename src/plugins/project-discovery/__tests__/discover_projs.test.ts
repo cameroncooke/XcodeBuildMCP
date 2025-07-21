@@ -67,7 +67,7 @@ describe('discover_projs plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error when workspaceRoot validation fails', async () => {
-      const result = await plugin.handler({ workspaceRoot: null });
+      const result = await discover_projsLogic({ workspaceRoot: null }, mockFileSystemExecutor);
 
       expect(result).toEqual({
         content: [
@@ -218,9 +218,12 @@ describe('discover_projs plugin', () => {
     });
 
     it('should handle validation error when workspaceRoot is null', async () => {
-      const result = await plugin.handler({
-        workspaceRoot: null,
-      });
+      const result = await discover_projsLogic(
+        {
+          workspaceRoot: null,
+        },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
         content: [

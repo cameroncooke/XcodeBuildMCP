@@ -27,16 +27,36 @@ describe('show_build_set_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle schema validation error when projectPath is null', async () => {
-      const result = await plugin.handler({ projectPath: null, scheme: 'MyScheme' });
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
+      });
+
+      const result = await show_build_set_projLogic(
+        { projectPath: null, scheme: 'MyScheme' },
+        mockExecutor,
+      );
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("Required parameter 'projectPath' is missing");
     });
 
     it('should handle schema validation error when scheme is null', async () => {
-      const result = await plugin.handler({
-        projectPath: '/path/to/MyProject.xcodeproj',
-        scheme: null,
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        error: undefined,
+        process: { pid: 12345 },
       });
+
+      const result = await show_build_set_projLogic(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: null,
+        },
+        mockExecutor,
+      );
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("Required parameter 'scheme' is missing");
     });

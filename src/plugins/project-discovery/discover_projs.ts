@@ -134,10 +134,21 @@ type DiscoverProjsParams = {
  * Exported for testing purposes.
  */
 export async function discover_projsLogic(
-  params: DiscoverProjsParams,
+  params: any,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
-  const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = params;
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspaceRoot', params.workspaceRoot);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+
+  // Cast to proper type after validation with defaults
+  const typedParams: DiscoverProjsParams = {
+    workspaceRoot: params.workspaceRoot as string,
+    scanPath: params.scanPath || '.',
+    maxDepth: params.maxDepth || 5,
+  };
+
+  const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = typedParams;
 
   // Calculate and validate the absolute scan path
   const requestedScanPath = path.resolve(workspaceRoot, relativeScanPath || '.');
@@ -262,17 +273,6 @@ export default {
       .describe(`Optional: Maximum directory depth to scan. Defaults to ${DEFAULT_MAX_DEPTH}.`),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    const workspaceRootValidation = validateRequiredParam('workspaceRoot', args.workspaceRoot);
-    if (!workspaceRootValidation.isValid) {
-      return workspaceRootValidation.errorResponse!;
-    }
-
-    const params: DiscoverProjsParams = {
-      workspaceRoot: args.workspaceRoot as string,
-      scanPath: args.scanPath as string | undefined,
-      maxDepth: (args.maxDepth as number) || DEFAULT_MAX_DEPTH,
-    };
-
-    return discover_projsLogic(params, getDefaultFileSystemExecutor());
+    return discover_projsLogic(args, getDefaultFileSystemExecutor());
   },
 };

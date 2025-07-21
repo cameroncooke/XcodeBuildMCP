@@ -4,6 +4,8 @@ import { createMockExecutor } from '../../../utils/command.js';
 
 // Import the plugin
 import describeUi from '../describe_ui.ts';
+// Import the logic function for testing
+import { describe_uiLogic } from '../../ui-testing/describe_ui.ts';
 
 describe('describe_ui tool', () => {
   let mockExecutor: any;
@@ -60,7 +62,7 @@ describe('describe_ui tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure', async () => {
-      const result = await describeUi.handler({}, mockExecutor, mockAxeHelpers);
+      const result = await describe_uiLogic({}, mockExecutor, mockAxeHelpers);
 
       expect(result).toEqual({
         content: [
@@ -74,7 +76,7 @@ describe('describe_ui tool', () => {
     });
 
     it('should handle successful UI description', async () => {
-      const result = await describeUi.handler(
+      const result = await describe_uiLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789abc',
         },
@@ -105,7 +107,7 @@ describe('describe_ui tool', () => {
         getBundledAxeEnvironment: () => ({}),
       };
 
-      const result = await describeUi.handler(
+      const result = await describe_uiLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789abc',
         },
@@ -131,7 +133,7 @@ describe('describe_ui tool', () => {
         error: 'Simulator not found',
       });
 
-      const result = await describeUi.handler(
+      const result = await describe_uiLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789abc',
         },
@@ -155,7 +157,7 @@ describe('describe_ui tool', () => {
         throw new Error('Command execution failed');
       };
 
-      const result = await describeUi.handler(
+      const result = await describe_uiLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789abc',
         },
@@ -181,7 +183,7 @@ describe('describe_ui tool', () => {
         throw 'String error';
       };
 
-      const result = await describeUi.handler(
+      const result = await describe_uiLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789abc',
         },

@@ -22,9 +22,18 @@ export interface ListSchemsWsParams {
  * Extracted for separation of concerns and testability.
  */
 export async function list_schems_wsLogic(
-  params: ListSchemsWsParams,
+  params: any,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+
+  // Cast to proper type after validation
+  const typedParams: ListSchemsWsParams = {
+    workspacePath: params.workspacePath as string,
+  };
+
   log('info', 'Listing schemes');
 
   try {
@@ -33,7 +42,7 @@ export async function list_schems_wsLogic(
     const command = ['xcodebuild', '-list'];
 
     // Add workspace parameter (guaranteed to exist by validation)
-    command.push('-workspace', params.workspacePath);
+    command.push('-workspace', typedParams.workspacePath);
 
     const result = await executor(command, 'List Schemes', true);
 
@@ -57,9 +66,9 @@ export async function list_schems_wsLogic(
       const firstScheme = schemes[0];
 
       nextStepsText = `Next Steps:
-1. Build the app: macos_build_workspace({ workspacePath: "${params.workspacePath}", scheme: "${firstScheme}" })
-   or for iOS: ios_simulator_build_by_name_workspace({ workspacePath: "${params.workspacePath}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
-2. Show build settings: show_build_set_ws({ workspacePath: "${params.workspacePath}", scheme: "${firstScheme}" })`;
+1. Build the app: macos_build_workspace({ workspacePath: "${typedParams.workspacePath}", scheme: "${firstScheme}" })
+   or for iOS: ios_simulator_build_by_name_workspace({ workspacePath: "${typedParams.workspacePath}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
+2. Show build settings: show_build_set_ws({ workspacePath: "${typedParams.workspacePath}", scheme: "${firstScheme}" })`;
     }
 
     return {
@@ -94,15 +103,6 @@ export default {
     workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
   }),
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    // Validate required parameters
-    const workspaceValidation = validateRequiredParam('workspacePath', args.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
-
-    // Transform args to typed parameters
-    const params: ListSchemsWsParams = {
-      workspacePath: args.workspacePath as string,
-    };
-
-    return list_schems_wsLogic(params, getDefaultCommandExecutor());
+    return list_schems_wsLogic(args, getDefaultCommandExecutor());
   },
 };

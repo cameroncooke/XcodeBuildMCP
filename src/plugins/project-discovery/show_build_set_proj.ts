@@ -26,20 +26,33 @@ interface ShowBuildSetProjParams {
  * @returns Promise resolving to a ToolResponse with build settings or error information
  */
 export async function show_build_set_projLogic(
-  params: ShowBuildSetProjParams,
+  params: any,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  log('info', `Showing build settings for scheme ${params.scheme}`);
+  // Validate required parameters
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+
+  // Cast to proper type after validation
+  const typedParams: ShowBuildSetProjParams = {
+    projectPath: params.projectPath as string,
+    scheme: params.scheme as string,
+  };
+
+  log('info', `Showing build settings for scheme ${typedParams.scheme}`);
 
   try {
     // Create the command array for xcodebuild
     const command = ['xcodebuild', '-showBuildSettings']; // -showBuildSettings as an option, not an action
 
     // Add the project
-    command.push('-project', params.projectPath);
+    command.push('-project', typedParams.projectPath);
 
     // Add the scheme
-    command.push('-scheme', params.scheme);
+    command.push('-scheme', typedParams.scheme);
 
     // Execute the command directly
     const result = await executor(command, 'Show Build Settings', true);
@@ -52,7 +65,7 @@ export async function show_build_set_projLogic(
       content: [
         {
           type: 'text',
-          text: `✅ Build settings for scheme ${params.scheme}:`,
+          text: `✅ Build settings for scheme ${typedParams.scheme}:`,
         },
         {
           type: 'text',
@@ -77,21 +90,6 @@ export default {
     scheme: z.string().describe('Scheme name to show build settings for (Required)'),
   }),
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    const params = args;
-
-    // Validate required parameters
-    const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-    if (!projectValidation.isValid) return projectValidation.errorResponse;
-
-    const schemeValidation = validateRequiredParam('scheme', params.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse;
-
-    // Cast to proper type after validation
-    const typedParams: ShowBuildSetProjParams = {
-      projectPath: params.projectPath as string,
-      scheme: params.scheme as string,
-    };
-
-    return show_build_set_projLogic(typedParams, getDefaultCommandExecutor());
+    return show_build_set_projLogic(args, getDefaultCommandExecutor());
   },
 };
