@@ -6,7 +6,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createMockFileSystemExecutor } from '../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  createCommandMatchingMockExecutor,
+} from '../../../utils/command.js';
 import screenshotPlugin, { screenshotLogic } from '../../ui-testing/screenshot.ts';
 
 describe('screenshot plugin', () => {
@@ -47,17 +51,18 @@ describe('screenshot plugin', () => {
   });
 
   describe('Command Generation', () => {
-    it('should generate correct simctl command', async () => {
-      let capturedCommand: string[] = [];
+    it('should generate correct simctl and sips commands', async () => {
+      const capturedCommands: string[][] = [];
 
-      const mockExecutor = async (command: string[]) => {
-        capturedCommand = command;
-        return {
-          success: true,
-          output: '',
-          error: undefined,
-          process: { pid: 12345 },
-        };
+      const mockExecutor = createCommandMatchingMockExecutor({
+        'xcrun simctl': { success: true, output: 'Screenshot saved' },
+        sips: { success: true, output: 'Image optimized' },
+      });
+
+      // Wrap to capture both commands
+      const capturingExecutor = async (command: string[], ...args: any[]) => {
+        capturedCommands.push(command);
+        return mockExecutor(command, ...args);
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
@@ -77,13 +82,17 @@ describe('screenshot plugin', () => {
         {
           simulatorUuid: 'test-uuid',
         },
-        mockExecutor,
+        capturingExecutor,
         mockFileSystemExecutor,
         mockPathDeps,
         mockUuidDeps,
       );
 
-      expect(capturedCommand).toEqual([
+      // Should execute both commands in sequence
+      expect(capturedCommands).toHaveLength(2);
+
+      // First command: xcrun simctl screenshot
+      expect(capturedCommands[0]).toEqual([
         'xcrun',
         'simctl',
         'io',
@@ -91,19 +100,36 @@ describe('screenshot plugin', () => {
         'screenshot',
         '/tmp/screenshot_mock-uuid-123.png',
       ]);
+
+      // Second command: sips optimization
+      expect(capturedCommands[1]).toEqual([
+        'sips',
+        '-Z',
+        '800',
+        '-s',
+        'format',
+        'jpeg',
+        '-s',
+        'formatOptions',
+        '75',
+        '/tmp/screenshot_mock-uuid-123.png',
+        '--out',
+        '/tmp/screenshot_optimized_mock-uuid-123.jpg',
+      ]);
     });
 
     it('should generate correct path with different uuid', async () => {
-      let capturedCommand: string[] = [];
+      const capturedCommands: string[][] = [];
 
-      const mockExecutor = async (command: string[]) => {
-        capturedCommand = command;
-        return {
-          success: true,
-          output: '',
-          error: undefined,
-          process: { pid: 12345 },
-        };
+      const mockExecutor = createCommandMatchingMockExecutor({
+        'xcrun simctl': { success: true, output: 'Screenshot saved' },
+        sips: { success: true, output: 'Image optimized' },
+      });
+
+      // Wrap to capture both commands
+      const capturingExecutor = async (command: string[], ...args: any[]) => {
+        capturedCommands.push(command);
+        return mockExecutor(command, ...args);
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
@@ -123,13 +149,17 @@ describe('screenshot plugin', () => {
         {
           simulatorUuid: 'another-uuid',
         },
-        mockExecutor,
+        capturingExecutor,
         mockFileSystemExecutor,
         mockPathDeps,
         mockUuidDeps,
       );
 
-      expect(capturedCommand).toEqual([
+      // Should execute both commands in sequence
+      expect(capturedCommands).toHaveLength(2);
+
+      // First command: xcrun simctl screenshot
+      expect(capturedCommands[0]).toEqual([
         'xcrun',
         'simctl',
         'io',
@@ -137,19 +167,36 @@ describe('screenshot plugin', () => {
         'screenshot',
         '/tmp/screenshot_different-uuid-456.png',
       ]);
+
+      // Second command: sips optimization
+      expect(capturedCommands[1]).toEqual([
+        'sips',
+        '-Z',
+        '800',
+        '-s',
+        'format',
+        'jpeg',
+        '-s',
+        'formatOptions',
+        '75',
+        '/tmp/screenshot_different-uuid-456.png',
+        '--out',
+        '/tmp/screenshot_optimized_different-uuid-456.jpg',
+      ]);
     });
 
     it('should use default dependencies when not provided', async () => {
-      let capturedCommand: string[] = [];
+      const capturedCommands: string[][] = [];
 
-      const mockExecutor = async (command: string[]) => {
-        capturedCommand = command;
-        return {
-          success: true,
-          output: '',
-          error: undefined,
-          process: { pid: 12345 },
-        };
+      const mockExecutor = createCommandMatchingMockExecutor({
+        'xcrun simctl': { success: true, output: 'Screenshot saved' },
+        sips: { success: true, output: 'Image optimized' },
+      });
+
+      // Wrap to capture both commands
+      const capturingExecutor = async (command: string[], ...args: any[]) => {
+        capturedCommands.push(command);
+        return mockExecutor(command, ...args);
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
@@ -160,18 +207,31 @@ describe('screenshot plugin', () => {
         {
           simulatorUuid: 'test-uuid',
         },
-        mockExecutor,
+        capturingExecutor,
         mockFileSystemExecutor,
       );
 
-      // Command should be generated with real os.tmpdir, path.join, and uuidv4
-      expect(capturedCommand).toHaveLength(6);
-      expect(capturedCommand[0]).toBe('xcrun');
-      expect(capturedCommand[1]).toBe('simctl');
-      expect(capturedCommand[2]).toBe('io');
-      expect(capturedCommand[3]).toBe('test-uuid');
-      expect(capturedCommand[4]).toBe('screenshot');
-      expect(capturedCommand[5]).toMatch(/\/.*\/screenshot_.*\.png/);
+      // Should execute both commands in sequence
+      expect(capturedCommands).toHaveLength(2);
+
+      // First command should be generated with real os.tmpdir, path.join, and uuidv4
+      const firstCommand = capturedCommands[0];
+      expect(firstCommand).toHaveLength(6);
+      expect(firstCommand[0]).toBe('xcrun');
+      expect(firstCommand[1]).toBe('simctl');
+      expect(firstCommand[2]).toBe('io');
+      expect(firstCommand[3]).toBe('test-uuid');
+      expect(firstCommand[4]).toBe('screenshot');
+      expect(firstCommand[5]).toMatch(/\/.*\/screenshot_.*\.png/);
+
+      // Second command should be sips optimization
+      const secondCommand = capturedCommands[1];
+      expect(secondCommand[0]).toBe('sips');
+      expect(secondCommand[1]).toBe('-Z');
+      expect(secondCommand[2]).toBe('800');
+      // Should have proper PNG input and JPG output paths
+      expect(secondCommand[secondCommand.length - 3]).toMatch(/\/.*\/screenshot_.*\.png/);
+      expect(secondCommand[secondCommand.length - 1]).toMatch(/\/.*\/screenshot_optimized_.*\.jpg/);
     });
   });
 
@@ -179,14 +239,14 @@ describe('screenshot plugin', () => {
     it('should capture screenshot successfully', async () => {
       const mockImageBuffer = Buffer.from('fake-image-data');
 
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: '',
-        error: undefined,
+      // Mock both commands: screenshot + optimization
+      const mockExecutor = createCommandMatchingMockExecutor({
+        'xcrun simctl': { success: true, output: 'Screenshot saved' },
+        sips: { success: true, output: 'Image optimized' },
       });
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
-        readFile: async () => mockImageBuffer.toString('utf8'),
+        readFile: async () => mockImageBuffer.toString('base64'), // Return base64 directly
       });
 
       const mockPathDeps = {
@@ -213,7 +273,7 @@ describe('screenshot plugin', () => {
           {
             type: 'image',
             data: mockImageBuffer.toString('base64'),
-            mimeType: 'image/png',
+            mimeType: 'image/jpeg', // Now JPEG after optimization
           },
         ],
       });
@@ -318,16 +378,17 @@ describe('screenshot plugin', () => {
     });
 
     it('should call correct command with direct execution', async () => {
-      let capturedArgs: any[] = [];
+      const capturedArgs: any[][] = [];
 
-      const mockExecutor = async (...args: any[]) => {
-        capturedArgs = args;
-        return {
-          success: true,
-          output: '',
-          error: undefined,
-          process: { pid: 12345 },
-        };
+      const mockExecutor = createCommandMatchingMockExecutor({
+        'xcrun simctl': { success: true, output: 'Screenshot saved' },
+        sips: { success: true, output: 'Image optimized' },
+      });
+
+      // Wrap to capture both command executions
+      const capturingExecutor = async (...args: any[]) => {
+        capturedArgs.push(args);
+        return mockExecutor(...args);
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
@@ -347,17 +408,40 @@ describe('screenshot plugin', () => {
         {
           simulatorUuid: 'test-uuid',
         },
-        mockExecutor,
+        capturingExecutor,
         mockFileSystemExecutor,
         mockPathDeps,
         mockUuidDeps,
       );
 
-      expect(capturedArgs).toEqual([
+      // Should capture both command executions
+      expect(capturedArgs).toHaveLength(2);
+
+      // First call: xcrun simctl screenshot (3 args: command, logPrefix, useShell)
+      expect(capturedArgs[0]).toEqual([
         ['xcrun', 'simctl', 'io', 'test-uuid', 'screenshot', '/tmp/screenshot_mock-uuid-123.png'],
         '[Screenshot]: screenshot',
         false,
-        undefined,
+      ]);
+
+      // Second call: sips optimization (3 args: command, logPrefix, useShell)
+      expect(capturedArgs[1]).toEqual([
+        [
+          'sips',
+          '-Z',
+          '800',
+          '-s',
+          'format',
+          'jpeg',
+          '-s',
+          'formatOptions',
+          '75',
+          '/tmp/screenshot_mock-uuid-123.png',
+          '--out',
+          '/tmp/screenshot_optimized_mock-uuid-123.jpg',
+        ],
+        '[Screenshot]: optimize image',
+        false,
       ]);
     });
 

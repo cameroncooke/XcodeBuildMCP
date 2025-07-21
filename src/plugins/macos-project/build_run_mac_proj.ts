@@ -52,7 +52,7 @@ async function _handleMacOSBuildLogic(
 async function _getAppPathFromBuildSettings(
   params: Record<string, unknown>,
   executor: CommandExecutor = getDefaultCommandExecutor(),
-): Promise<{ appPath?: string; error?: string }> {
+): Promise<{ success: boolean; appPath?: string; error?: string }> {
   try {
     // Create the command array for xcodebuild
     const command = ['xcodebuild', '-showBuildSettings'];

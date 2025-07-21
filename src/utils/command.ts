@@ -285,6 +285,72 @@ export function createNoopExecutor(): CommandExecutor {
 }
 
 /**
+ * Create a command-matching mock executor for testing multi-command scenarios
+ * Perfect for tools that execute multiple commands (like screenshot: simctl + sips)
+ *
+ * @param commandMap - Map of command patterns to their mock responses
+ * @returns CommandExecutor that matches commands and returns appropriate responses
+ *
+ * @example
+ * ```typescript
+ * const mockExecutor = createCommandMatchingMockExecutor({
+ *   'xcrun simctl': { output: 'Screenshot saved' },
+ *   'sips': { output: 'Image optimized' }
+ * });
+ * ```
+ */
+export function createCommandMatchingMockExecutor(
+  commandMap: Record<
+    string,
+    {
+      success?: boolean;
+      output?: string;
+      error?: string;
+      process?: any;
+    }
+  >,
+): CommandExecutor {
+  return async (command, _logPrefix, _useShell, _env) => {
+    const commandStr = command.join(' ');
+
+    // Find matching command pattern
+    const matchedKey = Object.keys(commandMap).find((key) => commandStr.includes(key));
+
+    if (!matchedKey) {
+      throw new Error(
+        `🚨 UNEXPECTED COMMAND! 🚨\n` +
+          `Command: ${commandStr}\n` +
+          `Expected one of: ${Object.keys(commandMap).join(', ')}\n` +
+          `Available patterns: ${JSON.stringify(Object.keys(commandMap), null, 2)}`,
+      );
+    }
+
+    const result = commandMap[matchedKey];
+
+    const mockProcess = {
+      pid: 12345,
+      stdout: null,
+      stderr: null,
+      stdin: null,
+      stdio: [null, null, null],
+      killed: false,
+      connected: false,
+      exitCode: result.success === false ? 1 : 0,
+      signalCode: null,
+      spawnargs: [],
+      spawnfile: 'sh',
+    };
+
+    return {
+      success: result.success ?? true, // Success by default (as discussed)
+      output: result.output ?? '',
+      error: result.error,
+      process: result.process ?? mockProcess,
+    };
+  };
+}
+
+/**
  * Create a mock file system executor for testing
  */
 export function createMockFileSystemExecutor(
