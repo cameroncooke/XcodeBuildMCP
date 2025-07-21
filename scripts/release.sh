@@ -79,7 +79,7 @@ run "sed -i '' -E 's/npm%3Axcodebuildmcp%40[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\
 
 echo ""
 echo "📝 Updating version in TOOL_OPTIONS.md..."
-run "sed -i '' -E 's/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/@'"$VERSION"'/g' TOOL_OPTIONS.md"
+run "sed -i '' -E 's/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/@'"$VERSION"'/g' docs/TOOL_OPTIONS.md"
 
 # Git operations
 echo ""

@@ -4,7 +4,7 @@ This document provides an overview of the `xcodebuildmcp` project architecture f
 
 ## 📋 Quick Reference
 
-**IMPORTANT**: Before working with tests, read the comprehensive @TESTING.md which covers:
+**IMPORTANT**: Before working with tests, read the comprehensive @docs/TESTING.md which covers:
 - Integration testing philosophy  
 - Three-dimensional testing strategy (Input validation, Command generation, Output processing)
 - Mock strategies and patterns

@@ -254,7 +254,7 @@ Cursor:
 find ~/Library/Application\ Support/Cursor/logs -name "Cursor MCP.log" -exec zip -r matching_logs.zip {} +
 ```
 
-If your MCP client doesn't have log files you can run the server directly using the MCP Inspector tool see [Debugging](CONTRIBUTING.md#debugging) for more information on how to do this. Once running the MCP tool prints all log messages to it's error pane, which can be helpful in diagnosing issues.
+If your MCP client doesn't have log files you can run the server directly using the MCP Inspector tool see [Debugging](docs/CONTRIBUTING.md#debugging) for more information on how to do this. Once running the MCP tool prints all log messages to it's error pane, which can be helpful in diagnosing issues.
 
 ## Privacy
 
@@ -331,7 +331,7 @@ XcodeBuildMCP follows a modular, layered architecture designed for extensibility
 - **Pattern**: Import production code, mock only external dependencies
 - **Validation**: Deterministic response validation for all tools
 
-For detailed architectural documentation, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For detailed architectural documentation, see [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Selective tool registration
 
@@ -374,20 +374,20 @@ https://github.com/user-attachments/assets/e3c08d75-8be6-4857-b4d0-9350b26ef086
 
 XcodeBuildMCP includes comprehensive documentation to help you understand and extend the project:
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Detailed architectural overview, design principles, and component details
-- **[TOOLS.md](TOOLS.md)** - Complete documentation of all 81 available tools
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Detailed architectural overview, design principles, and component details
+- **[TOOLS.md](docs/TOOLS.md)** - Complete documentation of all 81 available tools
 - **[TOOL_OPTIONS.md](TOOL_OPTIONS.md)** - Tool configuration and selective enablement guide
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Development setup, testing standards, and contribution guidelines
+- **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** - Development setup, testing standards, and contribution guidelines
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
 
 For AI assistants and automated tools:
-- **[CLAUDE.md](CLAUDE.md)** - Guidelines for AI assistants working with this codebase
+- **[CLAUDE.md](docs/CLAUDE.md)** - Guidelines for AI assistants working with this codebase
 
 ## Contributing
 
 Contributions are welcome! Here's how you can help improve XcodeBuildMCP.
 
-See our [CONTRIBUTING](CONTRIBUTING.md) document for detailed contribution guidelines, including:
+See our [CONTRIBUTING](docs/CONTRIBUTING.md) document for detailed contribution guidelines, including:
 - Development setup instructions
 - Mandatory testing principles
 - Code quality standards

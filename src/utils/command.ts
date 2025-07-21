@@ -199,7 +199,7 @@ export function getDefaultCommandExecutor(): CommandExecutor {
         `This test is trying to use the default command executor instead of a mock.\n` +
         `Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.\n` +
         `Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)\n` +
-        `See TESTING.md for proper testing patterns.`,
+        `See docs/TESTING.md for proper testing patterns.`,
     );
   }
   return defaultExecutor;
@@ -216,7 +216,7 @@ export function getDefaultFileSystemExecutor(): FileSystemExecutor {
         `This test is trying to use the default filesystem executor instead of a mock.\n` +
         `Fix: Pass createMockFileSystemExecutor() as the fileSystemExecutor parameter in your test.\n` +
         `Example: await plugin.handler(args, mockCmd, createMockFileSystemExecutor())\n` +
-        `See TESTING.md for proper testing patterns.`,
+        `See docs/TESTING.md for proper testing patterns.`,
     );
   }
   return defaultFileSystemExecutor;
