@@ -41,12 +41,12 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 
 ## Overview
 
-XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operations as tools for AI assistants and other MCP clients. Built with a modern plugin architecture, it provides 81 self-contained tools organized into workflow-based directories, enabling programmatic interaction with Xcode projects, simulators, devices, and Swift packages through a standardized interface.
+XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operations as tools for AI assistants and other MCP clients. Built with a modern plugin architecture, it provides 89 self-contained tools organized into workflow-based directories, enabling programmatic interaction with Xcode projects, simulators, devices, and Swift packages through a standardized interface.
 
 ### Architecture Highlights
 
 - **Plugin Architecture**: Self-contained tools with automatic discovery and zero-config registration
-- **Tool Granularity**: 81 specialized tools across 13 plugin directories for precise control
+- **Tool Granularity**: 89 specialized tools across 16 plugin directories for precise control
 - **Dynamic Loading**: Automatic plugin discovery with flexible enablement options
 - **Workflow Organization**: Tools grouped by logical workflow patterns (simulator, device, macOS, etc.)
 - **Type Safety**: Comprehensive Zod schema validation for all tool parameters
@@ -375,7 +375,7 @@ https://github.com/user-attachments/assets/e3c08d75-8be6-4857-b4d0-9350b26ef086
 XcodeBuildMCP includes comprehensive documentation to help you understand and extend the project:
 
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Detailed architectural overview, design principles, and component details
-- **[TOOLS.md](docs/TOOLS.md)** - Complete documentation of all 81 available tools
+- **[TOOLS.md](docs/TOOLS.md)** - Complete documentation of all 89 available tools
 - **[TOOL_OPTIONS.md](TOOL_OPTIONS.md)** - Tool configuration and selective enablement guide
 - **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** - Development setup, testing standards, and contribution guidelines
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes

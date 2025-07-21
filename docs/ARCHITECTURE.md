@@ -213,10 +213,13 @@ export default {
 plugins/
 ├── device-workspace/        # Device + Workspace operations
 ├── device-project/          # Device + Project operations (re-exports)
+├── device-shared/           # Shared device tools (canonical)
 ├── simulator-workspace/     # Simulator + Workspace operations  
 ├── simulator-project/       # Simulator + Project operations (re-exports)
+├── simulator-shared/        # Shared simulator tools (canonical)
 ├── macos-workspace/         # macOS + Workspace operations
 ├── macos-project/           # macOS + Project operations (re-exports)
+├── macos-shared/            # Shared macOS tools (canonical)
 ├── ui-testing/              # UI automation tools
 ├── swift-package/           # Swift Package Manager tools
 ├── project-discovery/       # Project analysis tools
@@ -254,7 +257,7 @@ plugins/
 
 ## Plugin Organization
 
-### Plugin Categories (81 tools total across 13 directories)
+### Plugin Categories (89 tools total across 16 directories)
 
 #### Build Tools (20 tools)
 - macOS builds (workspace/project)
@@ -311,7 +314,7 @@ Three levels of tool enablement:
 
 1. **All Tools** (default)
    - No environment variables set
-   - All 81 tools registered
+   - All 89 tools registered
 
 2. **Group-Based**
    - `XCODEBUILDMCP_GROUP_*=true`
@@ -420,7 +423,7 @@ describe('Tool Name', () => {
 
 - **Total Tests**: 407
 - **Test Files**: 26
-- **Coverage**: All 81 tools have comprehensive tests
+- **Coverage**: All 89 tools have comprehensive tests
 - **Execution Time**: ~1 second for full suite
 
 ## Build and Deployment
