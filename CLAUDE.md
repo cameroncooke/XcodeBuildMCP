@@ -25,7 +25,7 @@ The project is a Node.js application written in TypeScript with a plugin-based a
 
 *   **Entry Point (`src/index.ts`):** Server initialization and startup
 *   **Plugin Registry (`src/core/plugin-registry.ts`):** Automatic plugin discovery and loading
-*   **Plugins (`plugins/`):** Tool implementations organized by workflow
+*   **Plugins (`src/plugins/`):** Tool implementations organized by workflow
 *   **Utilities (`src/utils/`):** Shared functionality (command execution, validation, logging)
 *   **Diagnostic CLI (`src/diagnostic-cli.ts`):** Standalone diagnostic tool
 
@@ -38,16 +38,17 @@ The project uses a file-system-based plugin architecture where tools are automat
 Each plugin is a TypeScript file that exports a default object:
 
 ```typescript
-// Example: plugins/simulator-workspace/boot_sim.ts
+// Example: src/plugins/simulator-workspace/build_sim_name_ws.ts
 export default {
-  name: 'boot_sim',
-  description: 'Boots an iOS simulator by UUID',
+  name: 'build_sim_name_ws',
+  description: 'Builds an iOS simulator app from workspace',
   schema: {
-    simulatorUuid: z.string().uuid(),
+    workspacePath: z.string().describe('Path to .xcworkspace file'),
+    scheme: z.string().describe('Scheme to build'),
+    simulatorName: z.string().describe('Simulator name'),
   },
-  async handler(args: any) {
-    // Implementation logic
-    return { content: [...], isError: false };
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return build_sim_name_wsLogic(args, getDefaultCommandExecutor());
   },
 };
 ```
@@ -55,7 +56,7 @@ export default {
 ### 3.2. Plugin Directory Structure
 
 ```
-plugins/
+src/plugins/
 ├── swift-package/           # Swift Package Manager tools
 ├── simulator-workspace/     # Simulator + Workspace workflows
 ├── simulator-project/       # Simulator + Project workflows  
@@ -76,7 +77,7 @@ plugins/
 
 ### 3.2.1. Plugin Architecture Principles
 
-Plugin groups in `src/plugins/` and `src/utils/` represent specialized workflows for Apple platform development:
+Plugin groups in `src/plugins/` represent specialized workflows for Apple platform development:
 
 - **Project vs Workspace Separation**: Each plugin group may have variants like project (`_proj`) or workspace (`_ws`) tools, distinguished by file extensions. Project and workspace tools should NEVER be mixed.
 - **DRY Implementation**: Underlying tool handlers are shared, but tool interfaces remain unique for better agent tool discovery. Internal shared functions should accept both workspace and project paths to keep code DRY (Don't Repeat Yourself).
@@ -94,14 +95,14 @@ Plugin workflow groups are ultimately exposed as long as they have an `index.ts`
 Each plugin directory represents a workflow group and must contain an `index.ts` file that defines the workflow metadata:
 
 ```typescript
-// Example: plugins/simulator-workspace/index.ts
+// Example: src/plugins/simulator-workspace/index.ts
 export const workflow = {
-  name: "iOS Simulator + Workspace",
-  description: "Complete iOS simulator workflow for Xcode workspace projects",
+  name: "iOS Simulator Workspace Development",
+  description: "Complete iOS development workflow for .xcworkspace files including build, test, deploy, and debug capabilities",
   platforms: ["iOS"],
   targets: ["simulator"],
   projectTypes: ["workspace"],
-  capabilities: ["build", "test", "run", "debug", "ui-automation"]
+  capabilities: ["build", "test", "deploy", "debug", "ui-automation", "log-capture"]
 };
 ```
 
@@ -120,7 +121,7 @@ The workflow metadata is used by:
 
 ### 3.4. Adding New Tools
 
-1. **Create Plugin File:** Add a new `.ts` file in the appropriate `plugins/` subdirectory
+1. **Create Plugin File:** Add a new `.ts` file in the appropriate `src/plugins/` subdirectory
 2. **Export Plugin Object:** Include `name`, `description`, `schema`, and `handler`
 3. **Add Tests:** Create corresponding `.test.ts` file in the `__tests__/` folder
 4. **Update Workflow:** Ensure the workflow metadata in `index.ts` reflects any new capabilities
@@ -177,7 +178,7 @@ const mockExecutor = createMockExecutor({
   output: 'BUILD SUCCEEDED'
 });
 
-const result = await plugin.handler(params, mockExecutor);
+const result = await toolNameLogic(params, mockExecutor);
 ```
 
 **Example - FORBIDDEN:**
@@ -254,7 +255,7 @@ expect(mockSpawn).toHaveBeenCalledWith('sh', ['-c', 'swift build --package-path 
 expect(mockSpawn).toHaveBeenCalledWith('sh', ['-c', `swift build --package-path ${path}`], expect.any(Object));
 ```
 
-**Test Coverage:** Aim for 95%+ coverage. Run `npm run test:coverage -- plugins/[directory]/` to validate coverage.
+**Test Coverage:** Aim for 95%+ coverage. Run `npm run test:coverage -- src/plugins/[directory]/` to validate coverage.
 
 ### 4.4. Error Handling
 
