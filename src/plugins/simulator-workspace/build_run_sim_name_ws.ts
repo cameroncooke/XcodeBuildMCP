@@ -276,7 +276,7 @@ export default {
         'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
       ),
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return build_run_sim_name_wsLogic(args, getDefaultCommandExecutor());
   },
 };

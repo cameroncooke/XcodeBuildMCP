@@ -134,7 +134,7 @@ type DiscoverProjsParams = {
  * Exported for testing purposes.
  */
 export async function discover_projsLogic(
-  params: any,
+  params: unknown,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
   // Validate required parameters

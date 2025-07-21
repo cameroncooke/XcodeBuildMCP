@@ -42,7 +42,7 @@ export interface FileSystemExecutor {
   readFile(path: string, encoding?: BufferEncoding): Promise<string>;
   writeFile(path: string, content: string, encoding?: BufferEncoding): Promise<void>;
   cp(source: string, destination: string, options?: { recursive?: boolean }): Promise<void>;
-  readdir(path: string, options?: { withFileTypes?: boolean }): Promise<any[]>;
+  readdir(path: string, options?: { withFileTypes?: boolean }): Promise<unknown[]>;
   rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void>;
   existsSync(path: string): boolean;
   stat(path: string): Promise<{ isDirectory(): boolean }>;
@@ -159,9 +159,9 @@ const defaultFileSystemExecutor: FileSystemExecutor = {
     await fs.cp(source, destination, options);
   },
 
-  async readdir(path: string, options?: { withFileTypes?: boolean }): Promise<any[]> {
+  async readdir(path: string, options?: { withFileTypes?: boolean }): Promise<unknown[]> {
     const fs = await import('fs/promises');
-    return await fs.readdir(path, options as any);
+    return await fs.readdir(path, options as Record<string, unknown>);
   },
 
   async rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {
@@ -233,7 +233,7 @@ export function createMockExecutor(
         success?: boolean;
         output?: string;
         error?: string;
-        process?: any;
+        process?: unknown;
       }
     | Error
     | string,
@@ -306,7 +306,7 @@ export function createCommandMatchingMockExecutor(
       success?: boolean;
       output?: string;
       error?: string;
-      process?: any;
+      process?: unknown;
     }
   >,
 ): CommandExecutor {
@@ -361,7 +361,7 @@ export function createMockFileSystemExecutor(
     readFile: async (): Promise<string> => 'mock file content',
     writeFile: async (): Promise<void> => {},
     cp: async (): Promise<void> => {},
-    readdir: async (): Promise<any[]> => [],
+    readdir: async (): Promise<unknown[]> => [],
     rm: async (): Promise<void> => {},
     existsSync: (): boolean => false,
     stat: async (): Promise<{ isDirectory(): boolean }> => ({ isDirectory: (): boolean => true }),
@@ -410,7 +410,7 @@ export function createNoopFileSystemExecutor(): FileSystemExecutor {
           `Either fix the test to avoid this code path, or use createMockFileSystemExecutor() instead.`,
       );
     },
-    readdir: async (): Promise<any[]> => {
+    readdir: async (): Promise<unknown[]> => {
       throw new Error(
         `🚨 NOOP FILESYSTEM EXECUTOR CALLED! 🚨\n` +
           `This executor should never be called in this test context.\n` +

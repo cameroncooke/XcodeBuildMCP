@@ -199,7 +199,7 @@ export default {
     deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
     bundleId: z.string().describe('Bundle identifier of the app to launch and capture logs for.'),
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return start_device_log_capLogic(
       args as { deviceId: string; bundleId: string },
       getDefaultCommandExecutor(),

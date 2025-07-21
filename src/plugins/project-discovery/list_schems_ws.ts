@@ -22,7 +22,7 @@ export interface ListSchemsWsParams {
  * Extracted for separation of concerns and testability.
  */
 export async function list_schems_wsLogic(
-  params: any,
+  params: unknown,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   // Validate required parameters

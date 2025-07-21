@@ -34,7 +34,7 @@ interface MockUtilities {
   isXcodemakeEnabled: () => boolean;
   isXcodemakeAvailable: () => Promise<boolean>;
   doesMakefileExist: (path: string) => boolean;
-  loadPlugins: () => Promise<Map<string, any>>;
+  loadPlugins: () => Promise<Map<string, unknown>>;
 }
 
 // Constants
@@ -50,7 +50,10 @@ async function checkBinaryAvailability(
   const commandExecutor = mockSystem?.executor;
 
   // Fallback executor for when no mock is provided
-  const fallbackExecutor = async (_command: string[], _logPrefix?: string) => ({
+  const fallbackExecutor = async (
+    _command: string[],
+    _logPrefix?: string,
+  ): Promise<{ success: boolean; output: string; error: string }> => ({
     success: false,
     output: '',
     error: 'Binary not found',
@@ -119,7 +122,10 @@ async function getXcodeInfo(
   const commandExecutor = mockSystem?.executor;
 
   // Fallback executor for when no mock is provided
-  const fallbackExecutor = async (_command: string[], _logPrefix?: string) => ({
+  const fallbackExecutor = async (
+    _command: string[],
+    _logPrefix?: string,
+  ): Promise<{ success: boolean; output: string; error: string }> => ({
     success: false,
     output: '',
     error: 'Xcode tool not found',
@@ -288,7 +294,7 @@ async function getPluginSystemInfo(mockUtilities?: MockUtilities): Promise<
     const plugins = await loadPluginsFn();
 
     // Group plugins by directory
-    const pluginsByDirectory = {};
+    const pluginsByDirectory: Record<string, string[]> = {};
     let totalPlugins = 0;
 
     for (const plugin of plugins.values()) {
@@ -351,7 +357,7 @@ export async function diagnosticLogic(
   // Check for required binaries
   const requiredBinaries = ['axe', 'xcodemake', 'mise'];
 
-  const binaryStatus = {};
+  const binaryStatus: Record<string, { available: boolean; version?: string }> = {};
 
   for (const binary of requiredBinaries) {
     binaryStatus[binary] = await checkBinaryAvailability(binary, mockSystem);

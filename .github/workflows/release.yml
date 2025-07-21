@@ -40,6 +40,9 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
+      - name: Run tests
+        run: npm test
+
       - name: Bundle AXe artifacts
         run: npm run bundle:axe
 

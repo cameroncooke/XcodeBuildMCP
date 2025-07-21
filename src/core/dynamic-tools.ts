@@ -6,8 +6,8 @@ import type { WorkflowGroup } from './plugin-types.js';
  * Wrapper function to adapt MCP SDK handler calling convention to our dependency injection pattern
  * MCP SDK calls handlers with just (args), but our handlers expect (args, executor)
  */
-function wrapHandlerWithExecutor(handler: any) {
-  return async (args: any) => {
+function wrapHandlerWithExecutor(handler: (args: unknown, executor: unknown) => Promise<unknown>) {
+  return async (args: unknown): Promise<unknown> => {
     return handler(args, getDefaultCommandExecutor());
   };
 }

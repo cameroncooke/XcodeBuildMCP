@@ -129,7 +129,7 @@ export default {
       .string()
       .describe("Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"),
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return stop_app_sim_name_wsLogic(args, getDefaultCommandExecutor());
   },
 };

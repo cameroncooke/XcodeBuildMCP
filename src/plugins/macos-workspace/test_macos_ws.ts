@@ -47,7 +47,7 @@ const XcodePlatform = {
 async function parseXcresultBundle(
   resultBundlePath: string,
   utilDeps?: {
-    promisify: <T extends (...args: any[]) => any>(
+    promisify: <T extends (...args: unknown[]) => unknown>(
       fn: T,
     ) => T extends (...args: infer Args) => infer Return
       ? (...args: Args) => Promise<Return>
@@ -146,7 +146,7 @@ export async function test_macos_wsLogic(
     tmpdir: () => string;
   },
   utilDeps?: {
-    promisify: <T extends (...args: any[]) => any>(
+    promisify: <T extends (...args: unknown[]) => unknown>(
       fn: T,
     ) => T extends (...args: infer Args) => infer Return
       ? (...args: Args) => Promise<Return>

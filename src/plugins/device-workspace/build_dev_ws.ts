@@ -63,7 +63,7 @@ export default {
       .describe('Additional arguments to pass to xcodebuild'),
     preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return build_dev_wsLogic(args, getDefaultCommandExecutor());
   },
 };

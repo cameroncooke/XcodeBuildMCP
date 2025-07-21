@@ -11,7 +11,7 @@ const activeProcesses = new Map();
  * Process list dependencies for dependency injection
  */
 export interface ProcessListDependencies {
-  processMap?: Map<any, any>;
+  processMap?: Map<unknown, unknown>;
   arrayFrom?: typeof Array.from;
   dateNow?: typeof Date.now;
 }
@@ -23,7 +23,7 @@ export interface ProcessListDependencies {
  * @returns ToolResponse with process list information
  */
 export async function swift_package_listLogic(
-  params?: any,
+  params?: unknown,
   dependencies?: ProcessListDependencies,
 ): Promise<ToolResponse> {
   const processMap = dependencies?.processMap || activeProcesses;
@@ -66,7 +66,7 @@ export default {
   name: 'swift_package_list',
   description: 'Lists currently running Swift Package processes',
   schema: {},
-  async handler(args?: any, dependencies?: ProcessListDependencies): Promise<ToolResponse> {
+  async handler(args?: unknown, dependencies?: ProcessListDependencies): Promise<ToolResponse> {
     return swift_package_listLogic(args, dependencies);
   },
 };

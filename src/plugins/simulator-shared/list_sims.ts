@@ -93,7 +93,7 @@ export default {
   schema: {
     enabled: z.boolean().optional().describe('Optional flag to enable the listing operation.'),
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return list_simsLogic(args as ListSimsParams, getDefaultCommandExecutor());
   },
 };

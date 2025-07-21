@@ -128,7 +128,7 @@ export default {
       .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
     args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return launch_app_simLogic(args, getDefaultCommandExecutor());
   },
 };

@@ -84,7 +84,7 @@ export async function stop_device_log_capLogic(
  */
 export async function stopDeviceLogCapture(
   logSessionId: string,
-  fileSystem?: any,
+  fileSystem?: unknown,
 ): Promise<{ logContent: string; error?: string }> {
   // For backward compatibility, create a mock FileSystemExecutor from the fileSystem parameter
   const fsToUse = fileSystem || fs;
@@ -105,7 +105,7 @@ export async function stopDeviceLogCapture(
     ): Promise<void> {
       await fsToUse.promises.cp(source, destination, options);
     },
-    async readdir(path: string, options?: { withFileTypes?: boolean }): Promise<any[]> {
+    async readdir(path: string, options?: { withFileTypes?: boolean }): Promise<unknown[]> {
       return await fsToUse.promises.readdir(path, options);
     },
     async rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {
@@ -151,7 +151,7 @@ export default {
   schema: {
     logSessionId: z.string().describe('The session ID returned by start_device_log_cap.'),
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return stop_device_log_capLogic(
       args as { logSessionId: string },
       getDefaultFileSystemExecutor(),

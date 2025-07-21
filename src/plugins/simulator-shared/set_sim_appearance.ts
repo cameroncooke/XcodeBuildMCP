@@ -99,7 +99,7 @@ export default {
       .enum(['dark', 'light'])
       .describe('The appearance mode to set (either "dark" or "light")'),
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return set_sim_appearanceLogic(args as SetSimAppearanceParams, getDefaultCommandExecutor());
   },
 };

@@ -111,7 +111,7 @@ async function _getAppPathFromBuildSettings(
 export async function build_run_mac_projLogic(
   params: Record<string, unknown>,
   executor: CommandExecutor,
-  execAsync?: (cmd: string) => Promise<any>,
+  execAsync?: (cmd: string) => Promise<unknown>,
 ): Promise<ToolResponse> {
   log('info', 'Handling macOS build & run logic...');
 

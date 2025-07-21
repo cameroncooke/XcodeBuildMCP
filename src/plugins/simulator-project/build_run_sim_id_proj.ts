@@ -9,7 +9,7 @@ import { execSync } from 'child_process';
 import { ToolResponse } from '../../types/common.js';
 
 // Type definition for execSync function
-type ExecSyncFunction = (command: string, options?: any) => Buffer | string;
+type ExecSyncFunction = (command: string, options?: Record<string, unknown>) => Buffer | string;
 
 const XcodePlatform = {
   iOSSimulator: 'iOS Simulator',

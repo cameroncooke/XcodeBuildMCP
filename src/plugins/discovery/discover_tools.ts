@@ -8,8 +8,12 @@ import { ToolResponse } from '../../types/common.js';
 
 // Dependencies interface for dependency injection
 interface Dependencies {
-  loadWorkflowGroups?: () => Promise<Map<string, any>>;
-  enableWorkflows?: (server: any, workflows: string[], groups: Map<string, any>) => Promise<void>;
+  loadWorkflowGroups?: () => Promise<Map<string, unknown>>;
+  enableWorkflows?: (
+    server: Record<string, unknown>,
+    workflows: string[],
+    groups: Map<string, unknown>,
+  ) => Promise<void>;
 }
 
 export async function discover_toolsLogic(
@@ -84,7 +88,7 @@ Each workflow contains ALL tools needed for its complete development workflow - 
     );
 
     // 5. Parse the response
-    let selectedWorkflows = [];
+    let selectedWorkflows: string[] = [];
     try {
       const content = samplingResult.content;
       let responseText = '';
@@ -195,7 +199,7 @@ export default {
           "For example: 'I need to build my iOS app and run it on the iPhone 15 Pro simulator.'",
       ),
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return discover_toolsLogic(args);
   },
 };

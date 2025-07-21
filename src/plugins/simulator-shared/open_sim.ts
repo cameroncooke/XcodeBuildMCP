@@ -61,7 +61,7 @@ export default {
   name: 'open_sim',
   description: 'Opens the iOS Simulator app.',
   schema: {},
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return open_simLogic(args, getDefaultCommandExecutor());
   },
 };

@@ -11,7 +11,7 @@ export type LogCaptureFunction = (params: {
   simulatorUuid: string;
   bundleId: string;
   captureConsole?: boolean;
-}) => Promise<{ sessionId: string; logFilePath: string; processes: any[]; error?: string }>;
+}) => Promise<{ sessionId: string; logFilePath: string; processes: unknown[]; error?: string }>;
 
 /**
  * Parameters for launching app with logs in simulator

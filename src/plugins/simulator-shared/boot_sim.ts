@@ -70,7 +70,7 @@ export default {
       .string()
       .describe('UUID of the simulator to use (obtained from list_simulators)'),
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return boot_simLogic(args, getDefaultCommandExecutor());
   },
 };

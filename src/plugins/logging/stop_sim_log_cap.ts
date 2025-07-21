@@ -44,7 +44,7 @@ export default {
   schema: {
     logSessionId: z.string().describe('The session ID returned by start_sim_log_cap.'),
   },
-  handler: async (args: Record<string, unknown>) => {
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     return stop_sim_log_capLogic(args as { logSessionId: string });
   },
 };

@@ -26,7 +26,7 @@ interface ShowBuildSetProjParams {
  * @returns Promise resolving to a ToolResponse with build settings or error information
  */
 export async function show_build_set_projLogic(
-  params: any,
+  params: unknown,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   // Validate required parameters
