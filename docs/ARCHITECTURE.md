@@ -257,7 +257,7 @@ plugins/
 
 ## Plugin Organization
 
-### Plugin Categories (89 tools total across 16 directories)
+### Plugin Categories (84 tools total across 16 directories)
 
 #### Build Tools (20 tools)
 - macOS builds (workspace/project)
@@ -314,7 +314,7 @@ Three levels of tool enablement:
 
 1. **All Tools** (default)
    - No environment variables set
-   - All 89 tools registered
+   - All 84 tools registered
 
 2. **Group-Based**
    - `XCODEBUILDMCP_GROUP_*=true`
@@ -423,7 +423,7 @@ describe('Tool Name', () => {
 
 - **Total Tests**: 407
 - **Test Files**: 26
-- **Coverage**: All 89 tools have comprehensive tests
+- **Coverage**: All 84 tools have comprehensive tests
 - **Execution Time**: ~1 second for full suite
 
 ## Build and Deployment

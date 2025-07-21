@@ -1,6 +1,6 @@
 # XcodeBuildMCP Tools Reference
 
-This document provides a comprehensive list of all 89 tools available in XcodeBuildMCP, organized by functionality.
+This document provides a comprehensive list of all 84 tools available in XcodeBuildMCP, organized by functionality.
 
 ## Tool Categories
 
@@ -11,6 +11,7 @@ Tools for discovering and analyzing Xcode projects, workspaces, and build settin
 | Tool Name | Description |
 |-----------|-------------|
 | `discover_projs` | Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files. |
+| `discover_tools` | Analyzes a natural language task description to enable a relevant set of Xcode and Apple development tools for the current session. |
 | `list_schems_ws` | Lists available schemes in the workspace. IMPORTANT: Requires workspacePath. |
 | `list_schems_proj` | Lists available schemes in the project file. IMPORTANT: Requires projectPath. |
 | `list_sims` | Lists available iOS simulators with their UUIDs. |
@@ -127,8 +128,10 @@ Tools for installing, launching, and stopping applications on simulators and dev
 |-----------|-------------|
 | `install_app_sim` | Installs an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and appPath parameters. |
 | `launch_app_sim` | Launches an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and bundleId parameters. |
+| `launch_app_sim_name_ws` | Launches an app in an iOS simulator by simulator name. IMPORTANT: You MUST provide both the simulatorName and bundleId parameters. |
 | `launch_app_logs_sim` | Launches an app in an iOS simulator and captures its logs. |
 | `stop_app_sim` | Stops an app running in an iOS simulator. Requires simulatorUuid and bundleId. |
+| `stop_app_sim_name_ws` | Stops an app running in an iOS simulator by simulator name. IMPORTANT: You MUST provide both the simulatorName and bundleId parameters. |
 | `install_app_device` | Installs an app on a physical Apple device. Requires deviceId and appPath. |
 | `launch_app_device` | Launches an app on a physical Apple device. Requires deviceId and bundleId. |
 | `stop_app_device` | Stops an app running on a physical Apple device. Requires deviceId and processId. |
