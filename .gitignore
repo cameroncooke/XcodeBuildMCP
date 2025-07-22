@@ -100,3 +100,4 @@ buildServer.json
 # Bundled AXe artifacts (generated during build)
 bundled/
 
+/.vscode/mcp.json
