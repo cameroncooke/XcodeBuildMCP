@@ -65,7 +65,7 @@ export async function loadWorkflowGroups(): Promise<Map<string, WorkflowGroup>> 
 /**
  * Load workflow tools from the workflow module
  */
-async function loadWorkflowTools(workflowModule: any): Promise<PluginMeta[]> {
+async function loadWorkflowTools(workflowModule: Record<string, unknown>): Promise<PluginMeta[]> {
   const tools: PluginMeta[] = [];
 
   // Load individual tool files from the workflow module
