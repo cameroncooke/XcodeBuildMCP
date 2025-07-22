@@ -18,6 +18,7 @@ const XcodePlatform = {
 // Internal logic for building Simulator apps.
 async function _handleSimulatorBuildLogic(
   params: Record<string, unknown>,
+  executor: CommandExecutor,
   executeXcodeBuildCommandFn: typeof executeXcodeBuildCommand = executeXcodeBuildCommand,
 ): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
@@ -35,6 +36,7 @@ async function _handleSimulatorBuildLogic(
     },
     params.preferXcodebuild,
     'build',
+    executor,
   );
 }
 
@@ -72,6 +74,7 @@ export async function build_run_sim_id_projLogic(
     // --- Build Step ---
     const buildResult = await _handleSimulatorBuildLogic(
       processedParams,
+      executor,
       executeXcodeBuildCommandFn,
     );
 

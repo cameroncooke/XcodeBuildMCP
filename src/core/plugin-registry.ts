@@ -1,26 +1,17 @@
-import { readdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import type { PluginMeta, WorkflowGroup, WorkflowMeta } from './plugin-types.js';
-
-const IGNORE_GLOBS = [
-  '**/*.test.{ts,mts,cts,js,mjs,cjs}',
-  '**/*.spec.{ts,mts,cts,js,mjs,cjs}',
-  '**/__tests__/**',
-  '**/__mocks__/**',
-  '**/fixtures/**',
-  '**/coverage/**',
-];
+import { WORKFLOW_LOADERS, WorkflowName, WORKFLOW_METADATA } from './generated-plugins.js';
 
 export async function loadPlugins(): Promise<Map<string, PluginMeta>> {
   const plugins = new Map<string, PluginMeta>();
 
-  // This will be replaced by the esbuild plugin with actual imports
-  const pluginModules = await __PLUGIN_LOADER__();
+  // Load all workflows and collect all their tools
+  const workflowGroups = await loadWorkflowGroups();
 
-  for (const plugin of pluginModules) {
-    if (plugin?.name && typeof plugin.handler === 'function') {
-      plugins.set(plugin.name, plugin);
+  for (const workflow of workflowGroups.values()) {
+    for (const tool of workflow.tools) {
+      if (tool?.name && typeof tool.handler === 'function') {
+        plugins.set(tool.name, tool);
+      }
     }
   }
 
@@ -28,101 +19,87 @@ export async function loadPlugins(): Promise<Map<string, PluginMeta>> {
 }
 
 /**
- * Load workflow groups with metadata validation
+ * Load workflow groups with metadata validation using generated loaders
  */
-export async function loadWorkflowGroups(
-  root = new URL('../plugins/', import.meta.url),
-): Promise<Map<string, WorkflowGroup>> {
+export async function loadWorkflowGroups(): Promise<Map<string, WorkflowGroup>> {
   const workflows = new Map<string, WorkflowGroup>();
 
-  // Get all plugin directories
-  const directories = readdirSync(root.pathname, { withFileTypes: true })
-    .filter((dirent) => dirent.isDirectory())
-    .map((dirent) => dirent.name);
-
-  for (const dirName of directories) {
-    const dirPath = join(root.pathname, dirName);
-
-    // Load workflow metadata from index.js
-    const indexPath = join(dirPath, 'index.js');
-    let workflowMeta: WorkflowMeta;
-
+  for (const [workflowName, loader] of Object.entries(WORKFLOW_LOADERS)) {
     try {
-      const indexModule = await import(pathToFileURL(indexPath).href);
+      // Dynamic import with code-splitting
+      const workflowModule = await loader();
 
-      if (!indexModule.workflow) {
-        throw new Error(
-          `Workflow metadata missing: ${dirName}/index.js must export 'workflow' object`,
-        );
+      if (!workflowModule.workflow) {
+        throw new Error(`Workflow metadata missing in ${workflowName}/index.js`);
       }
 
-      workflowMeta = indexModule.workflow;
-
       // Validate required fields
+      const workflowMeta = workflowModule.workflow;
       if (!workflowMeta.name || typeof workflowMeta.name !== 'string') {
-        throw new Error(`Invalid workflow.name in ${dirName}/index.js: must be a non-empty string`);
+        throw new Error(
+          `Invalid workflow.name in ${workflowName}/index.js: must be a non-empty string`,
+        );
       }
 
       if (!workflowMeta.description || typeof workflowMeta.description !== 'string') {
         throw new Error(
-          `Invalid workflow.description in ${dirName}/index.js: must be a non-empty string`,
+          `Invalid workflow.description in ${workflowName}/index.js: must be a non-empty string`,
         );
       }
+
+      workflows.set(workflowName, {
+        workflow: workflowMeta,
+        tools: await loadWorkflowTools(workflowModule),
+        directoryName: workflowName,
+      });
     } catch (error) {
       throw new Error(
-        `Failed to load workflow metadata for '${dirName}': ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to load workflow '${workflowName}': ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
-
-    // Load tools from this directory
-    const tools: PluginMeta[] = [];
-    const files = globSync('*.{js,ts}', {
-      cwd: dirPath,
-      absolute: true,
-      ignore: [...IGNORE_GLOBS, 'index.{js,ts}'], // Don't include index files as tools
-    });
-
-    for (const file of files) {
-      const mod = await import(pathToFileURL(file).href);
-
-      // Handle default export (single tool)
-      if (mod.default?.name && typeof mod.default.handler === 'function') {
-        tools.push(mod.default);
-      }
-
-      // Handle named exports (re-exported shared tools)
-      for (const [key, value] of Object.entries(mod)) {
-        if (key !== 'default' && value && typeof value === 'object') {
-          const tool = value as PluginMeta;
-          if (tool.name && typeof tool.handler === 'function') {
-            tools.push(tool);
-          }
-        }
-      }
-    }
-
-    workflows.set(dirName, {
-      workflow: workflowMeta,
-      tools,
-      directoryName: dirName,
-    });
   }
 
   return workflows;
 }
 
 /**
- * Get workflow metadata by directory name
+ * Load workflow tools from the workflow module
  */
-export async function getWorkflowMetadata(
-  directoryName: string,
-  root = new URL('../plugins/', import.meta.url),
-): Promise<WorkflowMeta | null> {
-  const indexPath = join(root.pathname, directoryName, 'index.js');
+async function loadWorkflowTools(workflowModule: any): Promise<PluginMeta[]> {
+  const tools: PluginMeta[] = [];
 
+  // Load individual tool files from the workflow module
+  for (const [key, value] of Object.entries(workflowModule)) {
+    if (key !== 'workflow' && value && typeof value === 'object') {
+      const tool = value as PluginMeta;
+      if (tool.name && typeof tool.handler === 'function') {
+        tools.push(tool);
+      }
+    }
+  }
+
+  return tools;
+}
+
+/**
+ * Get workflow metadata by directory name using generated loaders
+ */
+export async function getWorkflowMetadata(directoryName: string): Promise<WorkflowMeta | null> {
   try {
-    const indexModule = await import(pathToFileURL(indexPath).href);
-    return indexModule.workflow || null;
+    // First try to get from generated metadata (fast path)
+    const metadata = WORKFLOW_METADATA[directoryName as WorkflowName];
+    if (metadata) {
+      return metadata;
+    }
+
+    // Fall back to loading the actual module
+    const loader = WORKFLOW_LOADERS[directoryName as WorkflowName];
+    if (loader) {
+      const workflowModule = await loader();
+      return workflowModule.workflow || null;
+    }
+
+    return null;
   } catch {
     return null;
   }

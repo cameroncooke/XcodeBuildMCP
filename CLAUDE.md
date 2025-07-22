@@ -24,14 +24,58 @@ The project is a Node.js application written in TypeScript with a plugin-based a
 ### 2.1. Core Components
 
 *   **Entry Point (`src/index.ts`):** Server initialization and startup
-*   **Plugin Registry (`src/core/plugin-registry.ts`):** Automatic plugin discovery and loading
+*   **Plugin Registry (`src/core/plugin-registry.ts`):** Dynamic plugin loading with code-splitting
+*   **Generated Registry (`src/core/generated-plugins.ts`):** Auto-generated workflow loaders (build-time)
+*   **Dynamic Tools (`src/core/dynamic-tools.ts`):** Workflow management and tool replacement
 *   **Plugins (`src/plugins/`):** Tool implementations organized by workflow
 *   **Utilities (`src/utils/`):** Shared functionality (command execution, validation, logging)
+*   **Build Plugins (`build-plugins/`):** esbuild plugins for code generation
 *   **Diagnostic CLI (`src/diagnostic-cli.ts`):** Standalone diagnostic tool
+
+### 2.2. Operating Modes
+
+XcodeBuildMCP operates in two distinct modes:
+
+#### **Static Mode (Default)**
+- **Environment**: `XCODEBUILDMCP_DYNAMIC_TOOLS=false` or unset
+- **Behavior**: All 105+ tools loaded immediately at startup
+- **Use Case**: Complete toolset, no AI dependency, predictable tool availability
+- **Bundle Size**: ~490KB (all workflows included)
+
+#### **Dynamic Mode (AI-Powered)**
+- **Environment**: `XCODEBUILDMCP_DYNAMIC_TOOLS=true`
+- **Behavior**: Only `discover_tools` available initially, workflows loaded on-demand
+- **Use Case**: Focused workflows, intelligent tool selection, code-splitting
+- **Bundle Size**: Minimal startup + on-demand workflow chunks
 
 ## 3. Plugin Architecture
 
-The project uses a file-system-based plugin architecture where tools are automatically discovered and loaded.
+The project uses a **build-time plugin discovery** system that maintains "configuration by convention" while enabling code-splitting and bundling compatibility.
+
+### 3.0. Build-Time Discovery System
+
+#### **Automatic Plugin Generation**
+At build time, an esbuild plugin (`build-plugins/plugin-discovery.js`) scans the filesystem and generates a registry:
+
+```typescript
+// Auto-generated: src/core/generated-plugins.ts
+export const WORKFLOW_LOADERS = {
+  'simulator-workspace': async () => {
+    const { workflow } = await import('../plugins/simulator-workspace/index.js');
+    const tool_0 = await import('../plugins/simulator-workspace/build_sim_name_ws.js').then(m => m.default);
+    // ... more tools loaded dynamically
+    return { workflow, 'build_sim_name_ws': tool_0, /* ... */ };
+  },
+  // ... 12 more workflows
+};
+```
+
+#### **Benefits**
+- ✅ **Configuration by Convention**: Drop folder → automatic registration
+- ✅ **Code-Splitting**: Each workflow becomes a separate bundle chunk  
+- ✅ **Bundling Compatible**: No runtime filesystem access required
+- ✅ **Performance**: Unused workflows not loaded in dynamic mode
+- ✅ **Type Safety**: Generated TypeScript types for all workflows
 
 ### 3.1. Plugin Structure
 
@@ -119,20 +163,81 @@ The workflow metadata is used by:
 - **Tool organization**: Groups related tools together logically
 - **Documentation**: Provides context about what each workflow supports
 
-### 3.4. Adding New Tools
+### 3.4. Dynamic Tool Discovery & Replacement
+
+#### **Tool Replacement (Default Behavior)**
+By default, `discover_tools` **replaces** existing workflows to maintain focus:
+
+```typescript
+// First call - enables simulator-project tools
+discover_tools({ task_description: "Build my iOS project" })
+
+// Second call - REPLACES with workspace tools
+discover_tools({ task_description: "Actually I need workspace tools" })
+// Result: Only simulator-workspace tools are active
+```
+
+#### **Additive Mode (Multi-Workflow)**
+For complex tasks requiring multiple workflows:
+
+```typescript
+// Enable base workflow
+discover_tools({ task_description: "Build and test iOS workspace" })
+
+// Add additional workflow
+discover_tools({ 
+  task_description: "I also need UI automation tools",
+  additive: true 
+})
+// Result: Both simulator-workspace AND ui-testing workflows active
+```
+
+#### **Workflow State Management**
+The system tracks enabled workflows and provides:
+- **Replacement logging**: Clear indication of what workflows are being replaced
+- **State tracking**: Internal tracking of active workflows and tools
+- **Clean switching**: Seamless transitions between workflow types (e.g., project → workspace)
+
+### 3.5. Adding New Tools
 
 1. **Create Plugin File:** Add a new `.ts` file in the appropriate `src/plugins/` subdirectory
 2. **Export Plugin Object:** Include `name`, `description`, `schema`, and `handler`
 3. **Add Tests:** Create corresponding `.test.ts` file in the `__tests__/` folder
 4. **Update Workflow:** Ensure the workflow metadata in `index.ts` reflects any new capabilities
-5. **Automatic Discovery:** No manual registration needed
+5. **Build Project:** Run `npm run build` to regenerate the plugin registry
+6. **Automatic Discovery:** Tools automatically available in both static and dynamic modes
+
+### 3.6. Adding New Workflows
+
+1. **Create Workflow Directory:** Add new folder in `src/plugins/` (e.g., `src/plugins/my-workflow/`)
+2. **Add Workflow Metadata:** Create `index.ts` with workflow metadata export:
+   ```typescript
+   export const workflow = {
+     name: "My Custom Workflow",
+     description: "Description of what this workflow accomplishes",
+     platforms: ["iOS", "macOS"],
+     targets: ["simulator", "device"],
+     projectTypes: ["project", "workspace"],
+     capabilities: ["build", "test", "deploy"]
+   };
+   ```
+3. **Add Tool Files:** Create individual `.ts` files for each tool in the workflow
+4. **Add Tests:** Create `__tests__/` subdirectory with test files
+5. **Build Project:** Run `npm run build` - workflow automatically discovered and registered
+6. **Verification:** New workflow appears in `discover_tools` AI selection and both operating modes
 
 ## 4. Development Workflow
 
 ### 4.1. Building
 
 *   **Build:** `npm run build`
+    - Scans `src/plugins/` for workflows and tools
+    - Generates `src/core/generated-plugins.ts` with dynamic import loaders
+    - Bundles application with code-splitting support
+    - Takes ~5-10 seconds (includes plugin discovery)
 *   **Watch Mode:** `npm run build:watch`
+    - Automatically regenerates plugin registry on file changes
+    - Faster incremental builds (~1-2 seconds)
 
 ### 4.2. Code Quality Requirements
 
@@ -257,7 +362,60 @@ expect(mockSpawn).toHaveBeenCalledWith('sh', ['-c', `swift build --package-path 
 
 **Test Coverage:** Aim for 95%+ coverage. Run `npm run test:coverage -- src/plugins/[directory]/` to validate coverage.
 
-### 4.4. Error Handling
+### 4.4. Testing Operating Modes
+
+#### **Testing Static Mode**
+```bash
+# Test static mode startup
+XCODEBUILDMCP_DYNAMIC_TOOLS=false node build/index.js
+
+# Verify all tools loaded
+# Expected: 105+ tools available immediately
+# Expected log: "📋 Starting in STATIC mode"
+```
+
+#### **Testing Dynamic Mode**  
+```bash
+# Test dynamic mode startup
+XCODEBUILDMCP_DYNAMIC_TOOLS=true node build/index.js
+
+# Verify minimal tool set
+# Expected: Only discover_tools available initially  
+# Expected log: "🔍 Starting in DYNAMIC mode"
+```
+
+#### **Testing Tool Discovery**
+```typescript
+// Test workflow replacement (default behavior)
+discover_tools({ task_description: "Build iOS project" })
+// → Enables simulator-project workflow
+
+discover_tools({ task_description: "Need workspace tools instead" })  
+// → Replaces with simulator-workspace workflow
+
+// Test additive mode
+discover_tools({ 
+  task_description: "Also need UI testing tools",
+  additive: true 
+})
+// → Adds ui-testing workflow to existing tools
+```
+
+#### **Testing Plugin Discovery**
+```bash
+# Verify build-time discovery
+npm run build
+
+# Check generated file
+cat src/core/generated-plugins.ts
+# Should contain WORKFLOW_LOADERS with dynamic imports
+
+# Verify workflow count
+# Expected: 13 workflows discovered
+# Expected log: "🔧 Generated workflow loaders for 13 workflows"
+```
+
+### 4.5. Error Handling
 
 *   **Return, Don't Throw:** Plugin handlers should catch errors and return `{ isError: true }`
 *   **Use Utilities:** `createTextResponse()`, `createErrorResponse()` for consistent responses

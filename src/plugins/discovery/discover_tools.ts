@@ -2,17 +2,21 @@ import { z } from 'zod';
 import { createTextResponse } from '../../utils/index.js';
 import { log } from '../../utils/index.js';
 import { CreateMessageResultSchema } from '@modelcontextprotocol/sdk/types.js';
-import { loadWorkflowGroups } from '../../utils/index.js';
-import { enableWorkflows } from '../../utils/index.js';
 import { ToolResponse } from '../../types/common.js';
+import {
+  enableWorkflows,
+  getAvailableWorkflows,
+  generateWorkflowDescriptions,
+} from '../../core/dynamic-tools.js';
 
 // Dependencies interface for dependency injection
 interface Dependencies {
-  loadWorkflowGroups?: () => Promise<Map<string, unknown>>;
+  getAvailableWorkflows?: () => string[];
+  generateWorkflowDescriptions?: () => string;
   enableWorkflows?: (
     server: Record<string, unknown>,
     workflows: string[],
-    groups: Map<string, unknown>,
+    additive?: boolean,
   ) => Promise<void>;
 }
 
@@ -20,7 +24,7 @@ export async function discover_toolsLogic(
   args: Record<string, unknown>,
   deps?: Dependencies,
 ): Promise<ToolResponse> {
-  const { task_description } = args;
+  const { task_description, additive } = args;
   log('info', `Discovering tools for task: ${task_description}`);
 
   try {
@@ -41,14 +45,11 @@ export async function discover_toolsLogic(
       );
     }
 
-    // 2. Load available workflow groups dynamically
-    const workflowGroups = await (deps?.loadWorkflowGroups || loadWorkflowGroups)();
-    const workflowNames = Array.from(workflowGroups.keys());
-
-    // Build workflow descriptions dynamically
-    const workflowDescriptions = Array.from(workflowGroups.values())
-      .map((group) => `- **${group.directoryName.toUpperCase()}**: ${group.workflow.description}`)
-      .join('\n');
+    // 2. Get available workflows using generated metadata
+    const workflowNames = (deps?.getAvailableWorkflows || getAvailableWorkflows)();
+    const workflowDescriptions = (
+      deps?.generateWorkflowDescriptions || generateWorkflowDescriptions
+    )();
 
     // 3. Construct the prompt for the LLM
     const userPrompt = `You are an expert assistant for the XcodeBuildMCP server. Your task is to select the most relevant workflow for a user's Apple development request.
@@ -164,17 +165,24 @@ Each workflow contains ALL tools needed for its complete development workflow - 
     }
 
     // 7. Enable the selected workflows
-    log('info', `Activating workflows: ${selectedWorkflows.join(', ')}`);
-    await (deps?.enableWorkflows || enableWorkflows)(server, selectedWorkflows, workflowGroups);
+    const isAdditive = Boolean(additive);
+    log(
+      'info',
+      `${isAdditive ? 'Adding' : 'Replacing with'} workflows: ${selectedWorkflows.join(', ')}`,
+    );
+    await (deps?.enableWorkflows || enableWorkflows)(server, selectedWorkflows, isAdditive);
 
-    // 8. Return success response
-    const toolCount = selectedWorkflows.reduce((count, workflowName) => {
-      const workflow = workflowGroups.get(workflowName);
-      return count + (workflow ? workflow.tools.length : 0);
-    }, 0);
+    // 8. Return success response - we can't easily get tool count ahead of time with dynamic loading
+    // but that's okay since the user will see the tools when they're loaded
+
+    const actionWord = isAdditive ? 'Added' : 'Enabled';
+    const modeDescription = isAdditive
+      ? `Added tools from ${selectedWorkflows.join(', ')} to your existing workflow tools.`
+      : `Replaced previous tools with ${selectedWorkflows.join(', ')} workflow tools.`;
 
     return createTextResponse(
-      `✅ Successfully enabled ${toolCount} XcodeBuildMCP tools for: ${selectedWorkflows.join(', ')}.\n\n` +
+      `✅ ${actionWord} XcodeBuildMCP tools for: ${selectedWorkflows.join(', ')}.\n\n` +
+        `${modeDescription}\n\n` +
         `Use XcodeBuildMCP tools for all Apple platform development tasks from now on. ` +
         `Call tools/list to see all available tools for your workflow.`,
     );
@@ -197,6 +205,14 @@ export default {
       .describe(
         'A detailed description of the development task you want to accomplish. ' +
           "For example: 'I need to build my iOS app and run it on the iPhone 15 Pro simulator.'",
+      ),
+    additive: z
+      .boolean()
+      .optional()
+      .describe(
+        'If true, add the discovered tools to existing enabled workflows. ' +
+          'If false (default), replace all existing workflows with the newly discovered one. ' +
+          'Use additive mode when you need tools from multiple workflows simultaneously.',
       ),
   },
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {

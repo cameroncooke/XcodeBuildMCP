@@ -68,7 +68,9 @@ For more details on how to work with MCP servers in VS Code see: https://code.vi
 
 ### Debugging
 
-You can use MCP Inspector via:
+#### MCP Inspector (Basic Debugging)
+
+You can use MCP Inspector for basic debugging via:
 
 ```bash
 npm run inspect
@@ -80,10 +82,122 @@ or if you prefer the explicit command:
 npx @modelcontextprotocol/inspector node build/index.js
 ```
 
+#### Reloaderoo (Advanced Debugging) - **RECOMMENDED**
+
+For development and debugging, we strongly recommend using **Reloaderoo**, which provides hot-reloading capabilities and advanced debugging features for MCP servers.
+
+Reloaderoo operates in two modes:
+
+##### 1. Proxy Mode (Hot-Reloading)
+Provides transparent hot-reloading without disconnecting your MCP client:
+
+```bash
+# Install reloaderoo globally
+npm install -g reloaderoo
+
+# Start XcodeBuildMCP through reloaderoo proxy
+reloaderoo -- node build/index.js
+```
+
+**Benefits**:
+- 🔄 Hot-reload server without restarting client
+- 🛠️ Automatic `restart_server` tool added to toolset
+- 🌊 Transparent MCP protocol forwarding
+- 📡 Full protocol support (tools, resources, prompts)
+
+**MCP Client Configuration for Proxy Mode**:
+```json
+{
+  "mcpServers": {
+    "XcodeBuildMCP": {
+      "command": "reloaderoo",
+      "args": ["--", "node", "/path/to/XcodeBuildMCP/build/index.js"],
+      "env": {
+        "XCODEBUILDMCP_DYNAMIC_TOOLS": "true",
+        "XCODEBUILDMCP_DEBUG": "true"
+      }
+    }
+  }
+}
+```
+
+##### 2. Inspection Mode (Raw MCP Debugging)
+Exposes debug tools for making raw MCP protocol calls and inspecting server responses:
+
+```bash
+# Start reloaderoo in inspection mode
+reloaderoo inspect mcp -- node build/index.js
+```
+
+**Available Debug Tools**:
+- `list_tools` - List all server tools
+- `call_tool` - Execute any server tool with parameters
+- `list_resources` - List all server resources  
+- `read_resource` - Read any server resource
+- `list_prompts` - List all server prompts
+- `get_prompt` - Get any server prompt
+- `get_server_info` - Get comprehensive server information
+- `ping` - Test server connectivity
+
+**MCP Client Configuration for Inspection Mode**:
+```json
+{
+  "mcpServers": {
+    "XcodeBuildMCP": {
+      "command": "node",
+      "args": [
+        "/path/to/reloaderoo/dist/bin/reloaderoo.js",
+        "inspect", "mcp",
+        "--working-dir", "/path/to/XcodeBuildMCP",
+        "--",
+        "node", "/path/to/XcodeBuildMCP/build/index.js"
+      ],
+      "env": {
+        "XCODEBUILDMCP_DYNAMIC_TOOLS": "true", 
+        "XCODEBUILDMCP_DEBUG": "true"
+      }
+    }
+  }
+}
+```
+
+##### Testing Dynamic Tool Discovery
+
+When testing dynamic tool discovery with reloaderoo inspection mode:
+
+```typescript
+// Test the discover_tools functionality
+await call_tool("discover_tools", {
+  "task_description": "I want to build and test an iOS app for the simulator"
+});
+
+// Verify only discover_tools is initially available
+await list_tools(); // Should show 1 tool in dynamic mode, 84+ in static mode
+
+// Check server information
+await get_server_info();
+```
+
+#### Operating Mode Testing
+
+Test both static and dynamic modes during development:
+
+```bash
+# Test static mode (all tools loaded immediately)
+XCODEBUILDMCP_DYNAMIC_TOOLS=false reloaderoo inspect mcp -- node build/index.js
+
+# Test dynamic mode (only discover_tools initially available)  
+XCODEBUILDMCP_DYNAMIC_TOOLS=true reloaderoo inspect mcp -- node build/index.js
+```
+
+**Key Differences to Test**:
+- **Static Mode**: ~84+ tools available immediately via `list_tools`
+- **Dynamic Mode**: Only 1 tool (`discover_tools`) available initially
+- **Dynamic Discovery**: After calling `discover_tools`, additional workflow tools become available
+
 #### Using the diagnostic tool
 
 Running the XcodeBuildMCP server with the environmental variable `XCODEBUILDMCP_DEBUG=true` will expose a new diagnostic tool which you can run using MCP Inspector:
-
 
 ```bash
 XCODEBUILDMCP_DEBUG=true npm run inspect
@@ -94,6 +208,27 @@ Alternatively, you can run the diagnostic tool directly:
 ```bash
 node build/diagnostic-cli.js
 ```
+
+#### Development Workflow with Reloaderoo
+
+1. **Start Development Session**:
+   ```bash
+   # Terminal 1: Start in hot-reload mode
+   reloaderoo -- node build/index.js
+   
+   # Terminal 2: Start build watcher  
+   npm run build:watch
+   ```
+
+2. **Make Changes**: Edit source code in `src/`
+
+3. **Test Changes**: Ask your AI client to restart the server:
+   ```
+   "Please restart the MCP server to load my changes"
+   ```
+   The AI will automatically call the `restart_server` tool provided by reloaderoo.
+
+4. **Verify Changes**: New functionality immediately available without reconnecting client
 
 ## Architecture and Code Standards
 
