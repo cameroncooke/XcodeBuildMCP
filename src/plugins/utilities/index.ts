@@ -1,12 +1,9 @@
 export const workflow = {
   name: 'Project Utilities',
   description:
-    'General project utilities including project scaffolding, cleaning, and maintenance operations. Create new projects and manage existing project lifecycle.',
+    'Essential project maintenance utilities for cleaning and managing existing projects. Provides clean operations for both .xcodeproj and .xcworkspace files.',
   platforms: ['iOS', 'macOS'],
-  capabilities: [
-    'project-scaffolding',
-    'project-cleaning',
-    'project-maintenance',
-    'template-generation',
-  ],
+  targets: ['simulator', 'device', 'mac'],
+  projectTypes: ['project', 'workspace'],
+  capabilities: ['project-cleaning', 'project-maintenance'],
 };

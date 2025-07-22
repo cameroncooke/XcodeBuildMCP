@@ -1,10 +1,10 @@
 /**
- * Tests for utilities workflow metadata
+ * Tests for project-scaffolding workflow metadata
  */
 import { describe, it, expect } from 'vitest';
-import { workflow } from '../index.ts';
+import { workflow } from '../index.js';
 
-describe('utilities workflow metadata', () => {
+describe('project-scaffolding workflow metadata', () => {
   describe('Workflow Structure', () => {
     it('should export workflow object with required properties', () => {
       expect(workflow).toHaveProperty('name');
@@ -16,12 +16,12 @@ describe('utilities workflow metadata', () => {
     });
 
     it('should have correct workflow name', () => {
-      expect(workflow.name).toBe('Project Utilities');
+      expect(workflow.name).toBe('Project Scaffolding');
     });
 
     it('should have correct description', () => {
       expect(workflow.description).toBe(
-        'Essential project maintenance utilities for cleaning and managing existing projects. Provides clean operations for both .xcodeproj and .xcworkspace files.',
+        'Tools for creating new iOS and macOS projects from templates. Bootstrap new applications with best practices, standard configurations, and modern project structures.',
       );
     });
 
@@ -34,11 +34,15 @@ describe('utilities workflow metadata', () => {
     });
 
     it('should have correct projectTypes array', () => {
-      expect(workflow.projectTypes).toEqual(['project', 'workspace']);
+      expect(workflow.projectTypes).toEqual(['project']);
     });
 
     it('should have correct capabilities array', () => {
-      expect(workflow.capabilities).toEqual(['project-cleaning', 'project-maintenance']);
+      expect(workflow.capabilities).toEqual([
+        'project-creation',
+        'template-generation',
+        'project-initialization',
+      ]);
     });
   });
 
@@ -75,12 +79,12 @@ describe('utilities workflow metadata', () => {
 
     it('should contain expected project type values', () => {
       expect(workflow.projectTypes).toContain('project');
-      expect(workflow.projectTypes).toContain('workspace');
     });
 
     it('should contain expected capability values', () => {
-      expect(workflow.capabilities).toContain('project-cleaning');
-      expect(workflow.capabilities).toContain('project-maintenance');
+      expect(workflow.capabilities).toContain('project-creation');
+      expect(workflow.capabilities).toContain('template-generation');
+      expect(workflow.capabilities).toContain('project-initialization');
     });
   });
 });

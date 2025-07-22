@@ -1,10 +1,10 @@
 /**
- * Tests for utilities workflow metadata
+ * Tests for simulator-environment workflow metadata
  */
 import { describe, it, expect } from 'vitest';
-import { workflow } from '../index.ts';
+import { workflow } from '../index.js';
 
-describe('utilities workflow metadata', () => {
+describe('simulator-environment workflow metadata', () => {
   describe('Workflow Structure', () => {
     it('should export workflow object with required properties', () => {
       expect(workflow).toHaveProperty('name');
@@ -16,21 +16,21 @@ describe('utilities workflow metadata', () => {
     });
 
     it('should have correct workflow name', () => {
-      expect(workflow.name).toBe('Project Utilities');
+      expect(workflow.name).toBe('Simulator Environment Configuration');
     });
 
     it('should have correct description', () => {
       expect(workflow.description).toBe(
-        'Essential project maintenance utilities for cleaning and managing existing projects. Provides clean operations for both .xcodeproj and .xcworkspace files.',
+        'Tools for configuring iOS Simulator environment settings including appearance, location services, and network conditions. Perfect for testing apps under various environmental conditions.',
       );
     });
 
     it('should have correct platforms array', () => {
-      expect(workflow.platforms).toEqual(['iOS', 'macOS']);
+      expect(workflow.platforms).toEqual(['iOS']);
     });
 
     it('should have correct targets array', () => {
-      expect(workflow.targets).toEqual(['simulator', 'device', 'mac']);
+      expect(workflow.targets).toEqual(['simulator']);
     });
 
     it('should have correct projectTypes array', () => {
@@ -38,7 +38,12 @@ describe('utilities workflow metadata', () => {
     });
 
     it('should have correct capabilities array', () => {
-      expect(workflow.capabilities).toEqual(['project-cleaning', 'project-maintenance']);
+      expect(workflow.capabilities).toEqual([
+        'environment-config',
+        'appearance',
+        'location',
+        'network-simulation',
+      ]);
     });
   });
 
@@ -64,13 +69,10 @@ describe('utilities workflow metadata', () => {
 
     it('should contain expected platform values', () => {
       expect(workflow.platforms).toContain('iOS');
-      expect(workflow.platforms).toContain('macOS');
     });
 
     it('should contain expected target values', () => {
       expect(workflow.targets).toContain('simulator');
-      expect(workflow.targets).toContain('device');
-      expect(workflow.targets).toContain('mac');
     });
 
     it('should contain expected project type values', () => {
@@ -79,8 +81,10 @@ describe('utilities workflow metadata', () => {
     });
 
     it('should contain expected capability values', () => {
-      expect(workflow.capabilities).toContain('project-cleaning');
-      expect(workflow.capabilities).toContain('project-maintenance');
+      expect(workflow.capabilities).toContain('environment-config');
+      expect(workflow.capabilities).toContain('appearance');
+      expect(workflow.capabilities).toContain('location');
+      expect(workflow.capabilities).toContain('network-simulation');
     });
   });
 });
