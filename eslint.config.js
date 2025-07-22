@@ -46,4 +46,10 @@ export default [
       'prefer-const': 'off',
     },
   },
+  {
+    files: ['src/core/generated-plugins.ts'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+    },
+  },
 ];
