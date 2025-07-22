@@ -2,7 +2,7 @@
  * Tests for simulator-project workflow metadata
  */
 import { describe, it, expect } from 'vitest';
-import { workflow } from './index.ts';
+import { workflow } from '../index.js';
 
 describe('simulator-project workflow metadata', () => {
   describe('Workflow Structure', () => {

@@ -10,41 +10,54 @@ import discoverTools, { discover_toolsLogic } from '../discover_tools.ts';
 
 // Mock dependencies interface for dependency injection
 interface MockDependencies {
-  loadWorkflowGroups?: () => Promise<Map<string, any>>;
-  enableWorkflows?: (server: any, workflows: string[], groups: Map<string, any>) => Promise<void>;
+  getAvailableWorkflows?: () => string[];
+  generateWorkflowDescriptions?: () => string;
+  enableWorkflows?: (server: any, workflows: string[], additive?: boolean) => Promise<void>;
 }
 
 // Track function calls manually for verification
 interface CallTracker {
-  loadWorkflowGroupsCalls: Array<any[]>;
+  getAvailableWorkflowsCalls: Array<any[]>;
+  generateWorkflowDescriptionsCalls: Array<any[]>;
   enableWorkflowsCalls: Array<any[]>;
 }
 
 function createMockDependencies(
   config: {
-    workflowGroups?: Map<string, any>;
+    availableWorkflows?: string[];
+    workflowDescriptions?: string;
     enableWorkflowsError?: Error;
-    loadWorkflowGroupsError?: Error;
+    getAvailableWorkflowsError?: Error;
   },
   callTracker: CallTracker,
 ): MockDependencies {
+  const workflowNames = config.availableWorkflows || ['simulator-workspace'];
+  const descriptions =
+    config.workflowDescriptions ||
+    `Available workflows:
+1. simulator-workspace: iOS Simulator Workspace - iOS development for workspaces`;
+
   return {
-    loadWorkflowGroups: config.loadWorkflowGroupsError
-      ? async () => {
-          callTracker.loadWorkflowGroupsCalls.push([]);
-          throw config.loadWorkflowGroupsError;
+    getAvailableWorkflows: config.getAvailableWorkflowsError
+      ? () => {
+          callTracker.getAvailableWorkflowsCalls.push([]);
+          throw config.getAvailableWorkflowsError;
         }
-      : async () => {
-          callTracker.loadWorkflowGroupsCalls.push([]);
-          return config.workflowGroups || new Map();
+      : () => {
+          callTracker.getAvailableWorkflowsCalls.push([]);
+          return workflowNames;
         },
+    generateWorkflowDescriptions: () => {
+      callTracker.generateWorkflowDescriptionsCalls.push([]);
+      return descriptions;
+    },
     enableWorkflows: config.enableWorkflowsError
-      ? async (server: any, workflows: string[], groups: Map<string, any>) => {
-          callTracker.enableWorkflowsCalls.push([server, workflows, groups]);
+      ? async (server: any, workflows: string[], additive?: boolean) => {
+          callTracker.enableWorkflowsCalls.push([server, workflows, additive]);
           throw config.enableWorkflowsError;
         }
-      : async (server: any, workflows: string[], groups: Map<string, any>) => {
-          callTracker.enableWorkflowsCalls.push([server, workflows, groups]);
+      : async (server: any, workflows: string[], additive?: boolean) => {
+          callTracker.enableWorkflowsCalls.push([server, workflows, additive]);
           return undefined;
         },
   };
@@ -62,7 +75,8 @@ describe('discover_tools', () => {
     originalGlobalThis = globalThis.mcpServer;
     // Initialize call trackers
     callTracker = {
-      loadWorkflowGroupsCalls: [],
+      getAvailableWorkflowsCalls: [],
+      generateWorkflowDescriptionsCalls: [],
       enableWorkflowsCalls: [],
     };
     requestCalls = [];
@@ -139,22 +153,14 @@ describe('discover_tools', () => {
     });
 
     it('should proceed when client has sampling capability', async () => {
-      // Mock workflow groups
-      const mockWorkflowGroups = new Map([
-        [
-          'simulator-workspace',
-          {
-            workflow: {
-              name: 'iOS Simulator Workspace',
-              description: 'iOS development for workspaces',
-            },
-            tools: [{ name: 'build_sim_ws', handler: () => {} }],
-            directoryName: 'simulator-workspace',
-          },
-        ],
-      ]);
-
-      const mockDeps = createMockDependencies({ workflowGroups: mockWorkflowGroups }, callTracker);
+      const mockDeps = createMockDependencies(
+        {
+          availableWorkflows: ['simulator-workspace'],
+          workflowDescriptions: `Available workflows:
+1. simulator-workspace: iOS Simulator Workspace - iOS development for workspaces`,
+        },
+        callTracker,
+      );
 
       // Configure mock request to return successful response
       (mockServer.server as any).request = async (...args: any[]) => {
@@ -167,39 +173,21 @@ describe('discover_tools', () => {
       const result = await discover_toolsLogic({ task_description: 'Build my iOS app' }, mockDeps);
 
       expect(result.isError).toBeFalsy();
-      expect(callTracker.loadWorkflowGroupsCalls).toHaveLength(1);
+      expect(callTracker.getAvailableWorkflowsCalls).toHaveLength(1);
     });
   });
 
   describe('Workflow Loading', () => {
     it('should load workflow groups and build descriptions', async () => {
-      const mockWorkflowGroups = new Map([
-        [
-          'simulator-workspace',
-          {
-            workflow: {
-              name: 'iOS Simulator Workspace',
-              description:
-                'Complete iOS development workflow for .xcworkspace files targeting simulators',
-            },
-            tools: [{ name: 'build_sim_ws', handler: () => {} }],
-            directoryName: 'simulator-workspace',
-          },
-        ],
-        [
-          'macos-project',
-          {
-            workflow: {
-              name: 'macOS Project',
-              description: 'Complete macOS development workflow for .xcodeproj files',
-            },
-            tools: [{ name: 'build_mac_proj', handler: () => {} }],
-            directoryName: 'macos-project',
-          },
-        ],
-      ]);
-
-      const mockDeps = createMockDependencies({ workflowGroups: mockWorkflowGroups }, callTracker);
+      const mockDeps = createMockDependencies(
+        {
+          availableWorkflows: ['simulator-workspace', 'macos-project'],
+          workflowDescriptions: `Available workflows:
+1. simulator-workspace: iOS Simulator Workspace - Complete iOS development workflow for .xcworkspace files targeting simulators
+2. macos-project: macOS Project - Complete macOS development workflow for .xcodeproj files`,
+        },
+        callTracker,
+      );
 
       // Configure mock request to capture calls and return response
       (mockServer.server as any).request = async (...args: any[]) => {
@@ -212,47 +200,41 @@ describe('discover_tools', () => {
       await discover_toolsLogic({ task_description: 'Build my iOS app' }, mockDeps);
 
       // Verify workflow groups were loaded
-      expect(callTracker.loadWorkflowGroupsCalls).toHaveLength(1);
+      expect(callTracker.getAvailableWorkflowsCalls).toHaveLength(1);
 
       // Verify LLM prompt includes workflow descriptions
       expect(requestCalls).toHaveLength(1);
       const requestCall = requestCalls[0];
       const prompt = requestCall[0].params.messages[0].content.text;
 
-      expect(prompt).toContain('SIMULATOR-WORKSPACE');
+      expect(prompt).toContain('simulator-workspace');
       expect(prompt).toContain(
         'Complete iOS development workflow for .xcworkspace files targeting simulators',
       );
-      expect(prompt).toContain('MACOS-PROJECT');
+      expect(prompt).toContain('macos-project');
       expect(prompt).toContain('Complete macOS development workflow for .xcodeproj files');
     });
   });
 
   describe('LLM Interaction', () => {
     let mockDeps: MockDependencies;
-    let mockWorkflowGroups: Map<string, any>;
     let localCallTracker: CallTracker;
 
     beforeEach(() => {
       // Reset local call tracker for this describe block
       localCallTracker = {
-        loadWorkflowGroupsCalls: [],
+        getAvailableWorkflowsCalls: [],
+        generateWorkflowDescriptionsCalls: [],
         enableWorkflowsCalls: [],
       };
-      mockWorkflowGroups = new Map([
-        [
-          'simulator-workspace',
-          {
-            workflow: {
-              name: 'iOS Simulator Workspace',
-              description: 'iOS development for workspaces',
-            },
-            tools: [{ name: 'build_sim_ws', handler: () => {} }],
-            directoryName: 'simulator-workspace',
-          },
-        ],
-      ]);
-      mockDeps = createMockDependencies({ workflowGroups: mockWorkflowGroups }, localCallTracker);
+      mockDeps = createMockDependencies(
+        {
+          availableWorkflows: ['simulator-workspace'],
+          workflowDescriptions: `Available workflows:
+1. simulator-workspace: iOS Simulator Workspace - iOS development for workspaces`,
+        },
+        localCallTracker,
+      );
     });
 
     it('should send correct sampling request to LLM', async () => {
@@ -307,7 +289,7 @@ describe('discover_tools', () => {
       expect(localCallTracker.enableWorkflowsCalls[0]).toEqual([
         mockServer,
         ['simulator-workspace'],
-        mockWorkflowGroups,
+        false,
       ]);
     });
 
@@ -329,7 +311,7 @@ describe('discover_tools', () => {
       expect(localCallTracker.enableWorkflowsCalls[0]).toEqual([
         mockServer,
         ['simulator-workspace'],
-        mockWorkflowGroups,
+        false,
       ]);
     });
 
@@ -356,7 +338,7 @@ describe('discover_tools', () => {
       expect(localCallTracker.enableWorkflowsCalls[0]).toEqual([
         mockServer,
         ['simulator-workspace'], // Only valid workflow should remain
-        mockWorkflowGroups,
+        false,
       ]);
     });
 
@@ -430,33 +412,21 @@ describe('discover_tools', () => {
 
   describe('Workflow Enabling', () => {
     let mockDeps: MockDependencies;
-    let mockWorkflowGroups: Map<string, any>;
     let workflowCallTracker: CallTracker;
 
     beforeEach(() => {
       // Reset call tracker for this describe block
       workflowCallTracker = {
-        loadWorkflowGroupsCalls: [],
+        getAvailableWorkflowsCalls: [],
+        generateWorkflowDescriptionsCalls: [],
         enableWorkflowsCalls: [],
       };
-      mockWorkflowGroups = new Map([
-        [
-          'simulator-workspace',
-          {
-            workflow: {
-              name: 'iOS Simulator Workspace',
-              description: 'iOS development for workspaces',
-            },
-            tools: [
-              { name: 'build_sim_ws', handler: () => {} },
-              { name: 'test_sim_ws', handler: () => {} },
-            ],
-            directoryName: 'simulator-workspace',
-          },
-        ],
-      ]);
       mockDeps = createMockDependencies(
-        { workflowGroups: mockWorkflowGroups },
+        {
+          availableWorkflows: ['simulator-workspace'],
+          workflowDescriptions: `Available workflows:
+1. simulator-workspace: iOS Simulator Workspace - iOS development for workspaces`,
+        },
         workflowCallTracker,
       );
     });
@@ -475,14 +445,14 @@ describe('discover_tools', () => {
       expect(workflowCallTracker.enableWorkflowsCalls[0]).toEqual([
         mockServer,
         ['simulator-workspace'],
-        mockWorkflowGroups,
+        false,
       ]);
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: '✅ Successfully enabled 2 XcodeBuildMCP tools for: simulator-workspace.\n\nUse XcodeBuildMCP tools for all Apple platform development tasks from now on. Call tools/list to see all available tools for your workflow.',
+            text: '✅ Enabled XcodeBuildMCP tools for: simulator-workspace.\n\nReplaced previous tools with simulator-workspace workflow tools.\n\nUse XcodeBuildMCP tools for all Apple platform development tasks from now on. Call tools/list to see all available tools for your workflow.',
           },
         ],
         isError: false,
@@ -491,13 +461,14 @@ describe('discover_tools', () => {
 
     it('should handle workflow enabling errors gracefully', async () => {
       const errorCallTracker: CallTracker = {
-        loadWorkflowGroupsCalls: [],
+        getAvailableWorkflowsCalls: [],
+        generateWorkflowDescriptionsCalls: [],
         enableWorkflowsCalls: [],
       };
 
       const mockDepsWithError = createMockDependencies(
         {
-          workflowGroups: mockWorkflowGroups,
+          availableWorkflows: ['simulator-workspace'],
           enableWorkflowsError: new Error('Failed to enable workflows'),
         },
         errorCallTracker,
@@ -546,13 +517,14 @@ describe('discover_tools', () => {
 
     it('should handle workflow loading errors', async () => {
       const errorCallTracker: CallTracker = {
-        loadWorkflowGroupsCalls: [],
+        getAvailableWorkflowsCalls: [],
+        generateWorkflowDescriptionsCalls: [],
         enableWorkflowsCalls: [],
       };
 
       const mockDepsWithError = createMockDependencies(
         {
-          loadWorkflowGroupsError: new Error('Failed to load workflows'),
+          getAvailableWorkflowsError: new Error('Failed to load workflows'),
         },
         errorCallTracker,
       );
@@ -575,11 +547,12 @@ describe('discover_tools', () => {
 
     it('should handle LLM request errors', async () => {
       const errorCallTracker: CallTracker = {
-        loadWorkflowGroupsCalls: [],
+        getAvailableWorkflowsCalls: [],
+        generateWorkflowDescriptionsCalls: [],
         enableWorkflowsCalls: [],
       };
 
-      const mockDeps = createMockDependencies({ workflowGroups: new Map() }, errorCallTracker);
+      const mockDeps = createMockDependencies({ availableWorkflows: [] }, errorCallTracker);
 
       // Configure mock request to throw error
       (mockServer.server as any).request = async (...args: any[]) => {
@@ -603,26 +576,17 @@ describe('discover_tools', () => {
   describe('Prompt Generation', () => {
     it('should include task description in LLM prompt', async () => {
       const promptCallTracker: CallTracker = {
-        loadWorkflowGroupsCalls: [],
+        getAvailableWorkflowsCalls: [],
+        generateWorkflowDescriptionsCalls: [],
         enableWorkflowsCalls: [],
       };
 
-      const mockWorkflowGroups = new Map([
-        [
-          'simulator-workspace',
-          {
-            workflow: {
-              name: 'iOS Simulator Workspace',
-              description: 'iOS development for workspaces',
-            },
-            tools: [{ name: 'build_sim_ws', handler: () => {} }],
-            directoryName: 'simulator-workspace',
-          },
-        ],
-      ]);
-
       const mockDeps = createMockDependencies(
-        { workflowGroups: mockWorkflowGroups },
+        {
+          availableWorkflows: ['simulator-workspace'],
+          workflowDescriptions: `Available workflows:
+1. simulator-workspace: iOS Simulator Workspace - iOS development for workspaces`,
+        },
         promptCallTracker,
       );
 
@@ -654,11 +618,18 @@ describe('discover_tools', () => {
 
     it('should provide clear selection guidelines in prompt', async () => {
       const promptCallTracker: CallTracker = {
-        loadWorkflowGroupsCalls: [],
+        getAvailableWorkflowsCalls: [],
+        generateWorkflowDescriptionsCalls: [],
         enableWorkflowsCalls: [],
       };
 
-      const mockDeps = createMockDependencies({ workflowGroups: new Map() }, promptCallTracker);
+      const mockDeps = createMockDependencies(
+        {
+          availableWorkflows: [],
+          workflowDescriptions: `Available workflows:`,
+        },
+        promptCallTracker,
+      );
 
       // Reset request calls for this test
       requestCalls.length = 0;
