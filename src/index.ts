@@ -26,6 +26,7 @@ import { log } from './utils/logger.js';
 // Import version
 import { version } from './version.js';
 import { loadPlugins } from './core/plugin-registry.js';
+import { registerResources } from './core/resources.js';
 
 // Import xcodemake utilities
 import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
@@ -53,6 +54,9 @@ async function main(): Promise<void> {
 
     // Create the server
     const server = createServer();
+
+    // Register MCP resources (available in both static and dynamic modes)
+    registerResources(server);
 
     // Make server available globally for dynamic tools
     (globalThis as { mcpServer?: McpServer }).mcpServer = server;
