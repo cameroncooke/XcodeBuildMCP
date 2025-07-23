@@ -6,22 +6,26 @@
  * to access data via URI references without requiring tool calls.
  *
  * Responsibilities:
- * - Defining resource URI schemes and handlers
+ * - Loading resources from the plugin-based resource system
  * - Managing resource registration with the MCP server
  * - Providing fallback compatibility for clients without resource support
- * - Integrating with existing tool logic through dependency injection
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { log, getDefaultCommandExecutor, CommandExecutor } from '../utils/index.js';
-import { list_simsLogic } from '../plugins/simulator-shared/list_sims.js';
+import { log, CommandExecutor } from '../utils/index.js';
+import { RESOURCE_LOADERS } from './generated-resources.js';
 
 /**
- * Resource URI schemes supported by XcodeBuildMCP
+ * Resource metadata interface
  */
-export const RESOURCE_URIS = {
-  SIMULATORS: 'mcp://xcodebuild/simulators',
-} as const;
+interface ResourceMeta {
+  uri: string;
+  description: string;
+  mimeType: string;
+  handler: (executor?: CommandExecutor) => Promise<{
+    contents: Array<{ type: 'text'; text: string }>;
+  }>;
+}
 
 /**
  * Check if a client supports MCP resources
@@ -34,69 +38,56 @@ export function supportsResources(): boolean {
 }
 
 /**
- * Resource handler for simulator data
- * Uses existing list_simsLogic to maintain consistency
- * @param executor Optional command executor for dependency injection
+ * Load all resources using generated loaders
+ * @returns Map of resource URI to resource metadata
  */
-async function handleSimulatorsResource(
-  executor: CommandExecutor = getDefaultCommandExecutor(),
-): Promise<{
-  contents: Array<{ type: 'text'; text: string }>;
-}> {
-  try {
-    log('info', 'Processing simulators resource request');
+export async function loadResources(): Promise<Map<string, ResourceMeta>> {
+  const resources = new Map<string, ResourceMeta>();
 
-    const result = await list_simsLogic({}, executor);
+  for (const [resourceName, loader] of Object.entries(RESOURCE_LOADERS)) {
+    try {
+      const resource = await loader();
 
-    if (result.isError) {
-      throw new Error(result.content[0]?.text || 'Failed to retrieve simulator data');
+      if (!resource.uri || !resource.handler || typeof resource.handler !== 'function') {
+        throw new Error(`Invalid resource structure for ${resourceName}`);
+      }
+
+      resources.set(resource.uri, resource);
+      log('info', `Loaded resource: ${resourceName} (${resource.uri})`);
+    } catch (error) {
+      log(
+        'error',
+        `Failed to load resource ${resourceName}: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
-
-    return {
-      contents: [
-        {
-          type: 'text' as const,
-          text: result.content[0]?.text || 'No simulator data available',
-        },
-      ],
-    };
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    log('error', `Error in simulators resource handler: ${errorMessage}`);
-
-    return {
-      contents: [
-        {
-          type: 'text' as const,
-          text: `Error retrieving simulator data: ${errorMessage}`,
-        },
-      ],
-    };
   }
+
+  return resources;
 }
 
 /**
  * Register all resources with the MCP server
  * @param server The MCP server instance
  */
-export function registerResources(server: McpServer): void {
+export async function registerResources(server: McpServer): Promise<void> {
   log('info', 'Registering MCP resources');
 
-  // Register simulators resource
-  server.resource(
-    RESOURCE_URIS.SIMULATORS,
-    'Available iOS simulators with their UUIDs and states',
-    { mimeType: 'text/plain' },
-    handleSimulatorsResource,
-  );
+  const resources = await loadResources();
 
-  log('info', `Registered resource: ${RESOURCE_URIS.SIMULATORS}`);
+  for (const [uri, resource] of resources) {
+    server.resource(uri, resource.description, { mimeType: resource.mimeType }, resource.handler);
+
+    log('info', `Registered resource: ${uri}`);
+  }
+
+  log('info', `Registered ${resources.size} resources`);
 }
 
 /**
  * Get all available resource URIs
  * @returns Array of resource URI strings
  */
-export function getAvailableResources(): string[] {
-  return Object.values(RESOURCE_URIS);
+export async function getAvailableResources(): Promise<string[]> {
+  const resources = await loadResources();
+  return Array.from(resources.keys());
 }
