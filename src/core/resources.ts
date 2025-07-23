@@ -13,7 +13,7 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { log, getDefaultCommandExecutor } from '../utils/index.js';
+import { log, getDefaultCommandExecutor, CommandExecutor } from '../utils/index.js';
 import { list_simsLogic } from '../plugins/simulator-shared/list_sims.js';
 
 /**
@@ -37,14 +37,14 @@ export function supportsResources(): boolean {
  * Resource handler for simulator data
  * Uses existing list_simsLogic to maintain consistency
  */
-async function handleSimulatorsResource(): Promise<{
+async function handleSimulatorsResource(executor?: CommandExecutor): Promise<{
   contents: Array<{ type: 'text'; text: string }>;
 }> {
   try {
     log('info', 'Processing simulators resource request');
 
     // Use existing logic with dependency injection
-    const result = await list_simsLogic({}, getDefaultCommandExecutor());
+    const result = await list_simsLogic({}, executor || getDefaultCommandExecutor());
 
     if (result.isError) {
       throw new Error(result.content[0]?.text || 'Failed to retrieve simulator data');
@@ -84,7 +84,7 @@ export function registerResources(server: McpServer): void {
   server.resource(
     RESOURCE_URIS.SIMULATORS,
     'Available iOS simulators with their UUIDs and states',
-    { mimeType: 'application/json' },
+    { mimeType: 'text/plain' },
     handleSimulatorsResource,
   );
 
