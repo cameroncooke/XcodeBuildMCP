@@ -17,6 +17,12 @@ import { log, getDefaultCommandExecutor, CommandExecutor } from '../utils/index.
 import { list_simsLogic } from '../plugins/simulator-shared/list_sims.js';
 
 /**
+ * Test executor injection for dependency injection during testing
+ * This allows tests to override the executor without modifying production code
+ */
+let testExecutor: CommandExecutor | undefined;
+
+/**
  * Resource URI schemes supported by XcodeBuildMCP
  */
 export const RESOURCE_URIS = {
@@ -34,6 +40,21 @@ export function supportsResources(): boolean {
 }
 
 /**
+ * Set test executor for dependency injection (testing only)
+ * @param executor Test executor to use
+ */
+export function setTestExecutor(executor: CommandExecutor): void {
+  testExecutor = executor;
+}
+
+/**
+ * Clear test executor (testing only)
+ */
+export function clearTestExecutor(): void {
+  testExecutor = undefined;
+}
+
+/**
  * Resource handler for simulator data
  * Uses existing list_simsLogic to maintain consistency
  */
@@ -43,8 +64,9 @@ async function handleSimulatorsResource(executor?: CommandExecutor): Promise<{
   try {
     log('info', 'Processing simulators resource request');
 
-    // Use existing logic with dependency injection
-    const result = await list_simsLogic({}, executor || getDefaultCommandExecutor());
+    // Use provided executor, or test executor, or default executor (in that order)
+    const effectiveExecutor = executor || testExecutor || getDefaultCommandExecutor();
+    const result = await list_simsLogic({}, effectiveExecutor);
 
     if (result.isError) {
       throw new Error(result.content[0]?.text || 'Failed to retrieve simulator data');
@@ -80,7 +102,8 @@ async function handleSimulatorsResource(executor?: CommandExecutor): Promise<{
 export function registerResources(server: McpServer): void {
   log('info', 'Registering MCP resources');
 
-  // Register simulators resource with wrapper to support dependency injection in tests
+  // Register simulators resource with wrapper that supports test executor injection
+  // The wrapper allows tests to pass an executor parameter for dependency injection
   server.resource(
     RESOURCE_URIS.SIMULATORS,
     'Available iOS simulators with their UUIDs and states',
