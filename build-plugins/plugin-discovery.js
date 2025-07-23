@@ -21,7 +21,7 @@ export function createPluginDiscoveryPlugin() {
 }
 
 async function generateWorkflowLoaders() {
-  const pluginsDir = path.resolve(process.cwd(), 'src/plugins');
+  const pluginsDir = path.resolve(process.cwd(), 'src/mcp/tools');
   
   if (!existsSync(pluginsDir)) {
     throw new Error(`Plugins directory not found: ${pluginsDir}`);
@@ -92,7 +92,7 @@ async function generateWorkflowLoaders() {
 function generateWorkflowLoader(workflowName, toolFiles) {
   const toolImports = toolFiles.map((file, index) => {
     const toolName = file.replace(/\.(ts|js)$/, '');
-    return `const tool_${index} = await import('../plugins/${workflowName}/${toolName}.js').then(m => m.default)`;
+    return `const tool_${index} = await import('../mcp/tools/${workflowName}/${toolName}.js').then(m => m.default)`;
   }).join(';\n    ');
 
   const toolExports = toolFiles.map((file, index) => {
@@ -101,7 +101,7 @@ function generateWorkflowLoader(workflowName, toolFiles) {
   }).join(',\n      ');
 
   return `async () => {
-    const { workflow } = await import('../plugins/${workflowName}/index.js');
+    const { workflow } = await import('../mcp/tools/${workflowName}/index.js');
     ${toolImports ? toolImports + ';\n    ' : ''}
     return {
       workflow,
@@ -226,7 +226,7 @@ ${metadataEntries}
 }
 
 async function generateResourceLoaders() {
-  const resourcesDir = path.resolve(process.cwd(), 'src/resources');
+  const resourcesDir = path.resolve(process.cwd(), 'src/mcp/resources');
   
   if (!existsSync(resourcesDir)) {
     console.log('Resources directory not found, skipping resource generation');
@@ -251,7 +251,7 @@ async function generateResourceLoaders() {
     
     // Generate dynamic loader for this resource
     resourceLoaders[resourceName] = `async () => {
-    const module = await import('../resources/${resourceName}.js');
+    const module = await import('../mcp/resources/${resourceName}.js');
     return module.default;
   }`;
     
