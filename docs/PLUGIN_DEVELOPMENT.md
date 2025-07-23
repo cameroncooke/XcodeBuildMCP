@@ -8,10 +8,11 @@ This guide provides comprehensive instructions for creating new tools and workfl
 2. [Plugin Architecture](#plugin-architecture)
 3. [Creating New Tools](#creating-new-tools)
 4. [Creating New Workflow Groups](#creating-new-workflow-groups)
-5. [Auto-Discovery System](#auto-discovery-system)
-6. [Testing Guidelines](#testing-guidelines)
-7. [Development Workflow](#development-workflow)
-8. [Best Practices](#best-practices)
+5. [Creating MCP Resources](#creating-mcp-resources)
+6. [Auto-Discovery System](#auto-discovery-system)
+7. [Testing Guidelines](#testing-guidelines)
+8. [Development Workflow](#development-workflow)
+9. [Best Practices](#best-practices)
 
 ## Overview
 
@@ -303,6 +304,95 @@ export { default } from '../simulator-shared/boot_sim.js';
 2. No chained re-exports (re-exports from re-exports)
 3. Each tool maintains project or workspace specificity
 4. Implementation shared, interfaces remain unique
+
+## Creating MCP Resources
+
+MCP Resources provide efficient URI-based data access for clients that support the MCP resource specification (VS Code, Claude Code, Claude Desktop).
+
+### 1. Resource Structure
+
+Resources are located in `src/resources/` and follow this pattern:
+
+```typescript
+// src/resources/example.ts
+export default {
+  uri: 'mcp://xcodebuild/example',
+  description: 'Description of the resource data',
+  mimeType: 'text/plain',
+  async handler(executor: CommandExecutor = getDefaultCommandExecutor()) {
+    // Resource implementation
+    return {
+      contents: [{ type: 'text', text: 'resource data' }]
+    };
+  }
+};
+```
+
+### 2. Resource Implementation Guidelines
+
+**Reuse Existing Logic**: Resources should reuse existing tool logic for consistency:
+
+```typescript
+// src/resources/simulators.ts
+import { list_simsLogic } from '../plugins/simulator-shared/list_sims.js';
+
+export default {
+  uri: 'mcp://xcodebuild/simulators',
+  description: 'Available iOS simulators with UUIDs and states',
+  mimeType: 'text/plain',
+  async handler(executor = getDefaultCommandExecutor()) {
+    const result = await list_simsLogic({}, executor);
+    return {
+      contents: [{ type: 'text', text: result.content[0].text }]
+    };
+  }
+};
+```
+
+### 3. Tool Redundancy Management
+
+When creating resources, update the redundancy filter:
+
+```typescript
+// src/core/resources.ts
+export function getRedundantToolNames(): string[] {
+  return [
+    'list_sims',      // Redundant with simulators resource
+    'your_new_tool',  // Add new redundant tools here
+  ];
+}
+```
+
+### 4. Resource Testing
+
+Create tests in `src/resources/__tests__/`:
+
+```typescript
+// src/resources/__tests__/example.test.ts
+import exampleResource from '../example.js';
+import { createMockExecutor } from '../../utils/test-common.js';
+
+describe('example resource', () => {
+  it('should return resource data', async () => {
+    const mockExecutor = createMockExecutor({
+      success: true,
+      output: 'test data'
+    });
+    
+    const result = await exampleResource.handler(mockExecutor);
+    
+    expect(result.contents[0].text).toContain('expected data');
+  });
+});
+```
+
+### 5. Auto-Discovery
+
+Resources are automatically discovered and loaded by the build system. After creating a resource:
+
+1. Run `npm run build` to regenerate resource loaders
+2. The resource will be available at its URI for supported clients
+3. Redundant tools will be automatically filtered for resource-capable clients
 
 ## Auto-Discovery System
 

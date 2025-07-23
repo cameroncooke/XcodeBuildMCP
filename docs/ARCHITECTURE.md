@@ -42,6 +42,12 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
 │  • plugins/**/                  – self-contained plugins    │
 └────────────────────────────────────────────────────────────┘
 ┌────────────────────────────────────────────────────────────┐
+│                    MCP Resources Layer                     │
+│  • src/core/resources.ts        – resource management      │
+│  • src/resources/**/            – MCP resource handlers    │
+│  • Client capability detection  – automatic tool filtering │
+└────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
 │                   Plugin Implementation Layer              │
 │  • plugins/**/**.js – one file per tool capability         │
 │  • Common patterns:                                         │
@@ -229,6 +235,56 @@ plugins/
 └── discovery/               # Dynamic tool discovery
 ```
 
+### MCP Resources System
+
+XcodeBuildMCP provides dual interfaces: traditional MCP tools and efficient MCP resources for supported clients.
+
+#### Resource Architecture
+
+```
+src/resources/
+├── simulators.ts           # Simulator data resource
+└── __tests__/              # Resource-specific tests
+```
+
+#### Client Capability Detection
+
+The system automatically detects client MCP capabilities:
+
+```typescript
+// src/core/resources.ts
+export function supportsResources(server?: unknown): boolean {
+  // Detects client capabilities via getClientCapabilities()
+  // Conservative fallback: assumes resource support
+}
+```
+
+#### Smart Tool Filtering
+
+When resources are available, redundant tools are automatically filtered:
+
+- **Resource-supported clients**: Get `mcp://xcodebuild/simulators` resource
+- **Tool-only clients**: Keep `list_sims` tool for compatibility
+- **Automatic detection**: No client configuration required
+
+#### Resource Implementation Pattern
+
+Resources reuse existing tool logic for consistency:
+
+```typescript
+// src/resources/simulators.ts
+export default {
+  uri: 'mcp://xcodebuild/simulators',
+  description: 'Available iOS simulators with UUIDs and states',
+  mimeType: 'text/plain',
+  async handler(executor = getDefaultCommandExecutor()) {
+    // Reuses list_simsLogic for consistency
+    const result = await list_simsLogic({}, executor);
+    return { contents: [{ type: 'text', text: result.content[0].text }] };
+  }
+};
+```
+
 ### Utility Layer
 
 #### Command Execution (`src/utils/command.ts`)
@@ -257,7 +313,7 @@ plugins/
 
 ## Plugin Organization
 
-### Plugin Categories (84 tools total across 16 directories)
+### Plugin Categories (105+ tools total across 15 workflow directories)
 
 #### Build Tools (20 tools)
 - macOS builds (workspace/project)

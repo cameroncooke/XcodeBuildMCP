@@ -1,6 +1,16 @@
 # XcodeBuildMCP Tools Reference
 
-This document provides a comprehensive list of all 84 tools available in XcodeBuildMCP, organized by functionality.
+This document provides a comprehensive list of all 105+ tools available in XcodeBuildMCP, organized by functionality.
+
+## MCP Resources
+
+For clients that support MCP resources (VS Code, Claude Code, Claude Desktop), XcodeBuildMCP also provides efficient URI-based data access:
+
+| Resource URI | Description | Replaces Tool |
+|--------------|-------------|---------------|
+| `mcp://xcodebuild/simulators` | Available iOS simulators with UUIDs and states | `list_sims` |
+
+**Note**: Resources provide the same data as their corresponding tools but through efficient URI access. XcodeBuildMCP automatically detects client capabilities and filters out redundant tools when resources are available.
 
 ## Tool Categories
 
