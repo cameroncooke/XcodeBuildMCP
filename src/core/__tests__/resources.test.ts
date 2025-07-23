@@ -188,7 +188,7 @@ describe('resources', () => {
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].type).toBe('text');
-      expect(result.contents[0].text).toContain('Error retrieving simulator data');
+      expect(result.contents[0].text).toContain('Failed to list simulators');
       expect(result.contents[0].text).toContain('spawn xcrun ENOENT');
     });
 
