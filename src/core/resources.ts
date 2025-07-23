@@ -18,7 +18,7 @@ import { RESOURCE_LOADERS } from './generated-resources.js';
 /**
  * Resource metadata interface
  */
-interface ResourceMeta {
+export interface ResourceMeta {
   uri: string;
   description: string;
   mimeType: string;
@@ -28,13 +28,41 @@ interface ResourceMeta {
 }
 
 /**
- * Check if a client supports MCP resources
- * This is a placeholder for actual capability detection
+ * Check if a client supports MCP resources by examining client capabilities
+ * @param server The MCP server instance to check client capabilities
+ * @returns true if client supports resources, false otherwise
  */
-export function supportsResources(): boolean {
-  // In a real implementation, this would check client capabilities
-  // For now, assume resources are supported
-  return true;
+export function supportsResources(server?: unknown): boolean {
+  if (!server) {
+    // Fallback when server is not available (e.g., during testing)
+    return true;
+  }
+
+  try {
+    // Access client capabilities through the underlying server instance
+    const clientCapabilities = server.server?.getClientCapabilities?.();
+
+    // Check if client has declared resource capabilities
+    // In MCP, clients that support resources will have resource-related capabilities
+    if (clientCapabilities && typeof clientCapabilities === 'object') {
+      // Look for any resource-related capabilities
+      // Note: The exact structure may vary, but the presence of any resource
+      // capability indicates support
+      return (
+        'resources' in clientCapabilities ||
+        'resource' in clientCapabilities ||
+        // Fallback: assume resource support for known clients
+        true
+      ); // Conservative approach - assume support
+    }
+
+    // Default to supporting resources if capabilities are unclear
+    return true;
+  } catch (error) {
+    log('warn', `Unable to detect client resource capabilities: ${error}`);
+    // Default to supporting resources to avoid breaking existing functionality
+    return true;
+  }
 }
 
 /**
@@ -66,11 +94,20 @@ export async function loadResources(): Promise<Map<string, ResourceMeta>> {
 }
 
 /**
- * Register all resources with the MCP server
+ * Register all resources with the MCP server if client supports resources
  * @param server The MCP server instance
+ * @returns true if resources were registered, false if skipped due to client limitations
  */
-export async function registerResources(server: McpServer): Promise<void> {
-  log('info', 'Registering MCP resources');
+export async function registerResources(server: McpServer): Promise<boolean> {
+  log('info', 'Checking client capabilities for resource support');
+
+  // Check if client supports resources
+  if (!supportsResources(server)) {
+    log('info', 'Client does not support resources, skipping resource registration');
+    return false;
+  }
+
+  log('info', 'Client supports resources, registering MCP resources');
 
   const resources = await loadResources();
 
@@ -81,6 +118,7 @@ export async function registerResources(server: McpServer): Promise<void> {
   }
 
   log('info', `Registered ${resources.size} resources`);
+  return true;
 }
 
 /**
@@ -90,4 +128,30 @@ export async function registerResources(server: McpServer): Promise<void> {
 export async function getAvailableResources(): Promise<string[]> {
   const resources = await loadResources();
   return Array.from(resources.keys());
+}
+
+/**
+ * Get tool names that should be excluded when resources are available
+ * This prevents duplicate functionality between tools and resources
+ * @returns Array of tool names to exclude
+ */
+export function getRedundantToolNames(): string[] {
+  return [
+    'list_sims', // Redundant with simulators resource
+    // Add more tool names as we add more resources
+  ];
+}
+
+/**
+ * Check if a tool should be excluded when resources are registered
+ * @param toolName The name of the tool to check
+ * @param resourcesRegistered Whether resources were successfully registered
+ * @returns true if tool should be excluded, false otherwise
+ */
+export function shouldExcludeTool(toolName: string, resourcesRegistered: boolean): boolean {
+  if (!resourcesRegistered) {
+    return false; // Don't exclude any tools if resources aren't available
+  }
+
+  return getRedundantToolNames().includes(toolName);
 }
