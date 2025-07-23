@@ -6,8 +6,10 @@ export default [
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    ignores: ['node_modules/**', 'build/**', 'dist/**', 'coverage/**', 'src/core/generated-plugins.ts'],
+  },
+  {
     files: ['**/*.{js,ts}'],
-    ignores: ['node_modules/**', 'build/**', 'dist/**', 'coverage/**', '**/*.test.ts'],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'module',
@@ -44,12 +46,6 @@ export default [
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       'prefer-const': 'off',
-    },
-  },
-  {
-    files: ['src/core/generated-plugins.ts'],
-    rules: {
-      '@typescript-eslint/explicit-function-return-type': 'off',
     },
   },
 ];
