@@ -6,8 +6,6 @@ import {
   getAvailableResources,
   supportsResources,
   RESOURCE_URIS,
-  setTestExecutor,
-  clearTestExecutor,
 } from '../resources.js';
 import { createMockExecutor, CommandExecutor } from '../../utils/command.js';
 
@@ -15,9 +13,6 @@ describe('resources', () => {
   let mockServer: McpServer;
 
   beforeEach(() => {
-    // Clear any test executor from previous tests
-    clearTestExecutor();
-
     // Create a mock MCP server using simple object structure
     mockServer = {
       resource: () => {},
@@ -118,9 +113,7 @@ describe('resources', () => {
         _uri: string,
         _description: string,
         _options: { mimeType: string },
-        handler: (
-          executor?: CommandExecutor,
-        ) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>,
+        handler: any,
       ) => {
         resourceHandler = handler;
       };

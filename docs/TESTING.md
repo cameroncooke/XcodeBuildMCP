@@ -99,6 +99,13 @@ export default {
 };
 ```
 
+**Important**: The dependency injection pattern applies to ALL handlers, including:
+- Tool handlers
+- Resource handlers
+- Any future handler types (prompts, etc.)
+
+Always use default parameter values (e.g., `= getDefaultCommandExecutor()`) to ensure production code works without explicit executor injection, while tests can override with mock executors.
+
 ### Test Requirements
 
 All tests must explicitly provide mock executors:
