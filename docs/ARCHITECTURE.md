@@ -313,7 +313,7 @@ export default {
 
 ## Plugin Organization
 
-### Plugin Categories (105+ tools total across 15 workflow directories)
+### Plugin Categories (54 canonical tools across 13 directories)
 
 #### Build Tools (20 tools)
 - macOS builds (workspace/project)

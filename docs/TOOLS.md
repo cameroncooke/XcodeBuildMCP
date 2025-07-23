@@ -1,6 +1,6 @@
 # XcodeBuildMCP Tools Reference
 
-This document provides a comprehensive list of all 105+ tools available in XcodeBuildMCP, organized by functionality.
+This document provides a comprehensive list of all 54 tools available in XcodeBuildMCP, organized by functionality.
 
 ## MCP Resources
 
