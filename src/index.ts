@@ -90,7 +90,7 @@ async function main(): Promise<void> {
       );
 
       // Register resources in dynamic mode
-      registerResources(server);
+      await registerResources(server);
 
       log('info', '   Use discover_tools to enable relevant workflows on-demand');
     } else {
@@ -104,7 +104,7 @@ async function main(): Promise<void> {
       }
 
       // Register resources in static mode
-      registerResources(server);
+      await registerResources(server);
     }
 
     // Start the server
