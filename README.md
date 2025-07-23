@@ -31,7 +31,6 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 - [Privacy](#privacy)
   - [What is sent to Sentry?](#what-is-sent-to-sentry)
   - [Opting Out of Sentry](#opting-out-of-sentry)
-- [Selective tool registration](#selective-tool-registration)
 - [Demos](#demos)
   - [Autonomously fixing build errors in Cursor](#autonomously-fixing-build-errors-in-cursor)
   - [Utilising the new UI automation and screen capture features](#utilising-the-new-ui-automation-and-screen-capture-features)
@@ -42,15 +41,6 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 ## Overview
 
 XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operations as tools for AI assistants and other MCP clients. Built with a modern plugin architecture, it provides 84 self-contained tools organized into workflow-based directories, enabling programmatic interaction with Xcode projects, simulators, devices, and Swift packages through a standardized interface.
-
-### Architecture Highlights
-
-- **Plugin Architecture**: Self-contained tools with automatic discovery and zero-config registration
-- **Tool Granularity**: 84 specialized tools across 16 plugin directories for precise control
-- **Dynamic Loading**: Automatic plugin discovery with flexible enablement options
-- **Workflow Organization**: Tools grouped by logical workflow patterns (simulator, device, macOS, etc.)
-- **Type Safety**: Comprehensive Zod schema validation for all tool parameters
-- **Extensible**: Easy addition of new tools through standardized plugin interface
 
 ![xcodebuildmcp2](https://github.com/user-attachments/assets/8961d5db-f7ed-4e60-bbb8-48bfd0bc1353)
 <caption>Using Cursor to build, install, and launch an app on the iOS simulator while capturing logs at run-time.</caption>
@@ -285,79 +275,6 @@ Example MCP client configuration:
 }
 ```
 
-## Architecture
-
-XcodeBuildMCP follows a modular, layered architecture designed for extensibility and maintainability:
-
-```
-┌────────────────────────────────────────────────────────────┐
-│            MCP Client (AI Assistant, CLI, Editor)          │
-└────────────────────────┬───────────────────────────────────┘
-                         │ MCP Protocol (stdio)
-┌────────────────────────▼───────────────────────────────────┐
-│                   MCP Server (index.ts)                     │
-├─────────────────────────────────────────────────────────────┤
-│              Tool Registration & Feature Toggle Layer       │
-│         (register-tools.ts, tool-groups.ts)                │
-├─────────────────────────────────────────────────────────────┤
-│                      Tool Implementation Layer              │
-│  ┌─────────────┬──────────────┬────────────────────────┐  │
-│  │ Build Tools │ Test Tools   │ Management Tools       │  │
-│  │ Simulator   │ Device Tools │ UI Automation          │  │
-│  │ Swift Pkg   │ Diagnostics  │ Project Discovery      │  │
-│  └─────────────┴──────────────┴────────────────────────┘  │
-├─────────────────────────────────────────────────────────────┤
-│                   Shared Utilities Layer                    │
-│  (command.ts, build-utils.ts, validation.ts, logger.ts)    │
-├─────────────────────────────────────────────────────────────┤
-│               External Dependencies                         │
-│  (xcodebuild, xcrun, simctl, xcodemake, AXe)              │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Key Components
-
-- **Entry Point** (`src/index.ts`): Server initialization and lifecycle management
-- **Tool Registration** (`src/utils/register-tools.ts`): Declarative tool catalog with metadata
-- **Tool Groups** (`src/utils/tool-groups.ts`): Workflow-based tool organization
-- **Tool Implementation** (`src/tools/*.ts`): Individual tool logic with Zod validation
-- **Utilities** (`src/utils/*.ts`): Shared functionality for command execution, error handling
-- **Type System** (`src/types/common.ts`): Core interfaces and enums
-
-### Testing Infrastructure
-
-- **Framework**: Vitest with TypeScript support
-- **Coverage**: 407 tests across 26 test files
-- **Pattern**: Import production code, mock only external dependencies
-- **Validation**: Deterministic response validation for all tools
-
-For detailed architectural documentation, see [ARCHITECTURE.md](docs/ARCHITECTURE.md).
-
-## Selective tool registration
-
-By default all tools are enabled but for some clients it may be useful to only enable specific tools to reduce the amount of context that is sent to the client. This can be achieved by setting specific environment variables in your clients MCP configuration.
-
-Once you have enabled one or more tools or groups of tools all other tools will be disabled. For example, to enable only the simulator related tools, you can set the environment variable to `XCODEBUILDMCP_GROUP_IOS_SIMULATOR_WORKFLOW=true` this will only expose tools for building, running and debugging on simulators
-
-```json
-{
-  "mcpServers": {
-    "XcodeBuildMCP": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "xcodebuildmcp@latest"
-      ],
-      "env": {
-        "XCODEBUILDMCP_GROUP_IOS_SIMULATOR_WORKFLOW": "true"
-      }        
-    }
-  }
-}
-```
-
-You can find a list of available tools and detailed instructions on how to enable them in the [TOOL_OPTIONS.md](TOOL_OPTIONS.md) file.
-
 ## Demos
 
 ### Autonomously fixing build errors in Cursor
@@ -369,19 +286,6 @@ You can find a list of available tools and detailed instructions on how to enabl
 
 ### Building and running iOS app in Claude Desktop
 https://github.com/user-attachments/assets/e3c08d75-8be6-4857-b4d0-9350b26ef086
-
-## Documentation
-
-XcodeBuildMCP includes comprehensive documentation to help you understand and extend the project:
-
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Detailed architectural overview, design principles, and component details
-- **[TOOLS.md](docs/TOOLS.md)** - Complete documentation of all 84 available tools
-- **[TOOL_OPTIONS.md](TOOL_OPTIONS.md)** - Tool configuration and selective enablement guide
-- **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** - Development setup, testing standards, and contribution guidelines
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and release notes
-
-For AI assistants and automated tools:
-- **[CLAUDE.md](CLAUDE.md)** - Guidelines for AI assistants working with this codebase
 
 ## Contributing
 
