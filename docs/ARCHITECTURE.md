@@ -313,7 +313,7 @@ export default {
 
 ## Plugin Organization
 
-### Plugin Categories (54 canonical tools across 13 directories)
+### Plugin Categories (81 canonical tools across 15 directories)
 
 #### Build Tools (20 tools)
 - macOS builds (workspace/project)
@@ -370,7 +370,7 @@ Three levels of tool enablement:
 
 1. **All Tools** (default)
    - No environment variables set
-   - All 84 tools registered
+   - All 81 canonical tools registered
 
 2. **Group-Based**
    - `XCODEBUILDMCP_GROUP_*=true`
@@ -479,7 +479,7 @@ describe('Tool Name', () => {
 
 - **Total Tests**: 407
 - **Test Files**: 26
-- **Coverage**: All 84 tools have comprehensive tests
+- **Coverage**: All 81 canonical tools have comprehensive tests
 - **Execution Time**: ~1 second for full suite
 
 ## Build and Deployment
