@@ -6,13 +6,18 @@ import {
   getAvailableResources,
   supportsResources,
   RESOURCE_URIS,
+  setTestExecutor,
+  clearTestExecutor,
 } from '../resources.js';
-import { createMockExecutor } from '../../utils/command.js';
+import { createMockExecutor, CommandExecutor } from '../../utils/command.js';
 
 describe('resources', () => {
   let mockServer: McpServer;
 
   beforeEach(() => {
+    // Clear any test executor from previous tests
+    clearTestExecutor();
+
     // Create a mock MCP server using simple object structure
     mockServer = {
       resource: () => {},
@@ -62,7 +67,9 @@ describe('resources', () => {
       let capturedDescription: string | undefined;
       let capturedOptions: { mimeType: string } | undefined;
       let capturedHandler:
-        | ((executor?: any) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>)
+        | ((
+            executor?: CommandExecutor,
+          ) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>)
         | undefined;
 
       // Capture the registration call parameters
@@ -70,7 +77,9 @@ describe('resources', () => {
         uri: string,
         description: string,
         options: { mimeType: string },
-        handler: (executor?: any) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>,
+        handler: (
+          executor?: CommandExecutor,
+        ) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>,
       ) => {
         capturedUri = uri;
         capturedDescription = description;
@@ -101,7 +110,7 @@ describe('resources', () => {
 
   describe('Simulators Resource Handler', () => {
     let resourceHandler: (
-      executor?: any,
+      executor?: CommandExecutor,
     ) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>;
 
     beforeEach(() => {
@@ -109,7 +118,9 @@ describe('resources', () => {
         _uri: string,
         _description: string,
         _options: { mimeType: string },
-        handler: (executor?: any) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>,
+        handler: (
+          executor?: CommandExecutor,
+        ) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>,
       ) => {
         resourceHandler = handler;
       };
