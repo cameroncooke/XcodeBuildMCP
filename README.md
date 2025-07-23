@@ -42,7 +42,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 
 ## Overview
 
-XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operations as tools and resources for AI assistants and other MCP clients. Built with a modern plugin architecture, it provides 105+ self-contained tools organized into workflow-based directories, plus MCP resources for efficient data access, enabling programmatic interaction with Xcode projects, simulators, devices, and Swift packages through a standardized interface.
+XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operations as tools and resources for AI assistants and other MCP clients. Built with a modern plugin architecture, it provides 54 self-contained tools organized into workflow-based directories, plus MCP resources for efficient data access, enabling programmatic interaction with Xcode projects, simulators, devices, and Swift packages through a standardized interface.
 
 ![xcodebuildmcp2](https://github.com/user-attachments/assets/8961d5db-f7ed-4e60-bbb8-48bfd0bc1353)
 <caption>Using Cursor to build, install, and launch an app on the iOS simulator while capturing logs at run-time.</caption>
