@@ -80,12 +80,12 @@ async function handleSimulatorsResource(executor?: CommandExecutor): Promise<{
 export function registerResources(server: McpServer): void {
   log('info', 'Registering MCP resources');
 
-  // Register simulators resource
+  // Register simulators resource with wrapper to support dependency injection in tests
   server.resource(
     RESOURCE_URIS.SIMULATORS,
     'Available iOS simulators with their UUIDs and states',
     { mimeType: 'text/plain' },
-    handleSimulatorsResource,
+    (executor?: CommandExecutor) => handleSimulatorsResource(executor),
   );
 
   log('info', `Registered resource: ${RESOURCE_URIS.SIMULATORS}`);
