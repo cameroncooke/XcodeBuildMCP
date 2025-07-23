@@ -33,6 +33,10 @@ export function createServer(): McpServer {
         tools: {
           listChanged: true,
         },
+        resources: {
+          subscribe: true,
+          listChanged: true,
+        },
         logging: {},
       },
     },

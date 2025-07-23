@@ -30,6 +30,9 @@ import { loadPlugins } from './core/plugin-registry.js';
 // Import xcodemake utilities
 import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
 
+// Import resource management
+import { registerResources } from './core/resources.js';
+
 /**
  * Main function to start the server
  */
@@ -85,6 +88,10 @@ async function main(): Promise<void> {
         discoverTool.schema,
         discoverTool.handler,
       );
+
+      // Register resources in dynamic mode
+      registerResources(server);
+
       log('info', '   Use discover_tools to enable relevant workflows on-demand');
     } else {
       log('info', '📋 Starting in STATIC mode');
@@ -95,6 +102,9 @@ async function main(): Promise<void> {
           server.tool(plugin.name, plugin.description || '', plugin.schema, plugin.handler);
         }
       }
+
+      // Register resources in static mode
+      registerResources(server);
     }
 
     // Start the server
