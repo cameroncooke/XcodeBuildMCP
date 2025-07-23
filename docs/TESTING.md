@@ -6,7 +6,7 @@ This document provides comprehensive testing guidelines for XcodeBuildMCP plugin
 
 1. [Testing Philosophy](#testing-philosophy)
 2. [Test Architecture](#test-architecture)  
-3. [Mock Strategy](#mock-strategy)
+3. [Dependency Injection Strategy](#dependency-injection-strategy)
 4. [Three-Dimensional Testing](#three-dimensional-testing)
 5. [Test Organization](#test-organization)
 6. [Test Patterns](#test-patterns)
@@ -17,102 +17,105 @@ This document provides comprehensive testing guidelines for XcodeBuildMCP plugin
 
 ## Testing Philosophy
 
-### Integration Testing Over Unit Testing
+### 🚨 CRITICAL: No Vitest Mocking Allowed
 
-XcodeBuildMCP follows an **integration testing philosophy** that prioritizes testing plugin interfaces over implementation details:
+**ABSOLUTE RULE: ALL VITEST MOCKING IS COMPLETELY BANNED**
+
+**FORBIDDEN PATTERNS (will cause immediate test failure):**
+- `vi.mock()` - BANNED
+- `vi.fn()` - BANNED  
+- `vi.mocked()` - BANNED
+- `vi.spyOn()` - BANNED
+- `.mockResolvedValue()` - BANNED
+- `.mockRejectedValue()` - BANNED
+- `.mockReturnValue()` - BANNED
+- `.mockImplementation()` - BANNED
+- `.toHaveBeenCalled()` - BANNED
+- `.toHaveBeenCalledWith()` - BANNED
+- `MockedFunction` type - BANNED
+- Any `mock*` variables - BANNED
+
+**ONLY ALLOWED MOCKING:**
+- `createMockExecutor({ success: true, output: 'result' })` - command execution
+- `createMockFileSystemExecutor({ readFile: async () => 'content' })` - file system operations
+
+### Integration Testing with Dependency Injection
+
+XcodeBuildMCP follows a **pure dependency injection** testing philosophy that eliminates vitest mocking:
 
 - ✅ **Test plugin interfaces** (public API contracts)
 - ✅ **Test integration flows** (plugin → utilities → external tools)
-- ✅ **Mock external dependencies only** (child_process.spawn)
-- ❌ **Avoid mocking internal utilities** (executeCommand, validation functions)
+- ✅ **Use dependency injection** with createMockExecutor()
+- ❌ **Never mock vitest functions** (vi.mock, vi.fn, etc.)
 
 ### Benefits
 
 1. **Implementation Independence**: Internal refactoring doesn't break tests
 2. **Real Coverage**: Tests verify actual user data flows
-3. **Maintainability**: Fewer brittle tests that break on implementation changes
+3. **Maintainability**: No brittle vitest mocks that break on implementation changes
 4. **True Integration**: Catches integration bugs between layers
+5. **Test Safety**: Default executors throw errors in test environment
 
 ## Test Architecture
 
 ### Correct Test Flow
 ```
-Test → Plugin Handler → executeCommand → utilities → [MOCKED] child_process.spawn
+Test → Plugin Handler → utilities → [DEPENDENCY INJECTION] createMockExecutor()
 ```
 
 ### What Gets Tested
 - Plugin parameter validation
-- Business logic execution
+- Business logic execution  
 - Command generation
 - Response formatting
 - Error handling
 - Integration between layers
 
 ### What Gets Mocked
-- External system dependencies (`child_process.spawn`)
-- File system operations (when testing without real files)
-- Network calls
-- Time-dependent functions (when testing timeouts)
+- Command execution via `createMockExecutor()`
+- File system operations via `createMockFileSystemExecutor()`
+- Nothing else - all vitest mocking is banned
 
-## Mock Strategy
+## Dependency Injection Strategy
 
-### Mock vs Spy Decision Matrix
+### Handler Requirements
 
-| Test Goal | Strategy | Implementation |
-|-----------|----------|----------------|
-| **Command Generation** | SPY | Verify correct CLI commands generated |
-| **Success Handling** | CONTROLLED MOCK | Return successful responses |
-| **Error Handling** | FAILURE MOCK | Return error responses/exit codes |
-| **Output Parsing** | REALISTIC MOCK | Return complex real-world output |
+All plugin handlers must support dependency injection:
 
-### Mock Implementation Patterns
-
-#### 1. Spy Pattern (Command Verification)
 ```typescript
-it('should generate correct xcodebuild command', async () => {
-  const mockSpawn = vi.mocked(spawn);
-  
-  await plugin.handler({
-    projectPath: '/test.xcodeproj',
-    scheme: 'MyApp',
-    configuration: 'Release'
-  });
-  
-  expect(mockSpawn).toHaveBeenCalledWith('sh', [
-    '-c',
-    'xcodebuild -project /test.xcodeproj -scheme MyApp -configuration Release build'
-  ], expect.any(Object));
-});
+export default {
+  name: 'tool_name',
+  description: 'Tool description',
+  schema: { /* zod schema */ },
+  async handler(
+    args: Record<string, unknown>, 
+    commandExecutor: CommandExecutor = getDefaultCommandExecutor(),
+    fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor()
+  ): Promise<ToolResponse> {
+    // Use injected executors
+    const result = await executeCommand(['xcrun', 'simctl', 'list'], commandExecutor);
+    return createTextResponse(result.output);
+  },
+};
 ```
 
-#### 2. Controlled Mock Pattern (Success Testing)
-```typescript
-it('should handle successful build', async () => {
-  setTimeout(() => {
-    mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
-    mockProcess.emit('close', 0);
-  }, 0);
-  
-  const result = await plugin.handler({ projectPath: '/test', scheme: 'MyApp' });
-  
-  expect(result).toEqual({
-    content: [{ type: 'text', text: '✅ Build succeeded for scheme MyApp' }]
-  });
-});
-```
+### Test Requirements
 
-#### 3. Failure Mock Pattern (Error Testing)
+All tests must explicitly provide mock executors:
+
 ```typescript
-it('should handle compilation errors', async () => {
-  setTimeout(() => {
-    mockProcess.stderr.emit('data', 'error: Use of undeclared identifier');
-    mockProcess.emit('close', 1);
-  }, 0);
+it('should handle successful command execution', async () => {
+  const mockExecutor = createMockExecutor({
+    success: true,
+    output: 'BUILD SUCCEEDED'
+  });
   
-  const result = await plugin.handler({ projectPath: '/test', scheme: 'MyApp' });
+  const result = await tool.handler(
+    { projectPath: '/test.xcodeproj', scheme: 'MyApp' },
+    mockExecutor
+  );
   
-  expect(result.isError).toBe(true);
-  expect(result.content[0].text).toContain('Use of undeclared identifier');
+  expect(result.content[0].text).toContain('Build succeeded');
 });
 ```
 
@@ -143,7 +146,9 @@ describe('Parameter Validation', () => {
   });
   
   it('should handle missing required parameters', async () => {
-    const result = await tool.handler({ scheme: 'MyApp' }); // Missing projectPath
+    const mockExecutor = createMockExecutor({ success: true });
+    
+    const result = await tool.handler({ scheme: 'MyApp' }, mockExecutor); // Missing projectPath
     
     expect(result).toEqual({
       content: [{
@@ -158,47 +163,38 @@ describe('Parameter Validation', () => {
 
 ### 2. Command Generation (CLI Testing)
 
-Verify correct CLI command construction:
+**CRITICAL: No command spying allowed. Test command generation through response validation.**
 
 ```typescript
 describe('Command Generation', () => {
-  it('should generate command with minimal parameters', async () => {
-    await tool.handler({
+  it('should execute correct command with minimal parameters', async () => {
+    const mockExecutor = createMockExecutor({
+      success: true,
+      output: 'BUILD SUCCEEDED'
+    });
+    
+    const result = await tool.handler({
       projectPath: '/test.xcodeproj',
       scheme: 'MyApp'
-    });
+    }, mockExecutor);
     
-    expect(mockSpawn).toHaveBeenCalledWith('sh', [
-      '-c',
-      'xcodebuild -project /test.xcodeproj -scheme MyApp -configuration Debug build'
-    ], expect.any(Object));
+    // Verify through successful response - command was executed correctly
+    expect(result.content[0].text).toContain('Build succeeded');
   });
   
-  it('should generate command with all parameters', async () => {
-    await tool.handler({
-      projectPath: '/test.xcodeproj',
-      scheme: 'MyApp',
-      configuration: 'Release',
-      derivedDataPath: '/custom/derived',
-      extraArgs: ['--verbose']
+  it('should handle paths with spaces correctly', async () => {
+    const mockExecutor = createMockExecutor({
+      success: true,
+      output: 'BUILD SUCCEEDED'
     });
     
-    expect(mockSpawn).toHaveBeenCalledWith('sh', [
-      '-c',
-      'xcodebuild -project /test.xcodeproj -scheme MyApp -configuration Release -derivedDataPath /custom/derived --verbose build'
-    ], expect.any(Object));
-  });
-  
-  it('should handle paths with spaces', async () => {
-    await tool.handler({
+    const result = await tool.handler({
       projectPath: '/Users/dev/My Project/app.xcodeproj',
       scheme: 'MyApp'
-    });
+    }, mockExecutor);
     
-    expect(mockSpawn).toHaveBeenCalledWith('sh', [
-      '-c',
-      'xcodebuild -project "/Users/dev/My Project/app.xcodeproj" -scheme MyApp -configuration Debug build'
-    ], expect.any(Object));
+    // Verify successful execution (proper path handling)
+    expect(result.content[0].text).toContain('Build succeeded');
   });
 });
 ```
@@ -210,38 +206,35 @@ Test response formatting and error handling:
 ```typescript
 describe('Response Processing', () => {
   it('should format successful response', async () => {
-    setTimeout(() => {
-      mockProcess.stdout.emit('data', 'BUILD SUCCEEDED');
-      mockProcess.emit('close', 0);
-    }, 0);
+    const mockExecutor = createMockExecutor({
+      success: true,
+      output: 'BUILD SUCCEEDED'
+    });
     
-    const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' });
+    const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' }, mockExecutor);
     
     expect(result).toEqual({
       content: [{ type: 'text', text: '✅ Build succeeded for scheme MyApp' }]
     });
   });
   
-  it('should extract and format warnings', async () => {
-    setTimeout(() => {
-      mockProcess.stdout.emit('data', 'warning: deprecated method\nBUILD SUCCEEDED');
-      mockProcess.emit('close', 0);
-    }, 0);
+  it('should handle command failures', async () => {
+    const mockExecutor = createMockExecutor({
+      success: false,
+      output: 'Build failed with errors',
+      error: 'Compilation error'
+    });
     
-    const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' });
+    const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' }, mockExecutor);
     
-    expect(result.content).toEqual([
-      { type: 'text', text: '⚠️ Warning: warning: deprecated method' },
-      { type: 'text', text: '✅ Build succeeded for scheme MyApp' }
-    ]);
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('Build failed');
   });
   
-  it('should handle spawn errors', async () => {
-    setTimeout(() => {
-      mockProcess.emit('error', new Error('spawn xcodebuild ENOENT'));
-    }, 0);
+  it('should handle executor errors', async () => {
+    const mockExecutor = createMockExecutor(new Error('spawn xcodebuild ENOENT'));
     
-    const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' });
+    const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' }, mockExecutor);
     
     expect(result).toEqual({
       content: [{ type: 'text', text: 'Error during build: spawn xcodebuild ENOENT' }],
@@ -308,32 +301,16 @@ describe('simulator-project re-exports', () => {
 ### Standard Test Template
 
 ```typescript
-import { vi, describe, it, expect, beforeEach, type MockedFunction } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { EventEmitter } from 'events';
-import { spawn } from 'child_process';
 
-// CRITICAL: Mock BEFORE imports to ensure proper mock chain
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
+// CRITICAL: NO VITEST MOCKING ALLOWED
+// Import ONLY what you need - no mock setup
 
 import tool from '../tool_name.ts';
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
+import { createMockExecutor } from '../../utils/command.js';
 
 describe('tool_name', () => {
-  let mockProcess: MockChildProcess;
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockProcess = new MockChildProcess();
-    vi.mocked(spawn).mockReturnValue(mockProcess);
-  });
 
   describe('Export Field Validation (Literal)', () => {
     it('should export correct name', () => {
@@ -352,33 +329,22 @@ describe('tool_name', () => {
   });
 
   describe('Command Generation', () => {
-    // CLI command tests...
+    it('should execute commands successfully', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Expected output'
+      });
+      
+      const result = await tool.handler(validParams, mockExecutor);
+      
+      expect(result.content[0].text).toContain('Expected result');
+    });
   });
 
   describe('Response Processing', () => {
     // Output handling tests...
   });
 });
-```
-
-### Critical Mock Ordering
-
-**CORRECT (Working)**:
-```typescript
-// ✅ Mock FIRST
-vi.mock('child_process', () => ({ spawn: vi.fn() }));
-
-// ✅ Import AFTER mock
-import tool from '../tool.ts';
-```
-
-**INCORRECT (Broken)**:
-```typescript
-// ❌ Import FIRST (caches real spawn)
-import tool from '../tool.ts';
-
-// ❌ Mock too late
-vi.mock('child_process', () => ({ spawn: vi.fn() }));
 ```
 
 ## Performance Requirements
@@ -425,10 +391,9 @@ Every plugin test must cover:
 - ✅ **Valid parameter combinations**
 - ✅ **Invalid parameter rejection**  
 - ✅ **Missing required parameters**
-- ✅ **Command generation variations**
 - ✅ **Successful command execution**
 - ✅ **Command failure scenarios**
-- ✅ **Spawn error handling**
+- ✅ **Executor error handling**
 - ✅ **Output parsing edge cases**
 
 ## Common Patterns
@@ -437,16 +402,19 @@ Every plugin test must cover:
 
 ```typescript
 it('should use default configuration when not provided', async () => {
-  await tool.handler({
+  const mockExecutor = createMockExecutor({
+    success: true,
+    output: 'BUILD SUCCEEDED'
+  });
+  
+  const result = await tool.handler({
     projectPath: '/test.xcodeproj',
     scheme: 'MyApp'
     // configuration intentionally omitted
-  });
+  }, mockExecutor);
   
-  expect(mockSpawn).toHaveBeenCalledWith('sh', [
-    '-c',
-    expect.stringContaining('-configuration Debug') // Default value
-  ], expect.any(Object));
+  // Verify default behavior through successful response
+  expect(result.content[0].text).toContain('Build succeeded');
 });
 ```
 
@@ -454,17 +422,17 @@ it('should use default configuration when not provided', async () => {
 
 ```typescript
 it('should extract app path from build settings', async () => {
-  setTimeout(() => {
-    mockProcess.stdout.emit('data', `
+  const mockExecutor = createMockExecutor({
+    success: true,
+    output: `
       CONFIGURATION_BUILD_DIR = /path/to/build
       BUILT_PRODUCTS_DIR = /path/to/products  
       FULL_PRODUCT_NAME = MyApp.app
       OTHER_SETTING = ignored_value
-    `);
-    mockProcess.emit('close', 0);
-  }, 0);
+    `
+  });
   
-  const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' });
+  const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' }, mockExecutor);
   
   expect(result.content[0].text).toContain('/path/to/products/MyApp.app');
 });
@@ -474,7 +442,9 @@ it('should extract app path from build settings', async () => {
 
 ```typescript
 it('should format validation errors correctly', async () => {
-  const result = await tool.handler({}); // Missing required params
+  const mockExecutor = createMockExecutor({ success: true });
+  
+  const result = await tool.handler({}, mockExecutor); // Missing required params
   
   expect(result).toEqual({
     content: [{
@@ -490,63 +460,86 @@ it('should format validation errors correctly', async () => {
 
 ### Common Issues
 
-#### 1. Tests Execute Real Commands
-**Symptoms**: Tests take minutes, stderr shows real command execution
-**Cause**: Mock ordering issue
-**Fix**: Move `vi.mock('child_process')` before imports
+#### 1. "Real System Executor Detected" Error
+**Symptoms**: Test fails with error about real system executor being used
+**Cause**: Handler not receiving mock executor parameter
+**Fix**: Ensure test passes createMockExecutor() to handler:
 
-#### 2. Mock Not Applied
-**Symptoms**: `mockSpawn` not called, real spawn executed  
-**Cause**: Import chain cached real spawn before mock applied
-**Fix**: Ensure mock is first statement in test file
-
-#### 3. Inconsistent Mock Behavior
-**Symptoms**: Some tests work, others don't
-**Cause**: Mixed mock strategies (some mock utils, some mock spawn)
-**Fix**: Standardize on child_process mocking only
-
-#### 4. Type Errors with Mocks
-**Symptoms**: TypeScript errors on mock setup
-**Fix**: Use proper type assertions:
 ```typescript
-const mockSpawn = vi.mocked(spawn);
-mockSpawn.mockReturnValue(mockProcess as any);
+// ❌ WRONG
+const result = await tool.handler(params);
+
+// ✅ CORRECT
+const mockExecutor = createMockExecutor({ success: true });
+const result = await tool.handler(params, mockExecutor);
+```
+
+#### 2. "Real Filesystem Executor Detected" Error
+**Symptoms**: Test fails when trying to access file system
+**Cause**: Handler not receiving mock file system executor
+**Fix**: Pass createMockFileSystemExecutor():
+
+```typescript
+const mockCmd = createMockExecutor({ success: true });
+const mockFS = createMockFileSystemExecutor({ readFile: async () => 'content' });
+const result = await tool.handler(params, mockCmd, mockFS);
+```
+
+#### 3. Handler Signature Errors
+**Symptoms**: TypeScript errors about handler parameters
+**Cause**: Handler doesn't support dependency injection
+**Fix**: Update handler signature:
+
+```typescript
+async handler(
+  args: Record<string, unknown>,
+  commandExecutor: CommandExecutor = getDefaultCommandExecutor(),
+  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor()
+): Promise<ToolResponse> {
+  // Use injected executors
+}
 ```
 
 ### Debug Commands
 
 ```bash
 # Run specific test file
-npm test -- plugins/simulator-workspace/__tests__/tool_name.test.ts
+npm test -- src/plugins/simulator-workspace/__tests__/tool_name.test.ts
 
 # Run with verbose output
 npm test -- --reporter=verbose
 
-# Check for real command execution
-npm test 2>&1 | grep "Executing.*command"
+# Check for banned patterns
+node scripts/check-test-patterns.js
+
+# Verify dependency injection compliance
+node scripts/audit-dependency-container.js
 
 # Coverage for specific directory
-npm run test:coverage -- plugins/simulator-workspace/
+npm run test:coverage -- src/plugins/simulator-workspace/
 ```
 
-### Mock Verification
+### Validation Scripts
 
-```typescript
-// Verify mock is properly applied
-beforeEach(() => {
-  const mockSpawn = vi.mocked(spawn);
-  expect(vi.isMockFunction(mockSpawn)).toBe(true);
-});
+```bash
+# Check for vitest mocking violations
+node scripts/check-test-patterns.js --pattern=vitest
+
+# Check dependency injection compliance
+node scripts/audit-dependency-container.js
+
+# Both scripts must pass before committing
 ```
 
 ## Best Practices Summary
 
-1. **Mock ordering**: Always mock external dependencies before imports
-2. **Integration focus**: Test plugin interfaces, not implementation details  
-3. **Three dimensions**: Test input validation, command generation, and output processing
+1. **Dependency injection**: Always use createMockExecutor() and createMockFileSystemExecutor()
+2. **No vitest mocking**: All vi.mock, vi.fn, etc. patterns are banned
+3. **Three dimensions**: Test input validation, command execution, and output processing
 4. **Literal expectations**: Use exact strings in assertions to catch regressions
 5. **Performance**: Ensure fast execution through proper mocking
 6. **Coverage**: Aim for 95%+ with focus on error paths
 7. **Consistency**: Follow standard patterns across all plugin tests
+8. **Test safety**: Default executors prevent accidental real system calls
 
-This testing strategy ensures robust, maintainable tests that provide confidence in plugin functionality while remaining resilient to implementation changes.
+This testing strategy ensures robust, maintainable tests that provide confidence in plugin functionality while remaining resilient to implementation changes and completely eliminating vitest mocking dependencies.

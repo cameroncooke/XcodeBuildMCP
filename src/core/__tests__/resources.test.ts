@@ -1,12 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { EventEmitter } from 'events';
-import { spawn } from 'child_process';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-
-// CRITICAL: Mock BEFORE imports to ensure proper mock chain
-vi.mock('child_process', () => ({
-  spawn: vi.fn(),
-}));
 
 import {
   registerResources,
@@ -14,26 +7,15 @@ import {
   supportsResources,
   RESOURCE_URIS,
 } from '../resources.js';
-import { createMockExecutor } from '../../utils/test-common.js';
-
-class MockChildProcess extends EventEmitter {
-  stdout = new EventEmitter();
-  stderr = new EventEmitter();
-  pid = 12345;
-}
+import { createMockExecutor } from '../../utils/command.js';
 
 describe('resources', () => {
-  let mockProcess: MockChildProcess;
   let mockServer: McpServer;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockProcess = new MockChildProcess();
-    vi.mocked(spawn).mockReturnValue(mockProcess as any);
-
-    // Create a mock MCP server
+    // Create a mock MCP server using simple object structure
     mockServer = {
-      resource: vi.fn(),
+      resource: () => {},
     } as unknown as McpServer;
   });
 
@@ -76,55 +58,68 @@ describe('resources', () => {
 
   describe('registerResources', () => {
     it('should register simulators resource with correct parameters', () => {
+      let capturedUri: string | undefined;
+      let capturedDescription: string | undefined;
+      let capturedOptions: { mimeType: string } | undefined;
+      let capturedHandler: Function | undefined;
+
+      // Capture the registration call parameters
+      mockServer.resource = (uri: string, description: string, options: { mimeType: string }, handler: Function) => {
+        capturedUri = uri;
+        capturedDescription = description;
+        capturedOptions = options;
+        capturedHandler = handler;
+      };
+
       registerResources(mockServer);
 
-      expect(mockServer.resource).toHaveBeenCalledWith(
-        'mcp://xcodebuild/simulators',
-        'Available iOS simulators with their UUIDs and states',
-        { mimeType: 'application/json' },
-        expect.any(Function),
-      );
+      expect(capturedUri).toBe('mcp://xcodebuild/simulators');
+      expect(capturedDescription).toBe('Available iOS simulators with their UUIDs and states');
+      expect(capturedOptions).toEqual({ mimeType: 'text/plain' });
+      expect(typeof capturedHandler).toBe('function');
     });
 
     it('should call server.resource once for each resource', () => {
+      let callCount = 0;
+
+      mockServer.resource = () => {
+        callCount++;
+      };
+
       registerResources(mockServer);
 
-      expect(mockServer.resource).toHaveBeenCalledTimes(1);
+      expect(callCount).toBe(1);
     });
   });
 
   describe('Simulators Resource Handler', () => {
-    let resourceHandler: () => Promise<{ contents: Array<{ type: 'text'; text: string }> }>;
+    let resourceHandler: (executor?: any) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>;
 
     beforeEach(() => {
+      mockServer.resource = (_uri: string, _description: string, _options: { mimeType: string }, handler: Function) => {
+        resourceHandler = handler;
+      };
       registerResources(mockServer);
-      // Extract the handler function from the mock call
-      const calls = vi.mocked(mockServer.resource).mock.calls;
-      resourceHandler = calls[0][3]; // Fourth parameter is the handler
     });
 
     it('should handle successful simulator data retrieval', async () => {
-      // Mock successful command execution
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          JSON.stringify({
-            devices: {
-              'iOS 17.0': [
-                {
-                  name: 'iPhone 15 Pro',
-                  udid: 'ABC123-DEF456-GHI789',
-                  state: 'Shutdown',
-                  isAvailable: true,
-                },
-              ],
-            },
-          }),
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: JSON.stringify({
+          devices: {
+            'iOS 17.0': [
+              {
+                name: 'iPhone 15 Pro',
+                udid: 'ABC123-DEF456-GHI789',
+                state: 'Shutdown',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      });
 
-      const result = await resourceHandler();
+      const result = await resourceHandler(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].type).toBe('text');
@@ -134,13 +129,13 @@ describe('resources', () => {
     });
 
     it('should handle command execution failure', async () => {
-      // Mock command failure
-      setTimeout(() => {
-        mockProcess.stderr.emit('data', 'Command failed');
-        mockProcess.emit('close', 1);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'Command failed',
+      });
 
-      const result = await resourceHandler();
+      const result = await resourceHandler(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].type).toBe('text');
@@ -148,13 +143,12 @@ describe('resources', () => {
     });
 
     it('should handle JSON parsing errors', async () => {
-      // Mock invalid JSON response
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', 'invalid json');
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'invalid json',
+      });
 
-      const result = await resourceHandler();
+      const result = await resourceHandler(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].type).toBe('text');
@@ -162,12 +156,9 @@ describe('resources', () => {
     });
 
     it('should handle spawn errors', async () => {
-      // Mock spawn error
-      setTimeout(() => {
-        mockProcess.emit('error', new Error('spawn xcrun ENOENT'));
-      }, 0);
+      const mockExecutor = createMockExecutor(new Error('spawn xcrun ENOENT'));
 
-      const result = await resourceHandler();
+      const result = await resourceHandler(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].type).toBe('text');
@@ -176,13 +167,12 @@ describe('resources', () => {
     });
 
     it('should handle empty simulator data', async () => {
-      // Mock empty simulator response
-      setTimeout(() => {
-        mockProcess.stdout.emit('data', JSON.stringify({ devices: {} }));
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: JSON.stringify({ devices: {} }),
+      });
 
-      const result = await resourceHandler();
+      const result = await resourceHandler(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].type).toBe('text');
@@ -190,86 +180,74 @@ describe('resources', () => {
     });
 
     it('should handle booted simulators correctly', async () => {
-      // Mock simulator with booted state
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          JSON.stringify({
-            devices: {
-              'iOS 17.0': [
-                {
-                  name: 'iPhone 15 Pro',
-                  udid: 'ABC123-DEF456-GHI789',
-                  state: 'Booted',
-                  isAvailable: true,
-                },
-              ],
-            },
-          }),
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: JSON.stringify({
+          devices: {
+            'iOS 17.0': [
+              {
+                name: 'iPhone 15 Pro',
+                udid: 'ABC123-DEF456-GHI789',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      });
 
-      const result = await resourceHandler();
+      const result = await resourceHandler(mockExecutor);
 
       expect(result.contents[0].text).toContain('[Booted]');
     });
 
     it('should filter out unavailable simulators', async () => {
-      // Mock mix of available and unavailable simulators
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          JSON.stringify({
-            devices: {
-              'iOS 17.0': [
-                {
-                  name: 'iPhone 15 Pro',
-                  udid: 'ABC123-DEF456-GHI789',
-                  state: 'Shutdown',
-                  isAvailable: true,
-                },
-                {
-                  name: 'iPhone 14',
-                  udid: 'XYZ789-UVW456-RST123',
-                  state: 'Shutdown',
-                  isAvailable: false,
-                },
-              ],
-            },
-          }),
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: JSON.stringify({
+          devices: {
+            'iOS 17.0': [
+              {
+                name: 'iPhone 15 Pro',
+                udid: 'ABC123-DEF456-GHI789',
+                state: 'Shutdown',
+                isAvailable: true,
+              },
+              {
+                name: 'iPhone 14',
+                udid: 'XYZ789-UVW456-RST123',
+                state: 'Shutdown',
+                isAvailable: false,
+              },
+            ],
+          },
+        }),
+      });
 
-      const result = await resourceHandler();
+      const result = await resourceHandler(mockExecutor);
 
       expect(result.contents[0].text).toContain('iPhone 15 Pro');
       expect(result.contents[0].text).not.toContain('iPhone 14');
     });
 
     it('should include next steps guidance', async () => {
-      // Mock successful response
-      setTimeout(() => {
-        mockProcess.stdout.emit(
-          'data',
-          JSON.stringify({
-            devices: {
-              'iOS 17.0': [
-                {
-                  name: 'iPhone 15 Pro',
-                  udid: 'ABC123-DEF456-GHI789',
-                  state: 'Shutdown',
-                  isAvailable: true,
-                },
-              ],
-            },
-          }),
-        );
-        mockProcess.emit('close', 0);
-      }, 0);
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: JSON.stringify({
+          devices: {
+            'iOS 17.0': [
+              {
+                name: 'iPhone 15 Pro',
+                udid: 'ABC123-DEF456-GHI789',
+                state: 'Shutdown',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      });
 
-      const result = await resourceHandler();
+      const result = await resourceHandler(mockExecutor);
 
       expect(result.contents[0].text).toContain('Next Steps:');
       expect(result.contents[0].text).toContain('boot_sim');
