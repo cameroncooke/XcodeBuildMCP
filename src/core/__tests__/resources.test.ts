@@ -61,10 +61,17 @@ describe('resources', () => {
       let capturedUri: string | undefined;
       let capturedDescription: string | undefined;
       let capturedOptions: { mimeType: string } | undefined;
-      let capturedHandler: Function | undefined;
+      let capturedHandler:
+        | ((executor?: any) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>)
+        | undefined;
 
       // Capture the registration call parameters
-      mockServer.resource = (uri: string, description: string, options: { mimeType: string }, handler: Function) => {
+      mockServer.resource = (
+        uri: string,
+        description: string,
+        options: { mimeType: string },
+        handler: (executor?: any) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>,
+      ) => {
         capturedUri = uri;
         capturedDescription = description;
         capturedOptions = options;
@@ -93,10 +100,17 @@ describe('resources', () => {
   });
 
   describe('Simulators Resource Handler', () => {
-    let resourceHandler: (executor?: any) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>;
+    let resourceHandler: (
+      executor?: any,
+    ) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>;
 
     beforeEach(() => {
-      mockServer.resource = (_uri: string, _description: string, _options: { mimeType: string }, handler: Function) => {
+      mockServer.resource = (
+        _uri: string,
+        _description: string,
+        _options: { mimeType: string },
+        handler: (executor?: any) => Promise<{ contents: Array<{ type: 'text'; text: string }> }>,
+      ) => {
         resourceHandler = handler;
       };
       registerResources(mockServer);
