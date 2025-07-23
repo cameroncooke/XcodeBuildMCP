@@ -6,6 +6,8 @@ import {
   getAvailableResources,
   supportsResources,
   loadResources,
+  shouldExcludeTool,
+  getRedundantToolNames,
 } from '../resources.js';
 
 describe('resources', () => {
@@ -73,8 +75,10 @@ describe('resources', () => {
   });
 
   describe('registerResources', () => {
-    it('should register all loaded resources with the server', async () => {
-      await registerResources(mockServer);
+    it('should register all loaded resources with the server and return true', async () => {
+      const result = await registerResources(mockServer);
+
+      expect(result).toBe(true);
 
       // Should have registered at least one resource
       expect(registeredResources.length).toBeGreaterThan(0);
@@ -91,7 +95,9 @@ describe('resources', () => {
     });
 
     it('should register resources with correct handlers', async () => {
-      await registerResources(mockServer);
+      const result = await registerResources(mockServer);
+
+      expect(result).toBe(true);
 
       const simulatorsResource = registeredResources.find(
         (r) => r.uri === 'mcp://xcodebuild/simulators',
@@ -114,6 +120,39 @@ describe('resources', () => {
       const uniqueResources = [...new Set(resources)];
 
       expect(resources.length).toBe(uniqueResources.length);
+    });
+  });
+
+  describe('tool filtering', () => {
+    describe('getRedundantToolNames', () => {
+      it('should return array of redundant tool names', () => {
+        const redundantTools = getRedundantToolNames();
+
+        expect(Array.isArray(redundantTools)).toBe(true);
+        expect(redundantTools).toContain('list_sims');
+      });
+    });
+
+    describe('shouldExcludeTool', () => {
+      it('should exclude redundant tools when resources are registered', () => {
+        expect(shouldExcludeTool('list_sims', true)).toBe(true);
+        expect(shouldExcludeTool('other_tool', true)).toBe(false);
+      });
+
+      it('should not exclude any tools when resources are not registered', () => {
+        expect(shouldExcludeTool('list_sims', false)).toBe(false);
+        expect(shouldExcludeTool('other_tool', false)).toBe(false);
+      });
+    });
+
+    describe('supportsResources', () => {
+      it('should return true by default for backward compatibility', () => {
+        expect(supportsResources()).toBe(true);
+      });
+
+      it('should return true when server is not provided', () => {
+        expect(supportsResources(undefined)).toBe(true);
+      });
     });
   });
 });
