@@ -16,9 +16,11 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
   - [Simulator management](#simulator-management)
   - [Device management](#device-management)
   - [App utilities](#app-utilities)
+  - [MCP Resources](#mcp-resources)
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Configure your MCP client](#configure-your-mcp-client)
+    - [MCP Feature Compatibility](#mcp-feature-compatibility)
     - [Quick install](#quick-install)
     - [Manual installation](#manual-installation)
     - [Alternative installation method using mise](#alternative-installation-method-using-mise)
@@ -40,7 +42,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 
 ## Overview
 
-XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operations as tools for AI assistants and other MCP clients. Built with a modern plugin architecture, it provides 84 self-contained tools organized into workflow-based directories, enabling programmatic interaction with Xcode projects, simulators, devices, and Swift packages through a standardized interface.
+XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operations as tools and resources for AI assistants and other MCP clients. Built with a modern plugin architecture, it provides 105+ self-contained tools organized into workflow-based directories, plus MCP resources for efficient data access, enabling programmatic interaction with Xcode projects, simulators, devices, and Swift packages through a standardized interface.
 
 ![xcodebuildmcp2](https://github.com/user-attachments/assets/8961d5db-f7ed-4e60-bbb8-48bfd0bc1353)
 <caption>Using Cursor to build, install, and launch an app on the iOS simulator while capturing logs at run-time.</caption>
@@ -92,7 +94,15 @@ The XcodeBuildMCP server provides the following tool capabilities:
   - Launch apps on simulators, physical devices, and macOS
   - Stop running apps with process ID or bundle ID management
   - Process monitoring and control for comprehensive app management
-- 
+
+### MCP Resources
+
+For clients that support MCP resources (VS Code, Claude Code, Claude Desktop), XcodeBuildMCP provides efficient URI-based data access:
+
+- **Simulators Resource** (`mcp://xcodebuild/simulators`): Direct access to available iOS simulators with UUIDs and states
+- **Automatic Fallback**: Clients without resource support automatically use equivalent tool-based APIs
+- **Smart Filtering**: Redundant tools are filtered out when resources are available to prevent duplicate functionality
+
 > [!IMPORTANT]
 > Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
 
@@ -105,6 +115,24 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - Node 18.x or later
 
 ### Configure your MCP client
+
+#### MCP Feature Compatibility
+
+XcodeBuildMCP supports both MCP tools and resources. Different editors have varying levels of MCP feature support:
+
+| Editor | Tools | Resources | Notes |
+|--------|-------|-----------|-------|
+| **VS Code** | ✅ | ✅ | Full MCP specification support |
+| **Cursor** | ✅ | ❌ | Tools only - resources not supported |
+| **Windsurf** | ✅ | ❌ | Tools and discovery only |
+| **Claude Code** | ✅ | ✅ | Full support for resources, tools, and routes |
+| **Claude Desktop** | ✅ | ✅ | Full support for resources, tools, and prompts |
+
+**Resources vs Tools:**
+- **Tools**: Function-based API calls (e.g., `list_sims()` to get simulator list)
+- **Resources**: Efficient data access via URIs (e.g., `mcp://xcodebuild/simulators` for simulator data)
+
+XcodeBuildMCP automatically detects your client's capabilities and provides the most appropriate interface. Clients with resource support get efficient URI-based data access, while others fall back to traditional tool calls.
 
 #### Quick install
 
