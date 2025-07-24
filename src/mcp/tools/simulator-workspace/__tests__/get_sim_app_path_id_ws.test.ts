@@ -188,7 +188,7 @@ describe('get_sim_app_path_id_ws tool', () => {
     it('should handle successful app path retrieval for tvOS Simulator', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
-        output: 'BUILT_PRODUCTS_DIR = /pa../../../../build\nFULL_PRODUCT_NAME = TVApp.app\n',
+        output: 'BUILT_PRODUCTS_DIR = /path/to/tv/build\nFULL_PRODUCT_NAME = TVApp.app\n',
       });
 
       const result = await get_sim_app_path_id_wsLogic(
@@ -207,14 +207,14 @@ describe('get_sim_app_path_id_ws tool', () => {
         content: [
           {
             type: 'text',
-            text: '✅ App path retrieved successfully: /pa../../../../build/TVApp.app',
+            text: '✅ App path retrieved successfully: /path/to/tv/build/TVApp.app',
           },
           {
             type: 'text',
             text: `Next Steps:
-1. Get bundle ID: get_app_bundle_id({ appPath: "/pa../../../../build/TVApp.app" })
+1. Get bundle ID: get_app_bundle_id({ appPath: "/path/to/tv/build/TVApp.app" })
 2. Boot simulator: boot_simulator({ simulatorUuid: "SIMULATOR_UUID" })
-3. Install app: install_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", appPath: "/pa../../../../build/TVApp.app" })
+3. Install app: install_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", appPath: "/path/to/tv/build/TVApp.app" })
 4. Launch app: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`,
           },
         ],
