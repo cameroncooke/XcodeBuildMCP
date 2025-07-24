@@ -6,12 +6,13 @@
 2. [Core Architecture](#core-architecture)
 3. [Design Principles](#design-principles)
 4. [Component Details](#component-details)
-5. [Tool Organization](#tool-organization)
-6. [Registration System](#registration-system)
+5. [Registration System](#registration-system)
+6. [Tool Naming Conventions & Glossary](#tool-naming-conventions--glossary)
 7. [Testing Architecture](#testing-architecture)
 8. [Build and Deployment](#build-and-deployment)
 9. [Extension Guidelines](#extension-guidelines)
 10. [Performance Considerations](#performance-considerations)
+11. [Security Considerations](#security-considerations)
 
 ## Overview
 
@@ -26,53 +27,10 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
 
 ## Core Architecture
 
-### Layered Architecture Diagram
-
-```
-┌────────────────────────────────────────────────────────────┐
-│            Presentation / Transport Layer                  │
-│  • src/server/server.ts  – MCP server creation & transport │
-│  • src/index.ts          – process entry, Sentry boot,     │
-│                            plugin loading, lifecycle       │
-└────────────────────────────────────────────────────────────┘
-┌────────────────────────────────────────────────────────────┐
-│            Plugin Discovery & Registration Layer           │
-│  • src/core/plugin-registry.ts  – automatic plugin loading │
-│  • src/core/plugin-types.ts     – plugin type definitions   │
-│  • plugins/**/                  – self-contained plugins   │
-└────────────────────────────────────────────────────────────┘
-┌────────────────────────────────────────────────────────────┐
-│                    MCP Resources Layer                     │
-│  • src/core/resources.ts        – resource management      │
-│  • src/resources/**/            – MCP resource handlers    │
-└────────────────────────────────────────────────────────────┘
-┌────────────────────────────────────────────────────────────┐
-│                   Plugin Implementation Layer              │
-│  • plugins/**/**.js – one file per tool capability          │
-│  • Common patterns:                                        │
-│      – Standardized plugin exports (name, schema, handler) │
-│      – Zod schemas for param validation                    │
-│      – Uniform ToolResponse payloads                       │
-└────────────────────────────────────────────────────────────┘
-┌────────────────────────────────────────────────────────────┐
-│                     Shared Utilities Layer                 │
-│  • src/utils/build-utils.ts        – Xcode build runner    │
-│  • src/utils/xcodemake.ts          – incremental build     │
-│  • src/utils/logger.ts / sentry.ts – logging & telemetry   │
-│  • src/utils/validation.ts         – response helpers      │
-│  • src/utils/command.ts            – shell execution       │
-└────────────────────────────────────────────────────────────┘
-┌────────────────────────────────────────────────────────────┐
-│                   Domain Model / Types Layer               │
-│  • src/types/common.ts   – enums, shared interfaces        │
-│  • src/tools/common.ts   – reusable Zod schemas            │
-└────────────────────────────────────────────────────────────┘
-```
-
 ### Runtime Flow
 
 1. **Initialization**
-   - `bin/xcodebuildmcp` → compiled `index.js` → executes `src/index.ts`
+   - The `xcodebuildmcp` executable, as defined in `package.json`, points to the compiled `build/index.js` which executes the main logic from `src/index.ts`.
    - Sentry initialized for error tracking (optional)
    - Version information loaded from `package.json`
 
@@ -81,20 +39,21 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
    - Plugin discovery system initialized
 
 3. **Plugin Discovery & Loading**
-   - `loadPlugins()` scans `plugins/` directory automatically
-   - Each plugin exports standardized interface (`name`, `description`, `schema`, `handler`)
-   - Plugins are self-contained with no external dependencies
+   - `loadPlugins()` scans `src/mcp/tools/` directory automatically
+   - `loadResources()` scans `src/mcp/resources/` directory automatically
+   - Each tool exports standardized interface (`name`, `description`, `schema`, `handler`)
+   - Tools are self-contained with no external dependencies
    - Dynamic vs static mode determines loading behavior
 
 4. **Tool Registration**
-   - Discovered plugins automatically registered with server
+   - Discovered tools automatically registered with server
    - No manual registration or configuration required
    - Environment variables can still control dynamic tool discovery
 
 5. **Request Handling**
-   - MCP client calls tool → server routes to plugin handler
+   - MCP client calls tool → server routes to tool handler
    - Zod validates parameters before execution
-   - Plugin handler uses shared utilities (build, simctl, etc.)
+   - Tool handler uses shared utilities (build, simctl, etc.)
    - Returns standardized `ToolResponse`
 
 6. **Response Streaming**
@@ -104,22 +63,22 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
 ## Design Principles
 
 ### 1. **Plugin Autonomy**
-Plugins are self-contained units that export a standardized interface. They don't know about the server implementation, ensuring loose coupling and high testability.
+Tools are self-contained units that export a standardized interface. They don't know about the server implementation, ensuring loose coupling and high testability.
 
 ### 2. **Pure Functions vs Stateful Components**
 - Most utilities are stateless pure functions
-- Stateful components (e.g., process tracking) isolated in specific modules
+- Stateful components (e.g., process tracking) isolated in specific tool modules
 - Clear separation between computation and side effects
 
 ### 3. **Single Source of Truth**
 - Version from `package.json` drives all version references
-- Plugin directory structure is authoritative tool source
+- Tool directory structure is authoritative tool source
 - Environment variables provide consistent configuration interface
 
 ### 4. **Feature Isolation**
 - Experimental features behind environment flags
 - Optional dependencies (Sentry, xcodemake) gracefully degrade
-- Plugin directory structure enables workflow-specific organization
+- Tool directory structure enables workflow-specific organization
 
 ### 5. **Type Safety Throughout**
 - TypeScript strict mode enabled
@@ -154,11 +113,11 @@ MCP server wrapper providing:
 - Request/response handling
 - Error boundary implementation
 
-### Plugin Discovery System
+### Tool Discovery System
 
 #### `src/core/plugin-registry.ts`
 Automatic plugin loading system:
-- Scans `plugins/` directory structure using glob patterns
+- Scans `src/mcp/tools/` directory structure using glob patterns
 - Dynamically imports plugin modules
 - Validates plugin interface compliance
 - Handles both default exports and named exports (for re-exports)
@@ -170,9 +129,9 @@ Plugin type definitions:
 - `WorkflowMeta` interface for workflow metadata
 - `WorkflowGroup` interface for directory organization
 
-### Plugin Implementation
+### Tool Implementation
 
-Each plugin (`plugins/*/*.js`) follows this standardized pattern:
+Each plugin (`src/mcp/tools/*/*.js`) follows this standardized pattern:
 
 ```javascript
 // 1. Import dependencies and schemas
@@ -212,36 +171,14 @@ export default {
 };
 ```
 
-### Plugin Directory Structure
-
-```
-plugins/
-├── device-workspace/        # Device + Workspace operations
-├── device-project/          # Device + Project operations (re-exports)
-├── device-shared/           # Shared device tools (canonical)
-├── simulator-workspace/     # Simulator + Workspace operations  
-├── simulator-project/       # Simulator + Project operations (re-exports)
-├── simulator-shared/        # Shared simulator tools (canonical)
-├── macos-workspace/         # macOS + Workspace operations
-├── macos-project/           # macOS + Project operations (re-exports)
-├── macos-shared/            # Shared macOS tools (canonical)
-├── ui-testing/              # UI automation tools
-├── swift-package/           # Swift Package Manager tools
-├── project-discovery/       # Project analysis tools
-├── logging/                 # Log capture tools
-├── utilities/               # General utilities
-├── diagnostics/             # Diagnostic tools
-└── discovery/               # Dynamic tool discovery
-```
-
 ### MCP Resources System
 
-XcodeBuildMCP provides dual interfaces: traditional MCP tools and efficient MCP resources for supported clients.
+XcodeBuildMCP provides dual interfaces: traditional MCP tools and efficient MCP resources for supported clients. Resources are located in `src/mcp/resources/` and are automatically discovered. For more details on creating resources, see the [Plugin Development Guide](docs/PLUGIN_DEVELOPMENT.md).
 
 #### Resource Architecture
 
 ```
-src/resources/
+src/mcp/resources/
 ├── simulators.ts           # Simulator data resource
 └── __tests__/              # Resource-specific tests
 ```
@@ -263,7 +200,7 @@ export function supportsResources(server?: unknown): boolean {
 Resources can reuse existing tool logic for consistency:
 
 ```typescript
-// src/resources/some_resource.ts
+// src/mcp/resources/some_resource.ts
 export default {
   uri: 'xcodebuildmcp://some_resource',
   name: 'some_resource',
@@ -311,126 +248,63 @@ export default {
 };
 ```
 
-### Utility Layer
-
-#### Command Execution (`src/utils/command.ts`)
-- Shell command execution with proper escaping
-- Process spawning and output capture
-- Error handling and timeout support
-- Environment variable injection
-
-#### Build Utilities (`src/utils/build-utils.ts`)
-- xcodebuild command construction
-- Platform-specific destination handling
-- Build configuration management
-- Incremental build support via xcodemake
-
-#### Validation (`src/utils/validation.ts`)
-- Parameter validation helpers
-- Response formatting utilities
-- Error response builders
-- Warning message construction
-
-#### Logging (`src/utils/logger.ts`)
-- Structured logging with levels
-- Console output formatting
-- Integration with error tracking
-- Debug mode support
-
-## Plugin Organization
-
-### Plugin Categories (81 canonical tools across 15 directories)
-
-#### Build Tools (20 tools)
-- macOS builds (workspace/project)
-- iOS simulator builds (by name/UUID)
-- iOS device builds
-- Swift package builds
-- Clean operations
-
-#### Test Tools (14 tools)
-- macOS test execution
-- iOS simulator testing
-- iOS device testing
-- Swift package tests
-- Test result parsing
-
-#### Management Tools (28 tools)
-- Simulator lifecycle management
-- Device discovery and control
-- App installation/launch/termination
-- Bundle ID extraction
-- App path resolution
-
-#### UI Automation (13 tools)
-- Element inspection (`describe_ui`)
-- Gestures (tap, swipe, scroll)
-- Keyboard input
-- Screenshot capture
-- Hardware button simulation
-
-#### Project Tools (4 tools)
-- Project/workspace discovery
-- Scheme listing
-- Build settings inspection
-- Project scaffolding
-
-#### Diagnostic Tools (2 tools)
-- Log capture (simulator/device)
-- Server diagnostics
-
-### Tool Naming Conventions
-
-Tools follow a consistent naming pattern:
-- `{action}_{target}_{variant}_{source}`
-- Examples:
-  - `build_sim_name_ws` (build simulator by name from workspace)
-  - `test_device_proj` (test on device from project)
-  - `get_mac_app_path_ws` (get macOS app path from workspace)
-
 ## Registration System
 
-### Environment-Based Enablement
+XcodeBuildMCP supports two primary operating modes for tool registration, controlled by the `XCODEBUILDMCP_DYNAMIC_TOOLS` environment variable.
 
-Three levels of tool enablement:
+### Static Mode (Default)
 
-1. **All Tools** (default)
-   - No environment variables set
-   - All 81 canonical tools registered
+- **Environment**: `XCODEBUILDMCP_DYNAMIC_TOOLS` is `false` or not set.
+- **Behavior**: All available tools are loaded and registered with the MCP server at startup.
+- **Use Case**: This mode is ideal for environments where the full suite of tools is desired immediately, providing a comprehensive and predictable toolset for the AI assistant.
 
-2. **Group-Based**
-   - `XCODEBUILDMCP_GROUP_*=true`
-   - Enables all tools in specified groups
-   - Multiple groups can be combined
+### Dynamic Mode (AI-Powered Workflow Selection)
 
-3. **Individual Tools**
-   - `XCODEBUILDMCP_TOOL_*=true`
-   - Fine-grained control
-   - Overrides group settings
+- **Environment**: `XCODEBUILDMCP_DYNAMIC_TOOLS=true`
+- **Behavior**: At startup, only the `discover_tools` tool is registered. This tool is designed to analyze a natural language task description from the user.
+- **Workflow**:
+    1. The client sends a task description (e.g., "I want to build and test my iOS app") to the `discover_tools` tool.
+    2. The tool uses the client's LLM via an MCP sampling request to determine the most relevant workflow group (e.g., `simulator-workspace`).
+    3. The server then dynamically loads and registers all tools from the selected workflow group.
+    4. The client is notified of the newly available tools.
+- **Use Case**: This mode is beneficial for conserving the LLM's context window by only loading a relevant subset of tools, leading to more focused and efficient interactions.
 
-### Tool Groups
+## Tool Naming Conventions & Glossary
 
-| Group | Purpose | Environment Variable |
-|-------|---------|---------------------|
-| PROJECT_DISCOVERY | Project exploration | XCODEBUILDMCP_GROUP_PROJECT_DISCOVERY |
-| MACOS_WORKFLOW | macOS development | XCODEBUILDMCP_GROUP_MACOS_WORKFLOW |
-| IOS_SIMULATOR_WORKFLOW | iOS simulator development | XCODEBUILDMCP_GROUP_IOS_SIMULATOR_WORKFLOW |
-| IOS_DEVICE_WORKFLOW | Physical device development | XCODEBUILDMCP_GROUP_IOS_DEVICE_WORKFLOW |
-| SWIFT_PACKAGE_WORKFLOW | Swift Package Manager | XCODEBUILDMCP_GROUP_SWIFT_PACKAGE_WORKFLOW |
-| TESTING | Test execution | XCODEBUILDMCP_GROUP_TESTING |
-| DIAGNOSTICS | Logging and debugging | XCODEBUILDMCP_GROUP_DIAGNOSTICS |
-| UI_TESTING | UI automation | XCODEBUILDMCP_GROUP_UI_TESTING |
-| APP_DEPLOYMENT | App installation/launch | XCODEBUILDMCP_GROUP_APP_DEPLOYMENT |
-| SIMULATOR_MANAGEMENT | Simulator control | XCODEBUILDMCP_GROUP_SIMULATOR_MANAGEMENT |
-| DEVICE_MANAGEMENT | Device control | XCODEBUILDMCP_GROUP_DEVICE_MANAGEMENT |
+Tools follow a consistent naming pattern to ensure predictability and clarity. Understanding this convention is crucial for both using and developing tools.
 
-### Write Tools
+### Naming Pattern
 
-Tools that modify system state require:
-- `isWriteTool: true` in registration
-- `XCODEBUILDMCP_ALLOW_WRITE_TOOLS=true` environment variable
+The standard naming convention for tools is:
 
-Examples: `stop_app_sim`, `stop_mac_app`, `install_app_device`
+`{action}_{target}_{specifier}_{projectType}`
+
+- **action**: The primary verb describing the tool's function (e.g., `build`, `test`, `get`, `list`).
+- **target**: The main subject of the action (e.g., `sim` for simulator, `dev` for device, `mac` for macOS).
+- **specifier**: A variant that specifies *how* the target is identified (e.g., `id` for UUID, `name` for by-name).
+- **projectType**: The type of Xcode project the tool operates on (e.g., `ws` for workspace, `proj` for project).
+
+Not all parts are required for every tool. For example, `swift_package_build` has an action and a target, but no specifier or project type.
+
+### Examples
+
+- `build_sim_id_ws`: **Build** for a **simulator** identified by its **ID (UUID)** from a **workspace**.
+- `test_dev_proj`: **Test** on a **device** from a **project**.
+- `get_mac_app_path_ws`: **Get** the app path for a **macOS** application from a **workspace**.
+- `list_sims`: **List** all **simulators**.
+
+### Glossary
+
+| Term/Abbreviation | Meaning | Description |
+|---|---|---|
+| `ws` | Workspace | Refers to an `.xcworkspace` file. Used for projects with multiple `.xcodeproj` files or dependencies managed by CocoaPods or SPM. |
+| `proj` | Project | Refers to an `.xcodeproj` file. Used for single-project setups. |
+| `sim` | Simulator | Refers to the iOS, watchOS, tvOS, or visionOS simulator. |
+| `dev` | Device | Refers to a physical Apple device (iPhone, iPad, etc.). |
+| `mac` | macOS | Refers to a native macOS application target. |
+| `id` | Identifier | Refers to the unique identifier (UUID/UDID) of a simulator or device. |
+| `name` | Name | Refers to the human-readable name of a simulator (e.g., "iPhone 15 Pro"). |
+| `cap` | Capture | Used in logging tools, e.g., `start_sim_log_cap`. |
 
 ## Testing Architecture
 
@@ -443,56 +317,31 @@ Examples: `stop_app_sim`, `stop_mac_app`, `install_app_device`
 
 ### Testing Principles
 
-**MANDATORY - NO EXCEPTIONS**:
+XcodeBuildMCP uses a strict **Dependency Injection (DI)** pattern for testing, which completely bans the use of traditional mocking libraries like Vitest's `vi.mock` or `vi.fn`. This ensures that tests are robust, maintainable, and verify the actual integration between components.
 
-1. **✅ ALWAYS TEST PRODUCTION CODE**
-   - Import actual tool functions from `src/tools/`
-   - Never create mock implementations with business logic
-
-2. **✅ ALWAYS MOCK EXTERNAL DEPENDENCIES**
-   - Mock only: `child_process`, `fs`, network calls, logger
-   - Never mock tool logic or validation
-
-3. **✅ ALWAYS TEST ALL LOGIC PATHS**
-   - Parameter validation (success and failure)
-   - Command execution paths
-   - Error handling scenarios
-
-4. **✅ ALWAYS VALIDATE INPUT/OUTPUT**
-   - Use exact response validation with `.toEqual()`
-   - Verify complete response structure
-   - Ensure `isError: true` on all failures
+For detailed guidelines, see the [Testing Guide](docs/TESTING.md).
 
 ### Test Structure Example
 
+Tests inject mock "executors" for external interactions like command-line execution or file system access. This allows for deterministic testing of tool logic without mocking the implementation itself.
+
 ```typescript
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { actualToolFunction } from './tool-file.js';
-
-// Mock only external dependencies
-vi.mock('child_process', () => ({
-  execSync: vi.fn()
-}));
-
-vi.mock('../utils/logger.js', () => ({
-  log: vi.fn()
-}));
+import { describe, it, expect } from 'vitest';
+import { toolNameLogic } from '../tool-file.js'; // Import the logic function
+import { createMockExecutor } from '../../../utils/test-common.js';
 
 describe('Tool Name', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('should validate parameters', async () => {
-    await expect(actualToolFunction({})).rejects.toThrow();
-  });
-
   it('should execute successfully', async () => {
-    const mockExecSync = vi.mocked(execSync);
-    mockExecSync.mockReturnValue('SUCCESS');
+    // 1. Create a mock executor to simulate command-line results
+    const mockExecutor = createMockExecutor({
+      success: true,
+      output: 'Command output'
+    });
+
+    // 2. Call the tool's logic function, injecting the mock executor
+    const result = await toolNameLogic({ param: 'value' }, mockExecutor);
     
-    const result = await actualToolFunction({ param: 'value' });
-    
+    // 3. Assert the final result
     expect(result).toEqual({
       content: [{ type: 'text', text: 'Expected output' }],
       isError: false
@@ -500,13 +349,6 @@ describe('Tool Name', () => {
   });
 });
 ```
-
-### Test Coverage
-
-- **Total Tests**: 407
-- **Test Files**: 26
-- **Coverage**: All 81 canonical tools have comprehensive tests
-- **Execution Time**: ~1 second for full suite
 
 ## Build and Deployment
 
@@ -556,81 +398,13 @@ bundled/
 
 ## Extension Guidelines
 
-### Adding a New Tool
+This project is designed to be extensible. For comprehensive instructions on creating new tools, workflow groups, and resources, please refer to the dedicated [**Plugin Development Guide**](docs/PLUGIN_DEVELOPMENT.md).
 
-1. **Create Tool Implementation**
-   ```typescript
-   // src/tools/my-new-tool.ts
-   export function registerMyNewTool(server: McpServer): void {
-     // Implementation
-   }
-   ```
-
-2. **Add to Registration Catalog**
-   ```typescript
-   // src/utils/register-tools.ts
-   {
-     register: registerMyNewTool,
-     groups: [ToolGroup.APPROPRIATE_GROUP],
-     envVar: 'XCODEBUILDMCP_TOOL_MY_NEW_TOOL',
-     isWriteTool: false
-   }
-   ```
-
-3. **Create Tests**
-   ```typescript
-   // src/tools/my-new-tool.test.ts
-   // Test implementation following testing principles
-   ```
-
-4. **Update Documentation**
-   - Add to `TOOLS.md`
-   - Update relevant group in `TOOL_OPTIONS.md`
-   - Add to CHANGELOG.md if significant
-
-### Adding a Tool Group
-
-1. **Extend ToolGroup Enum**
-   ```typescript
-   // src/utils/tool-groups.ts
-   export enum ToolGroup {
-     // ... existing groups
-     MY_NEW_GROUP = 'MY_NEW_GROUP'
-   }
-   ```
-
-2. **Add Environment Mapping**
-   ```typescript
-   // src/utils/tool-groups.ts
-   const GROUP_ENV_MAPPING = {
-     // ... existing mappings
-     [ToolGroup.MY_NEW_GROUP]: 'XCODEBUILDMCP_GROUP_MY_NEW_GROUP'
-   };
-   ```
-
-3. **Assign Tools to Group**
-   - Update tool registrations with new group
-   - Document in `TOOL_OPTIONS.md`
-
-### Supporting New Platforms
-
-1. **Update Platform Enum**
-   ```typescript
-   // src/types/common.ts
-   export enum XcodePlatform {
-     // ... existing platforms
-     newOS = 'newOS',
-     newOSSimulator = 'newOS Simulator'
-   }
-   ```
-
-2. **Update Build Utilities**
-   - Modify destination construction in `build-utils.ts`
-   - Add platform-specific logic
-
-3. **Create Platform Tools**
-   - Follow existing patterns (e.g., iOS tools)
-   - Maintain naming consistency
+The guide covers:
+- The auto-discovery system architecture.
+- The dependency injection pattern required for all new tools.
+- How to organize tools into workflow groups.
+- Testing guidelines and patterns.
 
 ## Performance Considerations
 
@@ -679,43 +453,3 @@ bundled/
 - Sensitive information scrubbed from errors
 - Stack traces limited to application code
 - Sentry integration respects privacy settings
-
-## Future Considerations
-
-### Architectural Evolution
-
-1. **Transport Layer**
-   - WebSocket support for multi-client scenarios
-   - gRPC for higher performance requirements
-
-2. **Plugin Architecture**
-   - Dynamic tool loading
-   - Third-party tool integration
-   - Custom tool development SDK
-
-3. **Configuration Management**
-   - JSON/YAML configuration files
-   - Tool preset definitions
-   - User-defined workflows
-
-4. **Enhanced Diagnostics**
-   - Performance profiling
-   - Request tracing
-   - Advanced error analytics
-
-### Scalability Paths
-
-1. **Horizontal Scaling**
-   - Multiple server instances
-   - Load balancing support
-   - Distributed tool execution
-
-2. **Cloud Integration**
-   - Remote build support
-   - Distributed testing
-   - Cloud simulator farms
-
-3. **Enterprise Features**
-   - Authentication/authorization
-   - Audit logging
-   - Usage analytics

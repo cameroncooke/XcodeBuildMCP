@@ -20,7 +20,7 @@ XcodeBuildMCP uses a **plugin-based architecture** with **filesystem-based auto-
 
 ### Key Features
 
-- **Auto-Discovery**: Tools are automatically found by scanning `src/plugins/` directory
+- **Auto-Discovery**: Tools are automatically found by scanning `src/mcp/tools/` directory
 - **Dynamic Loading**: AI can select relevant workflow groups based on user tasks
 - **Dependency Injection**: All tools use testable patterns with mock-friendly executors
 - **Workflow Organization**: Tools are grouped into end-to-end development workflows
@@ -30,7 +30,7 @@ XcodeBuildMCP uses a **plugin-based architecture** with **filesystem-based auto-
 ### Directory Structure
 
 ```
-src/plugins/
+src/mcp/tools/
 ├── simulator-workspace/        # iOS Simulator + Workspace tools
 ├── simulator-project/          # iOS Simulator + Project tools (re-exports)
 ├── simulator-shared/           # Shared simulator tools (canonical)
@@ -49,11 +49,11 @@ src/plugins/
 └── discovery/                  # Dynamic tool discovery
 ```
 
-### Plugin Types
+### Plugin Tool Types
 
-1. **Canonical Workflows**: Standalone workflow groups (e.g., `swift-package`, `ui-testing`)
-2. **Shared Tools**: Common tools in `*-shared` directories
-3. **Project/Workspace Variants**: Re-export shared tools for specific project types
+1. **Canonical Workflows**: Standalone workflow groups (e.g., `swift-package`, `ui-testing`) defined as folders in the `src/mcp/tools/` directory
+2. **Shared Tools**: Common tools in `*-shared` directories (not exposed to clients)
+3. **Re-exported Tools**: Share tools to other workflow groups by re-exporting them
 
 ## Creating New Tools
 
@@ -62,81 +62,70 @@ src/plugins/
 Every tool follows this standardized pattern:
 
 ```typescript
-// Example: src/plugins/simulator-workspace/build_sim_name_ws.ts
+// src/mcp/tools/my-workflow/my_tool.ts
 import { z } from 'zod';
-import { ToolResponse } from '../../types/common.js';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../utils/command.js';
-import { log, validateRequiredParam, createTextResponse, createErrorResponse } from '../../utils/index.js';
+import { ToolResponse } from '../../../types/common.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
+import { log, validateRequiredParam, createTextResponse, createErrorResponse } from '../../../utils/index.js';
 
-// Internal logic function with dependency injection
-export async function build_sim_name_wsLogic(
-  params: Record<string, unknown>,
+// 1. Define parameters type for clarity
+type MyToolParams = {
+  requiredParam: string;
+  optionalParam?: string;
+};
+
+// 2. Implement the core logic in a separate, testable function
+export async function my_toolLogic(
+  params: MyToolParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // 1. Parameter validation
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) {
-    return workspaceValidation.errorResponse;
+  // 3. Validate required parameters
+  const requiredValidation = validateRequiredParam('requiredParam', params.requiredParam);
+  if (!requiredValidation.isValid) {
+    return requiredValidation.errorResponse;
   }
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) {
-    return schemeValidation.errorResponse;
-  }
-
-  // 2. Parameter processing with defaults
-  const configuration = params.configuration ?? 'Debug';
-  const simulatorName = params.simulatorName as string;
-  
-  log('info', `Building ${params.scheme} for simulator ${simulatorName}`);
+  log('info', `Executing my_tool with param: ${params.requiredParam}`);
 
   try {
-    // 3. Command execution using executor
-    const command = [
-      'xcodebuild',
-      '-workspace', params.workspacePath as string,
-      '-scheme', params.scheme as string,
-      '-configuration', configuration,
-      '-destination', `platform=iOS Simulator,name=${simulatorName}`,
-      'build'
-    ];
-
-    const result = await executor(command, 'Build iOS App', false);
-    
-    // 4. Response processing
-    if (!result.success) {
-      return createErrorResponse('Build failed', result.error);
+    // 4. Build and execute the command using the injected executor
+    const command = ['my-command', '--param', params.requiredParam];
+    if (params.optionalParam) {
+      command.push('--optional', params.optionalParam);
     }
 
-    return createTextResponse(`✅ Build succeeded for scheme ${params.scheme}`);
+    const result = await executor(command, 'My Tool Operation');
 
+    if (!result.success) {
+      return createErrorResponse('My Tool operation failed', result.error);
+    }
+
+    return createTextResponse(`✅ Success: ${result.output}`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    log('error', `Build error: ${errorMessage}`);
-    return createErrorResponse('Build execution failed', errorMessage);
+    log('error', `My Tool execution error: ${errorMessage}`);
+    return createErrorResponse('Tool execution failed', errorMessage);
   }
 }
 
-// Required default export with plugin metadata
+// 5. Export the tool definition as the default export
 export default {
-  name: 'build_sim_name_ws',
-  description: 'Builds an iOS app from a workspace for a specific simulator by name. Example: build_sim_name_ws({ workspacePath: "/path/to/App.xcworkspace", scheme: "MyApp", simulatorName: "iPhone 15" })',
+  name: 'my_tool',
+  description: 'A brief description of what my_tool does, with a usage example. e.g. my_tool({ requiredParam: "value" })',
   schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to build (Required)'),
-    simulatorName: z.string().describe('Name of the simulator to target (Required)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+    requiredParam: z.string().describe('Description of the required parameter.'),
+    optionalParam: z.string().optional().describe('Description of the optional parameter.'),
   },
+  // The handler wraps the logic function with the default executor for production use
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return build_sim_name_wsLogic(args, getDefaultCommandExecutor());
+    return my_toolLogic(args as MyToolParams, getDefaultCommandExecutor());
   },
 };
 ```
 
-### 2. Required Plugin Properties
+### 2. Required Tool Plugin Properties
 
-Every plugin **must** export a default object with these properties:
+Every tool plugin **must** export a default object with these properties:
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -228,7 +217,7 @@ Each workflow group requires:
 **Required for all workflow groups:**
 
 ```typescript
-// Example: src/plugins/simulator-workspace/index.ts
+// Example: src/mcp/tools/simulator-workspace/index.ts
 export const workflow = {
   name: 'iOS Simulator Workspace Development',
   description: 'Complete iOS development workflow for .xcworkspace files including build, test, deploy, and debug capabilities',
@@ -336,7 +325,7 @@ export default {
 **Reuse Existing Logic**: Resources that mirror tools should reuse existing tool logic for consistency:
 
 ```typescript
-// src/resources/simulators.ts (simplified exmaple)
+// src/mcp/resources/simulators.ts (simplified exmaple)
 import { list_simsLogic } from '../plugins/simulator-shared/list_sims.js';
 
 export default {
@@ -359,10 +348,10 @@ As not all clients support resources it important that resource content that wou
 
 ### 3. Resource Testing
 
-Create tests in `src/resources/__tests__/`:
+Create tests in `src/mcp/resources/__tests__/`:
 
 ```typescript
-// src/resources/__tests__/example.test.ts
+// src/mcp/resources/__tests__/example.test.ts
 import exampleResource from '../example.js';
 import { createMockExecutor } from '../../utils/test-common.js';
 
@@ -391,7 +380,7 @@ Resources are automatically discovered and loaded by the build system. After cre
 
 ### How Auto-Discovery Works
 
-1. **Filesystem Scan**: `loadPlugins()` scans `src/plugins/` directory
+1. **Filesystem Scan**: `loadPlugins()` scans `src/mcp/tools/` directory
 2. **Workflow Loading**: Each subdirectory is treated as a potential workflow group
 3. **Metadata Validation**: `index.ts` files provide workflow metadata
 4. **Tool Discovery**: All `.ts` files (except tests and index) are loaded as tools
@@ -423,7 +412,7 @@ When `XCODEBUILDMCP_DYNAMIC_TOOLS=true`:
 - **Dynamic Mode**: `XCODEBUILDMCP_DYNAMIC_TOOLS=true`
 - **Debug Mode**: `XCODEBUILDMCP_DEBUG=true`
 
-**Note**: Individual tool and group environment variables (`XCODEBUILDMCP_TOOL_*`, `XCODEBUILDMCP_GROUP_*`) are no longer supported. Use static/dynamic modes instead.
+**Note**: The previous system of enabling individual tools and groups via `XCODEBUILDMCP_TOOL_*` and `XCODEBUILDMCP_GROUP_*` environment variables is no longer supported. The server now operates in either static or dynamic mode.
 
 ## Testing Guidelines
 
@@ -554,12 +543,12 @@ describe('tool_name', () => {
 
 ```bash
 # 1. Create tool file
-touch src/plugins/simulator-workspace/my_new_tool_ws.ts
+touch src/mcp/tools/simulator-workspace/my_new_tool_ws.ts
 
 # 2. Implement tool following patterns above
 
 # 3. Create test file
-touch src/plugins/simulator-workspace/__tests__/my_new_tool_ws.test.ts
+touch src/mcp/tools/simulator-workspace/__tests__/my_new_tool_ws.test.ts
 
 # 4. Build project
 npm run build
@@ -580,10 +569,10 @@ npm run inspect  # Use MCP Inspector to verify
 
 ```bash
 # 1. Create workflow directory
-mkdir src/plugins/my-new-workflow
+mkdir src/mcp/tools/my-new-workflow
 
 # 2. Create workflow metadata
-cat > src/plugins/my-new-workflow/index.ts << 'EOF'
+cat > src/mcp/tools/my-new-workflow/index.ts << 'EOF'
 export const workflow = {
   name: 'My New Workflow',
   description: 'Description of workflow capabilities',
@@ -595,7 +584,7 @@ export const workflow = {
 EOF
 
 # 3. Create tools directory and test directory
-mkdir src/plugins/my-new-workflow/__tests__
+mkdir src/mcp/tools/my-new-workflow/__tests__
 
 # 4. Implement tools following patterns
 
@@ -716,30 +705,10 @@ Instead of using generic descriptions like "Additional Tools: Simulator manageme
 Each tool must be listed individually with its actual description from the tool file:
 
 ```markdown
-### 3. iOS Simulator Project Development (`simulator-project`)
-**Purpose**: Complete iOS development workflow for .xcodeproj files (23 tools)
-- `boot_sim` - Boots an iOS simulator using its UUID
-- `build_run_sim_id_proj` - Builds and runs an app from a project file on a simulator specified by UUID
-- `build_run_sim_name_proj` - Builds and runs an app from a project file on a simulator specified by name
-- `build_sim_id_proj` - Builds an app from a project file for a specific simulator by UUID
-- `build_sim_name_proj` - Builds an app from a project file for a specific simulator by name
-- `clean_proj` - Cleans build products for a specific project file using xcodebuild
-- `describe_ui` - Gets entire view hierarchy with precise frame coordinates for all visible elements
-- `discover_projs` - Scans a directory to find Xcode project and workspace files
-- `get_app_bundle_id` - Extracts the bundle identifier from an app bundle for any Apple platform
-- `get_sim_app_path_id_proj` - Gets the app bundle path for a simulator by UUID using a project file
-- `get_sim_app_path_name_proj` - Gets the app bundle path for a simulator by name using a project file
-- `install_app_sim` - Installs an app in an iOS simulator
-- `launch_app_logs_sim` - Launches an app in an iOS simulator and captures its logs
-- `launch_app_sim` - Launches an app in an iOS simulator
-- `list_schems_proj` - Lists available schemes in the project file
-- `list_sims` - Lists available iOS simulators with their UUIDs
-- `open_sim` - Opens the iOS Simulator app
-- `screenshot` - Captures screenshot for visual verification
-- `show_build_set_proj` - Shows build settings from a project file using xcodebuild
-- `stop_app_sim` - Stops an app running in an iOS simulator
-- `test_sim_id_proj` - Runs tests for a project on a simulator by UUID using xcodebuild test
-- `test_sim_name_proj` - Runs tests for a project on a simulator by name using xcodebuild test
+### 1. My Awesome Workflow (`my-awesome-workflow`)
+**Purpose**: A short description of what this workflow is for. (2 tools)
+- `my_tool_one` - Description for my_tool_one from its definition file.
+- `my_tool_two` - Description for my_tool_two from its definition file.
 ```
 
 **Description Sources:**

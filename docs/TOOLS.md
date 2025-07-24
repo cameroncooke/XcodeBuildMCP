@@ -196,7 +196,7 @@ XcodeBuildMCP uses a **workflow-based architecture** with tools organized into  
 XcodeBuildMCP supports two operating modes:
 
 #### Static Mode (Default)
-All 81+ tools are loaded and available immediately at startup. Provides complete access to the full toolset without restrictions. Set `XCODEBUILDMCP_DYNAMIC_TOOLS=false` or leave unset.
+All tools are loaded and available immediately at startup. Provides complete access to the full toolset without restrictions. Set `XCODEBUILDMCP_DYNAMIC_TOOLS=false` or leave unset.
 
 #### Dynamic Mode  
 Only the `discover_tools` tool is available initially. AI agents can use `discover_tools` to analyze task descriptions and intelligently enable relevant workflow based tool-groups on-demand. Set `XCODEBUILDMCP_DYNAMIC_TOOLS=true` to enable.

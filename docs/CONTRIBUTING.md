@@ -248,50 +248,15 @@ Before making changes, please familiarize yourself with:
 
 ### Testing Standards
 
-**MANDATORY TESTING PRINCIPLES - NO EXCEPTIONS**:
+All contributions must adhere to the testing standards outlined in the [**XcodeBuildMCP Plugin Testing Guidelines (docs/TESTING.md)**](docs/TESTING.md). This is the canonical source of truth for all testing practices.
 
-1. **✅ ALWAYS TEST PRODUCTION CODE**
-   - Import and test actual tool functions from `src/tools/`
-   - Never create mock implementations with business logic
+**Key Principles (Summary):**
+- **No Vitest Mocking**: All forms of `vi.mock`, `vi.fn`, `vi.spyOn`, etc., are strictly forbidden.
+- **Dependency Injection**: All external dependencies (command execution, file system access) must be injected into tool logic functions using the `CommandExecutor` and `FileSystemExecutor` patterns.
+- **Test Production Code**: Tests must import and execute the actual tool logic, not mock implementations.
+- **Comprehensive Coverage**: Tests must cover input validation, command generation, and output processing.
 
-2. **✅ ALWAYS MOCK EXTERNAL DEPENDENCIES ONLY**
-   - Mock only: `child_process`, `fs`, network calls, logger
-   - Never mock tool logic or validation
-
-3. **✅ ALWAYS TEST ALL LOGIC PATHS**
-   - Parameter validation (success and failure)
-   - Command execution paths
-   - Error handling scenarios
-
-4. **✅ ALWAYS VALIDATE INPUT/OUTPUT**
-   - Use exact response validation with `.toEqual()`
-   - Verify complete response structure
-   - Ensure `isError: true` on all failures
-
-Example test structure:
-```typescript
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { actualToolFunction } from './tool-file.js';
-
-// Mock only external dependencies
-vi.mock('child_process', () => ({
-  execSync: vi.fn()
-}));
-
-describe('Tool Name', () => {
-  it('should test actual production code', async () => {
-    const mockExecSync = vi.mocked(execSync);
-    mockExecSync.mockReturnValue('SUCCESS');
-    
-    const result = await actualToolFunction({ param: 'value' });
-    
-    expect(result).toEqual({
-      content: [{ type: 'text', text: 'Expected output' }],
-      isError: false
-    });
-  });
-});
-```
+Please read [docs/TESTING.md](docs/TESTING.md) in its entirety before writing tests.
 
 ### Pre-Commit Checklist
 
@@ -332,7 +297,7 @@ The plugin development guide covers:
 
 ### Quick Plugin Development Checklist
 
-1. Choose appropriate workflow directory in `src/plugins/`
+1. Choose appropriate workflow directory in `src/mcp/tools/`
 2. Follow naming conventions: `{action}_{target}_{specifier}_{projectType}`
 3. Use dependency injection pattern with separate logic functions
 4. Create comprehensive tests using `createMockExecutor()`
