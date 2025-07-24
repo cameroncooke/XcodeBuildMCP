@@ -15,12 +15,24 @@ export default {
   mimeType: 'text/plain',
   async handler(
     uri: URL,
-    _executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<{ contents: Array<{ text: string }> }> {
-    try {
-      log('info', 'Processing swift-packages resource request');
+diff --git a/src/mcp/resources/swift-packages.ts b/src/mcp/resources/swift-packages.ts
+index 1234567..89abcde 100644
+--- a/src/mcp/resources/swift-packages.ts
++++ b/src/mcp/resources/swift-packages.ts
+@@ -15,9 +15,9 @@ export class SwiftPackagesResource implements ResourceHandler {
+   async handler(
+     uri: URL,
+-    _executor: CommandExecutor = getDefaultCommandExecutor(),
++    executor: CommandExecutor = getDefaultCommandExecutor(),
+   ): Promise<{ contents: Array<{ text: string }> }> {
+     try {
+       log('info', 'Processing swift-packages resource request');
+-
+-      const result = await swift_package_listLogic({});
++      const result = await swift_package_listLogic({}, executor);
 
-      const result = await swift_package_listLogic({});
+       return { contents: result };
+     } catch (err) {
 
       if (result.isError) {
         const errorText = result.content[0]?.text;
