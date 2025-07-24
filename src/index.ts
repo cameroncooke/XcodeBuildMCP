@@ -31,7 +31,7 @@ import { loadPlugins } from './core/plugin-registry.js';
 import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
 
 // Import resource management
-import { registerResources, shouldExcludeTool } from './core/resources.js';
+import { registerResources } from './core/resources.js';
 
 /**
  * Main function to start the server
@@ -97,18 +97,13 @@ async function main(): Promise<void> {
       log('info', '📋 Starting in STATIC mode');
 
       // Register resources first in static mode to determine tool filtering
-      const resourcesRegistered = await registerResources(server);
+      await registerResources(server);
 
       // In static mode, load all plugins except discover_tools
       const plugins = await loadPlugins();
       for (const plugin of plugins.values()) {
         if (plugin.name !== 'discover_tools') {
-          // Skip tools that are redundant when resources are available
-          if (!shouldExcludeTool(plugin.name, resourcesRegistered)) {
-            server.tool(plugin.name, plugin.description || '', plugin.schema, plugin.handler);
-          } else {
-            log('info', `Skipping redundant tool: ${plugin.name} (resource available)`);
-          }
+          server.tool(plugin.name, plugin.description || '', plugin.schema, plugin.handler);
         }
       }
     }

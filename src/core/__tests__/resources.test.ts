@@ -13,9 +13,9 @@ import {
 describe('resources', () => {
   let mockServer: McpServer;
   let registeredResources: Array<{
+    name: string;
     uri: string;
-    description: string;
-    options: { mimeType: string };
+    metadata: { mimeType: string; title: string };
     handler: any;
   }>;
 
@@ -23,8 +23,13 @@ describe('resources', () => {
     registeredResources = [];
     // Create a mock MCP server using simple object structure
     mockServer = {
-      resource: (uri: string, description: string, options: { mimeType: string }, handler: any) => {
-        registeredResources.push({ uri, description, options, handler });
+      resource: (
+        name: string,
+        uri: string,
+        metadata: { mimeType: string; title: string },
+        handler: any,
+      ) => {
+        registeredResources.push({ name, uri, metadata, handler });
       },
     } as unknown as McpServer;
   });
@@ -59,7 +64,7 @@ describe('resources', () => {
 
       // Should have at least the simulators resource
       expect(resources.size).toBeGreaterThan(0);
-      expect(resources.has('mcp://xcodebuild/simulators')).toBe(true);
+      expect(resources.has('xcodebuildmcp://simulators')).toBe(true);
     });
 
     it('should validate resource structure', async () => {
@@ -85,13 +90,14 @@ describe('resources', () => {
 
       // Check simulators resource was registered
       const simulatorsResource = registeredResources.find(
-        (r) => r.uri === 'mcp://xcodebuild/simulators',
+        (r) => r.uri === 'xcodebuildmcp://simulators',
       );
-      expect(simulatorsResource).toBeDefined();
-      expect(simulatorsResource?.description).toBe(
+      expect(typeof simulatorsResource?.handler).toBe('function');
+      expect(simulatorsResource?.metadata.title).toBe(
         'Available iOS simulators with their UUIDs and states',
       );
-      expect(simulatorsResource?.options.mimeType).toBe('text/plain');
+      expect(simulatorsResource?.metadata.mimeType).toBe('text/plain');
+      expect(simulatorsResource?.name).toBe('simulators');
     });
 
     it('should register resources with correct handlers', async () => {
@@ -100,7 +106,7 @@ describe('resources', () => {
       expect(result).toBe(true);
 
       const simulatorsResource = registeredResources.find(
-        (r) => r.uri === 'mcp://xcodebuild/simulators',
+        (r) => r.uri === 'xcodebuildmcp://simulators',
       );
       expect(typeof simulatorsResource?.handler).toBe('function');
     });
@@ -112,7 +118,7 @@ describe('resources', () => {
 
       expect(Array.isArray(resources)).toBe(true);
       expect(resources.length).toBeGreaterThan(0);
-      expect(resources).toContain('mcp://xcodebuild/simulators');
+      expect(resources).toContain('xcodebuildmcp://simulators');
     });
 
     it('should return unique URIs', async () => {

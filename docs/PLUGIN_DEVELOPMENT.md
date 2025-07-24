@@ -307,7 +307,7 @@ export { default } from '../simulator-shared/boot_sim.js';
 
 ## Creating MCP Resources
 
-MCP Resources provide efficient URI-based data access for clients that support the MCP resource specification (VS Code, Claude Code, Claude Desktop).
+MCP Resources provide efficient URI-based data access for clients that support the MCP resource specification
 
 ### 1. Resource Structure
 
@@ -316,13 +316,16 @@ Resources are located in `src/resources/` and follow this pattern:
 ```typescript
 // src/resources/example.ts
 export default {
-  uri: 'mcp://xcodebuild/example',
+  uri: 'xcodebuildmcp://example',
+  name: 'example'
   description: 'Description of the resource data',
   mimeType: 'text/plain',
-  async handler(executor: CommandExecutor = getDefaultCommandExecutor()) {
+  async handler(
+    executor: CommandExecutor = getDefaultCommandExecutor()
+  ): Promise<{ contents: Array<{ text: string }> }> {
     // Resource implementation
     return {
-      contents: [{ type: 'text', text: 'resource data' }]
+      contents: [{ text: 'resource data' }]
     };
   }
 };
@@ -330,40 +333,31 @@ export default {
 
 ### 2. Resource Implementation Guidelines
 
-**Reuse Existing Logic**: Resources should reuse existing tool logic for consistency:
+**Reuse Existing Logic**: Resources that mirror tools should reuse existing tool logic for consistency:
 
 ```typescript
-// src/resources/simulators.ts
+// src/resources/simulators.ts (simplified exmaple)
 import { list_simsLogic } from '../plugins/simulator-shared/list_sims.js';
 
 export default {
-  uri: 'mcp://xcodebuild/simulators',
+  uri: 'xcodebuildmcp://simulators',
+  name: 'simulators'
   description: 'Available iOS simulators with UUIDs and states',
   mimeType: 'text/plain',
-  async handler(executor = getDefaultCommandExecutor()) {
+  async handler(
+    executor: CommandExecutor = getDefaultCommandExecutor()
+  ): Promise<{ contents: Array<{ text: string }> }> {
     const result = await list_simsLogic({}, executor);
     return {
-      contents: [{ type: 'text', text: result.content[0].text }]
+      contents: [{ text: result.content[0].text }]
     };
   }
 };
 ```
 
-### 3. Tool Redundancy Management
+As not all clients support resources it important that resource content that would be ideally be served by resources be mirroed as a tool as well. This ensurew clients that don't support this capability continue to will still have access to that resource data via a simple tool call.
 
-When creating resources, update the redundancy filter:
-
-```typescript
-// src/core/resources.ts
-export function getRedundantToolNames(): string[] {
-  return [
-    'list_sims',      // Redundant with simulators resource
-    'your_new_tool',  // Add new redundant tools here
-  ];
-}
-```
-
-### 4. Resource Testing
+### 3. Resource Testing
 
 Create tests in `src/resources/__tests__/`:
 
@@ -386,13 +380,12 @@ describe('example resource', () => {
 });
 ```
 
-### 5. Auto-Discovery
+### 4. Auto-Discovery
 
 Resources are automatically discovered and loaded by the build system. After creating a resource:
 
 1. Run `npm run build` to regenerate resource loaders
 2. The resource will be available at its URI for supported clients
-3. Redundant tools will be automatically filtered for resource-capable clients
 
 ## Auto-Discovery System
 
@@ -423,6 +416,14 @@ When `XCODEBUILDMCP_DYNAMIC_TOOLS=true`:
 3. AI analyzes task and selects relevant workflow groups
 4. Selected workflows are dynamically enabled via `enableWorkflows()`
 5. Client is notified of new available tools
+
+#### Environment Configuration
+
+- **Static Mode** (default): `XCODEBUILDMCP_DYNAMIC_TOOLS=false` or unset
+- **Dynamic Mode**: `XCODEBUILDMCP_DYNAMIC_TOOLS=true`
+- **Debug Mode**: `XCODEBUILDMCP_DEBUG=true`
+
+**Note**: Individual tool and group environment variables (`XCODEBUILDMCP_TOOL_*`, `XCODEBUILDMCP_GROUP_*`) are no longer supported. Use static/dynamic modes instead.
 
 ## Testing Guidelines
 
@@ -651,3 +652,122 @@ When creating new tools and workflows, consider:
 4. **Workflow Completeness**: Does the workflow provide end-to-end functionality?
 
 The auto-discovery system makes your tools immediately available, while the dynamic mode allows AI to intelligently select relevant workflows based on user tasks. Following these patterns ensures seamless integration with both systems.
+
+## Updating TOOLS.md Documentation
+
+### Critical Documentation Maintenance
+
+**Every time you add, change, move, edit, or delete a tool, you MUST review and update the `docs/TOOLS.md` file to reflect the current state of the codebase.**
+
+### Documentation Update Process
+
+#### 1. Use Tree CLI for Accurate Discovery
+
+**Always use the `tree` command to get the actual filesystem representation of tools:**
+
+```bash
+# Get the definitive source of truth for all workflow groups and tools
+tree src/mcp/tools/ -I "__tests__" -I "*.test.ts"
+```
+
+This command:
+- Shows ALL workflow directories and their tools
+- Excludes test files (`__tests__` directories and `*.test.ts` files)
+- Provides the actual proof of what exists in the codebase
+- Gives an accurate count of tools per workflow group
+
+#### 2. Ignore Shared Groups in Documentation
+
+When updating `docs/TOOLS.md`:
+
+- **Ignore `*-shared` directories** (e.g., `simulator-shared`, `device-shared`, `macos-shared`)
+- These are implementation details, not user-facing workflow groups
+- Only document the main workflow groups that users interact with
+- The group count should exclude shared groups
+
+#### 3. List Actual Tool Names
+
+Instead of using generic descriptions like "Additional Tools: Simulator management, logging, UI testing tools":
+
+**❌ Wrong:**
+```markdown
+- **Additional Tools**: Simulator management, logging, UI testing tools
+```
+
+**✅ Correct:**
+```markdown
+- `boot_sim`, `install_app_sim`, `launch_app_sim`, `list_sims`, `open_sim`
+- `describe_ui`, `screenshot`, `start_sim_log_cap`, `stop_sim_log_cap`
+```
+
+#### 4. Systematic Documentation Update Steps
+
+1. **Run the tree command** to get current filesystem state
+2. **Identify all non-shared workflow directories** 
+3. **Count actual tool files** in each directory (exclude `index.ts` and test files)
+4. **List all tool names** explicitly in the documentation
+5. **Update tool counts** to reflect actual numbers
+6. **Verify consistency** between filesystem and documentation
+
+#### 5. Documentation Formatting Requirements
+
+**Format: One Tool Per Bullet Point with Description**
+
+Each tool must be listed individually with its actual description from the tool file:
+
+```markdown
+### 3. iOS Simulator Project Development (`simulator-project`)
+**Purpose**: Complete iOS development workflow for .xcodeproj files (23 tools)
+- `boot_sim` - Boots an iOS simulator using its UUID
+- `build_run_sim_id_proj` - Builds and runs an app from a project file on a simulator specified by UUID
+- `build_run_sim_name_proj` - Builds and runs an app from a project file on a simulator specified by name
+- `build_sim_id_proj` - Builds an app from a project file for a specific simulator by UUID
+- `build_sim_name_proj` - Builds an app from a project file for a specific simulator by name
+- `clean_proj` - Cleans build products for a specific project file using xcodebuild
+- `describe_ui` - Gets entire view hierarchy with precise frame coordinates for all visible elements
+- `discover_projs` - Scans a directory to find Xcode project and workspace files
+- `get_app_bundle_id` - Extracts the bundle identifier from an app bundle for any Apple platform
+- `get_sim_app_path_id_proj` - Gets the app bundle path for a simulator by UUID using a project file
+- `get_sim_app_path_name_proj` - Gets the app bundle path for a simulator by name using a project file
+- `install_app_sim` - Installs an app in an iOS simulator
+- `launch_app_logs_sim` - Launches an app in an iOS simulator and captures its logs
+- `launch_app_sim` - Launches an app in an iOS simulator
+- `list_schems_proj` - Lists available schemes in the project file
+- `list_sims` - Lists available iOS simulators with their UUIDs
+- `open_sim` - Opens the iOS Simulator app
+- `screenshot` - Captures screenshot for visual verification
+- `show_build_set_proj` - Shows build settings from a project file using xcodebuild
+- `stop_app_sim` - Stops an app running in an iOS simulator
+- `test_sim_id_proj` - Runs tests for a project on a simulator by UUID using xcodebuild test
+- `test_sim_name_proj` - Runs tests for a project on a simulator by name using xcodebuild test
+```
+
+**Description Sources:**
+- Use the actual `description` field from each tool's TypeScript file
+- Descriptions should be concise but informative for end users
+- Include platform/context information (iOS, macOS, simulator, device, etc.)
+- Mention required parameters when critical for usage
+
+#### 6. Validation Checklist
+
+After updating `docs/TOOLS.md`:
+
+- [ ] Tool counts match actual filesystem counts (from tree command)
+- [ ] Each tool has its own bullet point (one tool per line)
+- [ ] Each tool includes its actual description from the tool file
+- [ ] No generic descriptions like "Additional Tools: X, Y, Z"
+- [ ] Descriptions are user-friendly and informative
+- [ ] Shared groups (`*-shared`) are not included in main workflow list
+- [ ] Workflow group count reflects only user-facing groups (15 groups)
+- [ ] Tree command output was used as source of truth
+- [ ] Documentation is user-focused, not implementation-focused
+- [ ] Tool names are in alphabetical order within each workflow group
+
+### Why This Process Matters
+
+1. **Accuracy**: Tree command provides definitive proof of current state
+2. **Maintainability**: Systematic process prevents documentation drift
+3. **User Experience**: Accurate documentation helps users understand available tools
+4. **Development Confidence**: Developers can trust the documentation reflects reality
+
+**Remember**: The filesystem is the source of truth. Documentation must always reflect the actual codebase structure, and the tree command is the most reliable way to ensure accuracy.
