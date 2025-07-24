@@ -6,7 +6,7 @@ export default [
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ['node_modules/**', 'build/**', 'dist/**', 'coverage/**', 'src/core/generated-plugins.ts'],
+    ignores: ['node_modules/**', 'build/**', 'dist/**', 'coverage/**', 'src/core/generated-plugins.ts', 'src/core/generated-resources.ts'],
   },
   {
     files: ['**/*.{js,ts}'],
@@ -25,7 +25,7 @@ export default [
     rules: {
       'prettier/prettier': 'error',
       '@typescript-eslint/explicit-function-return-type': 'warn',
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { 
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_' 
