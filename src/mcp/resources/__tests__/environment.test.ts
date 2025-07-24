@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import environmentResource from '../environment.js';
+import environmentResource, { environmentResourceLogic } from '../environment.js';
 import { createMockExecutor } from '../../../utils/command.js';
 
 describe('environment resource', () => {
@@ -31,10 +31,7 @@ describe('environment resource', () => {
         output: 'Mock command output',
       });
 
-      const result = await environmentResource.handler(
-        new URL('xcodebuildmcp://environment'),
-        mockExecutor,
-      );
+      const result = await environmentResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('# XcodeBuildMCP Diagnostic Report');
@@ -48,10 +45,7 @@ describe('environment resource', () => {
     it('should handle spawn errors by showing diagnostic info', async () => {
       const mockExecutor = createMockExecutor(new Error('spawn xcrun ENOENT'));
 
-      const result = await environmentResource.handler(
-        new URL('xcodebuildmcp://environment'),
-        mockExecutor,
-      );
+      const result = await environmentResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('# XcodeBuildMCP Diagnostic Report');
@@ -64,10 +58,7 @@ describe('environment resource', () => {
         output: 'Mock output',
       });
 
-      const result = await environmentResource.handler(
-        new URL('xcodebuildmcp://environment'),
-        mockExecutor,
-      );
+      const result = await environmentResourceLogic(mockExecutor);
 
       expect(result.contents[0].text).toContain('## Troubleshooting Tips');
       expect(result.contents[0].text).toContain('brew tap cameroncooke/axe');
@@ -81,10 +72,7 @@ describe('environment resource', () => {
         output: 'Mock output',
       });
 
-      const result = await environmentResource.handler(
-        new URL('xcodebuildmcp://environment'),
-        mockExecutor,
-      );
+      const result = await environmentResourceLogic(mockExecutor);
 
       expect(result.contents[0].text).toContain('### UI Automation (axe)');
       expect(result.contents[0].text).toContain('### Incremental Builds');
@@ -99,10 +87,7 @@ describe('environment resource', () => {
         error: 'Command failed',
       });
 
-      const result = await environmentResource.handler(
-        new URL('xcodebuildmcp://environment'),
-        mockExecutor,
-      );
+      const result = await environmentResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('# XcodeBuildMCP Diagnostic Report');

@@ -66,7 +66,7 @@ export default {
   name: 'swift_package_list',
   description: 'Lists currently running Swift Package processes',
   schema: {},
-  async handler(args?: unknown, dependencies?: ProcessListDependencies): Promise<ToolResponse> {
-    return swift_package_listLogic(args, dependencies);
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return swift_package_listLogic(args);
   },
 };

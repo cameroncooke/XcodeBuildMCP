@@ -304,19 +304,47 @@ Resources are located in `src/resources/` and follow this pattern:
 
 ```typescript
 // src/resources/example.ts
-export default {
-  uri: 'xcodebuildmcp://example',
-  name: 'example'
-  description: 'Description of the resource data',
-  mimeType: 'text/plain',
-  async handler(
-    executor: CommandExecutor = getDefaultCommandExecutor()
-  ): Promise<{ contents: Array<{ text: string }> }> {
-    // Resource implementation
+import { log, getDefaultCommandExecutor, CommandExecutor } from '../../utils/index.js';
+
+// Testable resource logic separated from MCP handler
+export async function exampleResourceLogic(
+  executor: CommandExecutor = getDefaultCommandExecutor(),
+): Promise<{ contents: Array<{ text: string }> }> {
+  try {
+    log('info', 'Processing example resource request');
+    
+    // Use the executor to get data
+    const result = await executor(['some', 'command'], 'Example Resource Operation');
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to get resource data');
+    }
+
     return {
-      contents: [{ text: 'resource data' }]
+      contents: [{ text: result.output || 'resource data' }]
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('error', `Error in example resource handler: ${errorMessage}`);
+
+    return {
+      contents: [
+        {
+          text: `Error retrieving resource data: ${errorMessage}`,
+        },
+      ],
     };
   }
+}
+
+export default {
+  uri: 'xcodebuildmcp://example',
+  name: 'example',
+  description: 'Description of the resource data',
+  mimeType: 'text/plain',
+  async handler(_uri: URL): Promise<{ contents: Array<{ text: string }> }> {
+    return exampleResourceLogic();
+  },
 };
 ```
 
@@ -325,17 +353,16 @@ export default {
 **Reuse Existing Logic**: Resources that mirror tools should reuse existing tool logic for consistency:
 
 ```typescript
-// src/mcp/resources/simulators.ts (simplified exmaple)
-import { list_simsLogic } from '../plugins/simulator-shared/list_sims.js';
+// src/mcp/resources/simulators.ts (simplified example)
+import { list_simsLogic } from '../tools/simulator-shared/list_sims.js';
 
 export default {
   uri: 'xcodebuildmcp://simulators',
   name: 'simulators'
   description: 'Available iOS simulators with UUIDs and states',
   mimeType: 'text/plain',
-  async handler(
-    executor: CommandExecutor = getDefaultCommandExecutor()
-  ): Promise<{ contents: Array<{ text: string }> }> {
+  async handler(uri: URL): Promise<{ contents: Array<{ text: string }> }> {
+    const executor = getDefaultCommandExecutor();
     const result = await list_simsLogic({}, executor);
     return {
       contents: [{ text: result.content[0].text }]
@@ -352,19 +379,52 @@ Create tests in `src/mcp/resources/__tests__/`:
 
 ```typescript
 // src/mcp/resources/__tests__/example.test.ts
-import exampleResource from '../example.js';
+import exampleResource, { exampleResourceLogic } from '../example.js';
 import { createMockExecutor } from '../../utils/test-common.js';
 
 describe('example resource', () => {
-  it('should return resource data', async () => {
-    const mockExecutor = createMockExecutor({
-      success: true,
-      output: 'test data'
+  describe('Export Field Validation', () => {
+    it('should export correct uri', () => {
+      expect(exampleResource.uri).toBe('xcodebuildmcp://example');
     });
-    
-    const result = await exampleResource.handler(mockExecutor);
-    
-    expect(result.contents[0].text).toContain('expected data');
+
+    it('should export correct description', () => {
+      expect(exampleResource.description).toBe('Description of the resource data');
+    });
+
+    it('should export correct mimeType', () => {
+      expect(exampleResource.mimeType).toBe('text/plain');
+    });
+
+    it('should export handler function', () => {
+      expect(typeof exampleResource.handler).toBe('function');
+    });
+  });
+
+  describe('Resource Logic Functionality', () => {
+    it('should return resource data successfully', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'test data'
+      });
+      
+      // Test the logic function directly, not the handler
+      const result = await exampleResourceLogic(mockExecutor);
+      
+      expect(result.contents).toHaveLength(1);
+      expect(result.contents[0].text).toContain('expected data');
+    });
+
+    it('should handle command execution errors', async () => {
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Command failed'
+      });
+      
+      const result = await exampleResourceLogic(mockExecutor);
+      
+      expect(result.contents[0].text).toContain('Error retrieving');
+    });
   });
 });
 ```

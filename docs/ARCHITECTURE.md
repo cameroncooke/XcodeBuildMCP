@@ -201,49 +201,56 @@ Resources can reuse existing tool logic for consistency:
 
 ```typescript
 // src/mcp/resources/some_resource.ts
+import { log, getDefaultCommandExecutor, CommandExecutor } from '../../utils/index.js';
+import { getSomeResourceLogic } from '../tools/some-workflow/get_some_resource.js';
+
+// Testable resource logic separated from MCP handler
+export async function someResourceResourceLogic(
+  executor: CommandExecutor = getDefaultCommandExecutor(),
+): Promise<{ contents: Array<{ text: string }> }> {
+  try {
+    log('info', 'Processing some resource request');
+
+    const result = await getSomeResourceLogic({}, executor);
+
+    if (result.isError) {
+      const errorText = result.content[0]?.text;
+      throw new Error(
+        typeof errorText === 'string' ? errorText : 'Failed to retrieve some resource data',
+      );
+    }
+
+    return {
+      contents: [
+        {
+          text:
+            typeof result.content[0]?.text === 'string'
+              ? result.content[0].text
+              : 'No data for that resource is available',
+        },
+      ],
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('error', `Error in some_resource resource handler: ${errorMessage}`);
+
+    return {
+      contents: [
+        {
+          text: `Error retrieving resource data: ${errorMessage}`,
+        },
+      ],
+    };
+  }
+}
+
 export default {
   uri: 'xcodebuildmcp://some_resource',
   name: 'some_resource',
   description: 'Returns some resource information',
   mimeType: 'text/plain',
-  async handler(
-    uri: URL,
-    executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<{ contents: Array<{ text: string }> }> {
-    try {
-      log('info', 'Processing simulators resource request');
-
-      const result = await getSomeResource({}, executor);
-
-      if (result.isError) {
-        const errorText = result.content[0]?.text;
-        throw new Error(
-          typeof errorText === 'string' ? errorText : 'Failed to retrieve some resource data',
-        );
-      }
-
-      return {
-        contents: [
-          {
-            text:
-              typeof result.content[0]?.text === 'string'
-                ? result.content[0].text
-                : 'No data for that resource is available',
-          },
-        ],
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      log('error', `Error in some_resource resource handler: ${errorMessage}`);
-
-      return {
-        contents: [
-          {
-            text: `Error retrieving resource data: ${errorMessage}`,
-          },
-        ],
-      };
-    }
+  async handler(_uri: URL): Promise<{ contents: Array<{ text: string }> }> {
+    return someResourceResourceLogic();
   },
 };
 ```
