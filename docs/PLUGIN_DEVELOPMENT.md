@@ -308,7 +308,7 @@ import { log, getDefaultCommandExecutor, CommandExecutor } from '../../utils/ind
 
 // Testable resource logic separated from MCP handler
 export async function exampleResourceLogic(
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
 ): Promise<{ contents: Array<{ text: string }> }> {
   try {
     log('info', 'Processing example resource request');
@@ -343,7 +343,7 @@ export default {
   description: 'Description of the resource data',
   mimeType: 'text/plain',
   async handler(_uri: URL): Promise<{ contents: Array<{ text: string }> }> {
-    return exampleResourceLogic();
+    return exampleResourceLogic(getDefaultCommandExecutor());
   },
 };
 ```
