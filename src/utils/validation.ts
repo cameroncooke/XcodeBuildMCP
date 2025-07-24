@@ -207,5 +207,49 @@ export function validateEnumParam<T>(
   return { isValid: true };
 }
 
+/**
+ * Consolidates multiple content blocks into a single text response for Claude Code compatibility
+ *
+ * Claude Code violates the MCP specification by only showing the first content block.
+ * This function provides a workaround by concatenating all text content into a single block.
+ *
+ * @param response The original ToolResponse with multiple content blocks
+ * @returns A new ToolResponse with consolidated content
+ */
+export function consolidateContentForClaudeCode(response: ToolResponse): ToolResponse {
+  // Check environment variable to enable/disable this workaround
+  const shouldConsolidate = process.env.XCODEBUILDMCP_CLAUDE_CODE_WORKAROUND === 'true';
+
+  if (!shouldConsolidate || !response.content || response.content.length <= 1) {
+    return response;
+  }
+
+  // Extract all text content and concatenate with separators
+  const textParts: string[] = [];
+
+  response.content.forEach((item, index) => {
+    if (item.type === 'text') {
+      // Add a separator between content blocks (except for the first one)
+      if (index > 0 && textParts.length > 0) {
+        textParts.push('\n---\n');
+      }
+      textParts.push(item.text);
+    }
+    // Note: Image content is not handled in this workaround as it requires special formatting
+  });
+
+  const consolidatedText = textParts.join('');
+
+  return {
+    ...response,
+    content: [
+      {
+        type: 'text',
+        text: consolidatedText,
+      },
+    ],
+  };
+}
+
 // Export the ToolResponse type for use in other files
 export { ToolResponse, ValidationResult };
