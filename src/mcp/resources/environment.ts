@@ -25,10 +25,19 @@ export default {
 
       if (result.isError) {
         const errorText = result.content[0]?.text;
-        throw new Error(
-          typeof errorText === 'string' ? errorText : 'Failed to retrieve environment data',
-        );
+        const errorMessage = typeof errorText === 'string'
+          ? errorText
+          : 'Failed to retrieve environment data';
+        log('error', `Error in environment resource handler: ${errorMessage}`);
+        return {
+          contents: [
+            {
+              text: `Error retrieving environment data: ${errorMessage}`,
+            },
+          ],
+        };
       }
+      // ... rest of the function
 
       return {
         contents: [
