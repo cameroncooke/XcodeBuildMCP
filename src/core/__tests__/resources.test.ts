@@ -1,14 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-import {
-  registerResources,
-  getAvailableResources,
-  supportsResources,
-  loadResources,
-  shouldExcludeTool,
-  getRedundantToolNames,
-} from '../resources.js';
+import { registerResources, getAvailableResources, loadResources } from '../resources.js';
 
 describe('resources', () => {
   let mockServer: McpServer;
@@ -35,10 +28,6 @@ describe('resources', () => {
   });
 
   describe('Exports', () => {
-    it('should export supportsResources function', () => {
-      expect(typeof supportsResources).toBe('function');
-    });
-
     it('should export registerResources function', () => {
       expect(typeof registerResources).toBe('function');
     });
@@ -49,12 +38,6 @@ describe('resources', () => {
 
     it('should export loadResources function', () => {
       expect(typeof loadResources).toBe('function');
-    });
-  });
-
-  describe('supportsResources', () => {
-    it('should return true for resource support', () => {
-      expect(supportsResources()).toBe(true);
     });
   });
 
@@ -126,39 +109,6 @@ describe('resources', () => {
       const uniqueResources = [...new Set(resources)];
 
       expect(resources.length).toBe(uniqueResources.length);
-    });
-  });
-
-  describe('tool filtering', () => {
-    describe('getRedundantToolNames', () => {
-      it('should return array of redundant tool names', () => {
-        const redundantTools = getRedundantToolNames();
-
-        expect(Array.isArray(redundantTools)).toBe(true);
-        expect(redundantTools).toContain('list_sims');
-      });
-    });
-
-    describe('shouldExcludeTool', () => {
-      it('should exclude redundant tools when resources are registered', () => {
-        expect(shouldExcludeTool('list_sims', true)).toBe(true);
-        expect(shouldExcludeTool('other_tool', true)).toBe(false);
-      });
-
-      it('should not exclude any tools when resources are not registered', () => {
-        expect(shouldExcludeTool('list_sims', false)).toBe(false);
-        expect(shouldExcludeTool('other_tool', false)).toBe(false);
-      });
-    });
-
-    describe('supportsResources', () => {
-      it('should return true by default for backward compatibility', () => {
-        expect(supportsResources()).toBe(true);
-      });
-
-      it('should return true when server is not provided', () => {
-        expect(supportsResources(undefined)).toBe(true);
-      });
     });
   });
 });
