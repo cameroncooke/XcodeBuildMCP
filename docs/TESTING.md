@@ -56,6 +56,17 @@ XcodeBuildMCP follows a **pure dependency injection** testing philosophy that el
 4. **True Integration**: Catches integration bugs between layers
 5. **Test Safety**: Default executors throw errors in test environment
 
+### Automated Violation Checking
+
+To enforce the no-mocking policy, the project includes a script that automatically checks for banned testing patterns.
+
+```bash
+# Run the script to check for violations
+node scripts/check-test-patterns.js
+```
+
+This script is part of the standard development workflow and should be run before committing changes to ensure compliance with the testing standards. It will fail if it detects any use of `vi.mock`, `vi.fn`, or other forbidden patterns in the test files.
+
 ## Test Architecture
 
 ### Correct Test Flow
