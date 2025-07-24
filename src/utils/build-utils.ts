@@ -21,7 +21,7 @@ import { log } from './logger.js';
 import { XcodePlatform, constructDestinationString } from './xcode.js';
 import { CommandExecutor } from './command.js';
 import { ToolResponse, SharedBuildParams, PlatformBuildOptions } from '../types/common.js';
-import { createTextResponse } from './validation.js';
+import { createTextResponse, consolidateContentForClaudeCode } from './validation.js';
 import {
   isXcodemakeEnabled,
   isXcodemakeAvailable,
@@ -273,7 +273,7 @@ export async function executeXcodeBuildCommand(
         });
       }
 
-      return errorResponse;
+      return consolidateContentForClaudeCode(errorResponse);
     }
 
     log('info', `✅ ${platformOptions.logPrefix} ${buildAction} succeeded.`);
@@ -347,13 +347,15 @@ When done capturing logs, use: stop_and_get_simulator_log({ logSessionId: 'SESSI
       });
     }
 
-    return successResponse;
+    return consolidateContentForClaudeCode(successResponse);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     log('error', `Error during ${platformOptions.logPrefix} ${buildAction}: ${errorMessage}`);
-    return createTextResponse(
-      `Error during ${platformOptions.logPrefix} ${buildAction}: ${errorMessage}`,
-      true,
+    return consolidateContentForClaudeCode(
+      createTextResponse(
+        `Error during ${platformOptions.logPrefix} ${buildAction}: ${errorMessage}`,
+        true,
+      ),
     );
   }
 }

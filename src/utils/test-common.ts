@@ -20,7 +20,7 @@ import { join } from 'path';
 import { log } from './logger.js';
 import { XcodePlatform } from './xcode.js';
 import { executeXcodeBuildCommand } from './build-utils.js';
-import { createTextResponse } from './validation.js';
+import { createTextResponse, consolidateContentForClaudeCode } from './validation.js';
 import { ToolResponse } from '../types/common.js';
 import { CommandExecutor } from './command.js';
 
@@ -214,7 +214,7 @@ export async function handleTestLogic(
       await rm(tempDir, { recursive: true, force: true });
 
       // Return combined result - preserve isError from testResult (test failures should be marked as errors)
-      return {
+      const combinedResponse: ToolResponse = {
         content: [
           ...(testResult.content || []),
           {
@@ -224,6 +224,9 @@ export async function handleTestLogic(
         ],
         isError: testResult.isError,
       };
+
+      // Apply Claude Code workaround if enabled
+      return consolidateContentForClaudeCode(combinedResponse);
     } catch (parseError) {
       // If parsing fails, return original test result
       log('warn', `Failed to parse xcresult bundle: ${parseError}`);
@@ -235,11 +238,13 @@ export async function handleTestLogic(
         log('warn', `Failed to clean up temporary directory: ${cleanupError}`);
       }
 
-      return testResult;
+      return consolidateContentForClaudeCode(testResult);
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     log('error', `Error during test run: ${errorMessage}`);
-    return createTextResponse(`Error during test run: ${errorMessage}`, true);
+    return consolidateContentForClaudeCode(
+      createTextResponse(`Error during test run: ${errorMessage}`, true),
+    );
   }
 }

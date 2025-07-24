@@ -52,6 +52,11 @@ XcodeBuildMCP has two modes to manage its extensive toolset, controlled by the `
 - **Environment**: `XCODEBUILDMCP_DYNAMIC_TOOLS=true`.
 - **Behavior**: Only the `discover_tools` tool is available initially. You can use this tool by providing a natural language task description. The server then uses an LLM call (via MCP Sampling) to identify the most relevant workflow group and dynamically loads only those tools. This conserves context window space.
 
+#### Claude Code Compatibility Workaround
+- **Environment**: `XCODEBUILDMCP_CLAUDE_CODE_WORKAROUND=true`.
+- **Purpose**: Workaround for Claude Code's MCP specification violation where it only displays the first content block in tool responses.
+- **Behavior**: When enabled, multiple content blocks are consolidated into a single text response, separated by `---` dividers. This ensures all information (including test results and stderr warnings) is visible to Claude Code users.
+
 ### Core Architecture Layers
 1. **MCP Transport**: stdio protocol communication
 2. **Plugin Discovery**: Automatic tool AND resource registration system  
