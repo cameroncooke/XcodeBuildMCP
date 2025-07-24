@@ -9,26 +9,33 @@ import { log, getDefaultCommandExecutor, CommandExecutor } from '../../utils/ind
 import { list_simsLogic } from '../tools/simulator-shared/list_sims.js';
 
 export default {
-  uri: 'mcp://xcodebuild/simulators',
+  uri: 'xcodebuildmcp://simulators',
+  name: 'simulators',
   description: 'Available iOS simulators with their UUIDs and states',
   mimeType: 'text/plain',
   async handler(
+    uri: URL,
     executor: CommandExecutor = getDefaultCommandExecutor(),
-  ): Promise<{ contents: Array<{ type: 'text'; text: string }> }> {
+  ): Promise<{ contents: Array<{ text: string }> }> {
     try {
       log('info', 'Processing simulators resource request');
 
       const result = await list_simsLogic({}, executor);
 
       if (result.isError) {
-        throw new Error(result.content[0]?.text || 'Failed to retrieve simulator data');
+        const errorText = result.content[0]?.text;
+        throw new Error(
+          typeof errorText === 'string' ? errorText : 'Failed to retrieve simulator data',
+        );
       }
 
       return {
         contents: [
           {
-            type: 'text' as const,
-            text: result.content[0]?.text || 'No simulator data available',
+            text:
+              typeof result.content[0]?.text === 'string'
+                ? result.content[0].text
+                : 'No simulator data available',
           },
         ],
       };
@@ -39,7 +46,6 @@ export default {
       return {
         contents: [
           {
-            type: 'text' as const,
             text: `Error retrieving simulator data: ${errorMessage}`,
           },
         ],

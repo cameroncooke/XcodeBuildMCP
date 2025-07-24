@@ -20,11 +20,11 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Configure your MCP client](#configure-your-mcp-client)
-    - [MCP Feature Compatibility](#mcp-feature-compatibility)
     - [Quick install](#quick-install)
     - [Manual installation](#manual-installation)
     - [Alternative installation method using mise](#alternative-installation-method-using-mise)
     - [Installing via Smithery](#installing-via-smithery)
+    - [MCP Compatibility](#mcp-compatibility)
 - [Incremental build support](#incremental-build-support)
 - [Code Signing for Device Deployment](#code-signing-for-device-deployment)
 - [Troubleshooting](#troubleshooting)
@@ -97,11 +97,9 @@ The XcodeBuildMCP server provides the following tool capabilities:
 
 ### MCP Resources
 
-For clients that support MCP resources (VS Code, Claude Code, Claude Desktop), XcodeBuildMCP provides efficient URI-based data access:
+For clients that support MCP resources XcodeBuildMCP provides efficient URI-based data access:
 
-- **Simulators Resource** (`mcp://xcodebuild/simulators`): Direct access to available iOS simulators with UUIDs and states
-- **Automatic Fallback**: Clients without resource support automatically use equivalent tool-based APIs
-- **Smart Filtering**: Redundant tools are filtered out when resources are available to prevent duplicate functionality
+- **Simulators Resource** (`xcodebuildmcp://simulators`): Direct access to available iOS simulators with UUIDs and states
 
 > [!IMPORTANT]
 > Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
@@ -115,24 +113,6 @@ For clients that support MCP resources (VS Code, Claude Code, Claude Desktop), X
 - Node 18.x or later
 
 ### Configure your MCP client
-
-#### MCP Feature Compatibility
-
-XcodeBuildMCP supports both MCP tools and resources. Different editors have varying levels of MCP feature support:
-
-| Editor | Tools | Resources | Notes |
-|--------|-------|-----------|-------|
-| **VS Code** | ✅ | ✅ | Full MCP specification support |
-| **Cursor** | ✅ | ❌ | Tools only - resources not supported |
-| **Windsurf** | ✅ | ❌ | Tools and discovery only |
-| **Claude Code** | ✅ | ✅ | Full support for resources, tools, and routes |
-| **Claude Desktop** | ✅ | ✅ | Full support for resources, tools, and prompts |
-
-**Resources vs Tools:**
-- **Tools**: Function-based API calls (e.g., `list_sims()` to get simulator list)
-- **Resources**: Efficient data access via URIs (e.g., `mcp://xcodebuild/simulators` for simulator data)
-
-XcodeBuildMCP automatically detects your client's capabilities and provides the most appropriate interface. Clients with resource support get efficient URI-based data access, while others fall back to traditional tool calls.
 
 #### Quick install
 
@@ -200,6 +180,18 @@ To install XcodeBuildMCP Server for Claude Desktop automatically via [Smithery](
 ```bash
 npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client claude
 ```
+
+#### MCP Compatibility
+
+XcodeBuildMCP supports both MCP tools, resources and sampling. At time of writing the following editors have varying levels of MCP feature support:
+
+| Editor | Tools | Resources | Samplng |
+|--------|-------|-----------|---------|
+| **VS Code** | ✅ | ✅ | ✅ |
+| **Cursor** | ✅ | ❌ | ❌ | 
+| **Windsurf** | ✅ | ❌ | ❌ |
+| **Claude Code** | ✅ | ✅ | ❌ |
+| **Claude Desktop** | ✅ | ✅ | ❌ |
 
 ## Incremental build support
 

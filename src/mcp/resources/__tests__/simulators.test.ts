@@ -7,7 +7,7 @@ import { createMockExecutor } from '../../../utils/command.js';
 describe('simulators resource', () => {
   describe('Export Field Validation', () => {
     it('should export correct uri', () => {
-      expect(simulatorsResource.uri).toBe('mcp://xcodebuild/simulators');
+      expect(simulatorsResource.uri).toBe('xcodebuildmcp://simulators');
     });
 
     it('should export correct description', () => {

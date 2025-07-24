@@ -30,27 +30,26 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│            Presentation / Transport Layer                   │
+│            Presentation / Transport Layer                  │
 │  • src/server/server.ts  – MCP server creation & transport │
 │  • src/index.ts          – process entry, Sentry boot,     │
-│                            plugin loading, lifecycle        │
+│                            plugin loading, lifecycle       │
 └────────────────────────────────────────────────────────────┘
 ┌────────────────────────────────────────────────────────────┐
 │            Plugin Discovery & Registration Layer           │
 │  • src/core/plugin-registry.ts  – automatic plugin loading │
-│  • src/core/plugin-types.ts     – plugin type definitions  │
-│  • plugins/**/                  – self-contained plugins    │
+│  • src/core/plugin-types.ts     – plugin type definitions   │
+│  • plugins/**/                  – self-contained plugins   │
 └────────────────────────────────────────────────────────────┘
 ┌────────────────────────────────────────────────────────────┐
 │                    MCP Resources Layer                     │
 │  • src/core/resources.ts        – resource management      │
 │  • src/resources/**/            – MCP resource handlers    │
-│  • Client capability detection  – automatic tool filtering │
 └────────────────────────────────────────────────────────────┘
 ┌────────────────────────────────────────────────────────────┐
 │                   Plugin Implementation Layer              │
-│  • plugins/**/**.js – one file per tool capability         │
-│  • Common patterns:                                         │
+│  • plugins/**/**.js – one file per tool capability          │
+│  • Common patterns:                                        │
 │      – Standardized plugin exports (name, schema, handler) │
 │      – Zod schemas for param validation                    │
 │      – Uniform ToolResponse payloads                       │
@@ -259,29 +258,56 @@ export function supportsResources(server?: unknown): boolean {
 }
 ```
 
-#### Smart Tool Filtering
-
-When resources are available, redundant tools are automatically filtered:
-
-- **Resource-supported clients**: Get `mcp://xcodebuild/simulators` resource
-- **Tool-only clients**: Keep `list_sims` tool for compatibility
-- **Automatic detection**: No client configuration required
-
 #### Resource Implementation Pattern
 
-Resources reuse existing tool logic for consistency:
+Resources can reuse existing tool logic for consistency:
 
 ```typescript
-// src/resources/simulators.ts
+// src/resources/some_resource.ts
 export default {
-  uri: 'mcp://xcodebuild/simulators',
-  description: 'Available iOS simulators with UUIDs and states',
+  uri: 'xcodebuildmcp://some_resource',
+  name: 'some_resource',
+  description: 'Returns some resource information',
   mimeType: 'text/plain',
-  async handler(executor = getDefaultCommandExecutor()) {
-    // Reuses list_simsLogic for consistency
-    const result = await list_simsLogic({}, executor);
-    return { contents: [{ type: 'text', text: result.content[0].text }] };
-  }
+  async handler(
+    uri: URL,
+    executor: CommandExecutor = getDefaultCommandExecutor(),
+  ): Promise<{ contents: Array<{ text: string }> }> {
+    try {
+      log('info', 'Processing simulators resource request');
+
+      const result = await getSomeResource({}, executor);
+
+      if (result.isError) {
+        const errorText = result.content[0]?.text;
+        throw new Error(
+          typeof errorText === 'string' ? errorText : 'Failed to retrieve some resource data',
+        );
+      }
+
+      return {
+        contents: [
+          {
+            text:
+              typeof result.content[0]?.text === 'string'
+                ? result.content[0].text
+                : 'No data for that resource is available',
+          },
+        ],
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      log('error', `Error in some_resource resource handler: ${errorMessage}`);
+
+      return {
+        contents: [
+          {
+            text: `Error retrieving resource data: ${errorMessage}`,
+          },
+        ],
+      };
+    }
+  },
 };
 ```
 
