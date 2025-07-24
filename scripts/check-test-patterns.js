@@ -15,6 +15,7 @@
  * 2. NO setTimeout-based mocking patterns
  * 3. ONLY dependency injection with createMockExecutor() and createMockFileSystemExecutor()
  * 4. Proper test architecture compliance
+ * 5. NO handler signature violations (handlers must have exact MCP SDK signatures)
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
@@ -39,12 +40,13 @@ USAGE:
   node scripts/check-test-patterns.js [options]
 
 OPTIONS:
-  --pattern=TYPE    Check specific pattern type (vitest|timeout|all) [default: all]
+  --pattern=TYPE    Check specific pattern type (vitest|timeout|handler|all) [default: all]
   --help, -h        Show this help message
 
 PATTERN TYPES:
   vitest           Check only vitest mocking violations (vi.mock, vi.fn, etc.)
-  timeout          Check only setTimeout-based mocking patterns  
+  timeout          Check only setTimeout-based mocking patterns
+  handler          Check only handler signature violations
   all              Check all pattern violations (default)
 
 EXAMPLES:
@@ -97,6 +99,20 @@ const VITEST_MOCKING_PATTERNS = [
   /\bexecSyncFn\b/,                  // execSyncFn usage - BANNED (use executeCommand instead)
 ];
 
+// CRITICAL: HANDLER SIGNATURE VIOLATIONS ARE FORBIDDEN
+// MCP SDK requires handlers to have exact signatures: 
+// Tools: (args: Record<string, unknown>) => Promise<ToolResponse>
+// Resources: (uri: URL) => Promise<{ contents: Array<{ text: string }> }>
+const HANDLER_SIGNATURE_VIOLATIONS = [
+  /async\s+handler\s*\([^)]*:\s*[^,)]+,\s*[^)]+\s*:/ms,  // Handler with multiple parameters separated by comma - BANNED
+  /async\s+handler\s*\(\s*args\?\s*:/ms,                   // Handler with optional args parameter - BANNED (should be required)
+  /async\s+handler\s*\([^)]*,\s*[^)]*CommandExecutor/ms,  // Handler with CommandExecutor parameter - BANNED
+  /async\s+handler\s*\([^)]*,\s*[^)]*FileSystemExecutor/ms, // Handler with FileSystemExecutor parameter - BANNED
+  /async\s+handler\s*\([^)]*,\s*[^)]*Dependencies/ms,      // Handler with Dependencies parameter - BANNED
+  /async\s+handler\s*\([^)]*,\s*[^)]*executor\s*:/ms,      // Handler with executor parameter - BANNED
+  /async\s+handler\s*\([^)]*,\s*[^)]*dependencies\s*:/ms,  // Handler with dependencies parameter - BANNED
+];
+
 // ALLOWED PATTERNS for cleanup (not mocking)
 const ALLOWED_CLEANUP_PATTERNS = [
   // All cleanup patterns removed - no exceptions allowed
@@ -132,6 +148,31 @@ function findTestFiles(dir) {
   
   traverse(dir);
   return testFiles;
+}
+
+function findToolAndResourceFiles(dir) {
+  const toolFiles = [];
+  
+  function traverse(currentDir) {
+    const items = readdirSync(currentDir);
+    
+    for (const item of items) {
+      const fullPath = join(currentDir, item);
+      const stat = statSync(fullPath);
+      
+      if (stat.isDirectory()) {
+        // Skip test directories and other non-relevant directories
+        if (!item.startsWith('.') && item !== '__tests__' && item !== 'node_modules' && item !== 'dist' && item !== 'build') {
+          traverse(fullPath);
+        }
+      } else if ((item.endsWith('.ts') || item.endsWith('.js')) && !item.includes('.test.') && item !== 'index.ts' && item !== 'index.js') {
+        toolFiles.push(fullPath);
+      }
+    }
+  }
+  
+  traverse(dir);
+  return toolFiles;
 }
 
 function analyzeTestFile(filePath) {
@@ -199,19 +240,72 @@ function analyzeTestFile(filePath) {
   }
 }
 
+function analyzeToolOrResourceFile(filePath) {
+  try {
+    const content = readFileSync(filePath, 'utf8');
+    const relativePath = relative(projectRoot, filePath);
+    
+    // Check for handler signature violations (FORBIDDEN)
+    const hasHandlerSignatureViolations = HANDLER_SIGNATURE_VIOLATIONS.some(pattern => pattern.test(content));
+    
+    // Extract handler signature violation details
+    const handlerSignatureDetails = [];
+    if (hasHandlerSignatureViolations) {
+      // Use regex to find the violation and its line number
+      const lines = content.split('\n');
+      const fullContent = content;
+      
+      HANDLER_SIGNATURE_VIOLATIONS.forEach(pattern => {
+        let match;
+        const globalPattern = new RegExp(pattern.source, pattern.flags + 'g');
+        while ((match = globalPattern.exec(fullContent)) !== null) {
+          // Find which line this match is on
+          const beforeMatch = fullContent.substring(0, match.index);
+          const lineNumber = beforeMatch.split('\n').length;
+          
+          handlerSignatureDetails.push({
+            line: lineNumber,
+            content: match[0].replace(/\s+/g, ' ').trim(),
+            pattern: pattern.source
+          });
+        }
+      });
+    }
+    
+    return {
+      filePath: relativePath,
+      hasHandlerSignatureViolations,
+      handlerSignatureDetails,
+      needsConversion: hasHandlerSignatureViolations
+    };
+  } catch (error) {
+    console.error(`Error reading file ${filePath}: ${error.message}`);
+    return null;
+  }
+}
+
 function main() {
   console.log('🔍 XcodeBuildMCP Test Pattern Violations Checker\n');
   console.log(`🎯 Checking pattern type: ${patternFilter.toUpperCase()}\n`);
   console.log('TESTING GUIDELINES ENFORCED:');
   console.log('✅ ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()');
   console.log('❌ BANNED: vitest mocking patterns (vi.mock, vi.fn, .mockResolvedValue, etc.)');
-  console.log('❌ BANNED: setTimeout-based mocking patterns\n');
+  console.log('❌ BANNED: setTimeout-based mocking patterns');
+  console.log('❌ BANNED: handler signature violations (handlers must have exact MCP SDK signatures)\n');
   
   const testFiles = findTestFiles(join(projectRoot, 'src'));
   const results = testFiles.map(analyzeTestFile).filter(Boolean);
   
+  // Also check tool and resource files for handler signature violations
+  const toolFiles = findToolAndResourceFiles(join(projectRoot, 'src', 'mcp', 'tools'));
+  const resourceFiles = findToolAndResourceFiles(join(projectRoot, 'src', 'mcp', 'resources'));
+  const allToolAndResourceFiles = [...toolFiles, ...resourceFiles];
+  const handlerResults = allToolAndResourceFiles.map(analyzeToolOrResourceFile).filter(Boolean);
+  
   // Filter results based on pattern type
   let filteredResults;
+  let filteredHandlerResults = [];
+  
   switch (patternFilter) {
     case 'vitest':
       filteredResults = results.filter(r => r.hasVitestMockingPatterns);
@@ -221,10 +315,16 @@ function main() {
       filteredResults = results.filter(r => r.hasTimeoutPatterns);
       console.log(`Filtering to show only setTimeout violations (${filteredResults.length} files)`);
       break;
+    case 'handler':
+      filteredResults = [];
+      filteredHandlerResults = handlerResults.filter(r => r.hasHandlerSignatureViolations);
+      console.log(`Filtering to show only handler signature violations (${filteredHandlerResults.length} files)`);
+      break;
     case 'all':
     default:
       filteredResults = results.filter(r => r.needsConversion);
-      console.log(`Showing all pattern violations (${filteredResults.length} files)`);
+      filteredHandlerResults = handlerResults.filter(r => r.hasHandlerSignatureViolations);
+      console.log(`Showing all pattern violations (${filteredResults.length} test files + ${filteredHandlerResults.length} handler files)`);
       break;
   }
   
@@ -276,6 +376,24 @@ function main() {
     });
   }
   
+  // Handler signature violations reporting
+  if (filteredHandlerResults.length > 0) {
+    console.log(`🚨 HANDLER SIGNATURE VIOLATIONS (${filteredHandlerResults.length}):`);
+    console.log(`===========================================`);
+    filteredHandlerResults.forEach((result, index) => {
+      console.log(`${index + 1}. ${result.filePath}`);
+      
+      if (result.handlerSignatureDetails.length > 0) {
+        console.log(`   🛠️  HANDLER VIOLATIONS (${result.handlerSignatureDetails.length}):`);
+        result.handlerSignatureDetails.forEach(detail => {
+          console.log(`   Line ${detail.line}: ${detail.content}`);
+        });
+      }
+      
+      console.log('');
+    });
+  }
+  
   if (mixed.length > 0) {
     console.log(`⚠️  FILES WITH MIXED PATTERNS (${mixed.length}):`);
     console.log(`===================================`);
@@ -296,9 +414,11 @@ function main() {
   }
   
   // Summary for next steps
+  const hasViolations = needsConversion.length > 0 || filteredHandlerResults.length > 0;
+  
   if (needsConversion.length > 0) {
-    console.log(`🚨 CRITICAL ACTION REQUIRED:`);
-    console.log(`===========================`);
+    console.log(`🚨 CRITICAL ACTION REQUIRED (TEST FILES):`);
+    console.log(`=======================================`);
     console.log(`1. IMMEDIATELY remove ALL vitest mocking from ${needsConversion.length} files`);
     console.log(`2. BANNED: vi.mock(), vi.fn(), .mockResolvedValue(), .toHaveBeenCalled(), etc.`);
     console.log(`3. ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()`);
@@ -311,20 +431,35 @@ function main() {
       .sort((a, b) => (b.timeoutDetails.length + b.vitestMockingDetails.length) - (a.timeoutDetails.length + a.vitestMockingDetails.length))
       .slice(0, 5);
     
-    console.log(`🚨 TOP 5 FILES WITH MOST VIOLATIONS:`);
+    console.log(`🚨 TOP 5 TEST FILES WITH MOST VIOLATIONS:`);
     sortedByPatterns.forEach((result, index) => {
       const totalPatterns = result.timeoutDetails.length + result.vitestMockingDetails.length;
       console.log(`${index + 1}. ${result.filePath} (${totalPatterns} violations: ${result.timeoutDetails.length} timeout + ${result.vitestMockingDetails.length} vitest)`);
     });
-  } else if (mixed.length === 0) {
-    console.log(`🎉 ALL FILES COMPLY WITH VITEST MOCKING BAN!`);
-    console.log(`===========================================`);
-    console.log(`All test files use ONLY createMockExecutor() and createMockFileSystemExecutor().`);
-    console.log(`No vitest mocking patterns detected.`);
+    console.log('');
+  }
+  
+  if (filteredHandlerResults.length > 0) {
+    console.log(`🚨 CRITICAL ACTION REQUIRED (HANDLER FILES):`);
+    console.log(`==========================================`);
+    console.log(`1. IMMEDIATELY fix ALL handler signature violations in ${filteredHandlerResults.length} files`);
+    console.log(`2. Tools: Handler must be: async handler(args: Record<string, unknown>): Promise<ToolResponse>`);
+    console.log(`3. Resources: Handler must be: async handler(uri: URL): Promise<{ contents: Array<{ text: string }> }>`);
+    console.log(`4. Inject dependencies INSIDE handler body: const executor = getDefaultCommandExecutor()`);
+    console.log(`5. Run this script again after each fix to track progress`);
+    console.log('');
+  }
+  
+  if (!hasViolations && mixed.length === 0) {
+    console.log(`🎉 ALL FILES COMPLY WITH PROJECT STANDARDS!`);
+    console.log(`==========================================`);
+    console.log(`✅ All test files use ONLY createMockExecutor() and createMockFileSystemExecutor()`);
+    console.log(`✅ All handler signatures comply with MCP SDK requirements`);
+    console.log(`✅ No violations detected!`);
   }
   
   // Exit with appropriate code
-  process.exit(needsConversion.length > 0 || mixed.length > 0 ? 1 : 0);
+  process.exit(hasViolations || mixed.length > 0 ? 1 : 0);
 }
 
 main();

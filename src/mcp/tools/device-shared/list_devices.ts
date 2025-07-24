@@ -276,7 +276,7 @@ export default {
   description:
     'Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.',
   schema: {},
-  async handler(args?: Record<string, unknown>): Promise<ToolResponse> {
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     return list_devicesLogic(args, getDefaultCommandExecutor());
   },
 };

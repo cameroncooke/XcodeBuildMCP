@@ -94,18 +94,22 @@ Test → Plugin Handler → utilities → [DEPENDENCY INJECTION] createMockExecu
 All plugin handlers must support dependency injection:
 
 ```typescript
+export function tool_nameLogic(
+  args: Record<string, unknown>, 
+  commandExecutor: CommandExecutor,
+  fileSystemExecutor?: FileSystemExecutor
+): Promise<ToolResponse> {
+  // Use injected executors
+  const result = await executeCommand(['xcrun', 'simctl', 'list'], commandExecutor);
+  return createTextResponse(result.output);
+}
+
 export default {
   name: 'tool_name',
   description: 'Tool description',
   schema: { /* zod schema */ },
-  async handler(
-    args: Record<string, unknown>, 
-    commandExecutor: CommandExecutor = getDefaultCommandExecutor(),
-    fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor()
-  ): Promise<ToolResponse> {
-    // Use injected executors
-    const result = await executeCommand(['xcrun', 'simctl', 'list'], commandExecutor);
-    return createTextResponse(result.output);
+  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    return tool_nameLogic(args, getDefaultCommandExecutor(), getDefaultFileSystemExecutor());
   },
 };
 ```
@@ -128,7 +132,7 @@ it('should handle successful command execution', async () => {
     output: 'BUILD SUCCEEDED'
   });
   
-  const result = await tool.handler(
+  const result = await tool_nameLogic(
     { projectPath: '/test.xcodeproj', scheme: 'MyApp' },
     mockExecutor
   );
@@ -509,12 +513,8 @@ const result = await tool.handler(params, mockCmd, mockFS);
 **Fix**: Update handler signature:
 
 ```typescript
-async handler(
-  args: Record<string, unknown>,
-  commandExecutor: CommandExecutor = getDefaultCommandExecutor(),
-  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor()
-): Promise<ToolResponse> {
-  // Use injected executors
+async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  return tool_nameLogic(args, getDefaultCommandExecutor(), getDefaultFileSystemExecutor());
 }
 ```
 

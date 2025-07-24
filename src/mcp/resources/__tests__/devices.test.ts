@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import devicesResource from '../devices.js';
+import devicesResource, { devicesResourceLogic } from '../devices.js';
 import { createMockExecutor } from '../../../utils/command.js';
 
 describe('devices resource', () => {
@@ -33,10 +33,7 @@ iPad (98765-KLMNO-PQRST-43210) (14.0)
 My Device (11111-22222-33333-44444) (15.0)`,
       });
 
-      const result = await devicesResource.handler(
-        new URL('xcodebuildmcp://devices'),
-        mockExecutor,
-      );
+      const result = await devicesResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('Device listing (xctrace output)');
@@ -51,10 +48,7 @@ My Device (11111-22222-33333-44444) (15.0)`,
         error: 'Command failed',
       });
 
-      const result = await devicesResource.handler(
-        new URL('xcodebuildmcp://devices'),
-        mockExecutor,
-      );
+      const result = await devicesResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('Failed to list devices');
@@ -64,10 +58,7 @@ My Device (11111-22222-33333-44444) (15.0)`,
     it('should handle spawn errors', async () => {
       const mockExecutor = createMockExecutor(new Error('spawn xcrun ENOENT'));
 
-      const result = await devicesResource.handler(
-        new URL('xcodebuildmcp://devices'),
-        mockExecutor,
-      );
+      const result = await devicesResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('Error retrieving device data');
@@ -80,10 +71,7 @@ My Device (11111-22222-33333-44444) (15.0)`,
         output: '',
       });
 
-      const result = await devicesResource.handler(
-        new URL('xcodebuildmcp://devices'),
-        mockExecutor,
-      );
+      const result = await devicesResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('Device listing (xctrace output)');
@@ -96,10 +84,7 @@ My Device (11111-22222-33333-44444) (15.0)`,
         output: `iPhone 15 Pro (12345-ABCDE-FGHIJ-67890) (17.0)`,
       });
 
-      const result = await devicesResource.handler(
-        new URL('xcodebuildmcp://devices'),
-        mockExecutor,
-      );
+      const result = await devicesResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('Device listing (xctrace output)');

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 
-import simulatorsResource from '../simulators.js';
+import simulatorsResource, { simulatorsResourceLogic } from '../simulators.js';
 import { createMockExecutor } from '../../../utils/command.js';
 
 describe('simulators resource', () => {
@@ -43,10 +43,7 @@ describe('simulators resource', () => {
         }),
       });
 
-      const result = await simulatorsResource.handler(
-        new URL('xcodebuildmcp://simulators'),
-        mockExecutor,
-      );
+      const result = await simulatorsResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('Available iOS Simulators:');
@@ -61,10 +58,7 @@ describe('simulators resource', () => {
         error: 'Command failed',
       });
 
-      const result = await simulatorsResource.handler(
-        new URL('xcodebuildmcp://simulators'),
-        mockExecutor,
-      );
+      const result = await simulatorsResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('Failed to list simulators');
@@ -77,10 +71,7 @@ describe('simulators resource', () => {
         output: 'invalid json',
       });
 
-      const result = await simulatorsResource.handler(
-        new URL('xcodebuildmcp://simulators'),
-        mockExecutor,
-      );
+      const result = await simulatorsResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toBe('invalid json');
@@ -89,10 +80,7 @@ describe('simulators resource', () => {
     it('should handle spawn errors', async () => {
       const mockExecutor = createMockExecutor(new Error('spawn xcrun ENOENT'));
 
-      const result = await simulatorsResource.handler(
-        new URL('xcodebuildmcp://simulators'),
-        mockExecutor,
-      );
+      const result = await simulatorsResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('Failed to list simulators');
@@ -105,10 +93,7 @@ describe('simulators resource', () => {
         output: JSON.stringify({ devices: {} }),
       });
 
-      const result = await simulatorsResource.handler(
-        new URL('xcodebuildmcp://simulators'),
-        mockExecutor,
-      );
+      const result = await simulatorsResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('Available iOS Simulators:');
@@ -131,10 +116,7 @@ describe('simulators resource', () => {
         }),
       });
 
-      const result = await simulatorsResource.handler(
-        new URL('xcodebuildmcp://simulators'),
-        mockExecutor,
-      );
+      const result = await simulatorsResourceLogic(mockExecutor);
 
       expect(result.contents[0].text).toContain('[Booted]');
     });
@@ -162,10 +144,7 @@ describe('simulators resource', () => {
         }),
       });
 
-      const result = await simulatorsResource.handler(
-        new URL('xcodebuildmcp://simulators'),
-        mockExecutor,
-      );
+      const result = await simulatorsResourceLogic(mockExecutor);
 
       expect(result.contents[0].text).toContain('iPhone 15 Pro');
       expect(result.contents[0].text).not.toContain('iPhone 14');
@@ -188,10 +167,7 @@ describe('simulators resource', () => {
         }),
       });
 
-      const result = await simulatorsResource.handler(
-        new URL('xcodebuildmcp://simulators'),
-        mockExecutor,
-      );
+      const result = await simulatorsResourceLogic(mockExecutor);
 
       expect(result.contents[0].text).toContain('Next Steps:');
       expect(result.contents[0].text).toContain('boot_sim');
