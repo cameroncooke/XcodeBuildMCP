@@ -238,6 +238,11 @@ export function consolidateContentForClaudeCode(response: ToolResponse): ToolRes
     // Note: Image content is not handled in this workaround as it requires special formatting
   });
 
+  // If no text content was found, return the original response to preserve non-text content
+  if (textParts.length === 0) {
+    return response;
+  }
+
   const consolidatedText = textParts.join('');
 
   return {
