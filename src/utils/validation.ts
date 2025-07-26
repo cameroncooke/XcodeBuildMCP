@@ -21,10 +21,10 @@
  */
 
 import * as fs from 'fs';
-import { execSync } from 'child_process';
 import { log } from './logger.js';
 import { ToolResponse, ValidationResult } from '../types/common.js';
 import { FileSystemExecutor } from './command.js';
+import { getDefaultEnvironmentDetector } from './environment.js';
 
 /**
  * Creates a text response with the given message
@@ -209,42 +209,6 @@ export function validateEnumParam<T>(
 }
 
 /**
- * Detects if the MCP server is running under Claude Code
- *
- * Uses multiple detection methods to identify Claude Code reliably:
- * 1. Environment variable CLAUDECODE=1
- * 2. Environment variable CLAUDE_CODE_ENTRYPOINT=cli
- * 3. Parent process name contains 'claude'
- *
- * @returns true if Claude Code is detected, false otherwise
- */
-function isRunningUnderClaudeCode(): boolean {
-  // Method 1: Check for Claude Code environment variables
-  if (process.env.CLAUDECODE === '1' || process.env.CLAUDE_CODE_ENTRYPOINT === 'cli') {
-    return true;
-  }
-
-  // Method 2: Check parent process name
-  try {
-    const parentPid = process.ppid;
-    if (parentPid) {
-      const parentCommand = execSync(`ps -o command= -p ${parentPid}`, {
-        encoding: 'utf8',
-        timeout: 1000,
-      }).trim();
-      if (parentCommand.includes('claude')) {
-        return true;
-      }
-    }
-  } catch (error) {
-    // If process detection fails, fall back to environment variables only
-    log('debug', `Failed to detect parent process: ${error}`);
-  }
-
-  return false;
-}
-
-/**
  * Consolidates multiple content blocks into a single text response for Claude Code compatibility
  *
  * Claude Code violates the MCP specification by only showing the first content block.
@@ -256,7 +220,7 @@ function isRunningUnderClaudeCode(): boolean {
  */
 export function consolidateContentForClaudeCode(response: ToolResponse): ToolResponse {
   // Automatically detect if running under Claude Code
-  const shouldConsolidate = isRunningUnderClaudeCode();
+  const shouldConsolidate = getDefaultEnvironmentDetector().isRunningUnderClaudeCode();
 
   if (!shouldConsolidate || !response.content || response.content.length <= 1) {
     return response;

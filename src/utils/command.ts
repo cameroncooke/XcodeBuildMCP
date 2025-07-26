@@ -453,3 +453,18 @@ export function createNoopFileSystemExecutor(): FileSystemExecutor {
     tmpdir: (): string => '/tmp',
   };
 }
+
+/**
+ * Create a mock environment detector for testing
+ * @param options Mock options for environment detection
+ * @returns Mock environment detector
+ */
+export function createMockEnvironmentDetector(
+  options: {
+    isRunningUnderClaudeCode?: boolean;
+  } = {},
+): import('./environment.js').EnvironmentDetector {
+  return {
+    isRunningUnderClaudeCode: () => options.isRunningUnderClaudeCode ?? false,
+  };
+}
