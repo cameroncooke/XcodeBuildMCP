@@ -22,6 +22,90 @@ npm run inspect       # Run interactive MCP protocol inspector
 npm run diagnostic    # Diagnostic CLI
 ```
 
+### Development with Reloaderoo
+
+**Reloaderoo** provides CLI-based testing and hot-reload capabilities for XcodeBuildMCP without requiring MCP client configuration.
+
+#### Quick Start
+
+**CLI Mode (Testing & Development):**
+```bash
+# List all tools
+npx reloaderoo inspect list-tools -- node build/index.js
+
+# Call any tool
+npx reloaderoo inspect call-tool list_devices --params '{}' -- node build/index.js
+
+# Get server information
+npx reloaderoo inspect server-info -- node build/index.js
+
+# List and read resources
+npx reloaderoo inspect list-resources -- node build/index.js
+npx reloaderoo inspect read-resource "xcodebuildmcp://devices" -- node build/index.js
+```
+
+**Proxy Mode (MCP Client Integration):**
+```bash
+# Start persistent server for MCP clients
+npx reloaderoo proxy -- node build/index.js
+
+# With debug logging
+npx reloaderoo proxy --log-level debug -- node build/index.js
+
+# Then ask AI: "Please restart the MCP server to load my changes"
+```
+
+#### All CLI Inspect Commands
+
+Reloaderoo provides 8 inspect subcommands for comprehensive MCP server testing:
+
+```bash
+# Server capabilities and information
+npx reloaderoo inspect server-info -- node build/index.js
+
+# Tool management
+npx reloaderoo inspect list-tools -- node build/index.js
+npx reloaderoo inspect call-tool <tool_name> --params '<json>' -- node build/index.js
+
+# Resource access
+npx reloaderoo inspect list-resources -- node build/index.js
+npx reloaderoo inspect read-resource "<uri>" -- node build/index.js
+
+# Prompt management
+npx reloaderoo inspect list-prompts -- node build/index.js
+npx reloaderoo inspect get-prompt <name> --args '<json>' -- node build/index.js
+
+# Connectivity testing
+npx reloaderoo inspect ping -- node build/index.js
+```
+
+#### Advanced Options
+
+```bash
+# Custom working directory
+npx reloaderoo inspect list-tools --working-dir /custom/path -- node build/index.js
+
+# Timeout configuration
+npx reloaderoo inspect call-tool slow_tool --timeout 60000 --params '{}' -- node build/index.js
+
+# Raw JSON output (no formatting)
+npx reloaderoo inspect server-info --raw -- node build/index.js
+
+# Debug logging
+npx reloaderoo inspect list-tools --log-level debug -- node build/index.js
+```
+
+#### Key Benefits
+
+- ✅ **No MCP Client Setup**: Direct CLI access to all 84+ tools
+- ✅ **Raw JSON Output**: Perfect for AI agents and programmatic use
+- ✅ **Hot-Reload Support**: `restart_server` tool for MCP client development
+- ✅ **Claude Code Compatible**: Automatic content block consolidation
+- ✅ **8 Inspect Commands**: Complete MCP protocol testing capabilities
+- ✅ **Universal Compatibility**: Works on any system via npx
+
+For complete documentation, examples, and troubleshooting, see @docs/RELOADEROO.md
+
 ## Architecture Overview
 
 ### Plugin-Based MCP architecture
@@ -53,9 +137,9 @@ XcodeBuildMCP has two modes to manage its extensive toolset, controlled by the `
 - **Behavior**: Only the `discover_tools` tool is available initially. You can use this tool by providing a natural language task description. The server then uses an LLM call (via MCP Sampling) to identify the most relevant workflow group and dynamically loads only those tools. This conserves context window space.
 
 #### Claude Code Compatibility Workaround
-- **Environment**: `XCODEBUILDMCP_CLAUDE_CODE_WORKAROUND=true`.
+- **Detection**: Automatic detection when running under Claude Code.
 - **Purpose**: Workaround for Claude Code's MCP specification violation where it only displays the first content block in tool responses.
-- **Behavior**: When enabled, multiple content blocks are consolidated into a single text response, separated by `---` dividers. This ensures all information (including test results and stderr warnings) is visible to Claude Code users.
+- **Behavior**: When Claude Code is detected, multiple content blocks are automatically consolidated into a single text response, separated by `---` dividers. This ensures all information (including test results and stderr warnings) is visible to Claude Code users.
 
 ### Core Architecture Layers
 1. **MCP Transport**: stdio protocol communication
