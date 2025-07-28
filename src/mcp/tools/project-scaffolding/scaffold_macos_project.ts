@@ -62,8 +62,8 @@ function updatePackageSwiftFile(content: string, params: Record<string, unknown>
   let result = content;
 
   // Update ALL target name references in Package.swift
-  const featureName = `${params.projectName}Feature`;
-  const testName = `${params.projectName}FeatureTests`;
+  const featureName = `${params.projectName as string}Feature`;
+  const testName = `${params.projectName as string}FeatureTests`;
 
   // Replace ALL occurrences of MyProjectFeatureTests first (more specific)
   result = result.replace(/MyProjectFeatureTests/g, testName);
@@ -74,7 +74,7 @@ function updatePackageSwiftFile(content: string, params: Record<string, unknown>
   if (params.platform === 'macOS') {
     if (params.deploymentTarget) {
       // Extract major version (e.g., "14.0" -> "14")
-      const majorVersion = params.deploymentTarget.split('.')[0];
+      const majorVersion = (params.deploymentTarget as string).split('.')[0];
       result = result.replace(/\.macOS\(\.v\d+\)/, `.macOS(.v${majorVersion})`);
     }
   }
@@ -89,22 +89,22 @@ function updateXCConfigFile(content: string, params: Record<string, unknown>): s
   let result = content;
 
   // Update project identity settings
-  result = result.replace(/PRODUCT_NAME = .+/g, `PRODUCT_NAME = ${params.projectName}`);
+  result = result.replace(/PRODUCT_NAME = .+/g, `PRODUCT_NAME = ${params.projectName as string}`);
   result = result.replace(
     /PRODUCT_DISPLAY_NAME = .+/g,
-    `PRODUCT_DISPLAY_NAME = ${params.displayName || params.projectName}`,
+    `PRODUCT_DISPLAY_NAME = ${(params.displayName as string) || (params.projectName as string)}`,
   );
   result = result.replace(
     /PRODUCT_BUNDLE_IDENTIFIER = .+/g,
-    `PRODUCT_BUNDLE_IDENTIFIER = ${params.bundleIdentifier || `com.example.${params.projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`}`,
+    `PRODUCT_BUNDLE_IDENTIFIER = ${(params.bundleIdentifier as string) || `com.example.${(params.projectName as string).toLowerCase().replace(/[^a-z0-9]/g, '')}`}`,
   );
   result = result.replace(
     /MARKETING_VERSION = .+/g,
-    `MARKETING_VERSION = ${params.marketingVersion || '1.0'}`,
+    `MARKETING_VERSION = ${(params.marketingVersion as string) || '1.0'}`,
   );
   result = result.replace(
     /CURRENT_PROJECT_VERSION = .+/g,
-    `CURRENT_PROJECT_VERSION = ${params.currentProjectVersion || '1'}`,
+    `CURRENT_PROJECT_VERSION = ${(params.currentProjectVersion as string) || '1'}`,
   );
 
   // Platform-specific updates
@@ -113,24 +113,27 @@ function updateXCConfigFile(content: string, params: Record<string, unknown>): s
     if (params.deploymentTarget) {
       result = result.replace(
         /MACOSX_DEPLOYMENT_TARGET = .+/g,
-        `MACOSX_DEPLOYMENT_TARGET = ${params.deploymentTarget}`,
+        `MACOSX_DEPLOYMENT_TARGET = ${params.deploymentTarget as string}`,
       );
     }
 
     // Update entitlements path for macOS
     result = result.replace(
       /CODE_SIGN_ENTITLEMENTS = .+/g,
-      `CODE_SIGN_ENTITLEMENTS = Config/${params.projectName}.entitlements`,
+      `CODE_SIGN_ENTITLEMENTS = Config/${params.projectName as string}.entitlements`,
     );
   }
 
   // Update test bundle identifier and target name
-  result = result.replace(/TEST_TARGET_NAME = .+/g, `TEST_TARGET_NAME = ${params.projectName}`);
+  result = result.replace(
+    /TEST_TARGET_NAME = .+/g,
+    `TEST_TARGET_NAME = ${params.projectName as string}`,
+  );
 
   // Update comments that reference MyProject in entitlements paths
   result = result.replace(
     /Config\/MyProject\.entitlements/g,
-    `Config/${params.projectName}.entitlements`,
+    `Config/${params.projectName as string}.entitlements`,
   );
 
   return result;
@@ -173,7 +176,7 @@ async function processFile(
     // Replace MyProject in file/directory names
     const fileName = basename(destPath);
     const dirName = dirname(destPath);
-    const newFileName = fileName.replace(/MyProject/g, params.projectName);
+    const newFileName = fileName.replace(/MyProject/g, params.projectName as string);
     finalDestPath = join(dirName, newFileName);
   }
 
@@ -219,9 +222,13 @@ async function processFile(
     } else {
       // Use standard placeholder replacement
       const bundleIdentifier =
-        params.bundleIdentifier ||
-        `com.example.${params.projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-      processedContent = replacePlaceholders(content, params.projectName, bundleIdentifier);
+        (params.bundleIdentifier as string) ||
+        `com.example.${(params.projectName as string).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      processedContent = replacePlaceholders(
+        content,
+        params.projectName as string,
+        bundleIdentifier,
+      );
     }
 
     await fileSystemExecutor.mkdir(dirname(finalDestPath), { recursive: true });
@@ -245,26 +252,27 @@ async function processDirectory(
   const entries = await fileSystemExecutor.readdir(sourceDir, { withFileTypes: true });
 
   for (const entry of entries) {
-    const sourcePath = join(sourceDir, entry.name);
-    let destName = entry.name;
+    const dirent = entry as { isDirectory(): boolean; name: string };
+    const sourcePath = join(sourceDir, dirent.name);
+    let destName = dirent.name;
 
     if (params.customizeNames) {
       // Replace MyProject in directory names
-      destName = destName.replace(/MyProject/g, params.projectName);
+      destName = destName.replace(/MyProject/g, params.projectName as string);
     }
 
     const destPath = join(destDir, destName);
 
-    if (entry.isDirectory()) {
+    if (dirent.isDirectory()) {
       // Skip certain directories
-      if (entry.name === '.git' || entry.name === 'xcuserdata') {
+      if (dirent.name === '.git' || dirent.name === 'xcuserdata') {
         continue;
       }
       await fileSystemExecutor.mkdir(destPath, { recursive: true });
       await processDirectory(sourcePath, destPath, params, fileSystemExecutor);
-    } else if (entry.isFile()) {
+    } else if (dirent.isFile()) {
       // Skip certain files
-      if (entry.name === '.DS_Store' || entry.name.endsWith('.xcuserstate')) {
+      if (dirent.name === '.DS_Store' || dirent.name.endsWith('.xcuserstate')) {
         continue;
       }
       await processFile(sourcePath, destPath, params, fileSystemExecutor);
@@ -280,7 +288,10 @@ async function scaffoldProject(
   commandExecutor: CommandExecutor,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<string> {
-  const { projectName, outputPath, platform, customizeNames = true } = params;
+  const projectName = params.projectName as string;
+  const outputPath = params.outputPath as string;
+  const platform = params.platform as string;
+  const customizeNames = (params.customizeNames as boolean) ?? true;
 
   log('info', `Scaffolding project: ${projectName} (${platform}) at ${outputPath}`);
 
@@ -295,7 +306,7 @@ async function scaffoldProject(
   let templatePath;
   try {
     templatePath = await TemplateManager.getTemplatePath(
-      platform,
+      platform as 'macOS' | 'iOS',
       commandExecutor,
       fileSystemExecutor,
     );
@@ -341,18 +352,19 @@ export async function scaffold_macos_projectLogic(
   fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<ToolResponse> {
   try {
-    const projectParams = { ...params, platform: 'macOS' };
+    const paramsRecord = params as Record<string, unknown>;
+    const projectParams = { ...paramsRecord, platform: 'macOS' };
     const projectPath = await scaffoldProject(projectParams, commandExecutor, fileSystemExecutor);
 
     const response = {
       success: true,
       projectPath,
       platform: 'macOS',
-      message: `Successfully scaffolded macOS project "${params.projectName}" in ${projectPath}`,
+      message: `Successfully scaffolded macOS project "${paramsRecord.projectName as string}" in ${projectPath}`,
       nextSteps: [
         `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
-        `Build for macOS: build_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
-        `Run and run on macOS: build_run_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
+        `Build for macOS: build_mac_ws --workspace-path "${projectPath}/${paramsRecord.customizeNames ? (paramsRecord.projectName as string) : 'MyProject'}.xcworkspace" --scheme "${paramsRecord.customizeNames ? (paramsRecord.projectName as string) : 'MyProject'}"`,
+        `Run and run on macOS: build_run_mac_ws --workspace-path "${projectPath}/${paramsRecord.customizeNames ? (paramsRecord.projectName as string) : 'MyProject'}.xcworkspace" --scheme "${paramsRecord.customizeNames ? (paramsRecord.projectName as string) : 'MyProject'}"`,
       ],
     };
 

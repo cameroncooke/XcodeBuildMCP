@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../utils/command.js';
-import getSimAppPathIdProj, { get_sim_app_path_id_projLogic } from '../get_sim_app_path_id_proj.ts';
+import getSimAppPathIdProj, { get_sim_app_path_id_projLogic } from '../get_sim_app_path_id_proj.js';
 
 describe('get_sim_app_path_id_proj plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -263,16 +263,16 @@ describe('get_sim_app_path_id_proj plugin', () => {
       const calls: any[] = [];
       const mockExecutor = async (
         command: string[],
-        context: string,
-        logOutput: boolean,
-        timeout: number | undefined,
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
       ) => {
-        calls.push({ command, context, logOutput, timeout });
+        calls.push({ command, logPrefix, useShell, env });
         return {
           success: false,
           error: 'Command failed',
           output: '',
-          process: { pid: 12345 },
+          process: { pid: 12345 } as any,
         };
       };
 
@@ -301,9 +301,9 @@ describe('get_sim_app_path_id_proj plugin', () => {
         '-destination',
         'platform=iOS Simulator,id=test-uuid',
       ]);
-      expect(calls[0].context).toBe('Get App Path');
-      expect(calls[0].logOutput).toBe(true);
-      expect(calls[0].timeout).toBe(undefined);
+      expect(calls[0].logPrefix).toBe('Get App Path');
+      expect(calls[0].useShell).toBe(true);
+      expect(calls[0].env).toBe(undefined);
     });
   });
 });

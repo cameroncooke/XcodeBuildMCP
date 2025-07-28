@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import {
   log,
   getDefaultCommandExecutor,
@@ -10,28 +10,37 @@ import {
 } from '../../../utils/index.js';
 import { execSync } from 'child_process';
 
-const XcodePlatform = {
-  iOSSimulator: 'iOS Simulator',
-};
-
 // Helper function for simulator build logic
 async function _handleSimulatorBuildLogic(
   params: Record<string, unknown>,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  log('info', `Building ${params.workspacePath || params.projectPath} for iOS Simulator`);
+  const paramsRecord = params as Record<string, unknown>;
+  log(
+    'info',
+    `Building ${paramsRecord.workspacePath || paramsRecord.projectPath} for iOS Simulator`,
+  );
 
   try {
+    const buildParams = {
+      workspacePath: paramsRecord.workspacePath as string,
+      projectPath: paramsRecord.projectPath as string,
+      scheme: paramsRecord.scheme as string,
+      configuration: paramsRecord.configuration as string,
+      derivedDataPath: paramsRecord.derivedDataPath as string,
+      extraArgs: paramsRecord.extraArgs as string[],
+    };
+
     const buildResult = await executeXcodeBuildCommand(
-      params,
+      buildParams,
       {
         platform: XcodePlatform.iOSSimulator,
-        simulatorName: params.simulatorName,
-        simulatorId: params.simulatorId,
-        useLatestOS: params.useLatestOS,
+        simulatorName: paramsRecord.simulatorName as string,
+        simulatorId: paramsRecord.simulatorId as string,
+        useLatestOS: paramsRecord.useLatestOS as boolean,
         logPrefix: 'Build',
       },
-      params.preferXcodebuild,
+      paramsRecord.preferXcodebuild as boolean,
       'build',
       executor,
     );
@@ -49,23 +58,33 @@ export async function build_run_sim_name_wsLogic(
   params: Record<string, unknown>,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  const paramsRecord = params as Record<string, unknown>;
+
   // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
+  const simulatorNameValidation = validateRequiredParam(
+    'simulatorName',
+    paramsRecord.simulatorName,
+  );
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
   // Provide defaults
-  const processedParams = {
-    ...params,
-    configuration: params.configuration ?? 'Debug',
-    useLatestOS: params.useLatestOS ?? true,
-    preferXcodebuild: params.preferXcodebuild ?? false,
+  const processedParams = paramsRecord as Record<string, unknown> & {
+    workspacePath: string;
+    scheme: string;
+    simulatorName: string;
+    configuration: string;
+    useLatestOS: boolean;
+    preferXcodebuild: boolean;
   };
+  processedParams.configuration = (paramsRecord.configuration as string) ?? 'Debug';
+  processedParams.useLatestOS = (paramsRecord.useLatestOS as boolean) ?? true;
+  processedParams.preferXcodebuild = (paramsRecord.preferXcodebuild as boolean) ?? false;
 
   log(
     'info',
@@ -128,7 +147,7 @@ export async function build_run_sim_name_wsLogic(
     if (processedParams.workspacePath) {
       command.push('-workspace', processedParams.workspacePath);
     } else if (processedParams.projectPath) {
-      command.push('-project', processedParams.projectPath);
+      command.push('-project', processedParams.projectPath as string);
     }
 
     command.push('-scheme', processedParams.scheme);

@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import { z } from 'zod';
 import { log } from '../../../utils/index.js';
-import { activeDeviceLogSessions } from './start_device_log_cap.ts';
+import { activeDeviceLogSessions } from './start_device_log_cap.js';
 import { ToolResponse } from '../../../types/common.js';
 import { FileSystemExecutor, getDefaultFileSystemExecutor } from '../../../utils/command.js';
 
@@ -87,38 +87,38 @@ export async function stopDeviceLogCapture(
   fileSystem?: unknown,
 ): Promise<{ logContent: string; error?: string }> {
   // For backward compatibility, create a mock FileSystemExecutor from the fileSystem parameter
-  const fsToUse = fileSystem || fs;
+  const fsToUse = (fileSystem as typeof fs) || fs;
   const mockFileSystemExecutor: FileSystemExecutor = {
     async mkdir(path: string, options?: { recursive?: boolean }): Promise<void> {
-      await fsToUse.promises.mkdir(path, options);
+      await (fsToUse.promises || fsToUse).mkdir(path, options);
     },
     async readFile(path: string, encoding: string = 'utf8'): Promise<string> {
-      return await fsToUse.promises.readFile(path, encoding);
+      return await (fsToUse.promises || fsToUse).readFile(path, encoding);
     },
     async writeFile(path: string, content: string, encoding: string = 'utf8'): Promise<void> {
-      await fsToUse.promises.writeFile(path, content, encoding);
+      await (fsToUse.promises || fsToUse).writeFile(path, content, encoding);
     },
     async cp(
       source: string,
       destination: string,
       options?: { recursive?: boolean },
     ): Promise<void> {
-      await fsToUse.promises.cp(source, destination, options);
+      await (fsToUse.promises || fsToUse).cp(source, destination, options);
     },
     async readdir(path: string, options?: { withFileTypes?: boolean }): Promise<unknown[]> {
-      return await fsToUse.promises.readdir(path, options);
+      return await (fsToUse.promises || fsToUse).readdir(path, options);
     },
     async rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {
-      await fsToUse.promises.rm(path, options);
+      await (fsToUse.promises || fsToUse).rm(path, options);
     },
     existsSync(path: string): boolean {
-      return fsToUse.existsSync ? fsToUse.existsSync(path) : fs.existsSync(path);
+      return (fsToUse.existsSync || fs.existsSync)(path);
     },
     async stat(path: string): Promise<{ isDirectory(): boolean }> {
-      return await fsToUse.promises.stat(path);
+      return await (fsToUse.promises || fsToUse).stat(path);
     },
     async mkdtemp(prefix: string): Promise<string> {
-      return await fsToUse.promises.mkdtemp(prefix);
+      return await (fsToUse.promises || fsToUse).mkdtemp(prefix);
     },
     tmpdir(): string {
       return '/tmp';
@@ -130,7 +130,7 @@ export async function stopDeviceLogCapture(
   if (result.isError) {
     return {
       logContent: '',
-      error: result.content[0].text.replace(
+      error: (result.content[0].text as string).replace(
         `Failed to stop device log capture session ${logSessionId}: `,
         '',
       ),
@@ -138,7 +138,7 @@ export async function stopDeviceLogCapture(
   }
 
   // Extract log content from successful response
-  const text = result.content[0].text;
+  const text = result.content[0].text as string;
   const logContentMatch = text.match(/--- Captured Logs ---\n([\s\S]*)$/);
   const logContent = logContentMatch ? logContentMatch[1] : '';
 
@@ -151,9 +151,10 @@ export default {
   schema: {
     logSessionId: z.string().describe('The session ID returned by start_device_log_cap.'),
   },
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
+  handler: async (params: Record<string, unknown>): Promise<ToolResponse> => {
+    const paramsRecord = params as Record<string, unknown>;
     return stop_device_log_capLogic(
-      args as { logSessionId: string },
+      { logSessionId: paramsRecord.logSessionId as string },
       getDefaultFileSystemExecutor(),
     );
   },

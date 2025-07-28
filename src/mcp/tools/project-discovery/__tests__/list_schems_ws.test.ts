@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { createMockExecutor } from '../../../../utils/command.js';
 import plugin, { list_schems_wsLogic, ListSchemsWsParams } from '../list_schems_ws.ts';
 
@@ -37,19 +38,21 @@ describe('list_schems_ws plugin', () => {
     });
 
     it('should validate schema with valid inputs', () => {
+      const zodSchema = z.object(plugin.schema);
       expect(
-        plugin.schema.safeParse({ workspacePath: '/path/to/MyWorkspace.xcworkspace' }).success,
+        zodSchema.safeParse({ workspacePath: '/path/to/MyWorkspace.xcworkspace' }).success,
       ).toBe(true);
-      expect(plugin.schema.safeParse({ workspacePath: '/Users/dev/App.xcworkspace' }).success).toBe(
+      expect(zodSchema.safeParse({ workspacePath: '/Users/dev/App.xcworkspace' }).success).toBe(
         true,
       );
     });
 
     it('should validate schema with invalid inputs', () => {
-      expect(plugin.schema.safeParse({}).success).toBe(false);
-      expect(plugin.schema.safeParse({ workspacePath: 123 }).success).toBe(false);
-      expect(plugin.schema.safeParse({ workspacePath: null }).success).toBe(false);
-      expect(plugin.schema.safeParse({ workspacePath: undefined }).success).toBe(false);
+      const zodSchema = z.object(plugin.schema);
+      expect(zodSchema.safeParse({}).success).toBe(false);
+      expect(zodSchema.safeParse({ workspacePath: 123 }).success).toBe(false);
+      expect(zodSchema.safeParse({ workspacePath: null }).success).toBe(false);
+      expect(zodSchema.safeParse({ workspacePath: undefined }).success).toBe(false);
     });
   });
 

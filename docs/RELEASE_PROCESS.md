@@ -18,12 +18,30 @@ git checkout -b bugfix/issue-456-fix-simulator-crash
 
 ### 2. Development & Commits
 
+**Before committing, ALWAYS run quality checks:**
+```bash
+npm run build      # Ensure code compiles
+npm run typecheck  # MANDATORY: Fix all TypeScript errors
+npm run lint       # Fix linting issues
+npm run test       # Ensure tests pass
+```
+
+**🚨 CRITICAL: TypeScript errors are BLOCKING:**
+- **ZERO tolerance** for TypeScript errors in commits
+- The `npm run typecheck` command must pass with no errors
+- Fix all `ts(XXXX)` errors before committing
+- Do not ignore or suppress TypeScript errors without explicit approval
+
 **Make logical, atomic commits:**
-- Each commit should represent a single logical change
+- Each commit should represent a single logical change  
 - Write short, descriptive commit summaries
 - Commit frequently to your feature branch
 
 ```bash
+# Always run quality checks first
+npm run typecheck && npm run lint && npm run test
+
+# Then commit your changes
 git add .
 git commit -m "feat: add simulator boot validation logic"
 git commit -m "fix: handle null response in device list parser"
@@ -128,9 +146,12 @@ Every PR must include these sections in order:
 - **NEVER push to `main` directly**
 - **NEVER push without explicit user permission**
 - **NEVER force push without explicit permission**
+- **NEVER commit code with TypeScript errors**
 
 ### ✅ Required Practices
 - Always pull from `main` before creating branches
+- **MANDATORY: Run `npm run typecheck` before every commit**
+- **MANDATORY: Fix all TypeScript errors before committing**
 - Use `gh` CLI tool for all PR operations
 - Add "Cursor review" comment after PR creation
 - Maintain linear commit history via rebasing
@@ -144,3 +165,49 @@ Every PR must include these sections in order:
 - `hotfix/critical-issue-description` - Critical production fixes
 - `docs/update-readme` - Documentation updates
 - `refactor/improve-error-handling` - Code refactoring
+
+## Automated Quality Gates
+
+### CI/CD Pipeline
+Our GitHub Actions CI pipeline automatically enforces these quality checks:
+1. `npm run build` - Compilation check
+2. `npm run lint` - ESLint validation  
+3. `npm run format:check` - Prettier formatting check
+4. `npm run typecheck` - **TypeScript error validation**
+5. `npm run test` - Test suite execution
+
+**All checks must pass before PR merge is allowed.**
+
+### Optional: Pre-commit Hook Setup
+To catch TypeScript errors before committing locally:
+
+```bash
+# Create pre-commit hook
+cat > .git/hooks/pre-commit << 'EOF'
+#!/bin/sh
+echo "🔍 Running pre-commit checks..."
+
+# Run TypeScript type checking
+echo "📝 Checking TypeScript..."
+npm run typecheck
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript errors found. Please fix before committing."
+  exit 1
+fi
+
+# Run linting
+echo "🧹 Running linter..."
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ Linting errors found. Please fix before committing."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"
+EOF
+
+# Make it executable  
+chmod +x .git/hooks/pre-commit
+```
+
+This hook will automatically run `typecheck` and `lint` before every commit, preventing TypeScript errors from being committed.

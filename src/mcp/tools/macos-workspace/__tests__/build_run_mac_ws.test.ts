@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../utils/command.js';
-import buildRunMacWs, { build_run_mac_wsLogic } from '../build_run_mac_ws.ts';
+import buildRunMacWs, { build_run_mac_wsLogic } from '../build_run_mac_ws.js';
 
 describe('build_run_mac_ws plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -54,9 +54,12 @@ describe('build_run_mac_ws plugin', () => {
     it('should successfully build and run macOS app', async () => {
       // Mock successful build first, then successful build settings
       let callCount = 0;
-      const calls: any[] = [];
-      const mockExecutor = (command: string[]) => {
-        calls.push(command);
+      const mockExecutor = (
+        command: string[],
+        logPrefix: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
         callCount++;
         if (callCount === 1) {
           // First call for build
@@ -64,6 +67,7 @@ describe('build_run_mac_ws plugin', () => {
             success: true,
             output: 'BUILD SUCCEEDED',
             error: '',
+            process: {} as any,
           });
         } else {
           // Second call for build settings
@@ -71,6 +75,7 @@ describe('build_run_mac_ws plugin', () => {
             success: true,
             output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
             error: '',
+            process: {} as any,
           });
         }
       };
@@ -138,9 +143,12 @@ describe('build_run_mac_ws plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      const calls: any[] = [];
-      const mockExecutor = (command: string[]) => {
-        calls.push(command);
+      const mockExecutor = (
+        command: string[],
+        logPrefix: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
         return Promise.reject(new Error('Network error'));
       };
 
