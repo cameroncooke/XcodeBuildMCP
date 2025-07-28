@@ -77,14 +77,10 @@ run "sed -i '' -E 's/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9
 echo "📝 Updating version in README.md shield links..."
 run "sed -i '' -E 's/npm%3Axcodebuildmcp%40[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/npm%3Axcodebuildmcp%40'"$VERSION"'/g' README.md"
 
-echo ""
-echo "📝 Updating version in TOOL_OPTIONS.md..."
-run "sed -i '' -E 's/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/@'"$VERSION"'/g' docs/TOOL_OPTIONS.md"
-
 # Git operations
 echo ""
 echo "📦 Committing version changes..."
-run "git add package.json README.md TOOL_OPTIONS.md"
+run "git add package.json README.md"
 run "git commit -m \"Release v$VERSION\""
 run "git tag \"v$VERSION\""
 
