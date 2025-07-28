@@ -55,6 +55,17 @@ const ScaffoldmacOSProjectSchema = BaseScaffoldSchema.extend({
     .describe('macOS deployment target (e.g., 15.4, 14.0). If not provided, will use 15.4'),
 });
 
+type ScaffoldMacOSProjectParams = {
+  projectName: string;
+  outputPath: string;
+  bundleIdentifier?: string;
+  displayName?: string;
+  marketingVersion?: string;
+  currentProjectVersion?: string;
+  customizeNames?: boolean;
+  deploymentTarget?: string;
+};
+
 /**
  * Update Package.swift file with deployment target
  */
@@ -347,7 +358,7 @@ async function scaffoldProject(
  * Extracted for testability and Separation of Concerns
  */
 export async function scaffold_macos_projectLogic(
-  params: Record<string, unknown>,
+  params: ScaffoldMacOSProjectParams,
   commandExecutor: CommandExecutor,
   fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<ToolResponse> {
@@ -360,11 +371,11 @@ export async function scaffold_macos_projectLogic(
       success: true,
       projectPath,
       platform: 'macOS',
-      message: `Successfully scaffolded macOS project "${paramsRecord.projectName as string}" in ${projectPath}`,
+      message: `Successfully scaffolded macOS project "${params.projectName}" in ${projectPath}`,
       nextSteps: [
         `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
-        `Build for macOS: build_mac_ws --workspace-path "${projectPath}/${paramsRecord.customizeNames ? (paramsRecord.projectName as string) : 'MyProject'}.xcworkspace" --scheme "${paramsRecord.customizeNames ? (paramsRecord.projectName as string) : 'MyProject'}"`,
-        `Run and run on macOS: build_run_mac_ws --workspace-path "${projectPath}/${paramsRecord.customizeNames ? (paramsRecord.projectName as string) : 'MyProject'}.xcworkspace" --scheme "${paramsRecord.customizeNames ? (paramsRecord.projectName as string) : 'MyProject'}"`,
+        `Build for macOS: build_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
+        `Run and run on macOS: build_run_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
       ],
     };
 
@@ -408,7 +419,7 @@ export default {
   schema: ScaffoldmacOSProjectSchema.shape,
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     return scaffold_macos_projectLogic(
-      args,
+      args as ScaffoldMacOSProjectParams,
       getDefaultCommandExecutor(),
       getDefaultFileSystemExecutor(),
     );

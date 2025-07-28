@@ -72,11 +72,23 @@ function constructDestinationString(
   return `platform=${platform}`;
 }
 
+type GetSimAppPathIdProjParams = {
+  projectPath: string;
+  scheme: string;
+  platform: string;
+  simulatorId: string;
+  configuration?: string;
+  useLatestOS?: boolean;
+  workspacePath?: string;
+  simulatorName?: string;
+  arch?: string;
+};
+
 /**
  * Business logic for getting simulator app path by ID from project file
  */
 export async function get_sim_app_path_id_projLogic(
-  params: unknown,
+  params: GetSimAppPathIdProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const paramsRecord = params as Record<string, unknown>;
@@ -95,31 +107,32 @@ export async function get_sim_app_path_id_projLogic(
   if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
 
   // Set defaults
-  const processedParams = {
-    ...paramsRecord,
-    configuration: paramsRecord.configuration ?? 'Debug',
-    useLatestOS: paramsRecord.useLatestOS ?? true,
-  } as Record<string, unknown>;
+  const projectPath = params.projectPath;
+  const scheme = params.scheme;
+  const platform = params.platform;
+  const simulatorId = params.simulatorId;
+  const configuration = params.configuration ?? 'Debug';
+  const useLatestOS = params.useLatestOS ?? true;
+  const workspacePath = params.workspacePath;
+  const simulatorName = params.simulatorName;
+  const arch = params.arch;
 
-  log(
-    'info',
-    `Getting app path for scheme ${processedParams.scheme} on platform ${processedParams.platform}`,
-  );
+  log('info', `Getting app path for scheme ${scheme} on platform ${platform}`);
 
   try {
     // Create the command array for xcodebuild with -showBuildSettings option
     const command = ['xcodebuild', '-showBuildSettings'];
 
     // Add the workspace or project
-    if (processedParams.workspacePath) {
-      command.push('-workspace', processedParams.workspacePath as string);
-    } else if (processedParams.projectPath) {
-      command.push('-project', processedParams.projectPath as string);
+    if (workspacePath) {
+      command.push('-workspace', workspacePath);
+    } else if (projectPath) {
+      command.push('-project', projectPath);
     }
 
     // Add the scheme and configuration
-    command.push('-scheme', processedParams.scheme as string);
-    command.push('-configuration', processedParams.configuration as string);
+    command.push('-scheme', scheme);
+    command.push('-configuration', configuration);
 
     // Handle destination based on platform
     const isSimulatorPlatform = [
@@ -127,42 +140,33 @@ export async function get_sim_app_path_id_projLogic(
       XcodePlatform.watchOSSimulator,
       XcodePlatform.tvOSSimulator,
       XcodePlatform.visionOSSimulator,
-    ].includes(processedParams.platform as string);
+    ].includes(platform);
 
     let destinationString = '';
 
     if (isSimulatorPlatform) {
-      if (processedParams.simulatorId) {
-        destinationString = `platform=${processedParams.platform as string},id=${processedParams.simulatorId as string}`;
-      } else if (processedParams.simulatorName) {
-        destinationString = `platform=${processedParams.platform as string},name=${processedParams.simulatorName as string}${processedParams.useLatestOS ? ',OS=latest' : ''}`;
+      if (simulatorId) {
+        destinationString = `platform=${platform},id=${simulatorId}`;
+      } else if (simulatorName) {
+        destinationString = `platform=${platform},name=${simulatorName}${useLatestOS ? ',OS=latest' : ''}`;
       } else {
         return createTextResponse(
-          `For ${processedParams.platform as string} platform, either simulatorId or simulatorName must be provided`,
+          `For ${platform} platform, either simulatorId or simulatorName must be provided`,
           true,
         );
       }
-    } else if (processedParams.platform === XcodePlatform.macOS) {
-      destinationString = constructDestinationString(
-        processedParams.platform as string,
-        '',
-        '',
-        false,
-        processedParams.arch as string | undefined,
-      );
-    } else if (processedParams.platform === XcodePlatform.iOS) {
+    } else if (platform === XcodePlatform.macOS) {
+      destinationString = constructDestinationString(platform, '', '', false, arch);
+    } else if (platform === XcodePlatform.iOS) {
       destinationString = 'generic/platform=iOS';
-    } else if (processedParams.platform === XcodePlatform.watchOS) {
+    } else if (platform === XcodePlatform.watchOS) {
       destinationString = 'generic/platform=watchOS';
-    } else if (processedParams.platform === XcodePlatform.tvOS) {
+    } else if (platform === XcodePlatform.tvOS) {
       destinationString = 'generic/platform=tvOS';
-    } else if (processedParams.platform === XcodePlatform.visionOS) {
+    } else if (platform === XcodePlatform.visionOS) {
       destinationString = 'generic/platform=visionOS';
     } else {
-      return createTextResponse(
-        `Unsupported platform: ${processedParams.platform as string}`,
-        true,
-      );
+      return createTextResponse(`Unsupported platform: ${platform}`, true);
     }
 
     command.push('-destination', destinationString);
@@ -194,7 +198,7 @@ export async function get_sim_app_path_id_projLogic(
     const appPath = `${builtProductsDir}/${fullProductName}`;
 
     let nextStepsText = '';
-    if (processedParams.platform === XcodePlatform.macOS) {
+    if (platform === XcodePlatform.macOS) {
       nextStepsText = `Next Steps:
 1. Get bundle ID: get_macos_bundle_id({ appPath: "${appPath}" })
 2. Launch the app: launch_macos_app({ appPath: "${appPath}" })`;
@@ -210,7 +214,7 @@ export async function get_sim_app_path_id_projLogic(
         XcodePlatform.watchOS,
         XcodePlatform.tvOS,
         XcodePlatform.visionOS,
-      ].includes(processedParams.platform as string)
+      ].includes(platform)
     ) {
       nextStepsText = `Next Steps:
 1. Get bundle ID: get_app_bundle_id({ appPath: "${appPath}" })
@@ -219,7 +223,7 @@ export async function get_sim_app_path_id_projLogic(
     } else {
       // For other platforms
       nextStepsText = `Next Steps:
-1. The app has been built for ${processedParams.platform as string}
+1. The app has been built for ${platform}
 2. Use platform-specific deployment tools to install and run the app`;
     }
 
@@ -262,6 +266,9 @@ export default {
       .describe('Whether to use the latest OS version for the named simulator'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_sim_app_path_id_projLogic(args, getDefaultCommandExecutor());
+    return get_sim_app_path_id_projLogic(
+      args as GetSimAppPathIdProjParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };
