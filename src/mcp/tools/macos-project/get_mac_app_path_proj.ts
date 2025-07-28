@@ -11,14 +11,14 @@ import { validateRequiredParam } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 
-interface GetMacAppPathProjParams {
-  projectPath: unknown;
-  scheme: unknown;
-  configuration?: unknown;
-  derivedDataPath?: unknown;
-  extraArgs?: unknown;
-  arch?: unknown;
-}
+type GetMacAppPathProjParams = {
+  projectPath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  arch?: 'arm64' | 'x86_64';
+};
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -36,11 +36,13 @@ export async function get_mac_app_path_projLogic(
   params: GetMacAppPathProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse;
+  const paramsRecord = params as Record<string, unknown>;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   const configuration = params.configuration ?? 'Debug';
 
@@ -51,20 +53,20 @@ export async function get_mac_app_path_projLogic(
     const command = ['xcodebuild', '-showBuildSettings'];
 
     // Add the project
-    command.push('-project', params.projectPath as string);
+    command.push('-project', params.projectPath);
 
     // Add the scheme and configuration
-    command.push('-scheme', params.scheme as string);
-    command.push('-configuration', configuration as string);
+    command.push('-scheme', params.scheme);
+    command.push('-configuration', configuration);
 
     // Add optional derived data path
     if (params.derivedDataPath) {
-      command.push('-derivedDataPath', params.derivedDataPath as string);
+      command.push('-derivedDataPath', params.derivedDataPath);
     }
 
     // Add extra arguments if provided
     if (params.extraArgs && Array.isArray(params.extraArgs)) {
-      command.push(...(params.extraArgs as string[]));
+      command.push(...params.extraArgs);
     }
 
     // Execute the command directly with executor
@@ -151,6 +153,9 @@ export default {
       .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_mac_app_path_projLogic(args, getDefaultCommandExecutor());
+    return get_mac_app_path_projLogic(
+      args as unknown as GetMacAppPathProjParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };

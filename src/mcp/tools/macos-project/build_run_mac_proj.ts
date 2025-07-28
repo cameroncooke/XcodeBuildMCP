@@ -13,6 +13,17 @@ import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 
+type BuildRunMacProjParams = {
+  projectPath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  arch?: 'arm64' | 'x86_64';
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+  workspacePath?: string;
+};
+
 const XcodePlatform = {
   iOS: 'iOS',
   watchOS: 'watchOS',
@@ -29,7 +40,7 @@ const XcodePlatform = {
  * Internal logic for building macOS apps.
  */
 async function _handleMacOSBuildLogic(
-  params: Record<string, unknown>,
+  params: BuildRunMacProjParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
@@ -50,7 +61,7 @@ async function _handleMacOSBuildLogic(
 }
 
 async function _getAppPathFromBuildSettings(
-  params: Record<string, unknown>,
+  params: BuildRunMacProjParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<{ success: boolean; appPath?: string; error?: string }> {
   try {
@@ -66,7 +77,7 @@ async function _getAppPathFromBuildSettings(
 
     // Add the scheme and configuration
     command.push('-scheme', params.scheme);
-    command.push('-configuration', params.configuration);
+    command.push('-configuration', params.configuration ?? 'Debug');
 
     // Add derived data path if provided
     if (params.derivedDataPath) {
@@ -109,7 +120,7 @@ async function _getAppPathFromBuildSettings(
  * Business logic for building and running macOS apps.
  */
 export async function build_run_mac_projLogic(
-  params: Record<string, unknown>,
+  params: BuildRunMacProjParams,
   executor: CommandExecutor,
   execAsync?: (cmd: string) => Promise<unknown>,
 ): Promise<ToolResponse> {
@@ -149,7 +160,7 @@ export async function build_run_mac_projLogic(
       const execFunction = execAsync || promisify(exec);
       await execFunction(`open "${appPath}"`);
       log('info', `✅ macOS app launched successfully: ${appPath}`);
-      const successResponse = {
+      const successResponse: ToolResponse = {
         content: [
           ...buildWarningMessages,
           {
@@ -157,6 +168,7 @@ export async function build_run_mac_projLogic(
             text: `✅ macOS build and run succeeded for scheme ${params.scheme}. App launched: ${appPath}`,
           },
         ],
+        isError: false,
       };
       return successResponse;
     } catch (launchError) {
@@ -206,9 +218,9 @@ export default {
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     return build_run_mac_projLogic(
       {
-        ...args,
-        configuration: args.configuration ?? 'Debug',
-        preferXcodebuild: args.preferXcodebuild ?? false,
+        ...(args as unknown as BuildRunMacProjParams),
+        configuration: (args.configuration as string) ?? 'Debug',
+        preferXcodebuild: (args.preferXcodebuild as boolean) ?? false,
       },
       getDefaultCommandExecutor(),
     );

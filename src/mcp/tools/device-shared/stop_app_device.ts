@@ -9,10 +9,10 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 
-interface StopAppDeviceParams {
+type StopAppDeviceParams = {
   deviceId: string;
   processId: number;
-}
+};
 
 export async function stop_app_deviceLogic(
   params: StopAppDeviceParams,
@@ -84,6 +84,9 @@ export default {
     processId: z.number().describe('Process ID (PID) of the app to stop'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return stop_app_deviceLogic(args as StopAppDeviceParams, getDefaultCommandExecutor());
+    return stop_app_deviceLogic(
+      args as unknown as StopAppDeviceParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };

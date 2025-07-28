@@ -9,11 +9,16 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 
+type InstallAppDeviceParams = {
+  deviceId: string;
+  appPath: string;
+};
+
 /**
  * Business logic for installing an app on a physical Apple device
  */
 export async function install_app_deviceLogic(
-  params: Record<string, unknown>,
+  params: InstallAppDeviceParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const { deviceId, appPath } = params;
@@ -77,6 +82,9 @@ export default {
       .describe('Path to the .app bundle to install (full path to the .app directory)'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return install_app_deviceLogic(args, getDefaultCommandExecutor());
+    return install_app_deviceLogic(
+      args as unknown as InstallAppDeviceParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };
