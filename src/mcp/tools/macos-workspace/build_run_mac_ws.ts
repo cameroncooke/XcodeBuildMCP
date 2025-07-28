@@ -13,64 +13,68 @@ import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 
+type BuildRunMacWsParams = {
+  workspacePath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  arch?: 'arm64' | 'x86_64';
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+};
+
 /**
  * Internal logic for building macOS apps.
  */
 async function _handleMacOSBuildLogic(
-  params: Record<string, unknown>,
+  params: BuildRunMacWsParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
-  log('info', `Starting macOS build for scheme ${paramsRecord.scheme} (internal)`);
+  const _paramsRecord = params as Record<string, unknown>;
+  log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
     {
-      workspacePath: paramsRecord.workspacePath as string,
-      projectPath: paramsRecord.projectPath as string,
-      scheme: paramsRecord.scheme as string,
-      configuration: paramsRecord.configuration as string,
-      derivedDataPath: paramsRecord.derivedDataPath as string,
-      extraArgs: paramsRecord.extraArgs as string[],
+      workspacePath: params.workspacePath,
+      scheme: params.scheme,
+      configuration: params.configuration,
+      derivedDataPath: params.derivedDataPath,
+      extraArgs: params.extraArgs,
     },
     {
       platform: XcodePlatform.macOS,
-      arch: paramsRecord.arch as string,
+      arch: params.arch,
       logPrefix: 'macOS Build',
     },
-    paramsRecord.preferXcodebuild as boolean,
+    params.preferXcodebuild,
     'build',
     executor,
   );
 }
 
 async function _getAppPathFromBuildSettings(
-  params: Record<string, unknown>,
+  params: BuildRunMacWsParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<Record<string, unknown> | null> {
   try {
-    const paramsRecord = params as Record<string, unknown>;
     // Create the command array for xcodebuild
     const command = ['xcodebuild', '-showBuildSettings'];
 
-    // Add the workspace or project
-    if (paramsRecord.workspacePath) {
-      command.push('-workspace', paramsRecord.workspacePath as string);
-    } else if (paramsRecord.projectPath) {
-      command.push('-project', paramsRecord.projectPath as string);
-    }
+    // Add the workspace
+    command.push('-workspace', params.workspacePath);
 
     // Add the scheme and configuration
-    command.push('-scheme', paramsRecord.scheme as string);
-    command.push('-configuration', paramsRecord.configuration as string);
+    command.push('-scheme', params.scheme);
+    command.push('-configuration', params.configuration!);
 
     // Add derived data path if provided
-    if (paramsRecord.derivedDataPath) {
-      command.push('-derivedDataPath', paramsRecord.derivedDataPath as string);
+    if (params.derivedDataPath) {
+      command.push('-derivedDataPath', params.derivedDataPath);
     }
 
     // Add extra args if provided
-    if (paramsRecord.extraArgs && (paramsRecord.extraArgs as string[]).length > 0) {
-      command.push(...(paramsRecord.extraArgs as string[]));
+    if (params.extraArgs && params.extraArgs.length > 0) {
+      command.push(...params.extraArgs);
     }
 
     // Execute the command directly
@@ -104,16 +108,16 @@ async function _getAppPathFromBuildSettings(
  * Exported business logic for building and running macOS apps.
  */
 export async function build_run_mac_wsLogic(
-  params: Record<string, unknown>,
+  params: BuildRunMacWsParams,
   executor: CommandExecutor,
   execFunction?: (command: string) => Promise<{ stdout: string; stderr: string }>,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
+  const _paramsRecord = params as Record<string, unknown>;
   log('info', 'Handling macOS build & run logic...');
 
   try {
     // First, build the app
-    const buildResult = await _handleMacOSBuildLogic(paramsRecord, executor);
+    const buildResult = await _handleMacOSBuildLogic(params, executor);
 
     // 1. Check if the build itself failed
     if (buildResult.isError) {
@@ -122,7 +126,7 @@ export async function build_run_mac_wsLogic(
     const buildWarningMessages = buildResult.content?.filter((c) => c.type === 'text') ?? [];
 
     // 2. Build succeeded, now get the app path using the helper
-    const appPathResult = await _getAppPathFromBuildSettings(paramsRecord, executor);
+    const appPathResult = await _getAppPathFromBuildSettings(params, executor);
 
     // 3. Check if getting the app path failed
     if (!appPathResult.success) {
@@ -151,7 +155,7 @@ export async function build_run_mac_wsLogic(
           ...buildWarningMessages,
           {
             type: 'text' as const,
-            text: `✅ macOS build and run succeeded for scheme ${paramsRecord.scheme}. App launched: ${appPath}`,
+            text: `✅ macOS build and run succeeded for scheme ${params.scheme}. App launched: ${appPath}`,
           },
         ],
         isError: false,
@@ -204,11 +208,12 @@ export default {
       ),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    const typedArgs = args as BuildRunMacWsParams;
     return build_run_mac_wsLogic(
       {
-        ...args,
-        configuration: args.configuration ?? 'Debug',
-        preferXcodebuild: args.preferXcodebuild ?? false,
+        ...typedArgs,
+        configuration: typedArgs.configuration ?? 'Debug',
+        preferXcodebuild: typedArgs.preferXcodebuild ?? false,
       },
       getDefaultCommandExecutor(),
     );

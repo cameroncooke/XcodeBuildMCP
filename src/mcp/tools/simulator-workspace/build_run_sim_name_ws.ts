@@ -10,37 +10,43 @@ import {
 } from '../../../utils/index.js';
 import { execSync } from 'child_process';
 
+type BuildRunSimNameWsParams = {
+  workspacePath: string;
+  scheme: string;
+  simulatorName: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+};
+
 // Helper function for simulator build logic
 async function _handleSimulatorBuildLogic(
-  params: Record<string, unknown>,
+  params: BuildRunSimNameWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
-  log(
-    'info',
-    `Building ${paramsRecord.workspacePath || paramsRecord.projectPath} for iOS Simulator`,
-  );
+  const _paramsRecord = params as Record<string, unknown>;
+  log('info', `Building ${params.workspacePath} for iOS Simulator`);
 
   try {
     const buildParams = {
-      workspacePath: paramsRecord.workspacePath as string,
-      projectPath: paramsRecord.projectPath as string,
-      scheme: paramsRecord.scheme as string,
-      configuration: paramsRecord.configuration as string,
-      derivedDataPath: paramsRecord.derivedDataPath as string,
-      extraArgs: paramsRecord.extraArgs as string[],
+      workspacePath: params.workspacePath,
+      scheme: params.scheme,
+      configuration: params.configuration,
+      derivedDataPath: params.derivedDataPath,
+      extraArgs: params.extraArgs,
     };
 
     const buildResult = await executeXcodeBuildCommand(
       buildParams,
       {
         platform: XcodePlatform.iOSSimulator,
-        simulatorName: paramsRecord.simulatorName as string,
-        simulatorId: paramsRecord.simulatorId as string,
-        useLatestOS: paramsRecord.useLatestOS as boolean,
+        simulatorName: params.simulatorName,
+        useLatestOS: params.useLatestOS,
         logPrefix: 'Build',
       },
-      paramsRecord.preferXcodebuild as boolean,
+      params.preferXcodebuild,
       'build',
       executor,
     );
@@ -55,7 +61,7 @@ async function _handleSimulatorBuildLogic(
 
 // Exported business logic function
 export async function build_run_sim_name_wsLogic(
-  params: Record<string, unknown>,
+  params: BuildRunSimNameWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const paramsRecord = params as Record<string, unknown>;
@@ -74,22 +80,18 @@ export async function build_run_sim_name_wsLogic(
   if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
   // Provide defaults
-  const processedParams = paramsRecord as Record<string, unknown> & {
-    workspacePath: string;
-    scheme: string;
-    simulatorName: string;
-    configuration: string;
-    useLatestOS: boolean;
-    preferXcodebuild: boolean;
+  const processedParams: BuildRunSimNameWsParams = {
+    workspacePath: params.workspacePath,
+    scheme: params.scheme,
+    simulatorName: params.simulatorName,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+    derivedDataPath: params.derivedDataPath,
+    extraArgs: params.extraArgs,
   };
-  processedParams.configuration = (paramsRecord.configuration as string) ?? 'Debug';
-  processedParams.useLatestOS = (paramsRecord.useLatestOS as boolean) ?? true;
-  processedParams.preferXcodebuild = (paramsRecord.preferXcodebuild as boolean) ?? false;
 
-  log(
-    'info',
-    `Building and running ${processedParams.workspacePath || processedParams.projectPath} on iOS Simulator`,
-  );
+  log('info', `Building and running ${processedParams.workspacePath} on iOS Simulator`);
 
   try {
     // Step 1: Find simulator by name first
@@ -146,8 +148,6 @@ export async function build_run_sim_name_wsLogic(
 
     if (processedParams.workspacePath) {
       command.push('-workspace', processedParams.workspacePath);
-    } else if (processedParams.projectPath) {
-      command.push('-project', processedParams.projectPath as string);
     }
 
     command.push('-scheme', processedParams.scheme);
@@ -296,6 +296,6 @@ export default {
       ),
   },
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return build_run_sim_name_wsLogic(args, getDefaultCommandExecutor());
+    return build_run_sim_name_wsLogic(args as BuildRunSimNameWsParams, getDefaultCommandExecutor());
   },
 };

@@ -6,24 +6,34 @@ import { executeXcodeBuildCommand, XcodePlatform } from '../../../utils/index.js
 import { execSync } from 'child_process';
 import { ToolResponse } from '../../../types/common.js';
 
+type BuildRunSimNameProjParams = {
+  projectPath: string;
+  scheme: string;
+  simulatorName: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+};
+
 // Internal logic for building Simulator apps.
 async function _handleSimulatorBuildLogic(
-  params: Record<string, unknown>,
+  params: BuildRunSimNameProjParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
-  log('info', `Starting iOS Simulator build for scheme ${paramsRecord.scheme} (internal)`);
+  const _paramsRecord = params as Record<string, unknown>;
+  log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
-    paramsRecord as Record<string, unknown>,
+    _paramsRecord as Record<string, unknown>,
     {
       platform: XcodePlatform.iOSSimulator,
-      simulatorName: paramsRecord.simulatorName as string,
-      simulatorId: paramsRecord.simulatorId as string,
-      useLatestOS: paramsRecord.useLatestOS as boolean,
+      simulatorName: params.simulatorName,
+      useLatestOS: params.useLatestOS,
       logPrefix: 'iOS Simulator Build',
     },
-    paramsRecord.preferXcodebuild as boolean,
+    params.preferXcodebuild,
     'build',
     executor,
   );
@@ -31,7 +41,7 @@ async function _handleSimulatorBuildLogic(
 
 // Main business logic for building and running iOS Simulator apps
 export async function build_run_sim_name_projLogic(
-  params: Record<string, unknown>,
+  params: BuildRunSimNameProjParams,
   executor: CommandExecutor,
   execSyncFn: (command: string) => string | Buffer = execSync,
 ): Promise<ToolResponse> {
@@ -39,23 +49,27 @@ export async function build_run_sim_name_projLogic(
 
   // Validate required parameters
   const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse;
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
   const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   const simulatorNameValidation = validateRequiredParam(
     'simulatorName',
     paramsRecord.simulatorName,
   );
-  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
   // Provide defaults for the core logic
-  const processedParams = {
-    ...paramsRecord,
-    configuration: paramsRecord.configuration ?? 'Debug',
-    useLatestOS: paramsRecord.useLatestOS ?? true,
-    preferXcodebuild: paramsRecord.preferXcodebuild ?? false,
+  const processedParams: BuildRunSimNameProjParams = {
+    projectPath: params.projectPath,
+    scheme: params.scheme,
+    simulatorName: params.simulatorName,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true,
+    preferXcodebuild: params.preferXcodebuild ?? false,
+    derivedDataPath: params.derivedDataPath,
+    extraArgs: params.extraArgs,
   };
 
   return _handleIOSSimulatorBuildAndRunLogic(processedParams, executor, execSyncFn);
@@ -63,16 +77,16 @@ export async function build_run_sim_name_projLogic(
 
 // Internal logic for building and running iOS Simulator apps.
 async function _handleIOSSimulatorBuildAndRunLogic(
-  params: Record<string, unknown>,
+  params: BuildRunSimNameProjParams,
   executor: CommandExecutor,
   execSyncFn: (command: string) => string | Buffer,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
-  log('info', `Starting iOS Simulator build and run for scheme ${paramsRecord.scheme} (internal)`);
+  const _paramsRecord = params as Record<string, unknown>;
+  log('info', `Starting iOS Simulator build and run for scheme ${params.scheme} (internal)`);
 
   try {
     // --- Build Step ---
-    const buildResult = await _handleSimulatorBuildLogic(paramsRecord, executor);
+    const buildResult = await _handleSimulatorBuildLogic(params, executor);
 
     if (buildResult.isError) {
       return buildResult; // Return the build error
@@ -82,44 +96,26 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // Create the command array for xcodebuild with -showBuildSettings option
     const command = ['xcodebuild', '-showBuildSettings'];
 
-    // Add the workspace or project
-    if (paramsRecord.workspacePath) {
-      command.push('-workspace', paramsRecord.workspacePath as string);
-    } else if (paramsRecord.projectPath) {
-      command.push('-project', paramsRecord.projectPath as string);
-    }
+    // Add the project
+    command.push('-project', params.projectPath);
 
     // Add the scheme and configuration
-    command.push('-scheme', paramsRecord.scheme as string);
-    command.push('-configuration', paramsRecord.configuration as string);
+    command.push('-scheme', params.scheme);
+    command.push('-configuration', params.configuration!);
 
     // Handle destination for simulator
-    let destinationString = '';
-    if (paramsRecord.simulatorId) {
-      destinationString = `platform=iOS Simulator,id=${paramsRecord.simulatorId}`;
-    } else if (paramsRecord.simulatorName) {
-      destinationString = `platform=iOS Simulator,name=${paramsRecord.simulatorName}${paramsRecord.useLatestOS ? ',OS=latest' : ''}`;
-    } else {
-      return createTextResponse(
-        'Either simulatorId or simulatorName must be provided for iOS simulator build',
-        true,
-      );
-    }
+    const destinationString = `platform=iOS Simulator,name=${params.simulatorName}${params.useLatestOS ? ',OS=latest' : ''}`;
 
     command.push('-destination', destinationString);
 
     // Add derived data path if provided
-    if (paramsRecord.derivedDataPath) {
-      command.push('-derivedDataPath', paramsRecord.derivedDataPath as string);
+    if (params.derivedDataPath) {
+      command.push('-derivedDataPath', params.derivedDataPath);
     }
 
     // Add extra args if provided
-    if (
-      paramsRecord.extraArgs &&
-      Array.isArray(paramsRecord.extraArgs) &&
-      paramsRecord.extraArgs.length > 0
-    ) {
-      command.push(...(paramsRecord.extraArgs as string[]));
+    if (params.extraArgs && params.extraArgs.length > 0) {
+      command.push(...params.extraArgs);
     }
 
     // Execute the command directly
@@ -149,44 +145,40 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     log('info', `App bundle path for run: ${appBundlePath}`);
 
     // --- Find/Boot Simulator Step ---
-    let simulatorUuid = paramsRecord.simulatorId;
-    if (!simulatorUuid && paramsRecord.simulatorName) {
-      try {
-        log('info', `Finding simulator UUID for name: ${paramsRecord.simulatorName}`);
-        const simulatorsOutput = execSyncFn(
-          'xcrun simctl list devices available --json',
-        ).toString();
-        const simulatorsJson = JSON.parse(simulatorsOutput);
-        let foundSimulator = null;
+    let simulatorUuid: string | undefined;
+    try {
+      log('info', `Finding simulator UUID for name: ${params.simulatorName}`);
+      const simulatorsOutput = execSyncFn('xcrun simctl list devices available --json').toString();
+      const simulatorsJson = JSON.parse(simulatorsOutput);
+      let foundSimulator = null;
 
-        // Find the simulator in the available devices list
-        for (const runtime in simulatorsJson.devices) {
-          const devices = simulatorsJson.devices[runtime];
-          for (const device of devices) {
-            if (device.name === paramsRecord.simulatorName && device.isAvailable) {
-              foundSimulator = device;
-              break;
-            }
+      // Find the simulator in the available devices list
+      for (const runtime in simulatorsJson.devices) {
+        const devices = simulatorsJson.devices[runtime];
+        for (const device of devices) {
+          if (device.name === params.simulatorName && device.isAvailable) {
+            foundSimulator = device;
+            break;
           }
-          if (foundSimulator) break;
         }
+        if (foundSimulator) break;
+      }
 
-        if (foundSimulator) {
-          simulatorUuid = foundSimulator.udid;
-          log('info', `Found simulator for run: ${foundSimulator.name} (${simulatorUuid})`);
-        } else {
-          return createTextResponse(
-            `Build succeeded, but could not find an available simulator named '${paramsRecord.simulatorName}'. Use list_simulators({}) to check available devices.`,
-            true,
-          );
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+      if (foundSimulator) {
+        simulatorUuid = foundSimulator.udid;
+        log('info', `Found simulator for run: ${foundSimulator.name} (${simulatorUuid})`);
+      } else {
         return createTextResponse(
-          `Build succeeded, but error finding simulator: ${errorMessage}`,
+          `Build succeeded, but could not find an available simulator named '${params.simulatorName}'. Use list_simulators({}) to check available devices.`,
           true,
         );
       }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return createTextResponse(
+        `Build succeeded, but error finding simulator: ${errorMessage}`,
+        true,
+      );
     }
 
     if (!simulatorUuid) {
@@ -302,15 +294,13 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // --- Success ---
     log('info', '✅ iOS simulator build & run succeeded.');
 
-    const target = paramsRecord.simulatorId
-      ? `simulator UUID ${paramsRecord.simulatorId}`
-      : `simulator name '${paramsRecord.simulatorName}'`;
+    const target = `simulator name '${params.simulatorName}'`;
 
     return {
       content: [
         {
           type: 'text',
-          text: `✅ iOS simulator build and run succeeded for scheme ${paramsRecord.scheme} targeting ${target}.
+          text: `✅ iOS simulator build and run succeeded for scheme ${params.scheme} targeting ${target}.
           
 The app (${bundleId}) is now running in the iOS Simulator. 
 If you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.
@@ -363,6 +353,9 @@ export default {
       ),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_run_sim_name_projLogic(args, getDefaultCommandExecutor());
+    return build_run_sim_name_projLogic(
+      args as BuildRunSimNameProjParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };
