@@ -165,6 +165,12 @@ This approach ensures that tests are robust, easy to maintain, and verify the ac
 
 For complete guidelines, refer to @docs/TESTING.md.
 
+## Release Process
+
+Follow standardized development workflow with feature branches, structured pull requests, and linear commit history. **Never push to main directly or force push without permission.**
+
+For complete guidelines, refer to @docs/RELEASE_PROCESS.md
+
 ## Useful external resources
 
 ### Model Context Protocol
