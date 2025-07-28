@@ -6,22 +6,10 @@
  */
 
 import { z } from 'zod';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { validateRequiredParam } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
-
-const XcodePlatform = {
-  iOS: 'iOS',
-  watchOS: 'watchOS',
-  tvOS: 'tvOS',
-  visionOS: 'visionOS',
-  iOSSimulator: 'iOS Simulator',
-  watchOSSimulator: 'watchOS Simulator',
-  tvOSSimulator: 'tvOS Simulator',
-  visionOSSimulator: 'visionOS Simulator',
-  macOS: 'macOS',
-};
 
 /**
  * Parameters for build device project tool
@@ -39,25 +27,28 @@ export interface BuildDevProjParams {
  * Business logic for building device project
  */
 export async function build_dev_projLogic(
-  params: Record<string, unknown>,
+  params: BuildDevProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  const paramsRecord = params as unknown as Record<string, unknown>;
+  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
   if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
+  const processedParams = {
+    ...params,
+    configuration: params.configuration ?? 'Debug', // Default config
+  };
+
   return executeXcodeBuildCommand(
-    {
-      ...params,
-      configuration: params.configuration ?? 'Debug', // Default config
-    },
+    processedParams,
     {
       platform: XcodePlatform.iOS,
       logPrefix: 'iOS Device Build',
     },
-    params.preferXcodebuild,
+    params.preferXcodebuild ?? false,
     'build',
     executor,
   );
@@ -79,6 +70,6 @@ export default {
     preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_dev_projLogic(args, getDefaultCommandExecutor());
+    return build_dev_projLogic(args as unknown as BuildDevProjParams, getDefaultCommandExecutor());
   },
 };

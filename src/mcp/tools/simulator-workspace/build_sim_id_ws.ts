@@ -9,19 +9,31 @@ const XcodePlatform = {
   iOSSimulator: 'iOS Simulator',
 };
 
+type BuildSimIdWsParams = {
+  workspacePath: string;
+  scheme: string;
+  simulatorId: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+};
+
 export async function build_sim_id_wsLogic(
-  params: Record<string, unknown>,
+  params: BuildSimIdWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  const paramsRecord = params as Record<string, unknown>;
   // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse;
+  const simulatorIdValidation = validateRequiredParam('simulatorId', paramsRecord.simulatorId);
+  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
 
   // Provide defaults
   const processedParams = {
@@ -81,6 +93,6 @@ export default {
       ),
   },
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return build_sim_id_wsLogic(args, getDefaultCommandExecutor());
+    return build_sim_id_wsLogic(args as BuildSimIdWsParams, getDefaultCommandExecutor());
   },
 };

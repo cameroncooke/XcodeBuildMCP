@@ -12,19 +12,35 @@ const XcodePlatform = {
   iOSSimulator: 'iOS Simulator',
 };
 
+type BuildSimNameProjParams = {
+  projectPath: string;
+  scheme: string;
+  simulatorName: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+  simulatorId?: string;
+};
+
 export async function build_sim_name_projLogic(
-  params: Record<string, unknown>,
+  params: BuildSimNameProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  const paramsRecord = params as Record<string, unknown>;
   // Validate required parameters
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse;
+  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
+  const simulatorNameValidation = validateRequiredParam(
+    'simulatorName',
+    paramsRecord.simulatorName,
+  );
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
   // Provide defaults
   const finalParams = {
@@ -45,7 +61,7 @@ export async function build_sim_name_projLogic(
       useLatestOS: finalParams.useLatestOS,
       logPrefix: 'iOS Simulator Build',
     },
-    finalParams.preferXcodebuild,
+    finalParams.preferXcodebuild ?? false,
     'build',
     executor,
   );
@@ -79,6 +95,6 @@ export default {
       ),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_sim_name_projLogic(args, getDefaultCommandExecutor());
+    return build_sim_name_projLogic(args as BuildSimNameProjParams, getDefaultCommandExecutor());
   },
 };
