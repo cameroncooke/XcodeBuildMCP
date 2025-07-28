@@ -24,7 +24,7 @@ npm run diagnostic    # Diagnostic CLI
 
 ### Development with Reloaderoo
 
-**Reloaderoo** provides CLI-based testing and hot-reload capabilities for XcodeBuildMCP without requiring MCP client configuration.
+**Reloaderoo** (v1.1.2+) provides CLI-based testing and hot-reload capabilities for XcodeBuildMCP without requiring MCP client configuration.
 
 #### Quick Start
 
@@ -88,11 +88,11 @@ npx reloaderoo inspect list-tools --working-dir /custom/path -- node build/index
 # Timeout configuration
 npx reloaderoo inspect call-tool slow_tool --timeout 60000 --params '{}' -- node build/index.js
 
-# Raw JSON output (no formatting)
-npx reloaderoo inspect server-info --raw -- node build/index.js
+# Use timeout configuration if needed
+npx reloaderoo inspect server-info --timeout 60000 -- node build/index.js
 
-# Debug logging
-npx reloaderoo inspect list-tools --log-level debug -- node build/index.js
+# Debug logging (use proxy mode for detailed logging)
+npx reloaderoo proxy --log-level debug -- node build/index.js
 ```
 
 #### Key Benefits

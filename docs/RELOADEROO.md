@@ -1,6 +1,6 @@
 # Reloaderoo Integration Guide
 
-This guide explains how to use Reloaderoo for testing and developing XcodeBuildMCP with both CLI inspection tools and transparent proxy capabilities.
+This guide explains how to use Reloaderoo v1.1.2+ for testing and developing XcodeBuildMCP with both CLI inspection tools and transparent proxy capabilities.
 
 ## Overview
 
@@ -139,15 +139,19 @@ When running under Claude Code, XcodeBuildMCP automatically detects the environm
 ```bash
 npx reloaderoo [options] [command]
 
+Two modes, one tool:
+• Proxy MCP server that adds support for hot-reloading MCP servers.
+• CLI tool for inspecting MCP servers.
+
 Global Options:
-  -V, --version                    Output the version number
-  -h, --help                       Display help for command
+  -V, --version    Output the version number
+  -h, --help       Display help for command
 
 Commands:
-  proxy [options] -- <command>    🔄 Run as MCP proxy server (hot-reload mode)
-  inspect [subcommand]             🔍 Inspect and debug MCP servers (CLI mode)
-  info [options]                   📊 Display version and configuration information
-  help [command]                   ❓ Display help for command
+  proxy [options]  🔄 Run as MCP proxy server (default behavior)
+  inspect          🔍 Inspect and debug MCP servers
+  info [options]   📊 Display version and configuration information
+  help [command]   ❓ Display help for command
 ```
 
 ### 🔄 **Proxy Mode Commands**
@@ -200,7 +204,8 @@ Examples:
 npx reloaderoo info [options]
 
 Options:
-  --verbose                        Show detailed system information
+  -v, --verbose                    Show detailed information
+  -h, --help                       Display help for command
   
 Examples:
   npx reloaderoo info              # Show basic system information
@@ -344,14 +349,14 @@ npx reloaderoo proxy --max-restarts 5 -- node build/index.js
 # Test basic connectivity first
 npx reloaderoo inspect ping -- node build/index.js
 
-# Enable debug logging for CLI commands
-npx reloaderoo inspect list-tools --log-level debug -- node build/index.js
+# Enable debug logging for CLI commands (via proxy debug mode)
+npx reloaderoo proxy --log-level debug -- node build/index.js
 ```
 
 **JSON parsing errors:**
 ```bash
-# Use --raw flag to see unformatted output (if available)
-npx reloaderoo inspect server-info --raw -- node build/index.js
+# Check server information for diagnostics
+npx reloaderoo inspect server-info -- node build/index.js
 
 # Ensure your server outputs valid JSON
 node build/index.js | head -10
@@ -379,7 +384,7 @@ npx reloaderoo inspect call-tool list_devices --params '{}' -- node build/index.
 ```bash
 # Get detailed information about what's happening
 npx reloaderoo proxy --debug -- node build/index.js  # For proxy mode
-npx reloaderoo inspect list-tools --log-level debug -- node build/index.js  # For CLI mode
+npx reloaderoo proxy --log-level debug -- node build/index.js  # For detailed proxy logging
 
 # View system diagnostics
 npx reloaderoo info --verbose
@@ -390,7 +395,7 @@ npx reloaderoo info --verbose
 1. **Always build first**: Run `npm run build` before testing
 2. **Check tool names**: Use `inspect list-tools` to see exact tool names
 3. **Validate JSON**: Ensure parameters are valid JSON strings
-4. **Enable debug logging**: Use `--log-level debug` for verbose output
+4. **Enable debug logging**: Use `--log-level debug` or `--debug` for verbose output
 5. **Test connectivity**: Use `inspect ping` to verify server communication
 
 ## Advanced Usage
