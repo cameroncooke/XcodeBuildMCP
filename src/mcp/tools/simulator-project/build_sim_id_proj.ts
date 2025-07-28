@@ -9,17 +9,27 @@ const XcodePlatform = {
   iOSSimulator: 'iOS Simulator',
 };
 
+type BuildSimIdProjParams = {
+  projectPath: string;
+  scheme: string;
+  simulatorId: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+  simulatorName?: string;
+};
+
 // Internal logic for building Simulator apps.
 async function _handleSimulatorBuildLogic(
-  params: Record<string, unknown>,
+  params: BuildSimIdProjParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
-    {
-      ...params,
-    },
+    params,
     {
       platform: XcodePlatform.iOSSimulator,
       simulatorName: params.simulatorName,
@@ -27,36 +37,36 @@ async function _handleSimulatorBuildLogic(
       useLatestOS: params.useLatestOS,
       logPrefix: 'iOS Simulator Build',
     },
-    params.preferXcodebuild,
+    params.preferXcodebuild ?? false,
     'build',
     executor,
   );
 }
 
 export async function build_sim_id_projLogic(
-  params: Record<string, unknown>,
+  params: BuildSimIdProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  const paramsRecord = params as Record<string, unknown>;
   // Validate required parameters
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse;
+  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse;
+  const simulatorIdValidation = validateRequiredParam('simulatorId', paramsRecord.simulatorId);
+  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
 
   // Provide defaults
-  return _handleSimulatorBuildLogic(
-    {
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      useLatestOS: params.useLatestOS ?? true, // May be ignored by xcodebuild
-      preferXcodebuild: params.preferXcodebuild ?? false,
-    },
-    executor,
-  );
+  const processedParams: BuildSimIdProjParams = {
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    useLatestOS: params.useLatestOS ?? true, // May be ignored by xcodebuild
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  };
+
+  return _handleSimulatorBuildLogic(processedParams, executor);
 }
 
 export default {
@@ -87,6 +97,6 @@ export default {
       ),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_sim_id_projLogic(args, getDefaultCommandExecutor());
+    return build_sim_id_projLogic(args as BuildSimIdProjParams, getDefaultCommandExecutor());
   },
 };

@@ -22,27 +22,40 @@ const XcodePlatform = {
   macOS: 'macOS',
 };
 
+type BuildMacWsParams = {
+  workspacePath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  arch?: 'arm64' | 'x86_64';
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+};
+
 /**
  * Core business logic for building macOS apps from workspace
  */
 export async function build_mac_wsLogic(
-  params: Record<string, unknown>,
+  params: BuildMacWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  const _paramsRecord = params as Record<string, unknown>;
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
+  const processedParams = {
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+    preferXcodebuild: params.preferXcodebuild ?? false,
+  };
+
   return executeXcodeBuildCommand(
-    {
-      ...params,
-      configuration: params.configuration ?? 'Debug',
-      preferXcodebuild: params.preferXcodebuild ?? false,
-    },
+    processedParams,
     {
       platform: XcodePlatform.macOS,
       arch: params.arch,
       logPrefix: 'macOS Build',
     },
-    params.preferXcodebuild ?? false,
+    processedParams.preferXcodebuild,
     'build',
     executor,
   );
@@ -72,6 +85,6 @@ export default {
       ),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_mac_wsLogic(args, getDefaultCommandExecutor());
+    return build_mac_wsLogic(args as BuildMacWsParams, getDefaultCommandExecutor());
   },
 };

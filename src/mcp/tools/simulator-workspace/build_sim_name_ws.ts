@@ -9,19 +9,36 @@ const XcodePlatform = {
   iOSSimulator: 'iOS Simulator',
 };
 
+type BuildSimNameWsParams = {
+  workspacePath: string;
+  scheme: string;
+  simulatorName: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+  projectPath?: string;
+  simulatorId?: string;
+};
+
 export async function build_sim_name_wsLogic(
-  params: Record<string, unknown>,
+  params: BuildSimNameWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  const paramsRecord = params as Record<string, unknown>;
   // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse;
+  const simulatorNameValidation = validateRequiredParam(
+    'simulatorName',
+    paramsRecord.simulatorName,
+  );
+  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
   // Provide defaults
   const processedParams = {
@@ -46,7 +63,7 @@ export async function build_sim_name_wsLogic(
         useLatestOS: processedParams.useLatestOS,
         logPrefix: 'Build',
       },
-      processedParams.preferXcodebuild,
+      processedParams.preferXcodebuild ?? false,
       'build',
       executor,
     );
@@ -87,6 +104,6 @@ export default {
       ),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_sim_name_wsLogic(args, getDefaultCommandExecutor());
+    return build_sim_name_wsLogic(args as BuildSimNameWsParams, getDefaultCommandExecutor());
   },
 };

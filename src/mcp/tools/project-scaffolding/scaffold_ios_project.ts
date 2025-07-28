@@ -344,26 +344,27 @@ async function processDirectory(
   const entries = await fileSystemExecutor.readdir(sourceDir, { withFileTypes: true });
 
   for (const entry of entries) {
-    const sourcePath = join(sourceDir, entry.name);
-    let destName = entry.name;
+    const entryTyped = entry as { name: string; isDirectory: () => boolean; isFile: () => boolean };
+    const sourcePath = join(sourceDir, entryTyped.name);
+    let destName = entryTyped.name;
 
     if (params.customizeNames) {
       // Replace MyProject in directory names
-      destName = destName.replace(/MyProject/g, params.projectName);
+      destName = destName.replace(/MyProject/g, params.projectName as string);
     }
 
     const destPath = join(destDir, destName);
 
-    if (entry.isDirectory()) {
+    if (entryTyped.isDirectory()) {
       // Skip certain directories
-      if (entry.name === '.git' || entry.name === 'xcuserdata') {
+      if (entryTyped.name === '.git' || entryTyped.name === 'xcuserdata') {
         continue;
       }
       await fileSystemExecutor.mkdir(destPath, { recursive: true });
       await processDirectory(sourcePath, destPath, params, fileSystemExecutor);
-    } else if (entry.isFile()) {
+    } else if (entryTyped.isFile()) {
       // Skip certain files
-      if (entry.name === '.DS_Store' || entry.name.endsWith('.xcuserstate')) {
+      if (entryTyped.name === '.DS_Store' || entryTyped.name.endsWith('.xcuserstate')) {
         continue;
       }
       await processFile(sourcePath, destPath, params, fileSystemExecutor);
@@ -371,14 +372,39 @@ async function processDirectory(
   }
 }
 
+type ScaffoldIOSProjectParams = {
+  projectName: string;
+  outputPath: string;
+  bundleIdentifier?: string;
+  displayName?: string;
+  marketingVersion?: string;
+  currentProjectVersion?: string;
+  customizeNames?: boolean;
+  deploymentTarget?: string;
+  targetedDeviceFamily?: ('iphone' | 'ipad' | 'universal')[];
+  supportedOrientations?: (
+    | 'portrait'
+    | 'landscape-left'
+    | 'landscape-right'
+    | 'portrait-upside-down'
+  )[];
+  supportedOrientationsIpad?: (
+    | 'portrait'
+    | 'landscape-left'
+    | 'landscape-right'
+    | 'portrait-upside-down'
+  )[];
+};
+
 /**
  * Logic function for scaffolding iOS projects
  */
 export async function scaffold_ios_projectLogic(
-  params: Record<string, unknown>,
+  params: ScaffoldIOSProjectParams,
   commandExecutor: CommandExecutor,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
+  const _paramsRecord = params as Record<string, unknown>;
   try {
     const projectParams = { ...params, platform: 'iOS' };
     const projectPath = await scaffoldProject(projectParams, commandExecutor, fileSystemExecutor);
@@ -503,7 +529,7 @@ export default {
   schema: ScaffoldiOSProjectSchema.shape,
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     return scaffold_ios_projectLogic(
-      args,
+      args as ScaffoldIOSProjectParams,
       getDefaultCommandExecutor(),
       getDefaultFileSystemExecutor(),
     );

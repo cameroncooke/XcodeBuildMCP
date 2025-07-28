@@ -32,14 +32,25 @@ const XcodePlatform = {
   macOS: 'macOS',
 };
 
+type BuildMacProjParams = {
+  projectPath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  arch?: 'arm64' | 'x86_64';
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+};
+
 /**
  * Business logic for building macOS apps with dependency injection.
  */
 export async function build_mac_projLogic(
-  params: Record<string, unknown>,
+  params: BuildMacProjParams,
   executor: CommandExecutor,
   buildUtilsDeps: BuildUtilsDependencies = defaultBuildUtilsDependencies,
 ): Promise<ToolResponse> {
+  const _paramsRecord = params as Record<string, unknown>;
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
   const processedParams = {
@@ -55,7 +66,7 @@ export async function build_mac_projLogic(
       arch: params.arch,
       logPrefix: 'macOS Build',
     },
-    processedParams.preferXcodebuild,
+    processedParams.preferXcodebuild ?? false,
     'build',
     executor,
   );
@@ -83,6 +94,6 @@ export default {
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_mac_projLogic(args, getDefaultCommandExecutor());
+    return build_mac_projLogic(args as BuildMacProjParams, getDefaultCommandExecutor());
   },
 };
