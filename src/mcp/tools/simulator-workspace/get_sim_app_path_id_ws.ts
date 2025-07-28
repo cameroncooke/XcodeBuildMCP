@@ -4,6 +4,15 @@ import { log } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 
+type GetSimAppPathIdWsParams = {
+  workspacePath: string;
+  scheme: string;
+  platform: 'iOS Simulator' | 'watchOS Simulator' | 'tvOS Simulator' | 'visionOS Simulator';
+  simulatorId: string;
+  configuration?: string;
+  useLatestOS?: boolean;
+};
+
 const XcodePlatform = {
   macOS: 'macOS',
   iOS: 'iOS',
@@ -71,7 +80,7 @@ function constructDestinationString(
  * Business logic for getting app path from simulator workspace
  */
 export async function get_sim_app_path_id_wsLogic(
-  params: Record<string, unknown>,
+  params: GetSimAppPathIdWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const paramsRecord = params as Record<string, unknown>;
@@ -233,23 +242,23 @@ export default {
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const paramsRecord = args as Record<string, unknown>;
     const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
     const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
     const platformValidation = validateRequiredParam('platform', paramsRecord.platform);
-    if (!platformValidation.isValid) return platformValidation.errorResponse;
+    if (!platformValidation.isValid) return platformValidation.errorResponse!;
 
     const simulatorIdValidation = validateRequiredParam('simulatorId', paramsRecord.simulatorId);
-    if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse;
+    if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
 
     return get_sim_app_path_id_wsLogic(
       {
         ...paramsRecord,
         configuration: paramsRecord.configuration ?? 'Debug',
         useLatestOS: paramsRecord.useLatestOS ?? true,
-      },
+      } as GetSimAppPathIdWsParams,
       getDefaultCommandExecutor(),
     );
   },

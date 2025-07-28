@@ -5,15 +5,28 @@
  */
 
 import { z } from 'zod';
-import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { executeXcodeBuildCommand, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { createTextResponse, getDefaultCommandExecutor } from '../../../utils/index.js';
+import {
+  log,
+  CommandExecutor,
+  getDefaultCommandExecutor,
+  executeXcodeBuildCommand,
+  createTextResponse,
+} from '../../../utils/index.js';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { ToolResponse } from '../../../types/common.js';
+
+type TestMacosWsParams = {
+  workspacePath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+};
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -137,7 +150,7 @@ function formatTestSummary(summary: Record<string, unknown>): string {
 
 // Internal logic for running tests with platform-specific handling
 export async function test_macos_wsLogic(
-  params: Record<string, unknown>,
+  params: TestMacosWsParams,
   executor: CommandExecutor,
   tempDirDeps?: {
     mkdtemp: (prefix: string) => Promise<string>;
@@ -156,9 +169,10 @@ export async function test_macos_wsLogic(
     stat: (path: string) => Promise<{ isDirectory: () => boolean }>;
   },
 ): Promise<ToolResponse> {
+  const paramsRecord = params as Record<string, unknown>;
   // Process parameters with defaults
   const processedParams = {
-    ...params,
+    ...paramsRecord,
     configuration: params.configuration ?? 'Debug',
     preferXcodebuild: params.preferXcodebuild ?? false,
     platform: XcodePlatform.macOS,
@@ -274,6 +288,6 @@ export default {
       ),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return test_macos_wsLogic(args, getDefaultCommandExecutor());
+    return test_macos_wsLogic(args as TestMacosWsParams, getDefaultCommandExecutor());
   },
 };

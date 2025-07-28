@@ -11,13 +11,13 @@ import {
   getDefaultCommandExecutor,
   executeXcodeBuildCommand,
   createTextResponse,
-} from '../../../utils/index.ts';
+} from '../../../utils/index.js';
 import { promisify } from 'util';
 import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { ToolResponse } from '../../../types/common.ts';
+import { ToolResponse } from '../../../types/common.js';
 
 const XcodePlatform = {
   iOS: 'iOS',

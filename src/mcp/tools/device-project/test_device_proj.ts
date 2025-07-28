@@ -18,6 +18,17 @@ import {
   getDefaultFileSystemExecutor,
 } from '../../../utils/command.js';
 
+type TestDeviceProjParams = {
+  projectPath: string;
+  scheme: string;
+  deviceId: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+  platform?: 'iOS' | 'watchOS' | 'tvOS' | 'visionOS';
+};
+
 // Remove all custom dependency injection - use direct imports
 
 const XcodePlatform = {
@@ -134,10 +145,11 @@ function formatTestSummary(summary: Record<string, unknown>): string {
  * Business logic for running tests with platform-specific handling
  */
 export async function test_device_projLogic(
-  params: Record<string, unknown>,
+  params: TestDeviceProjParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
   fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<ToolResponse> {
+  const paramsRecord = params as Record<string, unknown>;
   log(
     'info',
     `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
@@ -156,15 +168,15 @@ export async function test_device_projLogic(
     // Run the test command
     const testResult = await executeXcodeBuildCommand(
       {
-        ...params,
+        ...paramsRecord,
         extraArgs,
       },
       {
-        platform: params.platform,
-        simulatorName: params.simulatorName,
-        simulatorId: params.simulatorId,
+        platform: paramsRecord.platform,
+        simulatorName: paramsRecord.simulatorName,
+        simulatorId: paramsRecord.simulatorId,
         deviceId: params.deviceId,
-        useLatestOS: params.useLatestOS,
+        useLatestOS: paramsRecord.useLatestOS,
         logPrefix: 'Test Run',
       },
       params.preferXcodebuild,
@@ -258,7 +270,7 @@ export default {
         preferXcodebuild: args.preferXcodebuild ?? false,
         platform: platformMap[args.platform ?? 'iOS'],
         deviceId: args.deviceId,
-      },
+      } as TestDeviceProjParams,
       getDefaultCommandExecutor(),
       getDefaultFileSystemExecutor(),
     );
