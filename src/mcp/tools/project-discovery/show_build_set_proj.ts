@@ -29,17 +29,20 @@ export async function show_build_set_projLogic(
   params: unknown,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  // Cast to record for safe property access
+  const paramsRecord = params as Record<string, unknown>;
+
   // Validate required parameters
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
+  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
   if (!projectValidation.isValid) return projectValidation.errorResponse;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse;
 
   // Cast to proper type after validation
   const typedParams: ShowBuildSetProjParams = {
-    projectPath: params.projectPath as string,
-    scheme: params.scheme as string,
+    projectPath: paramsRecord.projectPath as string,
+    scheme: paramsRecord.scheme as string,
   };
 
   log('info', `Showing build settings for scheme ${typedParams.scheme}`);

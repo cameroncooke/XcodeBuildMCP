@@ -137,15 +137,18 @@ export async function discover_projsLogic(
   params: unknown,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
+  // Cast to record for safe property access
+  const paramsRecord = params as Record<string, unknown>;
+
   // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspaceRoot', params.workspaceRoot);
+  const workspaceValidation = validateRequiredParam('workspaceRoot', paramsRecord.workspaceRoot);
   if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
 
   // Cast to proper type after validation with defaults
   const typedParams: DiscoverProjsParams = {
-    workspaceRoot: params.workspaceRoot as string,
-    scanPath: params.scanPath || '.',
-    maxDepth: params.maxDepth || 5,
+    workspaceRoot: paramsRecord.workspaceRoot as string,
+    scanPath: paramsRecord.scanPath || '.',
+    maxDepth: paramsRecord.maxDepth || 5,
   };
 
   const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = typedParams;
