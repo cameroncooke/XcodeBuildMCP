@@ -72,11 +72,23 @@ function constructDestinationString(
   return `platform=${platform}`;
 }
 
+type GetSimAppPathNameProjParams = {
+  projectPath: string;
+  scheme: string;
+  platform: string;
+  simulatorName: string;
+  configuration?: string;
+  useLatestOS?: boolean;
+  workspacePath?: string;
+  simulatorId?: string;
+  arch?: string;
+};
+
 /**
  * Exported business logic function for getting app path
  */
 export async function get_sim_app_path_name_projLogic(
-  params: Record<string, unknown>,
+  params: GetSimAppPathNameProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const paramsRecord = params as Record<string, unknown>;
@@ -98,15 +110,15 @@ export async function get_sim_app_path_name_projLogic(
   if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
   // Set defaults
-  const projectPath = paramsRecord.projectPath as string;
-  const scheme = paramsRecord.scheme as string;
-  const platform = paramsRecord.platform as string;
-  const simulatorName = paramsRecord.simulatorName as string;
-  const configuration = (paramsRecord.configuration as string) ?? 'Debug';
-  const useLatestOS = (paramsRecord.useLatestOS as boolean) ?? true;
-  const workspacePath = paramsRecord.workspacePath as string | undefined;
-  const simulatorId = paramsRecord.simulatorId as string | undefined;
-  const arch = paramsRecord.arch as string | undefined;
+  const projectPath = params.projectPath;
+  const scheme = params.scheme;
+  const platform = params.platform;
+  const simulatorName = params.simulatorName;
+  const configuration = params.configuration ?? 'Debug';
+  const useLatestOS = params.useLatestOS ?? true;
+  const workspacePath = params.workspacePath;
+  const simulatorId = params.simulatorId;
+  const arch = params.arch;
 
   log('info', `Getting app path for scheme ${scheme} on platform ${platform}`);
 
@@ -257,6 +269,9 @@ export default {
       .describe('Whether to use the latest OS version for the named simulator'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_sim_app_path_name_projLogic(args, getDefaultCommandExecutor());
+    return get_sim_app_path_name_projLogic(
+      args as GetSimAppPathNameProjParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };
