@@ -11,6 +11,15 @@ import { validateRequiredParam } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 
+type BuildDevWsParams = {
+  workspacePath: string;
+  scheme: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  preferXcodebuild?: boolean;
+};
+
 const XcodePlatform = {
   iOS: 'iOS',
   watchOS: 'watchOS',
@@ -24,14 +33,16 @@ const XcodePlatform = {
 };
 
 export async function build_dev_wsLogic(
-  params: Record<string, unknown>,
+  params: BuildDevWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+  const paramsRecord = params as Record<string, unknown>;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   return executeXcodeBuildCommand(
     {
@@ -64,6 +75,6 @@ export default {
     preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
   },
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return build_dev_wsLogic(args, getDefaultCommandExecutor());
+    return build_dev_wsLogic(args as unknown as BuildDevWsParams, getDefaultCommandExecutor());
   },
 };

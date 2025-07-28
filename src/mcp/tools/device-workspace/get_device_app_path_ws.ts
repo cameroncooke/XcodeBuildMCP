@@ -11,6 +11,13 @@ import { log } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 
+type GetDeviceAppPathWsParams = {
+  workspacePath: string;
+  scheme: string;
+  configuration?: string;
+  platform?: 'iOS' | 'watchOS' | 'tvOS' | 'visionOS';
+};
+
 const XcodePlatform = {
   iOS: 'iOS',
   watchOS: 'watchOS',
@@ -24,14 +31,16 @@ const XcodePlatform = {
 };
 
 export async function get_device_app_path_wsLogic(
-  params: Record<string, unknown>,
+  params: GetDeviceAppPathWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+  const paramsRecord = params as Record<string, unknown>;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   const platformMap = {
     iOS: XcodePlatform.iOS,
@@ -137,6 +146,9 @@ export default {
       .describe('Target platform (defaults to iOS)'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_device_app_path_wsLogic(args, getDefaultCommandExecutor());
+    return get_device_app_path_wsLogic(
+      args as unknown as GetDeviceAppPathWsParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };

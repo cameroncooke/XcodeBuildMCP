@@ -11,12 +11,12 @@ import { log } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 
-interface GetDeviceAppPathProjParams {
-  projectPath: unknown;
-  scheme: unknown;
-  configuration?: unknown;
-  platform?: unknown;
-}
+type GetDeviceAppPathProjParams = {
+  projectPath: string;
+  scheme: string;
+  configuration?: string;
+  platform?: 'iOS' | 'watchOS' | 'tvOS' | 'visionOS';
+};
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -34,11 +34,13 @@ export async function get_device_app_path_projLogic(
   params: GetDeviceAppPathProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse;
+  const paramsRecord = params as Record<string, unknown>;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   const platformMap = {
     iOS: XcodePlatform.iOS,
@@ -144,6 +146,9 @@ export default {
       .describe('Target platform (defaults to iOS)'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_device_app_path_projLogic(args, getDefaultCommandExecutor());
+    return get_device_app_path_projLogic(
+      args as unknown as GetDeviceAppPathProjParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };

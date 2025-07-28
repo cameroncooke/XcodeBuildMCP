@@ -12,10 +12,10 @@ import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-interface LaunchAppDeviceParams {
+type LaunchAppDeviceParams = {
   deviceId: string;
   bundleId: string;
-}
+};
 
 export async function launch_app_deviceLogic(
   params: LaunchAppDeviceParams,
@@ -116,6 +116,9 @@ export default {
       .describe('Bundle identifier of the app to launch (e.g., "com.example.MyApp")'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return launch_app_deviceLogic(args as LaunchAppDeviceParams, getDefaultCommandExecutor());
+    return launch_app_deviceLogic(
+      args as unknown as LaunchAppDeviceParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };
