@@ -14,11 +14,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
-
       - name: Build project
         run: npm run build
+
+      - name: Run tests
+        run: npm test
 
       - name: Extract version from build/version.js
         id: get_version

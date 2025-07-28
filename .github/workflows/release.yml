@@ -40,14 +40,14 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
-      - name: Run tests
-        run: npm test
-
       - name: Bundle AXe artifacts
         run: npm run bundle:axe
 
       - name: Build TypeScript
         run: npm run build
+
+      - name: Run tests
+        run: npm test
 
       - name: Get version from tag or input
         id: get_version
