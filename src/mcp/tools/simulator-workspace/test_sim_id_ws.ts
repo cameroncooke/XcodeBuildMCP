@@ -4,6 +4,17 @@ import { XcodePlatform } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { handleTestLogic } from '../../../utils/test-common.js';
 
+type TestSimIdWsParams = {
+  workspacePath: string;
+  scheme: string;
+  simulatorId: string;
+  configuration?: string;
+  derivedDataPath?: string;
+  extraArgs?: string[];
+  useLatestOS?: boolean;
+  preferXcodebuild?: boolean;
+};
+
 // Schema definitions
 const workspacePathSchema = z.string().describe('Path to the .xcworkspace file (Required)');
 const schemeSchema = z.string().describe('The scheme to use (Required)');
@@ -31,12 +42,13 @@ const preferXcodebuildSchema = z
   );
 
 export async function test_sim_id_wsLogic(
-  params: Record<string, unknown>,
+  params: TestSimIdWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  const paramsRecord = params as Record<string, unknown>;
   return handleTestLogic(
     {
-      ...params,
+      ...paramsRecord,
       configuration: params.configuration ?? 'Debug',
       useLatestOS: params.useLatestOS ?? false,
       preferXcodebuild: params.preferXcodebuild ?? false,
@@ -62,6 +74,6 @@ export default {
     preferXcodebuild: preferXcodebuildSchema,
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return test_sim_id_wsLogic(args, getDefaultCommandExecutor());
+    return test_sim_id_wsLogic(args as TestSimIdWsParams, getDefaultCommandExecutor());
   },
 };
