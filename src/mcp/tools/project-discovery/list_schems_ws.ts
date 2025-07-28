@@ -25,13 +25,16 @@ export async function list_schems_wsLogic(
   params: unknown,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  // Cast params to a record type for safe property access
+  const paramsRecord = params as Record<string, unknown>;
+
   // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
   if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
 
   // Cast to proper type after validation
   const typedParams: ListSchemsWsParams = {
-    workspacePath: params.workspacePath as string,
+    workspacePath: paramsRecord.workspacePath as string,
   };
 
   log('info', 'Listing schemes');
@@ -99,9 +102,9 @@ export default {
   name: 'list_schems_ws',
   description:
     "Lists available schemes in the workspace. IMPORTANT: Requires workspacePath. Example: list_schems_ws({ workspacePath: '/path/to/MyProject.xcworkspace' })",
-  schema: z.object({
+  schema: {
     workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-  }),
+  },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     return list_schems_wsLogic(args, getDefaultCommandExecutor());
   },

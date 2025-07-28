@@ -78,10 +78,10 @@ export default {
   name: 'show_build_set_ws',
   description:
     "Shows build settings from a workspace using xcodebuild. IMPORTANT: Requires workspacePath and scheme. Example: show_build_set_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
-  schema: z.object({
+  schema: {
     workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
     scheme: z.string().describe('The scheme to use (Required)'),
-  }),
+  },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     return show_build_set_wsLogic(args, getDefaultCommandExecutor());
   },
