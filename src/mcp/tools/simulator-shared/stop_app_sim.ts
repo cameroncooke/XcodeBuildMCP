@@ -18,18 +18,24 @@ export async function stop_app_simLogic(
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse;
+    return simulatorUuidValidation.errorResponse!;
   }
 
   const bundleIdValidation = validateRequiredParam('bundleId', params.bundleId);
   if (!bundleIdValidation.isValid) {
-    return bundleIdValidation.errorResponse;
+    return bundleIdValidation.errorResponse!;
   }
 
   log('info', `Stopping app ${params.bundleId} in simulator ${params.simulatorUuid}`);
 
   try {
-    const command = ['xcrun', 'simctl', 'terminate', params.simulatorUuid, params.bundleId];
+    const command = [
+      'xcrun',
+      'simctl',
+      'terminate',
+      params.simulatorUuid as string,
+      params.bundleId as string,
+    ];
     const result = await executor(command, 'Stop App in Simulator', true, undefined);
 
     if (!result.success) {

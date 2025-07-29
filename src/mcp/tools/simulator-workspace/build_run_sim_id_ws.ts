@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, SharedBuildParams } from '../../../types/common.js';
 import {
   log,
   getDefaultCommandExecutor,
@@ -22,16 +22,26 @@ async function _handleSimulatorBuildLogic(
   log('info', `Building ${params.workspacePath || params.projectPath} for iOS Simulator`);
 
   try {
+    // Create SharedBuildParams object with required properties
+    const sharedBuildParams: SharedBuildParams = {
+      workspacePath: params.workspacePath as string | undefined,
+      projectPath: params.projectPath as string | undefined,
+      scheme: params.scheme as string,
+      configuration: params.configuration as string,
+      derivedDataPath: params.derivedDataPath as string | undefined,
+      extraArgs: params.extraArgs as string[] | undefined,
+    };
+
     const buildResult = await executeXcodeBuildCommand(
-      params,
+      sharedBuildParams,
       {
         platform: XcodePlatform.iOSSimulator,
-        simulatorName: params.simulatorName,
-        simulatorId: params.simulatorId,
-        useLatestOS: params.useLatestOS,
+        simulatorName: params.simulatorName as string | undefined,
+        simulatorId: params.simulatorId as string | undefined,
+        useLatestOS: params.useLatestOS as boolean | undefined,
         logPrefix: 'Build',
       },
-      params.preferXcodebuild,
+      params.preferXcodebuild as boolean | undefined,
       'build',
       executor,
     );
@@ -51,13 +61,13 @@ export async function build_run_sim_id_wsLogic(
 ): Promise<ToolResponse> {
   // Validate required parameters
   const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
   const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse;
+  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
 
   // Provide defaults
   const processedParams = {
@@ -92,14 +102,17 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     const command = ['xcodebuild', '-showBuildSettings'];
 
     if (params.workspacePath) {
-      command.push('-workspace', params.workspacePath);
+      command.push('-workspace', params.workspacePath as string);
     } else if (params.projectPath) {
-      command.push('-project', params.projectPath);
+      command.push('-project', params.projectPath as string);
     }
 
-    command.push('-scheme', params.scheme);
-    command.push('-configuration', params.configuration);
-    command.push('-destination', `platform=${XcodePlatform.iOSSimulator},id=${params.simulatorId}`);
+    command.push('-scheme', params.scheme as string);
+    command.push('-configuration', params.configuration as string);
+    command.push(
+      '-destination',
+      `platform=${XcodePlatform.iOSSimulator},id=${params.simulatorId as string}`,
+    );
 
     const result = await executor(command, 'Get App Path', true, undefined);
 
@@ -145,14 +158,17 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     }
 
     if (!targetSimulator) {
-      return createTextResponse(`Simulator with ID ${params.simulatorId} not found.`, true);
+      return createTextResponse(
+        `Simulator with ID ${params.simulatorId as string} not found.`,
+        true,
+      );
     }
 
     // Boot if needed
     if (targetSimulator.state !== 'Booted') {
       log('info', `Booting simulator ${targetSimulator.name}...`);
       const bootResult = await executor(
-        ['xcrun', 'simctl', 'boot', params.simulatorId],
+        ['xcrun', 'simctl', 'boot', params.simulatorId as string],
         'Boot Simulator',
         true,
         undefined,
@@ -166,7 +182,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // Step 4: Install App
     log('info', `Installing app at ${appPath}...`);
     const installResult = await executor(
-      ['xcrun', 'simctl', 'install', params.simulatorId, appPath],
+      ['xcrun', 'simctl', 'install', params.simulatorId as string, appPath],
       'Install App',
       true,
       undefined,
@@ -196,7 +212,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
     log('info', `Launching app with bundle ID ${bundleId}...`);
     const launchResult = await executor(
-      ['xcrun', 'simctl', 'launch', params.simulatorId, bundleId],
+      ['xcrun', 'simctl', 'launch', params.simulatorId as string, bundleId],
       'Launch App',
       true,
       undefined,
@@ -223,7 +239,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
         },
         {
           type: 'text',
-          text: `📱 Simulator: ${targetSimulator.name} (${params.simulatorId})`,
+          text: `📱 Simulator: ${targetSimulator.name} (${params.simulatorId as string})`,
         },
       ],
     };
