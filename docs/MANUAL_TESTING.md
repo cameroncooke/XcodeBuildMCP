@@ -1,492 +1,27 @@
-# XcodeBuildMCP Plugin Testing Guidelines
+# XcodeBuildMCP Manual Testing Guidelines
 
-This document provides comprehensive testing guidelines for XcodeBuildMCP plugins, ensuring consistent, robust, and maintainable test coverage across the entire codebase.
+This document provides comprehensive guidelines for manual black-box testing of XcodeBuildMCP using Reloaderoo inspect commands. This is the authoritative guide for validating all tools through the Model Context Protocol interface.
 
 ## Table of Contents
 
 1. [Testing Philosophy](#testing-philosophy)
-2. [Test Architecture](#test-architecture)  
-3. [Dependency Injection Strategy](#dependency-injection-strategy)
-4. [Three-Dimensional Testing](#three-dimensional-testing)
-5. [Test Organization](#test-organization)
-6. [Test Patterns](#test-patterns)
-7. [Performance Requirements](#performance-requirements)
-8. [Coverage Standards](#coverage-standards)
-9. [Common Patterns](#common-patterns)
-10. [Manual Testing with Reloaderoo](#manual-testing-with-reloaderoo)
-11. [Troubleshooting](#troubleshooting)
+2. [Black Box Testing via Reloaderoo](#black-box-testing-via-reloaderoo)
+3. [Testing Psychology & Bias Prevention](#testing-psychology--bias-prevention)
+4. [Tool Dependency Graph Testing Strategy](#tool-dependency-graph-testing-strategy)
+5. [Prerequisites](#prerequisites)
+6. [Step-by-Step Testing Process](#step-by-step-testing-process)
+7. [Error Testing](#error-testing)
+8. [Testing Report Generation](#testing-report-generation)
+9. [Troubleshooting](#troubleshooting)
 
 ## Testing Philosophy
-
-### 🚨 CRITICAL: No Vitest Mocking Allowed
-
-**ABSOLUTE RULE: ALL VITEST MOCKING IS COMPLETELY BANNED**
-
-**FORBIDDEN PATTERNS (will cause immediate test failure):**
-- `vi.mock()` - BANNED
-- `vi.fn()` - BANNED  
-- `vi.mocked()` - BANNED
-- `vi.spyOn()` - BANNED
-- `.mockResolvedValue()` - BANNED
-- `.mockRejectedValue()` - BANNED
-- `.mockReturnValue()` - BANNED
-- `.mockImplementation()` - BANNED
-- `.toHaveBeenCalled()` - BANNED
-- `.toHaveBeenCalledWith()` - BANNED
-- `MockedFunction` type - BANNED
-- Any `mock*` variables - BANNED
-
-**ONLY ALLOWED MOCKING:**
-- `createMockExecutor({ success: true, output: 'result' })` - command execution
-- `createMockFileSystemExecutor({ readFile: async () => 'content' })` - file system operations
-
-### Integration Testing with Dependency Injection
-
-XcodeBuildMCP follows a **pure dependency injection** testing philosophy that eliminates vitest mocking:
-
-- ✅ **Test plugin interfaces** (public API contracts)
-- ✅ **Test integration flows** (plugin → utilities → external tools)
-- ✅ **Use dependency injection** with createMockExecutor()
-- ❌ **Never mock vitest functions** (vi.mock, vi.fn, etc.)
-
-### Benefits
-
-1. **Implementation Independence**: Internal refactoring doesn't break tests
-2. **Real Coverage**: Tests verify actual user data flows
-3. **Maintainability**: No brittle vitest mocks that break on implementation changes
-4. **True Integration**: Catches integration bugs between layers
-5. **Test Safety**: Default executors throw errors in test environment
-
-### Automated Violation Checking
-
-To enforce the no-mocking policy, the project includes a script that automatically checks for banned testing patterns.
-
-```bash
-# Run the script to check for violations
-node scripts/check-test-patterns.js
-```
-
-This script is part of the standard development workflow and should be run before committing changes to ensure compliance with the testing standards. It will fail if it detects any use of `vi.mock`, `vi.fn`, or other forbidden patterns in the test files.
-
-## Test Architecture
-
-### Correct Test Flow
-```
-Test → Plugin Handler → utilities → [DEPENDENCY INJECTION] createMockExecutor()
-```
-
-### What Gets Tested
-- Plugin parameter validation
-- Business logic execution  
-- Command generation
-- Response formatting
-- Error handling
-- Integration between layers
-
-### What Gets Mocked
-- Command execution via `createMockExecutor()`
-- File system operations via `createMockFileSystemExecutor()`
-- Nothing else - all vitest mocking is banned
-
-## Dependency Injection Strategy
-
-### Handler Requirements
-
-All plugin handlers must support dependency injection:
-
-```typescript
-export function tool_nameLogic(
-  args: Record<string, unknown>, 
-  commandExecutor: CommandExecutor,
-  fileSystemExecutor?: FileSystemExecutor
-): Promise<ToolResponse> {
-  // Use injected executors
-  const result = await executeCommand(['xcrun', 'simctl', 'list'], commandExecutor);
-  return createTextResponse(result.output);
-}
-
-export default {
-  name: 'tool_name',
-  description: 'Tool description',
-  schema: { /* zod schema */ },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return tool_nameLogic(args, getDefaultCommandExecutor(), getDefaultFileSystemExecutor());
-  },
-};
-```
-
-**Important**: The dependency injection pattern applies to ALL handlers, including:
-- Tool handlers
-- Resource handlers
-- Any future handler types (prompts, etc.)
-
-Always use default parameter values (e.g., `= getDefaultCommandExecutor()`) to ensure production code works without explicit executor injection, while tests can override with mock executors.
-
-### Test Requirements
-
-All tests must explicitly provide mock executors:
-
-```typescript
-it('should handle successful command execution', async () => {
-  const mockExecutor = createMockExecutor({
-    success: true,
-    output: 'BUILD SUCCEEDED'
-  });
-  
-  const result = await tool_nameLogic(
-    { projectPath: '/test.xcodeproj', scheme: 'MyApp' },
-    mockExecutor
-  );
-  
-  expect(result.content[0].text).toContain('Build succeeded');
-});
-```
-
-## Three-Dimensional Testing
-
-Every plugin test suite must validate three critical dimensions:
-
-### 1. Input Validation (Schema Testing)
-
-Test parameter validation and schema compliance:
-
-```typescript
-describe('Parameter Validation', () => {
-  it('should accept valid parameters', () => {
-    const schema = z.object(tool.schema);
-    expect(schema.safeParse({
-      projectPath: '/valid/path.xcodeproj',
-      scheme: 'ValidScheme'
-    }).success).toBe(true);
-  });
-  
-  it('should reject invalid parameters', () => {
-    const schema = z.object(tool.schema);
-    expect(schema.safeParse({
-      projectPath: 123, // Wrong type
-      scheme: 'ValidScheme'
-    }).success).toBe(false);
-  });
-  
-  it('should handle missing required parameters', async () => {
-    const mockExecutor = createMockExecutor({ success: true });
-    
-    const result = await tool.handler({ scheme: 'MyApp' }, mockExecutor); // Missing projectPath
-    
-    expect(result).toEqual({
-      content: [{
-        type: 'text',
-        text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter."
-      }],
-      isError: true
-    });
-  });
-});
-```
-
-### 2. Command Generation (CLI Testing)
-
-**CRITICAL: No command spying allowed. Test command generation through response validation.**
-
-```typescript
-describe('Command Generation', () => {
-  it('should execute correct command with minimal parameters', async () => {
-    const mockExecutor = createMockExecutor({
-      success: true,
-      output: 'BUILD SUCCEEDED'
-    });
-    
-    const result = await tool.handler({
-      projectPath: '/test.xcodeproj',
-      scheme: 'MyApp'
-    }, mockExecutor);
-    
-    // Verify through successful response - command was executed correctly
-    expect(result.content[0].text).toContain('Build succeeded');
-  });
-  
-  it('should handle paths with spaces correctly', async () => {
-    const mockExecutor = createMockExecutor({
-      success: true,
-      output: 'BUILD SUCCEEDED'
-    });
-    
-    const result = await tool.handler({
-      projectPath: '/Users/dev/My Project/app.xcodeproj',
-      scheme: 'MyApp'
-    }, mockExecutor);
-    
-    // Verify successful execution (proper path handling)
-    expect(result.content[0].text).toContain('Build succeeded');
-  });
-});
-```
-
-### 3. Output Processing (Response Testing)
-
-Test response formatting and error handling:
-
-```typescript
-describe('Response Processing', () => {
-  it('should format successful response', async () => {
-    const mockExecutor = createMockExecutor({
-      success: true,
-      output: 'BUILD SUCCEEDED'
-    });
-    
-    const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' }, mockExecutor);
-    
-    expect(result).toEqual({
-      content: [{ type: 'text', text: '✅ Build succeeded for scheme MyApp' }]
-    });
-  });
-  
-  it('should handle command failures', async () => {
-    const mockExecutor = createMockExecutor({
-      success: false,
-      output: 'Build failed with errors',
-      error: 'Compilation error'
-    });
-    
-    const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' }, mockExecutor);
-    
-    expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('Build failed');
-  });
-  
-  it('should handle executor errors', async () => {
-    const mockExecutor = createMockExecutor(new Error('spawn xcodebuild ENOENT'));
-    
-    const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' }, mockExecutor);
-    
-    expect(result).toEqual({
-      content: [{ type: 'text', text: 'Error during build: spawn xcodebuild ENOENT' }],
-      isError: true
-    });
-  });
-});
-```
-
-## Test Organization
-
-### Directory Structure
-
-```
-src/plugins/[workflow-group]/
-├── __tests__/
-│   ├── index.test.ts          # Workflow metadata tests (canonical groups only)
-│   ├── re-exports.test.ts     # Re-export validation (project/workspace groups only)
-│   ├── tool1.test.ts          # Individual tool tests
-│   ├── tool2.test.ts
-│   └── ...
-├── tool1.ts
-├── tool2.ts
-├── index.ts                   # Workflow metadata
-└── ...
-```
-
-### Test File Types
-
-#### 1. Tool Tests (`tool_name.test.ts`)
-Test individual plugin tools with full three-dimensional coverage.
-
-#### 2. Workflow Tests (`index.test.ts`)
-Test workflow metadata for canonical groups:
-
-```typescript
-describe('simulator-workspace workflow metadata', () => {
-  it('should have correct workflow name', () => {
-    expect(workflow.name).toBe('iOS Simulator Workspace Development');
-  });
-  
-  it('should have correct capabilities', () => {
-    expect(workflow.capabilities).toEqual([
-      'build', 'test', 'deploy', 'debug', 'ui-automation', 'log-capture'
-    ]);
-  });
-});
-```
-
-#### 3. Re-export Tests (`re-exports.test.ts`) 
-Test re-export integrity for project/workspace groups:
-
-```typescript
-describe('simulator-project re-exports', () => {
-  it('should re-export boot_sim from simulator-shared', () => {
-    expect(bootSim.name).toBe('boot_sim');
-    expect(typeof bootSim.handler).toBe('function');
-  });
-});
-```
-
-## Test Patterns
-
-### Standard Test Template
-
-```typescript
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
-
-// CRITICAL: NO VITEST MOCKING ALLOWED
-// Import ONLY what you need - no mock setup
-
-import tool from '../tool_name.ts';
-import { createMockExecutor } from '../../utils/command.js';
-
-describe('tool_name', () => {
-
-  describe('Export Field Validation (Literal)', () => {
-    it('should export correct name', () => {
-      expect(tool.name).toBe('tool_name');
-    });
-
-    it('should export correct description', () => {
-      expect(tool.description).toBe('Expected literal description');
-    });
-
-    it('should export handler function', () => {
-      expect(typeof tool.handler).toBe('function');
-    });
-
-    // Schema validation tests...
-  });
-
-  describe('Command Generation', () => {
-    it('should execute commands successfully', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'Expected output'
-      });
-      
-      const result = await tool.handler(validParams, mockExecutor);
-      
-      expect(result.content[0].text).toContain('Expected result');
-    });
-  });
-
-  describe('Response Processing', () => {
-    // Output handling tests...
-  });
-});
-```
-
-## Performance Requirements
-
-### Test Execution Speed
-
-- **Individual test**: < 100ms
-- **Test file**: < 5 seconds  
-- **Full test suite**: < 20 seconds
-- **No real system calls**: Tests must use mocks
-
-### Performance Anti-Patterns
-
-❌ **Real command execution**:
-```
-[INFO] Executing command: xcodebuild -showBuildSettings...
-```
-
-❌ **Long timeouts** (indicates real calls)
-❌ **File system operations** (unless testing file utilities)
-❌ **Network requests** (unless testing network utilities)
-
-## Coverage Standards
-
-### Target Coverage
-- **Overall**: 95%+
-- **Plugin handlers**: 100%
-- **Command generation**: 100%
-- **Error paths**: 100%
-
-### Coverage Validation
-```bash
-# Check coverage for specific plugin group
-npm run test:coverage -- plugins/simulator-workspace/
-
-# Ensure all code paths are tested
-npm run test:coverage -- --reporter=lcov
-```
-
-### Required Test Paths
-
-Every plugin test must cover:
-
-- ✅ **Valid parameter combinations**
-- ✅ **Invalid parameter rejection**  
-- ✅ **Missing required parameters**
-- ✅ **Successful command execution**
-- ✅ **Command failure scenarios**
-- ✅ **Executor error handling**
-- ✅ **Output parsing edge cases**
-
-## Common Patterns
-
-### Testing Parameter Defaults
-
-```typescript
-it('should use default configuration when not provided', async () => {
-  const mockExecutor = createMockExecutor({
-    success: true,
-    output: 'BUILD SUCCEEDED'
-  });
-  
-  const result = await tool.handler({
-    projectPath: '/test.xcodeproj',
-    scheme: 'MyApp'
-    // configuration intentionally omitted
-  }, mockExecutor);
-  
-  // Verify default behavior through successful response
-  expect(result.content[0].text).toContain('Build succeeded');
-});
-```
-
-### Testing Complex Output Parsing
-
-```typescript
-it('should extract app path from build settings', async () => {
-  const mockExecutor = createMockExecutor({
-    success: true,
-    output: `
-      CONFIGURATION_BUILD_DIR = /path/to/build
-      BUILT_PRODUCTS_DIR = /path/to/products  
-      FULL_PRODUCT_NAME = MyApp.app
-      OTHER_SETTING = ignored_value
-    `
-  });
-  
-  const result = await tool.handler({ projectPath: '/test', scheme: 'MyApp' }, mockExecutor);
-  
-  expect(result.content[0].text).toContain('/path/to/products/MyApp.app');
-});
-```
-
-### Testing Error Message Formatting
-
-```typescript
-it('should format validation errors correctly', async () => {
-  const mockExecutor = createMockExecutor({ success: true });
-  
-  const result = await tool.handler({}, mockExecutor); // Missing required params
-  
-  expect(result).toEqual({
-    content: [{
-      type: 'text',
-      text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter."
-    }],
-    isError: true
-  });
-});
-```
-
-## Manual Testing with Reloaderoo
 
 ### 🚨 CRITICAL: THOROUGHNESS OVER EFFICIENCY - NO SHORTCUTS ALLOWED
 
 **ABSOLUTE PRINCIPLE: EVERY TOOL MUST BE TESTED INDIVIDUALLY**
 
 **🚨 MANDATORY TESTING SCOPE - NO EXCEPTIONS:**
-- **EVERY SINGLE TOOL** - All 83+ tools must be tested individually, one by one
+- **EVERY SINGLE TOOL** - All tools must be tested individually, one by one
 - **NO REPRESENTATIVE SAMPLING** - Testing similar tools does NOT validate other tools
 - **NO PATTERN RECOGNITION SHORTCUTS** - Similar-looking tools may have different behaviors
 - **NO EFFICIENCY OPTIMIZATIONS** - Thoroughness is more important than speed
@@ -508,10 +43,12 @@ it('should format validation errors correctly', async () => {
 5. **No Assumptions**: Treat each tool as potentially unique requiring individual validation
 
 **TESTING COMPLETENESS VALIDATION:**
-- **Start Count**: Record exact number of tools discovered (e.g., 83 tools)
+- **Start Count**: Record exact number of tools discovered using `npm run tools`
 - **End Count**: Verify same number of tools have been individually tested
 - **Missing Tools = Testing Failure**: If any tools remain untested, the testing is incomplete
 - **TodoWrite Tracking**: Every tool must appear in todo list and be marked completed
+
+## Black Box Testing via Reloaderoo
 
 ### 🚨 CRITICAL: Black Box Testing via Reloaderoo Inspect
 
@@ -586,11 +123,11 @@ Some tools rely on in-memory state within the MCP server and will fail when test
 5. **Report as finding** - Note in testing report that stateful tools failed as expected
 
 **COMPLETE COVERAGE REQUIREMENTS:**
-- ✅ **Test ALL 83+ tools individually** - No exceptions, every tool gets manual verification
+- ✅ **Test ALL tools individually** - No exceptions, every tool gets manual verification
 - ✅ **Follow dependency graphs** - Test tools in correct order based on data dependencies
 - ✅ **Capture key outputs** - Record UUIDs, paths, schemes needed by dependent tools
 - ✅ **Test real workflows** - Complete end-to-end workflows from discovery to execution
-- ✅ **Use programmatic JSON parsing** - Accurate tool/resource counting and discovery
+- ✅ **Use tool-summary.js script** - Accurate tool/resource counting and discovery
 - ✅ **Document all observations** - Record exactly what you see via testing
 - ✅ **Report discrepancies as findings** - Note unexpected results without investigation
 
@@ -598,23 +135,25 @@ Some tools rely on in-memory state within the MCP server and will fail when test
 
 **Step 1: Create Complete Tool Inventory**
 ```bash
-# Generate complete list of all tools
-npx reloaderoo@latest inspect list-tools -- node build/index.js > /tmp/all_tools.json
-TOTAL_TOOLS=$(jq '.tools | length' /tmp/all_tools.json)
+# Use the official tool summary script to get accurate tool count and list
+npm run tools > /tmp/summary_output.txt
+TOTAL_TOOLS=$(grep "Tools:" /tmp/summary_output.txt | awk '{print $2}')
 echo "TOTAL TOOLS TO TEST: $TOTAL_TOOLS"
 
-# Extract all tool names for systematic testing
-jq -r '.tools[].name' /tmp/all_tools.json > /tmp/tool_names.txt
+# Generate detailed tool list and extract tool names
+npm run tools:list > /tmp/tools_detailed.txt
+grep "^   • " /tmp/tools_detailed.txt | sed 's/^   • //' > /tmp/tool_names.txt
 ```
 
 **Step 2: Create TodoWrite Task List for Every Tool**
 ```bash
-# Create individual todo items for each of the 83+ tools
+# Create individual todo items for each tool discovered
+# Use the actual tool count from step 1
 # Example for first few tools:
 # 1. [ ] Test tool: diagnostic  
 # 2. [ ] Test tool: list_devices
 # 3. [ ] Test tool: list_sims
-# ... (continue for ALL 83+ tools)
+# ... (continue for ALL $TOTAL_TOOLS tools)
 ```
 
 **Step 3: Test Each Tool Individually**
@@ -654,7 +193,7 @@ fi
 - ❌ **Never suggest implementation fixes** - Report issues as findings, don't solve them
 - ❌ **Never use scripts for tool testing** - Each tool must be manually executed and verified
 
-### 🚨 TESTING PSYCHOLOGY & BIAS PREVENTION
+## Testing Psychology & Bias Prevention
 
 **COMMON ANTI-PATTERNS TO AVOID:**
 
@@ -686,7 +225,7 @@ fi
 - **The goal is discovering problems**, not confirming everything works
 
 **TESTING COMPLETENESS CHECKLIST:**
-- [ ] Generated complete tool list (83+ tools)
+- [ ] Generated complete tool list using `npm run tools:list`
 - [ ] Created TodoWrite entry for every single tool
 - [ ] Tested every tool individually via Reloaderoo inspect
 - [ ] Marked every tool as completed in TodoWrite
@@ -694,7 +233,7 @@ fi
 - [ ] Documented all results, including failures and blocked tools
 - [ ] Created final report covering ALL tools, not just successful ones
 
-### Tool Dependency Graph Testing Strategy
+## Tool Dependency Graph Testing Strategy
 
 **CRITICAL: Tools must be tested in dependency order:**
 
@@ -733,41 +272,42 @@ Must capture and document these values for dependent tools:
 - **App bundle paths** from `get_*_app_path_*`
 - **Bundle IDs** from `get_*_bundle_id`
 
-### Prerequisites
+## Prerequisites
 
 1. **Build the server**: `npm run build`
 2. **Install jq**: `brew install jq` (required for JSON parsing)
 3. **System Requirements**: macOS with Xcode installed, connected devices/simulators optional
 
+## Step-by-Step Testing Process
+
+**Note**: All tool and resource discovery now uses the official `tool-summary.js` script (available as `npm run tools`, `npm run tools:list`, and `npm run tools:all`) instead of direct reloaderoo calls. This ensures accurate counts and lists without hardcoded values.
+
 ### Step 1: Programmatic Discovery and Official Testing Lists
 
-#### Generate Official Tool List
+#### Generate Official Tool and Resource Lists using tool-summary.js
 
 ```bash
-# Generate complete tool list with accurate count
-npx reloaderoo@latest inspect list-tools -- node build/index.js 2>/dev/null > /tmp/tools.json
+# Use the official tool summary script to get accurate counts and lists
+npm run tools > /tmp/summary_output.txt
 
-# Get accurate tool count
-TOOL_COUNT=$(jq '.tools | length' /tmp/tools.json)
+# Extract tool and resource counts from summary
+TOOL_COUNT=$(grep "Tools:" /tmp/summary_output.txt | awk '{print $2}')
+RESOURCE_COUNT=$(grep "Resources:" /tmp/summary_output.txt | awk '{print $2}')
 echo "Official tool count: $TOOL_COUNT"
-
-# Generate tool names list for testing checklist
-jq -r '.tools[] | .name' /tmp/tools.json > /tmp/tool_names.txt
-echo "Tool names saved to /tmp/tool_names.txt"
-```
-
-#### Generate Official Resource List
-
-```bash
-# Generate complete resource list
-npx reloaderoo@latest inspect list-resources -- node build/index.js 2>/dev/null > /tmp/resources.json
-
-# Get accurate resource count  
-RESOURCE_COUNT=$(jq '.resources | length' /tmp/resources.json)
 echo "Official resource count: $RESOURCE_COUNT"
 
-# Generate resource URIs for testing checklist
-jq -r '.resources[] | .uri' /tmp/resources.json > /tmp/resource_uris.txt
+# Generate detailed tool list for testing checklist
+npm run tools:list > /tmp/tools_detailed.txt
+
+# Extract tool names from the detailed output
+grep "^   • " /tmp/tools_detailed.txt | sed 's/^   • //' > /tmp/tool_names.txt
+echo "Tool names saved to /tmp/tool_names.txt"
+
+# Generate detailed resource list for testing checklist  
+npm run tools:all > /tmp/tools_and_resources.txt
+
+# Extract resource URIs from the detailed output
+sed -n '/📚 Available Resources:/,/✅ Tool summary complete!/p' /tmp/tools_and_resources.txt | grep "^   • " | sed 's/^   • //' | cut -d' ' -f1 > /tmp/resource_uris.txt
 echo "Resource URIs saved to /tmp/resource_uris.txt"
 ```
 
@@ -867,7 +407,7 @@ echo "Tool schema reference created at /tmp/tool_schemas.md"
 **SYSTEMATIC TESTING PROCESS:**
 
 1. **Create TodoWrite Task List**
-   - Add all 83 tools to task list before starting
+   - Add all tools (from `npm run tools` count) to task list before starting
    - Mark each tool as "pending" initially
    - Update status to "in_progress" when testing begins
    - Mark "completed" only after manual verification
@@ -986,13 +526,13 @@ while IFS= read -r workspace_path; do
 done < /tmp/workspace_paths.txt
 ```
 
-#### Phase 5: Manual Individual Tool Testing (All 83 Tools)
+#### Phase 5: Manual Individual Tool Testing (All Tools)
 
 **CRITICAL: Test every single tool manually, one at a time**
 
 **Manual Testing Process:**
 
-1. **Create task list** with TodoWrite tool for all 83 tools
+1. **Create task list** with TodoWrite tool for all tools (using count from `npm run tools`)
 2. **Test each tool individually** with proper parameters
 3. **Mark each tool complete** in task list after manual verification
 4. **Record results** and observations for each tool
@@ -1094,7 +634,7 @@ npx reloaderoo@latest inspect call-tool "swift_package_stop" --params '{"pid": 1
 # [Mark as "false negative - stateful tool limitation" in TodoWrite]
 # [Continue to next tool without investigation]
 
-# Continue individually for all 83 tools...
+# Continue individually for all tools (use count from npm run tools)...
 ```
 
 **HANDLING STATEFUL TOOL FAILURES:**
@@ -1106,7 +646,7 @@ npx reloaderoo@latest inspect call-tool "swift_package_stop" --params '{"pid": 1
 # Continue immediately to next tool in sequence
 ```
 
-### Step 4: Error Testing
+## Error Testing
 
 ```bash
 # Test error handling systematically
@@ -1125,7 +665,7 @@ echo "Testing invalid UUIDs..."
 npx reloaderoo@latest inspect call-tool boot_sim --params '{"simulatorUuid": "invalid-uuid"}' -- node build/index.js 2>/dev/null
 ```
 
-### Step 5: Generate Testing Report
+## Testing Report Generation
 
 ```bash
 # Create comprehensive testing session report
@@ -1170,88 +710,40 @@ jq --arg tool "TOOL_NAME" '.tools[] | select(.name == $tool) | .inputSchema' /tm
 jq --arg tool "TOOL_NAME" '.tools[] | select(.name == $tool) | .description' /tmp/tools.json
 ```
 
-This systematic approach ensures comprehensive, accurate testing using programmatic discovery and validation of all XcodeBuildMCP functionality.
-
 ## Troubleshooting
 
 ### Common Issues
 
-#### 1. "Real System Executor Detected" Error
-**Symptoms**: Test fails with error about real system executor being used
-**Cause**: Handler not receiving mock executor parameter
-**Fix**: Ensure test passes createMockExecutor() to handler:
+#### 1. Reloaderoo Command Timeouts
+**Symptoms**: Commands hang or timeout after extended periods
+**Cause**: Server startup issues or MCP protocol communication problems
+**Resolution**: 
+- Verify server builds successfully: `npm run build`
+- Test direct server startup: `node build/index.js`
+- Check for TypeScript compilation errors
 
-```typescript
-// ❌ WRONG
-const result = await tool.handler(params);
+#### 2. Tool Parameter Validation Errors
+**Symptoms**: Tools return parameter validation errors
+**Cause**: Missing or incorrect required parameters
+**Resolution**:
+- Check tool schema: `jq --arg tool "TOOL_NAME" '.tools[] | select(.name == $tool) | .inputSchema' /tmp/tools.json`
+- Verify parameter types and required fields
+- Use captured dependency data (UUIDs, paths, schemes)
 
-// ✅ CORRECT
-const mockExecutor = createMockExecutor({ success: true });
-const result = await tool.handler(params, mockExecutor);
-```
+#### 3. "No Such Tool" Errors
+**Symptoms**: Reloaderoo reports tool not found
+**Cause**: Tool name mismatch or server registration issues
+**Resolution**:
+- Verify tool exists in list: `npx reloaderoo@latest inspect list-tools -- node build/index.js | jq '.tools[].name'`
+- Check exact tool name spelling and case sensitivity
+- Ensure server built successfully
 
-#### 2. "Real Filesystem Executor Detected" Error
-**Symptoms**: Test fails when trying to access file system
-**Cause**: Handler not receiving mock file system executor
-**Fix**: Pass createMockFileSystemExecutor():
+#### 4. Empty or Malformed Responses
+**Symptoms**: Tools return empty responses or JSON parsing errors
+**Cause**: Tool implementation issues or server errors
+**Resolution**:
+- Document as testing finding - do not investigate implementation
+- Mark tool as "failed - empty response" in task list
+- Continue with next tool in sequence
 
-```typescript
-const mockCmd = createMockExecutor({ success: true });
-const mockFS = createMockFileSystemExecutor({ readFile: async () => 'content' });
-const result = await tool.handler(params, mockCmd, mockFS);
-```
-
-#### 3. Handler Signature Errors
-**Symptoms**: TypeScript errors about handler parameters
-**Cause**: Handler doesn't support dependency injection
-**Fix**: Update handler signature:
-
-```typescript
-async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-  return tool_nameLogic(args, getDefaultCommandExecutor(), getDefaultFileSystemExecutor());
-}
-```
-
-### Debug Commands
-
-```bash
-# Run specific test file
-npm test -- src/plugins/simulator-workspace/__tests__/tool_name.test.ts
-
-# Run with verbose output
-npm test -- --reporter=verbose
-
-# Check for banned patterns
-node scripts/check-test-patterns.js
-
-# Verify dependency injection compliance
-node scripts/audit-dependency-container.js
-
-# Coverage for specific directory
-npm run test:coverage -- src/plugins/simulator-workspace/
-```
-
-### Validation Scripts
-
-```bash
-# Check for vitest mocking violations
-node scripts/check-test-patterns.js --pattern=vitest
-
-# Check dependency injection compliance
-node scripts/audit-dependency-container.js
-
-# Both scripts must pass before committing
-```
-
-## Best Practices Summary
-
-1. **Dependency injection**: Always use createMockExecutor() and createMockFileSystemExecutor()
-2. **No vitest mocking**: All vi.mock, vi.fn, etc. patterns are banned
-3. **Three dimensions**: Test input validation, command execution, and output processing
-4. **Literal expectations**: Use exact strings in assertions to catch regressions
-5. **Performance**: Ensure fast execution through proper mocking
-6. **Coverage**: Aim for 95%+ with focus on error paths
-7. **Consistency**: Follow standard patterns across all plugin tests
-8. **Test safety**: Default executors prevent accidental real system calls
-
-This testing strategy ensures robust, maintainable tests that provide confidence in plugin functionality while remaining resilient to implementation changes and completely eliminating vitest mocking dependencies.
+This systematic approach ensures comprehensive, accurate testing using programmatic discovery and validation of all XcodeBuildMCP functionality through the MCP interface exclusively.
