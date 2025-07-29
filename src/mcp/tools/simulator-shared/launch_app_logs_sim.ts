@@ -76,6 +76,6 @@ export default {
     args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return launch_app_logs_simLogic(args as LaunchAppLogsSimParams);
+    return launch_app_logs_simLogic(args as unknown as LaunchAppLogsSimParams);
   },
 };
