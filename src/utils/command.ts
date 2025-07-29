@@ -257,13 +257,13 @@ export function createMockExecutor(
     signalCode: null,
     spawnargs: [],
     spawnfile: 'sh',
-  };
+  } as unknown as ChildProcess;
 
   return async (_command, _logPrefix, _useShell, _env) => ({
     success: result.success ?? true,
     output: result.output ?? '',
     error: result.error,
-    process: result.process ?? mockProcess,
+    process: (result.process ?? mockProcess) as ChildProcess,
   });
 }
 
@@ -339,13 +339,13 @@ export function createCommandMatchingMockExecutor(
       signalCode: null,
       spawnargs: [],
       spawnfile: 'sh',
-    };
+    } as unknown as ChildProcess;
 
     return {
       success: result.success ?? true, // Success by default (as discussed)
       output: result.output ?? '',
       error: result.error,
-      process: result.process ?? mockProcess,
+      process: (result.process ?? mockProcess) as ChildProcess,
     };
   };
 }

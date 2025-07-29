@@ -1,18 +1,37 @@
 import { log } from '../utils/logger.js';
-import { getDefaultCommandExecutor } from '../utils/command.js';
+import { getDefaultCommandExecutor, CommandExecutor } from '../utils/command.js';
 import { WORKFLOW_LOADERS, WorkflowName, WORKFLOW_METADATA } from './generated-plugins.js';
+import { ToolResponse } from '../types/common.js';
+import { PluginMeta } from './plugin-types.js';
 
 // Track enabled workflows and their tools for replacement functionality
 const enabledWorkflows = new Set<string>();
 const enabledTools = new Map<string, string>(); // toolName -> workflowName
 
+// Type for the handler function from our tools
+type ToolHandler = (
+  args: Record<string, unknown>,
+  executor: CommandExecutor,
+) => Promise<ToolResponse>;
+
+// Interface for the MCP server with the methods we need
+interface MCPServerInterface {
+  tool(
+    name: string,
+    description: string,
+    schema: unknown,
+    handler: (args: unknown) => Promise<unknown>,
+  ): void;
+  notifyToolsChanged?: () => Promise<void>;
+}
+
 /**
  * Wrapper function to adapt MCP SDK handler calling convention to our dependency injection pattern
  * MCP SDK calls handlers with just (args), but our handlers expect (args, executor)
  */
-function wrapHandlerWithExecutor(handler: (args: unknown, executor: unknown) => Promise<unknown>) {
-  return async (args: unknown): Promise<unknown> => {
-    return handler(args, getDefaultCommandExecutor());
+function wrapHandlerWithExecutor(handler: ToolHandler) {
+  return async (args: unknown): Promise<ToolResponse> => {
+    return handler(args as Record<string, unknown>, getDefaultCommandExecutor());
   };
 }
 
@@ -56,7 +75,7 @@ export function getEnabledWorkflows(): string[] {
  * @param additive - If true, add to existing workflows. If false (default), replace existing workflows
  */
 export async function enableWorkflows(
-  server: Record<string, unknown>,
+  server: MCPServerInterface,
   workflowNames: string[],
   additive: boolean = false,
 ): Promise<void> {
@@ -84,7 +103,7 @@ export async function enableWorkflows(
       log('info', `Loading workflow '${workflowName}' with code-splitting...`);
 
       // Dynamic import with code-splitting
-      const workflowModule = await loader();
+      const workflowModule = (await loader()) as Record<string, unknown>;
 
       // Get tools count from the module (excluding 'workflow' key)
       const toolKeys = Object.keys(workflowModule).filter((key) => key !== 'workflow');
@@ -93,7 +112,7 @@ export async function enableWorkflows(
 
       // Register each tool in the workflow
       for (const toolKey of toolKeys) {
-        const tool = workflowModule[toolKey];
+        const tool = workflowModule[toolKey] as PluginMeta | undefined;
 
         if (tool && tool.name && typeof tool.handler === 'function') {
           try {
@@ -101,7 +120,7 @@ export async function enableWorkflows(
               tool.name,
               tool.description || '',
               tool.schema,
-              wrapHandlerWithExecutor(tool.handler),
+              wrapHandlerWithExecutor(tool.handler as ToolHandler),
             );
 
             // Track the tool and workflow

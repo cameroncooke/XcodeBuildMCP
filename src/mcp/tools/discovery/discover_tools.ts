@@ -9,6 +9,17 @@ import {
   generateWorkflowDescriptions,
 } from '../../../core/dynamic-tools.js';
 
+// Import the MCP server interface type
+interface MCPServerInterface {
+  tool(
+    name: string,
+    description: string,
+    schema: unknown,
+    handler: (args: unknown) => Promise<unknown>,
+  ): void;
+  notifyToolsChanged?: () => Promise<void>;
+}
+
 // Dependencies interface for dependency injection
 interface Dependencies {
   getAvailableWorkflows?: () => string[];
@@ -29,13 +40,20 @@ export async function discover_toolsLogic(
 
   try {
     // Get the server instance from the global context
-    const server = globalThis.mcpServer;
+    const server = (globalThis as { mcpServer?: Record<string, unknown> }).mcpServer;
     if (!server) {
       throw new Error('Server instance not available');
     }
 
     // 1. Check for sampling capability
-    const clientCapabilities = (server.server || server)._clientCapabilities;
+    const serverInstance = (server.server || server) as Record<string, unknown> & {
+      _clientCapabilities?: { sampling?: boolean };
+      request: (params: {
+        method: string;
+        params: unknown;
+      }) => Promise<{ content?: Array<{ text?: string }> }>;
+    };
+    const clientCapabilities = serverInstance._clientCapabilities;
     if (!clientCapabilities?.sampling) {
       log('warn', 'Client does not support sampling capability');
       return createTextResponse(
@@ -77,7 +95,7 @@ Each workflow contains ALL tools needed for its complete development workflow - 
 
     // 4. Send sampling request
     log('debug', 'Sending sampling request to client LLM');
-    const samplingResult = await (server.server || server).request(
+    const samplingResult = await serverInstance.request(
       {
         method: 'sampling/createMessage',
         params: {
@@ -170,7 +188,11 @@ Each workflow contains ALL tools needed for its complete development workflow - 
       'info',
       `${isAdditive ? 'Adding' : 'Replacing with'} workflows: ${selectedWorkflows.join(', ')}`,
     );
-    await (deps?.enableWorkflows || enableWorkflows)(server, selectedWorkflows, isAdditive);
+    await (deps?.enableWorkflows || enableWorkflows)(
+      server as Record<string, unknown> & MCPServerInterface,
+      selectedWorkflows,
+      isAdditive,
+    );
 
     // 8. Return success response - we can't easily get tool count ahead of time with dynamic loading
     // but that's okay since the user will see the tools when they're loaded

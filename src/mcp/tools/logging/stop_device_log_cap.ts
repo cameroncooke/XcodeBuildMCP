@@ -11,11 +11,15 @@ import { activeDeviceLogSessions } from './start_device_log_cap.js';
 import { ToolResponse } from '../../../types/common.js';
 import { FileSystemExecutor, getDefaultFileSystemExecutor } from '../../../utils/command.js';
 
+type StopDeviceLogCapParams = {
+  logSessionId: string;
+};
+
 /**
  * Business logic for stopping device log capture session
  */
 export async function stop_device_log_capLogic(
-  params: { logSessionId: string },
+  params: StopDeviceLogCapParams,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
   const { logSessionId } = params;
@@ -90,35 +94,73 @@ export async function stopDeviceLogCapture(
   const fsToUse = (fileSystem as typeof fs) || fs;
   const mockFileSystemExecutor: FileSystemExecutor = {
     async mkdir(path: string, options?: { recursive?: boolean }): Promise<void> {
-      await (fsToUse.promises || fsToUse).mkdir(path, options);
+      if (fsToUse.promises) {
+        await fsToUse.promises.mkdir(path, options);
+      } else {
+        await fs.promises.mkdir(path, options);
+      }
     },
     async readFile(path: string, encoding: string = 'utf8'): Promise<string> {
-      return await (fsToUse.promises || fsToUse).readFile(path, encoding);
+      if (fsToUse.promises) {
+        return (await fsToUse.promises.readFile(path, encoding as BufferEncoding)) as string;
+      } else {
+        return (await fs.promises.readFile(path, encoding as BufferEncoding)) as string;
+      }
     },
     async writeFile(path: string, content: string, encoding: string = 'utf8'): Promise<void> {
-      await (fsToUse.promises || fsToUse).writeFile(path, content, encoding);
+      if (fsToUse.promises) {
+        await fsToUse.promises.writeFile(path, content, encoding as BufferEncoding);
+      } else {
+        await fs.promises.writeFile(path, content, encoding as BufferEncoding);
+      }
     },
     async cp(
       source: string,
       destination: string,
       options?: { recursive?: boolean },
     ): Promise<void> {
-      await (fsToUse.promises || fsToUse).cp(source, destination, options);
+      if (fsToUse.promises) {
+        await fsToUse.promises.cp(source, destination, options);
+      } else {
+        await fs.promises.cp(source, destination, options);
+      }
     },
     async readdir(path: string, options?: { withFileTypes?: boolean }): Promise<unknown[]> {
-      return await (fsToUse.promises || fsToUse).readdir(path, options);
+      if (fsToUse.promises) {
+        return (await fsToUse.promises.readdir(
+          path,
+          options as { withFileTypes?: boolean },
+        )) as unknown[];
+      } else {
+        return (await fs.promises.readdir(
+          path,
+          options as { withFileTypes?: boolean },
+        )) as unknown[];
+      }
     },
     async rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {
-      await (fsToUse.promises || fsToUse).rm(path, options);
+      if (fsToUse.promises) {
+        await fsToUse.promises.rm(path, options);
+      } else {
+        await fs.promises.rm(path, options);
+      }
     },
     existsSync(path: string): boolean {
       return (fsToUse.existsSync || fs.existsSync)(path);
     },
     async stat(path: string): Promise<{ isDirectory(): boolean }> {
-      return await (fsToUse.promises || fsToUse).stat(path);
+      if (fsToUse.promises) {
+        return (await fsToUse.promises.stat(path)) as { isDirectory(): boolean };
+      } else {
+        return (await fs.promises.stat(path)) as { isDirectory(): boolean };
+      }
     },
     async mkdtemp(prefix: string): Promise<string> {
-      return await (fsToUse.promises || fsToUse).mkdtemp(prefix);
+      if (fsToUse.promises) {
+        return await fsToUse.promises.mkdtemp(prefix);
+      } else {
+        return await fs.promises.mkdtemp(prefix);
+      }
     },
     tmpdir(): string {
       return '/tmp';
@@ -152,9 +194,8 @@ export default {
     logSessionId: z.string().describe('The session ID returned by start_device_log_cap.'),
   },
   handler: async (params: Record<string, unknown>): Promise<ToolResponse> => {
-    const paramsRecord = params as Record<string, unknown>;
     return stop_device_log_capLogic(
-      { logSessionId: paramsRecord.logSessionId as string },
+      params as StopDeviceLogCapParams,
       getDefaultFileSystemExecutor(),
     );
   },

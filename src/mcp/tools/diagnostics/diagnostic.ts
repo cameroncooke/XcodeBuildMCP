@@ -81,7 +81,7 @@ async function checkBinaryAvailability(
   let version;
 
   // Define version commands for specific binaries
-  const versionCommands = {
+  const versionCommands: Record<string, string> = {
     axe: 'axe --version',
     mise: 'mise --version',
   };
@@ -90,7 +90,7 @@ async function checkBinaryAvailability(
   if (binary in versionCommands) {
     try {
       const versionResult = await (commandExecutor || fallbackExecutor)(
-        versionCommands[binary].split(' '),
+        versionCommands[binary]!.split(' '),
         'Get Binary Version',
       );
       if (versionResult.success && versionResult.output) {
@@ -197,7 +197,7 @@ function getEnvironmentVariables(): Record<string, string | undefined> {
     'SENTRY_DISABLED',
   ];
 
-  const envVars = {};
+  const envVars: Record<string, string | undefined> = {};
 
   // Add standard environment variables
   for (const varName of relevantVars) {
@@ -301,15 +301,16 @@ async function getPluginSystemInfo(mockUtilities?: MockUtilities): Promise<
     const pluginsByDirectory: Record<string, string[]> = {};
     let totalPlugins = 0;
 
-    for (const plugin of plugins.values()) {
+    for (const plugin of Array.from(plugins.values())) {
       totalPlugins++;
-      const pluginPath = plugin.pluginPath || 'unknown';
+      const pluginWithPath = plugin as { pluginPath?: string; name: string };
+      const pluginPath = pluginWithPath.pluginPath || 'unknown';
       const directory = pluginPath.split('/').slice(-2, -1)[0] || 'unknown';
 
       if (!pluginsByDirectory[directory]) {
         pluginsByDirectory[directory] = [];
       }
-      pluginsByDirectory[directory].push(plugin.name);
+      pluginsByDirectory[directory].push(pluginWithPath.name);
     }
 
     return {
@@ -470,9 +471,10 @@ export async function diagnosticLogic(
     `- Mise available: ${diagnosticInfo.features.mise.available ? '✅ Yes' : '❌ No'}`,
 
     `\n### Available Tools`,
-    `- Total Plugins: ${diagnosticInfo.pluginSystem.totalPlugins || 0}`,
-    `- Plugin Directories: ${diagnosticInfo.pluginSystem.pluginDirectories || 0}`,
-    ...(diagnosticInfo.pluginSystem.pluginsByDirectory
+    `- Total Plugins: ${'totalPlugins' in diagnosticInfo.pluginSystem ? diagnosticInfo.pluginSystem.totalPlugins : 0}`,
+    `- Plugin Directories: ${'pluginDirectories' in diagnosticInfo.pluginSystem ? diagnosticInfo.pluginSystem.pluginDirectories : 0}`,
+    ...('pluginsByDirectory' in diagnosticInfo.pluginSystem &&
+    diagnosticInfo.pluginSystem.pluginsByDirectory
       ? Object.entries(diagnosticInfo.pluginSystem.pluginsByDirectory).map(
           ([dir, tools]) => `- ${dir}: ${Array.isArray(tools) ? tools.length : 0} tools`,
         )
