@@ -17,19 +17,7 @@ import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { ToolResponse } from '../../../types/common.js';
-
-const XcodePlatform = {
-  iOS: 'iOS',
-  watchOS: 'watchOS',
-  tvOS: 'tvOS',
-  visionOS: 'visionOS',
-  iOSSimulator: 'iOS Simulator',
-  watchOSSimulator: 'watchOS Simulator',
-  tvOSSimulator: 'tvOS Simulator',
-  visionOSSimulator: 'visionOS Simulator',
-  macOS: 'macOS',
-};
+import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 
 interface TestMacosProjParams {
   projectPath: string;
@@ -242,6 +230,9 @@ export default {
       .describe('If true, prefers xcodebuild over the experimental incremental build system'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return test_macos_projLogic(args as TestMacosProjParams, getDefaultCommandExecutor());
+    return test_macos_projLogic(
+      args as unknown as TestMacosProjParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };
