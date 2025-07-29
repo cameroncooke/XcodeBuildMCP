@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
@@ -12,69 +12,6 @@ type GetSimAppPathIdWsParams = {
   configuration?: string;
   useLatestOS?: boolean;
 };
-
-const XcodePlatform = {
-  macOS: 'macOS',
-  iOS: 'iOS',
-  iOSSimulator: 'iOS Simulator',
-  watchOS: 'watchOS',
-  watchOSSimulator: 'watchOS Simulator',
-  tvOS: 'tvOS',
-  tvOSSimulator: 'tvOS Simulator',
-  visionOS: 'visionOS',
-  visionOSSimulator: 'visionOS Simulator',
-};
-
-function constructDestinationString(
-  platform: string,
-  simulatorName: string,
-  simulatorId: string,
-  useLatest: boolean = true,
-  arch?: string,
-): string {
-  const isSimulatorPlatform = [
-    XcodePlatform.iOSSimulator,
-    XcodePlatform.watchOSSimulator,
-    XcodePlatform.tvOSSimulator,
-    XcodePlatform.visionOSSimulator,
-  ].includes(platform);
-
-  // If ID is provided for a simulator, it takes precedence and uniquely identifies it.
-  if (isSimulatorPlatform && simulatorId) {
-    return `platform=${platform},id=${simulatorId}`;
-  }
-
-  // If name is provided for a simulator
-  if (isSimulatorPlatform && simulatorName) {
-    return `platform=${platform},name=${simulatorName}${useLatest ? ',OS=latest' : ''}`;
-  }
-
-  // If it's a simulator platform but neither ID nor name is provided (should be prevented by callers now)
-  if (isSimulatorPlatform && !simulatorId && !simulatorName) {
-    log(
-      'warning',
-      `Constructing generic destination for ${platform} without name or ID. This might not be specific enough.`,
-    );
-    throw new Error(`Simulator name or ID is required for specific ${platform} operations`);
-  }
-
-  // Handle non-simulator platforms
-  switch (platform) {
-    case XcodePlatform.macOS:
-      return arch ? `platform=macOS,arch=${arch}` : 'platform=macOS';
-    case XcodePlatform.iOS:
-      return 'generic/platform=iOS';
-    case XcodePlatform.watchOS:
-      return 'generic/platform=watchOS';
-    case XcodePlatform.tvOS:
-      return 'generic/platform=tvOS';
-    case XcodePlatform.visionOS:
-      return 'generic/platform=visionOS';
-  }
-  // Fallback just in case (shouldn't be reached with enum)
-  log('error', `Reached unexpected point in constructDestinationString for platform: ${platform}`);
-  return `platform=${platform}`;
-}
 
 /**
  * Business logic for getting app path from simulator workspace
@@ -102,7 +39,7 @@ export async function get_sim_app_path_id_wsLogic(
 
     // Add the scheme and configuration
     command.push('-scheme', paramsRecord.scheme as string);
-    command.push('-configuration', paramsRecord.configuration as string);
+    command.push('-configuration', (paramsRecord.configuration as string) ?? 'Debug');
 
     // Handle destination based on platform
     const isSimulatorPlatform = [
@@ -110,7 +47,7 @@ export async function get_sim_app_path_id_wsLogic(
       XcodePlatform.watchOSSimulator,
       XcodePlatform.tvOSSimulator,
       XcodePlatform.visionOSSimulator,
-    ].includes(paramsRecord.platform as string);
+    ].includes(paramsRecord.platform as XcodePlatform);
 
     let destinationString = '';
 
@@ -126,13 +63,7 @@ export async function get_sim_app_path_id_wsLogic(
         );
       }
     } else if (paramsRecord.platform === XcodePlatform.macOS) {
-      destinationString = constructDestinationString(
-        paramsRecord.platform as string,
-        undefined,
-        undefined,
-        false,
-        paramsRecord.arch as string,
-      );
+      destinationString = `platform=macOS`;
     } else if (paramsRecord.platform === XcodePlatform.iOS) {
       destinationString = 'generic/platform=iOS';
     } else if (paramsRecord.platform === XcodePlatform.watchOS) {
@@ -190,7 +121,7 @@ export async function get_sim_app_path_id_wsLogic(
         XcodePlatform.watchOS,
         XcodePlatform.tvOS,
         XcodePlatform.visionOS,
-      ].includes(paramsRecord.platform as string)
+      ].includes(paramsRecord.platform as XcodePlatform)
     ) {
       nextStepsText = `Next Steps:
 1. Get bundle ID: get_app_bundle_id({ appPath: "${appPath}" })
