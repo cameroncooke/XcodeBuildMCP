@@ -169,6 +169,7 @@ describe('build_run_mac_proj', () => {
             text: '✅ macOS build and run succeeded for scheme MyApp. App launched: /path/to/build/MyApp.app',
           },
         ],
+        isError: false,
       });
     });
 

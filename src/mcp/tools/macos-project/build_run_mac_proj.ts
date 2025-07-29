@@ -10,7 +10,7 @@ import { promisify } from 'util';
 import { log } from '../../../utils/index.js';
 import { createTextResponse } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 
 type BuildRunMacProjParams = {
@@ -22,18 +22,6 @@ type BuildRunMacProjParams = {
   extraArgs?: string[];
   preferXcodebuild?: boolean;
   workspacePath?: string;
-};
-
-const XcodePlatform = {
-  iOS: 'iOS',
-  watchOS: 'watchOS',
-  tvOS: 'tvOS',
-  visionOS: 'visionOS',
-  iOSSimulator: 'iOS Simulator',
-  watchOSSimulator: 'watchOS Simulator',
-  tvOSSimulator: 'tvOS Simulator',
-  visionOSSimulator: 'visionOS Simulator',
-  macOS: 'macOS',
 };
 
 /**
@@ -48,6 +36,7 @@ async function _handleMacOSBuildLogic(
   return executeXcodeBuildCommand(
     {
       ...params,
+      configuration: params.configuration ?? 'Debug',
     },
     {
       platform: XcodePlatform.macOS,

@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { join } from 'path';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { createTextResponse } from '../../../utils/index.js';
@@ -26,22 +26,10 @@ type TestDeviceProjParams = {
   derivedDataPath?: string;
   extraArgs?: string[];
   preferXcodebuild?: boolean;
-  platform?: 'iOS' | 'watchOS' | 'tvOS' | 'visionOS';
+  platform?: XcodePlatform;
 };
 
 // Remove all custom dependency injection - use direct imports
-
-const XcodePlatform = {
-  iOS: 'iOS',
-  watchOS: 'watchOS',
-  tvOS: 'tvOS',
-  visionOS: 'visionOS',
-  iOSSimulator: 'iOS Simulator',
-  watchOSSimulator: 'watchOS Simulator',
-  tvOSSimulator: 'tvOS Simulator',
-  visionOSSimulator: 'visionOS Simulator',
-  macOS: 'macOS',
-};
 
 /**
  * Type definition for test summary structure from xcresulttool
@@ -149,7 +137,7 @@ export async function test_device_projLogic(
   executor: CommandExecutor = getDefaultCommandExecutor(),
   fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
+  const _paramsRecord = params as Record<string, unknown>;
   log(
     'info',
     `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
@@ -168,15 +156,18 @@ export async function test_device_projLogic(
     // Run the test command
     const testResult = await executeXcodeBuildCommand(
       {
-        ...paramsRecord,
+        projectPath: params.projectPath,
+        scheme: params.scheme,
+        configuration: params.configuration || 'Debug',
+        derivedDataPath: params.derivedDataPath,
         extraArgs,
       },
       {
-        platform: paramsRecord.platform,
-        simulatorName: paramsRecord.simulatorName,
-        simulatorId: paramsRecord.simulatorId,
+        platform: (params.platform as XcodePlatform) || XcodePlatform.iOS,
+        simulatorName: undefined,
+        simulatorId: undefined,
         deviceId: params.deviceId,
-        useLatestOS: paramsRecord.useLatestOS,
+        useLatestOS: false,
         logPrefix: 'Test Run',
       },
       params.preferXcodebuild,
@@ -256,19 +247,22 @@ export default {
       .describe('Target platform (defaults to iOS)'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    const platformMap = {
+    const platformMap: Record<string, XcodePlatform> = {
       iOS: XcodePlatform.iOS,
       watchOS: XcodePlatform.watchOS,
       tvOS: XcodePlatform.tvOS,
       visionOS: XcodePlatform.visionOS,
     };
 
+    const platformKey = (args.platform as string) ?? 'iOS';
+    const platform = platformMap[platformKey] ?? XcodePlatform.iOS;
+
     return test_device_projLogic(
       {
         ...args,
         configuration: args.configuration ?? 'Debug',
         preferXcodebuild: args.preferXcodebuild ?? false,
-        platform: platformMap[args.platform ?? 'iOS'],
+        platform,
         deviceId: args.deviceId,
       } as TestDeviceProjParams,
       getDefaultCommandExecutor(),
