@@ -37,20 +37,23 @@ export async function buttonLogic(
 ): Promise<ToolResponse> {
   const toolName = 'button';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
   const buttonTypeValidation = validateRequiredParam('buttonType', params.buttonType);
-  if (!buttonTypeValidation.isValid) return buttonTypeValidation.errorResponse;
+  if (!buttonTypeValidation.isValid) return buttonTypeValidation.errorResponse!;
 
   const { simulatorUuid, buttonType, duration } = params;
-  const commandArgs = ['button', buttonType];
+  const commandArgs = ['button', buttonType as string];
   if (duration !== undefined) {
     commandArgs.push('--duration', String(duration));
   }
 
-  log('info', `${LOG_PREFIX}/${toolName}: Starting ${buttonType} button press on ${simulatorUuid}`);
+  log(
+    'info',
+    `${LOG_PREFIX}/${toolName}: Starting ${buttonType} button press on ${simulatorUuid as string}`,
+  );
 
   try {
-    await executeAxeCommand(commandArgs, simulatorUuid, 'button', executor, axeHelpers);
+    await executeAxeCommand(commandArgs, simulatorUuid as string, 'button', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
     return {
       content: [{ type: 'text', text: `Hardware button '${buttonType}' pressed successfully.` }],
@@ -144,7 +147,9 @@ async function executeAxeCommand(
       );
     }
 
-    return result.output.trim();
+    return {
+      content: [{ type: 'text', text: result.output.trim() }],
+    };
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {

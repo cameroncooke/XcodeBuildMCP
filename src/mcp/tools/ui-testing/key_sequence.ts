@@ -31,32 +31,34 @@ export async function key_sequenceLogic(
 ): Promise<ToolResponse> {
   const toolName = 'key_sequence';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
   const keyCodesValidation = validateRequiredParam('keyCodes', params.keyCodes);
-  if (!keyCodesValidation.isValid) return keyCodesValidation.errorResponse;
+  if (!keyCodesValidation.isValid) return keyCodesValidation.errorResponse!;
 
   const { simulatorUuid, keyCodes, delay } = params;
-  const commandArgs = ['key-sequence', '--keycodes', keyCodes.join(',')];
+  const commandArgs = ['key-sequence', '--keycodes', (keyCodes as number[]).join(',')];
   if (delay !== undefined) {
     commandArgs.push('--delay', String(delay));
   }
 
   log(
     'info',
-    `${LOG_PREFIX}/${toolName}: Starting key sequence [${keyCodes.join(',')}] on ${simulatorUuid}`,
+    `${LOG_PREFIX}/${toolName}: Starting key sequence [${(keyCodes as number[]).join(',')}] on ${simulatorUuid}`,
   );
 
   try {
     await executeAxeCommand(
       commandArgs,
-      simulatorUuid,
+      simulatorUuid as string,
       'key-sequence',
       executor,
       getAxePathFn,
       getBundledAxeEnvironmentFn,
     );
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-    return createTextResponse(`Key sequence [${keyCodes.join(',')}] executed successfully.`);
+    return createTextResponse(
+      `Key sequence [${(keyCodes as number[]).join(',')}] executed successfully.`,
+    );
   } catch (error) {
     log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
     if (error instanceof DependencyError) {
@@ -144,7 +146,7 @@ async function executeAxeCommand(
       );
     }
 
-    return result.output.trim();
+    return createTextResponse(result.output.trim());
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {
