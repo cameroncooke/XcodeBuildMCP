@@ -17,7 +17,7 @@ import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 
 type TestMacosWsParams = {
   workspacePath: string;
@@ -26,18 +26,6 @@ type TestMacosWsParams = {
   derivedDataPath?: string;
   extraArgs?: string[];
   preferXcodebuild?: boolean;
-};
-
-const XcodePlatform = {
-  iOS: 'iOS',
-  watchOS: 'watchOS',
-  tvOS: 'tvOS',
-  visionOS: 'visionOS',
-  iOSSimulator: 'iOS Simulator',
-  watchOSSimulator: 'watchOS Simulator',
-  tvOSSimulator: 'tvOS Simulator',
-  visionOSSimulator: 'visionOS Simulator',
-  macOS: 'macOS',
 };
 
 /**
@@ -69,13 +57,14 @@ async function parseXcresultBundle(
 ): Promise<string> {
   try {
     const promisifyFn = utilDeps?.promisify || promisify;
-    const execAsync = promisifyFn(exec);
+    const execAsync = (promisifyFn as typeof promisify)(exec);
     const { stdout } = await execAsync(
       `xcrun xcresulttool get test-results summary --path "${resultBundlePath}"`,
+      {},
     );
 
     // Parse JSON response and format as human-readable
-    const summary = JSON.parse(stdout);
+    const summary = JSON.parse(stdout as unknown as string);
     return formatTestSummary(summary);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -176,6 +165,10 @@ export async function test_macos_wsLogic(
     configuration: params.configuration ?? 'Debug',
     preferXcodebuild: params.preferXcodebuild ?? false,
     platform: XcodePlatform.macOS,
+    workspacePath: params.workspacePath,
+    scheme: params.scheme,
+    derivedDataPath: params.derivedDataPath,
+    extraArgs: params.extraArgs,
   };
 
   log(
@@ -198,15 +191,14 @@ export async function test_macos_wsLogic(
     // Run the test command
     const testResult = await executeXcodeBuildCommand(
       {
-        ...processedParams,
+        workspacePath: processedParams.workspacePath,
+        scheme: processedParams.scheme,
+        configuration: processedParams.configuration,
+        derivedDataPath: processedParams.derivedDataPath,
         extraArgs,
       },
       {
-        platform: processedParams.platform,
-        simulatorName: processedParams.simulatorName,
-        simulatorId: processedParams.simulatorId,
-        deviceId: processedParams.deviceId,
-        useLatestOS: processedParams.useLatestOS,
+        platform: XcodePlatform.macOS,
         logPrefix: 'Test Run',
       },
       processedParams.preferXcodebuild,

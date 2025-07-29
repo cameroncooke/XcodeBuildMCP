@@ -11,6 +11,14 @@ import { validateRequiredParam, createTextResponse } from '../../../utils/index.
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 
+// Define parameters type for clarity
+type GetMacAppPathWsParams = {
+  workspacePath: string;
+  scheme: string;
+  configuration?: string;
+  arch?: 'arm64' | 'x86_64';
+};
+
 const XcodePlatform = {
   iOS: 'iOS',
   watchOS: 'watchOS',
@@ -24,14 +32,17 @@ const XcodePlatform = {
 };
 
 export async function get_mac_app_path_wsLogic(
-  params: Record<string, unknown>,
+  params: GetMacAppPathWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+  // Cast params to Record<string, unknown> for validation functions
+  const paramsRecord = params as Record<string, unknown>;
 
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   const configuration = params.configuration ?? 'Debug';
 
@@ -118,6 +129,6 @@ export default {
       .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_mac_app_path_wsLogic(args, getDefaultCommandExecutor());
+    return get_mac_app_path_wsLogic(args as GetMacAppPathWsParams, getDefaultCommandExecutor());
   },
 };

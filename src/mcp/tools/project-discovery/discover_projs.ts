@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import path from 'node:path';
+import * as path from 'node:path';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam } from '../../../utils/index.js';
 import { ToolResponse, createTextContent } from '../../../types/common.js';
@@ -15,6 +15,13 @@ import { FileSystemExecutor, getDefaultFileSystemExecutor } from '../../../utils
 // Constants
 const DEFAULT_MAX_DEPTH = 5;
 const SKIPPED_DIRS = new Set(['build', 'DerivedData', 'Pods', '.git', 'node_modules']);
+
+// Type definition for Dirent-like objects returned by readdir with withFileTypes: true
+interface DirentLike {
+  name: string;
+  isDirectory(): boolean;
+  isSymbolicLink(): boolean;
+}
 
 /**
  * Recursively scans directories to find Xcode projects and workspaces.
@@ -39,7 +46,9 @@ async function _findProjectsRecursive(
   try {
     // Use the injected fileSystemExecutor
     const entries = await fileSystemExecutor.readdir(currentDirAbs, { withFileTypes: true });
-    for (const entry of entries) {
+    for (const rawEntry of entries) {
+      // Cast the unknown entry to DirentLike interface for type safety
+      const entry = rawEntry as DirentLike;
       const absoluteEntryPath = path.join(currentDirAbs, entry.name);
       const relativePath = path.relative(workspaceRootAbs, absoluteEntryPath);
 
@@ -142,13 +151,13 @@ export async function discover_projsLogic(
 
   // Validate required parameters
   const workspaceValidation = validateRequiredParam('workspaceRoot', paramsRecord.workspaceRoot);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
   // Cast to proper type after validation with defaults
   const typedParams: DiscoverProjsParams = {
     workspaceRoot: paramsRecord.workspaceRoot as string,
-    scanPath: paramsRecord.scanPath || '.',
-    maxDepth: paramsRecord.maxDepth || 5,
+    scanPath: (paramsRecord.scanPath as string) || '.',
+    maxDepth: (paramsRecord.maxDepth as number) || 5,
   };
 
   const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = typedParams;
