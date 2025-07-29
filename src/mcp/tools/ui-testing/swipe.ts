@@ -55,15 +55,15 @@ export async function swipeLogic(
 ): Promise<ToolResponse> {
   const toolName = 'swipe';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
   const x1Validation = validateRequiredParam('x1', params.x1);
-  if (!x1Validation.isValid) return x1Validation.errorResponse;
+  if (!x1Validation.isValid) return x1Validation.errorResponse!;
   const y1Validation = validateRequiredParam('y1', params.y1);
-  if (!y1Validation.isValid) return y1Validation.errorResponse;
+  if (!y1Validation.isValid) return y1Validation.errorResponse!;
   const x2Validation = validateRequiredParam('x2', params.x2);
-  if (!x2Validation.isValid) return x2Validation.errorResponse;
+  if (!x2Validation.isValid) return x2Validation.errorResponse!;
   const y2Validation = validateRequiredParam('y2', params.y2);
-  if (!y2Validation.isValid) return y2Validation.errorResponse;
+  if (!y2Validation.isValid) return y2Validation.errorResponse!;
 
   const { simulatorUuid, x1, y1, x2, y2, duration, delta, preDelay, postDelay } = params;
   const commandArgs = [
@@ -149,7 +149,7 @@ export default {
     postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return swipeLogic(args as SwipeParams, getDefaultCommandExecutor());
+    return swipeLogic(args as unknown as SwipeParams, getDefaultCommandExecutor());
   },
 };
 
@@ -217,7 +217,7 @@ async function executeAxeCommand(
       );
     }
 
-    return result.output.trim();
+    return createTextResponse(result.output.trim());
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {
