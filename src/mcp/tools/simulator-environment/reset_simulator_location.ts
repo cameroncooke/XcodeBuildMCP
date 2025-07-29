@@ -5,7 +5,7 @@ import { validateRequiredParam } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 
 interface ResetSimulatorLocationParams {
-  simulatorUuid: unknown;
+  simulatorUuid: string;
 }
 
 // Helper function to execute simctl commands and handle responses
@@ -17,11 +17,11 @@ async function executeSimctlCommandAndRespond(
   failureMessagePrefix: string,
   operationLogContext: string,
   executor: CommandExecutor,
-  extraValidation?: Record<string, unknown>,
+  extraValidation?: () => ToolResponse | undefined,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse;
+    return simulatorUuidValidation.errorResponse!;
   }
 
   if (extraValidation) {
@@ -73,7 +73,7 @@ export async function reset_simulator_locationLogic(
   log('info', `Resetting simulator ${params.simulatorUuid} location`);
 
   return executeSimctlCommandAndRespond(
-    params,
+    params as unknown as Record<string, unknown>,
     ['location', params.simulatorUuid, 'clear'],
     'Reset Simulator Location',
     `Successfully reset simulator ${params.simulatorUuid} location.`,
@@ -92,6 +92,9 @@ export default {
       .describe('UUID of the simulator to use (obtained from list_simulators)'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return reset_simulator_locationLogic(args, getDefaultCommandExecutor());
+    return reset_simulator_locationLogic(
+      args as unknown as ResetSimulatorLocationParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };

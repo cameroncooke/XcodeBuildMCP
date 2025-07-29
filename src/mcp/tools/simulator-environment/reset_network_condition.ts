@@ -13,7 +13,7 @@ async function executeSimctlCommandAndRespond(
   failureMessagePrefix: string,
   operationLogContext: string,
   executor: CommandExecutor,
-  extraValidation?: Record<string, unknown>,
+  extraValidation?: () => ToolResponse | undefined,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
@@ -70,7 +70,7 @@ export async function reset_network_conditionLogic(
 
   return executeSimctlCommandAndRespond(
     params,
-    ['status_bar', params.simulatorUuid, 'clear'],
+    ['status_bar', params.simulatorUuid as string, 'clear'],
     'Reset Network Condition',
     `Successfully reset simulator ${params.simulatorUuid} network conditions.`,
     'Failed to reset network condition',

@@ -10,6 +10,7 @@ import {
 interface SetSimAppearanceParams {
   simulatorUuid: string;
   mode: 'dark' | 'light';
+  [key: string]: unknown; // Add index signature for compatibility
 }
 
 // Helper function to execute simctl commands and handle responses
@@ -20,12 +21,12 @@ async function executeSimctlCommandAndRespond(
   successMessage: string,
   failureMessagePrefix: string,
   operationLogContext: string,
-  extraValidation?: Record<string, unknown>,
+  extraValidation?: () => ToolResponse | undefined,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse;
+    return simulatorUuidValidation.errorResponse!;
   }
 
   if (extraValidation) {
@@ -77,7 +78,7 @@ export async function set_sim_appearanceLogic(
   log('info', `Setting simulator ${params.simulatorUuid} appearance to ${params.mode} mode`);
 
   return executeSimctlCommandAndRespond(
-    params,
+    params as Record<string, unknown>,
     ['ui', params.simulatorUuid, 'appearance', params.mode],
     'Set Simulator Appearance',
     `Successfully set simulator ${params.simulatorUuid} appearance to ${params.mode} mode`,
@@ -100,6 +101,9 @@ export default {
       .describe('The appearance mode to set (either "dark" or "light")'),
   },
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return set_sim_appearanceLogic(args as SetSimAppearanceParams, getDefaultCommandExecutor());
+    return set_sim_appearanceLogic(
+      args as unknown as SetSimAppearanceParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };

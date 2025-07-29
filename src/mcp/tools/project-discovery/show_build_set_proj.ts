@@ -34,10 +34,10 @@ export async function show_build_set_projLogic(
 
   // Validate required parameters
   const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse;
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
   const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse;
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   // Cast to proper type after validation
   const typedParams: ShowBuildSetProjParams = {
