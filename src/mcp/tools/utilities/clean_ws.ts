@@ -38,7 +38,7 @@ export async function clean_wsLogic(
 
     const workspacePathValidation = validateRequiredParam('workspacePath', validated.workspacePath);
     if (!workspacePathValidation.isValid) {
-      return workspacePathValidation.errorResponse;
+      return workspacePathValidation.errorResponse!;
     }
 
     log('info', 'Starting xcodebuild clean request (internal)');

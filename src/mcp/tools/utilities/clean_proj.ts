@@ -42,7 +42,7 @@ export async function clean_projLogic(
 
     const projectPathValidation = validateRequiredParam('projectPath', validated.projectPath);
     if (!projectPathValidation.isValid) {
-      return projectPathValidation.errorResponse;
+      return projectPathValidation.errorResponse!;
     }
 
     log('info', 'Starting xcodebuild clean request');

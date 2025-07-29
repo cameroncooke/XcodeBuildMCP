@@ -41,9 +41,9 @@ export async function type_textLogic(
 ): Promise<ToolResponse> {
   const toolName = 'type_text';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
   const textValidation = validateRequiredParam('text', params.text);
-  if (!textValidation.isValid) return textValidation.errorResponse;
+  if (!textValidation.isValid) return textValidation.errorResponse!;
 
   const { simulatorUuid, text } = params;
   const commandArgs = ['type', text];
@@ -54,7 +54,13 @@ export async function type_textLogic(
   );
 
   try {
-    await executeAxeCommand(commandArgs, simulatorUuid as string, 'type', executor, axeHelpers);
+    await executeAxeCommand(
+      commandArgs as string[],
+      simulatorUuid as string,
+      'type',
+      executor,
+      axeHelpers,
+    );
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
     return createTextResponse('Text typing simulated successfully.');
   } catch (error) {
@@ -91,7 +97,7 @@ export default {
     text: z.string().min(1, 'Text cannot be empty'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return type_textLogic(args, getDefaultCommandExecutor());
+    return type_textLogic(args as unknown as TypeTextParams, getDefaultCommandExecutor());
   },
 };
 
@@ -141,7 +147,7 @@ async function executeAxeCommand(
       );
     }
 
-    return result.output.trim();
+    return createTextResponse(result.output.trim());
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {
