@@ -12,7 +12,7 @@ Reloaderoo is available via npm and can be used with npx for universal compatibi
 
 ```bash
 # Use npx to run reloaderoo (works on any system)
-npx reloaderoo --help
+npx reloaderoo@latest --help
 
 # Or install globally if preferred
 npm install -g reloaderoo
@@ -36,44 +36,44 @@ Direct command-line access to MCP servers without client setup - perfect for tes
 
 ```bash
 # List all available tools
-npx reloaderoo inspect list-tools -- node build/index.js
+npx reloaderoo@latest inspect list-tools -- node build/index.js
 
 # Call any tool with parameters  
-npx reloaderoo inspect call-tool <tool_name> --params '<json>' -- node build/index.js
+npx reloaderoo@latest inspect call-tool <tool_name> --params '<json>' -- node build/index.js
 
 # Get server information
-npx reloaderoo inspect server-info -- node build/index.js
+npx reloaderoo@latest inspect server-info -- node build/index.js
 
 # List available resources
-npx reloaderoo inspect list-resources -- node build/index.js
+npx reloaderoo@latest inspect list-resources -- node build/index.js
 
 # Read a specific resource
-npx reloaderoo inspect read-resource "<uri>" -- node build/index.js
+npx reloaderoo@latest inspect read-resource "<uri>" -- node build/index.js
 
 # List available prompts
-npx reloaderoo inspect list-prompts -- node build/index.js
+npx reloaderoo@latest inspect list-prompts -- node build/index.js
 
 # Get a specific prompt
-npx reloaderoo inspect get-prompt <name> --args '<json>' -- node build/index.js
+npx reloaderoo@latest inspect get-prompt <name> --args '<json>' -- node build/index.js
 
 # Check server connectivity
-npx reloaderoo inspect ping -- node build/index.js
+npx reloaderoo@latest inspect ping -- node build/index.js
 ```
 
 **Example Tool Calls:**
 
 ```bash
 # List connected devices
-npx reloaderoo inspect call-tool list_devices --params '{}' -- node build/index.js
+npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/index.js
 
 # Get diagnostic information
-npx reloaderoo inspect call-tool diagnostic --params '{}' -- node build/index.js
+npx reloaderoo@latest inspect call-tool diagnostic --params '{}' -- node build/index.js
 
 # List iOS simulators
-npx reloaderoo inspect call-tool list_sims --params '{}' -- node build/index.js
+npx reloaderoo@latest inspect call-tool list_sims --params '{}' -- node build/index.js
 
 # Read devices resource
-npx reloaderoo inspect read-resource "xcodebuildmcp://devices" -- node build/index.js
+npx reloaderoo@latest inspect read-resource "xcodebuildmcp://devices" -- node build/index.js
 ```
 
 ### 🔄 **Proxy Mode** (Hot-Reload Development)
@@ -91,10 +91,10 @@ Transparent MCP proxy server that enables seamless hot-reloading during developm
 
 ```bash
 # Start proxy mode (your AI client connects to this)
-npx reloaderoo proxy -- node build/index.js
+npx reloaderoo@latest proxy -- node build/index.js
 
 # With debug logging
-npx reloaderoo proxy --log-level debug -- node build/index.js
+npx reloaderoo@latest proxy --log-level debug -- node build/index.js
 
 # Then in your AI session, request:
 # "Please restart the MCP server to load my latest changes"
@@ -108,7 +108,7 @@ Start CLI mode as a persistent MCP server for interactive debugging through MCP 
 
 ```bash
 # Start reloaderoo in CLI mode as an MCP server
-npx reloaderoo inspect mcp -- node build/index.js
+npx reloaderoo@latest inspect mcp -- node build/index.js
 ```
 
 This runs CLI mode as a persistent MCP server, exposing 8 debug tools through the MCP protocol:
@@ -137,7 +137,7 @@ When running under Claude Code, XcodeBuildMCP automatically detects the environm
 ### Command Structure
 
 ```bash
-npx reloaderoo [options] [command]
+npx reloaderoo@latest [options] [command]
 
 Two modes, one tool:
 • Proxy MCP server that adds support for hot-reloading MCP servers.
@@ -157,7 +157,7 @@ Commands:
 ### 🔄 **Proxy Mode Commands**
 
 ```bash
-npx reloaderoo proxy [options] -- <child-command> [child-args...]
+npx reloaderoo@latest proxy [options] -- <child-command> [child-args...]
 
 Options:
   -w, --working-dir <directory>    Working directory for the child process
@@ -180,7 +180,7 @@ Examples:
 ### 🔍 **CLI Mode Commands**
 
 ```bash
-npx reloaderoo inspect [subcommand] [options] -- <child-command> [child-args...]
+npx reloaderoo@latest inspect [subcommand] [options] -- <child-command> [child-args...]
 
 Subcommands:
   server-info [options]            Get server information and capabilities
@@ -193,23 +193,23 @@ Subcommands:
   ping [options]                   Check server connectivity
 
 Examples:
-  npx reloaderoo inspect list-tools -- node build/index.js
-  npx reloaderoo inspect call-tool list_devices --params '{}' -- node build/index.js
-  npx reloaderoo inspect server-info -- node build/index.js
+  npx reloaderoo@latest inspect list-tools -- node build/index.js
+  npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/index.js
+  npx reloaderoo@latest inspect server-info -- node build/index.js
 ```
 
 ### **Info Command**
 
 ```bash
-npx reloaderoo info [options]
+npx reloaderoo@latest info [options]
 
 Options:
   -v, --verbose                    Show detailed information
   -h, --help                       Display help for command
   
 Examples:
-  npx reloaderoo info              # Show basic system information
-  npx reloaderoo info --verbose    # Show detailed diagnostics
+  npx reloaderoo@latest info              # Show basic system information
+  npx reloaderoo@latest info --verbose    # Show detailed diagnostics
 ```
 
 ### Response Format
@@ -260,14 +260,14 @@ Perfect for testing individual tools or debugging server issues without MCP clie
 npm run build
 
 # 2. Test your server quickly
-npx reloaderoo inspect list-tools -- node build/index.js
+npx reloaderoo@latest inspect list-tools -- node build/index.js
 
 # 3. Call specific tools to verify behavior
-npx reloaderoo inspect call-tool list_devices --params '{}' -- node build/index.js
+npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/index.js
 
 # 4. Check server health and resources
-npx reloaderoo inspect ping -- node build/index.js
-npx reloaderoo inspect list-resources -- node build/index.js
+npx reloaderoo@latest inspect ping -- node build/index.js
+npx reloaderoo@latest inspect list-resources -- node build/index.js
 ```
 
 ### 🔄 **Proxy Mode Workflow** (Hot-Reload Development)
@@ -277,9 +277,9 @@ For full development sessions with AI clients that need persistent connections:
 #### 1. **Start Development Session**
 Configure your AI client to connect to reloaderoo proxy instead of your server directly:
 ```bash
-npx reloaderoo proxy -- node build/index.js
+npx reloaderoo@latest proxy -- node build/index.js
 # or with debug logging:
-npx reloaderoo proxy --log-level debug -- node build/index.js
+npx reloaderoo@latest proxy --log-level debug -- node build/index.js
 ```
 
 #### 2. **Develop Your MCP Server**
@@ -305,7 +305,7 @@ For interactive debugging through MCP clients:
 
 ```bash
 # Start reloaderoo CLI mode as an MCP server
-npx reloaderoo inspect mcp -- node build/index.js
+npx reloaderoo@latest inspect mcp -- node build/index.js
 
 # Then connect with an MCP client to access debug tools
 # Available tools: list_tools, call_tool, list_resources, etc.
@@ -321,25 +321,25 @@ npx reloaderoo inspect mcp -- node build/index.js
 node build/index.js
 
 # Then try with reloaderoo proxy to validate configuration
-npx reloaderoo proxy -- node build/index.js
+npx reloaderoo@latest proxy -- node build/index.js
 ```
 
 **Connection problems with MCP clients:**
 ```bash
 # Enable debug logging to see what's happening
-npx reloaderoo proxy --log-level debug -- node build/index.js
+npx reloaderoo@latest proxy --log-level debug -- node build/index.js
 
 # Check system info and configuration
-npx reloaderoo info --verbose
+npx reloaderoo@latest info --verbose
 ```
 
 **Restart failures in proxy mode:**
 ```bash
 # Increase restart timeout
-npx reloaderoo proxy --restart-timeout 60000 -- node build/index.js
+npx reloaderoo@latest proxy --restart-timeout 60000 -- node build/index.js
 
 # Check restart limits  
-npx reloaderoo proxy --max-restarts 5 -- node build/index.js
+npx reloaderoo@latest proxy --max-restarts 5 -- node build/index.js
 ```
 
 ### 🔍 **CLI Mode Issues**
@@ -347,16 +347,16 @@ npx reloaderoo proxy --max-restarts 5 -- node build/index.js
 **CLI commands failing:**
 ```bash
 # Test basic connectivity first
-npx reloaderoo inspect ping -- node build/index.js
+npx reloaderoo@latest inspect ping -- node build/index.js
 
 # Enable debug logging for CLI commands (via proxy debug mode)
-npx reloaderoo proxy --log-level debug -- node build/index.js
+npx reloaderoo@latest proxy --log-level debug -- node build/index.js
 ```
 
 **JSON parsing errors:**
 ```bash
 # Check server information for diagnostics
-npx reloaderoo inspect server-info -- node build/index.js
+npx reloaderoo@latest inspect server-info -- node build/index.js
 
 # Ensure your server outputs valid JSON
 node build/index.js | head -10
@@ -367,7 +367,7 @@ node build/index.js | head -10
 **Command not found:**
 ```bash
 # Ensure npx can find reloaderoo
-npx reloaderoo --help
+npx reloaderoo@latest --help
 
 # If that fails, try installing globally
 npm install -g reloaderoo
@@ -376,18 +376,18 @@ npm install -g reloaderoo
 **Parameter validation:**
 ```bash
 # Ensure JSON parameters are properly quoted
-npx reloaderoo inspect call-tool list_devices --params '{}' -- node build/index.js
+npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/index.js
 ```
 
 ### **General Debug Mode**
 
 ```bash
 # Get detailed information about what's happening
-npx reloaderoo proxy --debug -- node build/index.js  # For proxy mode
-npx reloaderoo proxy --log-level debug -- node build/index.js  # For detailed proxy logging
+npx reloaderoo@latest proxy --debug -- node build/index.js  # For proxy mode
+npx reloaderoo@latest proxy --log-level debug -- node build/index.js  # For detailed proxy logging
 
 # View system diagnostics
-npx reloaderoo info --verbose
+npx reloaderoo@latest info --verbose
 ```
 
 ### Debug Tips
@@ -421,14 +421,14 @@ export MCPDEV_PROXY_CWD=/path/to/directory     # Default working directory
 ### Custom Working Directory
 
 ```bash
-npx reloaderoo proxy --working-dir /custom/path -- node build/index.js
-npx reloaderoo inspect list-tools --working-dir /custom/path -- node build/index.js
+npx reloaderoo@latest proxy --working-dir /custom/path -- node build/index.js
+npx reloaderoo@latest inspect list-tools --working-dir /custom/path -- node build/index.js
 ```
 
 ### Timeout Configuration
 
 ```bash
-npx reloaderoo proxy --restart-timeout 60000 -- node build/index.js
+npx reloaderoo@latest proxy --restart-timeout 60000 -- node build/index.js
 ```
 
 ## Integration with XcodeBuildMCP
