@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ToolResponse, SharedBuildParams } from '../../../types/common.js';
+import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.js';
 import {
   log,
   getDefaultCommandExecutor,
@@ -9,10 +9,6 @@ import {
   CommandExecutor,
 } from '../../../utils/index.js';
 import { execSync } from 'child_process';
-
-const XcodePlatform = {
-  iOSSimulator: 'iOS Simulator',
-};
 
 // Helper function for simulator build logic
 async function _handleSimulatorBuildLogic(
@@ -72,7 +68,7 @@ export async function build_run_sim_id_wsLogic(
   // Provide defaults
   const processedParams = {
     ...params,
-    configuration: params.configuration ?? 'Debug',
+    configuration: (params.configuration as string) ?? 'Debug',
     useLatestOS: params.useLatestOS ?? true,
     preferXcodebuild: params.preferXcodebuild ?? false,
   };

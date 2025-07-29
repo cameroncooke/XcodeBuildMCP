@@ -30,16 +30,14 @@ async function _handleSimulatorBuildLogic(
   log('info', `Building ${params.workspacePath} for iOS Simulator`);
 
   try {
-    const buildParams = {
-      workspacePath: params.workspacePath,
-      scheme: params.scheme,
-      configuration: params.configuration,
-      derivedDataPath: params.derivedDataPath,
-      extraArgs: params.extraArgs,
+    // Ensure configuration has a default value for SharedBuildParams compatibility
+    const sharedBuildParams = {
+      ...params,
+      configuration: params.configuration ?? 'Debug',
     };
 
     const buildResult = await executeXcodeBuildCommand(
-      buildParams,
+      sharedBuildParams,
       {
         platform: XcodePlatform.iOSSimulator,
         simulatorName: params.simulatorName,
@@ -80,7 +78,7 @@ export async function build_run_sim_name_wsLogic(
   if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
   // Provide defaults
-  const processedParams: BuildRunSimNameWsParams = {
+  const processedParams = {
     workspacePath: params.workspacePath,
     scheme: params.scheme,
     simulatorName: params.simulatorName,
