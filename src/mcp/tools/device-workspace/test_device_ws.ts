@@ -5,9 +5,9 @@ import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/comma
 import { handleTestLogic } from '../../../utils/test-common.js';
 
 interface TestDeviceWsParams {
-  workspacePath?: string;
-  scheme?: string;
-  deviceId?: string;
+  workspacePath: string;
+  scheme: string;
+  deviceId: string;
   configuration?: string;
   derivedDataPath?: string;
   extraArgs?: string[];
@@ -62,6 +62,6 @@ export default {
       .describe('Target platform (defaults to iOS)'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return test_device_wsLogic(args, getDefaultCommandExecutor());
+    return test_device_wsLogic(args as unknown as TestDeviceWsParams, getDefaultCommandExecutor());
   },
 };
