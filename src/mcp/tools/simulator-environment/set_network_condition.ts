@@ -20,12 +20,12 @@ async function executeSimctlCommandAndRespond(
   successMessage: string,
   failureMessagePrefix: string,
   operationLogContext: string,
-  extraValidation?: Record<string, unknown>,
+  extraValidation?: () => ToolResponse | undefined,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse;
+    return simulatorUuidValidation.errorResponse!;
   }
 
   if (extraValidation) {
@@ -77,7 +77,7 @@ export async function set_network_conditionLogic(
   log('info', `Setting simulator ${params.simulatorUuid} network condition to ${params.profile}`);
 
   return executeSimctlCommandAndRespond(
-    params,
+    params as unknown as Record<string, unknown>,
     ['status_bar', params.simulatorUuid, 'override', '--dataNetwork', params.profile],
     'Set Network Condition',
     `Successfully set simulator ${params.simulatorUuid} network condition to ${params.profile} profile`,
@@ -104,7 +104,7 @@ export default {
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     return set_network_conditionLogic(
-      args as SetNetworkConditionParams,
+      args as unknown as SetNetworkConditionParams,
       getDefaultCommandExecutor(),
     );
   },
