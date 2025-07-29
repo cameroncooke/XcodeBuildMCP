@@ -45,15 +45,17 @@ export async function test_sim_name_wsLogic(
   params: TestSimNameWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
   return handleTestLogic(
     {
-      ...paramsRecord,
+      workspacePath: params.workspacePath,
+      scheme: params.scheme,
       configuration: params.configuration ?? 'Debug',
       useLatestOS: params.useLatestOS ?? false,
       preferXcodebuild: params.preferXcodebuild ?? false,
       platform: XcodePlatform.iOSSimulator,
       simulatorName: params.simulatorName,
+      derivedDataPath: params.derivedDataPath,
+      extraArgs: params.extraArgs,
     },
     executor,
   );
