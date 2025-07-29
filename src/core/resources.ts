@@ -12,6 +12,7 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import { log, CommandExecutor } from '../utils/index.js';
 import { RESOURCE_LOADERS } from './generated-resources.js';
 
@@ -67,7 +68,7 @@ export async function loadResources(): Promise<Map<string, ResourceMeta>> {
 export async function registerResources(server: McpServer): Promise<boolean> {
   const resources = await loadResources();
 
-  for (const [uri, resource] of resources) {
+  for (const [uri, resource] of Array.from(resources)) {
     // Create a handler wrapper that matches ReadResourceCallback signature
     const readCallback = async (resourceUri: URL, _extra: unknown): Promise<ReadResourceResult> => {
       const result = await resource.handler(resourceUri);

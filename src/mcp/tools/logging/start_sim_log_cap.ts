@@ -61,6 +61,6 @@ export default {
       .describe('Whether to capture console output (requires app relaunch).'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return start_sim_log_capLogic(args as StartSimLogCapParams);
+    return start_sim_log_capLogic(args as unknown as StartSimLogCapParams);
   },
 };
