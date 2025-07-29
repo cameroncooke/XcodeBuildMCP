@@ -2,12 +2,8 @@ import { z } from 'zod';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
-
-const XcodePlatform = {
-  iOSSimulator: 'iOS Simulator',
-};
 
 type BuildSimIdProjParams = {
   projectPath: string;
@@ -28,8 +24,14 @@ async function _handleSimulatorBuildLogic(
 ): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
+  // Ensure configuration has a default value for SharedBuildParams compatibility
+  const sharedBuildParams = {
+    ...params,
+    configuration: params.configuration ?? 'Debug',
+  };
+
   return executeXcodeBuildCommand(
-    params,
+    sharedBuildParams,
     {
       platform: XcodePlatform.iOSSimulator,
       simulatorName: params.simulatorName,

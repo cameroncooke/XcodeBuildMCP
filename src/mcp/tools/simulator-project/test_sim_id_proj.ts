@@ -19,11 +19,14 @@ export async function test_sim_id_projLogic(
   params: TestSimIdProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
   return handleTestLogic(
     {
-      ...paramsRecord,
+      projectPath: params.projectPath,
+      scheme: params.scheme,
+      simulatorId: params.simulatorId,
       configuration: params.configuration ?? 'Debug',
+      derivedDataPath: params.derivedDataPath,
+      extraArgs: params.extraArgs,
       useLatestOS: params.useLatestOS ?? false,
       preferXcodebuild: params.preferXcodebuild ?? false,
       platform: XcodePlatform.iOSSimulator,
