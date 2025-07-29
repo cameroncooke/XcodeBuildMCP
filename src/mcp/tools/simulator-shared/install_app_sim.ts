@@ -16,23 +16,29 @@ export async function install_app_simLogic(
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse;
+    return simulatorUuidValidation.errorResponse!;
   }
 
   const appPathValidation = validateRequiredParam('appPath', params.appPath);
   if (!appPathValidation.isValid) {
-    return appPathValidation.errorResponse;
+    return appPathValidation.errorResponse!;
   }
 
-  const appPathExistsValidation = validateFileExists(params.appPath, fileSystem);
+  const appPathExistsValidation = validateFileExists(params.appPath as string, fileSystem);
   if (!appPathExistsValidation.isValid) {
-    return appPathExistsValidation.errorResponse;
+    return appPathExistsValidation.errorResponse!;
   }
 
   log('info', `Starting xcrun simctl install request for simulator ${params.simulatorUuid}`);
 
   try {
-    const command = ['xcrun', 'simctl', 'install', params.simulatorUuid, params.appPath];
+    const command = [
+      'xcrun',
+      'simctl',
+      'install',
+      params.simulatorUuid as string,
+      params.appPath as string,
+    ];
     const result = await executor(command, 'Install App in Simulator', true, undefined);
 
     if (!result.success) {

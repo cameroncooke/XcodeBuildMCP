@@ -10,12 +10,12 @@ export async function launch_app_simLogic(
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse;
+    return simulatorUuidValidation.errorResponse!;
   }
 
   const bundleIdValidation = validateRequiredParam('bundleId', params.bundleId);
   if (!bundleIdValidation.isValid) {
-    return bundleIdValidation.errorResponse;
+    return bundleIdValidation.errorResponse!;
   }
 
   log('info', `Starting xcrun simctl launch request for simulator ${params.simulatorUuid}`);
@@ -26,12 +26,12 @@ export async function launch_app_simLogic(
       'xcrun',
       'simctl',
       'get_app_container',
-      params.simulatorUuid,
-      params.bundleId,
+      params.simulatorUuid as string,
+      params.bundleId as string,
       'app',
     ];
     const getAppContainerResult = await executor(
-      getAppContainerCmd,
+      getAppContainerCmd as string[],
       'Check App Installed',
       true,
       undefined,
@@ -60,13 +60,19 @@ export async function launch_app_simLogic(
   }
 
   try {
-    const command = ['xcrun', 'simctl', 'launch', params.simulatorUuid, params.bundleId];
+    const command = [
+      'xcrun',
+      'simctl',
+      'launch',
+      params.simulatorUuid as string,
+      params.bundleId as string,
+    ];
 
-    if (params.args && params.args.length > 0) {
-      command.push(...params.args);
+    if (params.args && Array.isArray(params.args) && (params.args as unknown[]).length > 0) {
+      command.push(...(params.args as string[]));
     }
 
-    const result = await executor(command, 'Launch App in Simulator', true, undefined);
+    const result = await executor(command as string[], 'Launch App in Simulator', true, undefined);
 
     if (!result.success) {
       return {
