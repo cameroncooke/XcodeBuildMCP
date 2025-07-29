@@ -5,11 +5,11 @@ import { validateRequiredParam } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { execSync } from 'child_process';
 
-interface LaunchAppSimNameWsParams {
+type LaunchAppSimNameWsParams = {
   simulatorName: string;
   bundleId: string;
   args?: string[];
-}
+};
 
 export async function launch_app_sim_name_wsLogic(
   params: LaunchAppSimNameWsParams,
@@ -17,12 +17,12 @@ export async function launch_app_sim_name_wsLogic(
 ): Promise<ToolResponse> {
   const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
   if (!simulatorNameValidation.isValid) {
-    return simulatorNameValidation.errorResponse;
+    return simulatorNameValidation.errorResponse!;
   }
 
   const bundleIdValidation = validateRequiredParam('bundleId', params.bundleId);
   if (!bundleIdValidation.isValid) {
-    return bundleIdValidation.errorResponse;
+    return bundleIdValidation.errorResponse!;
   }
 
   log('info', `Starting xcrun simctl launch request for simulator named ${params.simulatorName}`);
