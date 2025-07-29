@@ -4,7 +4,7 @@ import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/comma
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { executeXcodeBuildCommand, XcodePlatform } from '../../../utils/index.js';
 import { execSync } from 'child_process';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, SharedBuildParams } from '../../../types/common.js';
 
 type BuildRunSimNameProjParams = {
   projectPath: string;
@@ -22,11 +22,19 @@ async function _handleSimulatorBuildLogic(
   params: BuildRunSimNameProjParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
-  const _paramsRecord = params as Record<string, unknown>;
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
+  // Create SharedBuildParams object with required properties
+  const sharedBuildParams: SharedBuildParams = {
+    projectPath: params.projectPath,
+    scheme: params.scheme,
+    configuration: params.configuration ?? 'Debug',
+    derivedDataPath: params.derivedDataPath,
+    extraArgs: params.extraArgs,
+  };
+
   return executeXcodeBuildCommand(
-    _paramsRecord as Record<string, unknown>,
+    sharedBuildParams,
     {
       platform: XcodePlatform.iOSSimulator,
       simulatorName: params.simulatorName,
