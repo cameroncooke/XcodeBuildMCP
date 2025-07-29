@@ -35,7 +35,7 @@ const LOG_PREFIX = '[AXe]';
 const describeUITimestamps = new Map();
 const DESCRIBE_UI_WARNING_TIMEOUT = 60000; // 60 seconds
 
-function getCoordinateWarning(simulatorUuid): string | null {
+function getCoordinateWarning(simulatorUuid: string): string | null {
   const session = describeUITimestamps.get(simulatorUuid);
   if (!session) {
     return 'Warning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.';
@@ -61,11 +61,11 @@ export async function tapLogic(
 ): Promise<ToolResponse> {
   const toolName = 'tap';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
   const xValidation = validateRequiredParam('x', params.x);
-  if (!xValidation.isValid) return xValidation.errorResponse;
+  if (!xValidation.isValid) return xValidation.errorResponse!;
   const yValidation = validateRequiredParam('y', params.y);
-  if (!yValidation.isValid) return yValidation.errorResponse;
+  if (!yValidation.isValid) return yValidation.errorResponse!;
 
   const { simulatorUuid, x, y, preDelay, postDelay } = params;
   const commandArgs = ['tap', '-x', String(x), '-y', String(y)];
@@ -127,7 +127,7 @@ export default {
     postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return tapLogic(args as TapParams, getDefaultCommandExecutor());
+    return tapLogic(args as unknown as TapParams, getDefaultCommandExecutor());
   },
 };
 
@@ -174,7 +174,7 @@ async function executeAxeCommand(
       );
     }
 
-    return result.output.trim();
+    return createTextResponse(result.output.trim());
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {

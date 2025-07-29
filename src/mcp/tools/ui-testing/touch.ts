@@ -36,11 +36,11 @@ export async function touchLogic(
 ): Promise<ToolResponse> {
   const toolName = 'touch';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
   const xValidation = validateRequiredParam('x', params.x);
-  if (!xValidation.isValid) return xValidation.errorResponse;
+  if (!xValidation.isValid) return xValidation.errorResponse!;
   const yValidation = validateRequiredParam('y', params.y);
-  if (!yValidation.isValid) return yValidation.errorResponse;
+  if (!yValidation.isValid) return yValidation.errorResponse!;
 
   const { simulatorUuid, x, y, down, up, delay } = params;
 
@@ -71,10 +71,10 @@ export async function touchLogic(
   );
 
   try {
-    await executeAxeCommand(commandArgs, simulatorUuid, 'touch', executor, axeHelpers);
+    await executeAxeCommand(commandArgs, simulatorUuid as string, 'touch', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
 
-    const warning = getCoordinateWarning(simulatorUuid);
+    const warning = getCoordinateWarning(simulatorUuid as string);
     const message = `Touch event (${actionText}) at (${x}, ${y}) executed successfully.`;
 
     if (warning) {
@@ -130,7 +130,7 @@ export default {
 const describeUITimestamps = new Map();
 const DESCRIBE_UI_WARNING_TIMEOUT = 60000; // 60 seconds
 
-function getCoordinateWarning(simulatorUuid): string | null {
+function getCoordinateWarning(simulatorUuid: string): string | null {
   const session = describeUITimestamps.get(simulatorUuid);
   if (!session) {
     return 'Warning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.';

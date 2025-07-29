@@ -39,13 +39,13 @@ export async function long_pressLogic(
 ): Promise<ToolResponse> {
   const toolName = 'long_press';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
   const xValidation = validateRequiredParam('x', params.x);
-  if (!xValidation.isValid) return xValidation.errorResponse;
+  if (!xValidation.isValid) return xValidation.errorResponse!;
   const yValidation = validateRequiredParam('y', params.y);
-  if (!yValidation.isValid) return yValidation.errorResponse;
+  if (!yValidation.isValid) return yValidation.errorResponse!;
   const durationValidation = validateRequiredParam('duration', params.duration);
-  if (!durationValidation.isValid) return durationValidation.errorResponse;
+  if (!durationValidation.isValid) return durationValidation.errorResponse!;
 
   const { simulatorUuid, x, y, duration } = params;
   // AXe uses touch command with --down, --up, and --delay for long press
@@ -122,7 +122,7 @@ export default {
     duration: z.number().positive('Duration of the long press in milliseconds'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return long_pressLogic(args, getDefaultCommandExecutor());
+    return long_pressLogic(args as unknown as LongPressParams, getDefaultCommandExecutor());
   },
 };
 
@@ -196,7 +196,7 @@ async function executeAxeCommand(
       );
     }
 
-    return result.output.trim();
+    return createTextResponse(result.output.trim());
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {

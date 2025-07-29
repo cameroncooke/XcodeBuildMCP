@@ -152,7 +152,7 @@ export default {
     simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    const params = args as ScreenshotParams;
+    const params = args as unknown as ScreenshotParams;
     return screenshotLogic(params, getDefaultCommandExecutor(), getDefaultFileSystemExecutor());
   },
 };
