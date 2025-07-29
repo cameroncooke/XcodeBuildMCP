@@ -5,22 +5,10 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../../utils/index.js';
+import { log, XcodePlatform } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
-
-const XcodePlatform = {
-  iOS: 'iOS',
-  watchOS: 'watchOS',
-  tvOS: 'tvOS',
-  visionOS: 'visionOS',
-  iOSSimulator: 'iOS Simulator',
-  watchOSSimulator: 'watchOS Simulator',
-  tvOSSimulator: 'tvOS Simulator',
-  visionOSSimulator: 'visionOS Simulator',
-  macOS: 'macOS',
-};
 
 type BuildMacWsParams = {
   workspacePath: string;

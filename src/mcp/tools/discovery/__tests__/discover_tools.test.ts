@@ -268,7 +268,7 @@ describe('discover_tools', () => {
           maxTokens: 200,
         },
       });
-      expect(requestCall[1]).toBeDefined(); // Schema parameter
+      // Note: Schema parameter was removed in TypeScript fix - request method now only accepts one parameter
     });
 
     it('should handle array content format in LLM response', async () => {

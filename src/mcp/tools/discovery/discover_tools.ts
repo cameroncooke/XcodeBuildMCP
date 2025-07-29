@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createTextResponse } from '../../../utils/index.js';
 import { log } from '../../../utils/index.js';
-import { CreateMessageResultSchema } from '@modelcontextprotocol/sdk/types.js';
+// Removed CreateMessageResultSchema import as it's no longer used
 import { ToolResponse } from '../../../types/common.js';
 import {
   enableWorkflows,
@@ -95,21 +95,20 @@ Each workflow contains ALL tools needed for its complete development workflow - 
 
     // 4. Send sampling request
     log('debug', 'Sending sampling request to client LLM');
-    const samplingResult = await serverInstance.request(
-      {
-        method: 'sampling/createMessage',
-        params: {
-          messages: [{ role: 'user', content: { type: 'text', text: userPrompt } }],
-          maxTokens: 200,
-        },
+    const samplingResult = await serverInstance.request({
+      method: 'sampling/createMessage',
+      params: {
+        messages: [{ role: 'user', content: { type: 'text', text: userPrompt } }],
+        maxTokens: 200,
       },
-      CreateMessageResultSchema,
-    );
+    });
 
     // 5. Parse the response
     let selectedWorkflows: string[] = [];
     try {
-      const content = samplingResult.content;
+      const content = samplingResult.content as
+        | Array<{ type: 'text'; text: string }>
+        | { type: 'text'; text: string };
       let responseText = '';
 
       // Handle both array and single object content formats
@@ -122,7 +121,7 @@ Each workflow contains ALL tools needed for its complete development workflow - 
         content.type === 'text' &&
         'text' in content
       ) {
-        responseText = content.text.trim();
+        responseText = (content.text as string).trim();
       } else {
         throw new Error('Invalid content format in sampling response');
       }
@@ -151,7 +150,9 @@ Each workflow contains ALL tools needed for its complete development workflow - 
       // Extract the response text for error reporting
       let errorResponseText = 'Unknown response format';
       try {
-        const content = samplingResult.content;
+        const content = samplingResult.content as
+          | Array<{ type: 'text'; text: string }>
+          | { type: 'text'; text: string };
         if (Array.isArray(content) && content.length > 0 && content[0].type === 'text') {
           errorResponseText = content[0].text;
         } else if (
@@ -161,7 +162,7 @@ Each workflow contains ALL tools needed for its complete development workflow - 
           content.type === 'text' &&
           'text' in content
         ) {
-          errorResponseText = content.text;
+          errorResponseText = content.text as string;
         }
       } catch {
         // Keep default error message

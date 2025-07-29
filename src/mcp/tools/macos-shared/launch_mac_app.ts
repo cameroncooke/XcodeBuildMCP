@@ -28,13 +28,13 @@ export async function launch_mac_appLogic(
   // Validate required parameters
   const appPathValidation = validateRequiredParam('appPath', params.appPath);
   if (!appPathValidation.isValid) {
-    return appPathValidation.errorResponse;
+    return appPathValidation.errorResponse!;
   }
 
   // Validate that the app file exists
   const fileExistsValidation = validateFileExists(params.appPath as string, fileSystem);
   if (!fileExistsValidation.isValid) {
-    return fileExistsValidation.errorResponse;
+    return fileExistsValidation.errorResponse!;
   }
 
   log('info', `Starting launch macOS app request for ${params.appPath}`);
