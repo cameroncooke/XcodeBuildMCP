@@ -3,7 +3,7 @@
 
 // Import the shared activeProcesses map from swift_package_run
 // This maintains the same behavior as the original implementation
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, createTextContent } from '../../../types/common.js';
 
 const activeProcesses = new Map();
 
@@ -35,29 +35,25 @@ export async function swift_package_listLogic(
   if (processes.length === 0) {
     return {
       content: [
-        { type: 'text', text: 'ℹ️ No Swift Package processes currently running.' },
-        { type: 'text', text: '💡 Use swift_package_run to start an executable.' },
+        createTextContent('ℹ️ No Swift Package processes currently running.'),
+        createTextContent('💡 Use swift_package_run to start an executable.'),
       ],
     };
   }
 
-  const content = [
-    { type: 'text', text: `📋 Active Swift Package processes (${processes.length}):` },
-  ];
+  const content = [createTextContent(`📋 Active Swift Package processes (${processes.length}):`)];
 
   for (const [pid, info] of processes) {
     const executableName = info.executableName || 'default';
     const runtime = Math.max(1, Math.round((dateNow() - info.startedAt.getTime()) / 1000));
-    content.push({
-      type: 'text',
-      text: `  • PID ${pid}: ${executableName} (${info.packagePath}) - running ${runtime}s`,
-    });
+    content.push(
+      createTextContent(
+        `  • PID ${pid}: ${executableName} (${info.packagePath}) - running ${runtime}s`,
+      ),
+    );
   }
 
-  content.push({
-    type: 'text',
-    text: '💡 Use swift_package_stop with a PID to terminate a process.',
-  });
+  content.push(createTextContent('💡 Use swift_package_stop with a PID to terminate a process.'));
 
   return { content };
 }
