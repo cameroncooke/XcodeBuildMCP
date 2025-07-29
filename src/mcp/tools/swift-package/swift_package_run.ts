@@ -5,7 +5,7 @@ import { createTextResponse, validateRequiredParam } from '../../../utils/index.
 import { createErrorResponse } from '../../../utils/index.js';
 import { log } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, createTextContent } from '../../../types/common.js';
 import { addProcess } from './active-processes.js';
 
 // Inlined schemas from src/tools/common/index.ts
@@ -24,7 +24,7 @@ export async function swift_package_runLogic(
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
-  if (!pkgValidation.isValid) return pkgValidation.errorResponse;
+  if (!pkgValidation.isValid) return pkgValidation.errorResponse!;
 
   const resolvedPath = path.resolve(params.packagePath as string);
   const timeout = Math.min((params.timeout as number) || 30, 300) * 1000; // Convert to ms, max 5 minutes
@@ -66,12 +66,10 @@ export async function swift_package_runLogic(
         const mockPid = 12345;
         return {
           content: [
-            {
-              type: 'text',
-              text:
-                `🚀 Started executable in background (PID: ${mockPid})\n` +
+            createTextContent(
+              `🚀 Started executable in background (PID: ${mockPid})\n` +
                 `💡 Process is running independently. Use swift_package_stop with PID ${mockPid} to terminate when needed.`,
-            },
+            ),
           ],
         };
       } else {
@@ -84,19 +82,21 @@ export async function swift_package_runLogic(
         // Store the process in active processes system
         if (child.pid) {
           addProcess(child.pid, {
-            process: child,
+            process: {
+              kill: (signal?: string) => child.kill(signal as any),
+              on: (event: string, callback: () => void) => child.on(event, callback),
+              pid: child.pid,
+            },
             startedAt: new Date(),
           });
         }
 
         return {
           content: [
-            {
-              type: 'text',
-              text:
-                `🚀 Started executable in background (PID: ${child.pid})\n` +
+            createTextContent(
+              `🚀 Started executable in background (PID: ${child.pid})\n` +
                 `💡 Process is running independently. Use swift_package_stop with PID ${child.pid} to terminate when needed.`,
-            },
+            ),
           ],
         };
       }
@@ -126,26 +126,21 @@ export async function swift_package_runLogic(
       // Race between command completion and timeout
       const result = await Promise.race([commandPromise, timeoutPromise]);
 
-      if (result.timedOut) {
+      if ('timedOut' in result && result.timedOut) {
         // For timeout case, we need to start the process in background mode for continued monitoring
         if (isTestEnvironment) {
           // In test environment, return mock response without real spawn
           const mockPid = 12345;
           return {
             content: [
-              {
-                type: 'text',
-                text: `⏱️ Process timed out after ${timeout / 1000} seconds but continues running.`,
-              },
-              {
-                type: 'text',
-                text: `PID: ${mockPid}`,
-              },
-              {
-                type: 'text',
-                text: `💡 Process is still running. Use swift_package_stop with PID ${mockPid} to terminate when needed.`,
-              },
-              { type: 'text', text: result.output || '(no output so far)' },
+              createTextContent(
+                `⏱️ Process timed out after ${timeout / 1000} seconds but continues running.`,
+              ),
+              createTextContent(`PID: ${mockPid}`),
+              createTextContent(
+                `💡 Process is still running. Use swift_package_stop with PID ${mockPid} to terminate when needed.`,
+              ),
+              createTextContent(result.output || '(no output so far)'),
             ],
           };
         } else {
@@ -157,26 +152,25 @@ export async function swift_package_runLogic(
 
           if (child.pid) {
             addProcess(child.pid, {
-              process: child,
+              process: {
+                kill: (signal?: string) => child.kill(signal as any),
+                on: (event: string, callback: () => void) => child.on(event, callback),
+                pid: child.pid,
+              },
               startedAt: new Date(),
             });
           }
 
           return {
             content: [
-              {
-                type: 'text',
-                text: `⏱️ Process timed out after ${timeout / 1000} seconds but continues running.`,
-              },
-              {
-                type: 'text',
-                text: `PID: ${child.pid}`,
-              },
-              {
-                type: 'text',
-                text: `💡 Process is still running. Use swift_package_stop with PID ${child.pid} to terminate when needed.`,
-              },
-              { type: 'text', text: result.output || '(no output so far)' },
+              createTextContent(
+                `⏱️ Process timed out after ${timeout / 1000} seconds but continues running.`,
+              ),
+              createTextContent(`PID: ${child.pid}`),
+              createTextContent(
+                `💡 Process is still running. Use swift_package_stop with PID ${child.pid} to terminate when needed.`,
+              ),
+              createTextContent(result.output || '(no output so far)'),
             ],
           };
         }
@@ -185,21 +179,18 @@ export async function swift_package_runLogic(
       if (result.success) {
         return {
           content: [
-            { type: 'text', text: '✅ Swift executable completed successfully.' },
-            {
-              type: 'text',
-              text: '💡 Process finished cleanly. Check output for results.',
-            },
-            { type: 'text', text: result.output || '(no output)' },
+            createTextContent('✅ Swift executable completed successfully.'),
+            createTextContent('💡 Process finished cleanly. Check output for results.'),
+            createTextContent(result.output || '(no output)'),
           ],
         };
       } else {
         const content = [
-          { type: 'text', text: '❌ Swift executable failed.' },
-          { type: 'text', text: result.output || '(no output)' },
+          createTextContent('❌ Swift executable failed.'),
+          createTextContent(result.output || '(no output)'),
         ];
         if (result.error) {
-          content.push({ type: 'text', text: `Errors:\n${result.error}` });
+          content.push(createTextContent(`Errors:\n${result.error}`));
         }
         return { content };
       }
