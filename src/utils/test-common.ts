@@ -22,7 +22,7 @@ import { XcodePlatform } from './xcode.js';
 import { executeXcodeBuildCommand } from './build-utils.js';
 import { createTextResponse, consolidateContentForClaudeCode } from './validation.js';
 import { ToolResponse } from '../types/common.js';
-import { CommandExecutor } from './command.js';
+import { CommandExecutor, getDefaultCommandExecutor } from './command.js';
 
 /**
  * Type definition for test summary structure from xcresulttool
@@ -189,7 +189,7 @@ export async function handleTestLogic(
       },
       params.preferXcodebuild,
       'test',
-      executor,
+      executor || getDefaultCommandExecutor(),
     );
 
     // Parse xcresult bundle if it exists, regardless of whether tests passed or failed
