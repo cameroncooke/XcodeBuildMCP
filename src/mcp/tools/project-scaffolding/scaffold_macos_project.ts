@@ -263,7 +263,7 @@ async function processDirectory(
   const entries = await fileSystemExecutor.readdir(sourceDir, { withFileTypes: true });
 
   for (const entry of entries) {
-    const dirent = entry as { isDirectory(): boolean; name: string };
+    const dirent = entry as { isDirectory(): boolean; isFile(): boolean; name: string };
     const sourcePath = join(sourceDir, dirent.name);
     let destName = dirent.name;
 

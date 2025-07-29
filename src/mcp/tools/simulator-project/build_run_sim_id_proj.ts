@@ -6,7 +6,7 @@ import {
   executeXcodeBuildCommand,
 } from '../../../utils/index.js';
 import { execSync } from 'child_process';
-import { ToolResponse, XcodePlatform } from '../../../types/common.js';
+import { ToolResponse, XcodePlatform, SharedBuildParams } from '../../../types/common.js';
 
 // Type definition for execSync function
 type ExecSyncFunction = (command: string, options?: Record<string, unknown>) => Buffer | string;
@@ -32,8 +32,18 @@ async function _handleSimulatorBuildLogic(
 ): Promise<ToolResponse> {
   log('info', `Starting iOS Simulator build for scheme ${params.scheme} (internal)`);
 
+  // Create SharedBuildParams object with required configuration property
+  const sharedBuildParams: SharedBuildParams = {
+    workspacePath: params.workspacePath,
+    projectPath: params.projectPath,
+    scheme: params.scheme,
+    configuration: params.configuration ?? 'Debug',
+    derivedDataPath: params.derivedDataPath,
+    extraArgs: params.extraArgs,
+  };
+
   return executeXcodeBuildCommandFn(
-    params as Record<string, unknown>,
+    sharedBuildParams,
     {
       platform: XcodePlatform.iOSSimulator,
       simulatorName: params.simulatorName,

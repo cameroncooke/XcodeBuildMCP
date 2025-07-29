@@ -11,6 +11,7 @@ interface SetSimulatorLocationParams {
   simulatorUuid: string;
   latitude: number;
   longitude: number;
+  [key: string]: unknown;
 }
 
 // Helper function to execute simctl commands and handle responses
@@ -22,11 +23,11 @@ async function executeSimctlCommandAndRespond(
   failureMessagePrefix: string,
   operationLogContext: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
-  extraValidation?: Record<string, unknown>,
+  extraValidation?: () => ToolResponse | null,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse;
+    return simulatorUuidValidation.errorResponse!;
   }
 
   if (extraValidation) {
@@ -75,10 +76,7 @@ export async function set_simulator_locationLogic(
   params: SetSimulatorLocationParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const extraValidation = (): {
-    content: Array<{ type: string; text: string }>;
-    isError?: boolean;
-  } | null => {
+  const extraValidation = (): ToolResponse | null => {
     if (params.latitude < -90 || params.latitude > 90) {
       return {
         content: [
@@ -131,7 +129,7 @@ export default {
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     return set_simulator_locationLogic(
-      args as SetSimulatorLocationParams,
+      args as unknown as SetSimulatorLocationParams,
       getDefaultCommandExecutor(),
     );
   },

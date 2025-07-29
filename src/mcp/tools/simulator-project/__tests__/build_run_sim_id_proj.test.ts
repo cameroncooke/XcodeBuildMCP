@@ -314,17 +314,18 @@ describe('build_run_sim_id_proj plugin', () => {
 
       expect(mockExecuteXcodeBuildCommandCalls).toHaveLength(1);
       const call = mockExecuteXcodeBuildCommandCalls[0];
+      // Check first parameter (SharedBuildParams) - should only contain build-related properties
       expect(call[0]).toEqual(
         expect.objectContaining({
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
-          simulatorId: 'test-uuid',
           configuration: 'Release',
           derivedDataPath: '/path/to/derived',
           extraArgs: ['--custom-arg'],
-          preferXcodebuild: true,
+          workspacePath: undefined,
         }),
       );
+      // Check second parameter (PlatformBuildOptions) - should contain simulator-specific properties
       expect(call[1]).toEqual(
         expect.objectContaining({
           platform: 'iOS Simulator',
@@ -332,7 +333,9 @@ describe('build_run_sim_id_proj plugin', () => {
           logPrefix: 'iOS Simulator Build',
         }),
       );
+      // Check third parameter (preferXcodebuild boolean)
       expect(call[2]).toBe(true);
+      // Check fourth parameter (buildAction string)
       expect(call[3]).toBe('build');
     });
   });
