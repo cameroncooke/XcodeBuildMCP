@@ -9,7 +9,7 @@ export async function boot_simLogic(
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
   if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse;
+    return simulatorUuidValidation.errorResponse!;
   }
 
   log('info', `Starting xcrun simctl boot request for simulator ${params.simulatorUuid}`);
@@ -71,6 +71,6 @@ export default {
       .describe('UUID of the simulator to use (obtained from list_simulators)'),
   },
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return boot_simLogic(args, getDefaultCommandExecutor());
+    return boot_simLogic(args as { simulatorUuid: string }, getDefaultCommandExecutor());
   },
 };

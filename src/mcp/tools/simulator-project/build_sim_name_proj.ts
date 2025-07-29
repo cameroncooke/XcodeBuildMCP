@@ -6,11 +6,7 @@ import {
   getDefaultCommandExecutor,
   CommandExecutor,
 } from '../../../utils/index.js';
-import { ToolResponse } from '../../../types/common.js';
-
-const XcodePlatform = {
-  iOSSimulator: 'iOS Simulator',
-};
+import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 
 type BuildSimNameProjParams = {
   projectPath: string;
