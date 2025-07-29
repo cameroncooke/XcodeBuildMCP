@@ -15,7 +15,7 @@ export async function swift_package_cleanLogic(
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
-  if (!pkgValidation.isValid) return pkgValidation.errorResponse;
+  if (!pkgValidation.isValid) return pkgValidation.errorResponse!;
 
   const resolvedPath = path.resolve(params.packagePath as string);
   const swiftArgs = ['package', '--package-path', resolvedPath, 'clean'];
@@ -52,6 +52,9 @@ export default {
     packagePath: z.string().describe('Path to the Swift package root (Required)'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return swift_package_cleanLogic(args, getDefaultCommandExecutor());
+    return swift_package_cleanLogic(
+      args as unknown as SwiftPackageCleanParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };
