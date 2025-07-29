@@ -83,7 +83,7 @@ export async function swift_package_runLogic(
         if (child.pid) {
           addProcess(child.pid, {
             process: {
-              kill: (signal?: string) => child.kill(signal as any),
+              kill: (signal?: string) => child.kill(signal as NodeJS.Signals),
               on: (event: string, callback: () => void) => child.on(event, callback),
               pid: child.pid,
             },
@@ -153,7 +153,7 @@ export async function swift_package_runLogic(
           if (child.pid) {
             addProcess(child.pid, {
               process: {
-                kill: (signal?: string) => child.kill(signal as any),
+                kill: (signal?: string) => child.kill(signal as NodeJS.Signals),
                 on: (event: string, callback: () => void) => child.on(event, callback),
                 pid: child.pid,
               },

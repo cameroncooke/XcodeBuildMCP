@@ -38,7 +38,7 @@ export async function swift_package_buildLogic(
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
-  if (!pkgValidation.isValid) return pkgValidation.errorResponse;
+  if (!pkgValidation.isValid) return pkgValidation.errorResponse!;
 
   const resolvedPath = path.resolve(params.packagePath as string);
   const swiftArgs = ['build', '--package-path', resolvedPath];
@@ -98,6 +98,9 @@ export default {
     parseAsLibrary: parseAsLibrarySchema,
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return swift_package_buildLogic(args, getDefaultCommandExecutor());
+    return swift_package_buildLogic(
+      args as unknown as SwiftPackageBuildParams,
+      getDefaultCommandExecutor(),
+    );
   },
 };
