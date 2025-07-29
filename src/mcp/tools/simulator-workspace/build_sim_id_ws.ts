@@ -1,13 +1,9 @@
 import { z } from 'zod';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
-
-const XcodePlatform = {
-  iOSSimulator: 'iOS Simulator',
-};
 
 type BuildSimIdWsParams = {
   workspacePath: string;
@@ -43,16 +39,12 @@ export async function build_sim_id_wsLogic(
     preferXcodebuild: params.preferXcodebuild ?? false,
   };
 
-  log(
-    'info',
-    `Building ${processedParams.workspacePath || processedParams.projectPath} for iOS Simulator`,
-  );
+  log('info', `Building ${processedParams.workspacePath} for iOS Simulator`);
 
   const buildResult = await executeXcodeBuildCommand(
     processedParams,
     {
       platform: XcodePlatform.iOSSimulator,
-      simulatorName: processedParams.simulatorName,
       simulatorId: processedParams.simulatorId,
       useLatestOS: processedParams.useLatestOS,
       logPrefix: 'Build',
