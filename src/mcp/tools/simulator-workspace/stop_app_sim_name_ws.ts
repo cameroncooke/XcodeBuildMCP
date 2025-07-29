@@ -11,12 +11,12 @@ export async function stop_app_sim_name_wsLogic(
 ): Promise<ToolResponse> {
   const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
   if (!simulatorNameValidation.isValid) {
-    return simulatorNameValidation.errorResponse;
+    return simulatorNameValidation.errorResponse!;
   }
 
   const bundleIdValidation = validateRequiredParam('bundleId', params.bundleId);
   if (!bundleIdValidation.isValid) {
-    return bundleIdValidation.errorResponse;
+    return bundleIdValidation.errorResponse!;
   }
 
   log('info', `Stopping app ${params.bundleId} in simulator named ${params.simulatorName}`);
