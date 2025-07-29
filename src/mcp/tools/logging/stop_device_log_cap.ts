@@ -127,15 +127,11 @@ export async function stopDeviceLogCapture(
     },
     async readdir(path: string, options?: { withFileTypes?: boolean }): Promise<unknown[]> {
       if (fsToUse.promises) {
-        return (await fsToUse.promises.readdir(
-          path,
-          options as { withFileTypes?: boolean },
-        )) as unknown[];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (await fsToUse.promises.readdir(path, options as any)) as unknown[];
       } else {
-        return (await fs.promises.readdir(
-          path,
-          options as { withFileTypes?: boolean },
-        )) as unknown[];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (await fs.promises.readdir(path, options as any)) as unknown[];
       }
     },
     async rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {

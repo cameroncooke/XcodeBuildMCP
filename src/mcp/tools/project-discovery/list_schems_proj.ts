@@ -22,7 +22,7 @@ export async function list_schems_projLogic(
 
   // Validate required parameter
   const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse;
+  if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
   try {
     // For listing schemes, we can't use executeXcodeBuild directly since it's not a standard action
@@ -30,9 +30,9 @@ export async function list_schems_projLogic(
     const command = ['xcodebuild', '-list'];
 
     if (params.workspacePath) {
-      command.push('-workspace', params.workspacePath);
+      command.push('-workspace', params.workspacePath as string);
     } else if (params.projectPath) {
-      command.push('-project', params.projectPath);
+      command.push('-project', params.projectPath as string);
     } // No else needed, one path is guaranteed by callers
 
     const result = await executor(command, 'List Schemes', true);

@@ -30,7 +30,7 @@ export async function list_schems_wsLogic(
 
   // Validate required parameters
   const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse;
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
   // Cast to proper type after validation
   const typedParams: ListSchemsWsParams = {

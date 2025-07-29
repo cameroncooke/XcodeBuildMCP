@@ -35,7 +35,7 @@ export async function get_app_bundle_idLogic(
 ): Promise<ToolResponse> {
   const appPathValidation = validateRequiredParam('appPath', params.appPath);
   if (!appPathValidation.isValid) {
-    return appPathValidation.errorResponse;
+    return appPathValidation.errorResponse!;
   }
 
   const validated = { appPath: params.appPath as string };
