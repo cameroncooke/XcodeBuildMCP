@@ -45,7 +45,7 @@ export async function describe_uiLogic(
 ): Promise<ToolResponse> {
   const toolName = 'describe_ui';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
 
   const { simulatorUuid } = params;
   const commandArgs = ['describe-ui'];
@@ -114,7 +114,7 @@ export default {
     simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return describe_uiLogic(args as DescribeUiParams, getDefaultCommandExecutor());
+    return describe_uiLogic(args as unknown as DescribeUiParams, getDefaultCommandExecutor());
   },
 };
 
@@ -128,7 +128,7 @@ async function executeAxeCommand(
     getAxePath: () => string | null;
     getBundledAxeEnvironment: () => Record<string, string>;
   },
-): Promise<ToolResponse> {
+): Promise<string> {
   // Get the appropriate axe binary path
   const axeBinary = axeHelpers ? axeHelpers.getAxePath() : getAxePath();
   if (!axeBinary) {

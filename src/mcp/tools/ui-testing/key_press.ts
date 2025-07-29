@@ -31,11 +31,11 @@ export async function key_pressLogic(
 ): Promise<ToolResponse> {
   const toolName = 'key_press';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
   const keyCodeValidation = validateRequiredParam('keyCode', params.keyCode);
-  if (!keyCodeValidation.isValid) return keyCodeValidation.errorResponse;
+  if (!keyCodeValidation.isValid) return keyCodeValidation.errorResponse!;
 
-  const { simulatorUuid, keyCode, duration } = params as KeyPressParams;
+  const { simulatorUuid, keyCode, duration } = params as unknown as KeyPressParams;
   const commandArgs = ['key', String(keyCode)];
   if (duration !== undefined) {
     commandArgs.push('--duration', String(duration));
@@ -144,7 +144,9 @@ async function executeAxeCommand(
       );
     }
 
-    return result.output.trim();
+    return {
+      content: [{ type: 'text', text: result.output.trim() }],
+    };
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {

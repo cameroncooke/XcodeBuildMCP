@@ -47,9 +47,9 @@ export async function gestureLogic(
 ): Promise<ToolResponse> {
   const toolName = 'gesture';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse;
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
   const presetValidation = validateRequiredParam('preset', params.preset);
-  if (!presetValidation.isValid) return presetValidation.errorResponse;
+  if (!presetValidation.isValid) return presetValidation.errorResponse!;
 
   const { simulatorUuid, preset, screenWidth, screenHeight, duration, delta, preDelay, postDelay } =
     params;
@@ -163,7 +163,7 @@ export default {
       .describe('Optional: Delay after completing the gesture in seconds.'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return gestureLogic(args as GestureParams, getDefaultCommandExecutor());
+    return gestureLogic(args as unknown as GestureParams, getDefaultCommandExecutor());
   },
 };
 
@@ -215,7 +215,7 @@ async function executeAxeCommand(
       );
     }
 
-    return result.output.trim();
+    return createTextResponse(result.output.trim());
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {
