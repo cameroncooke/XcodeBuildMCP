@@ -50,7 +50,9 @@ export async function swift_package_listLogic(
   const content = [createTextContent(`📋 Active Swift Package processes (${processes.length}):`)];
 
   for (const [pid, info] of processes) {
-    const executableName = info.executableName ?? 'default';
+    // Use logical OR instead of nullish coalescing to treat empty strings as falsy
+    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+    const executableName = info.executableName || 'default';
     const runtime = Math.max(1, Math.round((dateNow() - info.startedAt.getTime()) / 1000));
     content.push(
       createTextContent(
