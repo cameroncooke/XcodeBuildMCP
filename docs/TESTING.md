@@ -20,9 +20,9 @@ This document provides comprehensive testing guidelines for XcodeBuildMCP plugin
 
 ### 🚨 CRITICAL: No Vitest Mocking Allowed
 
-**ABSOLUTE RULE: ALL VITEST MOCKING IS COMPLETELY BANNED**
+### ABSOLUTE RULE: ALL VITEST MOCKING IS COMPLETELY BANNED
 
-**FORBIDDEN PATTERNS (will cause immediate test failure):**
+### FORBIDDEN PATTERNS (will cause immediate test failure):
 - `vi.mock()` - BANNED
 - `vi.fn()` - BANNED  
 - `vi.mocked()` - BANNED
@@ -36,7 +36,7 @@ This document provides comprehensive testing guidelines for XcodeBuildMCP plugin
 - `MockedFunction` type - BANNED
 - Any `mock*` variables - BANNED
 
-**ONLY ALLOWED MOCKING:**
+### ONLY ALLOWED MOCKING:
 - `createMockExecutor({ success: true, output: 'result' })` - command execution
 - `createMockFileSystemExecutor({ readFile: async () => 'content' })` - file system operations
 
@@ -63,7 +63,7 @@ To enforce the no-mocking policy, the project includes a script that automatical
 
 ```bash
 # Run the script to check for violations
-node scripts/check-test-patterns.js
+node scripts/check-code-patterns.js
 ```
 
 This script is part of the standard development workflow and should be run before committing changes to ensure compliance with the testing standards. It will fail if it detects any use of `vi.mock`, `vi.fn`, or other forbidden patterns in the test files.
@@ -186,7 +186,7 @@ describe('Parameter Validation', () => {
 
 ### 2. Command Generation (CLI Testing)
 
-**CRITICAL: No command spying allowed. Test command generation through response validation.**
+### CRITICAL: No command spying allowed. Test command generation through response validation.
 
 ```typescript
 describe('Command Generation', () => {
@@ -483,16 +483,16 @@ it('should format validation errors correctly', async () => {
 
 ### 🚨 CRITICAL: THOROUGHNESS OVER EFFICIENCY - NO SHORTCUTS ALLOWED
 
-**ABSOLUTE PRINCIPLE: EVERY TOOL MUST BE TESTED INDIVIDUALLY**
+### ABSOLUTE PRINCIPLE: EVERY TOOL MUST BE TESTED INDIVIDUALLY
 
-**🚨 MANDATORY TESTING SCOPE - NO EXCEPTIONS:**
+### 🚨 MANDATORY TESTING SCOPE - NO EXCEPTIONS
 - **EVERY SINGLE TOOL** - All 83+ tools must be tested individually, one by one
 - **NO REPRESENTATIVE SAMPLING** - Testing similar tools does NOT validate other tools
 - **NO PATTERN RECOGNITION SHORTCUTS** - Similar-looking tools may have different behaviors
 - **NO EFFICIENCY OPTIMIZATIONS** - Thoroughness is more important than speed
 - **NO TIME CONSTRAINTS** - This is a long-running task with no deadline pressure
 
-**❌ FORBIDDEN EFFICIENCY SHORTCUTS:**
+### ❌ FORBIDDEN EFFICIENCY SHORTCUTS
 - **NEVER** assume testing `build_sim_id_proj` validates `build_sim_name_proj`
 - **NEVER** skip tools because they "look similar" to tested ones
 - **NEVER** use representative sampling instead of complete coverage
@@ -500,14 +500,14 @@ it('should format validation errors correctly', async () => {
 - **NEVER** group tools together for batch testing
 - **NEVER** make assumptions about untested tools based on tested patterns
 
-**✅ REQUIRED COMPREHENSIVE APPROACH:**
+### ✅ REQUIRED COMPREHENSIVE APPROACH
 1. **Individual Tool Testing**: Each tool gets its own dedicated test execution
 2. **Complete Documentation**: Every tool result must be recorded, regardless of outcome
 3. **Systematic Progress**: Use TodoWrite to track every single tool as tested/untested
 4. **Failure Documentation**: Test tools that cannot work and mark them as failed/blocked
 5. **No Assumptions**: Treat each tool as potentially unique requiring individual validation
 
-**TESTING COMPLETENESS VALIDATION:**
+### TESTING COMPLETENESS VALIDATION
 - **Start Count**: Record exact number of tools discovered (e.g., 83 tools)
 - **End Count**: Verify same number of tools have been individually tested
 - **Missing Tools = Testing Failure**: If any tools remain untested, the testing is incomplete
@@ -515,12 +515,12 @@ it('should format validation errors correctly', async () => {
 
 ### 🚨 CRITICAL: Black Box Testing via Reloaderoo Inspect
 
-**DEFINITION: Black Box Testing**
+### DEFINITION: Black Box Testing
 Black Box Testing means testing ONLY through external interfaces without any knowledge of internal implementation. For XcodeBuildMCP, this means testing exclusively through the Model Context Protocol (MCP) interface using Reloaderoo as the MCP client.
 
-**🚨 MANDATORY: RELOADEROO INSPECT IS THE ONLY ALLOWED TESTING METHOD**
+### 🚨 MANDATORY: RELOADEROO INSPECT IS THE ONLY ALLOWED TESTING METHOD
 
-**ABSOLUTE TESTING RULES - NO EXCEPTIONS:**
+### ABSOLUTE TESTING RULES - NO EXCEPTIONS
 
 1. **✅ ONLY ALLOWED: Reloaderoo Inspect Commands**
    - `npx reloaderoo@latest inspect call-tool "TOOL_NAME" --params 'JSON' -- node build/index.js`
@@ -553,22 +553,22 @@ Black Box Testing means testing ONLY through external interfaces without any kno
    npx reloaderoo@latest inspect call-tool "diagnostic" --params '{}' -- node build/index.js
    ```
 
-**WHY RELOADEROO INSPECT IS MANDATORY:**
+### WHY RELOADEROO INSPECT IS MANDATORY
 - **Higher Fidelity**: Provides clear input/output visibility for each tool call
 - **Real-world Simulation**: Tests exactly how MCP clients interact with the server
 - **Interface Validation**: Ensures MCP protocol compliance and proper JSON formatting
 - **Black Box Enforcement**: Prevents accidental access to internal implementation details
 - **Clean State**: Each tool call runs with a fresh MCP server instance, preventing cross-contamination
 
-**IMPORTANT: STATEFUL TOOL LIMITATIONS**
+### IMPORTANT: STATEFUL TOOL LIMITATIONS
 
-**Reloaderoo Inspect Behavior:**
+#### Reloaderoo Inspect Behavior:
 Reloaderoo starts a fresh MCP server instance for each individual tool call and terminates it immediately after the response. This ensures:
 - ✅ **Clean Testing Environment**: No state contamination between tool calls
 - ✅ **Isolated Testing**: Each tool test is independent and repeatable
 - ✅ **Real-world Accuracy**: Simulates how most MCP clients interact with servers
 
-**Expected False Negatives:**
+#### Expected False Negatives:
 Some tools rely on in-memory state within the MCP server and will fail when tested via Reloaderoo inspect. These failures are **expected and acceptable** as false negatives:
 
 - **`swift_package_stop`** - Requires in-memory process tracking from `swift_package_run`
@@ -578,14 +578,14 @@ Some tools rely on in-memory state within the MCP server and will fail when test
 - **`stop_sim_log_cap`** - Requires in-memory session tracking from `start_sim_log_cap`
 - **`stop_mac_app`** - Requires in-memory process tracking from `launch_mac_app`
 
-**Testing Protocol for Stateful Tools:**
+#### Testing Protocol for Stateful Tools:
 1. **Test the tool anyway** - Execute the Reloaderoo inspect command
 2. **Expect failure** - Tool will likely fail due to missing state
 3. **Mark as false negative** - Document the failure as expected due to stateful limitations
 4. **Continue testing** - Do not attempt to fix or investigate the failure
 5. **Report as finding** - Note in testing report that stateful tools failed as expected
 
-**COMPLETE COVERAGE REQUIREMENTS:**
+### COMPLETE COVERAGE REQUIREMENTS
 - ✅ **Test ALL 83+ tools individually** - No exceptions, every tool gets manual verification
 - ✅ **Follow dependency graphs** - Test tools in correct order based on data dependencies
 - ✅ **Capture key outputs** - Record UUIDs, paths, schemes needed by dependent tools
@@ -594,9 +594,9 @@ Some tools rely on in-memory state within the MCP server and will fail when test
 - ✅ **Document all observations** - Record exactly what you see via testing
 - ✅ **Report discrepancies as findings** - Note unexpected results without investigation
 
-**MANDATORY INDIVIDUAL TOOL TESTING PROTOCOL:**
+### MANDATORY INDIVIDUAL TOOL TESTING PROTOCOL
 
-**Step 1: Create Complete Tool Inventory**
+#### Step 1: Create Complete Tool Inventory
 ```bash
 # Generate complete list of all tools
 npx reloaderoo@latest inspect list-tools -- node build/index.js > /tmp/all_tools.json
@@ -607,7 +607,7 @@ echo "TOTAL TOOLS TO TEST: $TOTAL_TOOLS"
 jq -r '.tools[].name' /tmp/all_tools.json > /tmp/tool_names.txt
 ```
 
-**Step 2: Create TodoWrite Task List for Every Tool**
+#### Step 2: Create TodoWrite Task List for Every Tool
 ```bash
 # Create individual todo items for each of the 83+ tools
 # Example for first few tools:
@@ -617,7 +617,7 @@ jq -r '.tools[].name' /tmp/all_tools.json > /tmp/tool_names.txt
 # ... (continue for ALL 83+ tools)
 ```
 
-**Step 3: Test Each Tool Individually**
+#### Step 3: Test Each Tool Individually
 For EVERY tool in the list:
 ```bash
 # Test each tool individually - NO BATCHING
@@ -627,7 +627,7 @@ npx reloaderoo@latest inspect call-tool "TOOL_NAME" --params 'APPROPRIATE_PARAMS
 # Record result (success/failure/blocked) for each tool
 ```
 
-**Step 4: Validate Complete Coverage**
+#### Step 4: Validate Complete Coverage
 ```bash
 # Verify all tools tested
 COMPLETED_TOOLS=$(count completed todo items)
@@ -637,14 +637,14 @@ if [ $COMPLETED_TOOLS -ne $TOTAL_TOOLS ]; then
 fi
 ```
 
-**CRITICAL: NO TOOL LEFT UNTESTED**
+### CRITICAL: NO TOOL LEFT UNTESTED
 - **Every tool name from the JSON list must be individually tested**
 - **Every tool must have a TodoWrite entry that gets marked completed**
 - **Tools that fail due to missing parameters should be tested anyway and marked as blocked**
 - **Tools that require setup (like running processes) should be tested and documented as requiring dependencies**
 - **NO ASSUMPTIONS**: Test tools even if they seem redundant or similar to others
 
-**BLACK BOX TESTING ENFORCEMENT:**
+### BLACK BOX TESTING ENFORCEMENT
 - ✅ **Test only through Reloaderoo MCP interface** - Simulates real-world MCP client usage
 - ✅ **Use task lists** - Track progress with TodoWrite tool for every single tool
 - ✅ **Tick off each tool** - Mark completed in task list after manual verification
@@ -656,36 +656,36 @@ fi
 
 ### 🚨 TESTING PSYCHOLOGY & BIAS PREVENTION
 
-**COMMON ANTI-PATTERNS TO AVOID:**
+### COMMON ANTI-PATTERNS TO AVOID
 
-**1. Efficiency Bias (FORBIDDEN)**
+#### 1. Efficiency Bias (FORBIDDEN)
 - **Symptom**: "These tools look similar, I'll test one to validate the others"
 - **Correction**: Every tool is unique and must be tested individually
 - **Enforcement**: Count tools at start, verify same count tested at end
 
-**2. Pattern Recognition Override (FORBIDDEN)**  
+#### 2. Pattern Recognition Override (FORBIDDEN)  
 - **Symptom**: "I see the pattern, the rest will work the same way"
 - **Correction**: Patterns may hide edge cases, bugs, or different implementations
 - **Enforcement**: No assumptions allowed, test every tool regardless of apparent similarity
 
-**3. Time Pressure Shortcuts (FORBIDDEN)**
+#### 3. Time Pressure Shortcuts (FORBIDDEN)
 - **Symptom**: "This is taking too long, let me speed up by sampling"
 - **Correction**: This is explicitly a long-running task with no time constraints
 - **Enforcement**: Thoroughness is the ONLY priority, efficiency is irrelevant
 
-**4. False Confidence (FORBIDDEN)**
+#### 4. False Confidence (FORBIDDEN)
 - **Symptom**: "The architecture is solid, so all tools must work"
 - **Correction**: Architecture validation does not guarantee individual tool functionality
 - **Enforcement**: Test tools to discover actual issues, not to confirm assumptions
 
-**MANDATORY MINDSET:**
+### MANDATORY MINDSET
 - **Every tool is potentially broken** until individually tested
 - **Every tool may have unique edge cases** not covered by similar tools
 - **Every tool deserves individual attention** regardless of apparent redundancy
 - **Testing completion means EVERY tool tested**, not "enough tools to validate patterns"
 - **The goal is discovering problems**, not confirming everything works
 
-**TESTING COMPLETENESS CHECKLIST:**
+### TESTING COMPLETENESS CHECKLIST
 - [ ] Generated complete tool list (83+ tools)
 - [ ] Created TodoWrite entry for every single tool
 - [ ] Tested every tool individually via Reloaderoo inspect
@@ -723,7 +723,7 @@ fi
 6. **UI Automation Tools** (depend on running apps):
    - `describe_ui`, `screenshot`, `tap`, etc.
 
-**MANDATORY: Record Key Outputs**
+### MANDATORY: Record Key Outputs
 
 Must capture and document these values for dependent tools:
 - **Device UUIDs** from `list_devices`
@@ -862,9 +862,9 @@ echo "Tool schema reference created at /tmp/tool_schemas.md"
 
 #### 🚨 CRITICAL: STEP-BY-STEP BLACK BOX TESTING PROCESS
 
-**ABSOLUTE RULE: ALL TESTING MUST BE DONE MANUALLY, ONE TOOL AT A TIME USING RELOADEROO INSPECT**
+### ABSOLUTE RULE: ALL TESTING MUST BE DONE MANUALLY, ONE TOOL AT A TIME USING RELOADEROO INSPECT
 
-**SYSTEMATIC TESTING PROCESS:**
+### SYSTEMATIC TESTING PROCESS
 
 1. **Create TodoWrite Task List**
    - Add all 83 tools to task list before starting
@@ -893,7 +893,7 @@ echo "Tool schema reference created at /tmp/tool_schemas.md"
 
 #### Phase 1: Infrastructure Validation
 
-**Manual Commands (execute individually):**
+#### Manual Commands (execute individually):
 
 ```bash
 # Test server connectivity
@@ -922,7 +922,7 @@ done < /tmp/resource_uris.txt
 
 #### Phase 3: Foundation Tools (Data Collection)
 
-**CRITICAL: Capture ALL key outputs for dependent tools**
+### CRITICAL: Capture ALL key outputs for dependent tools
 
 ```bash
 echo "=== FOUNDATION TOOL TESTING & DATA COLLECTION ==="
@@ -988,9 +988,9 @@ done < /tmp/workspace_paths.txt
 
 #### Phase 5: Manual Individual Tool Testing (All 83 Tools)
 
-**CRITICAL: Test every single tool manually, one at a time**
+### CRITICAL: Test every single tool manually, one at a time
 
-**Manual Testing Process:**
+#### Manual Testing Process:
 
 1. **Create task list** with TodoWrite tool for all 83 tools
 2. **Test each tool individually** with proper parameters
@@ -998,7 +998,7 @@ done < /tmp/workspace_paths.txt
 4. **Record results** and observations for each tool
 5. **NO SCRIPTS** - Each command executed manually
 
-**STEP-BY-STEP MANUAL TESTING COMMANDS:**
+### STEP-BY-STEP MANUAL TESTING COMMANDS
 
 ```bash
 # STEP 1: Test foundation tools (no parameters required)
@@ -1029,7 +1029,7 @@ npx reloaderoo@latest inspect call-tool "build_sim_id_proj" --params '{"projectP
 # [Verify build succeeds and record app bundle path]
 ```
 
-**CRITICAL: EACH COMMAND MUST BE:**
+### CRITICAL: EACH COMMAND MUST BE
 1. **Executed individually** - One command at a time, manually typed or pasted
 2. **Verified manually** - Read the complete response before continuing
 3. **Tracked in task list** - Mark tool complete only after verification
@@ -1038,7 +1038,7 @@ npx reloaderoo@latest inspect call-tool "build_sim_id_proj" --params '{"projectP
 
 ### TESTING VIOLATIONS AND ENFORCEMENT
 
-**🚨 CRITICAL VIOLATIONS THAT WILL TERMINATE TESTING:**
+### 🚨 CRITICAL VIOLATIONS THAT WILL TERMINATE TESTING
 
 1. **Direct MCP Tool Usage Violation:**
    ```typescript
@@ -1067,13 +1067,13 @@ npx reloaderoo@latest inspect call-tool "build_sim_id_proj" --params '{"projectP
    const toolImplementation = await Read('/src/mcp/tools/device-shared/list_devices.ts');
    ```
 
-**ENFORCEMENT PROCEDURE:**
+### ENFORCEMENT PROCEDURE
 1. **First Violation**: Immediate correction and restart of testing process
 2. **Documentation Update**: Add explicit prohibition to prevent future violations  
 3. **Method Validation**: Ensure all future testing uses only Reloaderoo inspect commands
 4. **Progress Reset**: Restart testing from foundation tools if direct MCP usage detected
 
-**VALID TESTING SEQUENCE EXAMPLE:**
+### VALID TESTING SEQUENCE EXAMPLE
 ```bash
 # ✅ CORRECT - Step-by-step manual execution via Reloaderoo
 # Tool 1: Test diagnostic
@@ -1097,7 +1097,7 @@ npx reloaderoo@latest inspect call-tool "swift_package_stop" --params '{"pid": 1
 # Continue individually for all 83 tools...
 ```
 
-**HANDLING STATEFUL TOOL FAILURES:**
+### HANDLING STATEFUL TOOL FAILURES
 ```bash
 # ✅ CORRECT Response to Expected Stateful Tool Failure
 # Tool fails with "No process found" or similar state-related error
@@ -1222,7 +1222,7 @@ npm test -- src/plugins/simulator-workspace/__tests__/tool_name.test.ts
 npm test -- --reporter=verbose
 
 # Check for banned patterns
-node scripts/check-test-patterns.js
+node scripts/check-code-patterns.js
 
 # Verify dependency injection compliance
 node scripts/audit-dependency-container.js
@@ -1235,7 +1235,7 @@ npm run test:coverage -- src/plugins/simulator-workspace/
 
 ```bash
 # Check for vitest mocking violations
-node scripts/check-test-patterns.js --pattern=vitest
+node scripts/check-code-patterns.js --pattern=vitest
 
 # Check dependency injection compliance
 node scripts/audit-dependency-container.js

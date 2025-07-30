@@ -29,7 +29,7 @@ class MockProcess {
 
   kill(signal?: string): void {
     if (this.shouldThrowOnKill) {
-      throw this.killError || new Error('Process kill failed');
+      throw this.killError ?? new Error('Process kill failed');
     }
     this.killed = true;
     this.killSignal = signal;
@@ -165,7 +165,7 @@ describe('swift_package_stop plugin', () => {
       const killCalls: string[] = [];
       const originalKill = mockProcess.kill.bind(mockProcess);
       mockProcess.kill = (signal?: string) => {
-        killCalls.push(signal || 'default');
+        killCalls.push(signal ?? 'default');
         originalKill(signal);
       };
 
@@ -277,7 +277,7 @@ describe('swift_package_stop plugin', () => {
       const killCalls: string[] = [];
       const originalKill = mockProcess.kill.bind(mockProcess);
       mockProcess.kill = (signal?: string) => {
-        killCalls.push(signal || 'default');
+        killCalls.push(signal ?? 'default');
         originalKill(signal);
       };
 
@@ -363,7 +363,7 @@ describe('swift_package_stop plugin', () => {
       const killCalls: string[] = [];
       const originalKill = mockProcess.kill.bind(mockProcess);
       mockProcess.kill = (signal?: string) => {
-        killCalls.push(signal || 'default');
+        killCalls.push(signal ?? 'default');
         originalKill(signal);
       };
 

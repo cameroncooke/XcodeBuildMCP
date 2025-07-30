@@ -153,19 +153,19 @@ function updateXCConfigFile(content: string, params: Record<string, unknown>): s
   result = result.replace(/PRODUCT_NAME = .+/g, `PRODUCT_NAME = ${projectName}`);
   result = result.replace(
     /PRODUCT_DISPLAY_NAME = .+/g,
-    `PRODUCT_DISPLAY_NAME = ${displayName || projectName}`,
+    `PRODUCT_DISPLAY_NAME = ${displayName ?? projectName}`,
   );
   result = result.replace(
     /PRODUCT_BUNDLE_IDENTIFIER = .+/g,
-    `PRODUCT_BUNDLE_IDENTIFIER = ${bundleIdentifier || `com.example.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`}`,
+    `PRODUCT_BUNDLE_IDENTIFIER = ${bundleIdentifier ?? `com.example.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`}`,
   );
   result = result.replace(
     /MARKETING_VERSION = .+/g,
-    `MARKETING_VERSION = ${marketingVersion || '1.0'}`,
+    `MARKETING_VERSION = ${marketingVersion ?? '1.0'}`,
   );
   result = result.replace(
     /CURRENT_PROJECT_VERSION = .+/g,
-    `CURRENT_PROJECT_VERSION = ${currentProjectVersion || '1'}`,
+    `CURRENT_PROJECT_VERSION = ${currentProjectVersion ?? '1'}`,
   );
 
   // Platform-specific updates
@@ -318,7 +318,7 @@ async function processFile(
     } else {
       // Use standard placeholder replacement
       const bundleIdentifier =
-        bundleIdentifierParam ||
+        bundleIdentifierParam ??
         `com.example.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
       processedContent = replacePlaceholders(content, projectName, bundleIdentifier);
     }

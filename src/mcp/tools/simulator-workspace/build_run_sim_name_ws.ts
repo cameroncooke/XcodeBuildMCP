@@ -93,7 +93,7 @@ export async function build_run_sim_name_wsLogic(
 
   try {
     // Step 1: Find simulator by name first
-    let simulatorsData;
+    let simulatorsData: { devices: Record<string, unknown[]> };
     if (executor) {
       // When using dependency injection (testing), get simulator data from mock
       const simulatorListResult = await executor(
@@ -103,20 +103,39 @@ export async function build_run_sim_name_wsLogic(
       if (!simulatorListResult.success) {
         return createTextResponse(`Failed to list simulators: ${simulatorListResult.error}`, true);
       }
-      simulatorsData = JSON.parse(simulatorListResult.output);
+      simulatorsData = JSON.parse(simulatorListResult.output) as {
+        devices: Record<string, unknown[]>;
+      };
     } else {
       // Production path - use execSync
       const simulatorsOutput = execSync('xcrun simctl list devices available --json').toString();
-      simulatorsData = JSON.parse(simulatorsOutput);
+      simulatorsData = JSON.parse(simulatorsOutput) as {
+        devices: Record<string, unknown[]>;
+      };
     }
-    let foundSimulator = null;
+    let foundSimulator: { udid: string; name: string; state: string } | null = null;
 
     // Find the target simulator by name
     for (const runtime in simulatorsData.devices) {
-      if (simulatorsData.devices[runtime]) {
-        for (const device of simulatorsData.devices[runtime]) {
-          if (device.name === processedParams.simulatorName) {
-            foundSimulator = device;
+      const devices = simulatorsData.devices[runtime];
+      if (Array.isArray(devices)) {
+        for (const device of devices) {
+          if (
+            typeof device === 'object' &&
+            device !== null &&
+            'name' in device &&
+            'udid' in device &&
+            'state' in device &&
+            typeof device.name === 'string' &&
+            typeof device.udid === 'string' &&
+            typeof device.state === 'string' &&
+            device.name === processedParams.simulatorName
+          ) {
+            foundSimulator = {
+              udid: device.udid,
+              name: device.name,
+              state: device.state,
+            };
             break;
           }
         }

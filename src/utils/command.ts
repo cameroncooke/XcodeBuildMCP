@@ -88,7 +88,7 @@ async function defaultExecutor(
   // Log the actual command that will be executed
   const displayCommand =
     useShell && escapedCommand.length === 3 ? escapedCommand[2] : escapedCommand.join(' ');
-  log('info', `Executing ${logPrefix || ''} command: ${displayCommand}`);
+  log('info', `Executing ${logPrefix ?? ''} command: ${displayCommand}`);
 
   return new Promise((resolve, reject) => {
     const executable = escapedCommand[0];
@@ -107,11 +107,11 @@ async function defaultExecutor(
     let stdout = '';
     let stderr = '';
 
-    childProcess.stdout?.on('data', (data) => {
+    childProcess.stdout?.on('data', (data: Buffer) => {
       stdout += data.toString();
     });
 
-    childProcess.stderr?.on('data', (data) => {
+    childProcess.stderr?.on('data', (data: Buffer) => {
       stderr += data.toString();
     });
 

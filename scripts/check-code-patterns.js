@@ -1,21 +1,22 @@
 #!/usr/bin/env node
 
 /**
- * XcodeBuildMCP Test Pattern Violations Checker
+ * XcodeBuildMCP Code Pattern Violations Checker
  * 
- * Validates that all test files follow established testing patterns and
- * identifies violations of the project's testing guidelines.
+ * Validates that all code files follow established patterns and
+ * identifies violations of the project's coding guidelines.
  * 
  * USAGE:
- *   node scripts/check-test-patterns.js [--pattern=vitest|timeout|all]
- *   node scripts/check-test-patterns.js --help
+ *   node scripts/check-code-patterns.js [--pattern=vitest|timeout|typescript|handler|all]
+ *   node scripts/check-code-patterns.js --help
  * 
- * TESTING GUIDELINES ENFORCED:
+ * CODE GUIDELINES ENFORCED:
  * 1. NO vitest mocking patterns (vi.mock, vi.fn, .mockResolvedValue, etc.)
  * 2. NO setTimeout-based mocking patterns
  * 3. ONLY dependency injection with createMockExecutor() and createMockFileSystemExecutor()
- * 4. Proper test architecture compliance
- * 5. NO handler signature violations (handlers must have exact MCP SDK signatures)
+ * 4. NO TypeScript anti-patterns (as unknown casts, unsafe type assertions)
+ * 5. Proper test architecture compliance
+ * 6. NO handler signature violations (handlers must have exact MCP SDK signatures)
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
@@ -34,25 +35,27 @@ const showHelp = args.includes('--help') || args.includes('-h');
 
 if (showHelp) {
   console.log(`
-XcodeBuildMCP Test Pattern Violations Checker
+XcodeBuildMCP Code Pattern Violations Checker
 
 USAGE:
-  node scripts/check-test-patterns.js [options]
+  node scripts/check-code-patterns.js [options]
 
 OPTIONS:
-  --pattern=TYPE    Check specific pattern type (vitest|timeout|handler|all) [default: all]
+  --pattern=TYPE    Check specific pattern type (vitest|timeout|typescript|handler|all) [default: all]
   --help, -h        Show this help message
 
 PATTERN TYPES:
   vitest           Check only vitest mocking violations (vi.mock, vi.fn, etc.)
   timeout          Check only setTimeout-based mocking patterns
+  typescript       Check only TypeScript anti-patterns (as unknown, unsafe casts)
   handler          Check only handler signature violations
   all              Check all pattern violations (default)
 
 EXAMPLES:
-  node scripts/check-test-patterns.js
-  node scripts/check-test-patterns.js --pattern=vitest
-  node scripts/check-test-patterns.js --pattern=timeout
+  node scripts/check-code-patterns.js
+  node scripts/check-code-patterns.js --pattern=vitest
+  node scripts/check-code-patterns.js --pattern=typescript
+  node scripts/check-code-patterns.js --pattern=handler
 `);
   process.exit(0);
 }
@@ -97,6 +100,18 @@ const VITEST_MOCKING_PATTERNS = [
   /as MockedFunction/,               // Type casting to MockedFunction - BANNED
   /\bexecSync\b/,                    // execSync usage - BANNED (use executeCommand instead)
   /\bexecSyncFn\b/,                  // execSyncFn usage - BANNED (use executeCommand instead)
+];
+
+// CRITICAL: TYPESCRIPT ANTI-PATTERNS ARE FORBIDDEN
+// Prefer structural typing and object literals over unsafe type assertions
+const TYPESCRIPT_ANTIPATTERNS = [
+  /as unknown(?!\s*,)/,              // 'as unknown' casting - ANTI-PATTERN (prefer object literals)
+  /as any/,                          // 'as any' casting - BANNED (defeats TypeScript safety)
+  /\@ts-ignore/,                     // @ts-ignore comments - ANTI-PATTERN (fix the root cause)
+  /\@ts-expect-error/,               // @ts-expect-error comments - USE SPARINGLY (document why)
+  /\!\s*\;/,                         // Non-null assertion operator - USE SPARINGLY (ensure safety)
+  /\<any\>/,                         // Explicit any type - BANNED (use unknown or proper typing)
+  /:\s*any(?!\[\])/,                 // Parameter/variable typed as any - BANNED
 ];
 
 // CRITICAL: HANDLER SIGNATURE VIOLATIONS ARE FORBIDDEN
@@ -186,12 +201,16 @@ function analyzeTestFile(filePath) {
     // Check for vitest mocking patterns (FORBIDDEN)
     const hasVitestMockingPatterns = VITEST_MOCKING_PATTERNS.some(pattern => pattern.test(content));
     
+    // Check for TypeScript anti-patterns (ANTI-PATTERN)
+    const hasTypescriptAntipatterns = TYPESCRIPT_ANTIPATTERNS.some(pattern => pattern.test(content));
+    
     // Check for dependency injection patterns (TRUE DI)
     const hasDIPatterns = DEPENDENCY_INJECTION_PATTERNS.some(pattern => pattern.test(content));
     
     // Extract specific pattern occurrences for details
     const timeoutDetails = [];
     const vitestMockingDetails = [];
+    const typescriptAntipatternDetails = [];
     const lines = content.split('\n');
     
     lines.forEach((line, index) => {
@@ -221,18 +240,30 @@ function analyzeTestFile(filePath) {
           }
         }
       });
+      
+      TYPESCRIPT_ANTIPATTERNS.forEach(pattern => {
+        if (pattern.test(line)) {
+          typescriptAntipatternDetails.push({
+            line: index + 1,
+            content: line.trim(),
+            pattern: pattern.source
+          });
+        }
+      });
     });
     
     return {
       filePath: relativePath,
       hasTimeoutPatterns,
       hasVitestMockingPatterns,
+      hasTypescriptAntipatterns,
       hasDIPatterns,
       timeoutDetails,
       vitestMockingDetails,
-      needsConversion: hasTimeoutPatterns || hasVitestMockingPatterns,
-      isConverted: hasDIPatterns && !hasTimeoutPatterns && !hasVitestMockingPatterns,
-      isMixed: (hasTimeoutPatterns || hasVitestMockingPatterns) && hasDIPatterns
+      typescriptAntipatternDetails,
+      needsConversion: hasTimeoutPatterns || hasVitestMockingPatterns || hasTypescriptAntipatterns,
+      isConverted: hasDIPatterns && !hasTimeoutPatterns && !hasVitestMockingPatterns && !hasTypescriptAntipatterns,
+      isMixed: (hasTimeoutPatterns || hasVitestMockingPatterns || hasTypescriptAntipatterns) && hasDIPatterns
     };
   } catch (error) {
     console.error(`Error reading file ${filePath}: ${error.message}`);
@@ -245,11 +276,66 @@ function analyzeToolOrResourceFile(filePath) {
     const content = readFileSync(filePath, 'utf8');
     const relativePath = relative(projectRoot, filePath);
     
+    // Check for setTimeout patterns
+    const hasTimeoutPatterns = TIMEOUT_PATTERNS.some(pattern => pattern.test(content));
+    
+    // Check for vitest mocking patterns (FORBIDDEN)
+    const hasVitestMockingPatterns = VITEST_MOCKING_PATTERNS.some(pattern => pattern.test(content));
+    
+    // Check for TypeScript anti-patterns (ANTI-PATTERN)
+    const hasTypescriptAntipatterns = TYPESCRIPT_ANTIPATTERNS.some(pattern => pattern.test(content));
+    
+    // Check for dependency injection patterns (TRUE DI)
+    const hasDIPatterns = DEPENDENCY_INJECTION_PATTERNS.some(pattern => pattern.test(content));
+    
     // Check for handler signature violations (FORBIDDEN)
     const hasHandlerSignatureViolations = HANDLER_SIGNATURE_VIOLATIONS.some(pattern => pattern.test(content));
     
-    // Extract handler signature violation details
+    // Extract specific pattern occurrences for details
+    const timeoutDetails = [];
+    const vitestMockingDetails = [];
+    const typescriptAntipatternDetails = [];
     const handlerSignatureDetails = [];
+    const lines = content.split('\n');
+    
+    lines.forEach((line, index) => {
+      TIMEOUT_PATTERNS.forEach(pattern => {
+        if (pattern.test(line)) {
+          timeoutDetails.push({
+            line: index + 1,
+            content: line.trim(),
+            pattern: pattern.source
+          });
+        }
+      });
+      
+      VITEST_MOCKING_PATTERNS.forEach(pattern => {
+        if (pattern.test(line)) {
+          // Check if this line matches any allowed cleanup patterns
+          const isAllowedCleanup = ALLOWED_CLEANUP_PATTERNS.some(allowedPattern => 
+            allowedPattern.test(line.trim())
+          );
+          
+          if (!isAllowedCleanup) {
+            vitestMockingDetails.push({
+              line: index + 1,
+              content: line.trim(),
+              pattern: pattern.source
+            });
+          }
+        }
+      });
+      
+      TYPESCRIPT_ANTIPATTERNS.forEach(pattern => {
+        if (pattern.test(line)) {
+          typescriptAntipatternDetails.push({
+            line: index + 1,
+            content: line.trim(),
+            pattern: pattern.source
+          });
+        }
+      });
+    });
     if (hasHandlerSignatureViolations) {
       // Use regex to find the violation and its line number
       const lines = content.split('\n');
@@ -274,9 +360,18 @@ function analyzeToolOrResourceFile(filePath) {
     
     return {
       filePath: relativePath,
+      hasTimeoutPatterns,
+      hasVitestMockingPatterns,
+      hasTypescriptAntipatterns,
+      hasDIPatterns,
       hasHandlerSignatureViolations,
+      timeoutDetails,
+      vitestMockingDetails,
+      typescriptAntipatternDetails,
       handlerSignatureDetails,
-      needsConversion: hasHandlerSignatureViolations
+      needsConversion: hasTimeoutPatterns || hasVitestMockingPatterns || hasTypescriptAntipatterns || hasHandlerSignatureViolations,
+      isConverted: hasDIPatterns && !hasTimeoutPatterns && !hasVitestMockingPatterns && !hasTypescriptAntipatterns && !hasHandlerSignatureViolations,
+      isMixed: (hasTimeoutPatterns || hasVitestMockingPatterns || hasTypescriptAntipatterns || hasHandlerSignatureViolations) && hasDIPatterns
     };
   } catch (error) {
     console.error(`Error reading file ${filePath}: ${error.message}`);
@@ -285,22 +380,27 @@ function analyzeToolOrResourceFile(filePath) {
 }
 
 function main() {
-  console.log('🔍 XcodeBuildMCP Test Pattern Violations Checker\n');
+  console.log('🔍 XcodeBuildMCP Code Pattern Violations Checker\n');
   console.log(`🎯 Checking pattern type: ${patternFilter.toUpperCase()}\n`);
-  console.log('TESTING GUIDELINES ENFORCED:');
+  console.log('CODE GUIDELINES ENFORCED:');
   console.log('✅ ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()');
   console.log('❌ BANNED: vitest mocking patterns (vi.mock, vi.fn, .mockResolvedValue, etc.)');
   console.log('❌ BANNED: setTimeout-based mocking patterns');
+  console.log('❌ ANTI-PATTERN: TypeScript unsafe casts (as unknown, as any, @ts-ignore)');
   console.log('❌ BANNED: handler signature violations (handlers must have exact MCP SDK signatures)\n');
   
   const testFiles = findTestFiles(join(projectRoot, 'src'));
-  const results = testFiles.map(analyzeTestFile).filter(Boolean);
+  const testResults = testFiles.map(analyzeTestFile).filter(Boolean);
   
-  // Also check tool and resource files for handler signature violations
+  // Also check tool and resource files for TypeScript anti-patterns AND handler signature violations
   const toolFiles = findToolAndResourceFiles(join(projectRoot, 'src', 'mcp', 'tools'));
   const resourceFiles = findToolAndResourceFiles(join(projectRoot, 'src', 'mcp', 'resources'));
   const allToolAndResourceFiles = [...toolFiles, ...resourceFiles];
-  const handlerResults = allToolAndResourceFiles.map(analyzeToolOrResourceFile).filter(Boolean);
+  const toolResults = allToolAndResourceFiles.map(analyzeToolOrResourceFile).filter(Boolean);
+  
+  // Combine test and tool file results for TypeScript analysis
+  const results = [...testResults, ...toolResults];
+  const handlerResults = toolResults;
   
   // Filter results based on pattern type
   let filteredResults;
@@ -314,6 +414,10 @@ function main() {
     case 'timeout':
       filteredResults = results.filter(r => r.hasTimeoutPatterns);
       console.log(`Filtering to show only setTimeout violations (${filteredResults.length} files)`);
+      break;
+    case 'typescript':
+      filteredResults = results.filter(r => r.hasTypescriptAntipatterns);
+      console.log(`Filtering to show only TypeScript anti-pattern violations (${filteredResults.length} files)`);
       break;
     case 'handler':
       filteredResults = [];
@@ -331,17 +435,19 @@ function main() {
   const needsConversion = filteredResults;
   const converted = results.filter(r => r.isConverted);
   const mixed = results.filter(r => r.isMixed);
-  const timeoutOnly = results.filter(r => r.hasTimeoutPatterns && !r.hasVitestMockingPatterns && !r.hasDIPatterns);
-  const vitestMockingOnly = results.filter(r => r.hasVitestMockingPatterns && !r.hasTimeoutPatterns && !r.hasDIPatterns);
-  const noPatterns = results.filter(r => !r.hasTimeoutPatterns && !r.hasVitestMockingPatterns && !r.hasDIPatterns);
+  const timeoutOnly = results.filter(r => r.hasTimeoutPatterns && !r.hasVitestMockingPatterns && !r.hasTypescriptAntipatterns && !r.hasDIPatterns);
+  const vitestMockingOnly = results.filter(r => r.hasVitestMockingPatterns && !r.hasTimeoutPatterns && !r.hasTypescriptAntipatterns && !r.hasDIPatterns);
+  const typescriptOnly = results.filter(r => r.hasTypescriptAntipatterns && !r.hasTimeoutPatterns && !r.hasVitestMockingPatterns && !r.hasDIPatterns);
+  const noPatterns = results.filter(r => !r.hasTimeoutPatterns && !r.hasVitestMockingPatterns && !r.hasTypescriptAntipatterns && !r.hasDIPatterns);
   
-  console.log(`📊 VITEST MOCKING VIOLATION ANALYSIS`);
-  console.log(`===================================`);
-  console.log(`Total test files analyzed: ${results.length}`);
-  console.log(`🚨 FILES VIOLATING VITEST MOCKING BAN: ${needsConversion.length}`);
+  console.log(`📊 CODE PATTERN VIOLATION ANALYSIS`);
+  console.log(`=================================`);
+  console.log(`Total files analyzed: ${results.length}`);
+  console.log(`🚨 FILES WITH VIOLATIONS: ${needsConversion.length}`);
   console.log(`  └─ setTimeout-based violations: ${timeoutOnly.length}`);
   console.log(`  └─ vitest mocking violations: ${vitestMockingOnly.length}`);
-  console.log(`✅ COMPLIANT (pure dependency injection): ${converted.length}`);
+  console.log(`  └─ TypeScript anti-patterns: ${typescriptOnly.length}`);
+  console.log(`✅ COMPLIANT (best practices): ${converted.length}`);
   console.log(`⚠️  MIXED VIOLATIONS: ${mixed.length}`);
   console.log(`📝 No patterns detected: ${noPatterns.length}`);
   console.log('');
@@ -369,6 +475,16 @@ function main() {
         });
         if (result.vitestMockingDetails.length > 2) {
           console.log(`   ... and ${result.vitestMockingDetails.length - 2} more vitest patterns`);
+        }
+      }
+      
+      if (result.typescriptAntipatternDetails.length > 0) {
+        console.log(`   🚫 TYPESCRIPT ANTI-PATTERNS (${result.typescriptAntipatternDetails.length}):`);
+        result.typescriptAntipatternDetails.slice(0, 2).forEach(detail => {
+          console.log(`   Line ${detail.line}: ${detail.content}`);
+        });
+        if (result.typescriptAntipatternDetails.length > 2) {
+          console.log(`   ... and ${result.typescriptAntipatternDetails.length - 2} more TypeScript anti-patterns`);
         }
       }
       
@@ -428,13 +544,17 @@ function main() {
     
     // Show top files by total violation count
     const sortedByPatterns = needsConversion
-      .sort((a, b) => (b.timeoutDetails.length + b.vitestMockingDetails.length) - (a.timeoutDetails.length + a.vitestMockingDetails.length))
+      .sort((a, b) => {
+        const totalA = a.timeoutDetails.length + a.vitestMockingDetails.length + a.typescriptAntipatternDetails.length;
+        const totalB = b.timeoutDetails.length + b.vitestMockingDetails.length + b.typescriptAntipatternDetails.length;
+        return totalB - totalA;
+      })
       .slice(0, 5);
     
-    console.log(`🚨 TOP 5 TEST FILES WITH MOST VIOLATIONS:`);
+    console.log(`🚨 TOP 5 FILES WITH MOST VIOLATIONS:`);
     sortedByPatterns.forEach((result, index) => {
-      const totalPatterns = result.timeoutDetails.length + result.vitestMockingDetails.length;
-      console.log(`${index + 1}. ${result.filePath} (${totalPatterns} violations: ${result.timeoutDetails.length} timeout + ${result.vitestMockingDetails.length} vitest)`);
+      const totalPatterns = result.timeoutDetails.length + result.vitestMockingDetails.length + result.typescriptAntipatternDetails.length;
+      console.log(`${index + 1}. ${result.filePath} (${totalPatterns} violations: ${result.timeoutDetails.length} timeout + ${result.vitestMockingDetails.length} vitest + ${result.typescriptAntipatternDetails.length} typescript)`);
     });
     console.log('');
   }
@@ -453,7 +573,8 @@ function main() {
   if (!hasViolations && mixed.length === 0) {
     console.log(`🎉 ALL FILES COMPLY WITH PROJECT STANDARDS!`);
     console.log(`==========================================`);
-    console.log(`✅ All test files use ONLY createMockExecutor() and createMockFileSystemExecutor()`);
+    console.log(`✅ All files use ONLY createMockExecutor() and createMockFileSystemExecutor()`);
+    console.log(`✅ All files follow TypeScript best practices (no unsafe casts)`);
     console.log(`✅ All handler signatures comply with MCP SDK requirements`);
     console.log(`✅ No violations detected!`);
   }

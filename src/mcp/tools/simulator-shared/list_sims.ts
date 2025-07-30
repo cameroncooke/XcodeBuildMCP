@@ -6,6 +6,54 @@ interface ListSimsParams {
   enabled?: boolean;
 }
 
+interface SimulatorDevice {
+  name: string;
+  udid: string;
+  state: string;
+  isAvailable: boolean;
+}
+
+interface SimulatorData {
+  devices: Record<string, SimulatorDevice[]>;
+}
+
+function isSimulatorData(value: unknown): value is SimulatorData {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+  if (!obj.devices || typeof obj.devices !== 'object') {
+    return false;
+  }
+
+  const devices = obj.devices as Record<string, unknown>;
+  for (const runtime in devices) {
+    const deviceList = devices[runtime];
+    if (!Array.isArray(deviceList)) {
+      return false;
+    }
+
+    for (const device of deviceList) {
+      if (!device || typeof device !== 'object') {
+        return false;
+      }
+
+      const deviceObj = device as Record<string, unknown>;
+      if (
+        typeof deviceObj.name !== 'string' ||
+        typeof deviceObj.udid !== 'string' ||
+        typeof deviceObj.state !== 'string' ||
+        typeof deviceObj.isAvailable !== 'boolean'
+      ) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 export async function list_simsLogic(
   params: ListSimsParams,
   executor: CommandExecutor,
@@ -28,7 +76,20 @@ export async function list_simsLogic(
     }
 
     try {
-      const simulatorsData = JSON.parse(result.output);
+      const parsedData: unknown = JSON.parse(result.output);
+
+      if (!isSimulatorData(parsedData)) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Failed to parse simulator data: Invalid format',
+            },
+          ],
+        };
+      }
+
+      const simulatorsData: SimulatorData = parsedData;
       let responseText = 'Available iOS Simulators:\n\n';
 
       for (const runtime in simulatorsData.devices) {

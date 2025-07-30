@@ -37,7 +37,7 @@ async function _handleMacOSBuildLogic(
     {
       workspacePath: params.workspacePath,
       scheme: params.scheme,
-      configuration: params.configuration || 'Debug',
+      configuration: params.configuration ?? 'Debug',
       derivedDataPath: params.derivedDataPath,
       extraArgs: params.extraArgs,
     },
@@ -83,7 +83,7 @@ async function _getAppPathFromBuildSettings(
     if (!result.success) {
       return {
         success: false,
-        error: result.error || 'Failed to get build settings',
+        error: result.error ?? 'Failed to get build settings',
       };
     }
 
@@ -129,10 +129,10 @@ export async function build_run_mac_wsLogic(
     const appPathResult = await _getAppPathFromBuildSettings(params, executor);
 
     // 3. Check if getting the app path failed
-    if (!appPathResult || !appPathResult.success) {
+    if (!appPathResult?.success) {
       log('error', 'Build succeeded, but failed to get app path to launch.');
       const response = createTextResponse(
-        `✅ Build succeeded, but failed to get app path to launch: ${appPathResult?.error || 'Unknown error'}`,
+        `✅ Build succeeded, but failed to get app path to launch: ${appPathResult?.error ?? 'Unknown error'}`,
         false, // Build succeeded, so not a full error
       );
       if (response.content) {
@@ -147,7 +147,7 @@ export async function build_run_mac_wsLogic(
     // 4. Launch the app using the verified path
     // Launch the app
     try {
-      const execFunc = execFunction || promisify(exec);
+      const execFunc = execFunction ?? promisify(exec);
       await execFunc(`open "${appPath}"`);
       log('info', `✅ macOS app launched successfully: ${appPath}`);
       const successResponse = {

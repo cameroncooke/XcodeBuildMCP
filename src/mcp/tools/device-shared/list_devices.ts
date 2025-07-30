@@ -49,10 +49,55 @@ export async function list_devicesLogic(
         const jsonContent = fsDeps?.readFile
           ? await fsDeps.readFile(tempJsonPath, 'utf8')
           : await fs.readFile(tempJsonPath, 'utf8');
-        const deviceCtlData = JSON.parse(jsonContent);
+        const deviceCtlData: unknown = JSON.parse(jsonContent);
 
-        if (deviceCtlData.result?.devices) {
-          for (const device of deviceCtlData.result.devices) {
+        // Type guard to validate the device data structure
+        const isValidDeviceData = (data: unknown): data is { result?: { devices?: unknown[] } } => {
+          return (
+            typeof data === 'object' &&
+            data !== null &&
+            'result' in data &&
+            typeof (data as { result?: unknown }).result === 'object' &&
+            (data as { result?: unknown }).result !== null &&
+            'devices' in ((data as { result?: unknown }).result as { devices?: unknown }) &&
+            Array.isArray(
+              ((data as { result?: unknown }).result as { devices?: unknown[] }).devices,
+            )
+          );
+        };
+
+        if (isValidDeviceData(deviceCtlData) && deviceCtlData.result?.devices) {
+          for (const deviceRaw of deviceCtlData.result.devices) {
+            // Type guard for device object
+            const isValidDevice = (
+              device: unknown,
+            ): device is {
+              visibilityClass?: string;
+              connectionProperties?: {
+                pairingState?: string;
+                tunnelState?: string;
+                transportType?: string;
+              };
+              deviceProperties?: {
+                platformIdentifier?: string;
+                name?: string;
+                osVersionNumber?: string;
+                developerModeStatus?: string;
+                marketingName?: string;
+              };
+              hardwareProperties?: {
+                productType?: string;
+                cpuType?: { name?: string };
+              };
+              identifier?: string;
+            } => {
+              return typeof device === 'object' && device !== null;
+            };
+
+            if (!isValidDevice(deviceRaw)) continue;
+
+            const device = deviceRaw;
+
             // Skip simulators or unavailable devices
             if (
               device.visibilityClass === 'Simulator' ||
@@ -63,23 +108,25 @@ export async function list_devicesLogic(
 
             // Determine platform from platformIdentifier
             let platform = 'Unknown';
-            const platformId = device.deviceProperties?.platformIdentifier?.toLowerCase() || '';
-            if (platformId.includes('ios') || platformId.includes('iphone')) {
-              platform = 'iOS';
-            } else if (platformId.includes('ipad')) {
-              platform = 'iPadOS';
-            } else if (platformId.includes('watch')) {
-              platform = 'watchOS';
-            } else if (platformId.includes('tv') || platformId.includes('apple tv')) {
-              platform = 'tvOS';
-            } else if (platformId.includes('vision')) {
-              platform = 'visionOS';
+            const platformId = device.deviceProperties?.platformIdentifier?.toLowerCase() ?? '';
+            if (typeof platformId === 'string') {
+              if (platformId.includes('ios') || platformId.includes('iphone')) {
+                platform = 'iOS';
+              } else if (platformId.includes('ipad')) {
+                platform = 'iPadOS';
+              } else if (platformId.includes('watch')) {
+                platform = 'watchOS';
+              } else if (platformId.includes('tv') || platformId.includes('apple tv')) {
+                platform = 'tvOS';
+              } else if (platformId.includes('vision')) {
+                platform = 'visionOS';
+              }
             }
 
             // Determine connection state
-            const pairingState = device.connectionProperties?.pairingState || '';
-            const tunnelState = device.connectionProperties?.tunnelState || '';
-            const transportType = device.connectionProperties?.transportType || '';
+            const pairingState = device.connectionProperties?.pairingState ?? '';
+            const tunnelState = device.connectionProperties?.tunnelState ?? '';
+            const transportType = device.connectionProperties?.transportType ?? '';
 
             let state = 'Unknown';
             // Consider a device available if it's paired, regardless of tunnel state
@@ -97,11 +144,11 @@ export async function list_devicesLogic(
             }
 
             devices.push({
-              name: device.deviceProperties?.name || 'Unknown Device',
-              identifier: device.identifier,
+              name: device.deviceProperties?.name ?? 'Unknown Device',
+              identifier: device.identifier ?? 'Unknown',
               platform: platform,
               model:
-                device.deviceProperties?.marketingName || device.hardwareProperties?.productType,
+                device.deviceProperties?.marketingName ?? device.hardwareProperties?.productType,
               osVersion: device.deviceProperties?.osVersionNumber,
               state: state,
               connectionType: transportType,
@@ -190,15 +237,15 @@ export async function list_devicesLogic(
         for (const device of availableDevices) {
           responseText += `\n📱 ${device.name}\n`;
           responseText += `   UDID: ${device.identifier}\n`;
-          responseText += `   Model: ${device.model || 'Unknown'}\n`;
+          responseText += `   Model: ${device.model ?? 'Unknown'}\n`;
           if (device.productType) {
             responseText += `   Product Type: ${device.productType}\n`;
           }
-          responseText += `   Platform: ${device.platform} ${device.osVersion || ''}\n`;
+          responseText += `   Platform: ${device.platform} ${device.osVersion ?? ''}\n`;
           if (device.cpuArchitecture) {
             responseText += `   CPU Architecture: ${device.cpuArchitecture}\n`;
           }
-          responseText += `   Connection: ${device.connectionType || 'Unknown'}\n`;
+          responseText += `   Connection: ${device.connectionType ?? 'Unknown'}\n`;
           if (device.developerModeStatus) {
             responseText += `   Developer Mode: ${device.developerModeStatus}\n`;
           }
@@ -211,8 +258,8 @@ export async function list_devicesLogic(
         for (const device of pairedDevices) {
           responseText += `\n📱 ${device.name}\n`;
           responseText += `   UDID: ${device.identifier}\n`;
-          responseText += `   Model: ${device.model || 'Unknown'}\n`;
-          responseText += `   Platform: ${device.platform} ${device.osVersion || ''}\n`;
+          responseText += `   Model: ${device.model ?? 'Unknown'}\n`;
+          responseText += `   Platform: ${device.platform} ${device.osVersion ?? ''}\n`;
         }
         responseText += '\n';
       }

@@ -136,7 +136,7 @@ export async function build_run_sim_id_projLogic(
     // If there was an error with the command execution, return it
     if (!result.success) {
       return createTextResponse(
-        `Build succeeded, but failed to get app path: ${result.error || 'Unknown error'}`,
+        `Build succeeded, but failed to get app path: ${result.error ?? 'Unknown error'}`,
         true,
       );
     }
@@ -146,7 +146,7 @@ export async function build_run_sim_id_projLogic(
 
     // Extract CODESIGNING_FOLDER_PATH from build settings to get app path
     const appPathMatch = buildSettingsOutput.match(/CODESIGNING_FOLDER_PATH = (.+\.app)/);
-    if (!appPathMatch || !appPathMatch[1]) {
+    if (!appPathMatch?.[1]) {
       return createTextResponse(
         `Build succeeded, but could not find app path in build settings.`,
         true,
@@ -164,19 +164,49 @@ export async function build_run_sim_id_projLogic(
         const simulatorsOutput = execSyncFn(
           'xcrun simctl list devices available --json',
         ).toString();
-        const simulatorsJson = JSON.parse(simulatorsOutput);
-        let foundSimulator = null;
+        const simulatorsJson = JSON.parse(simulatorsOutput) as unknown;
+        let foundSimulator: { name: string; udid: string; isAvailable: boolean } | null = null;
 
         // Find the simulator in the available devices list
-        for (const runtime in simulatorsJson.devices) {
-          const devices = simulatorsJson.devices[runtime];
-          for (const device of devices) {
-            if (device.name === params.simulatorName && device.isAvailable) {
-              foundSimulator = device;
-              break;
+        if (simulatorsJson && typeof simulatorsJson === 'object' && 'devices' in simulatorsJson) {
+          const devicesObj = simulatorsJson.devices;
+          if (devicesObj && typeof devicesObj === 'object') {
+            for (const runtime in devicesObj) {
+              const devices = (devicesObj as Record<string, unknown>)[runtime];
+              if (Array.isArray(devices)) {
+                for (const device of devices) {
+                  if (
+                    device &&
+                    typeof device === 'object' &&
+                    'name' in device &&
+                    'isAvailable' in device &&
+                    'udid' in device
+                  ) {
+                    const deviceObj = device as {
+                      name: unknown;
+                      isAvailable: unknown;
+                      udid: unknown;
+                    };
+                    if (
+                      typeof deviceObj.name === 'string' &&
+                      typeof deviceObj.isAvailable === 'boolean' &&
+                      typeof deviceObj.udid === 'string' &&
+                      deviceObj.name === params.simulatorName &&
+                      deviceObj.isAvailable
+                    ) {
+                      foundSimulator = {
+                        name: deviceObj.name,
+                        udid: deviceObj.udid,
+                        isAvailable: deviceObj.isAvailable,
+                      };
+                      break;
+                    }
+                  }
+                }
+                if (foundSimulator) break;
+              }
             }
           }
-          if (foundSimulator) break;
         }
 
         if (foundSimulator) {

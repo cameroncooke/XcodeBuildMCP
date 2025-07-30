@@ -5,13 +5,19 @@
 // This maintains the same behavior as the original implementation
 import { ToolResponse, createTextContent } from '../../../types/common.js';
 
-const activeProcesses = new Map();
+interface ProcessInfo {
+  executableName?: string;
+  startedAt: Date;
+  packagePath: string;
+}
+
+const activeProcesses = new Map<number, ProcessInfo>();
 
 /**
  * Process list dependencies for dependency injection
  */
 export interface ProcessListDependencies {
-  processMap?: Map<unknown, unknown>;
+  processMap?: Map<number, ProcessInfo>;
   arrayFrom?: typeof Array.from;
   dateNow?: typeof Date.now;
 }
@@ -26,9 +32,9 @@ export async function swift_package_listLogic(
   params?: unknown,
   dependencies?: ProcessListDependencies,
 ): Promise<ToolResponse> {
-  const processMap = dependencies?.processMap || activeProcesses;
-  const arrayFrom = dependencies?.arrayFrom || Array.from;
-  const dateNow = dependencies?.dateNow || Date.now;
+  const processMap = dependencies?.processMap ?? activeProcesses;
+  const arrayFrom = dependencies?.arrayFrom ?? Array.from;
+  const dateNow = dependencies?.dateNow ?? Date.now;
 
   const processes = arrayFrom(processMap.entries());
 
@@ -44,7 +50,7 @@ export async function swift_package_listLogic(
   const content = [createTextContent(`📋 Active Swift Package processes (${processes.length}):`)];
 
   for (const [pid, info] of processes) {
-    const executableName = info.executableName || 'default';
+    const executableName = info.executableName ?? 'default';
     const runtime = Math.max(1, Math.round((dateNow() - info.startedAt.getTime()) / 1000));
     content.push(
       createTextContent(

@@ -80,16 +80,16 @@ export async function parseXcresultBundle(resultBundlePath: string): Promise<str
 function formatTestSummary(summary: TestSummary): string {
   const lines: string[] = [];
 
-  lines.push(`Test Summary: ${summary.title || 'Unknown'}`);
-  lines.push(`Overall Result: ${summary.result || 'Unknown'}`);
+  lines.push(`Test Summary: ${summary.title ?? 'Unknown'}`);
+  lines.push(`Overall Result: ${summary.result ?? 'Unknown'}`);
   lines.push('');
 
   lines.push('Test Counts:');
-  lines.push(`  Total: ${summary.totalTestCount || 0}`);
-  lines.push(`  Passed: ${summary.passedTests || 0}`);
-  lines.push(`  Failed: ${summary.failedTests || 0}`);
-  lines.push(`  Skipped: ${summary.skippedTests || 0}`);
-  lines.push(`  Expected Failures: ${summary.expectedFailures || 0}`);
+  lines.push(`  Total: ${summary.totalTestCount ?? 0}`);
+  lines.push(`  Passed: ${summary.passedTests ?? 0}`);
+  lines.push(`  Failed: ${summary.failedTests ?? 0}`);
+  lines.push(`  Skipped: ${summary.skippedTests ?? 0}`);
+  lines.push(`  Expected Failures: ${summary.expectedFailures ?? 0}`);
   lines.push('');
 
   if (summary.environmentDescription) {
@@ -105,7 +105,7 @@ function formatTestSummary(summary: TestSummary): string {
     const device = summary.devicesAndConfigurations[0].device;
     if (device) {
       lines.push(
-        `Device: ${device.deviceName || 'Unknown'} (${device.platform || 'Unknown'} ${device.osVersion || 'Unknown'})`,
+        `Device: ${device.deviceName ?? 'Unknown'} (${device.platform ?? 'Unknown'} ${device.osVersion ?? 'Unknown'})`,
       );
       lines.push('');
     }
@@ -119,7 +119,7 @@ function formatTestSummary(summary: TestSummary): string {
     lines.push('Test Failures:');
     summary.testFailures.forEach((failure, index: number) => {
       lines.push(
-        `  ${index + 1}. ${failure.testName || 'Unknown Test'} (${failure.targetName || 'Unknown Target'})`,
+        `  ${index + 1}. ${failure.testName ?? 'Unknown Test'} (${failure.targetName ?? 'Unknown Target'})`,
       );
       if (failure.failureText) {
         lines.push(`     ${failure.failureText}`);
@@ -132,7 +132,7 @@ function formatTestSummary(summary: TestSummary): string {
     lines.push('Insights:');
     summary.topInsights.forEach((insight, index: number) => {
       lines.push(
-        `  ${index + 1}. [${insight.impact || 'Unknown'}] ${insight.text || 'No description'}`,
+        `  ${index + 1}. [${insight.impact ?? 'Unknown'}] ${insight.text ?? 'No description'}`,
       );
     });
   }
@@ -171,7 +171,7 @@ export async function handleTestLogic(
     const resultBundlePath = join(tempDir, 'TestResults.xcresult');
 
     // Add resultBundlePath to extraArgs
-    const extraArgs = [...(params.extraArgs || []), `-resultBundlePath`, resultBundlePath];
+    const extraArgs = [...(params.extraArgs ?? []), `-resultBundlePath`, resultBundlePath];
 
     // Run the test command
     const testResult = await executeXcodeBuildCommand(
@@ -189,7 +189,7 @@ export async function handleTestLogic(
       },
       params.preferXcodebuild,
       'test',
-      executor || getDefaultCommandExecutor(),
+      executor ?? getDefaultCommandExecutor(),
     );
 
     // Parse xcresult bundle if it exists, regardless of whether tests passed or failed

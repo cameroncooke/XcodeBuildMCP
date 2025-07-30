@@ -449,7 +449,7 @@ describe('build_mac_proj plugin', () => {
         command.push('-scheme', params.scheme);
         command.push('-configuration', params.configuration);
         command.push('-skipMacroValidation');
-        command.push('-destination', `platform=macOS,arch=${platformOptions.arch || 'arm64'}`);
+        command.push('-destination', `platform=macOS,arch=${platformOptions.arch ?? 'arm64'}`);
         if (params.derivedDataPath) {
           command.push('-derivedDataPath', params.derivedDataPath);
         }
@@ -533,7 +533,7 @@ describe('build_mac_proj plugin', () => {
         command.push('-scheme', params.scheme);
         command.push('-configuration', params.configuration);
         command.push('-skipMacroValidation');
-        command.push('-destination', `platform=macOS,arch=${platformOptions.arch || 'arm64'}`);
+        command.push('-destination', `platform=macOS,arch=${platformOptions.arch ?? 'arm64'}`);
         if (params.derivedDataPath) {
           command.push('-derivedDataPath', params.derivedDataPath);
         }
@@ -626,7 +626,7 @@ describe('build_mac_proj plugin', () => {
         command.push('-scheme', params.scheme);
         command.push('-configuration', params.configuration);
         command.push('-skipMacroValidation');
-        command.push('-destination', `platform=macOS,arch=${platformOptions.arch || 'arm64'}`);
+        command.push('-destination', `platform=macOS,arch=${platformOptions.arch ?? 'arm64'}`);
         if (params.derivedDataPath) {
           command.push('-derivedDataPath', params.derivedDataPath);
         }
@@ -713,7 +713,7 @@ describe('build_mac_proj plugin', () => {
         command.push('-scheme', params.scheme);
         command.push('-configuration', params.configuration);
         command.push('-skipMacroValidation');
-        command.push('-destination', `platform=macOS,arch=${platformOptions.arch || 'arm64'}`);
+        command.push('-destination', `platform=macOS,arch=${platformOptions.arch ?? 'arm64'}`);
         if (params.derivedDataPath) {
           command.push('-derivedDataPath', params.derivedDataPath);
         }

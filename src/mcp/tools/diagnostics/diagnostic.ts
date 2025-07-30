@@ -65,7 +65,7 @@ async function checkBinaryAvailability(
 
   // First check if the binary exists at all
   try {
-    const whichResult = await (commandExecutor || fallbackExecutor)(
+    const whichResult = await (commandExecutor ?? fallbackExecutor)(
       ['which', binary],
       'Check Binary Availability',
     );
@@ -89,7 +89,7 @@ async function checkBinaryAvailability(
   // Try to get version using binary-specific commands
   if (binary in versionCommands) {
     try {
-      const versionResult = await (commandExecutor || fallbackExecutor)(
+      const versionResult = await (commandExecutor ?? fallbackExecutor)(
         versionCommands[binary]!.split(' '),
         'Get Binary Version',
       );
@@ -111,7 +111,7 @@ async function checkBinaryAvailability(
   // We only care about the specific binaries we've defined
   return {
     available: true,
-    version: version || 'Available (version info not available)',
+    version: version ?? 'Available (version info not available)',
   };
 }
 
@@ -137,7 +137,7 @@ async function getXcodeInfo(
 
   try {
     // Get Xcode version info
-    const xcodebuildResult = await (commandExecutor || fallbackExecutor)(
+    const xcodebuildResult = await (commandExecutor ?? fallbackExecutor)(
       ['xcodebuild', '-version'],
       'Get Xcode Version',
     );
@@ -147,7 +147,7 @@ async function getXcodeInfo(
     const version = xcodebuildResult.output.trim().split('\n').slice(0, 2).join(' - ');
 
     // Get Xcode selection info
-    const pathResult = await (commandExecutor || fallbackExecutor)(
+    const pathResult = await (commandExecutor ?? fallbackExecutor)(
       ['xcode-select', '-p'],
       'Get Xcode Path',
     );
@@ -156,7 +156,7 @@ async function getXcodeInfo(
     }
     const path = pathResult.output.trim();
 
-    const selectedXcodeResult = await (commandExecutor || fallbackExecutor)(
+    const selectedXcodeResult = await (commandExecutor ?? fallbackExecutor)(
       ['xcrun', '--find', 'xcodebuild'],
       'Find Xcodebuild',
     );
@@ -166,7 +166,7 @@ async function getXcodeInfo(
     const selectedXcode = selectedXcodeResult.output.trim();
 
     // Get xcrun version info
-    const xcrunVersionResult = await (commandExecutor || fallbackExecutor)(
+    const xcrunVersionResult = await (commandExecutor ?? fallbackExecutor)(
       ['xcrun', '--version'],
       'Get Xcrun Version',
     );
@@ -232,21 +232,21 @@ function getSystemInfo(mockSystem?: MockSystem): {
   homedir: string;
   tmpdir: string;
 } {
-  const platformFn = mockSystem?.platform || os.platform;
-  const releaseFn = mockSystem?.release || os.release;
-  const archFn = mockSystem?.arch || os.arch;
-  const cpusFn = mockSystem?.cpus || os.cpus;
-  const totalmemFn = mockSystem?.totalmem || os.totalmem;
-  const hostnameFn = mockSystem?.hostname || os.hostname;
-  const userInfoFn = mockSystem?.userInfo || os.userInfo;
-  const homedirFn = mockSystem?.homedir || os.homedir;
-  const tmpdirFn = mockSystem?.tmpdir || os.tmpdir;
+  const platformFn = mockSystem?.platform ?? os.platform;
+  const releaseFn = mockSystem?.release ?? os.release;
+  const archFn = mockSystem?.arch ?? os.arch;
+  const cpusFn = mockSystem?.cpus ?? os.cpus;
+  const totalmemFn = mockSystem?.totalmem ?? os.totalmem;
+  const hostnameFn = mockSystem?.hostname ?? os.hostname;
+  const userInfoFn = mockSystem?.userInfo ?? os.userInfo;
+  const homedirFn = mockSystem?.homedir ?? os.homedir;
+  const tmpdirFn = mockSystem?.tmpdir ?? os.tmpdir;
 
   return {
     platform: platformFn(),
     release: releaseFn(),
     arch: archFn(),
-    cpus: `${cpusFn().length} x ${cpusFn()[0]?.model || 'Unknown'}`,
+    cpus: `${cpusFn().length} x ${cpusFn()[0]?.model ?? 'Unknown'}`,
     memory: `${Math.round(totalmemFn() / (1024 * 1024 * 1024))} GB`,
     hostname: hostnameFn(),
     username: userInfoFn().username,
@@ -304,8 +304,8 @@ async function getPluginSystemInfo(mockUtilities?: MockUtilities): Promise<
     for (const plugin of Array.from(plugins.values())) {
       totalPlugins++;
       const pluginWithPath = plugin as { pluginPath?: string; name: string };
-      const pluginPath = pluginWithPath.pluginPath || 'unknown';
-      const directory = pluginPath.split('/').slice(-2, -1)[0] || 'unknown';
+      const pluginPath = pluginWithPath.pluginPath ?? 'unknown';
+      const directory = pluginPath.split('/').slice(-2, -1)[0] ?? 'unknown';
 
       if (!pluginsByDirectory[directory]) {
         pluginsByDirectory[directory] = [];
@@ -443,17 +443,17 @@ export async function diagnosticLogic(
     `\n## Dependencies`,
     ...Object.entries(diagnosticInfo.dependencies).map(
       ([binary, status]) =>
-        `- ${binary}: ${status.available ? `✅ ${status.version || 'Available'}` : '❌ Not found'}`,
+        `- ${binary}: ${status.available ? `✅ ${status.version ?? 'Available'}` : '❌ Not found'}`,
     ),
 
     `\n## Environment Variables`,
     ...Object.entries(diagnosticInfo.environmentVariables)
       .filter(([key]) => key !== 'PATH' && key !== 'PYTHONPATH') // These are too long, handle separately
-      .map(([key, value]) => `- ${key}: ${value || '(not set)'}`),
+      .map(([key, value]) => `- ${key}: ${value ?? '(not set)'}`),
 
     `\n### PATH`,
     `\`\`\``,
-    `${diagnosticInfo.environmentVariables.PATH || '(not set)'}`.split(':').join('\n'),
+    `${diagnosticInfo.environmentVariables.PATH ?? '(not set)'}`.split(':').join('\n'),
     `\`\`\``,
 
     `\n## Feature Status`,

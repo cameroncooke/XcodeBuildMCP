@@ -40,7 +40,7 @@ export function isXcodemakeEnabled(): boolean {
  * @returns The command string for xcodemake
  */
 function getXcodemakeCommand(): string {
-  return overriddenXcodemakePath || 'xcodemake';
+  return overriddenXcodemakePath ?? 'xcodemake';
 }
 
 /**

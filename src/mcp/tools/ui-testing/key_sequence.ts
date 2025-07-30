@@ -105,7 +105,7 @@ async function executeAxeCommand(
   executor: CommandExecutor = getDefaultCommandExecutor(),
   getAxePathFn?: () => string | null,
   getBundledAxeEnvironmentFn?: () => Record<string, string>,
-): Promise<ToolResponse> {
+): Promise<void> {
   // Get the appropriate axe binary path
   const axeBinary = getAxePathFn ? getAxePathFn() : getAxePath();
   if (!axeBinary) {
@@ -133,7 +133,7 @@ async function executeAxeCommand(
       throw new AxeError(
         `axe command '${commandName}' failed.`,
         commandName,
-        result.error || result.output,
+        result.error ?? result.output,
         simulatorUuid,
       );
     }
@@ -146,7 +146,7 @@ async function executeAxeCommand(
       );
     }
 
-    return createTextResponse(result.output.trim());
+    // Function now returns void - the calling code creates its own response
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {

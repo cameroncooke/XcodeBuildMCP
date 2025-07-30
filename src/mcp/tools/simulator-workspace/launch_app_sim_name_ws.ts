@@ -29,7 +29,7 @@ export async function launch_app_sim_name_wsLogic(
 
   try {
     // Step 1: Find simulator by name first
-    let simulatorsData;
+    let simulatorsData: { devices: Record<string, unknown[]> };
     if (executor) {
       // When using dependency injection (testing), get simulator data from mock
       const simulatorListResult = await executor(
@@ -48,21 +48,37 @@ export async function launch_app_sim_name_wsLogic(
           isError: true,
         };
       }
-      simulatorsData = JSON.parse(simulatorListResult.output);
+      simulatorsData = JSON.parse(simulatorListResult.output) as {
+        devices: Record<string, unknown[]>;
+      };
     } else {
       // Production path - use execSync
       const simulatorsOutput = execSync('xcrun simctl list devices available --json').toString();
-      simulatorsData = JSON.parse(simulatorsOutput);
+      simulatorsData = JSON.parse(simulatorsOutput) as {
+        devices: Record<string, unknown[]>;
+      };
     }
 
-    let foundSimulator = null;
+    let foundSimulator: { udid: string; name: string } | null = null;
 
     // Find the target simulator by name
     for (const runtime in simulatorsData.devices) {
-      if (simulatorsData.devices[runtime]) {
-        for (const device of simulatorsData.devices[runtime]) {
-          if (device.name === params.simulatorName) {
-            foundSimulator = device;
+      const devices = simulatorsData.devices[runtime];
+      if (Array.isArray(devices)) {
+        for (const device of devices) {
+          if (
+            typeof device === 'object' &&
+            device !== null &&
+            'name' in device &&
+            'udid' in device &&
+            typeof device.name === 'string' &&
+            typeof device.udid === 'string' &&
+            device.name === params.simulatorName
+          ) {
+            foundSimulator = {
+              udid: device.udid,
+              name: device.name,
+            };
             break;
           }
         }
@@ -116,7 +132,7 @@ export async function launch_app_sim_name_wsLogic(
     const command = ['xcrun', 'simctl', 'launch', simulatorUuid, params.bundleId];
 
     if (params.args && params.args.length > 0) {
-      command.push(...params.args);
+      command.push(...params.args.filter((arg): arg is string => typeof arg === 'string'));
     }
 
     const result = await executor(command, 'Launch App in Simulator', true, undefined);

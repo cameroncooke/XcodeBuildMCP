@@ -59,7 +59,7 @@ export async function screenshotLogic(
     const result = await executor(commandArgs, `${LOG_PREFIX}: screenshot`, false);
 
     if (!result.success) {
-      throw new SystemError(`Failed to capture screenshot: ${result.error || result.output}`);
+      throw new SystemError(`Failed to capture screenshot: ${result.error ?? result.output}`);
     }
 
     log('info', `${LOG_PREFIX}/screenshot: Success for ${simulatorUuid}`);

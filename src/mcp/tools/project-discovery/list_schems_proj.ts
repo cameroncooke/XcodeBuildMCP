@@ -56,7 +56,7 @@ export async function list_schems_projLogic(
     if (schemes.length > 0) {
       const firstScheme = schemes[0];
       const projectOrWorkspace = params.workspacePath ? 'workspace' : 'project';
-      const path = params.workspacePath || params.projectPath;
+      const path = params.workspacePath ?? params.projectPath;
 
       nextStepsText = `Next Steps:
 1. Build the app: ${projectOrWorkspace === 'workspace' ? 'macos_build_workspace' : 'macos_build_project'}({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })

@@ -15,7 +15,7 @@ async function _handleSimulatorBuildLogic(
   params: Record<string, unknown>,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
-  log('info', `Building ${params.workspacePath || params.projectPath} for iOS Simulator`);
+  log('info', `Building ${params.workspacePath ?? params.projectPath} for iOS Simulator`);
 
   try {
     // Create SharedBuildParams object with required properties
@@ -83,7 +83,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 ): Promise<ToolResponse> {
   log(
     'info',
-    `Building and running ${params.workspacePath || params.projectPath} on iOS Simulator`,
+    `Building and running ${params.workspacePath ?? params.projectPath} on iOS Simulator`,
   );
 
   try {
@@ -137,15 +137,30 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
     // Step 3: Find/Boot Simulator
     const simulatorsOutput = execSync('xcrun simctl list devices available --json').toString();
-    const simulatorsData = JSON.parse(simulatorsOutput);
-    let targetSimulator = null;
+    const simulatorsData = JSON.parse(simulatorsOutput) as { devices: Record<string, unknown[]> };
+    let targetSimulator: { udid: string; name: string; state: string } | null = null;
 
     // Find the target simulator
     for (const runtime in simulatorsData.devices) {
-      if (simulatorsData.devices[runtime]) {
-        for (const device of simulatorsData.devices[runtime]) {
-          if (device.udid === params.simulatorId) {
-            targetSimulator = device;
+      const devices = simulatorsData.devices[runtime];
+      if (Array.isArray(devices)) {
+        for (const device of devices) {
+          if (
+            typeof device === 'object' &&
+            device !== null &&
+            'udid' in device &&
+            'name' in device &&
+            'state' in device &&
+            typeof device.udid === 'string' &&
+            typeof device.name === 'string' &&
+            typeof device.state === 'string' &&
+            device.udid === params.simulatorId
+          ) {
+            targetSimulator = {
+              udid: device.udid,
+              name: device.name,
+              state: device.state,
+            };
             break;
           }
         }

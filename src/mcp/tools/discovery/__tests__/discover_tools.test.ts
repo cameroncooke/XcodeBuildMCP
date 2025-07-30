@@ -31,9 +31,9 @@ function createMockDependencies(
   },
   callTracker: CallTracker,
 ): MockDependencies {
-  const workflowNames = config.availableWorkflows || ['simulator-workspace'];
+  const workflowNames = config.availableWorkflows ?? ['simulator-workspace'];
   const descriptions =
-    config.workflowDescriptions ||
+    config.workflowDescriptions ??
     `Available workflows:
 1. simulator-workspace: iOS Simulator Workspace - iOS development for workspaces`;
 

@@ -53,8 +53,18 @@ async function parseXcresultBundle(resultBundlePath: string): Promise<string> {
     );
 
     // Parse JSON response and format as human-readable
-    const summary = JSON.parse(stdout);
-    return formatTestSummary(summary);
+    let summary: unknown;
+    try {
+      summary = JSON.parse(stdout);
+    } catch (parseError) {
+      throw new Error(`Failed to parse JSON output: ${parseError}`);
+    }
+
+    if (typeof summary !== 'object' || summary === null) {
+      throw new Error('Invalid JSON output: expected object');
+    }
+
+    return formatTestSummary(summary as Record<string, unknown>);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     log('error', `Error parsing xcresult bundle: ${errorMessage}`);
@@ -66,16 +76,16 @@ async function parseXcresultBundle(resultBundlePath: string): Promise<string> {
 function formatTestSummary(summary: Record<string, unknown>): string {
   const lines = [];
 
-  lines.push(`Test Summary: ${summary.title || 'Unknown'}`);
-  lines.push(`Overall Result: ${summary.result || 'Unknown'}`);
+  lines.push(`Test Summary: ${summary.title ?? 'Unknown'}`);
+  lines.push(`Overall Result: ${summary.result ?? 'Unknown'}`);
   lines.push('');
 
   lines.push('Test Counts:');
-  lines.push(`  Total: ${summary.totalTestCount || 0}`);
-  lines.push(`  Passed: ${summary.passedTests || 0}`);
-  lines.push(`  Failed: ${summary.failedTests || 0}`);
-  lines.push(`  Skipped: ${summary.skippedTests || 0}`);
-  lines.push(`  Expected Failures: ${summary.expectedFailures || 0}`);
+  lines.push(`  Total: ${summary.totalTestCount ?? 0}`);
+  lines.push(`  Passed: ${summary.passedTests ?? 0}`);
+  lines.push(`  Failed: ${summary.failedTests ?? 0}`);
+  lines.push(`  Skipped: ${summary.skippedTests ?? 0}`);
+  lines.push(`  Expected Failures: ${summary.expectedFailures ?? 0}`);
   lines.push('');
 
   if (summary.environmentDescription) {
@@ -88,12 +98,31 @@ function formatTestSummary(summary: Record<string, unknown>): string {
     Array.isArray(summary.devicesAndConfigurations) &&
     summary.devicesAndConfigurations.length > 0
   ) {
-    const device = summary.devicesAndConfigurations[0].device;
-    if (device) {
-      lines.push(
-        `Device: ${device.deviceName || 'Unknown'} (${device.platform || 'Unknown'} ${device.osVersion || 'Unknown'})`,
-      );
-      lines.push('');
+    const firstDeviceConfig: unknown = summary.devicesAndConfigurations[0];
+    if (
+      typeof firstDeviceConfig === 'object' &&
+      firstDeviceConfig !== null &&
+      'device' in firstDeviceConfig
+    ) {
+      const device: unknown = (firstDeviceConfig as Record<string, unknown>).device;
+      if (typeof device === 'object' && device !== null) {
+        const deviceRecord = device as Record<string, unknown>;
+        const deviceName =
+          'deviceName' in deviceRecord && typeof deviceRecord.deviceName === 'string'
+            ? deviceRecord.deviceName
+            : 'Unknown';
+        const platform =
+          'platform' in deviceRecord && typeof deviceRecord.platform === 'string'
+            ? deviceRecord.platform
+            : 'Unknown';
+        const osVersion =
+          'osVersion' in deviceRecord && typeof deviceRecord.osVersion === 'string'
+            ? deviceRecord.osVersion
+            : 'Unknown';
+
+        lines.push(`Device: ${deviceName} (${platform} ${osVersion})`);
+        lines.push('');
+      }
     }
   }
 
@@ -103,12 +132,23 @@ function formatTestSummary(summary: Record<string, unknown>): string {
     summary.testFailures.length > 0
   ) {
     lines.push('Test Failures:');
-    summary.testFailures.forEach((failure, index) => {
-      lines.push(
-        `  ${index + 1}. ${failure.testName || 'Unknown Test'} (${failure.targetName || 'Unknown Target'})`,
-      );
-      if (failure.failureText) {
-        lines.push(`     ${failure.failureText}`);
+    summary.testFailures.forEach((failure: unknown, index: number) => {
+      if (typeof failure === 'object' && failure !== null) {
+        const failureRecord = failure as Record<string, unknown>;
+        const testName =
+          'testName' in failureRecord && typeof failureRecord.testName === 'string'
+            ? failureRecord.testName
+            : 'Unknown Test';
+        const targetName =
+          'targetName' in failureRecord && typeof failureRecord.targetName === 'string'
+            ? failureRecord.targetName
+            : 'Unknown Target';
+
+        lines.push(`  ${index + 1}. ${testName} (${targetName})`);
+
+        if ('failureText' in failureRecord && typeof failureRecord.failureText === 'string') {
+          lines.push(`     ${failureRecord.failureText}`);
+        }
       }
     });
     lines.push('');
@@ -116,10 +156,20 @@ function formatTestSummary(summary: Record<string, unknown>): string {
 
   if (summary.topInsights && Array.isArray(summary.topInsights) && summary.topInsights.length > 0) {
     lines.push('Insights:');
-    summary.topInsights.forEach((insight, index) => {
-      lines.push(
-        `  ${index + 1}. [${insight.impact || 'Unknown'}] ${insight.text || 'No description'}`,
-      );
+    summary.topInsights.forEach((insight: unknown, index: number) => {
+      if (typeof insight === 'object' && insight !== null) {
+        const insightRecord = insight as Record<string, unknown>;
+        const impact =
+          'impact' in insightRecord && typeof insightRecord.impact === 'string'
+            ? insightRecord.impact
+            : 'Unknown';
+        const text =
+          'text' in insightRecord && typeof insightRecord.text === 'string'
+            ? insightRecord.text
+            : 'No description';
+
+        lines.push(`  ${index + 1}. [${impact}] ${text}`);
+      }
     });
   }
 
@@ -142,7 +192,7 @@ export async function test_macos_projLogic(
     const resultBundlePath = join(tempDir, 'TestResults.xcresult');
 
     // Add resultBundlePath to extraArgs
-    const extraArgs = [...(params.extraArgs || []), `-resultBundlePath`, resultBundlePath];
+    const extraArgs = [...(params.extraArgs ?? []), `-resultBundlePath`, resultBundlePath];
 
     // Run the test command
     const testResult = await executeXcodeBuildCommand(
@@ -184,7 +234,7 @@ export async function test_macos_projLogic(
       // Return combined result - preserve isError from testResult (test failures should be marked as errors)
       return {
         content: [
-          ...(testResult.content || []),
+          ...(testResult.content ?? []),
           {
             type: 'text',
             text: '\nTest Results Summary:\n' + testSummary,

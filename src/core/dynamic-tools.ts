@@ -114,11 +114,11 @@ export async function enableWorkflows(
       for (const toolKey of toolKeys) {
         const tool = workflowModule[toolKey] as PluginMeta | undefined;
 
-        if (tool && tool.name && typeof tool.handler === 'function') {
+        if (tool?.name && typeof tool.handler === 'function') {
           try {
             server.tool(
               tool.name,
-              tool.description || '',
+              tool.description ?? '',
               tool.schema,
               wrapHandlerWithExecutor(tool.handler as ToolHandler),
             );

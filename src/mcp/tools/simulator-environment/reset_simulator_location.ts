@@ -73,7 +73,7 @@ export async function reset_simulator_locationLogic(
   log('info', `Resetting simulator ${params.simulatorUuid} location`);
 
   return executeSimctlCommandAndRespond(
-    params as unknown as Record<string, unknown>,
+    { simulatorUuid: params.simulatorUuid },
     ['location', params.simulatorUuid, 'clear'],
     'Reset Simulator Location',
     `Successfully reset simulator ${params.simulatorUuid} location.`,
@@ -93,7 +93,9 @@ export default {
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     return reset_simulator_locationLogic(
-      args as unknown as ResetSimulatorLocationParams,
+      {
+        simulatorUuid: args.simulatorUuid as string,
+      },
       getDefaultCommandExecutor(),
     );
   },

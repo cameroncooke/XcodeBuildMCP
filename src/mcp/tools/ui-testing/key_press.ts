@@ -24,7 +24,7 @@ interface KeyPressParams {
 }
 
 export async function key_pressLogic(
-  params: Record<string, unknown>,
+  params: KeyPressParams,
   executor: CommandExecutor,
   getAxePathFn?: () => string | null,
   getBundledAxeEnvironmentFn?: () => Record<string, string>,
@@ -35,7 +35,7 @@ export async function key_pressLogic(
   const keyCodeValidation = validateRequiredParam('keyCode', params.keyCode);
   if (!keyCodeValidation.isValid) return keyCodeValidation.errorResponse!;
 
-  const { simulatorUuid, keyCode, duration } = params as unknown as KeyPressParams;
+  const { simulatorUuid, keyCode, duration } = params;
   const commandArgs = ['key', String(keyCode)];
   if (duration !== undefined) {
     commandArgs.push('--duration', String(duration));
@@ -91,7 +91,14 @@ export default {
     duration: z.number().min(0, 'Duration must be non-negative').optional(),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return key_pressLogic(args, getDefaultCommandExecutor());
+    return key_pressLogic(
+      {
+        simulatorUuid: args.simulatorUuid as string,
+        keyCode: args.keyCode as number,
+        duration: args.duration as number | undefined,
+      },
+      getDefaultCommandExecutor(),
+    );
   },
 };
 
@@ -103,7 +110,7 @@ async function executeAxeCommand(
   executor: CommandExecutor = getDefaultCommandExecutor(),
   getAxePathFn?: () => string | null,
   getBundledAxeEnvironmentFn?: () => Record<string, string>,
-): Promise<ToolResponse> {
+): Promise<void> {
   // Get the appropriate axe binary path
   const axeBinary = getAxePathFn ? getAxePathFn() : getAxePath();
   if (!axeBinary) {
@@ -131,7 +138,7 @@ async function executeAxeCommand(
       throw new AxeError(
         `axe command '${commandName}' failed.`,
         commandName,
-        result.error || result.output,
+        result.error ?? result.output,
         simulatorUuid,
       );
     }
@@ -144,9 +151,7 @@ async function executeAxeCommand(
       );
     }
 
-    return {
-      content: [{ type: 'text', text: result.output.trim() }],
-    };
+    // Function now returns void - the calling code creates its own response
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {

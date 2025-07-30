@@ -156,7 +156,7 @@ async function executeAxeCommand(
       throw new AxeError(
         `axe command '${commandName}' failed.`,
         commandName,
-        result.error || result.output,
+        result.error ?? result.output,
         simulatorUuid,
       );
     }
