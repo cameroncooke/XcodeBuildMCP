@@ -77,7 +77,7 @@ export async function set_network_conditionLogic(
   log('info', `Setting simulator ${params.simulatorUuid} network condition to ${params.profile}`);
 
   return executeSimctlCommandAndRespond(
-    params as unknown as Record<string, unknown>,
+    { simulatorUuid: params.simulatorUuid, profile: params.profile },
     ['status_bar', params.simulatorUuid, 'override', '--dataNetwork', params.profile],
     'Set Network Condition',
     `Successfully set simulator ${params.simulatorUuid} network condition to ${params.profile} profile`,
@@ -104,7 +104,18 @@ export default {
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     return set_network_conditionLogic(
-      args as unknown as SetNetworkConditionParams,
+      {
+        simulatorUuid: args.simulatorUuid as string,
+        profile: args.profile as
+          | 'wifi'
+          | '3g'
+          | 'edge'
+          | 'high-latency'
+          | 'dsl'
+          | '100%loss'
+          | '3g-lossy'
+          | 'very-lossy',
+      },
       getDefaultCommandExecutor(),
     );
   },

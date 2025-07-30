@@ -43,7 +43,7 @@ function getEnvironmentVariables(): Record<string, string> {
 
   const envVars: Record<string, string> = {};
   relevantVars.forEach((varName) => {
-    envVars[varName] = process.env[varName] || '';
+    envVars[varName] = process.env[varName] ?? '';
   });
 
   return envVars;
@@ -87,7 +87,7 @@ Sentry.init({
   release: `xcodebuildmcp@${version}`,
 
   // Set environment based on NODE_ENV
-  environment: process.env.NODE_ENV || 'development',
+  environment: process.env.NODE_ENV ?? 'development',
 
   // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring
   // We recommend adjusting this value in production
@@ -112,15 +112,15 @@ if (!xcodeInfo.error) {
 }
 
 const envVars = getEnvironmentVariables();
-tags.env_XCODEBUILDMCP_DEBUG = envVars['XCODEBUILDMCP_DEBUG'] || 'false';
-tags.env_XCODEMAKE_ENABLED = envVars['INCREMENTAL_BUILDS_ENABLED'] || 'false';
+tags.env_XCODEBUILDMCP_DEBUG = envVars['XCODEBUILDMCP_DEBUG'] ?? 'false';
+tags.env_XCODEMAKE_ENABLED = envVars['INCREMENTAL_BUILDS_ENABLED'] ?? 'false';
 
 const miseAvailable = checkBinaryAvailability('mise');
 tags.miseAvailable = miseAvailable.available ? 'true' : 'false';
-tags.miseVersion = miseAvailable.version || 'Unknown';
+tags.miseVersion = miseAvailable.version ?? 'Unknown';
 
 const axeAvailable = checkBinaryAvailability('axe');
 tags.axeAvailable = axeAvailable.available ? 'true' : 'false';
-tags.axeVersion = axeAvailable.version || 'Unknown';
+tags.axeVersion = axeAvailable.version ?? 'Unknown';
 
 Sentry.setTags(tags);

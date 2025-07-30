@@ -50,12 +50,12 @@ async function parseXcresultBundle(
       'Parse xcresult bundle',
     );
     if (!result.success) {
-      throw new Error(result.error || 'Failed to execute xcresulttool');
+      throw new Error(result.error ?? 'Failed to execute xcresulttool');
     }
 
     // Parse JSON response and format as human-readable
-    const summary = JSON.parse(result.output);
-    return formatTestSummary(summary);
+    const summaryData = JSON.parse(result.output) as Record<string, unknown>;
+    return formatTestSummary(summaryData);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     log('error', `Error parsing xcresult bundle: ${errorMessage}`);
@@ -69,16 +69,16 @@ async function parseXcresultBundle(
 function formatTestSummary(summary: Record<string, unknown>): string {
   const lines = [];
 
-  lines.push(`Test Summary: ${summary.title || 'Unknown'}`);
-  lines.push(`Overall Result: ${summary.result || 'Unknown'}`);
+  lines.push(`Test Summary: ${summary.title ?? 'Unknown'}`);
+  lines.push(`Overall Result: ${summary.result ?? 'Unknown'}`);
   lines.push('');
 
   lines.push('Test Counts:');
-  lines.push(`  Total: ${summary.totalTestCount || 0}`);
-  lines.push(`  Passed: ${summary.passedTests || 0}`);
-  lines.push(`  Failed: ${summary.failedTests || 0}`);
-  lines.push(`  Skipped: ${summary.skippedTests || 0}`);
-  lines.push(`  Expected Failures: ${summary.expectedFailures || 0}`);
+  lines.push(`  Total: ${summary.totalTestCount ?? 0}`);
+  lines.push(`  Passed: ${summary.passedTests ?? 0}`);
+  lines.push(`  Failed: ${summary.failedTests ?? 0}`);
+  lines.push(`  Skipped: ${summary.skippedTests ?? 0}`);
+  lines.push(`  Expected Failures: ${summary.expectedFailures ?? 0}`);
   lines.push('');
 
   if (summary.environmentDescription) {
@@ -91,10 +91,11 @@ function formatTestSummary(summary: Record<string, unknown>): string {
     Array.isArray(summary.devicesAndConfigurations) &&
     summary.devicesAndConfigurations.length > 0
   ) {
-    const device = summary.devicesAndConfigurations[0].device;
+    const deviceConfig = summary.devicesAndConfigurations[0] as Record<string, unknown>;
+    const device = deviceConfig.device as Record<string, unknown> | undefined;
     if (device) {
       lines.push(
-        `Device: ${device.deviceName || 'Unknown'} (${device.platform || 'Unknown'} ${device.osVersion || 'Unknown'})`,
+        `Device: ${device.deviceName ?? 'Unknown'} (${device.platform ?? 'Unknown'} ${device.osVersion ?? 'Unknown'})`,
       );
       lines.push('');
     }
@@ -106,9 +107,10 @@ function formatTestSummary(summary: Record<string, unknown>): string {
     summary.testFailures.length > 0
   ) {
     lines.push('Test Failures:');
-    summary.testFailures.forEach((failure, index) => {
+    summary.testFailures.forEach((failureItem, index) => {
+      const failure = failureItem as Record<string, unknown>;
       lines.push(
-        `  ${index + 1}. ${failure.testName || 'Unknown Test'} (${failure.targetName || 'Unknown Target'})`,
+        `  ${index + 1}. ${failure.testName ?? 'Unknown Test'} (${failure.targetName ?? 'Unknown Target'})`,
       );
       if (failure.failureText) {
         lines.push(`     ${failure.failureText}`);
@@ -119,9 +121,10 @@ function formatTestSummary(summary: Record<string, unknown>): string {
 
   if (summary.topInsights && Array.isArray(summary.topInsights) && summary.topInsights.length > 0) {
     lines.push('Insights:');
-    summary.topInsights.forEach((insight, index) => {
+    summary.topInsights.forEach((insightItem, index) => {
+      const insight = insightItem as Record<string, unknown>;
       lines.push(
-        `  ${index + 1}. [${insight.impact || 'Unknown'}] ${insight.text || 'No description'}`,
+        `  ${index + 1}. [${insight.impact ?? 'Unknown'}] ${insight.text ?? 'No description'}`,
       );
     });
   }
@@ -151,14 +154,14 @@ export async function test_device_projLogic(
     const resultBundlePath = join(tempDir, 'TestResults.xcresult');
 
     // Add resultBundlePath to extraArgs
-    const extraArgs = [...(params.extraArgs || []), `-resultBundlePath`, resultBundlePath];
+    const extraArgs = [...(params.extraArgs ?? []), `-resultBundlePath`, resultBundlePath];
 
     // Run the test command
     const testResult = await executeXcodeBuildCommand(
       {
         projectPath: params.projectPath,
         scheme: params.scheme,
-        configuration: params.configuration || 'Debug',
+        configuration: params.configuration ?? 'Debug',
         derivedDataPath: params.derivedDataPath,
         extraArgs,
       },
@@ -254,17 +257,36 @@ export default {
       visionOS: XcodePlatform.visionOS,
     };
 
-    const platformKey = (args.platform as string) ?? 'iOS';
+    const platformKey = typeof args.platform === 'string' ? args.platform : 'iOS';
     const platform = platformMap[platformKey] ?? XcodePlatform.iOS;
 
+    // Validate required parameters
+    const projectPath = typeof args.projectPath === 'string' ? args.projectPath : '';
+    const scheme = typeof args.scheme === 'string' ? args.scheme : '';
+    const deviceId = typeof args.deviceId === 'string' ? args.deviceId : '';
+    const configuration = typeof args.configuration === 'string' ? args.configuration : 'Debug';
+    const derivedDataPath =
+      typeof args.derivedDataPath === 'string' ? args.derivedDataPath : undefined;
+    const preferXcodebuild =
+      typeof args.preferXcodebuild === 'boolean' ? args.preferXcodebuild : false;
+    const extraArgs =
+      Array.isArray(args.extraArgs) && args.extraArgs.every((arg) => typeof arg === 'string')
+        ? (args.extraArgs as string[])
+        : undefined;
+
+    const params: TestDeviceProjParams = {
+      projectPath,
+      scheme,
+      deviceId,
+      configuration,
+      derivedDataPath,
+      extraArgs,
+      preferXcodebuild,
+      platform,
+    };
+
     return test_device_projLogic(
-      {
-        ...args,
-        configuration: args.configuration ?? 'Debug',
-        preferXcodebuild: args.preferXcodebuild ?? false,
-        platform,
-        deviceId: args.deviceId,
-      } as TestDeviceProjParams,
+      params,
       getDefaultCommandExecutor(),
       getDefaultFileSystemExecutor(),
     );

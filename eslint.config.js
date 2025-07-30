@@ -31,6 +31,30 @@ export default [
         varsIgnorePattern: '^_' 
       }],
       'no-console': ['warn', { allow: ['error'] }],
+      
+      // Prevent dangerous type casting anti-patterns (errors)
+      '@typescript-eslint/consistent-type-assertions': ['error', {
+        assertionStyle: 'as',
+        objectLiteralTypeAssertions: 'never'
+      }],
+      '@typescript-eslint/no-unsafe-argument': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      
+      // Prevent specific anti-patterns we found
+      '@typescript-eslint/ban-ts-comment': ['error', {
+        'ts-expect-error': 'allow-with-description',
+        'ts-ignore': true,
+        'ts-nocheck': true,
+        'ts-check': false,
+      }],
+      
+      // Encourage best practices (warnings - can be gradually fixed)
+      '@typescript-eslint/prefer-as-const': 'warn',
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn',
+      '@typescript-eslint/prefer-optional-chain': 'warn',
     },
   },
   {
@@ -46,6 +70,13 @@ export default [
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       'prefer-const': 'off',
+      
+      // Relax unsafe rules for tests - tests often need more flexibility
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
 ];

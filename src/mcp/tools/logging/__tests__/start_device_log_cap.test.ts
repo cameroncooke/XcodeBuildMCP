@@ -88,7 +88,7 @@ describe('start_device_log_cap plugin', () => {
 
       expect(result.content[0].text).toMatch(/✅ Device log capture started successfully/);
       expect(result.content[0].text).toMatch(/Session ID: [a-f0-9-]{36}/);
-      expect(result.isError || false).toBe(false);
+      expect(result.isError ?? false).toBe(false);
     });
 
     it('should include next steps in success response', async () => {

@@ -56,7 +56,7 @@ async function parseXcresultBundle(
   },
 ): Promise<string> {
   try {
-    const promisifyFn = utilDeps?.promisify || promisify;
+    const promisifyFn = utilDeps?.promisify ?? promisify;
     const execAsync = (promisifyFn as typeof promisify)(exec);
     const { stdout } = await execAsync(
       `xcrun xcresulttool get test-results summary --path "${resultBundlePath}"`,
@@ -64,7 +64,12 @@ async function parseXcresultBundle(
     );
 
     // Parse JSON response and format as human-readable
-    const summary = JSON.parse(stdout as unknown as string);
+    let summary: Record<string, unknown>;
+    try {
+      summary = JSON.parse(stdout as unknown as string) as Record<string, unknown>;
+    } catch (parseError) {
+      throw new Error(`Failed to parse JSON response: ${parseError}`);
+    }
     return formatTestSummary(summary);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -77,16 +82,16 @@ async function parseXcresultBundle(
 function formatTestSummary(summary: Record<string, unknown>): string {
   const lines = [];
 
-  lines.push(`Test Summary: ${summary.title || 'Unknown'}`);
-  lines.push(`Overall Result: ${summary.result || 'Unknown'}`);
+  lines.push(`Test Summary: ${summary.title ?? 'Unknown'}`);
+  lines.push(`Overall Result: ${summary.result ?? 'Unknown'}`);
   lines.push('');
 
   lines.push('Test Counts:');
-  lines.push(`  Total: ${summary.totalTestCount || 0}`);
-  lines.push(`  Passed: ${summary.passedTests || 0}`);
-  lines.push(`  Failed: ${summary.failedTests || 0}`);
-  lines.push(`  Skipped: ${summary.skippedTests || 0}`);
-  lines.push(`  Expected Failures: ${summary.expectedFailures || 0}`);
+  lines.push(`  Total: ${summary.totalTestCount ?? 0}`);
+  lines.push(`  Passed: ${summary.passedTests ?? 0}`);
+  lines.push(`  Failed: ${summary.failedTests ?? 0}`);
+  lines.push(`  Skipped: ${summary.skippedTests ?? 0}`);
+  lines.push(`  Expected Failures: ${summary.expectedFailures ?? 0}`);
   lines.push('');
 
   if (summary.environmentDescription) {
@@ -99,11 +104,13 @@ function formatTestSummary(summary: Record<string, unknown>): string {
     Array.isArray(summary.devicesAndConfigurations) &&
     summary.devicesAndConfigurations.length > 0
   ) {
-    const device = summary.devicesAndConfigurations[0].device;
-    if (device) {
-      lines.push(
-        `Device: ${device.deviceName || 'Unknown'} (${device.platform || 'Unknown'} ${device.osVersion || 'Unknown'})`,
-      );
+    const deviceConfig = summary.devicesAndConfigurations[0] as Record<string, unknown>;
+    const device = deviceConfig?.device as Record<string, unknown> | undefined;
+    if (device && typeof device === 'object') {
+      const deviceName = typeof device.deviceName === 'string' ? device.deviceName : 'Unknown';
+      const platform = typeof device.platform === 'string' ? device.platform : 'Unknown';
+      const osVersion = typeof device.osVersion === 'string' ? device.osVersion : 'Unknown';
+      lines.push(`Device: ${deviceName} (${platform} ${osVersion})`);
       lines.push('');
     }
   }
@@ -115,11 +122,16 @@ function formatTestSummary(summary: Record<string, unknown>): string {
   ) {
     lines.push('Test Failures:');
     summary.testFailures.forEach((failure, index) => {
-      lines.push(
-        `  ${index + 1}. ${failure.testName || 'Unknown Test'} (${failure.targetName || 'Unknown Target'})`,
-      );
-      if (failure.failureText) {
-        lines.push(`     ${failure.failureText}`);
+      const failureObj = failure as Record<string, unknown>;
+      const testName =
+        typeof failureObj.testName === 'string' ? failureObj.testName : 'Unknown Test';
+      const targetName =
+        typeof failureObj.targetName === 'string' ? failureObj.targetName : 'Unknown Target';
+      lines.push(`  ${index + 1}. ${testName} (${targetName})`);
+
+      const failureText = failureObj.failureText;
+      if (typeof failureText === 'string') {
+        lines.push(`     ${failureText}`);
       }
     });
     lines.push('');
@@ -128,9 +140,10 @@ function formatTestSummary(summary: Record<string, unknown>): string {
   if (summary.topInsights && Array.isArray(summary.topInsights) && summary.topInsights.length > 0) {
     lines.push('Insights:');
     summary.topInsights.forEach((insight, index) => {
-      lines.push(
-        `  ${index + 1}. [${insight.impact || 'Unknown'}] ${insight.text || 'No description'}`,
-      );
+      const insightObj = insight as Record<string, unknown>;
+      const impact = typeof insightObj.impact === 'string' ? insightObj.impact : 'Unknown';
+      const text = typeof insightObj.text === 'string' ? insightObj.text : 'No description';
+      lines.push(`  ${index + 1}. [${impact}] ${text}`);
     });
   }
 
@@ -178,15 +191,15 @@ export async function test_macos_wsLogic(
 
   try {
     // Create temporary directory for xcresult bundle
-    const mkdtempFn = tempDirDeps?.mkdtemp || mkdtemp;
-    const joinFn = tempDirDeps?.join || join;
-    const tmpdirFn = tempDirDeps?.tmpdir || tmpdir;
+    const mkdtempFn = tempDirDeps?.mkdtemp ?? mkdtemp;
+    const joinFn = tempDirDeps?.join ?? join;
+    const tmpdirFn = tempDirDeps?.tmpdir ?? tmpdir;
 
     const tempDir = await mkdtempFn(joinFn(tmpdirFn(), 'xcodebuild-test-'));
     const resultBundlePath = joinFn(tempDir, 'TestResults.xcresult');
 
     // Add resultBundlePath to extraArgs
-    const extraArgs = [...(processedParams.extraArgs || []), `-resultBundlePath`, resultBundlePath];
+    const extraArgs = [...(processedParams.extraArgs ?? []), `-resultBundlePath`, resultBundlePath];
 
     // Run the test command
     const testResult = await executeXcodeBuildCommand(
@@ -213,7 +226,7 @@ export async function test_macos_wsLogic(
 
       // Check if the file exists
       try {
-        const statFn = fileSystemDeps?.stat || (await import('fs/promises')).stat;
+        const statFn = fileSystemDeps?.stat ?? (await import('fs/promises')).stat;
         await statFn(resultBundlePath);
         log('info', `xcresult bundle exists at: ${resultBundlePath}`);
       } catch {
@@ -225,13 +238,13 @@ export async function test_macos_wsLogic(
       log('info', 'Successfully parsed xcresult bundle');
 
       // Clean up temporary directory
-      const rmFn = tempDirDeps?.rm || rm;
+      const rmFn = tempDirDeps?.rm ?? rm;
       await rmFn(tempDir, { recursive: true, force: true });
 
       // Return combined result - preserve isError from testResult (test failures should be marked as errors)
       return {
         content: [
-          ...(testResult.content || []),
+          ...(testResult.content ?? []),
           {
             type: 'text',
             text: '\nTest Results Summary:\n' + testSummary,
@@ -245,7 +258,7 @@ export async function test_macos_wsLogic(
 
       // Clean up temporary directory even if parsing fails
       try {
-        const rmFn = tempDirDeps?.rm || rm;
+        const rmFn = tempDirDeps?.rm ?? rm;
         await rmFn(tempDir, { recursive: true, force: true });
       } catch (cleanupError) {
         log('warn', `Failed to clean up temporary directory: ${cleanupError}`);

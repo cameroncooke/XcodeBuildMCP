@@ -154,9 +154,12 @@ export default {
 };
 
 // Session tracking for describe_ui warnings
-// DescribeUISession: { timestamp: number, simulatorUuid: string }
+interface DescribeUISession {
+  timestamp: number;
+  simulatorUuid: string;
+}
 
-const describeUITimestamps = new Map();
+const describeUITimestamps = new Map<string, DescribeUISession>();
 const DESCRIBE_UI_WARNING_TIMEOUT = 60000; // 60 seconds
 
 function getCoordinateWarning(simulatorUuid: string): string | null {
@@ -181,7 +184,7 @@ async function executeAxeCommand(
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
   axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
-): Promise<ToolResponse> {
+): Promise<void> {
   // Get the appropriate axe binary path
   const axeBinary = axeHelpers.getAxePath();
   if (!axeBinary) {
@@ -204,7 +207,7 @@ async function executeAxeCommand(
       throw new AxeError(
         `axe command '${commandName}' failed.`,
         commandName,
-        result.error || result.output,
+        result.error ?? result.output,
         simulatorUuid,
       );
     }
@@ -217,7 +220,7 @@ async function executeAxeCommand(
       );
     }
 
-    return createTextResponse(result.output.trim());
+    // Function now returns void - the calling code creates its own response
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {

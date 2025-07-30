@@ -323,7 +323,7 @@ describe('Swipe Plugin', () => {
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
       const result = await swipeLogic(
-        { x1: 100, y1: 200, x2: 300, y2: 400 } as SwipeParams,
+        { x1: 100, y1: 200, x2: 300, y2: 400 } as const satisfies Partial<SwipeParams>,
         createNoopExecutor(),
         createMockAxeHelpers(),
       );
@@ -346,7 +346,7 @@ describe('Swipe Plugin', () => {
           y1: 200,
           x2: 300,
           y2: 400,
-        } as SwipeParams,
+        } as const satisfies Partial<SwipeParams>,
         createNoopExecutor(),
         createMockAxeHelpers(),
       );

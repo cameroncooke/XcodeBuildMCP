@@ -84,7 +84,7 @@ async function _getAppPathFromBuildSettings(
     if (!result.success) {
       return {
         success: false,
-        error: result.error || 'Failed to get build settings',
+        error: result.error ?? 'Failed to get build settings',
       };
     }
 
@@ -146,7 +146,7 @@ export async function build_run_mac_projLogic(
 
     // 4. Launch the app using the verified path
     try {
-      const execFunction = execAsync || promisify(exec);
+      const execFunction = execAsync ?? promisify(exec);
       await execFunction(`open "${appPath}"`);
       log('info', `✅ macOS app launched successfully: ${appPath}`);
       const successResponse: ToolResponse = {

@@ -84,7 +84,7 @@ async function main(): Promise<void> {
 
       server.tool(
         discoverTool.name,
-        discoverTool.description || '',
+        discoverTool.description ?? '',
         discoverTool.schema,
         discoverTool.handler,
       );
@@ -103,7 +103,7 @@ async function main(): Promise<void> {
       const plugins = await loadPlugins();
       for (const plugin of plugins.values()) {
         if (plugin.name !== 'discover_tools') {
-          server.tool(plugin.name, plugin.description || '', plugin.schema, plugin.handler);
+          server.tool(plugin.name, plugin.description ?? '', plugin.schema, plugin.handler);
         }
       }
     }

@@ -58,11 +58,11 @@ describe('stop_device_log_cap plugin', () => {
       } = {},
     ) {
       const testProcess = {
-        killed: options.killed || false,
+        killed: options.killed ?? false,
         exitCode: options.exitCode !== undefined ? options.exitCode : null,
         killCalls: [] as string[],
         kill: function (signal?: string) {
-          this.killCalls.push(signal || 'SIGTERM');
+          this.killCalls.push(signal ?? 'SIGTERM');
           this.killed = true;
         },
       };

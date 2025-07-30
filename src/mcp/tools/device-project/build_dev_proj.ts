@@ -30,11 +30,10 @@ export async function build_dev_projLogic(
   params: BuildDevProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as unknown as Record<string, unknown>;
-  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
   if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   const processedParams = {
@@ -70,6 +69,16 @@ export default {
     preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
   },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_dev_projLogic(args as unknown as BuildDevProjParams, getDefaultCommandExecutor());
+    return build_dev_projLogic(
+      {
+        projectPath: args.projectPath as string,
+        scheme: args.scheme as string,
+        configuration: args.configuration as string,
+        derivedDataPath: args.derivedDataPath as string,
+        extraArgs: args.extraArgs as string[],
+        preferXcodebuild: args.preferXcodebuild as boolean,
+      },
+      getDefaultCommandExecutor(),
+    );
   },
 };

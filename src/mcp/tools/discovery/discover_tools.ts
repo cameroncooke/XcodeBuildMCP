@@ -46,7 +46,7 @@ export async function discover_toolsLogic(
     }
 
     // 1. Check for sampling capability
-    const serverInstance = (server.server || server) as Record<string, unknown> & {
+    const serverInstance = (server.server ?? server) as Record<string, unknown> & {
       _clientCapabilities?: { sampling?: boolean };
       request: (params: {
         method: string;
@@ -64,9 +64,9 @@ export async function discover_toolsLogic(
     }
 
     // 2. Get available workflows using generated metadata
-    const workflowNames = (deps?.getAvailableWorkflows || getAvailableWorkflows)();
+    const workflowNames = (deps?.getAvailableWorkflows ?? getAvailableWorkflows)();
     const workflowDescriptions = (
-      deps?.generateWorkflowDescriptions || generateWorkflowDescriptions
+      deps?.generateWorkflowDescriptions ?? generateWorkflowDescriptions
     )();
 
     // 3. Construct the prompt for the LLM
@@ -128,11 +128,18 @@ Each workflow contains ALL tools needed for its complete development workflow - 
 
       log('debug', `LLM response: ${responseText}`);
 
-      selectedWorkflows = JSON.parse(responseText);
+      const parsedResponse: unknown = JSON.parse(responseText);
 
-      if (!Array.isArray(selectedWorkflows)) {
+      if (!Array.isArray(parsedResponse)) {
         throw new Error('Response is not an array');
       }
+
+      // Validate that all items are strings
+      if (!parsedResponse.every((item): item is string => typeof item === 'string')) {
+        throw new Error('Response array contains non-string items');
+      }
+
+      selectedWorkflows = parsedResponse;
 
       // Validate that all selected workflows are valid
       const validWorkflows = selectedWorkflows.filter((workflow) =>
@@ -189,7 +196,7 @@ Each workflow contains ALL tools needed for its complete development workflow - 
       'info',
       `${isAdditive ? 'Adding' : 'Replacing with'} workflows: ${selectedWorkflows.join(', ')}`,
     );
-    await (deps?.enableWorkflows || enableWorkflows)(
+    await (deps?.enableWorkflows ?? enableWorkflows)(
       server as Record<string, unknown> & MCPServerInterface,
       selectedWorkflows,
       isAdditive,

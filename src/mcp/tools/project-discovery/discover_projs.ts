@@ -163,7 +163,7 @@ export async function discover_projsLogic(
   const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = typedParams;
 
   // Calculate and validate the absolute scan path
-  const requestedScanPath = path.resolve(workspaceRoot, relativeScanPath || '.');
+  const requestedScanPath = path.resolve(workspaceRoot, relativeScanPath ?? '.');
   let absoluteScanPath = requestedScanPath;
   const normalizedWorkspaceRoot = path.normalize(workspaceRoot);
   if (!path.normalize(absoluteScanPath).startsWith(normalizedWorkspaceRoot)) {

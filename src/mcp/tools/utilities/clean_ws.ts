@@ -47,8 +47,8 @@ export async function clean_wsLogic(
     return executeXcodeBuildCommand(
       {
         ...validated,
-        scheme: validated.scheme || '', // Empty string if not provided
-        configuration: validated.configuration || 'Debug', // Default to Debug if not provided
+        scheme: validated.scheme ?? '', // Empty string if not provided
+        configuration: validated.configuration ?? 'Debug', // Default to Debug if not provided
       },
       {
         platform: XcodePlatform.macOS, // Default to macOS, but this doesn't matter much for clean

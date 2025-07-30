@@ -69,12 +69,15 @@ type ScaffoldMacOSProjectParams = {
 /**
  * Update Package.swift file with deployment target
  */
-function updatePackageSwiftFile(content: string, params: Record<string, unknown>): string {
+function updatePackageSwiftFile(
+  content: string,
+  params: ScaffoldMacOSProjectParams & { platform: string },
+): string {
   let result = content;
 
   // Update ALL target name references in Package.swift
-  const featureName = `${params.projectName as string}Feature`;
-  const testName = `${params.projectName as string}FeatureTests`;
+  const featureName = `${params.projectName}Feature`;
+  const testName = `${params.projectName}FeatureTests`;
 
   // Replace ALL occurrences of MyProjectFeatureTests first (more specific)
   result = result.replace(/MyProjectFeatureTests/g, testName);
@@ -85,7 +88,7 @@ function updatePackageSwiftFile(content: string, params: Record<string, unknown>
   if (params.platform === 'macOS') {
     if (params.deploymentTarget) {
       // Extract major version (e.g., "14.0" -> "14")
-      const majorVersion = (params.deploymentTarget as string).split('.')[0];
+      const majorVersion = params.deploymentTarget.split('.')[0];
       result = result.replace(/\.macOS\(\.v\d+\)/, `.macOS(.v${majorVersion})`);
     }
   }
@@ -96,26 +99,29 @@ function updatePackageSwiftFile(content: string, params: Record<string, unknown>
 /**
  * Update XCConfig file with scaffold parameters
  */
-function updateXCConfigFile(content: string, params: Record<string, unknown>): string {
+function updateXCConfigFile(
+  content: string,
+  params: ScaffoldMacOSProjectParams & { platform: string },
+): string {
   let result = content;
 
   // Update project identity settings
-  result = result.replace(/PRODUCT_NAME = .+/g, `PRODUCT_NAME = ${params.projectName as string}`);
+  result = result.replace(/PRODUCT_NAME = .+/g, `PRODUCT_NAME = ${params.projectName}`);
   result = result.replace(
     /PRODUCT_DISPLAY_NAME = .+/g,
-    `PRODUCT_DISPLAY_NAME = ${(params.displayName as string) || (params.projectName as string)}`,
+    `PRODUCT_DISPLAY_NAME = ${params.displayName ?? params.projectName}`,
   );
   result = result.replace(
     /PRODUCT_BUNDLE_IDENTIFIER = .+/g,
-    `PRODUCT_BUNDLE_IDENTIFIER = ${(params.bundleIdentifier as string) || `com.example.${(params.projectName as string).toLowerCase().replace(/[^a-z0-9]/g, '')}`}`,
+    `PRODUCT_BUNDLE_IDENTIFIER = ${params.bundleIdentifier ?? `com.example.${params.projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`}`,
   );
   result = result.replace(
     /MARKETING_VERSION = .+/g,
-    `MARKETING_VERSION = ${(params.marketingVersion as string) || '1.0'}`,
+    `MARKETING_VERSION = ${params.marketingVersion ?? '1.0'}`,
   );
   result = result.replace(
     /CURRENT_PROJECT_VERSION = .+/g,
-    `CURRENT_PROJECT_VERSION = ${(params.currentProjectVersion as string) || '1'}`,
+    `CURRENT_PROJECT_VERSION = ${params.currentProjectVersion ?? '1'}`,
   );
 
   // Platform-specific updates
@@ -124,27 +130,24 @@ function updateXCConfigFile(content: string, params: Record<string, unknown>): s
     if (params.deploymentTarget) {
       result = result.replace(
         /MACOSX_DEPLOYMENT_TARGET = .+/g,
-        `MACOSX_DEPLOYMENT_TARGET = ${params.deploymentTarget as string}`,
+        `MACOSX_DEPLOYMENT_TARGET = ${params.deploymentTarget}`,
       );
     }
 
     // Update entitlements path for macOS
     result = result.replace(
       /CODE_SIGN_ENTITLEMENTS = .+/g,
-      `CODE_SIGN_ENTITLEMENTS = Config/${params.projectName as string}.entitlements`,
+      `CODE_SIGN_ENTITLEMENTS = Config/${params.projectName}.entitlements`,
     );
   }
 
   // Update test bundle identifier and target name
-  result = result.replace(
-    /TEST_TARGET_NAME = .+/g,
-    `TEST_TARGET_NAME = ${params.projectName as string}`,
-  );
+  result = result.replace(/TEST_TARGET_NAME = .+/g, `TEST_TARGET_NAME = ${params.projectName}`);
 
   // Update comments that reference MyProject in entitlements paths
   result = result.replace(
     /Config\/MyProject\.entitlements/g,
-    `Config/${params.projectName as string}.entitlements`,
+    `Config/${params.projectName}.entitlements`,
   );
 
   return result;
@@ -178,7 +181,7 @@ function replacePlaceholders(
 async function processFile(
   sourcePath: string,
   destPath: string,
-  params: Record<string, unknown>,
+  params: ScaffoldMacOSProjectParams & { platform: string },
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<void> {
   // Determine the destination file path
@@ -187,7 +190,7 @@ async function processFile(
     // Replace MyProject in file/directory names
     const fileName = basename(destPath);
     const dirName = dirname(destPath);
-    const newFileName = fileName.replace(/MyProject/g, params.projectName as string);
+    const newFileName = fileName.replace(/MyProject/g, params.projectName);
     finalDestPath = join(dirName, newFileName);
   }
 
@@ -233,13 +236,9 @@ async function processFile(
     } else {
       // Use standard placeholder replacement
       const bundleIdentifier =
-        (params.bundleIdentifier as string) ||
-        `com.example.${(params.projectName as string).toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-      processedContent = replacePlaceholders(
-        content,
-        params.projectName as string,
-        bundleIdentifier,
-      );
+        params.bundleIdentifier ??
+        `com.example.${params.projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      processedContent = replacePlaceholders(content, params.projectName, bundleIdentifier);
     }
 
     await fileSystemExecutor.mkdir(dirname(finalDestPath), { recursive: true });
@@ -257,7 +256,7 @@ async function processFile(
 async function processDirectory(
   sourceDir: string,
   destDir: string,
-  params: Record<string, unknown>,
+  params: ScaffoldMacOSProjectParams & { platform: string },
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<void> {
   const entries = await fileSystemExecutor.readdir(sourceDir, { withFileTypes: true });
@@ -269,7 +268,7 @@ async function processDirectory(
 
     if (params.customizeNames) {
       // Replace MyProject in directory names
-      destName = destName.replace(/MyProject/g, params.projectName as string);
+      destName = destName.replace(/MyProject/g, params.projectName);
     }
 
     const destPath = join(destDir, destName);
@@ -295,14 +294,14 @@ async function processDirectory(
  * Scaffold a new iOS or macOS project
  */
 async function scaffoldProject(
-  params: Record<string, unknown>,
+  params: ScaffoldMacOSProjectParams & { platform: string },
   commandExecutor: CommandExecutor,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<string> {
-  const projectName = params.projectName as string;
-  const outputPath = params.outputPath as string;
-  const platform = params.platform as string;
-  const customizeNames = (params.customizeNames as boolean) ?? true;
+  const projectName = params.projectName;
+  const outputPath = params.outputPath;
+  const platform = params.platform;
+  const customizeNames = params.customizeNames ?? true;
 
   log('info', `Scaffolding project: ${projectName} (${platform}) at ${outputPath}`);
 
@@ -363,8 +362,7 @@ export async function scaffold_macos_projectLogic(
   fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<ToolResponse> {
   try {
-    const paramsRecord = params as Record<string, unknown>;
-    const projectParams = { ...paramsRecord, platform: 'macOS' };
+    const projectParams = { ...params, platform: 'macOS' as const };
     const projectPath = await scaffoldProject(projectParams, commandExecutor, fileSystemExecutor);
 
     const response = {
@@ -418,8 +416,10 @@ export default {
     'Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.',
   schema: ScaffoldmacOSProjectSchema.shape,
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    // Validate the arguments against the schema before processing
+    const validatedArgs = ScaffoldmacOSProjectSchema.parse(args);
     return scaffold_macos_projectLogic(
-      args as ScaffoldMacOSProjectParams,
+      validatedArgs,
       getDefaultCommandExecutor(),
       getDefaultFileSystemExecutor(),
     );

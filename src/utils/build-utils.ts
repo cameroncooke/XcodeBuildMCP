@@ -308,7 +308,7 @@ Future builds will use the generated Makefile for improved performance.
       } else if (isSimulatorPlatform) {
         const idOrName = platformOptions.simulatorId ? 'id' : 'name';
         const simIdParam = platformOptions.simulatorId ? 'simulatorId' : 'simulatorName';
-        const simIdValue = platformOptions.simulatorId || platformOptions.simulatorName;
+        const simIdValue = platformOptions.simulatorId ?? platformOptions.simulatorName;
 
         additionalInfo = `Next Steps:
 1. Get App Path: get_simulator_app_path_by_${idOrName}_${params.workspacePath ? 'workspace' : 'project'}({ ${simIdParam}: '${simIdValue}', scheme: '${params.scheme}' })

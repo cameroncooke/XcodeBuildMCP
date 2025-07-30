@@ -5,15 +5,40 @@
  */
 
 import * as fs from 'fs';
+import { ChildProcess } from 'child_process';
 import { z } from 'zod';
 import { log } from '../../../utils/index.js';
 import { activeDeviceLogSessions } from './start_device_log_cap.js';
 import { ToolResponse } from '../../../types/common.js';
 import { FileSystemExecutor, getDefaultFileSystemExecutor } from '../../../utils/command.js';
 
+interface DeviceLogSession {
+  process: ChildProcess;
+  logFilePath: string;
+  deviceUuid: string;
+  bundleId: string;
+}
+
 type StopDeviceLogCapParams = {
   logSessionId: string;
 };
+
+/**
+ * Type guard to validate device log session structure
+ */
+function isValidDeviceLogSession(session: unknown): session is DeviceLogSession {
+  return (
+    typeof session === 'object' &&
+    session !== null &&
+    'process' in session &&
+    'logFilePath' in session &&
+    'deviceUuid' in session &&
+    'bundleId' in session &&
+    typeof (session as DeviceLogSession).logFilePath === 'string' &&
+    typeof (session as DeviceLogSession).deviceUuid === 'string' &&
+    typeof (session as DeviceLogSession).bundleId === 'string'
+  );
+}
 
 /**
  * Business logic for stopping device log capture session
@@ -24,8 +49,8 @@ export async function stop_device_log_capLogic(
 ): Promise<ToolResponse> {
   const { logSessionId } = params;
 
-  const session = activeDeviceLogSessions.get(logSessionId);
-  if (!session) {
+  const sessionData: unknown = activeDeviceLogSessions.get(logSessionId);
+  if (!sessionData) {
     log('warning', `Device log session not found: ${logSessionId}`);
     return {
       content: [
@@ -37,6 +62,22 @@ export async function stop_device_log_capLogic(
       isError: true,
     };
   }
+
+  // Validate session structure
+  if (!isValidDeviceLogSession(sessionData)) {
+    log('error', `Invalid device log session structure for session ${logSessionId}`);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Failed to stop device log capture session ${logSessionId}: Invalid session structure`,
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  const session = sessionData as DeviceLogSession;
 
   try {
     log('info', `Attempting to stop device log capture session: ${logSessionId}`);
@@ -84,6 +125,20 @@ export async function stop_device_log_capLogic(
 }
 
 /**
+ * Type guard to check if an object has fs-like promises interface
+ */
+function hasPromisesInterface(obj: unknown): obj is { promises: typeof fs.promises } {
+  return typeof obj === 'object' && obj !== null && 'promises' in obj;
+}
+
+/**
+ * Type guard to check if an object has existsSync method
+ */
+function hasExistsSyncMethod(obj: unknown): obj is { existsSync: typeof fs.existsSync } {
+  return typeof obj === 'object' && obj !== null && 'existsSync' in obj;
+}
+
+/**
  * Legacy support for backward compatibility
  */
 export async function stopDeviceLogCapture(
@@ -91,27 +146,31 @@ export async function stopDeviceLogCapture(
   fileSystem?: unknown,
 ): Promise<{ logContent: string; error?: string }> {
   // For backward compatibility, create a mock FileSystemExecutor from the fileSystem parameter
-  const fsToUse = (fileSystem as typeof fs) || fs;
+  const fsToUse = fileSystem ?? fs;
   const mockFileSystemExecutor: FileSystemExecutor = {
     async mkdir(path: string, options?: { recursive?: boolean }): Promise<void> {
-      if (fsToUse.promises) {
+      if (hasPromisesInterface(fsToUse)) {
         await fsToUse.promises.mkdir(path, options);
       } else {
         await fs.promises.mkdir(path, options);
       }
     },
-    async readFile(path: string, encoding: string = 'utf8'): Promise<string> {
-      if (fsToUse.promises) {
-        return (await fsToUse.promises.readFile(path, encoding as BufferEncoding)) as string;
+    async readFile(path: string, encoding: BufferEncoding = 'utf8'): Promise<string> {
+      if (hasPromisesInterface(fsToUse)) {
+        return (await fsToUse.promises.readFile(path, encoding)) as string;
       } else {
-        return (await fs.promises.readFile(path, encoding as BufferEncoding)) as string;
+        return (await fs.promises.readFile(path, encoding)) as string;
       }
     },
-    async writeFile(path: string, content: string, encoding: string = 'utf8'): Promise<void> {
-      if (fsToUse.promises) {
-        await fsToUse.promises.writeFile(path, content, encoding as BufferEncoding);
+    async writeFile(
+      path: string,
+      content: string,
+      encoding: BufferEncoding = 'utf8',
+    ): Promise<void> {
+      if (hasPromisesInterface(fsToUse)) {
+        await fsToUse.promises.writeFile(path, content, encoding);
       } else {
-        await fs.promises.writeFile(path, content, encoding as BufferEncoding);
+        await fs.promises.writeFile(path, content, encoding);
       }
     },
     async cp(
@@ -119,40 +178,50 @@ export async function stopDeviceLogCapture(
       destination: string,
       options?: { recursive?: boolean },
     ): Promise<void> {
-      if (fsToUse.promises) {
+      if (hasPromisesInterface(fsToUse)) {
         await fsToUse.promises.cp(source, destination, options);
       } else {
         await fs.promises.cp(source, destination, options);
       }
     },
     async readdir(path: string, options?: { withFileTypes?: boolean }): Promise<unknown[]> {
-      if (fsToUse.promises) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (await fsToUse.promises.readdir(path, options as any)) as unknown[];
+      if (hasPromisesInterface(fsToUse)) {
+        if (options?.withFileTypes === true) {
+          return (await fsToUse.promises.readdir(path, { withFileTypes: true })) as unknown[];
+        } else {
+          return (await fsToUse.promises.readdir(path)) as unknown[];
+        }
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (await fs.promises.readdir(path, options as any)) as unknown[];
+        if (options?.withFileTypes === true) {
+          return (await fs.promises.readdir(path, { withFileTypes: true })) as unknown[];
+        } else {
+          return (await fs.promises.readdir(path)) as unknown[];
+        }
       }
     },
     async rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void> {
-      if (fsToUse.promises) {
+      if (hasPromisesInterface(fsToUse)) {
         await fsToUse.promises.rm(path, options);
       } else {
         await fs.promises.rm(path, options);
       }
     },
     existsSync(path: string): boolean {
-      return (fsToUse.existsSync || fs.existsSync)(path);
+      if (hasExistsSyncMethod(fsToUse)) {
+        return fsToUse.existsSync(path);
+      } else {
+        return fs.existsSync(path);
+      }
     },
     async stat(path: string): Promise<{ isDirectory(): boolean }> {
-      if (fsToUse.promises) {
+      if (hasPromisesInterface(fsToUse)) {
         return (await fsToUse.promises.stat(path)) as { isDirectory(): boolean };
       } else {
         return (await fs.promises.stat(path)) as { isDirectory(): boolean };
       }
     },
     async mkdtemp(prefix: string): Promise<string> {
-      if (fsToUse.promises) {
+      if (hasPromisesInterface(fsToUse)) {
         return await fsToUse.promises.mkdtemp(prefix);
       } else {
         return await fs.promises.mkdtemp(prefix);
@@ -166,19 +235,29 @@ export async function stopDeviceLogCapture(
   const result = await stop_device_log_capLogic({ logSessionId }, mockFileSystemExecutor);
 
   if (result.isError) {
+    const errorText = result.content[0]?.text;
+    const errorMessage =
+      typeof errorText === 'string'
+        ? errorText.replace(`Failed to stop device log capture session ${logSessionId}: `, '')
+        : 'Unknown error occurred';
+
     return {
       logContent: '',
-      error: (result.content[0].text as string).replace(
-        `Failed to stop device log capture session ${logSessionId}: `,
-        '',
-      ),
+      error: errorMessage,
     };
   }
 
   // Extract log content from successful response
-  const text = result.content[0].text as string;
-  const logContentMatch = text.match(/--- Captured Logs ---\n([\s\S]*)$/);
-  const logContent = logContentMatch ? logContentMatch[1] : '';
+  const successText = result.content[0]?.text;
+  if (typeof successText !== 'string') {
+    return {
+      logContent: '',
+      error: 'Invalid response format: expected text content',
+    };
+  }
+
+  const logContentMatch = successText.match(/--- Captured Logs ---\n([\s\S]*)$/);
+  const logContent = logContentMatch?.[1] ?? '';
 
   return { logContent };
 }

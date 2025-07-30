@@ -17,6 +17,15 @@ type LaunchAppDeviceParams = {
   bundleId: string;
 };
 
+// Type for the launch JSON response
+type LaunchDataResponse = {
+  result?: {
+    process?: {
+      processIdentifier?: number;
+    };
+  };
+};
+
 export async function launch_app_deviceLogic(
   params: LaunchAppDeviceParams,
   executor: CommandExecutor,
@@ -61,11 +70,27 @@ export async function launch_app_deviceLogic(
     }
 
     // Parse JSON to extract process ID
-    let processId;
+    let processId: number | undefined;
     try {
       const jsonContent = await fs.readFile(tempJsonPath, 'utf8');
-      const launchData = JSON.parse(jsonContent);
-      processId = launchData.result?.process?.processIdentifier;
+      const parsedData: unknown = JSON.parse(jsonContent);
+
+      // Type guard to validate the parsed data structure
+      if (
+        parsedData &&
+        typeof parsedData === 'object' &&
+        'result' in parsedData &&
+        parsedData.result &&
+        typeof parsedData.result === 'object' &&
+        'process' in parsedData.result &&
+        parsedData.result.process &&
+        typeof parsedData.result.process === 'object' &&
+        'processIdentifier' in parsedData.result.process &&
+        typeof parsedData.result.process.processIdentifier === 'number'
+      ) {
+        const launchData = parsedData as LaunchDataResponse;
+        processId = launchData.result?.process?.processIdentifier;
+      }
 
       // Clean up temp file
       await fs.unlink(tempJsonPath).catch(() => {});

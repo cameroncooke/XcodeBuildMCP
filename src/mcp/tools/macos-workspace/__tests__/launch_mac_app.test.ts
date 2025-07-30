@@ -28,7 +28,7 @@ function createExecutionStub(stub: ExecutionStub) {
         process: { pid: 12345 },
       };
     } else {
-      throw new Error(stub.error || 'Command failed');
+      throw new Error(stub.error ?? 'Command failed');
     }
   };
 
