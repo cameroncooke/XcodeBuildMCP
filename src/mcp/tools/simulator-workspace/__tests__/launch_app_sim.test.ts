@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import launchAppSim, { launch_app_simLogic } from '../../simulator-shared/launch_app_sim.js';
 import { createMockExecutor } from '../../../../utils/command.js';

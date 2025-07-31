@@ -4,8 +4,8 @@
  * Using dependency injection for deterministic testing
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { createMockExecutor } from '../../../../utils/command.js';
+import { describe, it, expect } from 'vitest';
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
 import listDevices, { list_devicesLogic } from '../../device-shared/list_devices.js';
 
 describe('list_devices plugin', () => {
@@ -31,23 +31,6 @@ describe('list_devices plugin', () => {
       expect(listDevices.schema).toEqual({});
     });
   });
-
-  // Mock state tracking
-  let commandCalls: Array<{
-    command: string[];
-    logPrefix?: string;
-    useShell?: boolean;
-    env?: Record<string, string>;
-  }> = [];
-  let readFileCalls: string[] = [];
-  let unlinkCalls: string[] = [];
-  let mockReadFileData: string | null = null;
-
-  // Reset state
-  commandCalls = [];
-  readFileCalls = [];
-  unlinkCalls = [];
-  mockReadFileData = null;
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should generate correct devicectl command', async () => {
@@ -75,9 +58,21 @@ describe('list_devices plugin', () => {
         },
       };
 
-      mockReadFileData = JSON.stringify(devicectlJson);
+      // Track command calls
+      const commandCalls: Array<{
+        command: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        env?: Record<string, string>;
+      }> = [];
 
-      // Create tracking executor
+      // Create mock executor
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+      });
+
+      // Wrap to track calls
       const trackingExecutor = async (
         command: string[],
         logPrefix?: string,
@@ -85,12 +80,7 @@ describe('list_devices plugin', () => {
         env?: Record<string, string>,
       ) => {
         commandCalls.push({ command, logPrefix, useShell, env });
-        return {
-          success: true,
-          output: '',
-          error: undefined,
-          process: { pid: 12345 },
-        };
+        return mockExecutor(command, logPrefix, useShell, env);
       };
 
       // Create mock path dependencies
@@ -99,19 +89,11 @@ describe('list_devices plugin', () => {
         join: (...paths: string[]) => paths.join('/'),
       };
 
-      // Create mock fs dependencies
-      const mockFsDeps = {
-        readFile: async (path: string, encoding?: string) => {
-          readFileCalls.push(path);
-          if (mockReadFileData === null) {
-            throw new Error('No mock data set');
-          }
-          return mockReadFileData;
-        },
-        unlink: async (path: string) => {
-          unlinkCalls.push(path);
-        },
-      };
+      // Create mock filesystem with specific behavior
+      const mockFsDeps = createMockFileSystemExecutor({
+        readFile: async (path: string) => JSON.stringify(devicectlJson),
+        unlink: async () => {},
+      });
 
       await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
@@ -154,23 +136,11 @@ describe('list_devices plugin', () => {
         },
       };
 
-      mockReadFileData = JSON.stringify(devicectlJson);
-
-      // Create tracking executor
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        commandCalls.push({ command, logPrefix, useShell, env });
-        return {
-          success: true,
-          output: '',
-          error: undefined,
-          process: { pid: 12345 },
-        };
-      };
+      // Create mock executor
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+      });
 
       // Create mock path dependencies
       const mockPathDeps = {
@@ -178,21 +148,13 @@ describe('list_devices plugin', () => {
         join: (...paths: string[]) => paths.join('/'),
       };
 
-      // Create mock fs dependencies
-      const mockFsDeps = {
-        readFile: async (path: string, encoding?: string) => {
-          readFileCalls.push(path);
-          if (mockReadFileData === null) {
-            throw new Error('No mock data set');
-          }
-          return mockReadFileData;
-        },
-        unlink: async (path: string) => {
-          unlinkCalls.push(path);
-        },
-      };
+      // Create mock filesystem with specific behavior
+      const mockFsDeps = createMockFileSystemExecutor({
+        readFile: async (path: string) => JSON.stringify(devicectlJson),
+        unlink: async () => {},
+      });
 
-      const result = await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
+      const result = await list_devicesLogic({}, mockExecutor, mockPathDeps, mockFsDeps);
 
       expect(result).toEqual({
         content: [
@@ -214,7 +176,6 @@ describe('list_devices plugin', () => {
         env?: Record<string, string>,
       ) => {
         callCount++;
-        commandCalls.push({ command, logPrefix, useShell, env });
 
         if (callCount === 1) {
           // First call fails (devicectl)
@@ -241,16 +202,13 @@ describe('list_devices plugin', () => {
         join: (...paths: string[]) => paths.join('/'),
       };
 
-      // Create mock fs dependencies
-      const mockFsDeps = {
-        readFile: async (path: string, encoding?: string) => {
-          readFileCalls.push(path);
+      // Create mock filesystem that throws for readFile
+      const mockFsDeps = createMockFileSystemExecutor({
+        readFile: async () => {
           throw new Error('File not found');
         },
-        unlink: async (path: string) => {
-          unlinkCalls.push(path);
-        },
-      };
+        unlink: async () => {},
+      });
 
       const result = await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
@@ -265,21 +223,11 @@ describe('list_devices plugin', () => {
     });
 
     it('should return exact failure response', async () => {
-      // Create tracking executor that fails both calls
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        commandCalls.push({ command, logPrefix, useShell, env });
-        return {
-          success: false,
-          output: '',
-          error: 'Command failed',
-          process: { pid: 12345 },
-        };
-      };
+      // Create mock executor that fails both calls
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Command failed',
+      });
 
       // Create mock path dependencies
       const mockPathDeps = {
@@ -287,18 +235,15 @@ describe('list_devices plugin', () => {
         join: (...paths: string[]) => paths.join('/'),
       };
 
-      // Create mock fs dependencies
-      const mockFsDeps = {
-        readFile: async (path: string, encoding?: string) => {
-          readFileCalls.push(path);
+      // Create mock filesystem that throws for readFile
+      const mockFsDeps = createMockFileSystemExecutor({
+        readFile: async () => {
           throw new Error('File not found');
         },
-        unlink: async (path: string) => {
-          unlinkCalls.push(path);
-        },
-      };
+        unlink: async () => {},
+      });
 
-      const result = await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
+      const result = await list_devicesLogic({}, mockExecutor, mockPathDeps, mockFsDeps);
 
       expect(result).toEqual({
         content: [
@@ -318,8 +263,6 @@ describe('list_devices plugin', () => {
         },
       };
 
-      mockReadFileData = JSON.stringify(devicectlJson);
-
       // Create tracking executor with call count behavior
       let callCount = 0;
       const trackingExecutor = async (
@@ -329,7 +272,6 @@ describe('list_devices plugin', () => {
         env?: Record<string, string>,
       ) => {
         callCount++;
-        commandCalls.push({ command, logPrefix, useShell, env });
 
         if (callCount === 1) {
           // First call succeeds (devicectl)
@@ -356,19 +298,11 @@ describe('list_devices plugin', () => {
         join: (...paths: string[]) => paths.join('/'),
       };
 
-      // Create mock fs dependencies
-      const mockFsDeps = {
-        readFile: async (path: string, encoding?: string) => {
-          readFileCalls.push(path);
-          if (mockReadFileData === null) {
-            throw new Error('No mock data set');
-          }
-          return mockReadFileData;
-        },
-        unlink: async (path: string) => {
-          unlinkCalls.push(path);
-        },
-      };
+      // Create mock filesystem with empty devices response
+      const mockFsDeps = createMockFileSystemExecutor({
+        readFile: async () => JSON.stringify(devicectlJson),
+        unlink: async () => {},
+      });
 
       const result = await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
@@ -383,16 +317,8 @@ describe('list_devices plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      // Create tracking executor that throws an error
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        commandCalls.push({ command, logPrefix, useShell, env });
-        throw new Error('Unexpected error');
-      };
+      // Create mock executor that throws an error
+      const mockExecutor = createMockExecutor(new Error('Unexpected error'));
 
       // Create mock path dependencies
       const mockPathDeps = {
@@ -400,18 +326,15 @@ describe('list_devices plugin', () => {
         join: (...paths: string[]) => paths.join('/'),
       };
 
-      // Create mock fs dependencies
-      const mockFsDeps = {
-        readFile: async (path: string, encoding?: string) => {
-          readFileCalls.push(path);
+      // Create mock filesystem
+      const mockFsDeps = createMockFileSystemExecutor({
+        readFile: async () => {
           throw new Error('File not found');
         },
-        unlink: async (path: string) => {
-          unlinkCalls.push(path);
-        },
-      };
+        unlink: async () => {},
+      });
 
-      const result = await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
+      const result = await list_devicesLogic({}, mockExecutor, mockPathDeps, mockFsDeps);
 
       expect(result).toEqual({
         content: [

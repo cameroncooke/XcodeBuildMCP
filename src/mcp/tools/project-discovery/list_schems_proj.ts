@@ -9,13 +9,23 @@ import { log } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+
+// Define schema as ZodObject
+const listSchemsProjSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
+  workspacePath: z.string().optional().describe('Path to the .xcworkspace file (optional)'),
+});
+
+// Use z.infer for type safety
+type ListSchemsProjParams = z.infer<typeof listSchemsProjSchema>;
 
 /**
  * Business logic for listing schemes in a project.
  * Exported for direct testing and reuse.
  */
 export async function list_schems_projLogic(
-  params: Record<string, unknown>,
+  params: ListSchemsProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', 'Listing schemes');
@@ -30,9 +40,9 @@ export async function list_schems_projLogic(
     const command = ['xcodebuild', '-list'];
 
     if (params.workspacePath) {
-      command.push('-workspace', params.workspacePath as string);
+      command.push('-workspace', params.workspacePath);
     } else if (params.projectPath) {
-      command.push('-project', params.projectPath as string);
+      command.push('-project', params.projectPath);
     } // No else needed, one path is guaranteed by callers
 
     const result = await executor(command, 'List Schemes', true);
@@ -92,10 +102,6 @@ export default {
   name: 'list_schems_proj',
   description:
     "Lists available schemes in the project file. IMPORTANT: Requires projectPath. Example: list_schems_proj({ projectPath: '/path/to/MyProject.xcodeproj' })",
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return list_schems_projLogic(args, getDefaultCommandExecutor());
-  },
+  schema: listSchemsProjSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(listSchemsProjSchema, list_schems_projLogic, getDefaultCommandExecutor),
 };

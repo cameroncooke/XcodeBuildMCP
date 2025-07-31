@@ -1,10 +1,15 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-interface ListSimsParams {
-  enabled?: boolean;
-}
+// Define schema as ZodObject
+const listSimsSchema = z.object({
+  enabled: z.boolean().optional().describe('Optional flag to enable the listing operation.'),
+});
+
+// Use z.infer for type safety
+type ListSimsParams = z.infer<typeof listSimsSchema>;
 
 interface SimulatorDevice {
   name: string;
@@ -151,10 +156,6 @@ export async function list_simsLogic(
 export default {
   name: 'list_sims',
   description: 'Lists available iOS simulators with their UUIDs. ',
-  schema: {
-    enabled: z.boolean().optional().describe('Optional flag to enable the listing operation.'),
-  },
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return list_simsLogic(args as ListSimsParams, getDefaultCommandExecutor());
-  },
+  schema: listSimsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(listSimsSchema, list_simsLogic, getDefaultCommandExecutor),
 };

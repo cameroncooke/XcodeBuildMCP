@@ -2,7 +2,7 @@
  * Tests for button tool plugin
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../utils/command.js';
 import buttonPlugin, { buttonLogic } from '../button.ts';
@@ -300,6 +300,7 @@ describe('Button Plugin', () => {
 
       expect(result).toEqual({
         content: [{ type: 'text', text: "Hardware button 'home' pressed successfully." }],
+        isError: false,
       });
     });
 
@@ -332,6 +333,7 @@ describe('Button Plugin', () => {
 
       expect(result).toEqual({
         content: [{ type: 'text', text: "Hardware button 'side-button' pressed successfully." }],
+        isError: false,
       });
     });
 

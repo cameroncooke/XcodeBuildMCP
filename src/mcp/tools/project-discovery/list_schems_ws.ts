@@ -9,33 +9,27 @@ import { log } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-/**
- * Parameters for listing schemes in workspace
- */
-export interface ListSchemsWsParams {
-  workspacePath: string;
-}
+// Define schema as ZodObject
+const listSchemsWsSchema = z.object({
+  workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
+});
+
+// Use z.infer for type safety
+type ListSchemsWsParams = z.infer<typeof listSchemsWsSchema>;
 
 /**
  * Business logic for listing schemes in workspace.
  * Extracted for separation of concerns and testability.
  */
 export async function list_schems_wsLogic(
-  params: unknown,
+  params: ListSchemsWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Cast params to a record type for safe property access
-  const paramsRecord = params as Record<string, unknown>;
-
   // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
   if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-  // Cast to proper type after validation
-  const typedParams: ListSchemsWsParams = {
-    workspacePath: paramsRecord.workspacePath as string,
-  };
 
   log('info', 'Listing schemes');
 
@@ -45,7 +39,7 @@ export async function list_schems_wsLogic(
     const command = ['xcodebuild', '-list'];
 
     // Add workspace parameter (guaranteed to exist by validation)
-    command.push('-workspace', typedParams.workspacePath);
+    command.push('-workspace', params.workspacePath);
 
     const result = await executor(command, 'List Schemes', true);
 
@@ -69,9 +63,9 @@ export async function list_schems_wsLogic(
       const firstScheme = schemes[0];
 
       nextStepsText = `Next Steps:
-1. Build the app: macos_build_workspace({ workspacePath: "${typedParams.workspacePath}", scheme: "${firstScheme}" })
-   or for iOS: ios_simulator_build_by_name_workspace({ workspacePath: "${typedParams.workspacePath}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
-2. Show build settings: show_build_set_ws({ workspacePath: "${typedParams.workspacePath}", scheme: "${firstScheme}" })`;
+1. Build the app: macos_build_workspace({ workspacePath: "${params.workspacePath}", scheme: "${firstScheme}" })
+   or for iOS: ios_simulator_build_by_name_workspace({ workspacePath: "${params.workspacePath}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
+2. Show build settings: show_build_set_ws({ workspacePath: "${params.workspacePath}", scheme: "${firstScheme}" })`;
     }
 
     return {
@@ -102,10 +96,6 @@ export default {
   name: 'list_schems_ws',
   description:
     "Lists available schemes in the workspace. IMPORTANT: Requires workspacePath. Example: list_schems_ws({ workspacePath: '/path/to/MyProject.xcworkspace' })",
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return list_schems_wsLogic(args, getDefaultCommandExecutor());
-  },
+  schema: listSchemsWsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(listSchemsWsSchema, list_schems_wsLogic, getDefaultCommandExecutor),
 };

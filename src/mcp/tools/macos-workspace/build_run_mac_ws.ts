@@ -5,23 +5,37 @@
  */
 
 import { z } from 'zod';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import { log } from '../../../utils/index.js';
 import { createTextResponse } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type BuildRunMacWsParams = {
-  workspacePath: string;
-  scheme: string;
-  configuration?: string;
-  derivedDataPath?: string;
-  arch?: 'arm64' | 'x86_64';
-  extraArgs?: string[];
-  preferXcodebuild?: boolean;
-};
+// Define schema as ZodObject
+const buildRunMacWsSchema = z.object({
+  workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
+  scheme: z.string().describe('The scheme to use (Required)'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  derivedDataPath: z
+    .string()
+    .optional()
+    .describe('Path where build products and other derived data will go'),
+  arch: z
+    .enum(['arm64', 'x86_64'])
+    .optional()
+    .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
+  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+  preferXcodebuild: z
+    .boolean()
+    .optional()
+    .describe(
+      'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
+    ),
+});
+
+// Use z.infer for type safety
+type BuildRunMacWsParams = z.infer<typeof buildRunMacWsSchema>;
 
 /**
  * Internal logic for building macOS apps.
@@ -30,7 +44,6 @@ async function _handleMacOSBuildLogic(
   params: BuildRunMacWsParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
-  const _paramsRecord = params as Record<string, unknown>;
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
   return executeXcodeBuildCommand(
@@ -55,7 +68,7 @@ async function _handleMacOSBuildLogic(
 async function _getAppPathFromBuildSettings(
   params: BuildRunMacWsParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
-): Promise<Record<string, unknown> | null> {
+): Promise<{ success: boolean; appPath?: string; error?: string } | null> {
   try {
     // Create the command array for xcodebuild
     const command = ['xcodebuild', '-showBuildSettings'];
@@ -110,9 +123,7 @@ async function _getAppPathFromBuildSettings(
 export async function build_run_mac_wsLogic(
   params: BuildRunMacWsParams,
   executor: CommandExecutor,
-  execFunction?: (command: string) => Promise<{ stdout: string; stderr: string }>,
 ): Promise<ToolResponse> {
-  const _paramsRecord = params as Record<string, unknown>;
   log('info', 'Handling macOS build & run logic...');
 
   try {
@@ -145,27 +156,12 @@ export async function build_run_mac_wsLogic(
     log('info', `App path determined as: ${appPath}`);
 
     // 4. Launch the app using the verified path
-    // Launch the app
-    try {
-      const execFunc = execFunction ?? promisify(exec);
-      await execFunc(`open "${appPath}"`);
-      log('info', `✅ macOS app launched successfully: ${appPath}`);
-      const successResponse = {
-        content: [
-          ...buildWarningMessages,
-          {
-            type: 'text' as const,
-            text: `✅ macOS build and run succeeded for scheme ${params.scheme}. App launched: ${appPath}`,
-          },
-        ],
-        isError: false,
-      };
-      return successResponse;
-    } catch (launchError) {
-      const errorMessage = launchError instanceof Error ? launchError.message : String(launchError);
-      log('error', `Build succeeded, but failed to launch app ${appPath}: ${errorMessage}`);
+    const launchResult = await executor(['open', appPath!], 'Launch macOS App', true);
+
+    if (!launchResult.success) {
+      log('error', `Build succeeded, but failed to launch app ${appPath}: ${launchResult.error}`);
       const errorResponse = createTextResponse(
-        `✅ Build succeeded, but failed to launch app ${appPath}. Error: ${errorMessage}`,
+        `✅ Build succeeded, but failed to launch app ${appPath}. Error: ${launchResult.error}`,
         false, // Build succeeded
       );
       if (errorResponse.content) {
@@ -173,6 +169,19 @@ export async function build_run_mac_wsLogic(
       }
       return errorResponse;
     }
+
+    log('info', `✅ macOS app launched successfully: ${appPath}`);
+    const successResponse: ToolResponse = {
+      content: [
+        ...buildWarningMessages,
+        {
+          type: 'text',
+          text: `✅ macOS build and run succeeded for scheme ${params.scheme}. App launched: ${appPath}`,
+        },
+      ],
+      isError: false,
+    };
+    return successResponse;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     log('error', `Error during macOS build & run logic: ${errorMessage}`);
@@ -187,35 +196,18 @@ export async function build_run_mac_wsLogic(
 export default {
   name: 'build_run_mac_ws',
   description: 'Builds and runs a macOS app from a workspace in one step.',
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    arch: z
-      .enum(['arm64', 'x86_64'])
-      .optional()
-      .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
+  schema: buildRunMacWsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    buildRunMacWsSchema,
+    (params: BuildRunMacWsParams) =>
+      build_run_mac_wsLogic(
+        {
+          ...params,
+          configuration: params.configuration ?? 'Debug',
+          preferXcodebuild: params.preferXcodebuild ?? false,
+        },
+        getDefaultCommandExecutor(),
       ),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    const typedArgs = args as BuildRunMacWsParams;
-    return build_run_mac_wsLogic(
-      {
-        ...typedArgs,
-        configuration: typedArgs.configuration ?? 'Debug',
-        preferXcodebuild: typedArgs.preferXcodebuild ?? false,
-      },
-      getDefaultCommandExecutor(),
-    );
-  },
+    getDefaultCommandExecutor,
+  ),
 };

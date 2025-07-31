@@ -89,10 +89,7 @@ describe('install_app_device plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      // Manual stub function for error injection
-      const mockExecutor = async () => {
-        throw new Error('Network error');
-      };
+      const mockExecutor = createMockExecutor(new Error('Network error'));
 
       const result = await install_app_deviceLogic(
         {
@@ -115,9 +112,7 @@ describe('install_app_device plugin', () => {
 
     it('should return exact string error handling response', async () => {
       // Manual stub function for string error injection
-      const mockExecutor = async () => {
-        throw 'String error';
-      };
+      const mockExecutor = createMockExecutor('String error');
 
       const result = await install_app_deviceLogic(
         {

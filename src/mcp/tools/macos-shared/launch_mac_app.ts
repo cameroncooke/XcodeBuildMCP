@@ -14,11 +14,18 @@ import {
   FileSystemExecutor,
   getDefaultCommandExecutor,
 } from '../../../utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-interface LaunchMacAppParams {
-  appPath?: string;
-  args?: string[];
-}
+// Define schema as ZodObject
+const launchMacAppSchema = z.object({
+  appPath: z
+    .string()
+    .describe('Path to the macOS .app bundle to launch (full path to the .app directory)'),
+  args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
+});
+
+// Use z.infer for type safety
+type LaunchMacAppParams = z.infer<typeof launchMacAppSchema>;
 
 export async function launch_mac_appLogic(
   params: LaunchMacAppParams,
@@ -32,7 +39,7 @@ export async function launch_mac_appLogic(
   }
 
   // Validate that the app file exists
-  const fileExistsValidation = validateFileExists(params.appPath as string, fileSystem);
+  const fileExistsValidation = validateFileExists(params.appPath, fileSystem);
   if (!fileExistsValidation.isValid) {
     return fileExistsValidation.errorResponse!;
   }
@@ -41,7 +48,7 @@ export async function launch_mac_appLogic(
 
   try {
     // Construct the command as string array for CommandExecutor
-    const command = ['open', params.appPath as string];
+    const command = ['open', params.appPath];
 
     // Add any additional arguments if provided
     if (params.args && Array.isArray(params.args) && params.args.length > 0) {
@@ -80,13 +87,6 @@ export default {
   name: 'launch_mac_app',
   description:
     "Launches a macOS application. IMPORTANT: You MUST provide the appPath parameter. Example: launch_mac_app({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_launch_macos_app.",
-  schema: {
-    appPath: z
-      .string()
-      .describe('Path to the macOS .app bundle to launch (full path to the .app directory)'),
-    args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return launch_mac_appLogic(args, getDefaultCommandExecutor());
-  },
+  schema: launchMacAppSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(launchMacAppSchema, launch_mac_appLogic, getDefaultCommandExecutor),
 };

@@ -17,17 +17,25 @@ import {
   FileSystemExecutor,
   getDefaultFileSystemExecutor,
 } from '../../../utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type TestDeviceProjParams = {
-  projectPath: string;
-  scheme: string;
-  deviceId: string;
-  configuration?: string;
-  derivedDataPath?: string;
-  extraArgs?: string[];
-  preferXcodebuild?: boolean;
-  platform?: XcodePlatform;
-};
+// Define schema as ZodObject
+const testDeviceProjSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file'),
+  scheme: z.string().describe('The scheme to test'),
+  deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release)'),
+  derivedDataPath: z.string().optional().describe('Path to derived data directory'),
+  extraArgs: z.array(z.string()).optional().describe('Additional arguments to pass to xcodebuild'),
+  preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
+  platform: z
+    .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
+    .optional()
+    .describe('Target platform (defaults to iOS)'),
+});
+
+// Use z.infer for type safety
+type TestDeviceProjParams = z.infer<typeof testDeviceProjSchema>;
 
 // Remove all custom dependency injection - use direct imports
 
@@ -140,7 +148,6 @@ export async function test_device_projLogic(
   executor: CommandExecutor = getDefaultCommandExecutor(),
   fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<ToolResponse> {
-  const _paramsRecord = params as Record<string, unknown>;
   log(
     'info',
     `Starting test run for scheme ${params.scheme} on platform ${params.platform} (internal)`,
@@ -233,62 +240,21 @@ export default {
   name: 'test_device_proj',
   description:
     'Runs tests for an Apple project on a physical device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) using xcodebuild test and parses xcresult output. IMPORTANT: Requires projectPath, scheme, and deviceId.',
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file'),
-    scheme: z.string().describe('The scheme to test'),
-    deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release)'),
-    derivedDataPath: z.string().optional().describe('Path to derived data directory'),
-    extraArgs: z
-      .array(z.string())
-      .optional()
-      .describe('Additional arguments to pass to xcodebuild'),
-    preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
-    platform: z
-      .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
-      .optional()
-      .describe('Target platform (defaults to iOS)'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    const platformMap: Record<string, XcodePlatform> = {
-      iOS: XcodePlatform.iOS,
-      watchOS: XcodePlatform.watchOS,
-      tvOS: XcodePlatform.tvOS,
-      visionOS: XcodePlatform.visionOS,
-    };
+  schema: testDeviceProjSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    testDeviceProjSchema,
+    (params: TestDeviceProjParams) => {
+      // Platform mapping removed as we use string values directly
 
-    const platformKey = typeof args.platform === 'string' ? args.platform : 'iOS';
-    const platform = platformMap[platformKey] ?? XcodePlatform.iOS;
-
-    // Validate required parameters
-    const projectPath = typeof args.projectPath === 'string' ? args.projectPath : '';
-    const scheme = typeof args.scheme === 'string' ? args.scheme : '';
-    const deviceId = typeof args.deviceId === 'string' ? args.deviceId : '';
-    const configuration = typeof args.configuration === 'string' ? args.configuration : 'Debug';
-    const derivedDataPath =
-      typeof args.derivedDataPath === 'string' ? args.derivedDataPath : undefined;
-    const preferXcodebuild =
-      typeof args.preferXcodebuild === 'boolean' ? args.preferXcodebuild : false;
-    const extraArgs =
-      Array.isArray(args.extraArgs) && args.extraArgs.every((arg) => typeof arg === 'string')
-        ? (args.extraArgs as string[])
-        : undefined;
-
-    const params: TestDeviceProjParams = {
-      projectPath,
-      scheme,
-      deviceId,
-      configuration,
-      derivedDataPath,
-      extraArgs,
-      preferXcodebuild,
-      platform,
-    };
-
-    return test_device_projLogic(
-      params,
-      getDefaultCommandExecutor(),
-      getDefaultFileSystemExecutor(),
-    );
-  },
+      return test_device_projLogic(
+        {
+          ...params,
+          platform: params.platform ?? 'iOS',
+        },
+        getDefaultCommandExecutor(),
+        getDefaultFileSystemExecutor(),
+      );
+    },
+    getDefaultCommandExecutor,
+  ),
 };

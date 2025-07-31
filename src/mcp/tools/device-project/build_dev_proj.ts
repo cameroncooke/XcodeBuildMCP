@@ -10,18 +10,20 @@ import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { validateRequiredParam } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-/**
- * Parameters for build device project tool
- */
-export interface BuildDevProjParams {
-  projectPath: string;
-  scheme: string;
-  configuration?: string;
-  derivedDataPath?: string;
-  extraArgs?: string[];
-  preferXcodebuild?: boolean;
-}
+// Define schema as ZodObject
+const buildDevProjSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file'),
+  scheme: z.string().describe('The scheme to build'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release)'),
+  derivedDataPath: z.string().optional().describe('Path to derived data directory'),
+  extraArgs: z.array(z.string()).optional().describe('Additional arguments to pass to xcodebuild'),
+  preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
+});
+
+// Use z.infer for type safety
+type BuildDevProjParams = z.infer<typeof buildDevProjSchema>;
 
 /**
  * Business logic for building device project
@@ -57,28 +59,6 @@ export default {
   name: 'build_dev_proj',
   description:
     "Builds an app from a project file for a physical Apple device. IMPORTANT: Requires projectPath and scheme. Example: build_dev_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file'),
-    scheme: z.string().describe('The scheme to build'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release)'),
-    derivedDataPath: z.string().optional().describe('Path to derived data directory'),
-    extraArgs: z
-      .array(z.string())
-      .optional()
-      .describe('Additional arguments to pass to xcodebuild'),
-    preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_dev_projLogic(
-      {
-        projectPath: args.projectPath as string,
-        scheme: args.scheme as string,
-        configuration: args.configuration as string,
-        derivedDataPath: args.derivedDataPath as string,
-        extraArgs: args.extraArgs as string[],
-        preferXcodebuild: args.preferXcodebuild as boolean,
-      },
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: buildDevProjSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(buildDevProjSchema, build_dev_projLogic, getDefaultCommandExecutor),
 };

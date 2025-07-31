@@ -8,25 +8,39 @@ import {
   executeXcodeBuildCommand,
   CommandExecutor,
 } from '../../../utils/index.js';
-import { execSync } from 'child_process';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type BuildRunSimNameWsParams = {
-  workspacePath: string;
-  scheme: string;
-  simulatorName: string;
-  configuration?: string;
-  derivedDataPath?: string;
-  extraArgs?: string[];
-  useLatestOS?: boolean;
-  preferXcodebuild?: boolean;
-};
+// Define schema as ZodObject
+const buildRunSimNameWsSchema = z.object({
+  workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
+  scheme: z.string().describe('The scheme to use (Required)'),
+  simulatorName: z.string().describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  derivedDataPath: z
+    .string()
+    .optional()
+    .describe('Path where build products and other derived data will go'),
+  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+  useLatestOS: z
+    .boolean()
+    .optional()
+    .describe('Whether to use the latest OS version for the named simulator'),
+  preferXcodebuild: z
+    .boolean()
+    .optional()
+    .describe(
+      'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
+    ),
+});
+
+// Use z.infer for type safety
+type BuildRunSimNameWsParams = z.infer<typeof buildRunSimNameWsSchema>;
 
 // Helper function for simulator build logic
 async function _handleSimulatorBuildLogic(
   params: BuildRunSimNameWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const _paramsRecord = params as Record<string, unknown>;
   log('info', `Building ${params.workspacePath} for iOS Simulator`);
 
   try {
@@ -62,19 +76,14 @@ export async function build_run_sim_name_wsLogic(
   params: BuildRunSimNameWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
-
   // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
   if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-  const simulatorNameValidation = validateRequiredParam(
-    'simulatorName',
-    paramsRecord.simulatorName,
-  );
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
   if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
   // Provide defaults
@@ -93,26 +102,16 @@ export async function build_run_sim_name_wsLogic(
 
   try {
     // Step 1: Find simulator by name first
-    let simulatorsData: { devices: Record<string, unknown[]> };
-    if (executor) {
-      // When using dependency injection (testing), get simulator data from mock
-      const simulatorListResult = await executor(
-        ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
-        'List Simulators',
-      );
-      if (!simulatorListResult.success) {
-        return createTextResponse(`Failed to list simulators: ${simulatorListResult.error}`, true);
-      }
-      simulatorsData = JSON.parse(simulatorListResult.output) as {
-        devices: Record<string, unknown[]>;
-      };
-    } else {
-      // Production path - use execSync
-      const simulatorsOutput = execSync('xcrun simctl list devices available --json').toString();
-      simulatorsData = JSON.parse(simulatorsOutput) as {
-        devices: Record<string, unknown[]>;
-      };
+    const simulatorListResult = await executor(
+      ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
+      'List Simulators',
+    );
+    if (!simulatorListResult.success) {
+      return createTextResponse(`Failed to list simulators: ${simulatorListResult.error}`, true);
     }
+    const simulatorsData = JSON.parse(simulatorListResult.output) as {
+      devices: Record<string, unknown[]>;
+    };
     let foundSimulator: { udid: string; name: string; state: string } | null = null;
 
     // Find the target simulator by name
@@ -289,30 +288,10 @@ export default {
   name: 'build_run_sim_name_ws',
   description:
     "Builds and runs an app from a workspace on a simulator specified by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_run_sim_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    simulatorName: z
-      .string()
-      .describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    useLatestOS: z
-      .boolean()
-      .optional()
-      .describe('Whether to use the latest OS version for the named simulator'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-      ),
-  },
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return build_run_sim_name_wsLogic(args as BuildRunSimNameWsParams, getDefaultCommandExecutor());
-  },
+  schema: buildRunSimNameWsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    buildRunSimNameWsSchema,
+    build_run_sim_name_wsLogic,
+    getDefaultCommandExecutor,
+  ),
 };

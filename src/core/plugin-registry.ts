@@ -7,7 +7,7 @@ export async function loadPlugins(): Promise<Map<string, PluginMeta>> {
   // Load all workflows and collect all their tools
   const workflowGroups = await loadWorkflowGroups();
 
-  for (const workflow of workflowGroups.values()) {
+  for (const [, workflow] of workflowGroups.entries()) {
     for (const tool of workflow.tools) {
       if (tool?.name && typeof tool.handler === 'function') {
         plugins.set(tool.name, tool);

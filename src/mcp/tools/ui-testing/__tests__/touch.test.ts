@@ -3,7 +3,7 @@
  * Following CLAUDE.md testing standards with dependency injection
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../utils/command.js';
 import touchPlugin, { touchLogic } from '../touch.ts';
@@ -117,6 +117,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       await touchLogic(
@@ -158,6 +167,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       await touchLogic(
@@ -199,6 +217,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       await touchLogic(
@@ -242,6 +269,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       await touchLogic(
@@ -319,65 +355,117 @@ describe('Touch Plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
+    it('should handle axe dependency error', async () => {
       const mockExecutor = createMockExecutor({ success: true });
-
-      const result = await touchLogic({ x: 100, y: 200, down: true }, mockExecutor);
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return error for missing x', async () => {
-      const mockExecutor = createMockExecutor({ success: true });
-
-      const result = await touchLogic(
-        {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          y: 200,
-          down: true,
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'x' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return error for missing y', async () => {
-      const mockExecutor = createMockExecutor({ success: true });
+      const mockAxeHelpers = {
+        getAxePath: () => null,
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await touchLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           x: 100,
+          y: 200,
           down: true,
         },
         mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'y' is missing. Please provide a value for this parameter.",
+            text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
           },
         ],
         isError: true,
+      });
+    });
+
+    it('should successfully perform touch down', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: 'Touch down completed' });
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
+      const result = await touchLogic(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          down: true,
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Touch event (touch down) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+          },
+        ],
+        isError: false,
+      });
+    });
+
+    it('should successfully perform touch up', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: 'Touch up completed' });
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
+      const result = await touchLogic(
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          x: 100,
+          y: 200,
+          up: true,
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Touch event (touch up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+          },
+        ],
+        isError: false,
       });
     });
 
@@ -409,6 +497,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       const result = await touchLogic(
@@ -443,6 +540,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       const result = await touchLogic(
@@ -477,6 +583,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       const result = await touchLogic(
@@ -508,6 +623,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => null,
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       const result = await touchLogic(
@@ -542,6 +666,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       const result = await touchLogic(
@@ -574,6 +707,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       const result = await touchLogic(
@@ -608,6 +750,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       const result = await touchLogic(
@@ -642,6 +793,15 @@ describe('Touch Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       const result = await touchLogic(

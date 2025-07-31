@@ -7,6 +7,7 @@ import {
   CommandExecutor,
   getDefaultCommandExecutor,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 const XcodePlatform = {
   macOS: 'macOS',
@@ -71,38 +72,42 @@ function constructDestinationString(
   return `platform=${platform}`;
 }
 
-type GetSimAppPathNameWsParams = {
-  workspacePath: string;
-  scheme: string;
-  platform: string;
-  simulatorName: string;
-  configuration?: string;
-  useLatestOS?: boolean;
-  projectPath?: string;
-  simulatorId?: string;
-  arch?: string;
-};
+// Define schema as ZodObject
+const getSimAppPathNameWsSchema = z.object({
+  workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
+  scheme: z.string().describe('The scheme to use (Required)'),
+  platform: z
+    .enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator'])
+    .describe('Target simulator platform (Required)'),
+  simulatorName: z.string().describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  useLatestOS: z
+    .boolean()
+    .optional()
+    .describe('Whether to use the latest OS version for the named simulator'),
+  projectPath: z.string().optional().describe('Optional project path (for fallback)'),
+  simulatorId: z.string().optional().describe('Optional simulator UUID'),
+  arch: z.string().optional().describe('Optional architecture'),
+});
+
+// Use z.infer for type safety
+type GetSimAppPathNameWsParams = z.infer<typeof getSimAppPathNameWsSchema>;
 
 export async function get_sim_app_path_name_wsLogic(
   params: GetSimAppPathNameWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
-
   // Parameter validation
-  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
   if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-  const platformValidation = validateRequiredParam('platform', paramsRecord.platform);
+  const platformValidation = validateRequiredParam('platform', params.platform);
   if (!platformValidation.isValid) return platformValidation.errorResponse!;
 
-  const simulatorNameValidation = validateRequiredParam(
-    'simulatorName',
-    paramsRecord.simulatorName,
-  );
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
   if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
   // Set defaults
@@ -254,25 +259,10 @@ export default {
   name: 'get_sim_app_path_name_ws',
   description:
     "Gets the app bundle path for a simulator by name using a workspace. IMPORTANT: Requires workspacePath, scheme, platform, and simulatorName. Example: get_sim_app_path_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    platform: z
-      .enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator'])
-      .describe('Target simulator platform (Required)'),
-    simulatorName: z
-      .string()
-      .describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    useLatestOS: z
-      .boolean()
-      .optional()
-      .describe('Whether to use the latest OS version for the named simulator'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_sim_app_path_name_wsLogic(
-      args as GetSimAppPathNameWsParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: getSimAppPathNameWsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    getSimAppPathNameWsSchema,
+    get_sim_app_path_name_wsLogic,
+    getDefaultCommandExecutor,
+  ),
 };

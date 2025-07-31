@@ -12,21 +12,32 @@ import {
   executeXcodeBuildCommand,
   createTextResponse,
 } from '../../../utils/index.js';
-import { promisify } from 'util';
-import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type TestMacosWsParams = {
-  workspacePath: string;
-  scheme: string;
-  configuration?: string;
-  derivedDataPath?: string;
-  extraArgs?: string[];
-  preferXcodebuild?: boolean;
-};
+// Define schema as ZodObject
+const testMacosWsSchema = z.object({
+  workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
+  scheme: z.string().describe('The scheme to use (Required)'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  derivedDataPath: z
+    .string()
+    .optional()
+    .describe('Path where build products and other derived data will go'),
+  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+  preferXcodebuild: z
+    .boolean()
+    .optional()
+    .describe(
+      'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
+    ),
+});
+
+// Use z.infer for type safety
+type TestMacosWsParams = z.infer<typeof testMacosWsSchema>;
 
 /**
  * Type definition for test summary structure from xcresulttool
@@ -47,26 +58,23 @@ type TestMacosWsParams = {
 // Parse xcresult bundle using xcrun xcresulttool
 async function parseXcresultBundle(
   resultBundlePath: string,
-  utilDeps?: {
-    promisify: <T extends (...args: unknown[]) => unknown>(
-      fn: T,
-    ) => T extends (...args: infer Args) => infer Return
-      ? (...args: Args) => Promise<Return>
-      : never;
-  },
+  executor: CommandExecutor,
 ): Promise<string> {
   try {
-    const promisifyFn = utilDeps?.promisify ?? promisify;
-    const execAsync = (promisifyFn as typeof promisify)(exec);
-    const { stdout } = await execAsync(
-      `xcrun xcresulttool get test-results summary --path "${resultBundlePath}"`,
-      {},
+    const result = await executor(
+      ['xcrun', 'xcresulttool', 'get', 'test-results', 'summary', '--path', resultBundlePath],
+      'Parse xcresult bundle',
+      true,
     );
+
+    if (!result.success) {
+      throw new Error(result.error ?? 'Failed to parse xcresult bundle');
+    }
 
     // Parse JSON response and format as human-readable
     let summary: Record<string, unknown>;
     try {
-      summary = JSON.parse(stdout as unknown as string) as Record<string, unknown>;
+      summary = JSON.parse(result.output || '{}') as Record<string, unknown>;
     } catch (parseError) {
       throw new Error(`Failed to parse JSON response: ${parseError}`);
     }
@@ -104,12 +112,17 @@ function formatTestSummary(summary: Record<string, unknown>): string {
     Array.isArray(summary.devicesAndConfigurations) &&
     summary.devicesAndConfigurations.length > 0
   ) {
-    const deviceConfig = summary.devicesAndConfigurations[0] as Record<string, unknown>;
-    const device = deviceConfig?.device as Record<string, unknown> | undefined;
+    const deviceConfig = summary.devicesAndConfigurations[0] as unknown;
+    const device =
+      typeof deviceConfig === 'object' && deviceConfig !== null
+        ? (deviceConfig as Record<string, unknown>).device
+        : undefined;
     if (device && typeof device === 'object') {
-      const deviceName = typeof device.deviceName === 'string' ? device.deviceName : 'Unknown';
-      const platform = typeof device.platform === 'string' ? device.platform : 'Unknown';
-      const osVersion = typeof device.osVersion === 'string' ? device.osVersion : 'Unknown';
+      const deviceObj = device as Record<string, unknown>;
+      const deviceName =
+        typeof deviceObj.deviceName === 'string' ? deviceObj.deviceName : 'Unknown';
+      const platform = typeof deviceObj.platform === 'string' ? deviceObj.platform : 'Unknown';
+      const osVersion = typeof deviceObj.osVersion === 'string' ? deviceObj.osVersion : 'Unknown';
       lines.push(`Device: ${deviceName} (${platform} ${osVersion})`);
       lines.push('');
     }
@@ -122,16 +135,18 @@ function formatTestSummary(summary: Record<string, unknown>): string {
   ) {
     lines.push('Test Failures:');
     summary.testFailures.forEach((failure, index) => {
-      const failureObj = failure as Record<string, unknown>;
-      const testName =
-        typeof failureObj.testName === 'string' ? failureObj.testName : 'Unknown Test';
-      const targetName =
-        typeof failureObj.targetName === 'string' ? failureObj.targetName : 'Unknown Target';
-      lines.push(`  ${index + 1}. ${testName} (${targetName})`);
+      if (typeof failure === 'object' && failure !== null) {
+        const failureObj = failure as Record<string, unknown>;
+        const testName =
+          typeof failureObj.testName === 'string' ? failureObj.testName : 'Unknown Test';
+        const targetName =
+          typeof failureObj.targetName === 'string' ? failureObj.targetName : 'Unknown Target';
+        lines.push(`  ${index + 1}. ${testName} (${targetName})`);
 
-      const failureText = failureObj.failureText;
-      if (typeof failureText === 'string') {
-        lines.push(`     ${failureText}`);
+        const failureText = failureObj.failureText;
+        if (typeof failureText === 'string') {
+          lines.push(`     ${failureText}`);
+        }
       }
     });
     lines.push('');
@@ -140,10 +155,12 @@ function formatTestSummary(summary: Record<string, unknown>): string {
   if (summary.topInsights && Array.isArray(summary.topInsights) && summary.topInsights.length > 0) {
     lines.push('Insights:');
     summary.topInsights.forEach((insight, index) => {
-      const insightObj = insight as Record<string, unknown>;
-      const impact = typeof insightObj.impact === 'string' ? insightObj.impact : 'Unknown';
-      const text = typeof insightObj.text === 'string' ? insightObj.text : 'No description';
-      lines.push(`  ${index + 1}. [${impact}] ${text}`);
+      if (typeof insight === 'object' && insight !== null) {
+        const insightObj = insight as Record<string, unknown>;
+        const impact = typeof insightObj.impact === 'string' ? insightObj.impact : 'Unknown';
+        const text = typeof insightObj.text === 'string' ? insightObj.text : 'No description';
+        lines.push(`  ${index + 1}. [${impact}] ${text}`);
+      }
     });
   }
 
@@ -160,28 +177,16 @@ export async function test_macos_wsLogic(
     join: (...paths: string[]) => string;
     tmpdir: () => string;
   },
-  utilDeps?: {
-    promisify: <T extends (...args: unknown[]) => unknown>(
-      fn: T,
-    ) => T extends (...args: infer Args) => infer Return
-      ? (...args: Args) => Promise<Return>
-      : never;
-  },
   fileSystemDeps?: {
     stat: (path: string) => Promise<{ isDirectory: () => boolean }>;
   },
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
   // Process parameters with defaults
   const processedParams = {
-    ...paramsRecord,
+    ...params,
     configuration: params.configuration ?? 'Debug',
     preferXcodebuild: params.preferXcodebuild ?? false,
     platform: XcodePlatform.macOS,
-    workspacePath: params.workspacePath,
-    scheme: params.scheme,
-    derivedDataPath: params.derivedDataPath,
-    extraArgs: params.extraArgs,
   };
 
   log(
@@ -234,7 +239,7 @@ export async function test_macos_wsLogic(
         throw new Error(`xcresult bundle not found at ${resultBundlePath}`);
       }
 
-      const testSummary = await parseXcresultBundle(resultBundlePath, utilDeps);
+      const testSummary = await parseXcresultBundle(resultBundlePath, executor);
       log('info', 'Successfully parsed xcresult bundle');
 
       // Clean up temporary directory
@@ -276,23 +281,6 @@ export async function test_macos_wsLogic(
 export default {
   name: 'test_macos_ws',
   description: 'Runs tests for a macOS workspace using xcodebuild test and parses xcresult output.',
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-      ),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return test_macos_wsLogic(args as TestMacosWsParams, getDefaultCommandExecutor());
-  },
+  schema: testMacosWsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(testMacosWsSchema, test_macos_wsLogic, getDefaultCommandExecutor),
 };

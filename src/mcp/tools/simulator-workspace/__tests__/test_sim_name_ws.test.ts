@@ -3,7 +3,7 @@
  * Following CLAUDE.md testing standards with dependency injection and literal validation
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { createMockExecutor } from '../../../../utils/command.js';
 import testSimNameWs, { test_sim_name_wsLogic } from '../test_sim_name_ws.ts';
 

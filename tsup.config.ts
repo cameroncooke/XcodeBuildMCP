@@ -12,7 +12,7 @@ export default defineConfig({
   platform: 'node',
   outDir: 'build',
   clean: true,
-  // sourcemap: false, // Disable source maps to reduce noise
+  sourcemap: true, // Enable source maps for debugging
   dts: {
     entry: {
       index: 'src/index.ts',

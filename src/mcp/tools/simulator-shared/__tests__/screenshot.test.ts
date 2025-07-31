@@ -446,10 +446,8 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle SystemError exceptions', async () => {
-      const mockExecutor = async () => {
-        const { SystemError } = await import('../../../../utils/index.js');
-        throw new SystemError('System error occurred');
-      };
+      const { SystemError } = await import('../../../../utils/index.js');
+      const mockExecutor = createMockExecutor(new SystemError('System error occurred'));
 
       const mockPathDeps = {
         tmpdir: () => '/tmp',
@@ -482,9 +480,7 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle unexpected Error objects', async () => {
-      const mockExecutor = async () => {
-        throw new Error('Unexpected error');
-      };
+      const mockExecutor = createMockExecutor(new Error('Unexpected error'));
 
       const mockPathDeps = {
         tmpdir: () => '/tmp',
@@ -517,9 +513,7 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle unexpected string errors', async () => {
-      const mockExecutor = async () => {
-        throw 'String error';
-      };
+      const mockExecutor = createMockExecutor('String error');
 
       const mockPathDeps = {
         tmpdir: () => '/tmp',

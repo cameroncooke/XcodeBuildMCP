@@ -103,6 +103,15 @@ describe('Long Press Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'Mock axe not available' }],
+          isError: true,
+        }),
+      };
+
       await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -111,8 +120,7 @@ describe('Long Press Plugin', () => {
           duration: 1500,
         },
         trackingExecutor,
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -143,6 +151,15 @@ describe('Long Press Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'Mock axe not available' }],
+          isError: true,
+        }),
+      };
+
       await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -151,8 +168,7 @@ describe('Long Press Plugin', () => {
           duration: 2000,
         },
         trackingExecutor,
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -183,6 +199,15 @@ describe('Long Press Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'Mock axe not available' }],
+          isError: true,
+        }),
+      };
+
       await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -191,8 +216,7 @@ describe('Long Press Plugin', () => {
           duration: 500,
         },
         trackingExecutor,
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -223,6 +247,15 @@ describe('Long Press Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/path/to/bundled/axe',
+        getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'Mock axe not available' }],
+          isError: true,
+        }),
+      };
+
       await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -231,8 +264,7 @@ describe('Long Press Plugin', () => {
           duration: 3000,
         },
         trackingExecutor,
-        () => '/path/to/bundled/axe',
-        () => ({ AXE_PATH: '/some/path' }),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -254,11 +286,24 @@ describe('Long Press Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       const result = await long_pressLogic(
         { x: 100, y: 200, duration: 1500 },
         createNoopExecutor(),
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -273,6 +318,20 @@ describe('Long Press Plugin', () => {
     });
 
     it('should return error for missing x', async () => {
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -280,8 +339,7 @@ describe('Long Press Plugin', () => {
           duration: 1500,
         },
         createNoopExecutor(),
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -296,6 +354,20 @@ describe('Long Press Plugin', () => {
     });
 
     it('should return error for missing y', async () => {
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -303,8 +375,7 @@ describe('Long Press Plugin', () => {
           duration: 1500,
         },
         createNoopExecutor(),
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -319,6 +390,20 @@ describe('Long Press Plugin', () => {
     });
 
     it('should return error for missing duration', async () => {
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       const result = await long_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -326,8 +411,7 @@ describe('Long Press Plugin', () => {
           y: 200,
         },
         createNoopExecutor(),
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -348,8 +432,14 @@ describe('Long Press Plugin', () => {
         error: '',
       });
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'Mock axe not available' }],
+          isError: true,
+        }),
+      };
 
       const result = await long_pressLogic(
         {
@@ -359,8 +449,7 @@ describe('Long Press Plugin', () => {
           duration: 1500,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -382,9 +471,19 @@ describe('Long Press Plugin', () => {
         process: { pid: 12345 },
       });
 
-      // Mock getAxePath to return null (axe not found)
-      const mockGetAxePath = () => null;
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => null, // Mock axe not found
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await long_pressLogic(
         {
@@ -394,8 +493,7 @@ describe('Long Press Plugin', () => {
           duration: 1500,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -417,9 +515,14 @@ describe('Long Press Plugin', () => {
         process: { pid: 12345 },
       });
 
-      // Mock the utility functions
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'Mock axe not available' }],
+          isError: true,
+        }),
+      };
 
       const result = await long_pressLogic(
         {
@@ -429,8 +532,7 @@ describe('Long Press Plugin', () => {
           duration: 1500,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -449,8 +551,14 @@ describe('Long Press Plugin', () => {
         throw new Error('ENOENT: no such file or directory');
       };
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'Mock axe not available' }],
+          isError: true,
+        }),
+      };
 
       const result = await long_pressLogic(
         {
@@ -460,8 +568,7 @@ describe('Long Press Plugin', () => {
           duration: 1500,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -482,8 +589,14 @@ describe('Long Press Plugin', () => {
         throw new Error('Unexpected error');
       };
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'Mock axe not available' }],
+          isError: true,
+        }),
+      };
 
       const result = await long_pressLogic(
         {
@@ -493,8 +606,7 @@ describe('Long Press Plugin', () => {
           duration: 1500,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -515,8 +627,14 @@ describe('Long Press Plugin', () => {
         throw 'String error';
       };
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text', text: 'Mock axe not available' }],
+          isError: true,
+        }),
+      };
 
       const result = await long_pressLogic(
         {
@@ -526,8 +644,7 @@ describe('Long Press Plugin', () => {
           duration: 1500,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({

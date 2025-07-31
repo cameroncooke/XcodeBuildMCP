@@ -8,14 +8,10 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-
-type LaunchAppDeviceParams = {
-  deviceId: string;
-  bundleId: string;
-};
 
 // Type for the launch JSON response
 type LaunchDataResponse = {
@@ -25,6 +21,17 @@ type LaunchDataResponse = {
     };
   };
 };
+
+// Define schema as ZodObject
+const launchAppDeviceSchema = z.object({
+  deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
+  bundleId: z
+    .string()
+    .describe('Bundle identifier of the app to launch (e.g., "com.example.MyApp")'),
+});
+
+// Use z.infer for type safety
+type LaunchAppDeviceParams = z.infer<typeof launchAppDeviceSchema>;
 
 export async function launch_app_deviceLogic(
   params: LaunchAppDeviceParams,
@@ -134,16 +141,10 @@ export default {
   name: 'launch_app_device',
   description:
     'Launches an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and bundleId.',
-  schema: {
-    deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
-    bundleId: z
-      .string()
-      .describe('Bundle identifier of the app to launch (e.g., "com.example.MyApp")'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return launch_app_deviceLogic(
-      args as unknown as LaunchAppDeviceParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: launchAppDeviceSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    launchAppDeviceSchema,
+    launch_app_deviceLogic,
+    getDefaultCommandExecutor,
+  ),
 };

@@ -5,24 +5,35 @@
  */
 
 import { z } from 'zod';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import { log } from '../../../utils/index.js';
 import { createTextResponse } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type BuildRunMacProjParams = {
-  projectPath: string;
-  scheme: string;
-  configuration?: string;
-  derivedDataPath?: string;
-  arch?: 'arm64' | 'x86_64';
-  extraArgs?: string[];
-  preferXcodebuild?: boolean;
-  workspacePath?: string;
-};
+// Define schema as ZodObject
+const buildRunMacProjSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file'),
+  scheme: z.string().describe('The scheme to use'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  derivedDataPath: z
+    .string()
+    .optional()
+    .describe('Path where build products and other derived data will go'),
+  arch: z
+    .enum(['arm64', 'x86_64'])
+    .optional()
+    .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
+  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+  preferXcodebuild: z
+    .boolean()
+    .optional()
+    .describe('If true, prefers xcodebuild over the experimental incremental build system'),
+});
+
+// Use z.infer for type safety
+type BuildRunMacProjParams = z.infer<typeof buildRunMacProjSchema>;
 
 /**
  * Internal logic for building macOS apps.
@@ -57,12 +68,8 @@ async function _getAppPathFromBuildSettings(
     // Create the command array for xcodebuild
     const command = ['xcodebuild', '-showBuildSettings'];
 
-    // Add the workspace or project
-    if (params.workspacePath) {
-      command.push('-workspace', params.workspacePath);
-    } else if (params.projectPath) {
-      command.push('-project', params.projectPath);
-    }
+    // Add the project
+    command.push('-project', params.projectPath);
 
     // Add the scheme and configuration
     command.push('-scheme', params.scheme);
@@ -111,7 +118,6 @@ async function _getAppPathFromBuildSettings(
 export async function build_run_mac_projLogic(
   params: BuildRunMacProjParams,
   executor: CommandExecutor,
-  execAsync?: (cmd: string) => Promise<unknown>,
 ): Promise<ToolResponse> {
   log('info', 'Handling macOS build & run logic...');
 
@@ -144,27 +150,13 @@ export async function build_run_mac_projLogic(
     const appPath = appPathResult.appPath; // We know this is a valid string now
     log('info', `App path determined as: ${appPath}`);
 
-    // 4. Launch the app using the verified path
-    try {
-      const execFunction = execAsync ?? promisify(exec);
-      await execFunction(`open "${appPath}"`);
-      log('info', `✅ macOS app launched successfully: ${appPath}`);
-      const successResponse: ToolResponse = {
-        content: [
-          ...buildWarningMessages,
-          {
-            type: 'text',
-            text: `✅ macOS build and run succeeded for scheme ${params.scheme}. App launched: ${appPath}`,
-          },
-        ],
-        isError: false,
-      };
-      return successResponse;
-    } catch (launchError) {
-      const errorMessage = launchError instanceof Error ? launchError.message : String(launchError);
-      log('error', `Build succeeded, but failed to launch app ${appPath}: ${errorMessage}`);
+    // 4. Launch the app using CommandExecutor
+    const launchResult = await executor(['open', appPath!], 'Launch macOS App', true);
+
+    if (!launchResult.success) {
+      log('error', `Build succeeded, but failed to launch app ${appPath}: ${launchResult.error}`);
       const errorResponse = createTextResponse(
-        `✅ Build succeeded, but failed to launch app ${appPath}. Error: ${errorMessage}`,
+        `✅ Build succeeded, but failed to launch app ${appPath}. Error: ${launchResult.error}`,
         false, // Build succeeded
       );
       if (errorResponse.content) {
@@ -172,6 +164,19 @@ export async function build_run_mac_projLogic(
       }
       return errorResponse;
     }
+
+    log('info', `✅ macOS app launched successfully: ${appPath}`);
+    const successResponse: ToolResponse = {
+      content: [
+        ...buildWarningMessages,
+        {
+          type: 'text',
+          text: `✅ macOS build and run succeeded for scheme ${params.scheme}. App launched: ${appPath}`,
+        },
+      ],
+      isError: false,
+    };
+    return successResponse;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     log('error', `Error during macOS build & run logic: ${errorMessage}`);
@@ -186,32 +191,18 @@ export async function build_run_mac_projLogic(
 export default {
   name: 'build_run_mac_proj',
   description: 'Builds and runs a macOS app from a project file in one step.',
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file'),
-    scheme: z.string().describe('The scheme to use'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    arch: z
-      .enum(['arm64', 'x86_64'])
-      .optional()
-      .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe('If true, prefers xcodebuild over the experimental incremental build system'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_run_mac_projLogic(
-      {
-        ...(args as unknown as BuildRunMacProjParams),
-        configuration: (args.configuration as string) ?? 'Debug',
-        preferXcodebuild: (args.preferXcodebuild as boolean) ?? false,
-      },
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: buildRunMacProjSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    buildRunMacProjSchema,
+    (params: BuildRunMacProjParams) =>
+      build_run_mac_projLogic(
+        {
+          ...params,
+          configuration: params.configuration ?? 'Debug',
+          preferXcodebuild: params.preferXcodebuild ?? false,
+        },
+        getDefaultCommandExecutor(),
+      ),
+    getDefaultCommandExecutor,
+  ),
 };

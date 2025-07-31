@@ -8,11 +8,21 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type InstallAppDeviceParams = {
-  deviceId: string;
-  appPath: string;
-};
+// Define schema as ZodObject
+const installAppDeviceSchema = z.object({
+  deviceId: z
+    .string()
+    .min(1, 'Device ID cannot be empty')
+    .describe('UDID of the device (obtained from list_devices)'),
+  appPath: z
+    .string()
+    .describe('Path to the .app bundle to install (full path to the .app directory)'),
+});
+
+// Use z.infer for type safety
+type InstallAppDeviceParams = z.infer<typeof installAppDeviceSchema>;
 
 /**
  * Business logic for installing an app on a physical Apple device
@@ -72,19 +82,10 @@ export default {
   name: 'install_app_device',
   description:
     'Installs an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and appPath.',
-  schema: {
-    deviceId: z
-      .string()
-      .min(1, 'Device ID cannot be empty')
-      .describe('UDID of the device (obtained from list_devices)'),
-    appPath: z
-      .string()
-      .describe('Path to the .app bundle to install (full path to the .app directory)'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return install_app_deviceLogic(
-      args as unknown as InstallAppDeviceParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: installAppDeviceSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    installAppDeviceSchema,
+    install_app_deviceLogic,
+    getDefaultCommandExecutor,
+  ),
 };

@@ -27,8 +27,8 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'warn',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { 
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_' 
+        argsIgnorePattern: 'never',
+        varsIgnorePattern: 'never' 
       }],
       'no-console': ['warn', { allow: ['error'] }],
       

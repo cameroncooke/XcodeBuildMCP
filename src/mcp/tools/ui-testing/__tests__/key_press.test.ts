@@ -103,14 +103,27 @@ describe('Key Press Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
         },
         trackingExecutor,
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -134,6 +147,20 @@ describe('Key Press Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -141,8 +168,7 @@ describe('Key Press Plugin', () => {
           duration: 1.5,
         },
         trackingExecutor,
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -168,14 +194,27 @@ describe('Key Press Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 255,
         },
         trackingExecutor,
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -199,14 +238,27 @@ describe('Key Press Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/path/to/bundled/axe',
+        getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       await key_pressLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCode: 44,
         },
         trackingExecutor,
-        () => '/path/to/bundled/axe',
-        () => ({ AXE_PATH: '/some/path' }),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -260,8 +312,19 @@ describe('Key Press Plugin', () => {
         error: '',
       });
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_pressLogic(
         {
@@ -269,12 +332,12 @@ describe('Key Press Plugin', () => {
           keyCode: 40,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Key press (code: 40) simulated successfully.' }],
+        isError: false,
       });
     });
 
@@ -285,8 +348,19 @@ describe('Key Press Plugin', () => {
         error: '',
       });
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_pressLogic(
         {
@@ -295,18 +369,29 @@ describe('Key Press Plugin', () => {
           duration: 1.5,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Key press (code: 42) simulated successfully.' }],
+        isError: false,
       });
     });
 
     it('should handle DependencyError when axe is not available', async () => {
-      const mockGetAxePath = () => null;
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => null,
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_pressLogic(
         {
@@ -314,8 +399,7 @@ describe('Key Press Plugin', () => {
           keyCode: 40,
         },
         createNoopExecutor(),
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -339,8 +423,19 @@ describe('Key Press Plugin', () => {
         error: 'axe command failed',
       });
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_pressLogic(
         {
@@ -348,8 +443,7 @@ describe('Key Press Plugin', () => {
           keyCode: 40,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -368,8 +462,19 @@ describe('Key Press Plugin', () => {
         throw new Error('System error occurred');
       };
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_pressLogic(
         {
@@ -377,8 +482,7 @@ describe('Key Press Plugin', () => {
           keyCode: 40,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result.isError).toBe(true);
@@ -392,8 +496,19 @@ describe('Key Press Plugin', () => {
         throw new Error('Unexpected error');
       };
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_pressLogic(
         {
@@ -401,8 +516,7 @@ describe('Key Press Plugin', () => {
           keyCode: 40,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result.isError).toBe(true);
@@ -416,8 +530,19 @@ describe('Key Press Plugin', () => {
         throw 'String error';
       };
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_pressLogic(
         {
@@ -425,8 +550,7 @@ describe('Key Press Plugin', () => {
           keyCode: 40,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({

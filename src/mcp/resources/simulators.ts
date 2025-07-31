@@ -52,7 +52,7 @@ export default {
   name: 'simulators',
   description: 'Available iOS simulators with their UUIDs and states',
   mimeType: 'text/plain',
-  async handler(_uri: URL): Promise<{ contents: Array<{ text: string }> }> {
+  async handler(): Promise<{ contents: Array<{ text: string }> }> {
     return simulatorsResourceLogic();
   },
 };

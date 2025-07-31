@@ -3,13 +3,19 @@ import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
-import { execSync } from 'child_process';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type LaunchAppSimNameWsParams = {
-  simulatorName: string;
-  bundleId: string;
-  args?: string[];
-};
+// Define schema as ZodObject
+const launchAppSimNameWsSchema = z.object({
+  simulatorName: z.string().describe("Name of the simulator to use (e.g., 'iPhone 16')"),
+  bundleId: z
+    .string()
+    .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
+  args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
+});
+
+// Use z.infer for type safety
+type LaunchAppSimNameWsParams = z.infer<typeof launchAppSimNameWsSchema>;
 
 export async function launch_app_sim_name_wsLogic(
   params: LaunchAppSimNameWsParams,
@@ -29,35 +35,25 @@ export async function launch_app_sim_name_wsLogic(
 
   try {
     // Step 1: Find simulator by name first
-    let simulatorsData: { devices: Record<string, unknown[]> };
-    if (executor) {
-      // When using dependency injection (testing), get simulator data from mock
-      const simulatorListResult = await executor(
-        ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
-        'List Simulators',
-        true,
-      );
-      if (!simulatorListResult.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Failed to list simulators: ${simulatorListResult.error}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-      simulatorsData = JSON.parse(simulatorListResult.output) as {
-        devices: Record<string, unknown[]>;
-      };
-    } else {
-      // Production path - use execSync
-      const simulatorsOutput = execSync('xcrun simctl list devices available --json').toString();
-      simulatorsData = JSON.parse(simulatorsOutput) as {
-        devices: Record<string, unknown[]>;
+    const simulatorListResult = await executor(
+      ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
+      'List Simulators',
+      true,
+    );
+    if (!simulatorListResult.success) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Failed to list simulators: ${simulatorListResult.error}`,
+          },
+        ],
+        isError: true,
       };
     }
+    const simulatorsData = JSON.parse(simulatorListResult.output) as {
+      devices: Record<string, unknown[]>;
+    };
 
     let foundSimulator: { udid: string; name: string } | null = null;
 
@@ -188,17 +184,10 @@ export default {
   name: 'launch_app_sim_name_ws',
   description:
     "Launches an app in an iOS simulator by simulator name. IMPORTANT: You MUST provide both the simulatorName and bundleId parameters.\n\nNote: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_sim_name_ws({ simulatorName: 'iPhone 16', bundleId: 'com.example.MyApp' })",
-  schema: {
-    simulatorName: z.string().describe("Name of the simulator to use (e.g., 'iPhone 16')"),
-    bundleId: z
-      .string()
-      .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
-    args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
-  },
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return launch_app_sim_name_wsLogic(
-      args as LaunchAppSimNameWsParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: launchAppSimNameWsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    launchAppSimNameWsSchema,
+    launch_app_sim_name_wsLogic,
+    getDefaultCommandExecutor,
+  ),
 };

@@ -8,7 +8,7 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import {
   DependencyError,
   AxeError,
@@ -21,17 +21,22 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 const LOG_PREFIX = '[AXe]';
+
+// Define schema as ZodObject
+const typeTextSchema = z.object({
+  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  text: z.string().min(1, 'Text cannot be empty'),
+});
+
+// Use z.infer for type safety
+type TypeTextParams = z.infer<typeof typeTextSchema>;
 
 interface AxeHelpers {
   getAxePath: () => string | null;
   getBundledAxeEnvironment: () => Record<string, string>;
-}
-
-interface TypeTextParams {
-  simulatorUuid: unknown;
-  text: unknown;
 }
 
 export async function type_textLogic(
@@ -40,50 +45,40 @@ export async function type_textLogic(
   axeHelpers?: AxeHelpers,
 ): Promise<ToolResponse> {
   const toolName = 'type_text';
-  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
-  const textValidation = validateRequiredParam('text', params.text);
-  if (!textValidation.isValid) return textValidation.errorResponse!;
 
+  // Params are already validated by the factory, use directly
   const { simulatorUuid, text } = params;
   const commandArgs = ['type', text];
 
   log(
     'info',
-    `${LOG_PREFIX}/${toolName}: Starting type "${String(text).substring(0, 20)}..." on ${simulatorUuid}`,
+    `${LOG_PREFIX}/${toolName}: Starting type "${text.substring(0, 20)}..." on ${simulatorUuid}`,
   );
 
   try {
-    await executeAxeCommand(
-      commandArgs as string[],
-      simulatorUuid as string,
-      'type',
-      executor,
-      axeHelpers,
-    );
+    await executeAxeCommand(commandArgs, simulatorUuid, 'type', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
     return createTextResponse('Text typing simulated successfully.');
   } catch (error) {
-    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
+    log(
+      'error',
+      `${LOG_PREFIX}/${toolName}: Failed - ${error instanceof Error ? error.message : String(error)}`,
+    );
     if (error instanceof DependencyError) {
       return createAxeNotAvailableResponse();
     } else if (error instanceof AxeError) {
       return createErrorResponse(
         `Failed to simulate text typing: ${error.message}`,
         error.axeOutput,
-        error.name,
       );
     } else if (error instanceof SystemError) {
       return createErrorResponse(
         `System error executing axe: ${error.message}`,
         error.originalError?.stack,
-        error.name,
       );
     }
     return createErrorResponse(
       `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-      undefined,
-      'UnexpectedError',
     );
   }
 }
@@ -92,13 +87,8 @@ export default {
   name: 'type_text',
   description:
     'Type text (supports US keyboard characters). Use describe_ui to find text field, tap to focus, then type.',
-  schema: {
-    simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
-    text: z.string().min(1, 'Text cannot be empty'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return type_textLogic(args as unknown as TypeTextParams, getDefaultCommandExecutor());
-  },
+  schema: typeTextSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(typeTextSchema, type_textLogic, getDefaultCommandExecutor), // Safe factory
 };
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)

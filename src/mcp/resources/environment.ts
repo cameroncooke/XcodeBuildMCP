@@ -60,7 +60,7 @@ export default {
   description:
     'Comprehensive development environment diagnostic information and configuration status',
   mimeType: 'text/plain',
-  async handler(_uri: URL): Promise<{ contents: Array<{ text: string }> }> {
+  async handler(): Promise<{ contents: Array<{ text: string }> }> {
     return environmentResourceLogic();
   },
 };

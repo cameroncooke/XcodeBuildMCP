@@ -12,21 +12,30 @@ import {
   executeXcodeBuildCommand,
   createTextResponse,
 } from '../../../utils/index.js';
-import { promisify } from 'util';
-import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-interface TestMacosProjParams {
-  projectPath: string;
-  scheme: string;
-  configuration?: string;
-  derivedDataPath?: string;
-  extraArgs?: string[];
-  preferXcodebuild?: boolean;
-}
+// Define schema as ZodObject
+const testMacosProjSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file'),
+  scheme: z.string().describe('The scheme to use'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  derivedDataPath: z
+    .string()
+    .optional()
+    .describe('Path where build products and other derived data will go'),
+  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+  preferXcodebuild: z
+    .boolean()
+    .optional()
+    .describe('If true, prefers xcodebuild over the experimental incremental build system'),
+});
+
+// Use z.infer for type safety
+type TestMacosProjParams = z.infer<typeof testMacosProjSchema>;
 
 /**
  * Type definition for test summary structure from xcresulttool
@@ -45,17 +54,25 @@ interface TestMacosProjParams {
  */
 
 // Parse xcresult bundle using xcrun xcresulttool
-async function parseXcresultBundle(resultBundlePath: string): Promise<string> {
+async function parseXcresultBundle(
+  resultBundlePath: string,
+  executor: CommandExecutor,
+): Promise<string> {
   try {
-    const execAsync = promisify(exec);
-    const { stdout } = await execAsync(
-      `xcrun xcresulttool get test-results summary --path "${resultBundlePath}"`,
+    const result = await executor(
+      ['xcrun', 'xcresulttool', 'get', 'test-results', 'summary', '--path', resultBundlePath],
+      'Parse xcresult bundle',
+      true,
     );
+
+    if (!result.success) {
+      throw new Error(result.error ?? 'Failed to parse xcresult bundle');
+    }
 
     // Parse JSON response and format as human-readable
     let summary: unknown;
     try {
-      summary = JSON.parse(stdout);
+      summary = JSON.parse(result.output || '{}');
     } catch (parseError) {
       throw new Error(`Failed to parse JSON output: ${parseError}`);
     }
@@ -225,7 +242,7 @@ export async function test_macos_projLogic(
         throw new Error(`xcresult bundle not found at ${resultBundlePath}`);
       }
 
-      const testSummary = await parseXcresultBundle(resultBundlePath);
+      const testSummary = await parseXcresultBundle(resultBundlePath, executor);
       log('info', 'Successfully parsed xcresult bundle');
 
       // Clean up temporary directory
@@ -265,24 +282,6 @@ export async function test_macos_projLogic(
 export default {
   name: 'test_macos_proj',
   description: 'Runs tests for a macOS project using xcodebuild test and parses xcresult output.',
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file'),
-    scheme: z.string().describe('The scheme to use'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe('If true, prefers xcodebuild over the experimental incremental build system'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return test_macos_projLogic(
-      args as unknown as TestMacosProjParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: testMacosProjSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(testMacosProjSchema, test_macos_projLogic, getDefaultCommandExecutor),
 };

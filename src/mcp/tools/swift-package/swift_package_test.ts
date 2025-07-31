@@ -5,27 +5,27 @@ import { createTextResponse, validateRequiredParam } from '../../../utils/index.
 import { createErrorResponse } from '../../../utils/index.js';
 import { log } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-// Inlined schemas from src/tools/common/index.ts
-const swiftConfigurationSchema = z
-  .enum(['debug', 'release'])
-  .optional()
-  .describe('Swift package configuration (debug, release)');
+// Define schema as ZodObject
+const swiftPackageTestSchema = z.object({
+  packagePath: z.string().describe('Path to the Swift package root (Required)'),
+  testProduct: z.string().optional().describe('Optional specific test product to run'),
+  filter: z.string().optional().describe('Filter tests by name (regex pattern)'),
+  configuration: z
+    .enum(['debug', 'release'])
+    .optional()
+    .describe('Swift package configuration (debug, release)'),
+  parallel: z.boolean().optional().describe('Run tests in parallel (default: true)'),
+  showCodecov: z.boolean().optional().describe('Show code coverage (default: false)'),
+  parseAsLibrary: z
+    .boolean()
+    .optional()
+    .describe('Add -parse-as-library flag for @main support (default: false)'),
+});
 
-const parseAsLibrarySchema = z
-  .boolean()
-  .optional()
-  .describe('Add -parse-as-library flag for @main support (default: false)');
-
-interface SwiftPackageTestParams {
-  packagePath: unknown;
-  testProduct?: unknown;
-  filter?: unknown;
-  configuration?: unknown;
-  parallel?: unknown;
-  showCodecov?: unknown;
-  parseAsLibrary?: unknown;
-}
+// Use z.infer for type safety
+type SwiftPackageTestParams = z.infer<typeof swiftPackageTestSchema>;
 
 export async function swift_package_testLogic(
   params: SwiftPackageTestParams,
@@ -34,21 +34,21 @@ export async function swift_package_testLogic(
   const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
   if (!pkgValidation.isValid) return pkgValidation.errorResponse!;
 
-  const resolvedPath = path.resolve(params.packagePath as string);
+  const resolvedPath = path.resolve(params.packagePath);
   const swiftArgs = ['test', '--package-path', resolvedPath];
 
-  if (params.configuration && (params.configuration as string).toLowerCase() === 'release') {
+  if (params.configuration && params.configuration.toLowerCase() === 'release') {
     swiftArgs.push('-c', 'release');
-  } else if (params.configuration && (params.configuration as string).toLowerCase() !== 'debug') {
+  } else if (params.configuration && params.configuration.toLowerCase() !== 'debug') {
     return createTextResponse("Invalid configuration. Use 'debug' or 'release'.", true);
   }
 
   if (params.testProduct) {
-    swiftArgs.push('--test-product', params.testProduct as string);
+    swiftArgs.push('--test-product', params.testProduct);
   }
 
   if (params.filter) {
-    swiftArgs.push('--filter', params.filter as string);
+    swiftArgs.push('--filter', params.filter);
   }
 
   if (params.parallel === false) {
@@ -68,7 +68,7 @@ export async function swift_package_testLogic(
     const result = await executor(['swift', ...swiftArgs], 'Swift Package Test', true, undefined);
     if (!result.success) {
       const errorMessage = result.error ?? result.output ?? 'Unknown error';
-      return createErrorResponse('Swift package tests failed', errorMessage, 'TestError');
+      return createErrorResponse('Swift package tests failed', errorMessage);
     }
 
     return {
@@ -84,26 +84,17 @@ export async function swift_package_testLogic(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     log('error', `Swift package test failed: ${message}`);
-    return createErrorResponse('Failed to execute swift test', message, 'SystemError');
+    return createErrorResponse('Failed to execute swift test', message);
   }
 }
 
 export default {
   name: 'swift_package_test',
   description: 'Runs tests for a Swift Package with swift test',
-  schema: {
-    packagePath: z.string().describe('Path to the Swift package root (Required)'),
-    testProduct: z.string().optional().describe('Optional specific test product to run'),
-    filter: z.string().optional().describe('Filter tests by name (regex pattern)'),
-    configuration: swiftConfigurationSchema,
-    parallel: z.boolean().optional().describe('Run tests in parallel (default: true)'),
-    showCodecov: z.boolean().optional().describe('Show code coverage (default: false)'),
-    parseAsLibrary: parseAsLibrarySchema,
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return swift_package_testLogic(
-      args as unknown as SwiftPackageTestParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: swiftPackageTestSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    swiftPackageTestSchema,
+    swift_package_testLogic,
+    getDefaultCommandExecutor,
+  ),
 };

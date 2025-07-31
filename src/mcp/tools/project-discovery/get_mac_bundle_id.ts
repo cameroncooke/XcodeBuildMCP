@@ -5,37 +5,46 @@
  */
 
 import { z } from 'zod';
-import { execSync } from 'child_process';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
-import { FileSystemExecutor, getDefaultFileSystemExecutor } from '../../../utils/command.js';
+import {
+  CommandExecutor,
+  FileSystemExecutor,
+  getDefaultFileSystemExecutor,
+  getDefaultCommandExecutor,
+} from '../../../utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 /**
- * Sync executor function type for dependency injection
+ * Sync wrapper for CommandExecutor to handle synchronous commands
  */
-export type SyncExecutor = (command: string) => string;
-
-/**
- * Parameters for get mac bundle ID tool
- */
-export interface GetMacBundleIdParams {
-  appPath: string;
+async function executeSyncCommand(command: string, executor: CommandExecutor): Promise<string> {
+  const result = await executor(['/bin/sh', '-c', command], 'macOS Bundle ID Extraction');
+  if (!result.success) {
+    throw new Error(result.error ?? 'Command failed');
+  }
+  return result.output || '';
 }
 
-/**
- * Default sync executor implementation using execSync
- */
-const defaultSyncExecutor: SyncExecutor = (command: string): string => {
-  return execSync(command).toString().trim();
-};
+// Define schema as ZodObject
+const getMacBundleIdSchema = z.object({
+  appPath: z
+    .string()
+    .describe(
+      'Path to the macOS .app bundle to extract bundle ID from (full path to the .app directory)',
+    ),
+});
+
+// Use z.infer for type safety
+type GetMacBundleIdParams = z.infer<typeof getMacBundleIdSchema>;
 
 /**
  * Business logic for extracting macOS bundle ID
  */
 export async function get_mac_bundle_idLogic(
-  params: Record<string, unknown>,
-  syncExecutor: SyncExecutor,
+  params: GetMacBundleIdParams,
+  executor: CommandExecutor,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
   const appPathValidation = validateRequiredParam('appPath', params.appPath);
@@ -43,33 +52,35 @@ export async function get_mac_bundle_idLogic(
     return appPathValidation.errorResponse!;
   }
 
-  const validated = { appPath: params.appPath as string };
+  const appPath = params.appPath;
 
-  if (!fileSystemExecutor.existsSync(validated.appPath)) {
+  if (!fileSystemExecutor.existsSync(appPath)) {
     return {
       content: [
         {
           type: 'text',
-          text: `File not found: '${validated.appPath}'. Please check the path and try again.`,
+          text: `File not found: '${appPath}'. Please check the path and try again.`,
         },
       ],
       isError: true,
     };
   }
 
-  log('info', `Starting bundle ID extraction for macOS app: ${validated.appPath}`);
+  log('info', `Starting bundle ID extraction for macOS app: ${appPath}`);
 
   try {
     let bundleId;
 
     try {
-      bundleId = syncExecutor(
-        `defaults read "${validated.appPath}/Contents/Info" CFBundleIdentifier`,
+      bundleId = await executeSyncCommand(
+        `defaults read "${appPath}/Contents/Info" CFBundleIdentifier`,
+        executor,
       );
     } catch {
       try {
-        bundleId = syncExecutor(
-          `/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${validated.appPath}/Contents/Info.plist"`,
+        bundleId = await executeSyncCommand(
+          `/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${appPath}/Contents/Info.plist"`,
+          executor,
         );
       } catch (innerError) {
         throw new Error(
@@ -89,7 +100,7 @@ export async function get_mac_bundle_idLogic(
         {
           type: 'text',
           text: `Next Steps:
-- Launch the app: launch_mac_app({ appPath: "${validated.appPath}" })
+- Launch the app: launch_mac_app({ appPath: "${appPath}" })
 - Build from workspace: macos_build_workspace({ workspacePath: "PATH_TO_WORKSPACE", scheme: "SCHEME_NAME" })
 - Build from project: macos_build_project({ projectPath: "PATH_TO_PROJECT", scheme: "SCHEME_NAME" })`,
         },
@@ -120,14 +131,11 @@ export default {
   name: 'get_mac_bundle_id',
   description:
     "Extracts the bundle identifier from a macOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_mac_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_macos_bundle_id.",
-  schema: {
-    appPath: z
-      .string()
-      .describe(
-        'Path to the macOS .app bundle to extract bundle ID from (full path to the .app directory)',
-      ),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_mac_bundle_idLogic(args, defaultSyncExecutor, getDefaultFileSystemExecutor());
-  },
+  schema: getMacBundleIdSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    getMacBundleIdSchema,
+    (params: GetMacBundleIdParams) =>
+      get_mac_bundle_idLogic(params, getDefaultCommandExecutor(), getDefaultFileSystemExecutor()),
+    getDefaultCommandExecutor,
+  ),
 };

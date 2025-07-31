@@ -2,7 +2,7 @@
  * Tests for gesture tool plugin
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import {
   createMockExecutor,
@@ -353,6 +353,15 @@ describe('Gesture Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => null,
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       const result = await gestureLogic(

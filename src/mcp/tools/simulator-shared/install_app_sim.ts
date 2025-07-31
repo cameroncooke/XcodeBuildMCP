@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import { ToolResponse } from '../../../types/common.js';
 import {
   log,
   validateRequiredParam,
@@ -7,10 +7,24 @@ import {
   CommandExecutor,
   FileSystemExecutor,
   getDefaultCommandExecutor,
-} from '../../../utils/index.ts';
+} from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+
+// Define schema as ZodObject
+const installAppSimSchema = z.object({
+  simulatorUuid: z
+    .string()
+    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+  appPath: z
+    .string()
+    .describe('Path to the .app bundle to install (full path to the .app directory)'),
+});
+
+// Use z.infer for type safety
+type InstallAppSimParams = z.infer<typeof installAppSimSchema>;
 
 export async function install_app_simLogic(
-  params: Record<string, unknown>,
+  params: InstallAppSimParams,
   executor: CommandExecutor,
   fileSystem?: FileSystemExecutor,
 ): Promise<ToolResponse> {
@@ -24,7 +38,7 @@ export async function install_app_simLogic(
     return appPathValidation.errorResponse!;
   }
 
-  const appPathExistsValidation = validateFileExists(params.appPath as string, fileSystem);
+  const appPathExistsValidation = validateFileExists(params.appPath, fileSystem);
   if (!appPathExistsValidation.isValid) {
     return appPathExistsValidation.errorResponse!;
   }
@@ -32,13 +46,7 @@ export async function install_app_simLogic(
   log('info', `Starting xcrun simctl install request for simulator ${params.simulatorUuid}`);
 
   try {
-    const command = [
-      'xcrun',
-      'simctl',
-      'install',
-      params.simulatorUuid as string,
-      params.appPath as string,
-    ];
+    const command = ['xcrun', 'simctl', 'install', params.simulatorUuid, params.appPath];
     const result = await executor(command, 'Install App in Simulator', true, undefined);
 
     if (!result.success) {
@@ -99,15 +107,6 @@ export default {
   name: 'install_app_sim',
   description:
     "Installs an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and appPath parameters. Example: install_app_sim({ simulatorUuid: 'YOUR_UUID_HERE', appPath: '/path/to/your/app.app' })",
-  schema: {
-    simulatorUuid: z
-      .string()
-      .describe('UUID of the simulator to use (obtained from list_simulators)'),
-    appPath: z
-      .string()
-      .describe('Path to the .app bundle to install (full path to the .app directory)'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return install_app_simLogic(args, getDefaultCommandExecutor());
-  },
+  schema: installAppSimSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(installAppSimSchema, install_app_simLogic, getDefaultCommandExecutor),
 };

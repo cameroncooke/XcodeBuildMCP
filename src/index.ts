@@ -30,6 +30,9 @@ import { loadPlugins } from './core/plugin-registry.js';
 // Import xcodemake utilities
 import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
 
+// Import process for stdout configuration
+import process from 'node:process';
+
 // Import resource management
 import { registerResources } from './core/resources.js';
 
@@ -38,6 +41,10 @@ import { registerResources } from './core/resources.js';
  */
 async function main(): Promise<void> {
   try {
+    // Increase stdout maxListeners to prevent EventEmitter memory leak warnings
+    // during bulk tool registration in dynamic mode (80+ tools)
+    process.stdout.setMaxListeners(100);
+    
     // Check if xcodemake is enabled and available
     if (isXcodemakeEnabled()) {
       log('info', 'xcodemake is enabled, checking if available...');
@@ -60,53 +67,38 @@ async function main(): Promise<void> {
     // Make server available globally for dynamic tools
     (globalThis as { mcpServer?: McpServer }).mcpServer = server;
 
-    // Add notification capability for dynamic tool updates
-    (server as McpServer & { notifyToolsChanged?: () => Promise<void> }).notifyToolsChanged =
-      async (): Promise<void> => {
-        await server.server.notification({
-          method: 'notifications/tools/list_changed',
-          params: {},
-        });
-      };
-
-    // Determine operating mode
+    // Check if dynamic tools mode is enabled
     const isDynamicMode = process.env.XCODEBUILDMCP_DYNAMIC_TOOLS === 'true';
 
     if (isDynamicMode) {
-      log('info', '🔍 Starting in DYNAMIC mode');
-      // In dynamic mode, only load the discover_tools initially
+      // DYNAMIC MODE: Only load discovery tools initially
+      log('info', '🚀 Initializing server in dynamic mode...');
       const plugins = await loadPlugins();
-      const discoverTool = plugins.get('discover_tools');
-
-      if (!discoverTool) {
-        throw new Error('discover_tools not found - required for dynamic mode');
-      }
-
-      server.tool(
-        discoverTool.name,
-        discoverTool.description ?? '',
-        discoverTool.schema,
-        discoverTool.handler,
-      );
-
-      // Register resources in dynamic mode (returns true if registered)
-      await registerResources(server);
-
-      log('info', '   Use discover_tools to enable relevant workflows on-demand');
-    } else {
-      log('info', '📋 Starting in STATIC mode');
-
-      // Register resources first in static mode to determine tool filtering
-      await registerResources(server);
-
-      // In static mode, load all plugins except discover_tools
-      const plugins = await loadPlugins();
+      let registeredCount = 0;
+      
+      // Only register discovery tools initially
       for (const plugin of plugins.values()) {
-        if (plugin.name !== 'discover_tools') {
+        // Only load discover_tools and discovery-related tools initially
+        if (plugin.name === 'discover_tools' || plugin.name === 'discover_projs') {
           server.tool(plugin.name, plugin.description ?? '', plugin.schema, plugin.handler);
+          registeredCount++;
         }
       }
+      log('info', `✅ Registered ${registeredCount} discovery tools in dynamic mode.`);
+      log('info', 'Use discover_tools to enable additional workflows based on your task.');
+    } else {
+      // STATIC MODE: Load all tools immediately  
+      log('info', '🚀 Initializing server in static mode...');
+      const plugins = await loadPlugins();
+      let registeredCount = 0;
+      for (const plugin of plugins.values()) {
+        server.tool(plugin.name, plugin.description ?? '', plugin.schema, plugin.handler);
+        registeredCount++;
+      }
+      log('info', `✅ Registered ${registeredCount} tools in static mode.`);
     }
+    
+    await registerResources(server);
 
     // Start the server
     await startServer(server);
@@ -123,12 +115,7 @@ async function main(): Promise<void> {
     });
 
     // Log successful startup
-    const mode = isDynamicMode ? 'Dynamic' : 'Static';
-    log('info', `XcodeBuildMCP server (version ${version}) started successfully in ${mode} mode`);
-
-    if (isDynamicMode) {
-      log('info', 'Use "discover_tools" to enable relevant tool workflows for your task');
-    }
+    log('info', `XcodeBuildMCP server (version ${version}) started successfully`);
   } catch (error) {
     console.error('Fatal error in main():', error);
     process.exit(1);

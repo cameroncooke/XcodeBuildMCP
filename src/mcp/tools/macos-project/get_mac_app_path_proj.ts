@@ -10,15 +10,23 @@ import { log } from '../../../utils/index.js';
 import { validateRequiredParam } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type GetMacAppPathProjParams = {
-  projectPath: string;
-  scheme: string;
-  configuration?: string;
-  derivedDataPath?: string;
-  extraArgs?: string[];
-  arch?: 'arm64' | 'x86_64';
-};
+// Define schema as ZodObject
+const getMacAppPathProjSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file'),
+  scheme: z.string().describe('The scheme to use'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  derivedDataPath: z.string().optional().describe('Path to derived data directory'),
+  extraArgs: z.array(z.string()).optional().describe('Additional arguments to pass to xcodebuild'),
+  arch: z
+    .enum(['arm64', 'x86_64'])
+    .optional()
+    .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
+});
+
+// Use z.infer for type safety
+type GetMacAppPathProjParams = z.infer<typeof getMacAppPathProjSchema>;
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -36,12 +44,10 @@ export async function get_mac_app_path_projLogic(
   params: GetMacAppPathProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
-
-  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
   if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   const configuration = params.configuration ?? 'Debug';
@@ -138,24 +144,10 @@ export default {
   name: 'get_mac_app_path_proj',
   description:
     "Gets the app bundle path for a macOS application using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_mac_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file'),
-    scheme: z.string().describe('The scheme to use'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z.string().optional().describe('Path to derived data directory'),
-    extraArgs: z
-      .array(z.string())
-      .optional()
-      .describe('Additional arguments to pass to xcodebuild'),
-    arch: z
-      .enum(['arm64', 'x86_64'])
-      .optional()
-      .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_mac_app_path_projLogic(
-      args as unknown as GetMacAppPathProjParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: getMacAppPathProjSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    getMacAppPathProjSchema,
+    get_mac_app_path_projLogic,
+    getDefaultCommandExecutor,
+  ),
 };

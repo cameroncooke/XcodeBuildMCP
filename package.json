@@ -20,13 +20,17 @@
     "typecheck": "npx tsc --noEmit",
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
     "diagnostic": "node build/diagnostic-cli.js",
-    "tools": "node scripts/tool-summary.js",
-    "tools:list": "node scripts/tool-summary.js --list-tools",
-    "tools:all": "node scripts/tool-summary.js --list-tools --list-resources",
+    "tools": "node scripts/tools-cli.js",
+    "tools:list": "node scripts/tools-cli.js list",
+    "tools:static": "node scripts/tools-cli.js static",
+    "tools:count": "node scripts/tools-cli.js count --static",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "check-migration": "node scripts/check-type-safety-migration.js --summary",
+    "check-migration:verbose": "node scripts/check-type-safety-migration.js --verbose",
+    "check-migration:unfixed": "node scripts/check-type-safety-migration.js --unfixed-only --verbose"
   },
   "files": [
     "build",

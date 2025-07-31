@@ -6,17 +6,23 @@ import {
   CommandExecutor,
   getDefaultCommandExecutor,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-interface SetSimulatorLocationParams {
-  simulatorUuid: string;
-  latitude: number;
-  longitude: number;
-  [key: string]: unknown;
-}
+// Define schema as ZodObject
+const setSimulatorLocationSchema = z.object({
+  simulatorUuid: z
+    .string()
+    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+  latitude: z.number().describe('The latitude for the custom location.'),
+  longitude: z.number().describe('The longitude for the custom location.'),
+});
+
+// Use z.infer for type safety
+type SetSimulatorLocationParams = z.infer<typeof setSimulatorLocationSchema>;
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
-  params: Record<string, unknown>,
+  params: SetSimulatorLocationParams,
   simctlSubCommand: string[],
   operationDescriptionForXcodeCommand: string,
   successMessage: string,
@@ -120,17 +126,10 @@ export async function set_simulator_locationLogic(
 export default {
   name: 'set_simulator_location',
   description: 'Sets a custom GPS location for the simulator.',
-  schema: {
-    simulatorUuid: z
-      .string()
-      .describe('UUID of the simulator to use (obtained from list_simulators)'),
-    latitude: z.number().describe('The latitude for the custom location.'),
-    longitude: z.number().describe('The longitude for the custom location.'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return set_simulator_locationLogic(
-      args as unknown as SetSimulatorLocationParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: setSimulatorLocationSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    setSimulatorLocationSchema,
+    set_simulator_locationLogic,
+    getDefaultCommandExecutor,
+  ),
 };

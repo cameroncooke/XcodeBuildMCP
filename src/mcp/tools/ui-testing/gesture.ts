@@ -21,21 +21,70 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+
+// Define schema as ZodObject
+const gestureSchema = z.object({
+  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  preset: z
+    .enum([
+      'scroll-up',
+      'scroll-down',
+      'scroll-left',
+      'scroll-right',
+      'swipe-from-left-edge',
+      'swipe-from-right-edge',
+      'swipe-from-top-edge',
+      'swipe-from-bottom-edge',
+    ])
+    .describe(
+      'The gesture preset to perform. Must be one of: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge.',
+    ),
+  screenWidth: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      'Optional: Screen width in pixels. Used for gesture calculations. Auto-detected if not provided.',
+    ),
+  screenHeight: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      'Optional: Screen height in pixels. Used for gesture calculations. Auto-detected if not provided.',
+    ),
+  duration: z
+    .number()
+    .min(0, 'Duration must be non-negative')
+    .optional()
+    .describe('Optional: Duration of the gesture in seconds.'),
+  delta: z
+    .number()
+    .min(0, 'Delta must be non-negative')
+    .optional()
+    .describe('Optional: Distance to move in pixels.'),
+  preDelay: z
+    .number()
+    .min(0, 'Pre-delay must be non-negative')
+    .optional()
+    .describe('Optional: Delay before starting the gesture in seconds.'),
+  postDelay: z
+    .number()
+    .min(0, 'Post-delay must be non-negative')
+    .optional()
+    .describe('Optional: Delay after completing the gesture in seconds.'),
+});
+
+// Use z.infer for type safety
+type GestureParams = z.infer<typeof gestureSchema>;
 
 export interface AxeHelpers {
   getAxePath: () => string | null;
   getBundledAxeEnvironment: () => Record<string, string>;
-}
-
-interface GestureParams {
-  simulatorUuid: string;
-  preset: string;
-  screenWidth?: number;
-  screenHeight?: number;
-  duration?: number;
-  delta?: number;
-  preDelay?: number;
-  postDelay?: number;
+  createAxeNotAvailableResponse: () => ToolResponse;
 }
 
 const LOG_PREFIX = '[AXe]';
@@ -43,7 +92,11 @@ const LOG_PREFIX = '[AXe]';
 export async function gestureLogic(
   params: GestureParams,
   executor: CommandExecutor,
-  axeHelpers?: AxeHelpers,
+  axeHelpers: AxeHelpers = {
+    getAxePath,
+    getBundledAxeEnvironment,
+    createAxeNotAvailableResponse,
+  },
 ): Promise<ToolResponse> {
   const toolName = 'gesture';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -83,24 +136,20 @@ export async function gestureLogic(
   } catch (error) {
     log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
     if (error instanceof DependencyError) {
-      return createAxeNotAvailableResponse();
+      return axeHelpers.createAxeNotAvailableResponse();
     } else if (error instanceof AxeError) {
       return createErrorResponse(
         `Failed to execute gesture '${preset}': ${error.message}`,
         error.axeOutput,
-        error.name,
       );
     } else if (error instanceof SystemError) {
       return createErrorResponse(
         `System error executing axe: ${error.message}`,
         error.originalError?.stack,
-        error.name,
       );
     }
     return createErrorResponse(
       `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-      undefined,
-      'UnexpectedError',
     );
   }
 }
@@ -109,62 +158,18 @@ export default {
   name: 'gesture',
   description:
     'Perform gesture on iOS simulator using preset gestures: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge',
-  schema: {
-    simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
-    preset: z
-      .enum([
-        'scroll-up',
-        'scroll-down',
-        'scroll-left',
-        'scroll-right',
-        'swipe-from-left-edge',
-        'swipe-from-right-edge',
-        'swipe-from-top-edge',
-        'swipe-from-bottom-edge',
-      ])
-      .describe(
-        'The gesture preset to perform. Must be one of: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge.',
-      ),
-    screenWidth: z
-      .number()
-      .int()
-      .min(1)
-      .optional()
-      .describe(
-        'Optional: Screen width in pixels. Used for gesture calculations. Auto-detected if not provided.',
-      ),
-    screenHeight: z
-      .number()
-      .int()
-      .min(1)
-      .optional()
-      .describe(
-        'Optional: Screen height in pixels. Used for gesture calculations. Auto-detected if not provided.',
-      ),
-    duration: z
-      .number()
-      .min(0, 'Duration must be non-negative')
-      .optional()
-      .describe('Optional: Duration of the gesture in seconds.'),
-    delta: z
-      .number()
-      .min(0, 'Delta must be non-negative')
-      .optional()
-      .describe('Optional: Distance to move in pixels.'),
-    preDelay: z
-      .number()
-      .min(0, 'Pre-delay must be non-negative')
-      .optional()
-      .describe('Optional: Delay before starting the gesture in seconds.'),
-    postDelay: z
-      .number()
-      .min(0, 'Post-delay must be non-negative')
-      .optional()
-      .describe('Optional: Delay after completing the gesture in seconds.'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return gestureLogic(args as unknown as GestureParams, getDefaultCommandExecutor());
-  },
+  schema: gestureSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    gestureSchema,
+    (params: GestureParams, executor: CommandExecutor) => {
+      return gestureLogic(params, executor, {
+        getAxePath,
+        getBundledAxeEnvironment,
+        createAxeNotAvailableResponse,
+      });
+    },
+    getDefaultCommandExecutor,
+  ),
 };
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
@@ -173,10 +178,10 @@ async function executeAxeCommand(
   simulatorUuid: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
-  axeHelpers?: AxeHelpers,
+  axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
 ): Promise<void> {
   // Get the appropriate axe binary path
-  const axeBinary = axeHelpers ? axeHelpers.getAxePath() : getAxePath();
+  const axeBinary = axeHelpers.getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -189,12 +194,7 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv =
-      axeBinary !== 'axe'
-        ? axeHelpers
-          ? axeHelpers.getBundledAxeEnvironment()
-          : getBundledAxeEnvironment()
-        : undefined;
+    const axeEnv = axeBinary !== 'axe' ? axeHelpers.getBundledAxeEnvironment() : undefined;
 
     const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 

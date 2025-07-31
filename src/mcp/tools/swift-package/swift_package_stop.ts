@@ -4,12 +4,13 @@ import { createErrorResponse } from '../../../utils/index.js';
 import { getProcess, removeProcess, type ProcessInfo } from './active-processes.js';
 import { ToolResponse } from '../../../types/common.js';
 
-/**
- * Parameter type for swift_package_stop
- */
-type SwiftPackageStopParams = {
-  pid: number;
-};
+// Define schema as ZodObject
+const swiftPackageStopSchema = z.object({
+  pid: z.number().describe('Process ID (PID) of the running executable'),
+});
+
+// Use z.infer for type safety
+type SwiftPackageStopParams = z.infer<typeof swiftPackageStopSchema>;
 
 /**
  * Process manager interface for dependency injection
@@ -97,17 +98,24 @@ export async function swift_package_stopLogic(
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return createErrorResponse('Failed to stop process', message, 'SystemError');
+    return createErrorResponse('Failed to stop process', message);
   }
 }
 
 export default {
   name: 'swift_package_stop',
   description: 'Stops a running Swift Package executable started with swift_package_run',
-  schema: {
-    pid: z.number().describe('Process ID (PID) of the running executable'),
-  },
+  schema: swiftPackageStopSchema.shape, // MCP SDK compatibility
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return swift_package_stopLogic(args as SwiftPackageStopParams);
+    // Validate parameters using Zod
+    const parseResult = swiftPackageStopSchema.safeParse(args);
+    if (!parseResult.success) {
+      return createErrorResponse(
+        'Parameter validation failed',
+        parseResult.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
+      );
+    }
+
+    return swift_package_stopLogic(parseResult.data);
   },
 };

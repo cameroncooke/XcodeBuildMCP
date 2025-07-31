@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../utils/command.js';
 
@@ -106,7 +106,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         content: [
           {
             type: 'text',
-            text: 'Failed to get app path: Command failed without workspace path',
+            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
           },
         ],
         isError: true,
@@ -480,7 +480,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         content: [
           {
             type: 'text',
-            text: 'Failed to get app path: Command failed without scheme',
+            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
           },
         ],
         isError: true,
@@ -505,7 +505,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         content: [
           {
             type: 'text',
-            text: 'Unsupported platform: undefined',
+            text: "Required parameter 'platform' is missing. Please provide a value for this parameter.",
           },
         ],
         isError: true,
@@ -530,7 +530,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         content: [
           {
             type: 'text',
-            text: 'For iOS Simulator platform, either simulatorId or simulatorName must be provided',
+            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
           },
         ],
         isError: true,

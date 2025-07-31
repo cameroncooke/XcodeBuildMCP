@@ -9,18 +9,22 @@ import { log } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type ShowBuildSetWsParams = {
-  workspacePath: string;
-  scheme: string;
-  projectPath?: string;
-};
+// Define schema as ZodObject
+const showBuildSetWsSchema = z.object({
+  workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
+  scheme: z.string().describe('The scheme to use (Required)'),
+});
+
+// Use z.infer for type safety
+type ShowBuildSetWsParams = z.infer<typeof showBuildSetWsSchema>;
 
 /**
  * Business logic for showing build settings from a workspace.
  */
 export async function show_build_set_wsLogic(
-  params: Record<string, unknown>,
+  params: ShowBuildSetWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   // Validate required parameters
@@ -30,24 +34,17 @@ export async function show_build_set_wsLogic(
   const schemeValidation = validateRequiredParam('scheme', params.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-  // Cast to typed params after validation
-  const typedParams = params as ShowBuildSetWsParams;
-
-  log('info', `Showing build settings for scheme ${typedParams.scheme}`);
+  log('info', `Showing build settings for scheme ${params.scheme}`);
 
   try {
     // Create the command array for xcodebuild
     const command = ['xcodebuild', '-showBuildSettings']; // -showBuildSettings as an option, not an action
 
-    // Add the workspace or project
-    if (typedParams.workspacePath) {
-      command.push('-workspace', typedParams.workspacePath);
-    } else if (typedParams.projectPath) {
-      command.push('-project', typedParams.projectPath);
-    }
+    // Add the workspace (always present since it's required in the schema)
+    command.push('-workspace', params.workspacePath);
 
     // Add the scheme
-    command.push('-scheme', typedParams.scheme);
+    command.push('-scheme', params.scheme);
 
     // Execute the command directly
     const result = await executor(command, 'Show Build Settings', true);
@@ -69,9 +66,9 @@ export async function show_build_set_wsLogic(
         {
           type: 'text',
           text: `Next Steps:
-- Build the workspace: macos_build_workspace({ workspacePath: "${typedParams.workspacePath}", scheme: "${typedParams.scheme}" })
-- For iOS: ios_simulator_build_by_name_workspace({ workspacePath: "${typedParams.workspacePath}", scheme: "${typedParams.scheme}", simulatorName: "iPhone 16" })
-- List schemes: list_schems_ws({ workspacePath: "${typedParams.workspacePath}" })`,
+- Build the workspace: macos_build_workspace({ workspacePath: "${params.workspacePath}", scheme: "${params.scheme}" })
+- For iOS: ios_simulator_build_by_name_workspace({ workspacePath: "${params.workspacePath}", scheme: "${params.scheme}", simulatorName: "iPhone 16" })
+- List schemes: list_schems_ws({ workspacePath: "${params.workspacePath}" })`,
         },
       ],
       isError: false,
@@ -87,11 +84,6 @@ export default {
   name: 'show_build_set_ws',
   description:
     "Shows build settings from a workspace using xcodebuild. IMPORTANT: Requires workspacePath and scheme. Example: show_build_set_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme' })",
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return show_build_set_wsLogic(args, getDefaultCommandExecutor());
-  },
+  schema: showBuildSetWsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(showBuildSetWsSchema, show_build_set_wsLogic, getDefaultCommandExecutor),
 };

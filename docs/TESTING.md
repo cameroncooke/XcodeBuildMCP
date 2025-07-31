@@ -23,6 +23,8 @@ This document provides comprehensive testing guidelines for XcodeBuildMCP plugin
 ### ABSOLUTE RULE: ALL VITEST MOCKING IS COMPLETELY BANNED
 
 ### FORBIDDEN PATTERNS (will cause immediate test failure):
+
+#### Vitest Mocking (COMPLETELY BANNED):
 - `vi.mock()` - BANNED
 - `vi.fn()` - BANNED  
 - `vi.mocked()` - BANNED
@@ -34,11 +36,26 @@ This document provides comprehensive testing guidelines for XcodeBuildMCP plugin
 - `.toHaveBeenCalled()` - BANNED
 - `.toHaveBeenCalledWith()` - BANNED
 - `MockedFunction` type - BANNED
-- Any `mock*` variables - BANNED
+
+#### Manual Mock Implementations (BANNED - use our utilities instead):
+- `const mockExecutor = async (...) => { ... }` - Use `createMockExecutor()` instead
+- `const mockFsDeps = { readFile: async () => ... }` - Use `createMockFileSystemExecutor()` instead
+- `const mockServer = { ... }` - Refactor to use dependency injection pattern
+- Any manual async function implementations for mocking behavior
 
 ### ONLY ALLOWED MOCKING:
 - `createMockExecutor({ success: true, output: 'result' })` - command execution
 - `createMockFileSystemExecutor({ readFile: async () => 'content' })` - file system operations
+
+### OUR CORE PRINCIPLE
+
+**Simple Rule**: No mocking other than `createMockExecutor()` and `createMockFileSystemExecutor()` (and their noop variants).
+
+**Why This Rule Exists**:
+1. **Consistency**: All tests use the same mocking utilities, making them predictable and maintainable
+2. **Reliability**: Our utilities are thoroughly tested and handle edge cases properly
+3. **Architectural Enforcement**: Prevents bypassing our dependency injection patterns
+4. **Simplicity**: One clear rule instead of complex guidelines about what mocking is acceptable
 
 ### Integration Testing with Dependency Injection
 
@@ -66,7 +83,22 @@ To enforce the no-mocking policy, the project includes a script that automatical
 node scripts/check-code-patterns.js
 ```
 
-This script is part of the standard development workflow and should be run before committing changes to ensure compliance with the testing standards. It will fail if it detects any use of `vi.mock`, `vi.fn`, or other forbidden patterns in the test files.
+This script is part of the standard development workflow and should be run before committing changes to ensure compliance with the testing standards.
+
+### What the Script Flags vs. What It Should NOT Flag
+
+#### ✅ LEGITIMATE VIOLATIONS (correctly flagged):
+- Manual mock executors: `const mockExecutor = async (...) => { ... }`
+- Manual filesystem mocks: `const mockFsDeps = { readFile: async () => ... }`
+- Manual server mocks: `const mockServer = { ... }`
+- Vitest mocking patterns: `vi.mock()`, `vi.fn()`, etc.
+
+#### ❌ FALSE POSITIVES (should NOT be flagged):
+- Test data tracking: `commandCalls.push({ ... })` - This is just collecting test data, not mocking behavior
+- Regular variables: `const testData = { ... }` - Non-mocking object assignments
+- Test setup: Regular const assignments that don't implement mock behavior
+
+The script has been refined to minimize false positives while catching all legitimate violations of our core rule.
 
 ## Test Architecture
 

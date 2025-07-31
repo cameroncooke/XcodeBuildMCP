@@ -14,10 +14,20 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-// Parameter types
-interface DescribeUiParams {
-  simulatorUuid: string;
+// Define schema as ZodObject
+const describeUiSchema = z.object({
+  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+});
+
+// Use z.infer for type safety
+type DescribeUiParams = z.infer<typeof describeUiSchema>;
+
+export interface AxeHelpers {
+  getAxePath: () => string | null;
+  getBundledAxeEnvironment: () => Record<string, string>;
+  createAxeNotAvailableResponse: () => ToolResponse;
 }
 
 const LOG_PREFIX = '[AXe]';
@@ -38,9 +48,10 @@ function recordDescribeUICall(simulatorUuid: string): void {
 export async function describe_uiLogic(
   params: DescribeUiParams,
   executor: CommandExecutor,
-  axeHelpers?: {
-    getAxePath: () => string | null;
-    getBundledAxeEnvironment: () => Record<string, string>;
+  axeHelpers: AxeHelpers = {
+    getAxePath,
+    getBundledAxeEnvironment,
+    createAxeNotAvailableResponse,
   },
 ): Promise<ToolResponse> {
   const toolName = 'describe_ui';
@@ -84,24 +95,20 @@ export async function describe_uiLogic(
   } catch (error) {
     log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
     if (error instanceof DependencyError) {
-      return createAxeNotAvailableResponse();
+      return axeHelpers.createAxeNotAvailableResponse();
     } else if (error instanceof AxeError) {
       return createErrorResponse(
         `Failed to get accessibility hierarchy: ${error.message}`,
         error.axeOutput,
-        error.name,
       );
     } else if (error instanceof SystemError) {
       return createErrorResponse(
         `System error executing axe: ${error.message}`,
         error.originalError?.stack,
-        error.name,
       );
     }
     return createErrorResponse(
       `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-      undefined,
-      'UnexpectedError',
     );
   }
 }
@@ -110,12 +117,18 @@ export default {
   name: 'describe_ui',
   description:
     'Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation.',
-  schema: {
-    simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return describe_uiLogic(args as unknown as DescribeUiParams, getDefaultCommandExecutor());
-  },
+  schema: describeUiSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    describeUiSchema,
+    (params: DescribeUiParams, executor: CommandExecutor) => {
+      return describe_uiLogic(params, executor, {
+        getAxePath,
+        getBundledAxeEnvironment,
+        createAxeNotAvailableResponse,
+      });
+    },
+    getDefaultCommandExecutor,
+  ),
 };
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
@@ -124,13 +137,10 @@ async function executeAxeCommand(
   simulatorUuid: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
-  axeHelpers?: {
-    getAxePath: () => string | null;
-    getBundledAxeEnvironment: () => Record<string, string>;
-  },
+  axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
 ): Promise<string> {
   // Get the appropriate axe binary path
-  const axeBinary = axeHelpers ? axeHelpers.getAxePath() : getAxePath();
+  const axeBinary = axeHelpers.getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -143,12 +153,7 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv =
-      axeBinary !== 'axe'
-        ? axeHelpers
-          ? axeHelpers.getBundledAxeEnvironment()
-          : getBundledAxeEnvironment()
-        : undefined;
+    const axeEnv = axeBinary !== 'axe' ? axeHelpers.getBundledAxeEnvironment() : undefined;
 
     const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 

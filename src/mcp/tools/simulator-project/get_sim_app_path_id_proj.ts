@@ -8,6 +8,7 @@ import { log, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 const XcodePlatform = {
   macOS: 'macOS',
@@ -72,17 +73,28 @@ function constructDestinationString(
   return `platform=${platform}`;
 }
 
-type GetSimAppPathIdProjParams = {
-  projectPath: string;
-  scheme: string;
-  platform: string;
-  simulatorId: string;
-  configuration?: string;
-  useLatestOS?: boolean;
-  workspacePath?: string;
-  simulatorName?: string;
-  arch?: string;
-};
+// Define schema as ZodObject
+const getSimAppPathIdProjSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
+  scheme: z.string().describe('The scheme to use (Required)'),
+  platform: z
+    .enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator'])
+    .describe('The target simulator platform (Required)'),
+  simulatorId: z
+    .string()
+    .describe('UUID of the simulator to use (obtained from listSimulators) (Required)'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  useLatestOS: z
+    .boolean()
+    .optional()
+    .describe('Whether to use the latest OS version for the named simulator'),
+  workspacePath: z.string().optional().describe('Path to the .xcworkspace file'),
+  simulatorName: z.string().optional().describe('Name of the simulator'),
+  arch: z.string().optional().describe('Architecture'),
+});
+
+// Use z.infer for type safety
+type GetSimAppPathIdProjParams = z.infer<typeof getSimAppPathIdProjSchema>;
 
 /**
  * Business logic for getting simulator app path by ID from project file
@@ -91,19 +103,17 @@ export async function get_sim_app_path_id_projLogic(
   params: GetSimAppPathIdProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
-
   // Validate required parameters
-  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
   if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-  const platformValidation = validateRequiredParam('platform', paramsRecord.platform);
+  const platformValidation = validateRequiredParam('platform', params.platform);
   if (!platformValidation.isValid) return platformValidation.errorResponse!;
 
-  const simulatorIdValidation = validateRequiredParam('simulatorId', paramsRecord.simulatorId);
+  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
   if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
 
   // Set defaults
@@ -250,25 +260,10 @@ export default {
   name: 'get_sim_app_path_id_proj',
   description:
     "Gets the app bundle path for a simulator by UUID using a project file. IMPORTANT: Requires projectPath, scheme, platform, and simulatorId. Example: get_sim_app_path_id_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorId: 'SIMULATOR_UUID' })",
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    platform: z
-      .enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator'])
-      .describe('The target simulator platform (Required)'),
-    simulatorId: z
-      .string()
-      .describe('UUID of the simulator to use (obtained from listSimulators) (Required)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    useLatestOS: z
-      .boolean()
-      .optional()
-      .describe('Whether to use the latest OS version for the named simulator'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_sim_app_path_id_projLogic(
-      args as GetSimAppPathIdProjParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: getSimAppPathIdProjSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    getSimAppPathIdProjSchema,
+    get_sim_app_path_id_projLogic,
+    getDefaultCommandExecutor,
+  ),
 };

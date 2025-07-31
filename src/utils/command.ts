@@ -32,6 +32,7 @@ export type CommandExecutor = (
   logPrefix?: string,
   useShell?: boolean,
   env?: Record<string, string>,
+  detached?: boolean,
 ) => Promise<CommandResponse>;
 
 /**
@@ -57,7 +58,7 @@ export interface FileSystemExecutor {
  * @param logPrefix Prefix for logging
  * @param useShell Whether to use shell execution (true) or direct execution (false)
  * @param env Additional environment variables
- * @param spawnOptions Additional spawn options like cwd
+ * @param detached Whether to spawn process without waiting for completion (for streaming/background processes)
  * @returns Promise resolving to command response with the process
  */
 async function defaultExecutor(
@@ -65,6 +66,7 @@ async function defaultExecutor(
   logPrefix?: string,
   useShell: boolean = true,
   env?: Record<string, string>,
+  detached: boolean = false,
 ): Promise<CommandResponse> {
   // Properly escape arguments for shell
   let escapedCommand = command;
@@ -130,6 +132,27 @@ async function defaultExecutor(
     childProcess.on('error', (err) => {
       reject(err);
     });
+
+    // For detached processes, resolve immediately after successful spawn
+    if (detached) {
+      // Give a small delay to ensure the process starts successfully
+      setTimeout(() => {
+        if (childProcess.pid) {
+          resolve({
+            success: true,
+            output: '', // No output yet for detached processes
+            process: childProcess,
+          });
+        } else {
+          resolve({
+            success: false,
+            output: '',
+            error: 'Failed to start detached process',
+            process: childProcess,
+          });
+        }
+      }, 100);
+    }
   });
 }
 
@@ -259,7 +282,7 @@ export function createMockExecutor(
     spawnfile: 'sh',
   } as unknown as ChildProcess;
 
-  return async (_command, _logPrefix, _useShell, _env) => ({
+  return async () => ({
     success: result.success ?? true,
     output: result.output ?? '',
     error: result.error,
@@ -310,7 +333,7 @@ export function createCommandMatchingMockExecutor(
     }
   >,
 ): CommandExecutor {
-  return async (command, _logPrefix, _useShell, _env) => {
+  return async (command) => {
     const commandStr = command.join(' ');
 
     // Find matching command pattern

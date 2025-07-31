@@ -38,13 +38,18 @@ describe('install_app_device plugin', () => {
 
   describe('Command Generation', () => {
     it('should generate correct devicectl command with basic parameters', async () => {
-      // Manual call tracking with closure
       let capturedCommand: unknown[] = [];
       let capturedDescription: string = '';
       let capturedUseShell: boolean = false;
       let capturedEnv: unknown = undefined;
 
-      const mockExecutor = async (
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'App installation successful',
+        process: { pid: 12345 },
+      });
+
+      const trackingExecutor = async (
         command: unknown[],
         description: string,
         useShell: boolean,
@@ -54,12 +59,7 @@ describe('install_app_device plugin', () => {
         capturedDescription = description;
         capturedUseShell = useShell;
         capturedEnv = env;
-        return {
-          success: true,
-          output: 'App installation successful',
-          error: undefined,
-          process: { pid: 12345 },
-        };
+        return mockExecutor(command, description, useShell, env);
       };
 
       await install_app_deviceLogic(
@@ -67,7 +67,7 @@ describe('install_app_device plugin', () => {
           deviceId: 'test-device-123',
           appPath: '/path/to/test.app',
         },
-        mockExecutor,
+        trackingExecutor,
       );
 
       expect(capturedCommand).toEqual([
@@ -86,17 +86,17 @@ describe('install_app_device plugin', () => {
     });
 
     it('should generate correct command with different device ID', async () => {
-      // Manual call tracking with closure
       let capturedCommand: unknown[] = [];
 
-      const mockExecutor = async (command: unknown[]) => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'App installation successful',
+        process: { pid: 12345 },
+      });
+
+      const trackingExecutor = async (command: unknown[]) => {
         capturedCommand = command;
-        return {
-          success: true,
-          output: 'App installation successful',
-          error: undefined,
-          process: { pid: 12345 },
-        };
+        return mockExecutor(command);
       };
 
       await install_app_deviceLogic(
@@ -104,7 +104,7 @@ describe('install_app_device plugin', () => {
           deviceId: 'different-device-uuid',
           appPath: '/apps/MyApp.app',
         },
-        mockExecutor,
+        trackingExecutor,
       );
 
       expect(capturedCommand).toEqual([
@@ -120,17 +120,17 @@ describe('install_app_device plugin', () => {
     });
 
     it('should generate correct command with paths containing spaces', async () => {
-      // Manual call tracking with closure
       let capturedCommand: unknown[] = [];
 
-      const mockExecutor = async (command: unknown[]) => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'App installation successful',
+        process: { pid: 12345 },
+      });
+
+      const trackingExecutor = async (command: unknown[]) => {
         capturedCommand = command;
-        return {
-          success: true,
-          output: 'App installation successful',
-          error: undefined,
-          process: { pid: 12345 },
-        };
+        return mockExecutor(command);
       };
 
       await install_app_deviceLogic(
@@ -138,7 +138,7 @@ describe('install_app_device plugin', () => {
           deviceId: 'test-device-123',
           appPath: '/path/to/My App.app',
         },
-        mockExecutor,
+        trackingExecutor,
       );
 
       expect(capturedCommand).toEqual([
@@ -256,10 +256,7 @@ describe('install_app_device plugin', () => {
     });
 
     it('should return exception handling response', async () => {
-      // Manual stub function for error injection
-      const mockExecutor = async () => {
-        throw new Error('Network error');
-      };
+      const mockExecutor = createMockExecutor(new Error('Network error'));
 
       const result = await install_app_deviceLogic(
         {
@@ -281,10 +278,7 @@ describe('install_app_device plugin', () => {
     });
 
     it('should return string error handling response', async () => {
-      // Manual stub function for string error injection
-      const mockExecutor = async () => {
-        throw 'String error';
-      };
+      const mockExecutor = createMockExecutor('String error');
 
       const result = await install_app_deviceLogic(
         {

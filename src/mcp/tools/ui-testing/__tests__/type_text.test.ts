@@ -272,43 +272,54 @@ describe('Type Text Plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
+    it('should handle axe dependency error', async () => {
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: null,
+      });
+
       const result = await type_textLogic(
         {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
           text: 'Hello World',
         },
         createNoopExecutor(),
-        createMockFileSystemExecutor(),
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+            text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
           },
         ],
         isError: true,
       });
     });
 
-    it('should return error for missing text', async () => {
+    it('should successfully type text', async () => {
+      const mockAxeHelpers = createMockAxeHelpers({
+        getAxePathReturn: '/usr/local/bin/axe',
+        getBundledAxeEnvironmentReturn: {},
+      });
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Text typed successfully',
+        error: undefined,
+      });
+
       const result = await type_textLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          text: 'Hello World',
         },
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
+        mockExecutor,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'text' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+        content: [{ type: 'text', text: 'Text typing simulated successfully.' }],
+        isError: false,
       });
     });
 

@@ -8,7 +8,7 @@
  * response validation and comprehensive parameter testing.
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import {
   createMockExecutor,
@@ -391,7 +391,7 @@ describe('clean_ws plugin tests', () => {
         content: [
           {
             type: 'text',
-            text: "Expected string, received null at path 'workspacePath'",
+            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
           },
         ],
         isError: true,
@@ -429,9 +429,7 @@ describe('clean_ws plugin tests', () => {
       );
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        "Expected string, received number at path 'workspacePath'",
-      );
+      expect(result.content[0].text).toContain('The "path" argument must be of type string');
     });
   });
 });

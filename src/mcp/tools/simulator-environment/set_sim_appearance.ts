@@ -6,16 +6,22 @@ import {
   CommandExecutor,
   getDefaultCommandExecutor,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-interface SetSimAppearanceParams {
-  simulatorUuid: string;
-  mode: 'dark' | 'light';
-  [key: string]: unknown; // Add index signature for compatibility
-}
+// Define schema as ZodObject
+const setSimAppearanceSchema = z.object({
+  simulatorUuid: z
+    .string()
+    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+  mode: z.enum(['dark', 'light']).describe('The appearance mode to set (either "dark" or "light")'),
+});
+
+// Use z.infer for type safety
+type SetSimAppearanceParams = z.infer<typeof setSimAppearanceSchema>;
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
-  params: Record<string, unknown>,
+  params: SetSimAppearanceParams,
   simctlSubCommand: string[],
   operationDescriptionForXcodeCommand: string,
   successMessage: string,
@@ -78,7 +84,7 @@ export async function set_sim_appearanceLogic(
   log('info', `Setting simulator ${params.simulatorUuid} appearance to ${params.mode} mode`);
 
   return executeSimctlCommandAndRespond(
-    params as Record<string, unknown>,
+    params,
     ['ui', params.simulatorUuid, 'appearance', params.mode],
     'Set Simulator Appearance',
     `Successfully set simulator ${params.simulatorUuid} appearance to ${params.mode} mode`,
@@ -92,18 +98,10 @@ export async function set_sim_appearanceLogic(
 export default {
   name: 'set_sim_appearance',
   description: 'Sets the appearance mode (dark/light) of an iOS simulator.',
-  schema: {
-    simulatorUuid: z
-      .string()
-      .describe('UUID of the simulator to use (obtained from list_simulators)'),
-    mode: z
-      .enum(['dark', 'light'])
-      .describe('The appearance mode to set (either "dark" or "light")'),
-  },
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return set_sim_appearanceLogic(
-      args as unknown as SetSimAppearanceParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: setSimAppearanceSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    setSimAppearanceSchema,
+    set_sim_appearanceLogic,
+    getDefaultCommandExecutor,
+  ),
 };

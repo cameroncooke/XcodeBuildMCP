@@ -20,18 +20,23 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-export interface SwipeParams {
-  simulatorUuid: string;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-  duration?: number;
-  delta?: number;
-  preDelay?: number;
-  postDelay?: number;
-}
+// Define schema as ZodObject
+const swipeSchema = z.object({
+  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  x1: z.number().int('Start X coordinate'),
+  y1: z.number().int('Start Y coordinate'),
+  x2: z.number().int('End X coordinate'),
+  y2: z.number().int('End Y coordinate'),
+  duration: z.number().min(0, 'Duration must be non-negative').optional(),
+  delta: z.number().min(0, 'Delta must be non-negative').optional(),
+  preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
+  postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
+});
+
+// Use z.infer for type safety
+type SwipeParams = z.infer<typeof swipeSchema>;
 
 export interface AxeHelpers {
   getAxePath: () => string | null;
@@ -113,22 +118,15 @@ export async function swipeLogic(
     if (error instanceof DependencyError) {
       return axeHelpers.createAxeNotAvailableResponse();
     } else if (error instanceof AxeError) {
-      return createErrorResponse(
-        `Failed to simulate swipe: ${error.message}`,
-        error.axeOutput,
-        error.name,
-      );
+      return createErrorResponse(`Failed to simulate swipe: ${error.message}`, error.axeOutput);
     } else if (error instanceof SystemError) {
       return createErrorResponse(
         `System error executing axe: ${error.message}`,
         error.originalError?.stack,
-        error.name,
       );
     }
     return createErrorResponse(
       `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-      undefined,
-      'UnexpectedError',
     );
   }
 }
@@ -137,20 +135,18 @@ export default {
   name: 'swipe',
   description:
     "Swipe from one point to another. Use describe_ui for precise coordinates (don't guess from screenshots). Supports configurable timing.",
-  schema: {
-    simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
-    x1: z.number().int('Start X coordinate'),
-    y1: z.number().int('Start Y coordinate'),
-    x2: z.number().int('End X coordinate'),
-    y2: z.number().int('End Y coordinate'),
-    duration: z.number().min(0, 'Duration must be non-negative').optional(),
-    delta: z.number().min(0, 'Delta must be non-negative').optional(),
-    preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
-    postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return swipeLogic(args as unknown as SwipeParams, getDefaultCommandExecutor());
-  },
+  schema: swipeSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    swipeSchema,
+    (params: SwipeParams, executor: CommandExecutor) => {
+      return swipeLogic(params, executor, {
+        getAxePath,
+        getBundledAxeEnvironment,
+        createAxeNotAvailableResponse,
+      });
+    },
+    getDefaultCommandExecutor,
+  ),
 };
 
 // Session tracking for describe_ui warnings

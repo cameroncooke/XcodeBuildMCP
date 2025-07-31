@@ -3,7 +3,10 @@
 
 // Import the shared activeProcesses map from swift_package_run
 // This maintains the same behavior as the original implementation
+import { z } from 'zod';
 import { ToolResponse, createTextContent } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+import { getDefaultCommandExecutor } from '../../../utils/command.js';
 
 interface ProcessInfo {
   executableName?: string;
@@ -66,11 +69,21 @@ export async function swift_package_listLogic(
   return { content };
 }
 
+// Define schema as ZodObject (empty for this tool)
+const swiftPackageListSchema = z.object({});
+
+// Use z.infer for type safety
+type SwiftPackageListParams = z.infer<typeof swiftPackageListSchema>;
+
 export default {
   name: 'swift_package_list',
   description: 'Lists currently running Swift Package processes',
-  schema: {},
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return swift_package_listLogic(args);
-  },
+  schema: swiftPackageListSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    swiftPackageListSchema,
+    (params: SwiftPackageListParams) => {
+      return swift_package_listLogic(params);
+    },
+    getDefaultCommandExecutor,
+  ),
 };

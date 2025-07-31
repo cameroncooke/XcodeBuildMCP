@@ -70,7 +70,7 @@ export async function registerResources(server: McpServer): Promise<boolean> {
 
   for (const [uri, resource] of Array.from(resources)) {
     // Create a handler wrapper that matches ReadResourceCallback signature
-    const readCallback = async (resourceUri: URL, _extra: unknown): Promise<ReadResourceResult> => {
+    const readCallback = async (resourceUri: URL): Promise<ReadResourceResult> => {
       const result = await resource.handler(resourceUri);
       // Transform the content to match MCP SDK expectations
       return {

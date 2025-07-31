@@ -10,14 +10,21 @@ import { log } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-// Define parameters type for clarity
-type GetMacAppPathWsParams = {
-  workspacePath: string;
-  scheme: string;
-  configuration?: string;
-  arch?: 'arm64' | 'x86_64';
-};
+// Define schema as ZodObject
+const getMacAppPathWsSchema = z.object({
+  workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
+  scheme: z.string().describe('The scheme to use (Required)'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  arch: z
+    .enum(['arm64', 'x86_64'])
+    .optional()
+    .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
+});
+
+// Use z.infer for type safety
+type GetMacAppPathWsParams = z.infer<typeof getMacAppPathWsSchema>;
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -35,13 +42,10 @@ export async function get_mac_app_path_wsLogic(
   params: GetMacAppPathWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Cast params to Record<string, unknown> for validation functions
-  const paramsRecord = params as Record<string, unknown>;
-
-  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
   if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   const configuration = params.configuration ?? 'Debug';
@@ -119,16 +123,10 @@ export default {
   name: 'get_mac_app_path_ws',
   description:
     "Gets the app bundle path for a macOS application using a workspace. IMPORTANT: Requires workspacePath and scheme. Example: get_mac_app_path_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme' })",
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    arch: z
-      .enum(['arm64', 'x86_64'])
-      .optional()
-      .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_mac_app_path_wsLogic(args as GetMacAppPathWsParams, getDefaultCommandExecutor());
-  },
+  schema: getMacAppPathWsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    getMacAppPathWsSchema,
+    get_mac_app_path_wsLogic,
+    getDefaultCommandExecutor,
+  ),
 };

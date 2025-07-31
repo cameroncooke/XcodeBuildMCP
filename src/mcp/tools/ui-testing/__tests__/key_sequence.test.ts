@@ -101,14 +101,27 @@ describe('Key Sequence Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40, 42, 44],
         },
         trackingExecutor,
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -133,6 +146,20 @@ describe('Key Sequence Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -140,8 +167,7 @@ describe('Key Sequence Plugin', () => {
           delay: 0.5,
         },
         trackingExecutor,
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -168,14 +194,27 @@ describe('Key Sequence Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
           keyCodes: [255],
         },
         trackingExecutor,
-        () => '/usr/local/bin/axe',
-        () => ({}),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -200,6 +239,20 @@ describe('Key Sequence Plugin', () => {
         };
       };
 
+      const mockAxeHelpers = {
+        getAxePath: () => '/path/to/bundled/axe',
+        getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
+
       await key_sequenceLogic(
         {
           simulatorUuid: '12345678-1234-1234-1234-123456789012',
@@ -207,8 +260,7 @@ describe('Key Sequence Plugin', () => {
           delay: 1.0,
         },
         trackingExecutor,
-        () => '/path/to/bundled/axe',
-        () => ({ AXE_PATH: '/some/path' }),
+        mockAxeHelpers,
       );
 
       expect(capturedCommand).toEqual([
@@ -270,8 +322,19 @@ describe('Key Sequence Plugin', () => {
         error: undefined,
       });
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_sequenceLogic(
         {
@@ -280,8 +343,7 @@ describe('Key Sequence Plugin', () => {
           delay: 0.1,
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -297,8 +359,19 @@ describe('Key Sequence Plugin', () => {
         error: undefined,
       });
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_sequenceLogic(
         {
@@ -306,8 +379,7 @@ describe('Key Sequence Plugin', () => {
           keyCodes: [40],
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -317,8 +389,19 @@ describe('Key Sequence Plugin', () => {
     });
 
     it('should handle DependencyError when axe binary not found', async () => {
-      const mockGetAxePath = () => null;
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => null,
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_sequenceLogic(
         {
@@ -326,8 +409,7 @@ describe('Key Sequence Plugin', () => {
           keyCodes: [40],
         },
         createNoopExecutor(),
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -348,8 +430,19 @@ describe('Key Sequence Plugin', () => {
         error: 'Simulator not found',
       });
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_sequenceLogic(
         {
@@ -357,8 +450,7 @@ describe('Key Sequence Plugin', () => {
           keyCodes: [40],
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({
@@ -377,8 +469,19 @@ describe('Key Sequence Plugin', () => {
         throw new Error('ENOENT: no such file or directory');
       };
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_sequenceLogic(
         {
@@ -386,8 +489,7 @@ describe('Key Sequence Plugin', () => {
           keyCodes: [40],
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result.content[0].text).toMatch(
@@ -401,8 +503,19 @@ describe('Key Sequence Plugin', () => {
         throw new Error('Unexpected error');
       };
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_sequenceLogic(
         {
@@ -410,8 +523,7 @@ describe('Key Sequence Plugin', () => {
           keyCodes: [40],
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result.content[0].text).toMatch(
@@ -425,8 +537,19 @@ describe('Key Sequence Plugin', () => {
         throw 'String error';
       };
 
-      const mockGetAxePath = () => '/usr/local/bin/axe';
-      const mockGetBundledAxeEnvironment = () => ({});
+      const mockAxeHelpers = {
+        getAxePath: () => '/usr/local/bin/axe',
+        getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
+      };
 
       const result = await key_sequenceLogic(
         {
@@ -434,8 +557,7 @@ describe('Key Sequence Plugin', () => {
           keyCodes: [40],
         },
         mockExecutor,
-        mockGetAxePath,
-        mockGetBundledAxeEnvironment,
+        mockAxeHelpers,
       );
 
       expect(result).toEqual({

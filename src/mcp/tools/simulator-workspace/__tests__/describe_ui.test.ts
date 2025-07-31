@@ -105,6 +105,15 @@ describe('describe_ui tool', () => {
       const mockAxeHelpersNoAxe = {
         getAxePath: () => null,
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [
+            {
+              type: 'text',
+              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
+            },
+          ],
+          isError: true,
+        }),
       };
 
       const result = await describe_uiLogic(

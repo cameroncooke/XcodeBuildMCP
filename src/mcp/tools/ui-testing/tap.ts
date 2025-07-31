@@ -14,6 +14,7 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 export interface AxeHelpers {
   getAxePath: () => string | null;
@@ -21,13 +22,17 @@ export interface AxeHelpers {
   createAxeNotAvailableResponse: () => ToolResponse;
 }
 
-interface TapParams {
-  simulatorUuid: string;
-  x: number;
-  y: number;
-  preDelay?: number;
-  postDelay?: number;
-}
+// Define schema as ZodObject
+const tapSchema = z.object({
+  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  x: z.number().int('X coordinate must be an integer'),
+  y: z.number().int('Y coordinate must be an integer'),
+  preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
+  postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
+});
+
+// Use z.infer for type safety
+type TapParams = z.infer<typeof tapSchema>;
 
 const LOG_PREFIX = '[AXe]';
 
@@ -98,19 +103,15 @@ export async function tapLogic(
       return createErrorResponse(
         `Failed to simulate tap at (${x}, ${y}): ${error.message}`,
         error.axeOutput,
-        error.name,
       );
     } else if (error instanceof SystemError) {
       return createErrorResponse(
         `System error executing axe: ${error.message}`,
         error.originalError?.stack,
-        error.name,
       );
     }
     return createErrorResponse(
       `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-      undefined,
-      'UnexpectedError',
     );
   }
 }
@@ -119,16 +120,18 @@ export default {
   name: 'tap',
   description:
     "Tap at specific coordinates. Use describe_ui to get precise element coordinates (don't guess from screenshots). Supports optional timing delays.",
-  schema: {
-    simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
-    x: z.number().int('X coordinate must be an integer'),
-    y: z.number().int('Y coordinate must be an integer'),
-    preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
-    postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return tapLogic(args as unknown as TapParams, getDefaultCommandExecutor());
-  },
+  schema: tapSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    tapSchema,
+    (params: TapParams, executor: CommandExecutor) => {
+      return tapLogic(params, executor, {
+        getAxePath,
+        getBundledAxeEnvironment,
+        createAxeNotAvailableResponse,
+      });
+    },
+    getDefaultCommandExecutor,
+  ),
 };
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
