@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   createMockExecutor,
   createNoopExecutor,

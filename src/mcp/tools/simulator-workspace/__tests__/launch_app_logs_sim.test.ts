@@ -4,11 +4,12 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import launchAppLogsSim, {
   launch_app_logs_simLogic,
 } from '../../simulator-shared/launch_app_logs_sim.js';
+import { createMockExecutor } from '../../../../utils/command.js';
 
 describe('launch_app_logs_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -93,6 +94,7 @@ describe('launch_app_logs_sim tool', () => {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
         },
+        createMockExecutor({ success: true, output: 'mocked command' }),
         logCaptureStub,
       );
 
@@ -103,6 +105,7 @@ describe('launch_app_logs_sim tool', () => {
             text: `App launched successfully in simulator test-uuid-123 with log capture enabled.\n\nLog capture session ID: test-session-123\n\nNext Steps:\n1. Interact with your app in the simulator.\n2. Use 'stop_and_get_simulator_log({ logSessionId: "test-session-123" })' to stop capture and retrieve logs.`,
           },
         ],
+        isError: false,
       });
 
       expect(capturedParams).toEqual({

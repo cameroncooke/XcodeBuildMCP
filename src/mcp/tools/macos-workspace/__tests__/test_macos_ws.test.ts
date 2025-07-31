@@ -4,14 +4,11 @@
  * Using dependency injection for deterministic testing
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../../utils/command.js';
 import testMacosWs, { test_macos_wsLogic } from '../test_macos_ws.ts';
 
 describe('test_macos_ws plugin', () => {
-  // Clear any state if needed
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(testMacosWs.name).toBe('test_macos_ws');
@@ -144,6 +141,24 @@ describe('test_macos_ws plugin', () => {
         env?: Record<string, string>,
       ) => {
         commandCalls.push({ command, logPrefix, useShell, env });
+
+        // Handle xcresulttool command
+        if (command.includes('xcresulttool')) {
+          return {
+            success: true,
+            output: JSON.stringify({
+              title: 'Test Results',
+              result: 'SUCCEEDED',
+              totalTestCount: 5,
+              passedTests: 5,
+              failedTests: 0,
+              skippedTests: 0,
+              expectedFailures: 0,
+            }),
+            error: undefined,
+          };
+        }
+
         return {
           success: true,
           output: 'Test Succeeded',
@@ -152,7 +167,7 @@ describe('test_macos_ws plugin', () => {
         };
       };
 
-      // Mock temp directory dependencies
+      // Mock temp directory dependencies using approved utility
       const mockTempDirDeps = {
         mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
         rm: async () => {},
@@ -160,24 +175,9 @@ describe('test_macos_ws plugin', () => {
         tmpdir: () => '/tmp',
       };
 
-      // Mock exec/promisify for xcresulttool
-      const mockUtilDeps = {
-        promisify: () => async () => ({
-          stdout: JSON.stringify({
-            title: 'Test Results',
-            result: 'SUCCEEDED',
-            totalTestCount: 5,
-            passedTests: 5,
-            failedTests: 0,
-            skippedTests: 0,
-            expectedFailures: 0,
-          }),
-        }),
-      };
-
-      // Mock file system check
+      // Mock file system check using approved utility
       const mockFileSystemDeps = {
-        stat: async () => ({}),
+        stat: async () => ({ isDirectory: () => true }),
       };
 
       const result = await test_macos_wsLogic(
@@ -187,12 +187,11 @@ describe('test_macos_ws plugin', () => {
         },
         mockExecutor,
         mockTempDirDeps,
-        mockUtilDeps,
         mockFileSystemDeps,
       );
 
-      // Verify command was called with correct parameters
-      expect(commandCalls).toHaveLength(1);
+      // Verify commands were called with correct parameters
+      expect(commandCalls).toHaveLength(2); // xcodebuild test + xcresulttool
       expect(commandCalls[0].command).toEqual([
         'xcodebuild',
         '-workspace',
@@ -211,6 +210,18 @@ describe('test_macos_ws plugin', () => {
       expect(commandCalls[0].logPrefix).toBe('Test Run');
       expect(commandCalls[0].useShell).toBe(true);
 
+      // Verify xcresulttool was called
+      expect(commandCalls[1].command).toEqual([
+        'xcrun',
+        'xcresulttool',
+        'get',
+        'test-results',
+        'summary',
+        '--path',
+        '/tmp/xcodebuild-test-abc123/TestResults.xcresult',
+      ]);
+      expect(commandCalls[1].logPrefix).toBe('Parse xcresult bundle');
+
       expect(result.content).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -222,13 +233,45 @@ describe('test_macos_ws plugin', () => {
     });
 
     it('should return exact test failure response', async () => {
-      // Mock executor for failed test
-      const mockExecutor = createMockExecutor({
-        success: false,
-        output: '',
-        error: 'error: Test failed',
-        process: { pid: 12345 },
-      });
+      // Track command execution calls
+      let callCount = 0;
+      const mockExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callCount++;
+
+        // First call is xcodebuild test - fails
+        if (callCount === 1) {
+          return {
+            success: false,
+            output: '',
+            error: 'error: Test failed',
+            process: { pid: 12345 },
+          };
+        }
+
+        // Second call is xcresulttool
+        if (command.includes('xcresulttool')) {
+          return {
+            success: true,
+            output: JSON.stringify({
+              title: 'Test Results',
+              result: 'FAILED',
+              totalTestCount: 5,
+              passedTests: 3,
+              failedTests: 2,
+              skippedTests: 0,
+              expectedFailures: 0,
+            }),
+            error: undefined,
+          };
+        }
+
+        return { success: true, output: '', error: undefined };
+      };
 
       // Mock temp directory dependencies
       const mockTempDirDeps = {
@@ -238,24 +281,9 @@ describe('test_macos_ws plugin', () => {
         tmpdir: () => '/tmp',
       };
 
-      // Mock exec/promisify for xcresulttool (failed test)
-      const mockUtilDeps = {
-        promisify: () => async () => ({
-          stdout: JSON.stringify({
-            title: 'Test Results',
-            result: 'FAILED',
-            totalTestCount: 5,
-            passedTests: 3,
-            failedTests: 2,
-            skippedTests: 0,
-            expectedFailures: 0,
-          }),
-        }),
-      };
-
       // Mock file system check
       const mockFileSystemDeps = {
-        stat: async () => ({}),
+        stat: async () => ({ isDirectory: () => true }),
       };
 
       const result = await test_macos_wsLogic(
@@ -265,7 +293,6 @@ describe('test_macos_ws plugin', () => {
         },
         mockExecutor,
         mockTempDirDeps,
-        mockUtilDeps,
         mockFileSystemDeps,
       );
 
@@ -285,12 +312,38 @@ describe('test_macos_ws plugin', () => {
       const commandCalls: any[] = [];
 
       // Mock executor for successful test with optional parameters
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'Test Succeeded',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const mockExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        commandCalls.push({ command, logPrefix, useShell, env });
+
+        // Handle xcresulttool command
+        if (command.includes('xcresulttool')) {
+          return {
+            success: true,
+            output: JSON.stringify({
+              title: 'Test Results',
+              result: 'SUCCEEDED',
+              totalTestCount: 5,
+              passedTests: 5,
+              failedTests: 0,
+              skippedTests: 0,
+              expectedFailures: 0,
+            }),
+            error: undefined,
+          };
+        }
+
+        return {
+          success: true,
+          output: 'Test Succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       // Mock temp directory dependencies
       const mockTempDirDeps = {
@@ -300,24 +353,9 @@ describe('test_macos_ws plugin', () => {
         tmpdir: () => '/tmp',
       };
 
-      // Mock exec/promisify for xcresulttool
-      const mockUtilDeps = {
-        promisify: () => async () => ({
-          stdout: JSON.stringify({
-            title: 'Test Results',
-            result: 'SUCCEEDED',
-            totalTestCount: 5,
-            passedTests: 5,
-            failedTests: 0,
-            skippedTests: 0,
-            expectedFailures: 0,
-          }),
-        }),
-      };
-
       // Mock file system check
       const mockFileSystemDeps = {
-        stat: async () => ({}),
+        stat: async () => ({ isDirectory: () => true }),
       };
 
       const result = await test_macos_wsLogic(
@@ -331,7 +369,6 @@ describe('test_macos_ws plugin', () => {
         },
         mockExecutor,
         mockTempDirDeps,
-        mockUtilDeps,
         mockFileSystemDeps,
       );
 
@@ -350,8 +387,6 @@ describe('test_macos_ws plugin', () => {
       const mockExecutor = createMockExecutor({
         success: true,
         output: 'Test Succeeded',
-        error: undefined,
-        process: { pid: 12345 },
       });
 
       // Mock temp directory dependencies - mkdtemp fails
@@ -364,24 +399,9 @@ describe('test_macos_ws plugin', () => {
         tmpdir: () => '/tmp',
       };
 
-      // Mock exec/promisify for xcresulttool
-      const mockUtilDeps = {
-        promisify: () => async () => ({
-          stdout: JSON.stringify({
-            title: 'Test Results',
-            result: 'SUCCEEDED',
-            totalTestCount: 5,
-            passedTests: 5,
-            failedTests: 0,
-            skippedTests: 0,
-            expectedFailures: 0,
-          }),
-        }),
-      };
-
       // Mock file system check
       const mockFileSystemDeps = {
-        stat: async () => ({}),
+        stat: async () => ({ isDirectory: () => true }),
       };
 
       const result = await test_macos_wsLogic(
@@ -391,7 +411,6 @@ describe('test_macos_ws plugin', () => {
         },
         mockExecutor,
         mockTempDirDeps,
-        mockUtilDeps,
         mockFileSystemDeps,
       );
 

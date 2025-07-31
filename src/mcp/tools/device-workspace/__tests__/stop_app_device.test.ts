@@ -88,9 +88,7 @@ describe('stop_app_device plugin', () => {
     });
 
     it('should return exact exception handling response', async () => {
-      const mockExecutor = async () => {
-        throw new Error('Network error');
-      };
+      const mockExecutor = createMockExecutor(new Error('Network error'));
 
       const result = await stop_app_deviceLogic(
         {
@@ -112,9 +110,7 @@ describe('stop_app_device plugin', () => {
     });
 
     it('should return exact string error handling response', async () => {
-      const mockExecutor = async () => {
-        throw 'String error';
-      };
+      const mockExecutor = createMockExecutor('String error');
 
       const result = await stop_app_deviceLogic(
         {

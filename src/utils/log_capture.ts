@@ -1,9 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { spawn, ChildProcess } from 'child_process';
+import type { ChildProcess } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
 import { log } from '../utils/logger.js';
+import { CommandExecutor, getDefaultCommandExecutor } from './command.js';
 
 /**
  * Log file retention policy:
@@ -26,11 +27,14 @@ export const activeLogSessions: Map<string, LogSession> = new Map();
  * Start a log capture session for an iOS simulator.
  * Returns { sessionId, logFilePath, processes, error? }
  */
-export async function startLogCapture(params: {
-  simulatorUuid: string;
-  bundleId: string;
-  captureConsole?: boolean;
-}): Promise<{ sessionId: string; logFilePath: string; processes: ChildProcess[]; error?: string }> {
+export async function startLogCapture(
+  params: {
+    simulatorUuid: string;
+    bundleId: string;
+    captureConsole?: boolean;
+  },
+  executor: CommandExecutor = getDefaultCommandExecutor(),
+): Promise<{ sessionId: string; logFilePath: string; processes: ChildProcess[]; error?: string }> {
   // Clean up old logs before starting a new session
   await cleanOldLogs();
 
@@ -47,32 +51,66 @@ export async function startLogCapture(params: {
     logStream.write('\n--- Log capture for bundle ID: ' + bundleId + ' ---\n');
 
     if (captureConsole) {
-      const stdoutLogProcess = spawn('xcrun', [
-        'simctl',
-        'launch',
-        '--console-pty',
-        '--terminate-running-process',
-        simulatorUuid,
-        bundleId,
-      ]);
-      stdoutLogProcess.stdout.pipe(logStream);
-      stdoutLogProcess.stderr.pipe(logStream);
-      processes.push(stdoutLogProcess);
+      const stdoutLogResult = await executor(
+        [
+          'xcrun',
+          'simctl',
+          'launch',
+          '--console-pty',
+          '--terminate-running-process',
+          simulatorUuid,
+          bundleId,
+        ],
+        'Console Log Capture',
+        true, // useShell
+        undefined, // env
+        true, // detached - don't wait for this streaming process to complete
+      );
+
+      if (!stdoutLogResult.success) {
+        return {
+          sessionId: '',
+          logFilePath: '',
+          processes: [],
+          error: stdoutLogResult.error ?? 'Failed to start console log capture',
+        };
+      }
+
+      stdoutLogResult.process.stdout?.pipe(logStream);
+      stdoutLogResult.process.stderr?.pipe(logStream);
+      processes.push(stdoutLogResult.process);
     }
 
-    const osLogProcess = spawn('xcrun', [
-      'simctl',
-      'spawn',
-      simulatorUuid,
-      'log',
-      'stream',
-      '--level=debug',
-      '--predicate',
-      `subsystem == "${bundleId}"`,
-    ]);
-    osLogProcess.stdout.pipe(logStream);
-    osLogProcess.stderr.pipe(logStream);
-    processes.push(osLogProcess);
+    const osLogResult = await executor(
+      [
+        'xcrun',
+        'simctl',
+        'spawn',
+        simulatorUuid,
+        'log',
+        'stream',
+        '--level=debug',
+        '--predicate',
+        `subsystem == "${bundleId}"`,
+      ],
+      'OS Log Capture',
+      true, // useShell
+      undefined, // env
+      true, // detached - don't wait for this streaming process to complete
+    );
+
+    if (!osLogResult.success) {
+      return {
+        sessionId: '',
+        logFilePath: '',
+        processes: [],
+        error: osLogResult.error ?? 'Failed to start OS log capture',
+      };
+    }
+
+    osLogResult.process.stdout?.pipe(logStream);
+    osLogResult.process.stderr?.pipe(logStream);
+    processes.push(osLogResult.process);
 
     for (const process of processes) {
       process.on('close', (code) => {

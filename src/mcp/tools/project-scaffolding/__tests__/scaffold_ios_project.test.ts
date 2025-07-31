@@ -18,38 +18,11 @@ describe('scaffold_ios_project plugin', () => {
   let originalEnv: string | undefined;
 
   beforeEach(() => {
-    // Create mock executor that handles curl/unzip commands properly
-    mockCommandExecutor = (
-      command: string[],
-      logPrefix?: string,
-      useShell?: boolean,
-      env?: Record<string, string>,
-    ) => {
-      const cmdString = command.join(' ');
-
-      if (cmdString.includes('curl')) {
-        // Mock successful download
-        return Promise.resolve({
-          success: true,
-          output: 'Downloaded successfully',
-          process: { pid: 123 } as any,
-        });
-      } else if (cmdString.includes('unzip')) {
-        // Mock successful extraction
-        return Promise.resolve({
-          success: true,
-          output: 'Extracted successfully',
-          process: { pid: 123 } as any,
-        });
-      }
-
-      // Default success for other commands
-      return Promise.resolve({
-        success: true,
-        output: 'Command executed successfully',
-        process: { pid: 123 } as any,
-      });
-    };
+    // Create mock executor using approved utility
+    mockCommandExecutor = createMockExecutor({
+      success: true,
+      output: 'Command executed successfully',
+    });
 
     mockFileSystemExecutor = createMockFileSystemExecutor({
       existsSync: (path) => {
@@ -183,31 +156,14 @@ describe('scaffold_ios_project plugin', () => {
 
       // Track commands executed
       let capturedCommands: string[][] = [];
-      const trackingCommandExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
+      const trackingCommandExecutor = createMockExecutor({
+        success: true,
+        output: 'Command executed successfully',
+      });
+      // Wrap to capture commands
+      const capturingExecutor = async (command: string[], ...args: any[]) => {
         capturedCommands.push(command);
-        if (command.join(' ').includes('curl')) {
-          return Promise.resolve({
-            success: true,
-            output: 'Downloaded successfully',
-            process: { pid: 123 } as any,
-          });
-        } else if (command.join(' ').includes('unzip')) {
-          return Promise.resolve({
-            success: true,
-            output: 'Extracted successfully',
-            process: { pid: 123 } as any,
-          });
-        }
-        return Promise.resolve({
-          success: true,
-          output: 'Command executed successfully',
-          process: { pid: 123 } as any,
-        });
+        return trackingCommandExecutor(command, ...args);
       };
 
       await scaffold_ios_projectLogic(
@@ -215,7 +171,7 @@ describe('scaffold_ios_project plugin', () => {
           projectName: 'TestIOSApp',
           outputPath: '/tmp/test-projects',
         },
-        trackingCommandExecutor,
+        capturingExecutor,
         mockFileSystemExecutor,
       );
 
@@ -265,31 +221,14 @@ describe('scaffold_ios_project plugin', () => {
 
       // Track commands executed
       let capturedCommands: string[][] = [];
-      const trackingCommandExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
+      const trackingCommandExecutor = createMockExecutor({
+        success: true,
+        output: 'Command executed successfully',
+      });
+      // Wrap to capture commands
+      const capturingExecutor = async (command: string[], ...args: any[]) => {
         capturedCommands.push(command);
-        if (command.join(' ').includes('curl')) {
-          return Promise.resolve({
-            success: true,
-            output: 'Downloaded successfully',
-            process: { pid: 123 } as any,
-          });
-        } else if (command.join(' ').includes('unzip')) {
-          return Promise.resolve({
-            success: true,
-            output: 'Extracted successfully',
-            process: { pid: 123 } as any,
-          });
-        }
-        return Promise.resolve({
-          success: true,
-          output: 'Command executed successfully',
-          process: { pid: 123 } as any,
-        });
+        return trackingCommandExecutor(command, ...args);
       };
 
       await scaffold_ios_projectLogic(
@@ -297,7 +236,7 @@ describe('scaffold_ios_project plugin', () => {
           projectName: 'TestIOSApp',
           outputPath: '/tmp/test-projects',
         },
-        trackingCommandExecutor,
+        capturingExecutor,
         downloadMockFileSystemExecutor,
       );
 
@@ -320,31 +259,14 @@ describe('scaffold_ios_project plugin', () => {
 
       // Track commands executed
       let capturedCommands: string[][] = [];
-      const trackingCommandExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
+      const trackingCommandExecutor = createMockExecutor({
+        success: true,
+        output: 'Command executed successfully',
+      });
+      // Wrap to capture commands
+      const capturingExecutor = async (command: string[], ...args: any[]) => {
         capturedCommands.push(command);
-        if (command.join(' ').includes('curl')) {
-          return Promise.resolve({
-            success: true,
-            output: 'Downloaded successfully',
-            process: { pid: 123 } as any,
-          });
-        } else if (command.join(' ').includes('unzip')) {
-          return Promise.resolve({
-            success: true,
-            output: 'Extracted successfully',
-            process: { pid: 123 } as any,
-          });
-        }
-        return Promise.resolve({
-          success: true,
-          output: 'Command executed successfully',
-          process: { pid: 123 } as any,
-        });
+        return trackingCommandExecutor(command, ...args);
       };
 
       await scaffold_ios_projectLogic(
@@ -352,7 +274,7 @@ describe('scaffold_ios_project plugin', () => {
           projectName: 'TestIOSApp',
           outputPath: '/tmp/test-projects',
         },
-        trackingCommandExecutor,
+        capturingExecutor,
         mockFileSystemExecutor,
       );
 
@@ -407,31 +329,14 @@ describe('scaffold_ios_project plugin', () => {
 
       // Track commands executed - using default executor path
       let capturedCommands: string[][] = [];
-      const trackingCommandExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
+      const trackingCommandExecutor = createMockExecutor({
+        success: true,
+        output: 'Command executed successfully',
+      });
+      // Wrap to capture commands
+      const capturingExecutor = async (command: string[], ...args: any[]) => {
         capturedCommands.push(command);
-        if (command.join(' ').includes('curl')) {
-          return Promise.resolve({
-            success: true,
-            output: 'Downloaded successfully',
-            process: { pid: 123 } as any,
-          });
-        } else if (command.join(' ').includes('unzip')) {
-          return Promise.resolve({
-            success: true,
-            output: 'Extracted successfully',
-            process: { pid: 123 } as any,
-          });
-        }
-        return Promise.resolve({
-          success: true,
-          output: 'Command executed successfully',
-          process: { pid: 123 } as any,
-        });
+        return trackingCommandExecutor(command, ...args);
       };
 
       await scaffold_ios_projectLogic(
@@ -439,7 +344,7 @@ describe('scaffold_ios_project plugin', () => {
           projectName: 'TestIOSApp',
           outputPath: '/tmp/test-projects',
         },
-        trackingCommandExecutor,
+        capturingExecutor,
         downloadMockFileSystemExecutor,
       );
 
@@ -645,31 +550,11 @@ describe('scaffold_ios_project plugin', () => {
       delete process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH;
 
       // Mock command executor to fail for curl commands
-      const failingMockCommandExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        const cmdString = command.join(' ');
-
-        if (cmdString.includes('curl')) {
-          // Mock download failure
-          return Promise.resolve({
-            success: false,
-            output: '',
-            error: 'Template download failed',
-            process: { pid: 123 } as any,
-          });
-        }
-
-        // Other commands succeed
-        return Promise.resolve({
-          success: true,
-          output: 'Command executed successfully',
-          process: { pid: 123 } as any,
-        });
-      };
+      const failingMockCommandExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'Template download failed',
+      });
 
       const result = await scaffold_ios_projectLogic(
         {
@@ -729,38 +614,11 @@ describe('scaffold_ios_project plugin', () => {
       });
 
       // Mock command executor to fail for unzip commands
-      const failingMockCommandExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        const cmdString = command.join(' ');
-
-        if (cmdString.includes('curl')) {
-          // Mock download success
-          return Promise.resolve({
-            success: true,
-            output: 'Downloaded successfully',
-            process: { pid: 123 } as any,
-          });
-        } else if (cmdString.includes('unzip')) {
-          // Mock extraction failure
-          return Promise.resolve({
-            success: false,
-            output: '',
-            error: 'Extraction failed',
-            process: { pid: 123 } as any,
-          });
-        }
-
-        // Other commands succeed
-        return Promise.resolve({
-          success: true,
-          output: 'Command executed successfully',
-          process: { pid: 123 } as any,
-        });
-      };
+      const failingMockCommandExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'Extraction failed',
+      });
 
       const result = await scaffold_ios_projectLogic(
         {

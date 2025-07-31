@@ -102,7 +102,7 @@ describe('start_sim_log_cap plugin', () => {
 
     it('should handle null bundleId parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: '' });
-      const logCaptureStub = (params: any) => {
+      const logCaptureStub = (params: any, executor: any) => {
         return Promise.resolve({
           sessionId: 'test-uuid-123',
           logFilePath: '/tmp/test.log',
@@ -128,7 +128,7 @@ describe('start_sim_log_cap plugin', () => {
 
     it('should return error when log capture fails', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: '' });
-      const logCaptureStub = (params: any) => {
+      const logCaptureStub = (params: any, executor: any) => {
         return Promise.resolve({
           sessionId: '',
           logFilePath: '',
@@ -152,7 +152,7 @@ describe('start_sim_log_cap plugin', () => {
 
     it('should return success with session ID when log capture starts successfully', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: '' });
-      const logCaptureStub = (params: any) => {
+      const logCaptureStub = (params: any, executor: any) => {
         return Promise.resolve({
           sessionId: 'test-uuid-123',
           logFilePath: '/tmp/test.log',
@@ -178,7 +178,7 @@ describe('start_sim_log_cap plugin', () => {
 
     it('should indicate console capture when captureConsole is true', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: '' });
-      const logCaptureStub = (params: any) => {
+      const logCaptureStub = (params: any, executor: any) => {
         return Promise.resolve({
           sessionId: 'test-uuid-123',
           logFilePath: '/tmp/test.log',
@@ -209,7 +209,7 @@ describe('start_sim_log_cap plugin', () => {
         args: string[];
       }> = [];
 
-      const logCaptureStub = (params: any) => {
+      const logCaptureStub = (params: any, executor: any) => {
         if (params.captureConsole) {
           // Record the console capture spawn call
           spawnCalls.push({
@@ -292,7 +292,7 @@ describe('start_sim_log_cap plugin', () => {
         args: string[];
       }> = [];
 
-      const logCaptureStub = (params: any) => {
+      const logCaptureStub = (params: any, executor: any) => {
         // Record the structured log capture spawn call only
         spawnCalls.push({
           command: 'xcrun',

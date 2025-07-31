@@ -4,12 +4,13 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import launchAppLogsSim, {
   launch_app_logs_simLogic,
   LogCaptureFunction,
 } from '../launch_app_logs_sim.ts';
+import { createMockExecutor } from '../../../../utils/command.js';
 
 describe('launch_app_logs_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -79,7 +80,7 @@ describe('launch_app_logs_sim tool', () => {
     it('should handle successful app launch with log capture', async () => {
       // Create pure mock function without vitest mocking
       let capturedParams: any = null;
-      const logCaptureStub: LogCaptureFunction = async (params: any) => {
+      const logCaptureStub: LogCaptureFunction = async (params: any, executor: any) => {
         capturedParams = params;
         return {
           sessionId: 'test-session-123',
@@ -89,11 +90,14 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+
       const result = await launch_app_logs_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
         },
+        mockExecutor,
         logCaptureStub,
       );
 
@@ -104,6 +108,7 @@ describe('launch_app_logs_sim tool', () => {
             text: `App launched successfully in simulator test-uuid-123 with log capture enabled.\n\nLog capture session ID: test-session-123\n\nNext Steps:\n1. Interact with your app in the simulator.\n2. Use 'stop_and_get_simulator_log({ logSessionId: "test-session-123" })' to stop capture and retrieve logs.`,
           },
         ],
+        isError: false,
       });
 
       expect(capturedParams).toEqual({
@@ -116,7 +121,7 @@ describe('launch_app_logs_sim tool', () => {
     it('should handle app launch with additional arguments', async () => {
       // Create pure mock function for this test case
       let capturedParams: any = null;
-      const logCaptureStub: LogCaptureFunction = async (params: any) => {
+      const logCaptureStub: LogCaptureFunction = async (params: any, executor: any) => {
         capturedParams = params;
         return {
           sessionId: 'test-session-456',
@@ -126,12 +131,15 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+
       const result = await launch_app_logs_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
           args: ['--debug', '--verbose'],
         },
+        mockExecutor,
         logCaptureStub,
       );
 
@@ -143,7 +151,7 @@ describe('launch_app_logs_sim tool', () => {
     });
 
     it('should handle log capture failure', async () => {
-      const logCaptureStub: LogCaptureFunction = async () => {
+      const logCaptureStub: LogCaptureFunction = async (params: any, executor: any) => {
         return {
           sessionId: '',
           logFilePath: '',
@@ -152,11 +160,14 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+
       const result = await launch_app_logs_simLogic(
         {
           simulatorUuid: 'test-uuid-123',
           bundleId: 'com.example.testapp',
         },
+        mockExecutor,
         logCaptureStub,
       );
 
@@ -172,10 +183,15 @@ describe('launch_app_logs_sim tool', () => {
     });
 
     it('should handle validation failures for simulatorUuid', async () => {
-      const result = await launch_app_logs_simLogic({
-        simulatorUuid: undefined as any,
-        bundleId: 'com.example.testapp',
-      });
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const result = await launch_app_logs_simLogic(
+        {
+          simulatorUuid: undefined as any,
+          bundleId: 'com.example.testapp',
+        },
+        mockExecutor,
+        undefined as any,
+      );
 
       expect(result).toEqual({
         content: [
@@ -189,10 +205,15 @@ describe('launch_app_logs_sim tool', () => {
     });
 
     it('should handle validation failures for bundleId', async () => {
-      const result = await launch_app_logs_simLogic({
-        simulatorUuid: 'test-uuid-123',
-        bundleId: undefined as any,
-      });
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const result = await launch_app_logs_simLogic(
+        {
+          simulatorUuid: 'test-uuid-123',
+          bundleId: undefined as any,
+        },
+        mockExecutor,
+        undefined as any,
+      );
 
       expect(result).toEqual({
         content: [
@@ -207,7 +228,7 @@ describe('launch_app_logs_sim tool', () => {
 
     it('should pass correct parameters to startLogCapture', async () => {
       let capturedParams: any = null;
-      const logCaptureStub: LogCaptureFunction = async (params: any) => {
+      const logCaptureStub: LogCaptureFunction = async (params: any, executor: any) => {
         capturedParams = params;
         return {
           sessionId: 'test-session-789',
@@ -217,11 +238,14 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+
       await launch_app_logs_simLogic(
         {
           simulatorUuid: 'uuid-456',
           bundleId: 'com.test.myapp',
         },
+        mockExecutor,
         logCaptureStub,
       );
 
@@ -233,7 +257,7 @@ describe('launch_app_logs_sim tool', () => {
     });
 
     it('should include session ID and next steps in success message', async () => {
-      const logCaptureStub: LogCaptureFunction = async () => {
+      const logCaptureStub: LogCaptureFunction = async (params: any, executor: any) => {
         return {
           sessionId: 'session-abc-def',
           logFilePath: '/tmp/xcodemcp_sim_log_session-abc-def.log',
@@ -242,11 +266,14 @@ describe('launch_app_logs_sim tool', () => {
         };
       };
 
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+
       const result = await launch_app_logs_simLogic(
         {
           simulatorUuid: 'test-uuid-789',
           bundleId: 'com.example.testapp',
         },
+        mockExecutor,
         logCaptureStub,
       );
 
@@ -257,14 +284,20 @@ describe('launch_app_logs_sim tool', () => {
             text: `App launched successfully in simulator test-uuid-789 with log capture enabled.\n\nLog capture session ID: session-abc-def\n\nNext Steps:\n1. Interact with your app in the simulator.\n2. Use 'stop_and_get_simulator_log({ logSessionId: "session-abc-def" })' to stop capture and retrieve logs.`,
           },
         ],
+        isError: false,
       });
     });
 
     it('should handle missing required parameters', async () => {
-      const resultMissingSimulator = await launch_app_logs_simLogic({
-        simulatorUuid: undefined as any,
-        bundleId: 'com.example.testapp',
-      });
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const resultMissingSimulator = await launch_app_logs_simLogic(
+        {
+          simulatorUuid: undefined as any,
+          bundleId: 'com.example.testapp',
+        },
+        mockExecutor,
+        undefined as any,
+      );
 
       expect(resultMissingSimulator).toEqual({
         content: [
@@ -276,10 +309,14 @@ describe('launch_app_logs_sim tool', () => {
         isError: true,
       });
 
-      const resultMissingBundle = await launch_app_logs_simLogic({
-        simulatorUuid: 'test-uuid-123',
-        bundleId: undefined as any,
-      });
+      const resultMissingBundle = await launch_app_logs_simLogic(
+        {
+          simulatorUuid: 'test-uuid-123',
+          bundleId: undefined as any,
+        },
+        mockExecutor,
+        undefined as any,
+      );
 
       expect(resultMissingBundle).toEqual({
         content: [

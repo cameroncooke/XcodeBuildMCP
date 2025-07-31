@@ -2,11 +2,19 @@ import { z } from 'zod';
 import { log } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-interface StopMacAppParams {
-  appName?: string;
-  processId?: number;
-}
+// Define schema as ZodObject
+const stopMacAppSchema = z.object({
+  appName: z
+    .string()
+    .optional()
+    .describe('Name of the application to stop (e.g., "Calculator" or "MyApp")'),
+  processId: z.number().optional().describe('Process ID (PID) of the application to stop'),
+});
+
+// Use z.infer for type safety
+type StopMacAppParams = z.infer<typeof stopMacAppSchema>;
 
 export async function stop_mac_appLogic(
   params: StopMacAppParams,
@@ -72,14 +80,6 @@ export async function stop_mac_appLogic(
 export default {
   name: 'stop_mac_app',
   description: 'Stops a running macOS application. Can stop by app name or process ID.',
-  schema: {
-    appName: z
-      .string()
-      .optional()
-      .describe('Name of the application to stop (e.g., "Calculator" or "MyApp")'),
-    processId: z.number().optional().describe('Process ID (PID) of the application to stop'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return stop_mac_appLogic(args, getDefaultCommandExecutor());
-  },
+  schema: stopMacAppSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(stopMacAppSchema, stop_mac_appLogic, getDefaultCommandExecutor),
 };

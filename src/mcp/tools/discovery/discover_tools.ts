@@ -8,31 +8,43 @@ import {
   getAvailableWorkflows,
   generateWorkflowDescriptions,
 } from '../../../core/dynamic-tools.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+import { getDefaultCommandExecutor } from '../../../utils/command.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
-// Import the MCP server interface type
-interface MCPServerInterface {
-  tool(
-    name: string,
-    description: string,
-    schema: unknown,
-    handler: (args: unknown) => Promise<unknown>,
-  ): void;
-  notifyToolsChanged?: () => Promise<void>;
-}
+// Using McpServer type from SDK instead of custom interface
+
+// Define schema as ZodObject
+const discoverToolsSchema = z.object({
+  task_description: z
+    .string()
+    .describe(
+      'A detailed description of the development task you want to accomplish. ' +
+        "For example: 'I need to build my iOS app and run it on the iPhone 15 Pro simulator.'",
+    ),
+  additive: z
+    .boolean()
+    .optional()
+    .describe(
+      'If true, add the discovered tools to existing enabled workflows. ' +
+        'If false (default), replace all existing workflows with the newly discovered one. ' +
+        'Use additive mode when you need tools from multiple workflows simultaneously.',
+    ),
+});
+
+// Use z.infer for type safety
+type DiscoverToolsParams = z.infer<typeof discoverToolsSchema>;
 
 // Dependencies interface for dependency injection
 interface Dependencies {
   getAvailableWorkflows?: () => string[];
   generateWorkflowDescriptions?: () => string;
-  enableWorkflows?: (
-    server: Record<string, unknown>,
-    workflows: string[],
-    additive?: boolean,
-  ) => Promise<void>;
+  enableWorkflows?: (server: McpServer, workflows: string[], additive?: boolean) => Promise<void>;
 }
 
 export async function discover_toolsLogic(
-  args: Record<string, unknown>,
+  args: DiscoverToolsParams,
+  _executor?: unknown,
   deps?: Dependencies,
 ): Promise<ToolResponse> {
   const { task_description, additive } = args;
@@ -40,21 +52,13 @@ export async function discover_toolsLogic(
 
   try {
     // Get the server instance from the global context
-    const server = (globalThis as { mcpServer?: Record<string, unknown> }).mcpServer;
+    const server = (globalThis as { mcpServer?: McpServer }).mcpServer;
     if (!server) {
       throw new Error('Server instance not available');
     }
 
     // 1. Check for sampling capability
-    const serverInstance = (server.server ?? server) as Record<string, unknown> & {
-      _clientCapabilities?: { sampling?: boolean };
-      request: (params: {
-        method: string;
-        params: unknown;
-      }) => Promise<{ content?: Array<{ text?: string }> }>;
-    };
-    const clientCapabilities = serverInstance._clientCapabilities;
-    if (!clientCapabilities?.sampling) {
+    if (!server.server.getClientCapabilities()?.sampling) {
       log('warn', 'Client does not support sampling capability');
       return createTextResponse(
         'Your client does not support the sampling feature required for dynamic tool discovery. ' +
@@ -95,20 +99,19 @@ Each workflow contains ALL tools needed for its complete development workflow - 
 
     // 4. Send sampling request
     log('debug', 'Sending sampling request to client LLM');
-    const samplingResult = await serverInstance.request({
-      method: 'sampling/createMessage',
-      params: {
-        messages: [{ role: 'user', content: { type: 'text', text: userPrompt } }],
-        maxTokens: 200,
-      },
+    const samplingResult = await server.server.createMessage({
+      messages: [{ role: 'user', content: { type: 'text', text: userPrompt } }],
+      maxTokens: 200,
     });
 
     // 5. Parse the response
     let selectedWorkflows: string[] = [];
     try {
-      const content = samplingResult.content as
-        | Array<{ type: 'text'; text: string }>
-        | { type: 'text'; text: string };
+      const content = (
+        samplingResult as {
+          content: Array<{ type: 'text'; text: string }> | { type: 'text'; text: string };
+        }
+      ).content;
       let responseText = '';
 
       // Handle both array and single object content formats
@@ -157,9 +160,11 @@ Each workflow contains ALL tools needed for its complete development workflow - 
       // Extract the response text for error reporting
       let errorResponseText = 'Unknown response format';
       try {
-        const content = samplingResult.content as
-          | Array<{ type: 'text'; text: string }>
-          | { type: 'text'; text: string };
+        const content = (
+          samplingResult as {
+            content: Array<{ type: 'text'; text: string }> | { type: 'text'; text: string };
+          }
+        ).content;
         if (Array.isArray(content) && content.length > 0 && content[0].type === 'text') {
           errorResponseText = content[0].text;
         } else if (
@@ -196,11 +201,7 @@ Each workflow contains ALL tools needed for its complete development workflow - 
       'info',
       `${isAdditive ? 'Adding' : 'Replacing with'} workflows: ${selectedWorkflows.join(', ')}`,
     );
-    await (deps?.enableWorkflows ?? enableWorkflows)(
-      server as Record<string, unknown> & MCPServerInterface,
-      selectedWorkflows,
-      isAdditive,
-    );
+    await (deps?.enableWorkflows ?? enableWorkflows)(server, selectedWorkflows, isAdditive);
 
     // 8. Return success response - we can't easily get tool count ahead of time with dynamic loading
     // but that's okay since the user will see the tools when they're loaded
@@ -228,24 +229,13 @@ Each workflow contains ALL tools needed for its complete development workflow - 
 export default {
   name: 'discover_tools',
   description:
-    'Analyzes a natural language task description to enable a relevant set of Xcode and Apple development tools for the current session.',
-  schema: {
-    task_description: z
-      .string()
-      .describe(
-        'A detailed description of the development task you want to accomplish. ' +
-          "For example: 'I need to build my iOS app and run it on the iPhone 15 Pro simulator.'",
-      ),
-    additive: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, add the discovered tools to existing enabled workflows. ' +
-          'If false (default), replace all existing workflows with the newly discovered one. ' +
-          'Use additive mode when you need tools from multiple workflows simultaneously.',
-      ),
-  },
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return discover_toolsLogic(args);
-  },
+    'Analyzes a natural language task description to enable a relevant set of Xcode and Apple development tools. For best results, specify the target platform (iOS, macOS, watchOS, tvOS, visionOS) and project type (.xcworkspace or .xcodeproj).',
+  schema: discoverToolsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    discoverToolsSchema,
+    (params: DiscoverToolsParams, executor) => {
+      return discover_toolsLogic(params, executor);
+    },
+    getDefaultCommandExecutor,
+  ),
 };

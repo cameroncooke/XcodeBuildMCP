@@ -10,13 +10,21 @@ import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type GetDeviceAppPathProjParams = {
-  projectPath: string;
-  scheme: string;
-  configuration?: string;
-  platform?: 'iOS' | 'watchOS' | 'tvOS' | 'visionOS';
-};
+// Define schema as ZodObject
+const getDeviceAppPathProjSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file'),
+  scheme: z.string().describe('The scheme to use'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  platform: z
+    .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
+    .optional()
+    .describe('Target platform (defaults to iOS)'),
+});
+
+// Use z.infer for type safety
+type GetDeviceAppPathProjParams = z.infer<typeof getDeviceAppPathProjSchema>;
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -34,12 +42,10 @@ export async function get_device_app_path_projLogic(
   params: GetDeviceAppPathProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
-
-  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
   if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   const platformMap = {
@@ -136,19 +142,10 @@ export default {
   name: 'get_device_app_path_proj',
   description:
     "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_device_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file'),
-    scheme: z.string().describe('The scheme to use'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    platform: z
-      .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
-      .optional()
-      .describe('Target platform (defaults to iOS)'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_device_app_path_projLogic(
-      args as unknown as GetDeviceAppPathProjParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: getDeviceAppPathProjSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    getDeviceAppPathProjSchema,
+    get_device_app_path_projLogic,
+    getDefaultCommandExecutor,
+  ),
 };

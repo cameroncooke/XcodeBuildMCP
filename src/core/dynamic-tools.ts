@@ -22,6 +22,30 @@ interface MCPServerInterface {
     schema: unknown,
     handler: (args: unknown) => Promise<unknown>,
   ): void;
+  registerTool?(
+    name: string,
+    config: {
+      title?: string;
+      description: string;
+      inputSchema?: unknown;
+      outputSchema?: unknown;
+      annotations?: unknown;
+    },
+    callback: (args: unknown) => Promise<unknown>,
+  ): unknown;
+  registerTools?(
+    tools: Array<{
+      name: string;
+      config: {
+        title?: string;
+        description: string;
+        inputSchema?: unknown;
+        outputSchema?: unknown;
+        annotations?: unknown;
+      };
+      callback: (args: unknown) => Promise<unknown>;
+    }>,
+  ): unknown[];
   notifyToolsChanged?: () => Promise<void>;
 }
 
@@ -110,30 +134,84 @@ export async function enableWorkflows(
 
       log('info', `Enabling ${toolKeys.length} tools from '${workflowName}' workflow`);
 
-      // Register each tool in the workflow
+      // Prepare tools for bulk registration
+      const toolsToRegister: Array<{
+        name: string;
+        config: {
+          title?: string;
+          description: string;
+          inputSchema?: unknown;
+          outputSchema?: unknown;
+          annotations?: unknown;
+        };
+        callback: (args: unknown) => Promise<unknown>;
+      }> = [];
+
+      // Collect all tools from this workflow
       for (const toolKey of toolKeys) {
         const tool = workflowModule[toolKey] as PluginMeta | undefined;
 
         if (tool?.name && typeof tool.handler === 'function') {
-          try {
-            server.tool(
-              tool.name,
-              tool.description ?? '',
-              tool.schema,
-              wrapHandlerWithExecutor(tool.handler as ToolHandler),
-            );
+          toolsToRegister.push({
+            name: tool.name,
+            config: {
+              description: tool.description ?? '',
+              inputSchema: tool.schema,
+            },
+            callback: wrapHandlerWithExecutor(tool.handler as ToolHandler),
+          });
 
-            // Track the tool and workflow
-            enabledTools.set(tool.name, workflowName);
-
-            totalToolsAdded++;
-            log('debug', `Registered tool: ${tool.name}`);
-          } catch (error) {
-            log('error', `Failed to register tool '${tool.name}': ${error}`);
-          }
+          // Track the tool and workflow
+          enabledTools.set(tool.name, workflowName);
+          totalToolsAdded++;
         } else {
           log('warn', `Invalid tool definition for '${toolKey}' in workflow '${workflowName}'`);
         }
+      }
+
+      // Use bulk registration if available, otherwise fall back to individual registration
+      if (typeof (server as any).registerTools === 'function') {
+        try {
+          log('info', `🚀 Enabling ${toolsToRegister.length} tools from '${workflowName}' workflow`);
+          const registeredTools = (server as any).registerTools(toolsToRegister);
+          log('info', `✅ Registered ${registeredTools.length} tools from '${workflowName}'`);
+          // registerTools() automatically sends tool list change notification internally
+        } catch (error) {
+          log('error', `Failed to register tools from '${workflowName}': ${error}`);
+        }
+      } else if (typeof (server as any).registerTool === 'function') {
+        // Use registerTool (fewer notifications than tool())
+        log('info', `🚀 Enabling ${toolsToRegister.length} tools from '${workflowName}' workflow`);
+        for (const toolToRegister of toolsToRegister) {
+          try {
+            (server as any).registerTool(
+              toolToRegister.name,
+              toolToRegister.config,
+              toolToRegister.callback,
+            );
+            log('debug', `Registered tool: ${toolToRegister.name}`);
+          } catch (error) {
+            log('error', `Failed to register tool '${toolToRegister.name}': ${error}`);
+          }
+        }
+        log('info', `✅ Registered ${toolsToRegister.length} tools from '${workflowName}'`);
+      } else {
+        // Final fallback to tool() method (most notifications)
+        log('info', `🚀 Enabling ${toolsToRegister.length} tools from '${workflowName}' workflow`);
+        for (const toolToRegister of toolsToRegister) {
+          try {
+            server.tool(
+              toolToRegister.name,
+              toolToRegister.config.description,
+              toolToRegister.config.inputSchema,
+              toolToRegister.callback,
+            );
+            log('debug', `Registered tool: ${toolToRegister.name}`);
+          } catch (error) {
+            log('error', `Failed to register tool '${toolToRegister.name}': ${error}`);
+          }
+        }
+        log('info', `✅ Registered ${toolsToRegister.length} tools from '${workflowName}'`);
       }
 
       // Track the workflow as enabled
@@ -147,13 +225,30 @@ export async function enableWorkflows(
   }
 
   // Notify the client about the tool list change
-  if (server.notifyToolsChanged) {
+  // Only send manual notifications if we're not using registerTools (which sends automatically)
+  let needsManualNotification = true;
+  
+  for (const workflowName of workflowNames) {
+    if (typeof (server as any).registerTools === 'function') {
+      needsManualNotification = false;
+      break;
+    }
+  }
+  
+  if (needsManualNotification) {
     try {
-      await server.notifyToolsChanged();
-      log('debug', 'Notified client of tool list changes');
+      if (typeof (server as any).sendToolListChanged === 'function') {
+        (server as any).sendToolListChanged();
+        log('debug', 'Sent tool list changed notification');
+      } else if (server.notifyToolsChanged) {
+        await server.notifyToolsChanged();
+        log('debug', 'Notified client of tool list changes (fallback)');
+      }
     } catch (error) {
       log('warn', `Failed to notify client of tool changes: ${error}`);
     }
+  } else {
+    log('debug', 'Skipping manual notification - registerTools() handles notifications automatically');
   }
 
   log(

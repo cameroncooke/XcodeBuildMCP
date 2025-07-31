@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import {
   DependencyError,
   AxeError,
@@ -21,6 +21,20 @@ import {
   getBundledAxeEnvironment,
 } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+
+// Define schema as ZodObject
+const touchSchema = z.object({
+  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  x: z.number().int('X coordinate must be an integer'),
+  y: z.number().int('Y coordinate must be an integer'),
+  down: z.boolean().optional(),
+  up: z.boolean().optional(),
+  delay: z.number().min(0, 'Delay must be non-negative').optional(),
+});
+
+// Use z.infer for type safety
+type TouchParams = z.infer<typeof touchSchema>;
 
 interface AxeHelpers {
   getAxePath: () => string | null;
@@ -30,27 +44,18 @@ interface AxeHelpers {
 const LOG_PREFIX = '[AXe]';
 
 export async function touchLogic(
-  params: Record<string, unknown>,
+  params: TouchParams,
   executor: CommandExecutor,
   axeHelpers?: AxeHelpers,
 ): Promise<ToolResponse> {
   const toolName = 'touch';
-  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
-  const xValidation = validateRequiredParam('x', params.x);
-  if (!xValidation.isValid) return xValidation.errorResponse!;
-  const yValidation = validateRequiredParam('y', params.y);
-  if (!yValidation.isValid) return yValidation.errorResponse!;
 
+  // Params are already validated by createTypedTool - use directly
   const { simulatorUuid, x, y, down, up, delay } = params;
 
   // Validate that at least one of down or up is specified
   if (!down && !up) {
-    return createErrorResponse(
-      'At least one of "down" or "up" must be true',
-      undefined,
-      'ValidationError',
-    );
+    return createErrorResponse('At least one of "down" or "up" must be true');
   }
 
   const commandArgs = ['touch', '-x', String(x), '-y', String(y)];
@@ -71,10 +76,10 @@ export async function touchLogic(
   );
 
   try {
-    await executeAxeCommand(commandArgs, simulatorUuid as string, 'touch', executor, axeHelpers);
+    await executeAxeCommand(commandArgs, simulatorUuid, 'touch', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
 
-    const warning = getCoordinateWarning(simulatorUuid as string);
+    const warning = getCoordinateWarning(simulatorUuid);
     const message = `Touch event (${actionText}) at (${x}, ${y}) executed successfully.`;
 
     if (warning) {
@@ -83,26 +88,25 @@ export async function touchLogic(
 
     return createTextResponse(message);
   } catch (error) {
-    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
+    log(
+      'error',
+      `${LOG_PREFIX}/${toolName}: Failed - ${error instanceof Error ? error.message : String(error)}`,
+    );
     if (error instanceof DependencyError) {
       return createAxeNotAvailableResponse();
     } else if (error instanceof AxeError) {
       return createErrorResponse(
         `Failed to execute touch event: ${error.message}`,
         error.axeOutput,
-        error.name,
       );
     } else if (error instanceof SystemError) {
       return createErrorResponse(
         `System error executing axe: ${error.message}`,
         error.originalError?.stack,
-        error.name,
       );
     }
     return createErrorResponse(
       `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-      undefined,
-      'UnexpectedError',
     );
   }
 }
@@ -111,17 +115,8 @@ export default {
   name: 'touch',
   description:
     "Perform touch down/up events at specific coordinates. Use describe_ui for precise coordinates (don't guess from screenshots).",
-  schema: {
-    simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
-    x: z.number().int('X coordinate must be an integer'),
-    y: z.number().int('Y coordinate must be an integer'),
-    down: z.boolean().optional(),
-    up: z.boolean().optional(),
-    delay: z.number().min(0, 'Delay must be non-negative').optional(),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return touchLogic(args, getDefaultCommandExecutor());
-  },
+  schema: touchSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(touchSchema, touchLogic, getDefaultCommandExecutor),
 };
 
 // Session tracking for describe_ui warnings

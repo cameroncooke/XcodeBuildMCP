@@ -4,6 +4,7 @@ import {
   createMockExecutor,
   createNoopExecutor,
   createMockFileSystemExecutor,
+  createCommandMatchingMockExecutor,
 } from '../../../../utils/command.js';
 import buildRunSimNameProj, { build_run_sim_name_projLogic } from '../build_run_sim_name_proj.js';
 
@@ -168,44 +169,22 @@ describe('build_run_sim_name_proj plugin', () => {
     });
 
     it('should handle successful build and run', async () => {
-      let callCount = 0;
-      const mockExecutor: any = (
-        command: string[],
-        logPrefix: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        callCount++;
-        if (callCount === 1) {
-          return Promise.resolve({
-            success: true,
-            output: 'BUILD SUCCEEDED',
-            error: undefined,
-            process: { pid: 12345 },
-          });
-        } else if (callCount === 2) {
-          return Promise.resolve({
-            success: true,
-            output: 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app',
-            error: undefined,
-            process: { pid: 12345 },
-          });
-        }
-        return Promise.resolve({
+      // Create a command-matching mock executor that handles all the different commands
+      const mockExecutor = createCommandMatchingMockExecutor({
+        // Build command (from executeXcodeBuildCommand) - this matches first
+        'xcodebuild -project': {
           success: true,
-          output: '',
-          error: undefined,
-          process: { pid: 12345 },
-        });
-      };
-
-      let execSyncCallIndex = 0;
-      const mockExecSync = (command: string) => {
-        execSyncCallIndex++;
-
-        // simulator list
-        if (execSyncCallIndex === 1) {
-          return JSON.stringify({
+          output: 'BUILD SUCCEEDED',
+        },
+        // Get app path command (xcodebuild -showBuildSettings) - this matches second
+        'xcodebuild -showBuildSettings': {
+          success: true,
+          output: 'CODESIGNING_FOLDER_PATH = /path/to/MyApp.app',
+        },
+        // Find simulator command
+        'xcrun simctl list devices available --json': {
+          success: true,
+          output: JSON.stringify({
             devices: {
               'com.apple.CoreSimulator.SimRuntime.iOS-17-0': [
                 {
@@ -215,36 +194,39 @@ describe('build_run_sim_name_proj plugin', () => {
                 },
               ],
             },
-          });
-        }
-
-        // simulator state
-        if (execSyncCallIndex === 2) {
-          return '    iPhone 16 (test-uuid-123) (Booted)';
-        }
-
-        // open Simulator
-        if (execSyncCallIndex === 3) {
-          return '';
-        }
-
-        // install app
-        if (execSyncCallIndex === 4) {
-          return '';
-        }
-
-        // bundle ID
-        if (execSyncCallIndex === 5) {
-          return 'com.example.MyApp';
-        }
-
-        // launch app
-        if (execSyncCallIndex === 6) {
-          return '';
-        }
-
-        return '';
-      };
+          }),
+        },
+        // Check simulator state command
+        'xcrun simctl list devices': {
+          success: true,
+          output: '    iPhone 16 (test-uuid-123) (Booted)',
+        },
+        // Boot simulator command (if needed)
+        'xcrun simctl boot': {
+          success: true,
+          output: '',
+        },
+        // Open Simulator app
+        'open -a Simulator': {
+          success: true,
+          output: '',
+        },
+        // Install app command
+        'xcrun simctl install': {
+          success: true,
+          output: '',
+        },
+        // Bundle ID extraction commands
+        PlistBuddy: {
+          success: true,
+          output: 'com.example.MyApp',
+        },
+        // Launch app command
+        'xcrun simctl launch': {
+          success: true,
+          output: '',
+        },
+      });
 
       const result = await build_run_sim_name_projLogic(
         {
@@ -253,7 +235,6 @@ describe('build_run_sim_name_proj plugin', () => {
           simulatorName: 'iPhone 16',
         },
         mockExecutor,
-        mockExecSync,
       );
 
       expect(result.isError).toBe(false);
@@ -279,7 +260,6 @@ describe('build_run_sim_name_proj plugin', () => {
           preferXcodebuild: true,
         },
         mockExecutor,
-        () => '',
       );
 
       // Test that the function processes parameters correctly (build should fail due to mock)

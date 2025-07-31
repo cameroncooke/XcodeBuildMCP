@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../utils/command.js';
 import buildMacWs, { build_mac_wsLogic } from '../build_mac_ws.ts';

@@ -21,12 +21,23 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-interface LongPressParams {
-  simulatorUuid: unknown;
-  x: unknown;
-  y: unknown;
-  duration: unknown;
+// Define schema as ZodObject
+const longPressSchema = z.object({
+  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  x: z.number().int('X coordinate for the long press'),
+  y: z.number().int('Y coordinate for the long press'),
+  duration: z.number().positive('Duration of the long press in milliseconds'),
+});
+
+// Use z.infer for type safety
+type LongPressParams = z.infer<typeof longPressSchema>;
+
+export interface AxeHelpers {
+  getAxePath: () => string | null;
+  getBundledAxeEnvironment: () => Record<string, string>;
+  createAxeNotAvailableResponse: () => ToolResponse;
 }
 
 const LOG_PREFIX = '[AXe]';
@@ -34,8 +45,11 @@ const LOG_PREFIX = '[AXe]';
 export async function long_pressLogic(
   params: LongPressParams,
   executor: CommandExecutor,
-  getAxePathFn?: () => string | null,
-  getBundledAxeEnvironmentFn?: () => Record<string, string>,
+  axeHelpers: AxeHelpers = {
+    getAxePath,
+    getBundledAxeEnvironment,
+    createAxeNotAvailableResponse,
+  },
 ): Promise<ToolResponse> {
   const toolName = 'long_press';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -68,17 +82,10 @@ export async function long_pressLogic(
   );
 
   try {
-    await executeAxeCommand(
-      commandArgs,
-      String(simulatorUuid),
-      'touch',
-      executor,
-      getAxePathFn,
-      getBundledAxeEnvironmentFn,
-    );
+    await executeAxeCommand(commandArgs, simulatorUuid, 'touch', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
 
-    const warning = getCoordinateWarning(String(simulatorUuid));
+    const warning = getCoordinateWarning(simulatorUuid);
     const message = `Long press at (${x}, ${y}) for ${duration}ms simulated successfully.`;
 
     if (warning) {
@@ -89,24 +96,20 @@ export async function long_pressLogic(
   } catch (error) {
     log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
     if (error instanceof DependencyError) {
-      return createAxeNotAvailableResponse();
+      return axeHelpers.createAxeNotAvailableResponse();
     } else if (error instanceof AxeError) {
       return createErrorResponse(
         `Failed to simulate long press at (${x}, ${y}): ${error.message}`,
         error.axeOutput,
-        error.name,
       );
     } else if (error instanceof SystemError) {
       return createErrorResponse(
         `System error executing axe: ${error.message}`,
         error.originalError?.stack,
-        error.name,
       );
     }
     return createErrorResponse(
       `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-      undefined,
-      'UnexpectedError',
     );
   }
 }
@@ -115,15 +118,18 @@ export default {
   name: 'long_press',
   description:
     "Long press at specific coordinates for given duration (ms). Use describe_ui for precise coordinates (don't guess from screenshots).",
-  schema: {
-    simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
-    x: z.number().int('X coordinate for the long press'),
-    y: z.number().int('Y coordinate for the long press'),
-    duration: z.number().positive('Duration of the long press in milliseconds'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return long_pressLogic(args as unknown as LongPressParams, getDefaultCommandExecutor());
-  },
+  schema: longPressSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    longPressSchema,
+    (params: LongPressParams, executor: CommandExecutor) => {
+      return long_pressLogic(params, executor, {
+        getAxePath,
+        getBundledAxeEnvironment,
+        createAxeNotAvailableResponse,
+      });
+    },
+    getDefaultCommandExecutor,
+  ),
 };
 
 // Session tracking for describe_ui warnings
@@ -156,11 +162,10 @@ async function executeAxeCommand(
   simulatorUuid: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
-  getAxePathFn?: () => string | null,
-  getBundledAxeEnvironmentFn?: () => Record<string, string>,
+  axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
 ): Promise<void> {
   // Get the appropriate axe binary path
-  const axeBinary = getAxePathFn ? getAxePathFn() : getAxePath();
+  const axeBinary = axeHelpers.getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -173,12 +178,7 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv =
-      axeBinary !== 'axe'
-        ? getBundledAxeEnvironmentFn
-          ? getBundledAxeEnvironmentFn()
-          : getBundledAxeEnvironment()
-        : undefined;
+    const axeEnv = axeBinary !== 'axe' ? axeHelpers.getBundledAxeEnvironment() : undefined;
 
     const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 

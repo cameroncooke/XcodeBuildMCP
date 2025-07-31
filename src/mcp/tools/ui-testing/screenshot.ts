@@ -16,17 +16,22 @@ import {
   getDefaultFileSystemExecutor,
   getDefaultCommandExecutor,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 const LOG_PREFIX = '[Screenshot]';
 
-interface ScreenshotParams {
-  simulatorUuid: string;
-}
+// Define schema as ZodObject
+const screenshotSchema = z.object({
+  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+});
+
+// Use z.infer for type safety
+type ScreenshotParams = z.infer<typeof screenshotSchema>;
 
 export async function screenshotLogic(
   params: ScreenshotParams,
   executor: CommandExecutor,
-  fileSystemExecutor: FileSystemExecutor,
+  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
   pathUtils: { tmpdir: () => string; join: (...paths: string[]) => string } = { ...path, tmpdir },
   uuidUtils: { v4: () => string } = { v4: uuidv4 },
 ): Promise<ToolResponse> {
@@ -123,8 +128,6 @@ export async function screenshotLogic(
       log('error', `${LOG_PREFIX}/screenshot: Failed to process image file: ${fileError}`);
       return createErrorResponse(
         `Screenshot captured but failed to process image file: ${fileError instanceof Error ? fileError.message : String(fileError)}`,
-        undefined,
-        'FileProcessingError',
       );
     }
   } catch (_error) {
@@ -133,13 +136,10 @@ export async function screenshotLogic(
       return createErrorResponse(
         `System error executing screenshot: ${_error.message}`,
         _error.originalError?.stack,
-        _error.name,
       );
     }
     return createErrorResponse(
       `An unexpected error occurred: ${_error instanceof Error ? _error.message : String(_error)}`,
-      undefined,
-      'UnexpectedError',
     );
   }
 }
@@ -148,11 +148,12 @@ export default {
   name: 'screenshot',
   description:
     "Captures screenshot for visual verification. For UI coordinates, use describe_ui instead (don't determine coordinates from screenshots).",
-  schema: {
-    simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    const params = args as unknown as ScreenshotParams;
-    return screenshotLogic(params, getDefaultCommandExecutor(), getDefaultFileSystemExecutor());
-  },
+  schema: screenshotSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    screenshotSchema,
+    (params: ScreenshotParams, executor: CommandExecutor) => {
+      return screenshotLogic(params, executor);
+    },
+    getDefaultCommandExecutor,
+  ),
 };

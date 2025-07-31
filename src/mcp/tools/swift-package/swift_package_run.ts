@@ -1,42 +1,57 @@
 import { z } from 'zod';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
 import { createTextResponse, validateRequiredParam } from '../../../utils/index.js';
 import { createErrorResponse } from '../../../utils/index.js';
 import { log } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { ToolResponse, createTextContent } from '../../../types/common.js';
 import { addProcess } from './active-processes.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-// Inlined schemas from src/tools/common/index.ts
-const swiftConfigurationSchema = z
-  .enum(['debug', 'release'])
-  .optional()
-  .describe("Build configuration: 'debug' (default) or 'release'");
+// Define schema as ZodObject
+const swiftPackageRunSchema = z.object({
+  packagePath: z.string().describe('Path to the Swift package root (Required)'),
+  executableName: z
+    .string()
+    .optional()
+    .describe('Name of executable to run (defaults to package name)'),
+  arguments: z.array(z.string()).optional().describe('Arguments to pass to the executable'),
+  configuration: z
+    .enum(['debug', 'release'])
+    .optional()
+    .describe("Build configuration: 'debug' (default) or 'release'"),
+  timeout: z.number().optional().describe('Timeout in seconds (default: 30, max: 300)'),
+  background: z
+    .boolean()
+    .optional()
+    .describe('Run in background and return immediately (default: false)'),
+  parseAsLibrary: z
+    .boolean()
+    .optional()
+    .describe('Add -parse-as-library flag for @main support (default: false)'),
+});
 
-const parseAsLibrarySchema = z
-  .boolean()
-  .optional()
-  .describe('Add -parse-as-library flag for @main support (default: false)');
+// Use z.infer for type safety
+type SwiftPackageRunParams = z.infer<typeof swiftPackageRunSchema>;
 
 export async function swift_package_runLogic(
-  params: Record<string, unknown>,
+  params: SwiftPackageRunParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
   if (!pkgValidation.isValid) return pkgValidation.errorResponse!;
 
-  const resolvedPath = path.resolve(params.packagePath as string);
-  const timeout = Math.min((params.timeout as number) || 30, 300) * 1000; // Convert to ms, max 5 minutes
+  const resolvedPath = path.resolve(params.packagePath);
+  const timeout = Math.min(params.timeout ?? 30, 300) * 1000; // Convert to ms, max 5 minutes
 
   // Detect test environment to prevent real spawn calls during testing
   const isTestEnvironment = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
 
   const swiftArgs = ['run', '--package-path', resolvedPath];
 
-  if (params.configuration && (params.configuration as string).toLowerCase() === 'release') {
+  if (params.configuration && params.configuration.toLowerCase() === 'release') {
     swiftArgs.push('-c', 'release');
-  } else if (params.configuration && (params.configuration as string).toLowerCase() !== 'debug') {
+  } else if (params.configuration && params.configuration.toLowerCase() !== 'debug') {
     return createTextResponse("Invalid configuration. Use 'debug' or 'release'.", true);
   }
 
@@ -45,24 +60,22 @@ export async function swift_package_runLogic(
   }
 
   if (params.executableName) {
-    swiftArgs.push(params.executableName as string);
+    swiftArgs.push(params.executableName);
   }
 
   // Add double dash before executable arguments
-  if (params.arguments && (params.arguments as string[]).length > 0) {
+  if (params.arguments && params.arguments.length > 0) {
     swiftArgs.push('--');
-    swiftArgs.push(...(params.arguments as string[]));
+    swiftArgs.push(...params.arguments);
   }
 
   log('info', `Running swift ${swiftArgs.join(' ')}`);
 
   try {
-    // For background processes, we need direct access to the ChildProcess
-    // So we'll use spawn directly but in a way that integrates with CommandExecutor for foreground processes
     if (params.background) {
-      // Background mode: handle differently based on environment
+      // Background mode: Use CommandExecutor but don't wait for completion
       if (isTestEnvironment) {
-        // In test environment, return mock response without real spawn
+        // In test environment, return mock response without real process
         const mockPid = 12345;
         return {
           content: [
@@ -73,32 +86,58 @@ export async function swift_package_runLogic(
           ],
         };
       } else {
-        // Production: use real spawn for background process management
-        const child = spawn('swift', swiftArgs, {
-          cwd: resolvedPath,
-          env: { ...process.env },
-        });
+        // Production: use CommandExecutor to start the process
+        const command = ['swift', ...swiftArgs];
+        // Filter out undefined values from process.env
+        const cleanEnv = Object.fromEntries(
+          Object.entries(process.env).filter(([, value]) => value !== undefined),
+        ) as Record<string, string>;
+        const result = await executor(
+          command,
+          'Swift Package Run (Background)',
+          true,
+          cleanEnv,
+          true,
+        );
 
-        // Store the process in active processes system
-        if (child.pid) {
-          addProcess(child.pid, {
+        // Store the process in active processes system if available
+        if (result.process?.pid) {
+          addProcess(result.process.pid, {
             process: {
-              kill: (signal?: string) => child.kill(signal as NodeJS.Signals),
-              on: (event: string, callback: () => void) => child.on(event, callback),
-              pid: child.pid,
+              kill: (signal?: string) => {
+                // Adapt string signal to NodeJS.Signals
+                if (result.process) {
+                  result.process.kill(signal as NodeJS.Signals);
+                }
+              },
+              on: (event: string, callback: () => void) => {
+                if (result.process) {
+                  result.process.on(event, callback);
+                }
+              },
+              pid: result.process.pid,
             },
             startedAt: new Date(),
           });
-        }
 
-        return {
-          content: [
-            createTextContent(
-              `🚀 Started executable in background (PID: ${child.pid})\n` +
-                `💡 Process is running independently. Use swift_package_stop with PID ${child.pid} to terminate when needed.`,
-            ),
-          ],
-        };
+          return {
+            content: [
+              createTextContent(
+                `🚀 Started executable in background (PID: ${result.process.pid})\n` +
+                  `💡 Process is running independently. Use swift_package_stop with PID ${result.process.pid} to terminate when needed.`,
+              ),
+            ],
+          };
+        } else {
+          return {
+            content: [
+              createTextContent(
+                `🚀 Started executable in background\n` +
+                  `💡 Process is running independently. PID not available for this execution.`,
+              ),
+            ],
+          };
+        }
       }
     } else {
       // Foreground mode: use CommandExecutor but handle long-running processes
@@ -127,48 +166,29 @@ export async function swift_package_runLogic(
       const result = await Promise.race([commandPromise, timeoutPromise]);
 
       if ('timedOut' in result && result.timedOut) {
-        // For timeout case, we need to start the process in background mode for continued monitoring
+        // For timeout case, the process may still be running - provide timeout response
         if (isTestEnvironment) {
-          // In test environment, return mock response without real spawn
+          // In test environment, return mock response
           const mockPid = 12345;
           return {
             content: [
               createTextContent(
-                `⏱️ Process timed out after ${timeout / 1000} seconds but continues running.`,
+                `⏱️ Process timed out after ${timeout / 1000} seconds but may continue running.`,
               ),
-              createTextContent(`PID: ${mockPid}`),
+              createTextContent(`PID: ${mockPid} (mock)`),
               createTextContent(
-                `💡 Process is still running. Use swift_package_stop with PID ${mockPid} to terminate when needed.`,
+                `💡 Process may still be running. Use swift_package_stop with PID ${mockPid} to terminate when needed.`,
               ),
               createTextContent(result.output || '(no output so far)'),
             ],
           };
         } else {
-          // Production: use real spawn for continued monitoring
-          const child = spawn('swift', swiftArgs, {
-            cwd: resolvedPath,
-            env: { ...process.env },
-          });
-
-          if (child.pid) {
-            addProcess(child.pid, {
-              process: {
-                kill: (signal?: string) => child.kill(signal as NodeJS.Signals),
-                on: (event: string, callback: () => void) => child.on(event, callback),
-                pid: child.pid,
-              },
-              startedAt: new Date(),
-            });
-          }
-
+          // Production: timeout occurred, but we don't start a new process
           return {
             content: [
+              createTextContent(`⏱️ Process timed out after ${timeout / 1000} seconds.`),
               createTextContent(
-                `⏱️ Process timed out after ${timeout / 1000} seconds but continues running.`,
-              ),
-              createTextContent(`PID: ${child.pid}`),
-              createTextContent(
-                `💡 Process is still running. Use swift_package_stop with PID ${child.pid} to terminate when needed.`,
+                `💡 Process execution exceeded the timeout limit. Consider using background mode for long-running executables.`,
               ),
               createTextContent(result.output || '(no output so far)'),
             ],
@@ -198,29 +218,17 @@ export async function swift_package_runLogic(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     log('error', `Swift run failed: ${message}`);
-    return createErrorResponse('Failed to execute swift run', message, 'SystemError');
+    return createErrorResponse('Failed to execute swift run', message);
   }
 }
 
 export default {
   name: 'swift_package_run',
   description: 'Runs an executable target from a Swift Package with swift run',
-  schema: {
-    packagePath: z.string().describe('Path to the Swift package root (Required)'),
-    executableName: z
-      .string()
-      .optional()
-      .describe('Name of executable to run (defaults to package name)'),
-    arguments: z.array(z.string()).optional().describe('Arguments to pass to the executable'),
-    configuration: swiftConfigurationSchema,
-    timeout: z.number().optional().describe('Timeout in seconds (default: 30, max: 300)'),
-    background: z
-      .boolean()
-      .optional()
-      .describe('Run in background and return immediately (default: false)'),
-    parseAsLibrary: parseAsLibrarySchema,
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return swift_package_runLogic(args, getDefaultCommandExecutor());
-  },
+  schema: swiftPackageRunSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    swiftPackageRunSchema,
+    swift_package_runLogic,
+    getDefaultCommandExecutor,
+  ),
 };

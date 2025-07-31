@@ -5,23 +5,34 @@
  */
 
 import * as fs from 'fs';
-import { ChildProcess } from 'child_process';
+import type { ChildProcess } from 'child_process';
 import { z } from 'zod';
 import { log } from '../../../utils/index.js';
 import { activeDeviceLogSessions } from './start_device_log_cap.js';
 import { ToolResponse } from '../../../types/common.js';
-import { FileSystemExecutor, getDefaultFileSystemExecutor } from '../../../utils/command.js';
+import {
+  FileSystemExecutor,
+  getDefaultFileSystemExecutor,
+  getDefaultCommandExecutor,
+} from '../../../utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 interface DeviceLogSession {
-  process: ChildProcess;
+  process:
+    | ChildProcess
+    | { killed?: boolean; exitCode?: number | null; kill?: (signal?: string) => boolean };
   logFilePath: string;
   deviceUuid: string;
   bundleId: string;
 }
 
-type StopDeviceLogCapParams = {
-  logSessionId: string;
-};
+// Define schema as ZodObject
+const stopDeviceLogCapSchema = z.object({
+  logSessionId: z.string().describe('The session ID returned by start_device_log_cap.'),
+});
+
+// Use z.infer for type safety
+type StopDeviceLogCapParams = z.infer<typeof stopDeviceLogCapSchema>;
 
 /**
  * Type guard to validate device log session structure
@@ -84,7 +95,7 @@ export async function stop_device_log_capLogic(
     const logFilePath = session.logFilePath;
 
     if (!session.process.killed && session.process.exitCode === null) {
-      session.process.kill('SIGTERM');
+      session.process.kill?.('SIGTERM');
     }
 
     activeDeviceLogSessions.delete(logSessionId);
@@ -157,9 +168,11 @@ export async function stopDeviceLogCapture(
     },
     async readFile(path: string, encoding: BufferEncoding = 'utf8'): Promise<string> {
       if (hasPromisesInterface(fsToUse)) {
-        return (await fsToUse.promises.readFile(path, encoding)) as string;
+        const result = await fsToUse.promises.readFile(path, encoding);
+        return typeof result === 'string' ? result : (result as Buffer).toString();
       } else {
-        return (await fs.promises.readFile(path, encoding)) as string;
+        const result = await fs.promises.readFile(path, encoding);
+        return typeof result === 'string' ? result : (result as Buffer).toString();
       }
     },
     async writeFile(
@@ -187,15 +200,19 @@ export async function stopDeviceLogCapture(
     async readdir(path: string, options?: { withFileTypes?: boolean }): Promise<unknown[]> {
       if (hasPromisesInterface(fsToUse)) {
         if (options?.withFileTypes === true) {
-          return (await fsToUse.promises.readdir(path, { withFileTypes: true })) as unknown[];
+          const result = await fsToUse.promises.readdir(path, { withFileTypes: true });
+          return Array.isArray(result) ? result : [];
         } else {
-          return (await fsToUse.promises.readdir(path)) as unknown[];
+          const result = await fsToUse.promises.readdir(path);
+          return Array.isArray(result) ? result : [];
         }
       } else {
         if (options?.withFileTypes === true) {
-          return (await fs.promises.readdir(path, { withFileTypes: true })) as unknown[];
+          const result = await fs.promises.readdir(path, { withFileTypes: true });
+          return Array.isArray(result) ? result : [];
         } else {
-          return (await fs.promises.readdir(path)) as unknown[];
+          const result = await fs.promises.readdir(path);
+          return Array.isArray(result) ? result : [];
         }
       }
     },
@@ -215,9 +232,11 @@ export async function stopDeviceLogCapture(
     },
     async stat(path: string): Promise<{ isDirectory(): boolean }> {
       if (hasPromisesInterface(fsToUse)) {
-        return (await fsToUse.promises.stat(path)) as { isDirectory(): boolean };
+        const result = await fsToUse.promises.stat(path);
+        return result as { isDirectory(): boolean };
       } else {
-        return (await fs.promises.stat(path)) as { isDirectory(): boolean };
+        const result = await fs.promises.stat(path);
+        return result as { isDirectory(): boolean };
       }
     },
     async mkdtemp(prefix: string): Promise<string> {
@@ -265,13 +284,12 @@ export async function stopDeviceLogCapture(
 export default {
   name: 'stop_device_log_cap',
   description: 'Stops an active Apple device log capture session and returns the captured logs.',
-  schema: {
-    logSessionId: z.string().describe('The session ID returned by start_device_log_cap.'),
-  },
-  handler: async (params: Record<string, unknown>): Promise<ToolResponse> => {
-    return stop_device_log_capLogic(
-      params as StopDeviceLogCapParams,
-      getDefaultFileSystemExecutor(),
-    );
-  },
+  schema: stopDeviceLogCapSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    stopDeviceLogCapSchema,
+    (params: StopDeviceLogCapParams) => {
+      return stop_device_log_capLogic(params, getDefaultFileSystemExecutor());
+    },
+    getDefaultCommandExecutor,
+  ),
 };

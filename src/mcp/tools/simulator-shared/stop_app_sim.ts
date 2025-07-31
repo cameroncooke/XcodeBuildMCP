@@ -6,14 +6,19 @@ import {
   CommandExecutor,
   getDefaultCommandExecutor,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-export interface StopAppSimParams {
-  simulatorUuid: string;
-  bundleId: string;
-}
+// Define schema as ZodObject
+const stopAppSimSchema = z.object({
+  simulatorUuid: z.string().describe('UUID of the simulator (obtained from list_simulators)'),
+  bundleId: z.string().describe("Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"),
+});
+
+// Use z.infer for type safety
+type StopAppSimParams = z.infer<typeof stopAppSimSchema>;
 
 export async function stop_app_simLogic(
-  params: Record<string, unknown>,
+  params: StopAppSimParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -76,13 +81,6 @@ export async function stop_app_simLogic(
 export default {
   name: 'stop_app_sim',
   description: 'Stops an app running in an iOS simulator. Requires simulatorUuid and bundleId.',
-  schema: {
-    simulatorUuid: z.string().describe('UUID of the simulator (obtained from list_simulators)'),
-    bundleId: z
-      .string()
-      .describe("Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return stop_app_simLogic(args, getDefaultCommandExecutor());
-  },
+  schema: stopAppSimSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(stopAppSimSchema, stop_app_simLogic, getDefaultCommandExecutor),
 };

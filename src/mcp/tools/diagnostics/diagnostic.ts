@@ -17,6 +17,7 @@ import {
 import * as os from 'os';
 import { loadPlugins } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Mock system interface for dependency injection
 interface MockSystem {
@@ -54,10 +55,11 @@ async function checkBinaryAvailability(
   const commandExecutor = mockSystem?.executor;
 
   // Fallback executor for when no mock is provided
-  const fallbackExecutor = async (
-    _command: string[],
-    _logPrefix?: string,
-  ): Promise<{ success: boolean; output: string; error: string }> => ({
+  const fallbackExecutor = async (): Promise<{
+    success: boolean;
+    output: string;
+    error: string;
+  }> => ({
     success: false,
     output: '',
     error: 'Binary not found',
@@ -126,10 +128,11 @@ async function getXcodeInfo(
   const commandExecutor = mockSystem?.executor;
 
   // Fallback executor for when no mock is provided
-  const fallbackExecutor = async (
-    _command: string[],
-    _logPrefix?: string,
-  ): Promise<{ success: boolean; output: string; error: string }> => ({
+  const fallbackExecutor = async (): Promise<{
+    success: boolean;
+    output: string;
+    error: string;
+  }> => ({
     success: false,
     output: '',
     error: 'Xcode tool not found',
@@ -336,11 +339,19 @@ function getIndividuallyEnabledTools(): string[] {
     .map((key) => key.replace('XCODEBUILDMCP_TOOL_', ''));
 }
 
+// Define schema as ZodObject
+const diagnosticSchema = z.object({
+  enabled: z.boolean().optional().describe('Optional: dummy parameter to satisfy MCP protocol'),
+});
+
+// Use z.infer for type safety
+type DiagnosticParams = z.infer<typeof diagnosticSchema>;
+
 /**
  * Run the diagnostic tool and return the results
  */
 export async function diagnosticLogic(
-  params: Record<string, unknown>,
+  params: DiagnosticParams,
   executor: CommandExecutor,
   mockUtilities?: MockUtilities,
 ): Promise<ToolResponse> {
@@ -510,10 +521,6 @@ export default {
   name: 'diagnostic',
   description:
     'Provides comprehensive information about the MCP server environment, available dependencies, and configuration status.',
-  schema: {
-    enabled: z.boolean().optional().describe('Optional: dummy parameter to satisfy MCP protocol'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return diagnosticLogic(args, getDefaultCommandExecutor());
-  },
+  schema: diagnosticSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(diagnosticSchema, diagnosticLogic, getDefaultCommandExecutor),
 };

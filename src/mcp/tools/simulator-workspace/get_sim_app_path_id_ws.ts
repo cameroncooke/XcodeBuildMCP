@@ -3,19 +3,25 @@ import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type GetSimAppPathIdWsParams = {
-  workspacePath: string;
-  scheme?: string;
-  platform?:
-    | XcodePlatform.iOSSimulator
-    | XcodePlatform.watchOSSimulator
-    | XcodePlatform.tvOSSimulator
-    | XcodePlatform.visionOSSimulator;
-  simulatorId?: string;
-  configuration?: string;
-  useLatestOS?: boolean;
-};
+// Define schema as ZodObject
+const getSimAppPathIdWsSchema = z.object({
+  workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
+  scheme: z.string().describe('The scheme to use (Required)'),
+  platform: z
+    .enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator'])
+    .describe('Target simulator platform (Required)'),
+  simulatorId: z.string().describe('UUID of the simulator to use (Required)'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  useLatestOS: z
+    .boolean()
+    .optional()
+    .describe('Whether to use the latest OS version for the simulator'),
+});
+
+// Use z.infer for type safety
+type GetSimAppPathIdWsParams = z.infer<typeof getSimAppPathIdWsSchema>;
 
 /**
  * Business logic for getting app path from simulator workspace
@@ -24,10 +30,18 @@ export async function get_sim_app_path_id_wsLogic(
   params: GetSimAppPathIdWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Validate platform parameter
-  if (!params.platform) {
-    return createTextResponse(`Unsupported platform: ${params.platform}`, true);
-  }
+  // Validate required parameters
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
+  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
+
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
+  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
+
+  const platformValidation = validateRequiredParam('platform', params.platform);
+  if (!platformValidation.isValid) return platformValidation.errorResponse!;
+
+  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
+  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
 
   log('info', `Getting app path for scheme ${params.scheme} on platform ${params.platform}`);
 
@@ -52,7 +66,7 @@ export async function get_sim_app_path_id_wsLogic(
       XcodePlatform.watchOSSimulator,
       XcodePlatform.tvOSSimulator,
       XcodePlatform.visionOSSimulator,
-    ].includes(params.platform);
+    ].includes(params.platform as XcodePlatform);
 
     let destinationString = '';
 
@@ -134,46 +148,10 @@ export default {
   name: 'get_sim_app_path_id_ws',
   description:
     "Gets the app bundle path for a simulator by UUID using a workspace. IMPORTANT: Requires workspacePath, scheme, platform, and simulatorId. Example: get_sim_app_path_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorId: 'SIMULATOR_UUID' })",
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    platform: z
-      .enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator'])
-      .describe('Target simulator platform (Required)'),
-    simulatorId: z.string().describe('UUID of the simulator to use (Required)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    useLatestOS: z
-      .boolean()
-      .optional()
-      .describe('Whether to use the latest OS version for the simulator'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    const workspaceValidation = validateRequiredParam('workspacePath', args.workspacePath);
-    if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-    const schemeValidation = validateRequiredParam('scheme', args.scheme);
-    if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-    const platformValidation = validateRequiredParam('platform', args.platform);
-    if (!platformValidation.isValid) return platformValidation.errorResponse!;
-
-    const simulatorIdValidation = validateRequiredParam('simulatorId', args.simulatorId);
-    if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
-    return get_sim_app_path_id_wsLogic(
-      {
-        workspacePath: args.workspacePath as string,
-        scheme: args.scheme as string,
-        platform: args.platform as
-          | XcodePlatform.iOSSimulator
-          | XcodePlatform.watchOSSimulator
-          | XcodePlatform.tvOSSimulator
-          | XcodePlatform.visionOSSimulator,
-        simulatorId: args.simulatorId as string,
-        configuration: (args.configuration as string) ?? 'Debug',
-        useLatestOS: (args.useLatestOS as boolean) ?? true,
-      },
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: getSimAppPathIdWsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    getSimAppPathIdWsSchema,
+    get_sim_app_path_id_wsLogic,
+    getDefaultCommandExecutor,
+  ),
 };

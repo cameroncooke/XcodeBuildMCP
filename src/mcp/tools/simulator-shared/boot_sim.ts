@@ -2,9 +2,20 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { validateRequiredParam } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+
+// Define schema as ZodObject
+const bootSimSchema = z.object({
+  simulatorUuid: z
+    .string()
+    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+});
+
+// Use z.infer for type safety
+type BootSimParams = z.infer<typeof bootSimSchema>;
 
 export async function boot_simLogic(
-  params: { simulatorUuid: string },
+  params: BootSimParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -65,12 +76,6 @@ export default {
   name: 'boot_sim',
   description:
     "Boots an iOS simulator. IMPORTANT: You MUST provide the simulatorUuid parameter. Example: boot_sim({ simulatorUuid: 'YOUR_UUID_HERE' })",
-  schema: {
-    simulatorUuid: z
-      .string()
-      .describe('UUID of the simulator to use (obtained from list_simulators)'),
-  },
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return boot_simLogic(args as { simulatorUuid: string }, getDefaultCommandExecutor());
-  },
+  schema: bootSimSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(bootSimSchema, boot_simLogic, getDefaultCommandExecutor),
 };

@@ -3,9 +3,24 @@ import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+
+// Define schema as ZodObject
+const launchAppSimSchema = z.object({
+  simulatorUuid: z
+    .string()
+    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+  bundleId: z
+    .string()
+    .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
+  args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
+});
+
+// Use z.infer for type safety
+type LaunchAppSimParams = z.infer<typeof launchAppSimSchema>;
 
 export async function launch_app_simLogic(
-  params: Record<string, unknown>,
+  params: LaunchAppSimParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -26,12 +41,12 @@ export async function launch_app_simLogic(
       'xcrun',
       'simctl',
       'get_app_container',
-      params.simulatorUuid as string,
-      params.bundleId as string,
+      params.simulatorUuid,
+      params.bundleId,
       'app',
     ];
     const getAppContainerResult = await executor(
-      getAppContainerCmd as string[],
+      getAppContainerCmd,
       'Check App Installed',
       true,
       undefined,
@@ -60,19 +75,13 @@ export async function launch_app_simLogic(
   }
 
   try {
-    const command = [
-      'xcrun',
-      'simctl',
-      'launch',
-      params.simulatorUuid as string,
-      params.bundleId as string,
-    ];
+    const command = ['xcrun', 'simctl', 'launch', params.simulatorUuid, params.bundleId];
 
-    if (params.args && Array.isArray(params.args) && (params.args as unknown[]).length > 0) {
-      command.push(...(params.args as string[]));
+    if (params.args && params.args.length > 0) {
+      command.push(...params.args);
     }
 
-    const result = await executor(command as string[], 'Launch App in Simulator', true, undefined);
+    const result = await executor(command, 'Launch App in Simulator', true, undefined);
 
     if (!result.success) {
       return {
@@ -125,16 +134,6 @@ export default {
   name: 'launch_app_sim',
   description:
     "Launches an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and bundleId parameters.\n\nNote: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_sim({ simulatorUuid: 'YOUR_UUID_HERE', bundleId: 'com.example.MyApp' })",
-  schema: {
-    simulatorUuid: z
-      .string()
-      .describe('UUID of the simulator to use (obtained from list_simulators)'),
-    bundleId: z
-      .string()
-      .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
-    args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
-  },
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return launch_app_simLogic(args, getDefaultCommandExecutor());
-  },
+  schema: launchAppSimSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(launchAppSimSchema, launch_app_simLogic, getDefaultCommandExecutor),
 };

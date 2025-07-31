@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
+import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import {
   DependencyError,
   AxeError,
@@ -14,20 +14,34 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+
+// Define schema as ZodObject
+const keyPressSchema = z.object({
+  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  keyCode: z.number().int('HID keycode to press (0-255)').min(0).max(255),
+  duration: z.number().min(0, 'Duration must be non-negative').optional(),
+});
+
+// Use z.infer for type safety
+type KeyPressParams = z.infer<typeof keyPressSchema>;
+
+export interface AxeHelpers {
+  getAxePath: () => string | null;
+  getBundledAxeEnvironment: () => Record<string, string>;
+  createAxeNotAvailableResponse: () => ToolResponse;
+}
 
 const LOG_PREFIX = '[AXe]';
-
-interface KeyPressParams {
-  simulatorUuid: string;
-  keyCode: number;
-  duration?: number;
-}
 
 export async function key_pressLogic(
   params: KeyPressParams,
   executor: CommandExecutor,
-  getAxePathFn?: () => string | null,
-  getBundledAxeEnvironmentFn?: () => Record<string, string>,
+  axeHelpers: AxeHelpers = {
+    getAxePath,
+    getBundledAxeEnvironment,
+    createAxeNotAvailableResponse,
+  },
 ): Promise<ToolResponse> {
   const toolName = 'key_press';
   const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
@@ -44,39 +58,26 @@ export async function key_pressLogic(
   log('info', `${LOG_PREFIX}/${toolName}: Starting key press ${keyCode} on ${simulatorUuid}`);
 
   try {
-    await executeAxeCommand(
-      commandArgs,
-      simulatorUuid,
-      'key',
-      executor,
-      getAxePathFn,
-      getBundledAxeEnvironmentFn,
-    );
+    await executeAxeCommand(commandArgs, simulatorUuid, 'key', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
-    return {
-      content: [{ type: 'text', text: `Key press (code: ${keyCode}) simulated successfully.` }],
-    };
+    return createTextResponse(`Key press (code: ${keyCode}) simulated successfully.`);
   } catch (error) {
     log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
     if (error instanceof DependencyError) {
-      return createAxeNotAvailableResponse();
+      return axeHelpers.createAxeNotAvailableResponse();
     } else if (error instanceof AxeError) {
       return createErrorResponse(
         `Failed to simulate key press (code: ${keyCode}): ${error.message}`,
         error.axeOutput,
-        error.name,
       );
     } else if (error instanceof SystemError) {
       return createErrorResponse(
         `System error executing axe: ${error.message}`,
         error.originalError?.stack,
-        error.name,
       );
     }
     return createErrorResponse(
       `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`,
-      undefined,
-      'UnexpectedError',
     );
   }
 }
@@ -85,21 +86,18 @@ export default {
   name: 'key_press',
   description:
     'Press a single key by keycode on the simulator. Common keycodes: 40=Return, 42=Backspace, 43=Tab, 44=Space, 58-67=F1-F10.',
-  schema: {
-    simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
-    keyCode: z.number().int('HID keycode to press (0-255)').min(0).max(255),
-    duration: z.number().min(0, 'Duration must be non-negative').optional(),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return key_pressLogic(
-      {
-        simulatorUuid: args.simulatorUuid as string,
-        keyCode: args.keyCode as number,
-        duration: args.duration as number | undefined,
-      },
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: keyPressSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    keyPressSchema,
+    (params: KeyPressParams, executor: CommandExecutor) => {
+      return key_pressLogic(params, executor, {
+        getAxePath,
+        getBundledAxeEnvironment,
+        createAxeNotAvailableResponse,
+      });
+    },
+    getDefaultCommandExecutor,
+  ),
 };
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
@@ -108,11 +106,10 @@ async function executeAxeCommand(
   simulatorUuid: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
-  getAxePathFn?: () => string | null,
-  getBundledAxeEnvironmentFn?: () => Record<string, string>,
+  axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
 ): Promise<void> {
   // Get the appropriate axe binary path
-  const axeBinary = getAxePathFn ? getAxePathFn() : getAxePath();
+  const axeBinary = axeHelpers.getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -125,12 +122,7 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv =
-      axeBinary !== 'axe'
-        ? getBundledAxeEnvironmentFn
-          ? getBundledAxeEnvironmentFn()
-          : getBundledAxeEnvironment()
-        : undefined;
+    const axeEnv = axeBinary !== 'axe' ? axeHelpers.getBundledAxeEnvironment() : undefined;
 
     const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
 

@@ -310,22 +310,29 @@ describe('clean_proj plugin tests', () => {
       });
     });
 
-    it('should return error response for validation failure', async () => {
+    it('should execute clean successfully with valid parameters', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Clean succeeded',
+        error: undefined,
+        process: { pid: 12345 },
+      });
+
       const result = await clean_projLogic(
         {
-          projectPath: null,
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
         },
-        createNoopExecutor(),
+        mockExecutor,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Expected string, received null at path 'projectPath'",
+            text: '✅ Clean clean succeeded for scheme MyScheme.',
           },
         ],
-        isError: true,
       });
     });
 
@@ -351,16 +358,32 @@ describe('clean_proj plugin tests', () => {
       });
     });
 
-    it('should handle invalid schema with zod validation', async () => {
+    it('should execute clean with additional parameters', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Clean completed with additional args',
+        error: undefined,
+        process: { pid: 12345 },
+      });
+
       const result = await clean_projLogic(
         {
-          projectPath: 123, // Invalid type
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+          configuration: 'Release',
+          extraArgs: ['--verbose'],
         },
-        createNoopExecutor(),
+        mockExecutor,
       );
 
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe("Expected string, received number at path 'projectPath'");
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: '✅ Clean clean succeeded for scheme MyScheme.',
+          },
+        ],
+      });
     });
   });
 });

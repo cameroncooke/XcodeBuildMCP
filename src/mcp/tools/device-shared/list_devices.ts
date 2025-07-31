@@ -5,18 +5,26 @@
  * with their UUIDs, names, and connection status. Use this to discover physical devices for testing.
  */
 
+import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+
+// Define schema as ZodObject (empty schema since this tool takes no parameters)
+const listDevicesSchema = z.object({});
+
+// Use z.infer for type safety
+type ListDevicesParams = z.infer<typeof listDevicesSchema>;
 
 /**
  * Business logic for listing connected devices
  */
 export async function list_devicesLogic(
-  args?: Record<string, unknown>,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  params: ListDevicesParams,
+  executor: CommandExecutor,
   pathDeps?: { tmpdir?: () => string; join?: (...paths: string[]) => string },
   fsDeps?: {
     readFile?: (path: string, encoding?: string) => Promise<string>;
@@ -91,7 +99,107 @@ export async function list_devicesLogic(
               };
               identifier?: string;
             } => {
-              return typeof device === 'object' && device !== null;
+              if (typeof device !== 'object' || device === null) {
+                return false;
+              }
+
+              const dev = device as Record<string, unknown>;
+
+              // Check if identifier exists and is a string (most critical property)
+              if (typeof dev.identifier !== 'string' && dev.identifier !== undefined) {
+                return false;
+              }
+
+              // Check visibilityClass if present
+              if (dev.visibilityClass !== undefined && typeof dev.visibilityClass !== 'string') {
+                return false;
+              }
+
+              // Check connectionProperties structure if present
+              if (dev.connectionProperties !== undefined) {
+                if (
+                  typeof dev.connectionProperties !== 'object' ||
+                  dev.connectionProperties === null
+                ) {
+                  return false;
+                }
+                const connProps = dev.connectionProperties as Record<string, unknown>;
+                if (
+                  connProps.pairingState !== undefined &&
+                  typeof connProps.pairingState !== 'string'
+                ) {
+                  return false;
+                }
+                if (
+                  connProps.tunnelState !== undefined &&
+                  typeof connProps.tunnelState !== 'string'
+                ) {
+                  return false;
+                }
+                if (
+                  connProps.transportType !== undefined &&
+                  typeof connProps.transportType !== 'string'
+                ) {
+                  return false;
+                }
+              }
+
+              // Check deviceProperties structure if present
+              if (dev.deviceProperties !== undefined) {
+                if (typeof dev.deviceProperties !== 'object' || dev.deviceProperties === null) {
+                  return false;
+                }
+                const devProps = dev.deviceProperties as Record<string, unknown>;
+                if (
+                  devProps.platformIdentifier !== undefined &&
+                  typeof devProps.platformIdentifier !== 'string'
+                ) {
+                  return false;
+                }
+                if (devProps.name !== undefined && typeof devProps.name !== 'string') {
+                  return false;
+                }
+                if (
+                  devProps.osVersionNumber !== undefined &&
+                  typeof devProps.osVersionNumber !== 'string'
+                ) {
+                  return false;
+                }
+                if (
+                  devProps.developerModeStatus !== undefined &&
+                  typeof devProps.developerModeStatus !== 'string'
+                ) {
+                  return false;
+                }
+                if (
+                  devProps.marketingName !== undefined &&
+                  typeof devProps.marketingName !== 'string'
+                ) {
+                  return false;
+                }
+              }
+
+              // Check hardwareProperties structure if present
+              if (dev.hardwareProperties !== undefined) {
+                if (typeof dev.hardwareProperties !== 'object' || dev.hardwareProperties === null) {
+                  return false;
+                }
+                const hwProps = dev.hardwareProperties as Record<string, unknown>;
+                if (hwProps.productType !== undefined && typeof hwProps.productType !== 'string') {
+                  return false;
+                }
+                if (hwProps.cpuType !== undefined) {
+                  if (typeof hwProps.cpuType !== 'object' || hwProps.cpuType === null) {
+                    return false;
+                  }
+                  const cpuType = hwProps.cpuType as Record<string, unknown>;
+                  if (cpuType.name !== undefined && typeof cpuType.name !== 'string') {
+                    return false;
+                  }
+                }
+              }
+
+              return true;
             };
 
             if (!isValidDevice(deviceRaw)) continue;
@@ -322,8 +430,6 @@ export default {
   name: 'list_devices',
   description:
     'Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.',
-  schema: {},
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return list_devicesLogic(args, getDefaultCommandExecutor());
-  },
+  schema: listDevicesSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(listDevicesSchema, list_devicesLogic, getDefaultCommandExecutor),
 };

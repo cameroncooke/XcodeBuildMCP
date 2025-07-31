@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../utils/command.js';
 import launchAppSim, { launch_app_simLogic } from '../launch_app_sim.ts';

@@ -8,36 +8,62 @@ import {
   executeXcodeBuildCommand,
   CommandExecutor,
 } from '../../../utils/index.js';
-import { execSync } from 'child_process';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+
+// Define schema as ZodObject
+const buildRunSimIdWsSchema = z.object({
+  workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
+  scheme: z.string().describe('The scheme to use (Required)'),
+  simulatorId: z
+    .string()
+    .describe('UUID of the simulator to use (obtained from listSimulators) (Required)'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  derivedDataPath: z
+    .string()
+    .optional()
+    .describe('Path where build products and other derived data will go'),
+  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+  useLatestOS: z
+    .boolean()
+    .optional()
+    .describe('Whether to use the latest OS version for the named simulator'),
+  preferXcodebuild: z
+    .boolean()
+    .optional()
+    .describe(
+      'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
+    ),
+});
+
+// Use z.infer for type safety
+type BuildRunSimIdWsParams = z.infer<typeof buildRunSimIdWsSchema>;
 
 // Helper function for simulator build logic
 async function _handleSimulatorBuildLogic(
-  params: Record<string, unknown>,
+  params: BuildRunSimIdWsParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
-  log('info', `Building ${params.workspacePath ?? params.projectPath} for iOS Simulator`);
+  log('info', `Building ${params.workspacePath} for iOS Simulator`);
 
   try {
     // Create SharedBuildParams object with required properties
     const sharedBuildParams: SharedBuildParams = {
-      workspacePath: params.workspacePath as string | undefined,
-      projectPath: params.projectPath as string | undefined,
-      scheme: params.scheme as string,
-      configuration: params.configuration as string,
-      derivedDataPath: params.derivedDataPath as string | undefined,
-      extraArgs: params.extraArgs as string[] | undefined,
+      workspacePath: params.workspacePath,
+      scheme: params.scheme,
+      configuration: params.configuration ?? 'Debug',
+      derivedDataPath: params.derivedDataPath,
+      extraArgs: params.extraArgs,
     };
 
     const buildResult = await executeXcodeBuildCommand(
       sharedBuildParams,
       {
         platform: XcodePlatform.iOSSimulator,
-        simulatorName: params.simulatorName as string | undefined,
-        simulatorId: params.simulatorId as string | undefined,
-        useLatestOS: params.useLatestOS as boolean | undefined,
+        simulatorId: params.simulatorId,
+        useLatestOS: params.useLatestOS,
         logPrefix: 'Build',
       },
-      params.preferXcodebuild as boolean | undefined,
+      params.preferXcodebuild,
       'build',
       executor,
     );
@@ -52,7 +78,7 @@ async function _handleSimulatorBuildLogic(
 
 // Exported business logic function
 export async function build_run_sim_id_wsLogic(
-  params: Record<string, unknown>,
+  params: BuildRunSimIdWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   // Validate required parameters
@@ -68,7 +94,7 @@ export async function build_run_sim_id_wsLogic(
   // Provide defaults
   const processedParams = {
     ...params,
-    configuration: (params.configuration as string) ?? 'Debug',
+    configuration: params.configuration ?? 'Debug',
     useLatestOS: params.useLatestOS ?? true,
     preferXcodebuild: params.preferXcodebuild ?? false,
   };
@@ -78,13 +104,10 @@ export async function build_run_sim_id_wsLogic(
 
 // Helper function for iOS Simulator build and run logic
 async function _handleIOSSimulatorBuildAndRunLogic(
-  params: Record<string, unknown>,
+  params: BuildRunSimIdWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  log(
-    'info',
-    `Building and running ${params.workspacePath ?? params.projectPath} on iOS Simulator`,
-  );
+  log('info', `Building and running ${params.workspacePath} on iOS Simulator`);
 
   try {
     // Step 1: Build
@@ -97,18 +120,10 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // Step 2: Get App Path
     const command = ['xcodebuild', '-showBuildSettings'];
 
-    if (params.workspacePath) {
-      command.push('-workspace', params.workspacePath as string);
-    } else if (params.projectPath) {
-      command.push('-project', params.projectPath as string);
-    }
-
-    command.push('-scheme', params.scheme as string);
-    command.push('-configuration', params.configuration as string);
-    command.push(
-      '-destination',
-      `platform=${XcodePlatform.iOSSimulator},id=${params.simulatorId as string}`,
-    );
+    command.push('-workspace', params.workspacePath);
+    command.push('-scheme', params.scheme);
+    command.push('-configuration', params.configuration ?? 'Debug');
+    command.push('-destination', `platform=${XcodePlatform.iOSSimulator},id=${params.simulatorId}`);
 
     const result = await executor(command, 'Get App Path', true, undefined);
 
@@ -136,8 +151,16 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     const appPath = `${builtProductsDir}/${fullProductName}`;
 
     // Step 3: Find/Boot Simulator
-    const simulatorsOutput = execSync('xcrun simctl list devices available --json').toString();
-    const simulatorsData = JSON.parse(simulatorsOutput) as { devices: Record<string, unknown[]> };
+    const simulatorListResult = await executor(
+      ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
+      'List Simulators',
+    );
+    if (!simulatorListResult.success) {
+      return createTextResponse(`Failed to list simulators: ${simulatorListResult.error}`, true);
+    }
+    const simulatorsData = JSON.parse(simulatorListResult.output) as {
+      devices: Record<string, unknown[]>;
+    };
     let targetSimulator: { udid: string; name: string; state: string } | null = null;
 
     // Find the target simulator
@@ -169,17 +192,14 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     }
 
     if (!targetSimulator) {
-      return createTextResponse(
-        `Simulator with ID ${params.simulatorId as string} not found.`,
-        true,
-      );
+      return createTextResponse(`Simulator with ID ${params.simulatorId} not found.`, true);
     }
 
     // Boot if needed
     if (targetSimulator.state !== 'Booted') {
       log('info', `Booting simulator ${targetSimulator.name}...`);
       const bootResult = await executor(
-        ['xcrun', 'simctl', 'boot', params.simulatorId as string],
+        ['xcrun', 'simctl', 'boot', params.simulatorId],
         'Boot Simulator',
         true,
         undefined,
@@ -193,7 +213,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // Step 4: Install App
     log('info', `Installing app at ${appPath}...`);
     const installResult = await executor(
-      ['xcrun', 'simctl', 'install', params.simulatorId as string, appPath],
+      ['xcrun', 'simctl', 'install', params.simulatorId, appPath],
       'Install App',
       true,
       undefined,
@@ -223,7 +243,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
     log('info', `Launching app with bundle ID ${bundleId}...`);
     const launchResult = await executor(
-      ['xcrun', 'simctl', 'launch', params.simulatorId as string, bundleId],
+      ['xcrun', 'simctl', 'launch', params.simulatorId, bundleId],
       'Launch App',
       true,
       undefined,
@@ -250,7 +270,7 @@ async function _handleIOSSimulatorBuildAndRunLogic(
         },
         {
           type: 'text',
-          text: `📱 Simulator: ${targetSimulator.name} (${params.simulatorId as string})`,
+          text: `📱 Simulator: ${targetSimulator.name} (${params.simulatorId})`,
         },
       ],
     };
@@ -265,30 +285,10 @@ export default {
   name: 'build_run_sim_id_ws',
   description:
     "Builds and runs an app from a workspace on a simulator specified by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_run_sim_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    simulatorId: z
-      .string()
-      .describe('UUID of the simulator to use (obtained from listSimulators) (Required)'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    useLatestOS: z
-      .boolean()
-      .optional()
-      .describe('Whether to use the latest OS version for the named simulator'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-      ),
-  },
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return build_run_sim_id_wsLogic(args, getDefaultCommandExecutor());
-  },
+  schema: buildRunSimIdWsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    buildRunSimIdWsSchema,
+    build_run_sim_id_wsLogic,
+    getDefaultCommandExecutor,
+  ),
 };

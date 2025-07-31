@@ -311,11 +311,11 @@ https://github.com/user-attachments/assets/e3c08d75-8be6-4857-b4d0-9350b26ef086
 
 Contributions are welcome! Here's how you can help improve XcodeBuildMCP.
 
-See our [CONTRIBUTING](docs/CONTRIBUTING.md) document for detailed contribution guidelines, including:
-- Development setup instructions
-- Mandatory testing principles
-- Code quality standards
-- Pre-commit checklist
+See our documentation for development:
+- [CONTRIBUTING](docs/CONTRIBUTING.md) - Contribution guidelines and development setup
+- [CODE_QUALITY](docs/CODE_QUALITY.md) - Code quality standards, linting, and architectural rules
+- [TESTING](docs/TESTING.md) - Testing principles and patterns
+- [ARCHITECTURE](docs/ARCHITECTURE.md) - System architecture and design principles
 
 ## Licence
 

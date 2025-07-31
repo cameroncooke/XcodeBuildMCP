@@ -3,20 +3,24 @@
 /**
  * XcodeBuildMCP Code Pattern Violations Checker
  * 
- * Validates that all code files follow established patterns and
- * identifies violations of the project's coding guidelines.
+ * Validates that all code files follow XcodeBuildMCP-specific architectural patterns.
+ * This script focuses on domain-specific rules that ESLint cannot express.
  * 
  * USAGE:
- *   node scripts/check-code-patterns.js [--pattern=vitest|timeout|typescript|handler|all]
+ *   node scripts/check-code-patterns.js [--pattern=vitest|execsync|handler|handler-testing|all]
  *   node scripts/check-code-patterns.js --help
  * 
- * CODE GUIDELINES ENFORCED:
+ * ARCHITECTURAL RULES ENFORCED:
  * 1. NO vitest mocking patterns (vi.mock, vi.fn, .mockResolvedValue, etc.)
- * 2. NO setTimeout-based mocking patterns
+ * 2. NO execSync usage in production code (use CommandExecutor instead)
  * 3. ONLY dependency injection with createMockExecutor() and createMockFileSystemExecutor()
- * 4. NO TypeScript anti-patterns (as unknown casts, unsafe type assertions)
- * 5. Proper test architecture compliance
- * 6. NO handler signature violations (handlers must have exact MCP SDK signatures)
+ * 4. NO handler signature violations (handlers must have exact MCP SDK signatures)
+ * 5. NO handler testing violations (test logic functions, not handlers directly)
+ * 
+ * For comprehensive code quality documentation, see docs/CODE_QUALITY.md
+ * 
+ * Note: General code quality rules (TypeScript, ESLint) are handled by other tools.
+ * This script only enforces XcodeBuildMCP-specific architectural patterns.
  */
 
 import { readFileSync, readdirSync, statSync } from 'fs';
@@ -41,39 +45,41 @@ USAGE:
   node scripts/check-code-patterns.js [options]
 
 OPTIONS:
-  --pattern=TYPE    Check specific pattern type (vitest|timeout|typescript|handler|all) [default: all]
+  --pattern=TYPE    Check specific pattern type (vitest|execsync|handler|handler-testing|server-typing|all) [default: all]
   --help, -h        Show this help message
 
 PATTERN TYPES:
   vitest           Check only vitest mocking violations (vi.mock, vi.fn, etc.)
-  timeout          Check only setTimeout-based mocking patterns
-  typescript       Check only TypeScript anti-patterns (as unknown, unsafe casts)
+  execsync         Check only execSync usage in production code
   handler          Check only handler signature violations
+  handler-testing  Check only handler testing violations (testing handlers instead of logic functions)
+  server-typing    Check only improper server typing violations (Record<string, unknown> casts)
   all              Check all pattern violations (default)
+
+  Note: General code quality (TypeScript, etc.) is handled by ESLint
 
 EXAMPLES:
   node scripts/check-code-patterns.js
   node scripts/check-code-patterns.js --pattern=vitest
-  node scripts/check-code-patterns.js --pattern=typescript
   node scripts/check-code-patterns.js --pattern=handler
+  node scripts/check-code-patterns.js --pattern=handler-testing
+  node scripts/check-code-patterns.js --pattern=server-typing
 `);
   process.exit(0);
 }
 
-// Patterns that indicate setTimeout-based mocking approach
-const TIMEOUT_PATTERNS = [
-  /setTimeout\s*\(\s*\(\s*\)\s*=>/,  // setTimeout(() => {
-  /setTimeout\s*\(\s*function/,      // setTimeout(function() {
-  /mockProcess\.stdout\.emit/,       // mockProcess.stdout.emit
-  /mockProcess\.stderr\.emit/,       // mockProcess.stderr.emit
-  /mockProcess\.emit\s*\(/,          // mockProcess.emit(
-  /MockChildProcess\s+extends\s+EventEmitter/, // class MockChildProcess extends EventEmitter
-  /new\s+EventEmitter\(\)/,          // new EventEmitter()
+// Patterns for execSync usage in production code (FORBIDDEN)
+// Note: execSync is allowed in test files for mocking, but not in production code
+const EXECSYNC_PATTERNS = [
+  /\bexecSync\s*\(/,                 // Direct execSync usage
+  /\bexecSyncFn\s*[=:]/,             // execSyncFn parameter or assignment
+  /^import\s+(?!type\s)[^}]*from\s+['"]child_process['"]/m,    // Importing from child_process (except type-only imports)
+  /^import\s+{[^}]*(?:exec|spawn|execSync)[^}]*}\s+from\s+['"](?:node:)?child_process['"]/m, // Named imports of functions
 ];
 
 // CRITICAL: ALL VITEST MOCKING PATTERNS ARE COMPLETELY FORBIDDEN
-// ONLY dependency injection with createMockExecutor and createMockFileSystemExecutor is allowed
-const VITEST_MOCKING_PATTERNS = [
+// ONLY dependency injection with approved mock utilities is allowed
+const VITEST_GENERIC_PATTERNS = [
   /vi\.mock\s*\(/,                   // vi.mock() - BANNED
   /vi\.fn\s*\(/,                     // vi.fn() - BANNED
   /vi\.mocked\s*\(/,                 // vi.mocked() - BANNED
@@ -89,30 +95,55 @@ const VITEST_MOCKING_PATTERNS = [
   /\.toHaveBeenCalled/,              // .toHaveBeenCalled - BANNED
   /\.toHaveBeenCalledWith/,          // .toHaveBeenCalledWith - BANNED
   /MockedFunction/,                  // MockedFunction type - BANNED
-  /mockExecuteCommand/,              // mockExecuteCommand variables - BANNED
-  /mockValidateRequiredParam/,       // mockValidateRequiredParam variables - BANNED
-  /mockValidateFileExists/,          // mockValidateFileExists variables - BANNED
-  /mockStartLogCapture/,             // mockStartLogCapture variables - BANNED
-  /mockCreateTextResponse/,          // mockCreateTextResponse variables - BANNED
-  /mockCreateErrorResponse/,         // mockCreateErrorResponse variables - BANNED
-  /mockLog/,                         // mockLog variables - BANNED
-  /mockTemplateManager/,             // mockTemplateManager variables - BANNED
   /as MockedFunction/,               // Type casting to MockedFunction - BANNED
   /\bexecSync\b/,                    // execSync usage - BANNED (use executeCommand instead)
   /\bexecSyncFn\b/,                  // execSyncFn usage - BANNED (use executeCommand instead)
 ];
 
-// CRITICAL: TYPESCRIPT ANTI-PATTERNS ARE FORBIDDEN
-// Prefer structural typing and object literals over unsafe type assertions
-const TYPESCRIPT_ANTIPATTERNS = [
-  /as unknown(?!\s*,)/,              // 'as unknown' casting - ANTI-PATTERN (prefer object literals)
-  /as any/,                          // 'as any' casting - BANNED (defeats TypeScript safety)
-  /\@ts-ignore/,                     // @ts-ignore comments - ANTI-PATTERN (fix the root cause)
-  /\@ts-expect-error/,               // @ts-expect-error comments - USE SPARINGLY (document why)
-  /\!\s*\;/,                         // Non-null assertion operator - USE SPARINGLY (ensure safety)
-  /\<any\>/,                         // Explicit any type - BANNED (use unknown or proper typing)
-  /:\s*any(?!\[\])/,                 // Parameter/variable typed as any - BANNED
+// APPROVED mock utilities - ONLY these are allowed
+const APPROVED_MOCK_PATTERNS = [
+  /\bcreateMockExecutor\b/,
+  /\bcreateMockFileSystemExecutor\b/,
+  /\bcreateNoopExecutor\b/,
+  /\bcreateNoopFileSystemExecutor\b/,
+  /\bcreateCommandMatchingMockExecutor\b/,
+  /\bcreateMockEnvironmentDetector\b/,
 ];
+
+// REFINED PATTERNS - Only flag ACTUAL vitest violations, not approved dependency injection patterns
+// Manual executors and mock objects are APPROVED when used for dependency injection
+const UNAPPROVED_MOCK_PATTERNS = [
+  // ONLY ACTUAL VITEST PATTERNS (vi.* usage) - Everything else is approved
+  /\bmock[A-Z][a-zA-Z0-9]*\s*=\s*vi\./,              // mockSomething = vi.fn() - vitest assignments only
+
+  // No other patterns - manual executors and mock objects are approved for dependency injection
+];
+
+// Function to check if a line contains unapproved mock patterns
+function hasUnapprovedMockPattern(line) {
+  // Skip lines that contain approved patterns
+  const hasApprovedPattern = APPROVED_MOCK_PATTERNS.some(pattern => pattern.test(line));
+  if (hasApprovedPattern) {
+    return false;
+  }
+
+  // Check for unapproved patterns
+  return UNAPPROVED_MOCK_PATTERNS.some(pattern => pattern.test(line));
+}
+
+// Combined pattern checker for backward compatibility
+const VITEST_MOCKING_PATTERNS = VITEST_GENERIC_PATTERNS;
+
+// CRITICAL: ARCHITECTURAL VIOLATIONS - Utilities bypassing CommandExecutor (BANNED)
+const UTILITY_BYPASS_PATTERNS = [
+  /spawn\s*\(/,                      // Direct Node.js spawn usage in utilities - BANNED
+  /exec\s*\(/,                       // Direct Node.js exec usage in utilities - BANNED  
+  /execSync\s*\(/,                   // Direct Node.js execSync usage in utilities - BANNED
+  /child_process\./,                 // Direct child_process module usage in utilities - BANNED
+];
+
+// TypeScript patterns are now handled by ESLint - removed from domain-specific checks
+// ESLint has comprehensive TypeScript rules with proper test file exceptions
 
 // CRITICAL: HANDLER SIGNATURE VIOLATIONS ARE FORBIDDEN
 // MCP SDK requires handlers to have exact signatures: 
@@ -126,6 +157,26 @@ const HANDLER_SIGNATURE_VIOLATIONS = [
   /async\s+handler\s*\([^)]*,\s*[^)]*Dependencies/ms,      // Handler with Dependencies parameter - BANNED
   /async\s+handler\s*\([^)]*,\s*[^)]*executor\s*:/ms,      // Handler with executor parameter - BANNED
   /async\s+handler\s*\([^)]*,\s*[^)]*dependencies\s*:/ms,  // Handler with dependencies parameter - BANNED
+];
+
+// CRITICAL: HANDLER TESTING IN TESTS IS FORBIDDEN
+// Tests must ONLY call logic functions with dependency injection, NEVER handlers directly
+// Handlers are thin wrappers for MCP SDK - testing them violates dependency injection architecture
+const HANDLER_TESTING_VIOLATIONS = [
+  /\.handler\s*\(/,                     // Direct handler calls in tests - BANNED
+  /await\s+\w+\.handler\s*\(/,          // Awaited handler calls - BANNED
+  /const\s+result\s*=\s*await\s+\w+\.handler/, // Handler result assignment - BANNED
+  /expect\s*\(\s*await\s+\w+\.handler/, // Handler expectation calls - BANNED
+];
+
+// CRITICAL: IMPROPER SERVER TYPING PATTERNS ARE FORBIDDEN  
+// Server instances must use proper MCP SDK types, not generic Record<string, unknown> casts
+const IMPROPER_SERVER_TYPING_VIOLATIONS = [
+  /as Record<string, unknown>.*server/,           // Casting server to Record - BANNED
+  /server.*as Record<string, unknown>/,           // Casting server to Record - BANNED
+  /mcpServer\?\s*:\s*Record<string, unknown>/,    // Typing server as Record - BANNED
+  /server\.server\?\?\s*server.*as Record/,       // Complex server casting - BANNED
+  /interface\s+MCPServerInterface\s*{/,           // Custom MCP interfaces when SDK types exist - BANNED
 ];
 
 // ALLOWED PATTERNS for cleanup (not mocking)
@@ -142,14 +193,14 @@ const DEPENDENCY_INJECTION_PATTERNS = [
 
 function findTestFiles(dir) {
   const testFiles = [];
-  
+
   function traverse(currentDir) {
     const items = readdirSync(currentDir);
-    
+
     for (const item of items) {
       const fullPath = join(currentDir, item);
       const stat = statSync(fullPath);
-      
+
       if (stat.isDirectory()) {
         // Skip node_modules and other non-relevant directories
         if (!item.startsWith('.') && item !== 'node_modules' && item !== 'dist' && item !== 'build') {
@@ -160,21 +211,21 @@ function findTestFiles(dir) {
       }
     }
   }
-  
+
   traverse(dir);
   return testFiles;
 }
 
 function findToolAndResourceFiles(dir) {
   const toolFiles = [];
-  
+
   function traverse(currentDir) {
     const items = readdirSync(currentDir);
-    
+
     for (const item of items) {
       const fullPath = join(currentDir, item);
       const stat = statSync(fullPath);
-      
+
       if (stat.isDirectory()) {
         // Skip test directories and other non-relevant directories
         if (!item.startsWith('.') && item !== '__tests__' && item !== 'node_modules' && item !== 'dist' && item !== 'build') {
@@ -185,65 +236,133 @@ function findToolAndResourceFiles(dir) {
       }
     }
   }
-  
+
   traverse(dir);
   return toolFiles;
+}
+
+function findUtilityFiles(dir) {
+  const utilityFiles = [];
+
+  function traverse(currentDir) {
+    const items = readdirSync(currentDir);
+
+    for (const item of items) {
+      const fullPath = join(currentDir, item);
+      const stat = statSync(fullPath);
+
+      if (stat.isDirectory()) {
+        // Skip test directories and other non-relevant directories
+        if (!item.startsWith('.') && item !== '__tests__' && item !== 'node_modules' && item !== 'dist' && item !== 'build') {
+          traverse(fullPath);
+        }
+      } else if ((item.endsWith('.ts') || item.endsWith('.js')) && !item.includes('.test.') && item !== 'index.ts' && item !== 'index.js') {
+        // Only include key utility files that should use CommandExecutor
+        // Exclude command.ts itself as it's the core implementation that is allowed to use spawn()
+        if (fullPath.includes('/utils/') && (
+          fullPath.includes('log_capture.ts') ||
+          fullPath.includes('build.ts') ||
+          fullPath.includes('simctl.ts')
+        ) && !fullPath.includes('command.ts')) {
+          utilityFiles.push(fullPath);
+        }
+      }
+    }
+  }
+
+  traverse(dir);
+  return utilityFiles;
+}
+
+// Helper function to determine if a file is a test file
+function isTestFile(filePath) {
+  return filePath.includes('__tests__') || filePath.endsWith('.test.ts') || filePath.endsWith('.test.js');
+}
+
+// Helper function to determine if a file is a production file
+function isProductionFile(filePath) {
+  return !isTestFile(filePath) && (filePath.endsWith('.ts') || filePath.endsWith('.js'));
+}
+
+// Helper function to determine if a file is allowed to use child_process
+function isAllowedChildProcessFile(filePath) {
+  // These files need direct child_process access for their core functionality
+  return filePath.includes('command.ts') || // Core CommandExecutor implementation
+    filePath.includes('swift_package_run.ts'); // Needs spawn for background process management
 }
 
 function analyzeTestFile(filePath) {
   try {
     const content = readFileSync(filePath, 'utf8');
     const relativePath = relative(projectRoot, filePath);
-    
-    // Check for setTimeout patterns
-    const hasTimeoutPatterns = TIMEOUT_PATTERNS.some(pattern => pattern.test(content));
-    
-    // Check for vitest mocking patterns (FORBIDDEN)
-    const hasVitestMockingPatterns = VITEST_MOCKING_PATTERNS.some(pattern => pattern.test(content));
-    
-    // Check for TypeScript anti-patterns (ANTI-PATTERN)
-    const hasTypescriptAntipatterns = TYPESCRIPT_ANTIPATTERNS.some(pattern => pattern.test(content));
-    
+
+    // Check for vitest mocking patterns using new robust approach
+    const vitestMockingDetails = [];
+    const lines = content.split('\n');
+
+    // 1. Check generic vi.* patterns (always violations)
+    lines.forEach((line, index) => {
+      VITEST_GENERIC_PATTERNS.forEach(pattern => {
+        if (pattern.test(line)) {
+          vitestMockingDetails.push({
+            line: index + 1,
+            content: line.trim(),
+            pattern: pattern.source,
+            type: 'vitest-generic'
+          });
+        }
+      });
+
+      // 2. Check for unapproved mock patterns
+      if (hasUnapprovedMockPattern(line)) {
+        // Find which specific pattern matched for better reporting
+        const matchedPattern = UNAPPROVED_MOCK_PATTERNS.find(pattern => pattern.test(line));
+        vitestMockingDetails.push({
+          line: index + 1,
+          content: line.trim(),
+          pattern: matchedPattern ? matchedPattern.source : 'unapproved mock pattern',
+          type: 'unapproved-mock'
+        });
+      }
+    });
+
+    const hasVitestMockingPatterns = vitestMockingDetails.length > 0;
+
+    // TypeScript patterns now handled by ESLint
+    const hasTypescriptAntipatterns = false;
+
+    // Check for handler testing violations (FORBIDDEN - ARCHITECTURAL VIOLATION)
+    const hasHandlerTestingViolations = HANDLER_TESTING_VIOLATIONS.some(pattern => pattern.test(content));
+
+    // Check for improper server typing violations (FORBIDDEN - ARCHITECTURAL VIOLATION)
+    const hasImproperServerTypingViolations = IMPROPER_SERVER_TYPING_VIOLATIONS.some(pattern => pattern.test(content));
+
     // Check for dependency injection patterns (TRUE DI)
     const hasDIPatterns = DEPENDENCY_INJECTION_PATTERNS.some(pattern => pattern.test(content));
-    
+
     // Extract specific pattern occurrences for details
-    const timeoutDetails = [];
-    const vitestMockingDetails = [];
-    const typescriptAntipatternDetails = [];
-    const lines = content.split('\n');
-    
+    const execSyncDetails = []; // Not applicable to test files
+    const typescriptAntipatternDetails = []; // Unused - TypeScript handled by ESLint
+    const handlerTestingDetails = [];
+    const improperServerTypingDetails = [];
+
     lines.forEach((line, index) => {
-      TIMEOUT_PATTERNS.forEach(pattern => {
+
+      // TypeScript anti-patterns now handled by ESLint - removed from domain checks
+
+      HANDLER_TESTING_VIOLATIONS.forEach(pattern => {
         if (pattern.test(line)) {
-          timeoutDetails.push({
+          handlerTestingDetails.push({
             line: index + 1,
             content: line.trim(),
             pattern: pattern.source
           });
         }
       });
-      
-      VITEST_MOCKING_PATTERNS.forEach(pattern => {
+
+      IMPROPER_SERVER_TYPING_VIOLATIONS.forEach(pattern => {
         if (pattern.test(line)) {
-          // Check if this line matches any allowed cleanup patterns
-          const isAllowedCleanup = ALLOWED_CLEANUP_PATTERNS.some(allowedPattern => 
-            allowedPattern.test(line.trim())
-          );
-          
-          if (!isAllowedCleanup) {
-            vitestMockingDetails.push({
-              line: index + 1,
-              content: line.trim(),
-              pattern: pattern.source
-            });
-          }
-        }
-      });
-      
-      TYPESCRIPT_ANTIPATTERNS.forEach(pattern => {
-        if (pattern.test(line)) {
-          typescriptAntipatternDetails.push({
+          improperServerTypingDetails.push({
             line: index + 1,
             content: line.trim(),
             pattern: pattern.source
@@ -251,19 +370,23 @@ function analyzeTestFile(filePath) {
         }
       });
     });
-    
+
     return {
       filePath: relativePath,
-      hasTimeoutPatterns,
+      hasExecSyncPatterns: false, // Not applicable to test files
       hasVitestMockingPatterns,
       hasTypescriptAntipatterns,
+      hasHandlerTestingViolations,
+      hasImproperServerTypingViolations,
       hasDIPatterns,
-      timeoutDetails,
+      execSyncDetails,
       vitestMockingDetails,
       typescriptAntipatternDetails,
-      needsConversion: hasTimeoutPatterns || hasVitestMockingPatterns || hasTypescriptAntipatterns,
-      isConverted: hasDIPatterns && !hasTimeoutPatterns && !hasVitestMockingPatterns && !hasTypescriptAntipatterns,
-      isMixed: (hasTimeoutPatterns || hasVitestMockingPatterns || hasTypescriptAntipatterns) && hasDIPatterns
+      handlerTestingDetails,
+      improperServerTypingDetails,
+      needsConversion: hasVitestMockingPatterns || hasHandlerTestingViolations || hasImproperServerTypingViolations,
+      isConverted: hasDIPatterns && !hasVitestMockingPatterns && !hasHandlerTestingViolations && !hasImproperServerTypingViolations,
+      isMixed: (hasVitestMockingPatterns || hasHandlerTestingViolations || hasImproperServerTypingViolations) && hasDIPatterns
     };
   } catch (error) {
     console.error(`Error reading file ${filePath}: ${error.message}`);
@@ -275,60 +398,94 @@ function analyzeToolOrResourceFile(filePath) {
   try {
     const content = readFileSync(filePath, 'utf8');
     const relativePath = relative(projectRoot, filePath);
-    
-    // Check for setTimeout patterns
-    const hasTimeoutPatterns = TIMEOUT_PATTERNS.some(pattern => pattern.test(content));
-    
-    // Check for vitest mocking patterns (FORBIDDEN)
-    const hasVitestMockingPatterns = VITEST_MOCKING_PATTERNS.some(pattern => pattern.test(content));
-    
-    // Check for TypeScript anti-patterns (ANTI-PATTERN)
-    const hasTypescriptAntipatterns = TYPESCRIPT_ANTIPATTERNS.some(pattern => pattern.test(content));
-    
+
+    // Check for execSync patterns in production code (excluding allowed files)
+    const hasExecSyncPatterns = isProductionFile(filePath) &&
+      !isAllowedChildProcessFile(filePath) &&
+      EXECSYNC_PATTERNS.some(pattern => pattern.test(content));
+
+    // Check for vitest mocking patterns using new robust approach
+    const vitestMockingDetails = [];
+    const lines = content.split('\n');
+
+    // 1. Check generic vi.* patterns (always violations)
+    lines.forEach((line, index) => {
+      VITEST_GENERIC_PATTERNS.forEach(pattern => {
+        if (pattern.test(line)) {
+          vitestMockingDetails.push({
+            line: index + 1,
+            content: line.trim(),
+            pattern: pattern.source,
+            type: 'vitest-generic'
+          });
+        }
+      });
+
+      // 2. Check for unapproved mock patterns
+      if (hasUnapprovedMockPattern(line)) {
+        // Find which specific pattern matched for better reporting
+        const matchedPattern = UNAPPROVED_MOCK_PATTERNS.find(pattern => pattern.test(line));
+        vitestMockingDetails.push({
+          line: index + 1,
+          content: line.trim(),
+          pattern: matchedPattern ? matchedPattern.source : 'unapproved mock pattern',
+          type: 'unapproved-mock'
+        });
+      }
+    });
+
+    const hasVitestMockingPatterns = vitestMockingDetails.length > 0;
+
+    // TypeScript patterns now handled by ESLint
+    const hasTypescriptAntipatterns = false;
+
     // Check for dependency injection patterns (TRUE DI)
     const hasDIPatterns = DEPENDENCY_INJECTION_PATTERNS.some(pattern => pattern.test(content));
-    
+
     // Check for handler signature violations (FORBIDDEN)
     const hasHandlerSignatureViolations = HANDLER_SIGNATURE_VIOLATIONS.some(pattern => pattern.test(content));
-    
+
+    // Check for improper server typing violations (FORBIDDEN - ARCHITECTURAL VIOLATION)
+    const hasImproperServerTypingViolations = IMPROPER_SERVER_TYPING_VIOLATIONS.some(pattern => pattern.test(content));
+
+    // Check for utility bypass patterns (ARCHITECTURAL VIOLATION)
+    const hasUtilityBypassPatterns = UTILITY_BYPASS_PATTERNS.some(pattern => pattern.test(content));
+
     // Extract specific pattern occurrences for details
-    const timeoutDetails = [];
-    const vitestMockingDetails = [];
-    const typescriptAntipatternDetails = [];
+    const execSyncDetails = [];
+    const typescriptAntipatternDetails = []; // Unused - TypeScript handled by ESLint
     const handlerSignatureDetails = [];
-    const lines = content.split('\n');
-    
+    const improperServerTypingDetails = [];
+    const utilityBypassDetails = [];
+
     lines.forEach((line, index) => {
-      TIMEOUT_PATTERNS.forEach(pattern => {
+      if (isProductionFile(filePath) && !isAllowedChildProcessFile(filePath)) {
+        EXECSYNC_PATTERNS.forEach(pattern => {
+          if (pattern.test(line)) {
+            execSyncDetails.push({
+              line: index + 1,
+              content: line.trim(),
+              pattern: pattern.source
+            });
+          }
+        });
+      }
+
+      // TypeScript anti-patterns now handled by ESLint - removed from domain checks
+
+      IMPROPER_SERVER_TYPING_VIOLATIONS.forEach(pattern => {
         if (pattern.test(line)) {
-          timeoutDetails.push({
+          improperServerTypingDetails.push({
             line: index + 1,
             content: line.trim(),
             pattern: pattern.source
           });
         }
       });
-      
-      VITEST_MOCKING_PATTERNS.forEach(pattern => {
+
+      UTILITY_BYPASS_PATTERNS.forEach(pattern => {
         if (pattern.test(line)) {
-          // Check if this line matches any allowed cleanup patterns
-          const isAllowedCleanup = ALLOWED_CLEANUP_PATTERNS.some(allowedPattern => 
-            allowedPattern.test(line.trim())
-          );
-          
-          if (!isAllowedCleanup) {
-            vitestMockingDetails.push({
-              line: index + 1,
-              content: line.trim(),
-              pattern: pattern.source
-            });
-          }
-        }
-      });
-      
-      TYPESCRIPT_ANTIPATTERNS.forEach(pattern => {
-        if (pattern.test(line)) {
-          typescriptAntipatternDetails.push({
+          utilityBypassDetails.push({
             line: index + 1,
             content: line.trim(),
             pattern: pattern.source
@@ -340,7 +497,7 @@ function analyzeToolOrResourceFile(filePath) {
       // Use regex to find the violation and its line number
       const lines = content.split('\n');
       const fullContent = content;
-      
+
       HANDLER_SIGNATURE_VIOLATIONS.forEach(pattern => {
         let match;
         const globalPattern = new RegExp(pattern.source, pattern.flags + 'g');
@@ -348,7 +505,7 @@ function analyzeToolOrResourceFile(filePath) {
           // Find which line this match is on
           const beforeMatch = fullContent.substring(0, match.index);
           const lineNumber = beforeMatch.split('\n').length;
-          
+
           handlerSignatureDetails.push({
             line: lineNumber,
             content: match[0].replace(/\s+/g, ' ').trim(),
@@ -357,21 +514,25 @@ function analyzeToolOrResourceFile(filePath) {
         }
       });
     }
-    
+
     return {
       filePath: relativePath,
-      hasTimeoutPatterns,
+      hasExecSyncPatterns,
       hasVitestMockingPatterns,
       hasTypescriptAntipatterns,
       hasDIPatterns,
       hasHandlerSignatureViolations,
-      timeoutDetails,
+      hasImproperServerTypingViolations,
+      hasUtilityBypassPatterns,
+      execSyncDetails,
       vitestMockingDetails,
       typescriptAntipatternDetails,
       handlerSignatureDetails,
-      needsConversion: hasTimeoutPatterns || hasVitestMockingPatterns || hasTypescriptAntipatterns || hasHandlerSignatureViolations,
-      isConverted: hasDIPatterns && !hasTimeoutPatterns && !hasVitestMockingPatterns && !hasTypescriptAntipatterns && !hasHandlerSignatureViolations,
-      isMixed: (hasTimeoutPatterns || hasVitestMockingPatterns || hasTypescriptAntipatterns || hasHandlerSignatureViolations) && hasDIPatterns
+      improperServerTypingDetails,
+      utilityBypassDetails,
+      needsConversion: hasExecSyncPatterns || hasVitestMockingPatterns || hasHandlerSignatureViolations || hasImproperServerTypingViolations || hasUtilityBypassPatterns,
+      isConverted: hasDIPatterns && !hasExecSyncPatterns && !hasVitestMockingPatterns && !hasHandlerSignatureViolations && !hasImproperServerTypingViolations && !hasUtilityBypassPatterns,
+      isMixed: (hasExecSyncPatterns || hasVitestMockingPatterns || hasHandlerSignatureViolations || hasImproperServerTypingViolations || hasUtilityBypassPatterns) && hasDIPatterns
     };
   } catch (error) {
     console.error(`Error reading file ${filePath}: ${error.message}`);
@@ -385,44 +546,56 @@ function main() {
   console.log('CODE GUIDELINES ENFORCED:');
   console.log('✅ ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()');
   console.log('❌ BANNED: vitest mocking patterns (vi.mock, vi.fn, .mockResolvedValue, etc.)');
-  console.log('❌ BANNED: setTimeout-based mocking patterns');
-  console.log('❌ ANTI-PATTERN: TypeScript unsafe casts (as unknown, as any, @ts-ignore)');
-  console.log('❌ BANNED: handler signature violations (handlers must have exact MCP SDK signatures)\n');
-  
+  console.log('❌ BANNED: execSync usage in production code (use CommandExecutor instead)');
+  console.log('ℹ️  TypeScript patterns: Handled by ESLint with proper test exceptions');
+  console.log('❌ BANNED: handler signature violations (handlers must have exact MCP SDK signatures)');
+  console.log('❌ BANNED: handler testing violations (test logic functions, not handlers directly)');
+  console.log('❌ BANNED: improper server typing (use McpServer type, not Record<string, unknown>)\n');
+
   const testFiles = findTestFiles(join(projectRoot, 'src'));
   const testResults = testFiles.map(analyzeTestFile).filter(Boolean);
-  
+
   // Also check tool and resource files for TypeScript anti-patterns AND handler signature violations
   const toolFiles = findToolAndResourceFiles(join(projectRoot, 'src', 'mcp', 'tools'));
   const resourceFiles = findToolAndResourceFiles(join(projectRoot, 'src', 'mcp', 'resources'));
   const allToolAndResourceFiles = [...toolFiles, ...resourceFiles];
   const toolResults = allToolAndResourceFiles.map(analyzeToolOrResourceFile).filter(Boolean);
-  
-  // Combine test and tool file results for TypeScript analysis
-  const results = [...testResults, ...toolResults];
+
+  // Check utility files for architectural violations (bypassing CommandExecutor)
+  const utilityFiles = findUtilityFiles(join(projectRoot, 'src'));
+  const utilityResults = utilityFiles.map(analyzeToolOrResourceFile).filter(Boolean);
+
+  // Combine test, tool, and utility file results for analysis
+  const results = [...testResults, ...toolResults, ...utilityResults];
   const handlerResults = toolResults;
-  
+  const utilityBypassResults = utilityResults.filter(r => r.hasUtilityBypassPatterns);
+
   // Filter results based on pattern type
   let filteredResults;
   let filteredHandlerResults = [];
-  
+
   switch (patternFilter) {
     case 'vitest':
       filteredResults = results.filter(r => r.hasVitestMockingPatterns);
       console.log(`Filtering to show only vitest mocking violations (${filteredResults.length} files)`);
       break;
-    case 'timeout':
-      filteredResults = results.filter(r => r.hasTimeoutPatterns);
-      console.log(`Filtering to show only setTimeout violations (${filteredResults.length} files)`);
+    case 'execsync':
+      filteredResults = results.filter(r => r.hasExecSyncPatterns);
+      console.log(`Filtering to show only execSync violations (${filteredResults.length} files)`);
       break;
-    case 'typescript':
-      filteredResults = results.filter(r => r.hasTypescriptAntipatterns);
-      console.log(`Filtering to show only TypeScript anti-pattern violations (${filteredResults.length} files)`);
-      break;
+    // TypeScript case removed - now handled by ESLint
     case 'handler':
       filteredResults = [];
       filteredHandlerResults = handlerResults.filter(r => r.hasHandlerSignatureViolations);
       console.log(`Filtering to show only handler signature violations (${filteredHandlerResults.length} files)`);
+      break;
+    case 'handler-testing':
+      filteredResults = results.filter(r => r.hasHandlerTestingViolations);
+      console.log(`Filtering to show only handler testing violations (${filteredResults.length} files)`);
+      break;
+    case 'server-typing':
+      filteredResults = results.filter(r => r.hasImproperServerTypingViolations);
+      console.log(`Filtering to show only improper server typing violations (${filteredResults.length} files)`);
       break;
     case 'all':
     default:
@@ -431,43 +604,49 @@ function main() {
       console.log(`Showing all pattern violations (${filteredResults.length} test files + ${filteredHandlerResults.length} handler files)`);
       break;
   }
-  
+
   const needsConversion = filteredResults;
   const converted = results.filter(r => r.isConverted);
   const mixed = results.filter(r => r.isMixed);
-  const timeoutOnly = results.filter(r => r.hasTimeoutPatterns && !r.hasVitestMockingPatterns && !r.hasTypescriptAntipatterns && !r.hasDIPatterns);
-  const vitestMockingOnly = results.filter(r => r.hasVitestMockingPatterns && !r.hasTimeoutPatterns && !r.hasTypescriptAntipatterns && !r.hasDIPatterns);
-  const typescriptOnly = results.filter(r => r.hasTypescriptAntipatterns && !r.hasTimeoutPatterns && !r.hasVitestMockingPatterns && !r.hasDIPatterns);
-  const noPatterns = results.filter(r => !r.hasTimeoutPatterns && !r.hasVitestMockingPatterns && !r.hasTypescriptAntipatterns && !r.hasDIPatterns);
-  
+  const execSyncOnly = results.filter(r => r.hasExecSyncPatterns && !r.hasVitestMockingPatterns && true && !r.hasHandlerTestingViolations && !r.hasImproperServerTypingViolations && !r.hasDIPatterns);
+  const vitestMockingOnly = results.filter(r => r.hasVitestMockingPatterns && !r.hasExecSyncPatterns && true && !r.hasHandlerTestingViolations && !r.hasImproperServerTypingViolations && !r.hasDIPatterns);
+  const typescriptOnly = results.filter(r => r.false && !r.hasExecSyncPatterns && !r.hasVitestMockingPatterns && !r.hasHandlerTestingViolations && !r.hasImproperServerTypingViolations && !r.hasDIPatterns);
+  const handlerTestingOnly = results.filter(r => r.hasHandlerTestingViolations && !r.hasExecSyncPatterns && !r.hasVitestMockingPatterns && true && !r.hasImproperServerTypingViolations && !r.hasDIPatterns);
+  const improperServerTypingOnly = results.filter(r => r.hasImproperServerTypingViolations && !r.hasExecSyncPatterns && !r.hasVitestMockingPatterns && !r.hasHandlerTestingViolations && !r.hasDIPatterns);
+  const noPatterns = results.filter(r => !r.hasExecSyncPatterns && !r.hasVitestMockingPatterns && true && !r.hasHandlerTestingViolations && !r.hasImproperServerTypingViolations && !r.hasDIPatterns);
+
   console.log(`📊 CODE PATTERN VIOLATION ANALYSIS`);
   console.log(`=================================`);
   console.log(`Total files analyzed: ${results.length}`);
   console.log(`🚨 FILES WITH VIOLATIONS: ${needsConversion.length}`);
-  console.log(`  └─ setTimeout-based violations: ${timeoutOnly.length}`);
+  console.log(`  └─ execSync production violations: ${execSyncOnly.length}`);
   console.log(`  └─ vitest mocking violations: ${vitestMockingOnly.length}`);
-  console.log(`  └─ TypeScript anti-patterns: ${typescriptOnly.length}`);
+  // TypeScript anti-patterns now handled by ESLint
+  console.log(`  └─ handler testing violations: ${handlerTestingOnly.length}`);
+  console.log(`  └─ improper server typing violations: ${improperServerTypingOnly.length}`);
+  console.log(`🚨 ARCHITECTURAL VIOLATIONS: ${utilityBypassResults.length}`);
   console.log(`✅ COMPLIANT (best practices): ${converted.length}`);
   console.log(`⚠️  MIXED VIOLATIONS: ${mixed.length}`);
   console.log(`📝 No patterns detected: ${noPatterns.length}`);
   console.log('');
-  
+
   if (needsConversion.length > 0) {
     console.log(`❌ FILES THAT NEED CONVERSION (${needsConversion.length}):`);
     console.log(`=====================================`);
     needsConversion.forEach((result, index) => {
       console.log(`${index + 1}. ${result.filePath}`);
-      
-      if (result.timeoutDetails.length > 0) {
-        console.log(`   🕐 TIMEOUT PATTERNS (${result.timeoutDetails.length}):`);
-        result.timeoutDetails.slice(0, 2).forEach(detail => {
+
+      if (result.execSyncDetails && result.execSyncDetails.length > 0) {
+        console.log(`   🚨 EXECSYNC PATTERNS (${result.execSyncDetails.length}):`);
+        result.execSyncDetails.slice(0, 2).forEach(detail => {
           console.log(`   Line ${detail.line}: ${detail.content}`);
         });
-        if (result.timeoutDetails.length > 2) {
-          console.log(`   ... and ${result.timeoutDetails.length - 2} more setTimeout patterns`);
+        if (result.execSyncDetails.length > 2) {
+          console.log(`   ... and ${result.execSyncDetails.length - 2} more execSync patterns`);
         }
+        console.log(`   🔧 FIX: Replace execSync with CommandExecutor dependency injection`);
       }
-      
+
       if (result.vitestMockingDetails.length > 0) {
         console.log(`   🧪 VITEST MOCKING PATTERNS (${result.vitestMockingDetails.length}):`);
         result.vitestMockingDetails.slice(0, 2).forEach(detail => {
@@ -477,39 +656,74 @@ function main() {
           console.log(`   ... and ${result.vitestMockingDetails.length - 2} more vitest patterns`);
         }
       }
-      
-      if (result.typescriptAntipatternDetails.length > 0) {
-        console.log(`   🚫 TYPESCRIPT ANTI-PATTERNS (${result.typescriptAntipatternDetails.length}):`);
-        result.typescriptAntipatternDetails.slice(0, 2).forEach(detail => {
+
+      // TypeScript violations now handled by ESLint - removed from domain checks
+
+      if (result.handlerTestingDetails && result.handlerTestingDetails.length > 0) {
+        console.log(`   🚨 HANDLER TESTING VIOLATIONS (${result.handlerTestingDetails.length}):`);
+        result.handlerTestingDetails.slice(0, 2).forEach(detail => {
           console.log(`   Line ${detail.line}: ${detail.content}`);
         });
-        if (result.typescriptAntipatternDetails.length > 2) {
-          console.log(`   ... and ${result.typescriptAntipatternDetails.length - 2} more TypeScript anti-patterns`);
+        if (result.handlerTestingDetails.length > 2) {
+          console.log(`   ... and ${result.handlerTestingDetails.length - 2} more handler testing violations`);
         }
+        console.log(`   🔧 FIX: Replace handler calls with logic function calls using dependency injection`);
       }
-      
+
+      if (result.improperServerTypingDetails && result.improperServerTypingDetails.length > 0) {
+        console.log(`   🔧 IMPROPER SERVER TYPING VIOLATIONS (${result.improperServerTypingDetails.length}):`);
+        result.improperServerTypingDetails.slice(0, 2).forEach(detail => {
+          console.log(`   Line ${detail.line}: ${detail.content}`);
+        });
+        if (result.improperServerTypingDetails.length > 2) {
+          console.log(`   ... and ${result.improperServerTypingDetails.length - 2} more server typing violations`);
+        }
+        console.log(`   🔧 FIX: Import McpServer from SDK and use proper typing instead of Record<string, unknown>`);
+      }
+
       console.log('');
     });
   }
-  
+
+  // Utility bypass violations reporting  
+  if (utilityBypassResults.length > 0) {
+    console.log(`🚨 CRITICAL: UTILITY ARCHITECTURAL VIOLATIONS (${utilityBypassResults.length}):`);
+    console.log(`=======================================================`);
+    console.log('⚠️  These utilities bypass CommandExecutor and break our testing architecture!');
+    console.log('');
+    utilityBypassResults.forEach((result, index) => {
+      console.log(`${index + 1}. ${result.filePath}`);
+
+      if (result.utilityBypassDetails.length > 0) {
+        console.log(`   🚨 BYPASS PATTERNS (${result.utilityBypassDetails.length}):`);
+        result.utilityBypassDetails.forEach(detail => {
+          console.log(`   Line ${detail.line}: ${detail.content}`);
+        });
+      }
+
+      console.log('   🔧 FIX: Refactor to accept CommandExecutor and use it instead of direct spawn/exec calls');
+      console.log('');
+    });
+  }
+
   // Handler signature violations reporting
   if (filteredHandlerResults.length > 0) {
     console.log(`🚨 HANDLER SIGNATURE VIOLATIONS (${filteredHandlerResults.length}):`);
     console.log(`===========================================`);
     filteredHandlerResults.forEach((result, index) => {
       console.log(`${index + 1}. ${result.filePath}`);
-      
+
       if (result.handlerSignatureDetails.length > 0) {
         console.log(`   🛠️  HANDLER VIOLATIONS (${result.handlerSignatureDetails.length}):`);
         result.handlerSignatureDetails.forEach(detail => {
           console.log(`   Line ${detail.line}: ${detail.content}`);
         });
       }
-      
+
       console.log('');
     });
   }
-  
+
   if (mixed.length > 0) {
     console.log(`⚠️  FILES WITH MIXED PATTERNS (${mixed.length}):`);
     console.log(`===================================`);
@@ -519,7 +733,7 @@ function main() {
       console.log('');
     });
   }
-  
+
   if (converted.length > 0) {
     console.log(`✅ SUCCESSFULLY CONVERTED FILES (${converted.length}):`);
     console.log(`====================================`);
@@ -528,37 +742,49 @@ function main() {
     });
     console.log('');
   }
-  
+
   // Summary for next steps
-  const hasViolations = needsConversion.length > 0 || filteredHandlerResults.length > 0;
-  
+  const hasViolations = needsConversion.length > 0 || filteredHandlerResults.length > 0 || utilityBypassResults.length > 0;
+
   if (needsConversion.length > 0) {
     console.log(`🚨 CRITICAL ACTION REQUIRED (TEST FILES):`);
     console.log(`=======================================`);
     console.log(`1. IMMEDIATELY remove ALL vitest mocking from ${needsConversion.length} files`);
     console.log(`2. BANNED: vi.mock(), vi.fn(), .mockResolvedValue(), .toHaveBeenCalled(), etc.`);
-    console.log(`3. ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()`);
+    console.log(`3. BANNED: Testing handlers directly (.handler()) - test logic functions with dependency injection`);
+    console.log(`4. ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()`);
     console.log(`4. Update plugin implementations to accept executor?: CommandExecutor parameter`);
     console.log(`5. Run this script again after each fix to track progress`);
     console.log('');
-    
+
     // Show top files by total violation count
     const sortedByPatterns = needsConversion
       .sort((a, b) => {
-        const totalA = a.timeoutDetails.length + a.vitestMockingDetails.length + a.typescriptAntipatternDetails.length;
-        const totalB = b.timeoutDetails.length + b.vitestMockingDetails.length + b.typescriptAntipatternDetails.length;
+        const totalA = (a.execSyncDetails?.length || 0) + a.vitestMockingDetails.length + (a.handlerTestingDetails?.length || 0) + (a.improperServerTypingDetails?.length || 0);
+        const totalB = (b.execSyncDetails?.length || 0) + b.vitestMockingDetails.length + (b.handlerTestingDetails?.length || 0) + (b.improperServerTypingDetails?.length || 0);
         return totalB - totalA;
       })
       .slice(0, 5);
-    
+
     console.log(`🚨 TOP 5 FILES WITH MOST VIOLATIONS:`);
     sortedByPatterns.forEach((result, index) => {
-      const totalPatterns = result.timeoutDetails.length + result.vitestMockingDetails.length + result.typescriptAntipatternDetails.length;
-      console.log(`${index + 1}. ${result.filePath} (${totalPatterns} violations: ${result.timeoutDetails.length} timeout + ${result.vitestMockingDetails.length} vitest + ${result.typescriptAntipatternDetails.length} typescript)`);
+      const totalPatterns = (result.execSyncDetails?.length || 0) + result.vitestMockingDetails.length + (result.handlerTestingDetails?.length || 0) + (result.improperServerTypingDetails?.length || 0);
+      console.log(`${index + 1}. ${result.filePath} (${totalPatterns} violations: ${result.execSyncDetails?.length || 0} execSync + ${result.vitestMockingDetails.length} vitest + ${result.handlerTestingDetails?.length || 0} handler + ${result.improperServerTypingDetails?.length || 0} server)`);
     });
     console.log('');
   }
-  
+
+  if (utilityBypassResults.length > 0) {
+    console.log(`🚨 CRITICAL ACTION REQUIRED (UTILITY FILES):`);
+    console.log(`==========================================`);
+    console.log(`1. IMMEDIATELY fix ALL architectural violations in ${utilityBypassResults.length} files`);
+    console.log(`2. Refactor utilities to accept CommandExecutor parameter`);
+    console.log(`3. Replace direct spawn/exec calls with executor calls`);
+    console.log(`4. These violations break our entire testing strategy`);
+    console.log(`5. Run this script again after each fix to track progress`);
+    console.log('');
+  }
+
   if (filteredHandlerResults.length > 0) {
     console.log(`🚨 CRITICAL ACTION REQUIRED (HANDLER FILES):`);
     console.log(`==========================================`);
@@ -569,16 +795,17 @@ function main() {
     console.log(`5. Run this script again after each fix to track progress`);
     console.log('');
   }
-  
+
   if (!hasViolations && mixed.length === 0) {
     console.log(`🎉 ALL FILES COMPLY WITH PROJECT STANDARDS!`);
     console.log(`==========================================`);
     console.log(`✅ All files use ONLY createMockExecutor() and createMockFileSystemExecutor()`);
     console.log(`✅ All files follow TypeScript best practices (no unsafe casts)`);
     console.log(`✅ All handler signatures comply with MCP SDK requirements`);
+    console.log(`✅ All utilities properly use CommandExecutor dependency injection`);
     console.log(`✅ No violations detected!`);
   }
-  
+
   // Exit with appropriate code
   process.exit(hasViolations || mixed.length > 0 ? 1 : 0);
 }

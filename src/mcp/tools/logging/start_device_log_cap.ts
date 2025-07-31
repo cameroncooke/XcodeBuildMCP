@@ -16,6 +16,7 @@ import {
   getDefaultCommandExecutor,
 } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 /**
  * Log file retention policy for device logs:
@@ -147,14 +148,20 @@ async function cleanOldDeviceLogs(): Promise<void> {
   );
 }
 
+// Define schema as ZodObject
+const startDeviceLogCapSchema = z.object({
+  deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
+  bundleId: z.string().describe('Bundle identifier of the app to launch and capture logs for.'),
+});
+
+// Use z.infer for type safety
+type StartDeviceLogCapParams = z.infer<typeof startDeviceLogCapSchema>;
+
 /**
  * Core business logic for starting device log capture.
  */
 export async function start_device_log_capLogic(
-  params: {
-    deviceId: string;
-    bundleId: string;
-  },
+  params: StartDeviceLogCapParams,
   executor: CommandExecutor,
   fileSystemExecutor?: FileSystemExecutor,
 ): Promise<ToolResponse> {
@@ -195,14 +202,10 @@ export default {
   name: 'start_device_log_cap',
   description:
     'Starts capturing logs from a specified Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) by launching the app with console output. Returns a session ID.',
-  schema: {
-    deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
-    bundleId: z.string().describe('Bundle identifier of the app to launch and capture logs for.'),
-  },
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return start_device_log_capLogic(
-      args as { deviceId: string; bundleId: string },
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: startDeviceLogCapSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    startDeviceLogCapSchema,
+    start_device_log_capLogic,
+    getDefaultCommandExecutor,
+  ),
 };

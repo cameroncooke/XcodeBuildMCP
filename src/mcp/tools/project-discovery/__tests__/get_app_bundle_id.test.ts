@@ -10,24 +10,25 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import plugin, { get_app_bundle_idLogic, type SyncExecutor } from '../get_app_bundle_id.ts';
-import { createMockFileSystemExecutor } from '../../../../utils/command.js';
+import plugin, { get_app_bundle_idLogic } from '../get_app_bundle_id.ts';
+import {
+  createMockFileSystemExecutor,
+  createCommandMatchingMockExecutor,
+} from '../../../../utils/command.js';
 
 describe('get_app_bundle_id plugin', () => {
-  // Helper function to create mock sync executor
-  const createMockSyncExecutor = (results: Record<string, string | Error>): SyncExecutor => {
-    const calls: string[] = [];
-    return (command: string): string => {
-      calls.push(command);
-      const result = results[command];
-      if (result instanceof Error) {
-        throw result;
-      }
-      if (typeof result === 'string') {
-        return result;
-      }
-      throw new Error(`Unexpected command: ${command}`);
-    };
+  // Helper function to create mock executor for command matching
+  const createMockExecutorForCommands = (results: Record<string, string | Error>) => {
+    return createCommandMatchingMockExecutor(
+      Object.fromEntries(
+        Object.entries(results).map(([command, result]) => [
+          command,
+          result instanceof Error
+            ? { success: false, error: result.message }
+            : { success: true, output: result },
+        ]),
+      ),
+    );
   };
 
   describe('Export Field Validation (Literal)', () => {
@@ -62,12 +63,12 @@ describe('get_app_bundle_id plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error when appPath validation fails', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockExecutor = createMockExecutorForCommands({});
       const mockFileSystemExecutor = createMockFileSystemExecutor({});
 
       const result = await get_app_bundle_idLogic(
         { appPath: null },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -83,14 +84,14 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should return error when file exists validation fails', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockExecutor = createMockExecutorForCommands({});
       const mockFileSystemExecutor = createMockFileSystemExecutor({
         existsSync: () => false,
       });
 
       const result = await get_app_bundle_idLogic(
         { appPath: '/path/to/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -106,7 +107,7 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should return success with bundle ID using defaults read', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({
+      const mockExecutor = createMockExecutorForCommands({
         'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': 'com.example.MyApp',
       });
       const mockFileSystemExecutor = createMockFileSystemExecutor({
@@ -115,7 +116,7 @@ describe('get_app_bundle_id plugin', () => {
 
       const result = await get_app_bundle_idLogic(
         { appPath: '/path/to/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -139,7 +140,7 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should fallback to PlistBuddy when defaults read fails', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({
+      const mockExecutor = createMockExecutorForCommands({
         'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': new Error(
           'defaults read failed',
         ),
@@ -152,7 +153,7 @@ describe('get_app_bundle_id plugin', () => {
 
       const result = await get_app_bundle_idLogic(
         { appPath: '/path/to/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -176,7 +177,7 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should return error when both extraction methods fail', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({
+      const mockExecutor = createMockExecutorForCommands({
         'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': new Error(
           'defaults read failed',
         ),
@@ -189,7 +190,7 @@ describe('get_app_bundle_id plugin', () => {
 
       const result = await get_app_bundle_idLogic(
         { appPath: '/path/to/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -209,7 +210,7 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({
+      const mockExecutor = createMockExecutorForCommands({
         'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': new Error(
           'defaults read failed',
         ),
@@ -222,7 +223,7 @@ describe('get_app_bundle_id plugin', () => {
 
       const result = await get_app_bundle_idLogic(
         { appPath: '/path/to/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -242,7 +243,7 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle string errors in catch blocks', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({
+      const mockExecutor = createMockExecutorForCommands({
         'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': new Error(
           'defaults read failed',
         ),
@@ -255,7 +256,7 @@ describe('get_app_bundle_id plugin', () => {
 
       const result = await get_app_bundle_idLogic(
         { appPath: '/path/to/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -276,12 +277,12 @@ describe('get_app_bundle_id plugin', () => {
 
     it('should handle schema validation error when appPath is null', async () => {
       // Schema validation will throw before reaching validateRequiredParam
-      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockExecutor = createMockExecutorForCommands({});
       const mockFileSystemExecutor = createMockFileSystemExecutor({});
 
       const result = await get_app_bundle_idLogic(
         { appPath: null },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -297,10 +298,10 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle schema validation with missing appPath', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockExecutor = createMockExecutorForCommands({});
       const mockFileSystemExecutor = createMockFileSystemExecutor({});
 
-      const result = await get_app_bundle_idLogic({}, mockSyncExecutor, mockFileSystemExecutor);
+      const result = await get_app_bundle_idLogic({}, mockExecutor, mockFileSystemExecutor);
 
       expect(result).toEqual({
         content: [
@@ -314,12 +315,12 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle schema validation with undefined appPath', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockExecutor = createMockExecutorForCommands({});
       const mockFileSystemExecutor = createMockFileSystemExecutor({});
 
       const result = await get_app_bundle_idLogic(
         { appPath: undefined },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -335,14 +336,14 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle schema validation with number type appPath', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockExecutor = createMockExecutorForCommands({});
       const mockFileSystemExecutor = createMockFileSystemExecutor({
         existsSync: () => false,
       });
 
       const result = await get_app_bundle_idLogic(
         { appPath: 123 },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 

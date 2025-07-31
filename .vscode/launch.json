@@ -18,6 +18,33 @@
       "sourceMapPathOverrides": {
         "/*": "${workspaceFolder}/src/*"
       }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch MCP Server Dev",
+      "program": "${workspaceFolder}/build/index.js",
+      "cwd": "${workspaceFolder}",
+      "runtimeArgs": [
+        "--inspect=9999"
+      ],
+      "env": {
+        "XCODEBUILDMCP_DEBUG": "true",
+        "XCODEBUILDMCP_DYNAMIC_TOOLS": "true",
+        "INCREMENTAL_BUILDS_ENABLED": "false",
+        "XCODEBUILDMCP_IOS_TEMPLATE_PATH": "/Volumes/Developer/XcodeBuildMCP-iOS-Template",
+        "XCODEBUILDMCP_MACOS_TEMPLATE_PATH": "/Volumes/Developer/XcodeBuildMCP-macOS-Template"
+      },
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/build/**/*.js"
+      ],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "sourceMapPathOverrides": {
+        "/*": "${workspaceFolder}/src/*"
+      }
     }
   ]
 }

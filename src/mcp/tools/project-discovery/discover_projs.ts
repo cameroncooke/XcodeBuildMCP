@@ -10,7 +10,12 @@ import * as path from 'node:path';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam } from '../../../utils/index.js';
 import { ToolResponse, createTextContent } from '../../../types/common.js';
-import { FileSystemExecutor, getDefaultFileSystemExecutor } from '../../../utils/command.js';
+import {
+  FileSystemExecutor,
+  getDefaultFileSystemExecutor,
+  getDefaultCommandExecutor,
+} from '../../../utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Constants
 const DEFAULT_MAX_DEPTH = 5;
@@ -131,36 +136,42 @@ async function _findProjectsRecursive(
   }
 }
 
-// Type definition for the parameters
-type DiscoverProjsParams = {
-  workspaceRoot: string;
-  scanPath?: string;
-  maxDepth: number;
-};
+// Define schema as ZodObject
+const discoverProjsSchema = z.object({
+  workspaceRoot: z.string().describe('The absolute path of the workspace root to scan within.'),
+  scanPath: z
+    .string()
+    .optional()
+    .describe('Optional: Path relative to workspace root to scan. Defaults to workspace root.'),
+  maxDepth: z
+    .number()
+    .int()
+    .nonnegative()
+    .optional()
+    .describe(`Optional: Maximum directory depth to scan. Defaults to ${DEFAULT_MAX_DEPTH}.`),
+});
+
+// Use z.infer for type safety
+type DiscoverProjsParams = z.infer<typeof discoverProjsSchema>;
 
 /**
  * Business logic for discovering projects.
  * Exported for testing purposes.
  */
 export async function discover_projsLogic(
-  params: unknown,
+  params: DiscoverProjsParams,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
-  // Cast to record for safe property access
-  const paramsRecord = params as Record<string, unknown>;
-
   // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspaceRoot', paramsRecord.workspaceRoot);
+  const workspaceValidation = validateRequiredParam('workspaceRoot', params.workspaceRoot);
   if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
-  // Cast to proper type after validation with defaults
-  const typedParams: DiscoverProjsParams = {
-    workspaceRoot: paramsRecord.workspaceRoot as string,
-    scanPath: (paramsRecord.scanPath as string) || '.',
-    maxDepth: (paramsRecord.maxDepth as number) || 5,
-  };
+  // Apply defaults
+  const scanPath = params.scanPath ?? '.';
+  const maxDepth = params.maxDepth ?? DEFAULT_MAX_DEPTH;
+  const workspaceRoot = params.workspaceRoot;
 
-  const { scanPath: relativeScanPath, maxDepth, workspaceRoot } = typedParams;
+  const relativeScanPath = scanPath;
 
   // Calculate and validate the absolute scan path
   const requestedScanPath = path.resolve(workspaceRoot, relativeScanPath ?? '.');
@@ -270,21 +281,12 @@ export default {
   name: 'discover_projs',
   description:
     'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
-  schema: {
-    workspaceRoot: z.string().describe('The absolute path of the workspace root to scan within.'),
-    scanPath: z
-      .string()
-      .optional()
-      .describe('Optional: Path relative to workspace root to scan. Defaults to workspace root.'),
-    maxDepth: z
-      .number()
-      .int()
-      .nonnegative()
-      .optional()
-      .default(DEFAULT_MAX_DEPTH)
-      .describe(`Optional: Maximum directory depth to scan. Defaults to ${DEFAULT_MAX_DEPTH}.`),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return discover_projsLogic(args, getDefaultFileSystemExecutor());
-  },
+  schema: discoverProjsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    discoverProjsSchema,
+    (params: DiscoverProjsParams) => {
+      return discover_projsLogic(params, getDefaultFileSystemExecutor());
+    },
+    getDefaultCommandExecutor,
+  ),
 };

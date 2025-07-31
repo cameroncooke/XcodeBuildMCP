@@ -70,21 +70,21 @@ describe('launch_app_device plugin (device-shared)', () => {
 
   describe('Command Generation', () => {
     it('should generate correct devicectl command with required parameters', async () => {
-      // Manual call tracking for command verification
       const calls: any[] = [];
-      const mockExecutor = async (
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'App launched successfully',
+        process: { pid: 12345 },
+      });
+
+      const trackingExecutor = async (
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
         env?: Record<string, string>,
       ) => {
         calls.push({ command, logPrefix, useShell, env });
-        return {
-          success: true,
-          output: 'App launched successfully',
-          error: undefined,
-          process: { pid: 12345 },
-        };
+        return mockExecutor(command, logPrefix, useShell, env);
       };
 
       await launch_app_deviceLogic(
@@ -92,7 +92,7 @@ describe('launch_app_device plugin (device-shared)', () => {
           deviceId: 'test-device-123',
           bundleId: 'com.example.app',
         },
-        mockExecutor,
+        trackingExecutor,
       );
 
       expect(calls).toHaveLength(1);
@@ -116,14 +116,15 @@ describe('launch_app_device plugin (device-shared)', () => {
 
     it('should generate command with different device and bundle parameters', async () => {
       const calls: any[] = [];
-      const mockExecutor = async (command: string[]) => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Launch successful',
+        process: { pid: 54321 },
+      });
+
+      const trackingExecutor = async (command: string[]) => {
         calls.push({ command });
-        return {
-          success: true,
-          output: 'Launch successful',
-          error: undefined,
-          process: { pid: 54321 },
-        };
+        return mockExecutor(command);
       };
 
       await launch_app_deviceLogic(
@@ -131,7 +132,7 @@ describe('launch_app_device plugin (device-shared)', () => {
           deviceId: '00008030-001E14BE2288802E',
           bundleId: 'com.apple.mobilesafari',
         },
-        mockExecutor,
+        trackingExecutor,
       );
 
       expect(calls[0].command).toEqual([
@@ -330,11 +331,7 @@ describe('launch_app_device plugin (device-shared)', () => {
     });
 
     it('should handle executor exception with Error object', async () => {
-      const calls: any[] = [];
-      const mockExecutor = async () => {
-        calls.push('executor_called');
-        throw new Error('Network error');
-      };
+      const mockExecutor = createMockExecutor(new Error('Network error'));
 
       const result = await launch_app_deviceLogic(
         {
@@ -344,7 +341,6 @@ describe('launch_app_device plugin (device-shared)', () => {
         mockExecutor,
       );
 
-      expect(calls).toEqual(['executor_called']);
       expect(result).toEqual({
         content: [
           {
@@ -357,11 +353,7 @@ describe('launch_app_device plugin (device-shared)', () => {
     });
 
     it('should handle executor exception with string error', async () => {
-      const calls: any[] = [];
-      const mockExecutor = async () => {
-        calls.push('executor_called');
-        throw 'String error';
-      };
+      const mockExecutor = createMockExecutor('String error');
 
       const result = await launch_app_deviceLogic(
         {
@@ -371,7 +363,6 @@ describe('launch_app_device plugin (device-shared)', () => {
         mockExecutor,
       );
 
-      expect(calls).toEqual(['executor_called']);
       expect(result).toEqual({
         content: [
           {

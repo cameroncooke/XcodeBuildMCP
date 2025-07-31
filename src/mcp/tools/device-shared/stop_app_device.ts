@@ -8,11 +8,16 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type StopAppDeviceParams = {
-  deviceId: string;
-  processId: number;
-};
+// Define schema as ZodObject
+const stopAppDeviceSchema = z.object({
+  deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
+  processId: z.number().describe('Process ID (PID) of the app to stop'),
+});
+
+// Use z.infer for type safety
+type StopAppDeviceParams = z.infer<typeof stopAppDeviceSchema>;
 
 export async function stop_app_deviceLogic(
   params: StopAppDeviceParams,
@@ -79,14 +84,6 @@ export default {
   name: 'stop_app_device',
   description:
     'Stops an app running on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and processId.',
-  schema: {
-    deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
-    processId: z.number().describe('Process ID (PID) of the app to stop'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return stop_app_deviceLogic(
-      args as unknown as StopAppDeviceParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: stopAppDeviceSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(stopAppDeviceSchema, stop_app_deviceLogic, getDefaultCommandExecutor),
 };

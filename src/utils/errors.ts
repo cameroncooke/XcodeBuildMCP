@@ -108,11 +108,7 @@ export class AxeError extends XcodeBuildMCPError {
 }
 
 // Helper to create a standard error response
-export function createErrorResponse(
-  message: string,
-  details?: string,
-  _errorType: string = 'UnknownError',
-): ToolResponse {
+export function createErrorResponse(message: string, details?: string): ToolResponse {
   const detailText = details ? `\nDetails: ${details}` : '';
   return {
     content: [

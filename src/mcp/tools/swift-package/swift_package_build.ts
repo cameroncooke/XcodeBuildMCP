@@ -8,30 +8,22 @@ import {
   getDefaultCommandExecutor,
 } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-// Inlined schemas from src/tools/common/index.ts
-const swiftConfigurationSchema = z
-  .enum(['debug', 'release'])
-  .optional()
-  .describe('Swift package configuration (debug, release)');
+// Define schema as ZodObject
+const swiftPackageBuildSchema = z.object({
+  packagePath: z.string().describe('Path to the Swift package root (Required)'),
+  targetName: z.string().optional().describe('Optional target to build'),
+  configuration: z
+    .enum(['debug', 'release'])
+    .optional()
+    .describe('Swift package configuration (debug, release)'),
+  architectures: z.array(z.string()).optional().describe('Target architectures to build for'),
+  parseAsLibrary: z.boolean().optional().describe('Build as library instead of executable'),
+});
 
-const swiftArchitecturesSchema = z
-  .array(z.string())
-  .optional()
-  .describe('Target architectures to build for');
-
-const parseAsLibrarySchema = z
-  .boolean()
-  .optional()
-  .describe('Build as library instead of executable');
-
-interface SwiftPackageBuildParams {
-  packagePath: unknown;
-  targetName?: unknown;
-  configuration?: unknown;
-  architectures?: unknown;
-  parseAsLibrary?: unknown;
-}
+// Use z.infer for type safety
+type SwiftPackageBuildParams = z.infer<typeof swiftPackageBuildSchema>;
 
 export async function swift_package_buildLogic(
   params: SwiftPackageBuildParams,
@@ -40,19 +32,19 @@ export async function swift_package_buildLogic(
   const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
   if (!pkgValidation.isValid) return pkgValidation.errorResponse!;
 
-  const resolvedPath = path.resolve(params.packagePath as string);
+  const resolvedPath = path.resolve(params.packagePath);
   const swiftArgs = ['build', '--package-path', resolvedPath];
 
-  if (params.configuration && (params.configuration as string).toLowerCase() === 'release') {
+  if (params.configuration && params.configuration.toLowerCase() === 'release') {
     swiftArgs.push('-c', 'release');
   }
 
   if (params.targetName) {
-    swiftArgs.push('--target', params.targetName as string);
+    swiftArgs.push('--target', params.targetName);
   }
 
   if (params.architectures) {
-    for (const arch of params.architectures as string[]) {
+    for (const arch of params.architectures) {
       swiftArgs.push('--arch', arch);
     }
   }
@@ -66,7 +58,7 @@ export async function swift_package_buildLogic(
     const result = await executor(['swift', ...swiftArgs], 'Swift Package Build', true, undefined);
     if (!result.success) {
       const errorMessage = result.error ?? result.output ?? 'Unknown error';
-      return createErrorResponse('Swift package build failed', errorMessage, 'BuildError');
+      return createErrorResponse('Swift package build failed', errorMessage);
     }
 
     return {
@@ -83,24 +75,17 @@ export async function swift_package_buildLogic(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     log('error', `Swift package build failed: ${message}`);
-    return createErrorResponse('Failed to execute swift build', message, 'SystemError');
+    return createErrorResponse('Failed to execute swift build', message);
   }
 }
 
 export default {
   name: 'swift_package_build',
   description: 'Builds a Swift Package with swift build',
-  schema: {
-    packagePath: z.string().describe('Path to the Swift package root (Required)'),
-    targetName: z.string().optional().describe('Optional target to build'),
-    configuration: swiftConfigurationSchema,
-    architectures: swiftArchitecturesSchema,
-    parseAsLibrary: parseAsLibrarySchema,
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return swift_package_buildLogic(
-      args as unknown as SwiftPackageBuildParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: swiftPackageBuildSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    swiftPackageBuildSchema,
+    swift_package_buildLogic,
+    getDefaultCommandExecutor,
+  ),
 };

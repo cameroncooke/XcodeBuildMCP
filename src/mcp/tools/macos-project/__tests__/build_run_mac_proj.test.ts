@@ -101,13 +101,6 @@ describe('build_run_mac_proj', () => {
         return Promise.resolve({ success: true, output: '', error: '' });
       };
 
-      // Mock execAsync for launching app
-      const execAsyncCalls: string[] = [];
-      const mockExecAsync = (cmd: string) => {
-        execAsyncCalls.push(cmd);
-        return Promise.resolve('');
-      };
-
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
@@ -115,7 +108,7 @@ describe('build_run_mac_proj', () => {
         preferXcodebuild: false,
       };
 
-      const result = await build_run_mac_projLogic(args, mockExecutor, mockExecAsync);
+      const result = await build_run_mac_projLogic(args, mockExecutor);
 
       // Verify build command was called
       expect(executorCalls[0]).toEqual({
@@ -278,13 +271,15 @@ describe('build_run_mac_proj', () => {
             output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
             error: '',
           });
+        } else if (callCount === 3) {
+          // Third call for open command fails
+          return Promise.resolve({
+            success: false,
+            output: '',
+            error: 'Failed to launch',
+          });
         }
         return Promise.resolve({ success: true, output: '', error: '' });
-      };
-
-      // Mock execAsync for launching app to fail
-      const mockExecAsync = (cmd: string) => {
-        return Promise.reject(new Error('Failed to launch'));
       };
 
       const args = {
@@ -294,7 +289,7 @@ describe('build_run_mac_proj', () => {
         preferXcodebuild: false,
       };
 
-      const result = await build_run_mac_projLogic(args, mockExecutor, mockExecAsync);
+      const result = await build_run_mac_projLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -373,11 +368,6 @@ describe('build_run_mac_proj', () => {
         return Promise.resolve({ success: true, output: '', error: '' });
       };
 
-      // Mock execAsync for launching app
-      const mockExecAsync = (cmd: string) => {
-        return Promise.resolve('');
-      };
-
       const args = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
@@ -385,7 +375,7 @@ describe('build_run_mac_proj', () => {
         preferXcodebuild: false,
       };
 
-      await build_run_mac_projLogic(args, mockExecutor, mockExecAsync);
+      await build_run_mac_projLogic(args, mockExecutor);
 
       expect(executorCalls[0]).toEqual({
         command: [

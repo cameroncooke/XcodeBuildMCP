@@ -50,7 +50,7 @@ export default {
   name: 'devices',
   description: 'Connected physical Apple devices with their UUIDs, names, and connection status',
   mimeType: 'text/plain',
-  async handler(_uri: URL): Promise<{ contents: Array<{ text: string }> }> {
+  async handler(): Promise<{ contents: Array<{ text: string }> }> {
     return devicesResourceLogic();
   },
 };

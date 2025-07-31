@@ -9,6 +9,7 @@ import { log } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Types for dependency injection
 export interface BuildUtilsDependencies {
@@ -20,15 +21,28 @@ const defaultBuildUtilsDependencies: BuildUtilsDependencies = {
   executeXcodeBuildCommand,
 };
 
-type BuildMacProjParams = {
-  projectPath: string;
-  scheme: string;
-  configuration?: string;
-  derivedDataPath?: string;
-  arch?: 'arm64' | 'x86_64';
-  extraArgs?: string[];
-  preferXcodebuild?: boolean;
-};
+// Define schema as ZodObject
+const buildMacProjSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file'),
+  scheme: z.string().describe('The scheme to use'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  derivedDataPath: z
+    .string()
+    .optional()
+    .describe('Path where build products and other derived data will go'),
+  arch: z
+    .enum(['arm64', 'x86_64'])
+    .optional()
+    .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
+  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+  preferXcodebuild: z
+    .boolean()
+    .optional()
+    .describe('If true, prefers xcodebuild over the experimental incremental build system'),
+});
+
+// Use z.infer for type safety
+type BuildMacProjParams = z.infer<typeof buildMacProjSchema>;
 
 /**
  * Business logic for building macOS apps with dependency injection.
@@ -38,7 +52,6 @@ export async function build_mac_projLogic(
   executor: CommandExecutor,
   buildUtilsDeps: BuildUtilsDependencies = defaultBuildUtilsDependencies,
 ): Promise<ToolResponse> {
-  const _paramsRecord = params as Record<string, unknown>;
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
   const processedParams = {
@@ -63,25 +76,6 @@ export async function build_mac_projLogic(
 export default {
   name: 'build_mac_proj',
   description: 'Builds a macOS app using xcodebuild from a project file.',
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file'),
-    scheme: z.string().describe('The scheme to use'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    arch: z
-      .enum(['arm64', 'x86_64'])
-      .optional()
-      .describe('Architecture to build for (arm64 or x86_64). For macOS only.'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe('If true, prefers xcodebuild over the experimental incremental build system'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_mac_projLogic(args as BuildMacProjParams, getDefaultCommandExecutor());
-  },
+  schema: buildMacProjSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(buildMacProjSchema, build_mac_projLogic, getDefaultCommandExecutor),
 };

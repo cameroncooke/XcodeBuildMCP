@@ -10,13 +10,21 @@ import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type GetDeviceAppPathWsParams = {
-  workspacePath: string;
-  scheme: string;
-  configuration?: string;
-  platform?: 'iOS' | 'watchOS' | 'tvOS' | 'visionOS';
-};
+// Define schema as ZodObject
+const getDeviceAppPathWsSchema = z.object({
+  workspacePath: z.string().describe('Path to the .xcworkspace file'),
+  scheme: z.string().describe('The scheme to use'),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  platform: z
+    .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
+    .optional()
+    .describe('Target platform (defaults to iOS)'),
+});
+
+// Use z.infer for type safety
+type GetDeviceAppPathWsParams = z.infer<typeof getDeviceAppPathWsSchema>;
 
 const XcodePlatform = {
   iOS: 'iOS',
@@ -34,12 +42,10 @@ export async function get_device_app_path_wsLogic(
   params: GetDeviceAppPathWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
-
-  const workspaceValidation = validateRequiredParam('workspacePath', paramsRecord.workspacePath);
+  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
   if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
   const platformMap = {
@@ -136,19 +142,10 @@ export default {
   name: 'get_device_app_path_ws',
   description:
     "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using a workspace. IMPORTANT: Requires workspacePath and scheme. Example: get_device_app_path_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme' })",
-  schema: {
-    workspacePath: z.string().describe('Path to the .xcworkspace file'),
-    scheme: z.string().describe('The scheme to use'),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    platform: z
-      .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
-      .optional()
-      .describe('Target platform (defaults to iOS)'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return get_device_app_path_wsLogic(
-      args as unknown as GetDeviceAppPathWsParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: getDeviceAppPathWsSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    getDeviceAppPathWsSchema,
+    get_device_app_path_wsLogic,
+    getDefaultCommandExecutor,
+  ),
 };

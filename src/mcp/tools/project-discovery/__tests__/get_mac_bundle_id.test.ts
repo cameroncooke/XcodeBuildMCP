@@ -1,23 +1,24 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import plugin, { type SyncExecutor, get_mac_bundle_idLogic } from '../get_mac_bundle_id.ts';
-import { createMockFileSystemExecutor } from '../../../../utils/command.js';
+import plugin, { get_mac_bundle_idLogic } from '../get_mac_bundle_id.ts';
+import {
+  createMockFileSystemExecutor,
+  createCommandMatchingMockExecutor,
+} from '../../../../utils/command.js';
 
 describe('get_mac_bundle_id plugin', () => {
-  // Helper function to create mock sync executor
-  const createMockSyncExecutor = (results: Record<string, string | Error>): SyncExecutor => {
-    const calls: string[] = [];
-    return (command: string): string => {
-      calls.push(command);
-      const result = results[command];
-      if (result instanceof Error) {
-        throw result;
-      }
-      if (typeof result === 'string') {
-        return result;
-      }
-      throw new Error(`Unexpected command: ${command}`);
-    };
+  // Helper function to create mock executor for command matching
+  const createMockExecutorForCommands = (results: Record<string, string | Error>) => {
+    return createCommandMatchingMockExecutor(
+      Object.fromEntries(
+        Object.entries(results).map(([command, result]) => [
+          command,
+          result instanceof Error
+            ? { success: false, error: result.message }
+            : { success: true, output: result },
+        ]),
+      ),
+    );
   };
 
   describe('Export Field Validation (Literal)', () => {
@@ -52,12 +53,12 @@ describe('get_mac_bundle_id plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error when appPath validation fails', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockExecutor = createMockExecutorForCommands({});
       const mockFileSystemExecutor = createMockFileSystemExecutor({});
 
       const result = await get_mac_bundle_idLogic(
         { appPath: null },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -73,14 +74,14 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should return error when file exists validation fails', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockExecutor = createMockExecutorForCommands({});
       const mockFileSystemExecutor = createMockFileSystemExecutor({
         existsSync: () => false,
       });
 
       const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -96,7 +97,7 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should return success with bundle ID using defaults read', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({
+      const mockExecutor = createMockExecutorForCommands({
         'defaults read "/Applications/MyApp.app/Contents/Info" CFBundleIdentifier':
           'com.example.MyMacApp',
       });
@@ -106,7 +107,7 @@ describe('get_mac_bundle_id plugin', () => {
 
       const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -129,7 +130,7 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should fallback to PlistBuddy when defaults read fails', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({
+      const mockExecutor = createMockExecutorForCommands({
         'defaults read "/Applications/MyApp.app/Contents/Info" CFBundleIdentifier': new Error(
           'defaults read failed',
         ),
@@ -142,7 +143,7 @@ describe('get_mac_bundle_id plugin', () => {
 
       const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -165,7 +166,7 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should return error when both extraction methods fail', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({
+      const mockExecutor = createMockExecutorForCommands({
         'defaults read "/Applications/MyApp.app/Contents/Info" CFBundleIdentifier': new Error(
           'Command failed',
         ),
@@ -178,7 +179,7 @@ describe('get_mac_bundle_id plugin', () => {
 
       const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -195,7 +196,7 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should handle Error objects in catch blocks', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({
+      const mockExecutor = createMockExecutorForCommands({
         'defaults read "/Applications/MyApp.app/Contents/Info" CFBundleIdentifier': new Error(
           'Custom error message',
         ),
@@ -208,7 +209,7 @@ describe('get_mac_bundle_id plugin', () => {
 
       const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -225,16 +226,20 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should handle string errors in catch blocks', async () => {
-      const mockSyncExecutor: SyncExecutor = (command: string): string => {
-        throw 'String error';
-      };
+      const mockExecutor = createMockExecutorForCommands({
+        'defaults read "/Applications/MyApp.app/Contents/Info" CFBundleIdentifier': new Error(
+          'String error',
+        ),
+        '/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/Applications/MyApp.app/Contents/Info.plist"':
+          new Error('String error'),
+      });
       const mockFileSystemExecutor = createMockFileSystemExecutor({
         existsSync: () => true,
       });
 
       const result = await get_mac_bundle_idLogic(
         { appPath: '/Applications/MyApp.app' },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 
@@ -251,12 +256,12 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should handle schema validation error when appPath is null', async () => {
-      const mockSyncExecutor = createMockSyncExecutor({});
+      const mockExecutor = createMockExecutorForCommands({});
       const mockFileSystemExecutor = createMockFileSystemExecutor({});
 
       const result = await get_mac_bundle_idLogic(
         { appPath: null },
-        mockSyncExecutor,
+        mockExecutor,
         mockFileSystemExecutor,
       );
 

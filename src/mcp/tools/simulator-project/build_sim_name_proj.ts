@@ -7,35 +7,47 @@ import {
   CommandExecutor,
 } from '../../../utils/index.js';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type BuildSimNameProjParams = {
-  projectPath: string;
-  scheme: string;
-  simulatorName: string;
-  configuration?: string;
-  derivedDataPath?: string;
-  extraArgs?: string[];
-  useLatestOS?: boolean;
-  preferXcodebuild?: boolean;
-  simulatorId?: string;
-};
+// Define schema as ZodObject
+const buildSimNameProjSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
+  scheme: z.string().describe('The scheme to use (Required)'),
+  simulatorName: z.string().describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  derivedDataPath: z
+    .string()
+    .optional()
+    .describe('Path where build products and other derived data will go'),
+  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+  useLatestOS: z
+    .boolean()
+    .optional()
+    .describe('Whether to use the latest OS version for the named simulator'),
+  preferXcodebuild: z
+    .boolean()
+    .optional()
+    .describe(
+      'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
+    ),
+  simulatorId: z.string().optional().describe('UUID of the simulator (optional)'),
+});
+
+// Use z.infer for type safety
+type BuildSimNameProjParams = z.infer<typeof buildSimNameProjSchema>;
 
 export async function build_sim_name_projLogic(
   params: BuildSimNameProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
   // Validate required parameters
-  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
   if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-  const simulatorNameValidation = validateRequiredParam(
-    'simulatorName',
-    paramsRecord.simulatorName,
-  );
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
   if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
   // Provide defaults
@@ -67,30 +79,10 @@ export default {
   name: 'build_sim_name_proj',
   description:
     "Builds an app from a project file for a specific simulator by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_sim_name_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    simulatorName: z
-      .string()
-      .describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    useLatestOS: z
-      .boolean()
-      .optional()
-      .describe('Whether to use the latest OS version for the named simulator'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-      ),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_sim_name_projLogic(args as BuildSimNameProjParams, getDefaultCommandExecutor());
-  },
+  schema: buildSimNameProjSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    buildSimNameProjSchema,
+    build_sim_name_projLogic,
+    getDefaultCommandExecutor,
+  ),
 };

@@ -1,8 +1,16 @@
+import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+
+// Define schema as ZodObject
+const openSimSchema = z.object({});
+
+// Use z.infer for type safety
+type OpenSimParams = z.infer<typeof openSimSchema>;
 
 export async function open_simLogic(
-  params: Record<string, unknown>,
+  params: OpenSimParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', 'Starting open simulator request');
@@ -60,8 +68,6 @@ export async function open_simLogic(
 export default {
   name: 'open_sim',
   description: 'Opens the iOS Simulator app.',
-  schema: {},
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    return open_simLogic(args, getDefaultCommandExecutor());
-  },
+  schema: openSimSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(openSimSchema, open_simLogic, getDefaultCommandExecutor),
 };

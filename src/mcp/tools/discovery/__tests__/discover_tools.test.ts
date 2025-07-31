@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
 import discoverTools, { discover_toolsLogic } from '../discover_tools.ts';
 
@@ -68,7 +68,7 @@ describe('discover_tools', () => {
   let originalGlobalThis: Record<string, unknown>;
   let callTracker: CallTracker;
   let requestCalls: Array<any[]>;
-  let notifyToolsChangedCalls: Array<any[]>;
+  let sendToolListChangedCalls: Array<any[]>;
 
   beforeEach(() => {
     // Save original globalThis
@@ -80,18 +80,23 @@ describe('discover_tools', () => {
       enableWorkflowsCalls: [],
     };
     requestCalls = [];
-    notifyToolsChangedCalls = [];
+    sendToolListChangedCalls = [];
     // Create mock server
     mockServer = {
       server: {
         _clientCapabilities: { sampling: true },
+        getClientCapabilities: () => ({ sampling: true }),
+        createMessage: async (...args: any[]) => {
+          requestCalls.push(args);
+          throw new Error('Mock createMessage not configured');
+        },
         request: async (...args: any[]) => {
           requestCalls.push(args);
           throw new Error('Mock request not configured');
         },
       },
-      notifyToolsChanged: (...args: any[]) => {
-        notifyToolsChangedCalls.push(args);
+      sendToolListChanged: (...args: any[]) => {
+        sendToolListChangedCalls.push(args);
       },
     };
     // Set up global server
@@ -138,8 +143,9 @@ describe('discover_tools', () => {
     it('should return error when client lacks sampling capability', async () => {
       // Mock server without sampling capability
       mockServer.server._clientCapabilities = {};
+      (mockServer.server as any).getClientCapabilities = () => ({});
 
-      const result = await discover_toolsLogic({ task_description: 'Build my app' });
+      const result = await discover_toolsLogic({ task_description: 'Build my app' }, undefined);
 
       expect(result).toEqual({
         content: [
@@ -163,14 +169,18 @@ describe('discover_tools', () => {
       );
 
       // Configure mock request to return successful response
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         requestCalls.push(args);
         return {
           content: [{ type: 'text', text: '["simulator-workspace"]' }],
         };
       };
 
-      const result = await discover_toolsLogic({ task_description: 'Build my iOS app' }, mockDeps);
+      const result = await discover_toolsLogic(
+        { task_description: 'Build my iOS app' },
+        undefined,
+        mockDeps,
+      );
 
       expect(result.isError).toBeFalsy();
       expect(callTracker.getAvailableWorkflowsCalls).toHaveLength(1);
@@ -190,14 +200,14 @@ describe('discover_tools', () => {
       );
 
       // Configure mock request to capture calls and return response
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         requestCalls.push(args);
         return {
           content: [{ type: 'text', text: '["simulator-workspace"]' }],
         };
       };
 
-      await discover_toolsLogic({ task_description: 'Build my iOS app' }, mockDeps);
+      await discover_toolsLogic({ task_description: 'Build my iOS app' }, undefined, mockDeps);
 
       // Verify workflow groups were loaded
       expect(callTracker.getAvailableWorkflowsCalls).toHaveLength(1);
@@ -205,7 +215,7 @@ describe('discover_tools', () => {
       // Verify LLM prompt includes workflow descriptions
       expect(requestCalls).toHaveLength(1);
       const requestCall = requestCalls[0];
-      const prompt = requestCall[0].params.messages[0].content.text;
+      const prompt = requestCall[0].messages[0].content.text;
 
       expect(prompt).toContain('simulator-workspace');
       expect(prompt).toContain(
@@ -242,31 +252,32 @@ describe('discover_tools', () => {
       requestCalls.length = 0;
 
       // Configure mock request to capture calls and return response
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         requestCalls.push(args);
         return {
           content: [{ type: 'text', text: '["simulator-workspace"]' }],
         };
       };
 
-      await discover_toolsLogic({ task_description: 'Build my iOS app and test it' }, mockDeps);
+      await discover_toolsLogic(
+        { task_description: 'Build my iOS app and test it' },
+        undefined,
+        mockDeps,
+      );
 
       expect(requestCalls).toHaveLength(1);
       const requestCall = requestCalls[0];
       expect(requestCall[0]).toEqual({
-        method: 'sampling/createMessage',
-        params: {
-          messages: [
-            {
-              role: 'user',
-              content: {
-                type: 'text',
-                text: expect.stringContaining('Build my iOS app and test it'),
-              },
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: expect.stringContaining('Build my iOS app and test it'),
             },
-          ],
-          maxTokens: 200,
-        },
+          },
+        ],
+        maxTokens: 200,
       });
       // Note: Schema parameter was removed in TypeScript fix - request method now only accepts one parameter
     });
@@ -276,13 +287,17 @@ describe('discover_tools', () => {
       localCallTracker.enableWorkflowsCalls.length = 0;
 
       // Configure mock request to return response
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         return {
           content: [{ type: 'text', text: '["simulator-workspace"]' }],
         };
       };
 
-      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic(
+        { task_description: 'Build my app' },
+        undefined,
+        mockDeps,
+      );
 
       expect(result.isError).toBeFalsy();
       expect(localCallTracker.enableWorkflowsCalls).toHaveLength(1);
@@ -298,13 +313,17 @@ describe('discover_tools', () => {
       localCallTracker.enableWorkflowsCalls.length = 0;
 
       // Configure mock request to return response with single object format
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         return {
           content: { type: 'text', text: '["simulator-workspace"]' },
         };
       };
 
-      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic(
+        { task_description: 'Build my app' },
+        undefined,
+        mockDeps,
+      );
 
       expect(result.isError).toBeFalsy();
       expect(localCallTracker.enableWorkflowsCalls).toHaveLength(1);
@@ -320,7 +339,7 @@ describe('discover_tools', () => {
       localCallTracker.enableWorkflowsCalls.length = 0;
 
       // Configure mock request to return response with invalid workflows
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         return {
           content: [
             {
@@ -331,7 +350,11 @@ describe('discover_tools', () => {
         };
       };
 
-      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic(
+        { task_description: 'Build my app' },
+        undefined,
+        mockDeps,
+      );
 
       expect(result.isError).toBeFalsy();
       expect(localCallTracker.enableWorkflowsCalls).toHaveLength(1);
@@ -344,13 +367,17 @@ describe('discover_tools', () => {
 
     it('should handle malformed JSON in LLM response', async () => {
       // Configure mock request to return malformed JSON
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         return {
           content: [{ type: 'text', text: 'This is not JSON at all!' }],
         };
       };
 
-      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic(
+        { task_description: 'Build my app' },
+        undefined,
+        mockDeps,
+      );
 
       expect(result).toEqual({
         content: [
@@ -365,13 +392,17 @@ describe('discover_tools', () => {
 
     it('should handle non-array JSON in LLM response', async () => {
       // Configure mock request to return non-array JSON
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         return {
           content: [{ type: 'text', text: '{"workflow": "simulator-workspace"}' }],
         };
       };
 
-      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic(
+        { task_description: 'Build my app' },
+        undefined,
+        mockDeps,
+      );
 
       expect(result).toEqual({
         content: [
@@ -389,13 +420,17 @@ describe('discover_tools', () => {
       localCallTracker.enableWorkflowsCalls.length = 0;
 
       // Configure mock request to return empty array
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         return {
           content: [{ type: 'text', text: '[]' }],
         };
       };
 
-      const result = await discover_toolsLogic({ task_description: 'Just saying hello' }, mockDeps);
+      const result = await discover_toolsLogic(
+        { task_description: 'Just saying hello' },
+        undefined,
+        mockDeps,
+      );
 
       expect(result).toEqual({
         content: [
@@ -433,13 +468,17 @@ describe('discover_tools', () => {
 
     it('should enable selected workflows and return success message', async () => {
       // Configure mock request to return successful response
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         return {
           content: [{ type: 'text', text: '["simulator-workspace"]' }],
         };
       };
 
-      const result = await discover_toolsLogic({ task_description: 'Build my iOS app' }, mockDeps);
+      const result = await discover_toolsLogic(
+        { task_description: 'Build my iOS app' },
+        undefined,
+        mockDeps,
+      );
 
       expect(workflowCallTracker.enableWorkflowsCalls).toHaveLength(1);
       expect(workflowCallTracker.enableWorkflowsCalls[0]).toEqual([
@@ -475,7 +514,7 @@ describe('discover_tools', () => {
       );
 
       // Configure mock request to return successful response
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         return {
           content: [{ type: 'text', text: '["simulator-workspace"]' }],
         };
@@ -483,6 +522,7 @@ describe('discover_tools', () => {
 
       const result = await discover_toolsLogic(
         { task_description: 'Build my app' },
+        undefined,
         mockDepsWithError,
       );
 
@@ -502,7 +542,7 @@ describe('discover_tools', () => {
     it('should handle missing server instance', async () => {
       (globalThis as any).mcpServer = undefined;
 
-      const result = await discover_toolsLogic({ task_description: 'Build my app' });
+      const result = await discover_toolsLogic({ task_description: 'Build my app' }, undefined);
 
       expect(result).toEqual({
         content: [
@@ -531,6 +571,7 @@ describe('discover_tools', () => {
 
       const result = await discover_toolsLogic(
         { task_description: 'Build my app' },
+        undefined,
         mockDepsWithError,
       );
 
@@ -555,11 +596,15 @@ describe('discover_tools', () => {
       const mockDeps = createMockDependencies({ availableWorkflows: [] }, errorCallTracker);
 
       // Configure mock request to throw error
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         throw new Error('LLM request failed');
       };
 
-      const result = await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
+      const result = await discover_toolsLogic(
+        { task_description: 'Build my app' },
+        undefined,
+        mockDeps,
+      );
 
       expect(result).toEqual({
         content: [
@@ -594,7 +639,7 @@ describe('discover_tools', () => {
       requestCalls.length = 0;
 
       // Configure mock request to capture calls and return response
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         requestCalls.push(args);
         return {
           content: [{ type: 'text', text: '["simulator-workspace"]' }],
@@ -604,11 +649,11 @@ describe('discover_tools', () => {
       const taskDescription =
         'I need to build my React Native iOS app for the simulator and run tests';
 
-      await discover_toolsLogic({ task_description: taskDescription }, mockDeps);
+      await discover_toolsLogic({ task_description: taskDescription }, undefined, mockDeps);
 
       expect(requestCalls).toHaveLength(1);
       const requestCall = requestCalls[0];
-      const prompt = requestCall[0].params.messages[0].content.text;
+      const prompt = requestCall[0].messages[0].content.text;
 
       expect(prompt).toContain(taskDescription);
       expect(prompt).toContain('Project Type Selection Guide');
@@ -635,18 +680,18 @@ describe('discover_tools', () => {
       requestCalls.length = 0;
 
       // Configure mock request to capture calls and return response
-      (mockServer.server as any).request = async (...args: any[]) => {
+      (mockServer.server as any).createMessage = async (...args: any[]) => {
         requestCalls.push(args);
         return {
           content: [{ type: 'text', text: '[]' }],
         };
       };
 
-      await discover_toolsLogic({ task_description: 'Build my app' }, mockDeps);
+      await discover_toolsLogic({ task_description: 'Build my app' }, undefined, mockDeps);
 
       expect(requestCalls).toHaveLength(1);
       const requestCall = requestCalls[0];
-      const prompt = requestCall[0].params.messages[0].content.text;
+      const prompt = requestCall[0].messages[0].content.text;
 
       expect(prompt).toContain('Choose ONLY ONE workflow');
       expect(prompt).toContain('If working with .xcworkspace files');

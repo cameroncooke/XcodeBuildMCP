@@ -55,16 +55,8 @@ const ScaffoldmacOSProjectSchema = BaseScaffoldSchema.extend({
     .describe('macOS deployment target (e.g., 15.4, 14.0). If not provided, will use 15.4'),
 });
 
-type ScaffoldMacOSProjectParams = {
-  projectName: string;
-  outputPath: string;
-  bundleIdentifier?: string;
-  displayName?: string;
-  marketingVersion?: string;
-  currentProjectVersion?: string;
-  customizeNames?: boolean;
-  deploymentTarget?: string;
-};
+// Use z.infer for type safety
+type ScaffoldMacOSProjectParams = z.infer<typeof ScaffoldmacOSProjectSchema>;
 
 /**
  * Update Package.swift file with deployment target

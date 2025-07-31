@@ -372,29 +372,8 @@ async function processDirectory(
   }
 }
 
-type ScaffoldIOSProjectParams = {
-  projectName: string;
-  outputPath: string;
-  bundleIdentifier?: string;
-  displayName?: string;
-  marketingVersion?: string;
-  currentProjectVersion?: string;
-  customizeNames?: boolean;
-  deploymentTarget?: string;
-  targetedDeviceFamily?: ('iphone' | 'ipad' | 'universal')[];
-  supportedOrientations?: (
-    | 'portrait'
-    | 'landscape-left'
-    | 'landscape-right'
-    | 'portrait-upside-down'
-  )[];
-  supportedOrientationsIpad?: (
-    | 'portrait'
-    | 'landscape-left'
-    | 'landscape-right'
-    | 'portrait-upside-down'
-  )[];
-};
+// Use z.infer for type safety
+type ScaffoldIOSProjectParams = z.infer<typeof ScaffoldiOSProjectSchema>;
 
 /**
  * Logic function for scaffolding iOS projects
@@ -404,7 +383,6 @@ export async function scaffold_ios_projectLogic(
   commandExecutor: CommandExecutor,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
-  const _paramsRecord = params as Record<string, unknown>;
   try {
     const projectParams = { ...params, platform: 'iOS' };
     const projectPath = await scaffoldProject(projectParams, commandExecutor, fileSystemExecutor);
@@ -528,8 +506,9 @@ export default {
     'Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.',
   schema: ScaffoldiOSProjectSchema.shape,
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
+    const params = ScaffoldiOSProjectSchema.parse(args);
     return scaffold_ios_projectLogic(
-      args as ScaffoldIOSProjectParams,
+      params,
       getDefaultCommandExecutor(),
       getDefaultFileSystemExecutor(),
     );

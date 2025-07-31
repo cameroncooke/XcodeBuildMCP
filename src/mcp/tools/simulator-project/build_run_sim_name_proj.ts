@@ -3,19 +3,34 @@ import { log } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import { executeXcodeBuildCommand, XcodePlatform } from '../../../utils/index.js';
-import { execSync } from 'child_process';
 import { ToolResponse, SharedBuildParams } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-type BuildRunSimNameProjParams = {
-  projectPath: string;
-  scheme: string;
-  simulatorName: string;
-  configuration?: string;
-  derivedDataPath?: string;
-  extraArgs?: string[];
-  useLatestOS?: boolean;
-  preferXcodebuild?: boolean;
-};
+// Define schema as ZodObject
+const buildRunSimNameProjSchema = z.object({
+  projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
+  scheme: z.string().describe('The scheme to use (Required)'),
+  simulatorName: z.string().describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
+  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
+  derivedDataPath: z
+    .string()
+    .optional()
+    .describe('Path where build products and other derived data will go'),
+  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+  useLatestOS: z
+    .boolean()
+    .optional()
+    .describe('Whether to use the latest OS version for the named simulator'),
+  preferXcodebuild: z
+    .boolean()
+    .optional()
+    .describe(
+      'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
+    ),
+});
+
+// Use z.infer for type safety
+type BuildRunSimNameProjParams = z.infer<typeof buildRunSimNameProjSchema>;
 
 // Internal logic for building Simulator apps.
 async function _handleSimulatorBuildLogic(
@@ -51,21 +66,15 @@ async function _handleSimulatorBuildLogic(
 export async function build_run_sim_name_projLogic(
   params: BuildRunSimNameProjParams,
   executor: CommandExecutor,
-  execSyncFn: (command: string) => string | Buffer = execSync,
 ): Promise<ToolResponse> {
-  const paramsRecord = params as Record<string, unknown>;
-
   // Validate required parameters
-  const projectValidation = validateRequiredParam('projectPath', paramsRecord.projectPath);
+  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
   if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
-  const schemeValidation = validateRequiredParam('scheme', paramsRecord.scheme);
+  const schemeValidation = validateRequiredParam('scheme', params.scheme);
   if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
 
-  const simulatorNameValidation = validateRequiredParam(
-    'simulatorName',
-    paramsRecord.simulatorName,
-  );
+  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
   if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
 
   // Provide defaults for the core logic
@@ -80,16 +89,14 @@ export async function build_run_sim_name_projLogic(
     extraArgs: params.extraArgs,
   };
 
-  return _handleIOSSimulatorBuildAndRunLogic(processedParams, executor, execSyncFn);
+  return _handleIOSSimulatorBuildAndRunLogic(processedParams, executor);
 }
 
 // Internal logic for building and running iOS Simulator apps.
 async function _handleIOSSimulatorBuildAndRunLogic(
   params: BuildRunSimNameProjParams,
   executor: CommandExecutor,
-  execSyncFn: (command: string) => string | Buffer,
 ): Promise<ToolResponse> {
-  const _paramsRecord = params as Record<string, unknown>;
   log('info', `Starting iOS Simulator build and run for scheme ${params.scheme} (internal)`);
 
   try {
@@ -156,8 +163,17 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     let simulatorUuid: string | undefined;
     try {
       log('info', `Finding simulator UUID for name: ${params.simulatorName}`);
-      const simulatorsOutput = execSyncFn('xcrun simctl list devices available --json').toString();
-      const simulatorsJson: unknown = JSON.parse(simulatorsOutput);
+      const simulatorsResult = await executor(
+        ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
+        'Find Simulator',
+      );
+      if (!simulatorsResult.success) {
+        return createTextResponse(
+          `Build succeeded, but error finding simulator: ${simulatorsResult.error ?? 'Unknown error'}`,
+          true,
+        );
+      }
+      const simulatorsJson: unknown = JSON.parse(simulatorsResult.output);
       let foundSimulator: { udid: string; name: string } | null = null;
 
       // Find the simulator in the available devices list
@@ -221,8 +237,18 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // Ensure simulator is booted
     try {
       log('info', `Checking simulator state for UUID: ${simulatorUuid}`);
-      const simulatorStateOutput = execSyncFn('xcrun simctl list devices').toString();
-      const simulatorLine = simulatorStateOutput
+      const simulatorStateResult = await executor(
+        ['xcrun', 'simctl', 'list', 'devices'],
+        'Check Simulator State',
+      );
+      if (!simulatorStateResult.success) {
+        return createTextResponse(
+          `Build succeeded, but error checking simulator state: ${simulatorStateResult.error ?? 'Unknown error'}`,
+          true,
+        );
+      }
+
+      const simulatorLine = simulatorStateResult.output
         .split('\n')
         .find((line) => line.includes(simulatorUuid as string));
 
@@ -237,7 +263,16 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
       if (!isBooted) {
         log('info', `Booting simulator ${simulatorUuid}`);
-        execSyncFn(`xcrun simctl boot "${simulatorUuid}"`);
+        const bootResult = await executor(
+          ['xcrun', 'simctl', 'boot', simulatorUuid],
+          'Boot Simulator',
+        );
+        if (!bootResult.success) {
+          return createTextResponse(
+            `Build succeeded, but error booting simulator: ${bootResult.error ?? 'Unknown error'}`,
+            true,
+          );
+        }
       } else {
         log('info', `Simulator ${simulatorUuid} is already booted`);
       }
@@ -253,7 +288,14 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // --- Open Simulator UI Step ---
     try {
       log('info', 'Opening Simulator app');
-      execSyncFn('open -a Simulator');
+      const openResult = await executor(['open', '-a', 'Simulator'], 'Open Simulator App');
+      if (!openResult.success) {
+        log(
+          'warning',
+          `Warning: Could not open Simulator app: ${openResult.error ?? 'Unknown error'}`,
+        );
+        // Don't fail the whole operation for this
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log('warning', `Warning: Could not open Simulator app: ${errorMessage}`);
@@ -263,7 +305,16 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // --- Install App Step ---
     try {
       log('info', `Installing app at path: ${appBundlePath} to simulator: ${simulatorUuid}`);
-      execSyncFn(`xcrun simctl install "${simulatorUuid}" "${appBundlePath}"`);
+      const installResult = await executor(
+        ['xcrun', 'simctl', 'install', simulatorUuid, appBundlePath],
+        'Install App',
+      );
+      if (!installResult.success) {
+        return createTextResponse(
+          `Build succeeded, but error installing app on simulator: ${installResult.error ?? 'Unknown error'}`,
+          true,
+        );
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log('error', `Error installing app: ${errorMessage}`);
@@ -280,18 +331,38 @@ async function _handleIOSSimulatorBuildAndRunLogic(
 
       // Try PlistBuddy first (more reliable)
       try {
-        bundleId = execSyncFn(
-          `/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "${appBundlePath}/Info.plist"`,
-        )
-          .toString()
-          .trim();
+        const plistResult = await executor(
+          [
+            '/usr/libexec/PlistBuddy',
+            '-c',
+            'Print :CFBundleIdentifier',
+            `${appBundlePath}/Info.plist`,
+          ],
+          'Extract Bundle ID with PlistBuddy',
+          true,
+        );
+
+        if (plistResult.success && plistResult.output.trim()) {
+          bundleId = plistResult.output.trim();
+        } else {
+          throw new Error('PlistBuddy failed or returned empty result');
+        }
       } catch (plistError) {
         // Fallback to defaults if PlistBuddy fails
         const errorMessage = plistError instanceof Error ? plistError.message : String(plistError);
         log('warning', `PlistBuddy failed, trying defaults: ${errorMessage}`);
-        bundleId = execSyncFn(`defaults read "${appBundlePath}/Info" CFBundleIdentifier`)
-          .toString()
-          .trim();
+
+        const defaultsResult = await executor(
+          ['defaults', 'read', `${appBundlePath}/Info`, 'CFBundleIdentifier'],
+          'Extract Bundle ID with defaults',
+          true,
+        );
+
+        if (!defaultsResult.success || !defaultsResult.output.trim()) {
+          throw new Error('Both PlistBuddy and defaults failed to extract bundle ID');
+        }
+
+        bundleId = defaultsResult.output.trim();
       }
 
       if (!bundleId) {
@@ -311,7 +382,16 @@ async function _handleIOSSimulatorBuildAndRunLogic(
     // --- Launch App Step ---
     try {
       log('info', `Launching app with bundle ID: ${bundleId} on simulator: ${simulatorUuid}`);
-      execSyncFn(`xcrun simctl launch "${simulatorUuid}" "${bundleId}"`);
+      const launchResult = await executor(
+        ['xcrun', 'simctl', 'launch', simulatorUuid, bundleId],
+        'Launch App',
+      );
+      if (!launchResult.success) {
+        return createTextResponse(
+          `Build and install succeeded, but error launching app on simulator: ${launchResult.error ?? 'Unknown error'}`,
+          true,
+        );
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log('error', `Error launching app: ${errorMessage}`);
@@ -359,33 +439,10 @@ export default {
   name: 'build_run_sim_name_proj',
   description:
     "Builds and runs an app from a project file on a simulator specified by name. IMPORTANT: Requires projectPath, scheme, and simulatorName. Example: build_run_sim_name_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-  schema: {
-    projectPath: z.string().describe('Path to the .xcodeproj file (Required)'),
-    scheme: z.string().describe('The scheme to use (Required)'),
-    simulatorName: z
-      .string()
-      .describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
-    configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-    derivedDataPath: z
-      .string()
-      .optional()
-      .describe('Path where build products and other derived data will go'),
-    extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-    useLatestOS: z
-      .boolean()
-      .optional()
-      .describe('Whether to use the latest OS version for the named simulator'),
-    preferXcodebuild: z
-      .boolean()
-      .optional()
-      .describe(
-        'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-      ),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return build_run_sim_name_projLogic(
-      args as BuildRunSimNameProjParams,
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: buildRunSimNameProjSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    buildRunSimNameProjSchema,
+    build_run_sim_name_projLogic,
+    getDefaultCommandExecutor,
+  ),
 };

@@ -3,14 +3,21 @@ import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
 import { validateRequiredParam } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
-interface ResetSimulatorLocationParams {
-  simulatorUuid: string;
-}
+// Define schema as ZodObject
+const resetSimulatorLocationSchema = z.object({
+  simulatorUuid: z
+    .string()
+    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+});
+
+// Use z.infer for type safety
+type ResetSimulatorLocationParams = z.infer<typeof resetSimulatorLocationSchema>;
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
-  params: Record<string, unknown>,
+  params: ResetSimulatorLocationParams,
   simctlSubCommand: string[],
   operationDescriptionForXcodeCommand: string,
   successMessage: string,
@@ -73,7 +80,7 @@ export async function reset_simulator_locationLogic(
   log('info', `Resetting simulator ${params.simulatorUuid} location`);
 
   return executeSimctlCommandAndRespond(
-    { simulatorUuid: params.simulatorUuid },
+    params,
     ['location', params.simulatorUuid, 'clear'],
     'Reset Simulator Location',
     `Successfully reset simulator ${params.simulatorUuid} location.`,
@@ -86,17 +93,10 @@ export async function reset_simulator_locationLogic(
 export default {
   name: 'reset_simulator_location',
   description: "Resets the simulator's location to default.",
-  schema: {
-    simulatorUuid: z
-      .string()
-      .describe('UUID of the simulator to use (obtained from list_simulators)'),
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    return reset_simulator_locationLogic(
-      {
-        simulatorUuid: args.simulatorUuid as string,
-      },
-      getDefaultCommandExecutor(),
-    );
-  },
+  schema: resetSimulatorLocationSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool(
+    resetSimulatorLocationSchema,
+    reset_simulator_locationLogic,
+    getDefaultCommandExecutor,
+  ),
 };
