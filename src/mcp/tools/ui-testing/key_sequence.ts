@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { createTextResponse } from '../../../utils/index.js';
+import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
 import {
   DependencyError,
   AxeError,
@@ -50,6 +50,11 @@ export async function key_sequenceLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'key_sequence';
+  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
+  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
+  const keyCodesValidation = validateRequiredParam('keyCodes', params.keyCodes);
+  if (!keyCodesValidation.isValid) return keyCodesValidation.errorResponse!;
+
   const { simulatorUuid, keyCodes, delay } = params;
   const commandArgs = ['key-sequence', '--keycodes', keyCodes.join(',')];
   if (delay !== undefined) {
