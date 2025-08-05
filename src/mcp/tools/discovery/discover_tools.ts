@@ -58,7 +58,8 @@ export async function discover_toolsLogic(
     }
 
     // 1. Check for sampling capability
-    if (!server.server.getClientCapabilities()?.sampling) {
+    const clientCapabilities = server.server?.getClientCapabilities?.();
+    if (!clientCapabilities?.sampling) {
       log('warn', 'Client does not support sampling capability');
       return createTextResponse(
         'Your client does not support the sampling feature required for dynamic tool discovery. ' +
@@ -99,6 +100,9 @@ Each workflow contains ALL tools needed for its complete development workflow - 
 
     // 4. Send sampling request
     log('debug', 'Sending sampling request to client LLM');
+    if (!server.server?.createMessage) {
+      throw new Error('Server does not support message creation');
+    }
     const samplingResult = await server.server.createMessage({
       messages: [{ role: 'user', content: { type: 'text', text: userPrompt } }],
       maxTokens: 200,

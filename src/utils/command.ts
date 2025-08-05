@@ -117,41 +117,55 @@ async function defaultExecutor(
       stderr += data.toString();
     });
 
-    childProcess.on('close', (code) => {
-      const success = code === 0;
-      const response: CommandResponse = {
-        success,
-        output: stdout,
-        error: success ? undefined : stderr,
-        process: childProcess,
-      };
-
-      resolve(response);
-    });
-
-    childProcess.on('error', (err) => {
-      reject(err);
-    });
-
-    // For detached processes, resolve immediately after successful spawn
+    // For detached processes, handle differently to avoid race conditions
     if (detached) {
+      // For detached processes, only wait for spawn success/failure
+      let resolved = false;
+
+      childProcess.on('error', (err) => {
+        if (!resolved) {
+          resolved = true;
+          reject(err);
+        }
+      });
+
       // Give a small delay to ensure the process starts successfully
       setTimeout(() => {
-        if (childProcess.pid) {
-          resolve({
-            success: true,
-            output: '', // No output yet for detached processes
-            process: childProcess,
-          });
-        } else {
-          resolve({
-            success: false,
-            output: '',
-            error: 'Failed to start detached process',
-            process: childProcess,
-          });
+        if (!resolved) {
+          resolved = true;
+          if (childProcess.pid) {
+            resolve({
+              success: true,
+              output: '', // No output for detached processes
+              process: childProcess,
+            });
+          } else {
+            resolve({
+              success: false,
+              output: '',
+              error: 'Failed to start detached process',
+              process: childProcess,
+            });
+          }
         }
       }, 100);
+    } else {
+      // For non-detached processes, handle normally
+      childProcess.on('close', (code) => {
+        const success = code === 0;
+        const response: CommandResponse = {
+          success,
+          output: stdout,
+          error: success ? undefined : stderr,
+          process: childProcess,
+        };
+
+        resolve(response);
+      });
+
+      childProcess.on('error', (err) => {
+        reject(err);
+      });
     }
   });
 }
