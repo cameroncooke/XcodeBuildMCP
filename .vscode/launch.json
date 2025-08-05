@@ -4,8 +4,9 @@
     {
       "type": "node",
       "request": "attach",
-      "name": "Attach to MCP Server Dev",
+      "name": "Wait for MCP Server to Start",
       "port": 9999,
+      "address": "localhost",
       "restart": true,
       "skipFiles": [
         "<node_internals>/**"
@@ -17,7 +18,10 @@
       "cwd": "${workspaceFolder}",
       "sourceMapPathOverrides": {
         "/*": "${workspaceFolder}/src/*"
-      }
+      },
+      "timeout": 60000,
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": "${workspaceFolder}"
     },
     {
       "type": "node",

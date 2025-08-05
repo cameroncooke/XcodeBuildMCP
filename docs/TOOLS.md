@@ -198,8 +198,8 @@ XcodeBuildMCP supports two operating modes:
 #### Static Mode (Default)
 All tools are loaded and available immediately at startup. Provides complete access to the full toolset without restrictions. Set `XCODEBUILDMCP_DYNAMIC_TOOLS=false` or leave unset.
 
-#### Dynamic Mode  
-Only the `discover_tools` tool is available initially. AI agents can use `discover_tools` to analyze task descriptions and intelligently enable relevant workflow based tool-groups on-demand. Set `XCODEBUILDMCP_DYNAMIC_TOOLS=true` to enable.
+#### Dynamic Mode (Experimental)
+Only the `discover_tools` and `discover_projs` tools are available initially. AI agents can use `discover_tools` tool to provide a task description that the server will analyze and intelligently enable relevant workflow based tool-groups on-demand. Set `XCODEBUILDMCP_DYNAMIC_TOOLS=true` to enable.
 
 ## MCP Resources
 
@@ -208,3 +208,5 @@ For clients that support MCP resources, XcodeBuildMCP provides efficient URI-bas
 | Resource URI | Description | Mirrors Tool |
 |--------------|-------------|---------------|
 | `xcodebuildmcp://simulators` | Available iOS simulators with UUIDs and states | `list_sims` |
+| `xcodebuildmcp://devices` | Available physical Apple devices with UUIDs, names, and connection status | `list_devices` |
+| `xcodebuildmcp://environment` | System diagnostics and environment validation | `diagnostic` |
