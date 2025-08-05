@@ -116,7 +116,7 @@ describe('discover_tools', () => {
 
     it('should have correct description', () => {
       expect(discoverTools.description).toBe(
-        'Analyzes a natural language task description to enable a relevant set of Xcode and Apple development tools for the current session.',
+        'Analyzes a natural language task description to enable a relevant set of Xcode and Apple development tools. For best results, specify the target platform (iOS, macOS, watchOS, tvOS, visionOS) and project type (.xcworkspace or .xcodeproj).',
       );
     });
 

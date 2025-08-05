@@ -3,6 +3,9 @@ import { getDefaultCommandExecutor, CommandExecutor } from '../utils/command.js'
 import { WORKFLOW_LOADERS, WorkflowName, WORKFLOW_METADATA } from './generated-plugins.js';
 import { ToolResponse } from '../types/common.js';
 import { PluginMeta } from './plugin-types.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { registerAndTrackTools } from '../utils/tool-registry.js';
+import { ZodRawShape } from 'zod';
 
 // Track enabled workflows and their tools for replacement functionality
 const enabledWorkflows = new Set<string>();
@@ -14,40 +17,7 @@ type ToolHandler = (
   executor: CommandExecutor,
 ) => Promise<ToolResponse>;
 
-// Interface for the MCP server with the methods we need
-interface MCPServerInterface {
-  tool(
-    name: string,
-    description: string,
-    schema: unknown,
-    handler: (args: unknown) => Promise<unknown>,
-  ): void;
-  registerTool?(
-    name: string,
-    config: {
-      title?: string;
-      description: string;
-      inputSchema?: unknown;
-      outputSchema?: unknown;
-      annotations?: unknown;
-    },
-    callback: (args: unknown) => Promise<unknown>,
-  ): unknown;
-  registerTools?(
-    tools: Array<{
-      name: string;
-      config: {
-        title?: string;
-        description: string;
-        inputSchema?: unknown;
-        outputSchema?: unknown;
-        annotations?: unknown;
-      };
-      callback: (args: unknown) => Promise<unknown>;
-    }>,
-  ): unknown[];
-  notifyToolsChanged?: () => Promise<void>;
-}
+// Use the actual McpServer type from the SDK instead of a custom interface
 
 /**
  * Wrapper function to adapt MCP SDK handler calling convention to our dependency injection pattern
@@ -99,7 +69,7 @@ export function getEnabledWorkflows(): string[] {
  * @param additive - If true, add to existing workflows. If false (default), replace existing workflows
  */
 export async function enableWorkflows(
-  server: MCPServerInterface,
+  server: McpServer,
   workflowNames: string[],
   additive: boolean = false,
 ): Promise<void> {
@@ -134,17 +104,16 @@ export async function enableWorkflows(
 
       log('info', `Enabling ${toolKeys.length} tools from '${workflowName}' workflow`);
 
-      // Prepare tools for bulk registration
       const toolsToRegister: Array<{
         name: string;
         config: {
           title?: string;
-          description: string;
-          inputSchema?: unknown;
-          outputSchema?: unknown;
-          annotations?: unknown;
+          description?: string;
+          inputSchema?: ZodRawShape;
+          outputSchema?: ZodRawShape;
+          annotations?: Record<string, unknown>;
         };
-        callback: (args: unknown) => Promise<unknown>;
+        callback: (args: Record<string, unknown>) => Promise<ToolResponse>;
       }> = [];
 
       // Collect all tools from this workflow
@@ -156,7 +125,7 @@ export async function enableWorkflows(
             name: tool.name,
             config: {
               description: tool.description ?? '',
-              inputSchema: tool.schema,
+              inputSchema: tool.schema, // MCP SDK now handles complex types properly
             },
             callback: wrapHandlerWithExecutor(tool.handler as ToolHandler),
           });
@@ -169,46 +138,66 @@ export async function enableWorkflows(
         }
       }
 
-      // Use bulk registration if available, otherwise fall back to individual registration
-      if (typeof (server as any).registerTools === 'function') {
-        try {
-          log('info', `🚀 Enabling ${toolsToRegister.length} tools from '${workflowName}' workflow`);
-          const registeredTools = (server as any).registerTools(toolsToRegister);
+      // Use bulk registration with proper types - no runtime checking needed
+      try {
+        const availableTools = toolsToRegister.filter((tool) => {
+          // In testing/development, check for duplicate registrations
+          // The MCP SDK handles this internally, so this is just for logging
+          log('debug', `Preparing to register tool: ${tool.name}`);
+          return true;
+        });
+
+        if (availableTools.length > 0) {
+          log('info', `🚀 Enabling ${availableTools.length} tools from '${workflowName}' workflow`);
+
+          // Convert to proper tool registration format, adapting callback signature
+          const toolRegistrations = availableTools.map((tool) => ({
+            name: tool.name,
+            config: {
+              description: tool.config.description,
+              inputSchema: tool.config.inputSchema as unknown, // Cast to unknown for SDK interface
+            },
+            // Adapt callback to match SDK's expected signature (args, extra) => result
+            callback: (args: unknown): Promise<ToolResponse> =>
+              tool.callback(args as Record<string, unknown>),
+          }));
+
+          // Use registerTools with proper types and tracking
+          const registeredTools = registerAndTrackTools(server, toolRegistrations);
           log('info', `✅ Registered ${registeredTools.length} tools from '${workflowName}'`);
           // registerTools() automatically sends tool list change notification internally
-        } catch (error) {
-          log('error', `Failed to register tools from '${workflowName}': ${error}`);
+        } else {
+          log(
+            'info',
+            `All ${toolsToRegister.length} tools from '${workflowName}' were already registered`,
+          );
         }
-      } else if (typeof (server as any).registerTool === 'function') {
-        // Use registerTool (fewer notifications than tool())
-        log('info', `🚀 Enabling ${toolsToRegister.length} tools from '${workflowName}' workflow`);
+      } catch (error) {
+        log('error', `Failed to register tools from '${workflowName}': ${error}`);
+        // Fallback to simplified tool registration one at a time
+        log(
+          'info',
+          `🚀 Fallback: Enabling ${toolsToRegister.length} tools individually from '${workflowName}' workflow`,
+        );
         for (const toolToRegister of toolsToRegister) {
           try {
-            (server as any).registerTool(
-              toolToRegister.name,
-              toolToRegister.config,
-              toolToRegister.callback,
-            );
+            // Use the simplified registerTools method with single tool to avoid type complexity
+            const singleToolRegistration = [
+              {
+                name: toolToRegister.name,
+                config: {
+                  description: toolToRegister.config.description,
+                  inputSchema: toolToRegister.config.inputSchema as unknown, // Cast to unknown for SDK interface
+                },
+                // Adapt callback to match SDK's expected signature
+                callback: (args: unknown): Promise<ToolResponse> =>
+                  toolToRegister.callback(args as Record<string, unknown>),
+              },
+            ];
+            registerAndTrackTools(server, singleToolRegistration);
             log('debug', `Registered tool: ${toolToRegister.name}`);
-          } catch (error) {
-            log('error', `Failed to register tool '${toolToRegister.name}': ${error}`);
-          }
-        }
-        log('info', `✅ Registered ${toolsToRegister.length} tools from '${workflowName}'`);
-      } else {
-        // Final fallback to tool() method (most notifications)
-        log('info', `🚀 Enabling ${toolsToRegister.length} tools from '${workflowName}' workflow`);
-        for (const toolToRegister of toolsToRegister) {
-          try {
-            server.tool(
-              toolToRegister.name,
-              toolToRegister.config.description,
-              toolToRegister.config.inputSchema,
-              toolToRegister.callback,
-            );
-            log('debug', `Registered tool: ${toolToRegister.name}`);
-          } catch (error) {
-            log('error', `Failed to register tool '${toolToRegister.name}': ${error}`);
+          } catch (toolError) {
+            log('error', `Failed to register tool '${toolToRegister.name}': ${toolError}`);
           }
         }
         log('info', `✅ Registered ${toolsToRegister.length} tools from '${workflowName}'`);
@@ -224,32 +213,8 @@ export async function enableWorkflows(
     }
   }
 
-  // Notify the client about the tool list change
-  // Only send manual notifications if we're not using registerTools (which sends automatically)
-  let needsManualNotification = true;
-  
-  for (const workflowName of workflowNames) {
-    if (typeof (server as any).registerTools === 'function') {
-      needsManualNotification = false;
-      break;
-    }
-  }
-  
-  if (needsManualNotification) {
-    try {
-      if (typeof (server as any).sendToolListChanged === 'function') {
-        (server as any).sendToolListChanged();
-        log('debug', 'Sent tool list changed notification');
-      } else if (server.notifyToolsChanged) {
-        await server.notifyToolsChanged();
-        log('debug', 'Notified client of tool list changes (fallback)');
-      }
-    } catch (error) {
-      log('warn', `Failed to notify client of tool changes: ${error}`);
-    }
-  } else {
-    log('debug', 'Skipping manual notification - registerTools() handles notifications automatically');
-  }
+  // No manual notification needed - registerTools() handles notifications automatically
+  log('debug', 'Tool list change notifications handled automatically by registerTools()');
 
   log(
     'info',

@@ -25,7 +25,6 @@ import { log } from './utils/logger.js';
 
 // Import version
 import { version } from './version.js';
-import { loadPlugins } from './core/plugin-registry.js';
 
 // Import xcodemake utilities
 import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
@@ -35,16 +34,13 @@ import process from 'node:process';
 
 // Import resource management
 import { registerResources } from './core/resources.js';
+import { registerDiscoveryTools, registerAllToolsStatic } from './utils/tool-registry.js';
 
 /**
  * Main function to start the server
  */
 async function main(): Promise<void> {
   try {
-    // Increase stdout maxListeners to prevent EventEmitter memory leak warnings
-    // during bulk tool registration in dynamic mode (80+ tools)
-    process.stdout.setMaxListeners(100);
-    
     // Check if xcodemake is enabled and available
     if (isXcodemakeEnabled()) {
       log('info', 'xcodemake is enabled, checking if available...');
@@ -67,37 +63,20 @@ async function main(): Promise<void> {
     // Make server available globally for dynamic tools
     (globalThis as { mcpServer?: McpServer }).mcpServer = server;
 
-    // Check if dynamic tools mode is enabled
-    const isDynamicMode = process.env.XCODEBUILDMCP_DYNAMIC_TOOLS === 'true';
+    // Check if dynamic tools mode is explicitly disabled
+    const isDynamicModeEnabled = process.env.XCODEBUILDMCP_DYNAMIC_TOOLS === 'true';
 
-    if (isDynamicMode) {
-      // DYNAMIC MODE: Only load discovery tools initially
-      log('info', '🚀 Initializing server in dynamic mode...');
-      const plugins = await loadPlugins();
-      let registeredCount = 0;
-      
-      // Only register discovery tools initially
-      for (const plugin of plugins.values()) {
-        // Only load discover_tools and discovery-related tools initially
-        if (plugin.name === 'discover_tools' || plugin.name === 'discover_projs') {
-          server.tool(plugin.name, plugin.description ?? '', plugin.schema, plugin.handler);
-          registeredCount++;
-        }
-      }
-      log('info', `✅ Registered ${registeredCount} discovery tools in dynamic mode.`);
-      log('info', 'Use discover_tools to enable additional workflows based on your task.');
+    if (isDynamicModeEnabled) {
+      // DYNAMIC MODE: Start with discovery tools only
+      log('info', '🚀 Initializing server in dynamic tools mode...');
+      await registerDiscoveryTools(server);
+      log('info', '💡 Use discover_tools to enable additional workflows based on your task.');
     } else {
-      // STATIC MODE: Load all tools immediately  
-      log('info', '🚀 Initializing server in static mode...');
-      const plugins = await loadPlugins();
-      let registeredCount = 0;
-      for (const plugin of plugins.values()) {
-        server.tool(plugin.name, plugin.description ?? '', plugin.schema, plugin.handler);
-        registeredCount++;
-      }
-      log('info', `✅ Registered ${registeredCount} tools in static mode.`);
+      // EXPLICIT STATIC MODE: Load all tools immediately
+      log('info', '🚀 Initializing server in static tools mode...');
+      await registerAllToolsStatic(server);
     }
-    
+
     await registerResources(server);
 
     // Start the server
