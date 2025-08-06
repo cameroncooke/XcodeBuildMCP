@@ -276,21 +276,19 @@ describe('screenshot plugin', () => {
             mimeType: 'image/jpeg', // Now JPEG after optimization
           },
         ],
+        isError: false,
       });
     });
 
-    it('should handle missing simulatorUuid', async () => {
-      const result = await screenshotLogic(
-        {},
-        createMockExecutor({ success: true }),
-        createMockFileSystemExecutor(),
-      );
+    it('should handle missing simulatorUuid via handler', async () => {
+      // Test Zod validation by calling the handler with invalid params
+      const result = await screenshotPlugin.handler({});
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
           },
         ],
         isError: true,

@@ -145,18 +145,18 @@ describe('swift_package_test plugin', () => {
   });
 
   describe('Response Logic Testing', () => {
-    it('should return validation error for missing packagePath', async () => {
-      const result = await swift_package_testLogic({}, createNoopExecutor());
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'packagePath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+    it('should handle empty packagePath parameter', async () => {
+      // When packagePath is empty, the function should still process it
+      // but the command execution may fail, which is handled by the executor
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Tests completed with empty path',
       });
+
+      const result = await swift_package_testLogic({ packagePath: '' }, mockExecutor);
+
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toBe('✅ Swift package tests completed.');
     });
 
     it('should return successful test response', async () => {
@@ -181,6 +181,7 @@ describe('swift_package_test plugin', () => {
           },
           { type: 'text', text: 'All tests passed.' },
         ],
+        isError: false,
       });
     });
 
@@ -259,6 +260,7 @@ describe('swift_package_test plugin', () => {
           },
           { type: 'text', text: 'Tests completed.' },
         ],
+        isError: false,
       });
     });
   });

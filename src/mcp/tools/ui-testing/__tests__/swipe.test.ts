@@ -321,45 +321,27 @@ describe('Swipe Plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
-      const result = await swipeLogic(
-        { x1: 100, y1: 200, x2: 300, y2: 400 } as const satisfies Partial<SwipeParams>,
-        createNoopExecutor(),
-        createMockAxeHelpers(),
-      );
+    it('should return error for missing simulatorUuid via handler', async () => {
+      const result = await swipePlugin.handler({ x1: 100, y1: 200, x2: 300, y2: 400 });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('simulatorUuid');
     });
 
-    it('should return error for missing x1', async () => {
-      const result = await swipeLogic(
-        {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          y1: 200,
-          x2: 300,
-          y2: 400,
-        } as const satisfies Partial<SwipeParams>,
-        createNoopExecutor(),
-        createMockAxeHelpers(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'x1' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+    it('should return error for missing x1 via handler', async () => {
+      const result = await swipePlugin.handler({
+        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        y1: 200,
+        x2: 300,
+        y2: 400,
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('x1');
     });
 
     it('should return success for valid swipe execution', async () => {

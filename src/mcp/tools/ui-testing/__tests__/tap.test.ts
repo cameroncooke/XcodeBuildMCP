@@ -491,79 +491,152 @@ describe('Tap Plugin', () => {
     });
   });
 
+  describe('Plugin Handler Validation', () => {
+    it('should return Zod validation error for missing simulatorUuid', async () => {
+      const result = await tapPlugin.handler({
+        x: 100,
+        y: 200,
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return Zod validation error for missing x coordinate', async () => {
+      const result = await tapPlugin.handler({
+        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        y: 200,
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nx: Required',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return Zod validation error for missing y coordinate', async () => {
+      const result = await tapPlugin.handler({
+        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        x: 100,
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\ny: Required',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return Zod validation error for invalid UUID format', async () => {
+      const result = await tapPlugin.handler({
+        simulatorUuid: 'invalid-uuid',
+        x: 100,
+        y: 200,
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Invalid Simulator UUID format',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return Zod validation error for non-integer x coordinate', async () => {
+      const result = await tapPlugin.handler({
+        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        x: 3.14,
+        y: 200,
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nx: X coordinate must be an integer',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return Zod validation error for non-integer y coordinate', async () => {
+      const result = await tapPlugin.handler({
+        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        x: 100,
+        y: 3.14,
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\ny: Y coordinate must be an integer',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return Zod validation error for negative preDelay', async () => {
+      const result = await tapPlugin.handler({
+        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        x: 100,
+        y: 200,
+        preDelay: -1,
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\npreDelay: Pre-delay must be non-negative',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return Zod validation error for negative postDelay', async () => {
+      const result = await tapPlugin.handler({
+        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        x: 100,
+        y: 200,
+        postDelay: -1,
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\npostDelay: Post-delay must be non-negative',
+          },
+        ],
+        isError: true,
+      });
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
-      const mockAxeHelpers = createMockAxeHelpers();
-
-      const result = await tapLogic(
-        {
-          x: 100,
-          y: 200,
-        } as any,
-        mockExecutor,
-        mockAxeHelpers,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return error for missing x coordinate', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
-      const mockAxeHelpers = createMockAxeHelpers();
-
-      const result = await tapLogic(
-        {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          y: 200,
-        } as any,
-        mockExecutor,
-        mockAxeHelpers,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'x' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return error for missing y coordinate', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
-      const mockAxeHelpers = createMockAxeHelpers();
-
-      const result = await tapLogic(
-        {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          x: 100,
-        } as any,
-        mockExecutor,
-        mockAxeHelpers,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'y' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
     it('should return DependencyError when axe binary is not found', async () => {
       const mockExecutor = createMockExecutor({
         success: true,

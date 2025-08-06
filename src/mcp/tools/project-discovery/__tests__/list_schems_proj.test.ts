@@ -229,19 +229,14 @@ describe('list_schems_proj plugin', () => {
       ]);
     });
 
-    it('should handle validation error when projectPath is missing', async () => {
-      // Handler will return error response for missing required parameter
-      const mockExecutor = createMockExecutor({ success: true, output: 'mock output' });
-      const result = await list_schems_projLogic({}, mockExecutor);
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+    it('should handle validation when testing with missing projectPath via plugin handler', async () => {
+      // Note: Direct logic function calls bypass Zod validation, so we test the actual plugin handler
+      // to verify Zod validation works properly. The createTypedTool wrapper handles validation.
+      const result = await plugin.handler({});
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('projectPath');
+      expect(result.content[0].text).toContain('Required');
     });
   });
 });

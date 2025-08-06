@@ -61,43 +61,6 @@ describe('launch_mac_app plugin', () => {
   });
 
   describe('Input Validation', () => {
-    it('should handle missing appPath parameter', async () => {
-      const mockExecutor = async () => Promise.resolve({ stdout: '', stderr: '' });
-
-      const result = await launch_mac_appLogic({}, mockExecutor);
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle missing appPath with other parameters', async () => {
-      const mockExecutor = async () => Promise.resolve({ stdout: '', stderr: '' });
-
-      const result = await launch_mac_appLogic(
-        {
-          args: ['--debug'],
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
     it('should handle non-existent app path', async () => {
       const mockExecutor = async () => Promise.resolve({ stdout: '', stderr: '' });
       const mockFileSystem = createMockFileSystemExecutor({

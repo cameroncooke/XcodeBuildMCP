@@ -254,38 +254,9 @@ describe('Gesture Plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
-      const result = await gestureLogic({ preset: 'scroll-up' } as any, createNoopExecutor());
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return error for missing preset', async () => {
-      const result = await gestureLogic(
-        {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        } as any,
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'preset' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
+    // Note: Parameter validation is now handled by Zod schema validation in createTypedTool,
+    // so invalid parameters never reach gestureLogic. The schema validation tests above
+    // cover parameter validation scenarios.
 
     it('should return success for valid gesture execution', async () => {
       const mockExecutor = createMockExecutor({

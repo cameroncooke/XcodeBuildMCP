@@ -2,9 +2,9 @@
  * Tests for long_press tool plugin
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../utils/command.js';
+import { createMockExecutor } from '../../../../utils/command.js';
 import longPressPlugin, { long_pressLogic } from '../long_press.ts';
 
 describe('Long Press Plugin', () => {
@@ -285,146 +285,6 @@ describe('Long Press Plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text',
-              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
-            },
-          ],
-          isError: true,
-        }),
-      };
-
-      const result = await long_pressLogic(
-        { x: 100, y: 200, duration: 1500 },
-        createNoopExecutor(),
-        mockAxeHelpers,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return error for missing x', async () => {
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text',
-              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
-            },
-          ],
-          isError: true,
-        }),
-      };
-
-      const result = await long_pressLogic(
-        {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          y: 200,
-          duration: 1500,
-        },
-        createNoopExecutor(),
-        mockAxeHelpers,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'x' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return error for missing y', async () => {
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text',
-              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
-            },
-          ],
-          isError: true,
-        }),
-      };
-
-      const result = await long_pressLogic(
-        {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          x: 100,
-          duration: 1500,
-        },
-        createNoopExecutor(),
-        mockAxeHelpers,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'y' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return error for missing duration', async () => {
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text',
-              text: 'Bundled axe tool not found. UI automation features are not available.\n\nThis is likely an installation issue with the npm package.\nPlease reinstall xcodebuildmcp or report this issue.',
-            },
-          ],
-          isError: true,
-        }),
-      };
-
-      const result = await long_pressLogic(
-        {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          x: 100,
-          y: 200,
-        },
-        createNoopExecutor(),
-        mockAxeHelpers,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'duration' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
     it('should return success for valid long press execution', async () => {
       const mockExecutor = createMockExecutor({
         success: true,

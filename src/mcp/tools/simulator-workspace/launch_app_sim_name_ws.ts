@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
@@ -21,16 +20,6 @@ export async function launch_app_sim_name_wsLogic(
   params: LaunchAppSimNameWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-  if (!simulatorNameValidation.isValid) {
-    return simulatorNameValidation.errorResponse!;
-  }
-
-  const bundleIdValidation = validateRequiredParam('bundleId', params.bundleId);
-  if (!bundleIdValidation.isValid) {
-    return bundleIdValidation.errorResponse!;
-  }
-
   log('info', `Starting xcrun simctl launch request for simulator named ${params.simulatorName}`);
 
   try {

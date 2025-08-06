@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import { log, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
@@ -103,19 +103,6 @@ export async function get_sim_app_path_id_projLogic(
   params: GetSimAppPathIdProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Validate required parameters
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-  const platformValidation = validateRequiredParam('platform', params.platform);
-  if (!platformValidation.isValid) return platformValidation.errorResponse!;
-
-  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
   // Set defaults
   const projectPath = params.projectPath;
   const scheme = params.scheme;

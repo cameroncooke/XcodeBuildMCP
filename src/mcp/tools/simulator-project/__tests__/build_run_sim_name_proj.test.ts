@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import {
   createMockExecutor,
-  createNoopExecutor,
-  createMockFileSystemExecutor,
   createCommandMatchingMockExecutor,
 } from '../../../../utils/command.js';
 import buildRunSimNameProj, { build_run_sim_name_projLogic } from '../build_run_sim_name_proj.js';
@@ -81,20 +79,16 @@ describe('build_run_sim_name_proj plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return validation error for missing projectPath', async () => {
-      const result = await build_run_sim_name_projLogic(
-        {
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        },
-        createNoopExecutor(),
-        () => '',
-      );
+      const result = await buildRunSimNameProj.handler({
+        scheme: 'MyScheme',
+        simulatorName: 'iPhone 16',
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nprojectPath: Required',
           },
         ],
         isError: true,
@@ -102,20 +96,16 @@ describe('build_run_sim_name_proj plugin', () => {
     });
 
     it('should return validation error for missing scheme', async () => {
-      const result = await build_run_sim_name_projLogic(
-        {
-          projectPath: '/path/to/project.xcodeproj',
-          simulatorName: 'iPhone 16',
-        },
-        createNoopExecutor(),
-        () => '',
-      );
+      const result = await buildRunSimNameProj.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        simulatorName: 'iPhone 16',
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nscheme: Required',
           },
         ],
         isError: true,
@@ -123,20 +113,16 @@ describe('build_run_sim_name_proj plugin', () => {
     });
 
     it('should return validation error for missing simulatorName', async () => {
-      const result = await build_run_sim_name_projLogic(
-        {
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-        },
-        createNoopExecutor(),
-        () => '',
-      );
+      const result = await buildRunSimNameProj.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        scheme: 'MyScheme',
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorName' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorName: Required',
           },
         ],
         isError: true,

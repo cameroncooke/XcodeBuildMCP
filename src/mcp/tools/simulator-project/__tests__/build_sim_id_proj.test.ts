@@ -79,65 +79,80 @@ describe('build_sim_id_proj plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return validation error for missing projectPath', async () => {
-      const result = await build_sim_id_projLogic(
-        {
-          scheme: 'MyScheme',
-          simulatorId: 'test-uuid',
-        },
-        createNoopExecutor(),
-      );
+    it('should return Zod validation error for missing projectPath via handler', async () => {
+      const result = await buildSimIdProj.handler({
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid',
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nprojectPath: Required',
           },
         ],
         isError: true,
       });
     });
 
-    it('should return validation error for missing scheme', async () => {
+    it('should return Zod validation error for missing scheme via handler', async () => {
+      const result = await buildSimIdProj.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        simulatorId: 'test-uuid',
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nscheme: Required',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return Zod validation error for missing simulatorId via handler', async () => {
+      const result = await buildSimIdProj.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        scheme: 'MyScheme',
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Required',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should pass validation when all required parameters are provided', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        error: undefined,
+      });
+
       const result = await build_sim_id_projLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
           simulatorId: 'test-uuid',
         },
-        createNoopExecutor(),
+        mockExecutor,
       );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      // Should not be a validation error
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0].text).toContain('✅ iOS Simulator Build build succeeded');
     });
 
-    it('should return validation error for missing simulatorId', async () => {
-      const result = await build_sim_id_projLogic(
-        {
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
+    // Note: build_sim_id_projLogic now assumes valid parameters since
+    // validation is handled by createTypedTool wrapper using Zod schema
 
     it('should return build error when build fails', async () => {
       const mockExecutor = createMockExecutor({

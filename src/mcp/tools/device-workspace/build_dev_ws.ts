@@ -7,7 +7,6 @@
 
 import { z } from 'zod';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
@@ -29,14 +28,8 @@ export async function build_dev_wsLogic(
   params: BuildDevWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // No casting needed! Parameters are guaranteed valid by schema validation
-  // Direct validation using typed parameters
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
+  // Parameters are guaranteed valid by Zod schema validation in createTypedTool
+  // No manual validation needed for required parameters
   return executeXcodeBuildCommand(
     {
       ...params,

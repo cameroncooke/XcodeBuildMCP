@@ -75,14 +75,14 @@ describe('boot_sim tool', () => {
       });
     });
 
-    it('should handle validation failure', async () => {
-      const result = await boot_simLogic({ simulatorUuid: undefined }, createNoopExecutor());
+    it('should handle validation failure via handler', async () => {
+      const result = await bootSim.handler({ simulatorUuid: undefined });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
           },
         ],
         isError: true,

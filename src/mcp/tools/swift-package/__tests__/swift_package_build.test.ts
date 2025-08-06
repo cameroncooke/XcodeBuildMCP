@@ -163,18 +163,19 @@ describe('swift_package_build plugin', () => {
   });
 
   describe('Response Logic Testing', () => {
-    it('should return validation error for missing packagePath', async () => {
-      const result = await swift_package_buildLogic({}, createNoopExecutor());
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'packagePath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+    it('should handle missing packagePath parameter (Zod handles validation)', async () => {
+      // Note: With createTypedTool, Zod validation happens before the logic function is called
+      // So we test with a valid but minimal parameter set since validation is handled upstream
+      const executor = createMockExecutor({
+        success: true,
+        output: 'Build succeeded',
       });
+
+      const result = await swift_package_buildLogic({ packagePath: '/test/package' }, executor);
+
+      // The logic function should execute normally with valid parameters
+      // Zod validation errors are handled by createTypedTool wrapper
+      expect(result.isError).toBe(false);
     });
 
     it('should return successful build response', async () => {

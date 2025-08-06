@@ -52,26 +52,8 @@ describe('get_mac_bundle_id plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error when appPath validation fails', async () => {
-      const mockExecutor = createMockExecutorForCommands({});
-      const mockFileSystemExecutor = createMockFileSystemExecutor({});
-
-      const result = await get_mac_bundle_idLogic(
-        { appPath: null },
-        mockExecutor,
-        mockFileSystemExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
+    // Note: appPath validation is now handled by Zod schema validation in createTypedTool
+    // This test would not reach the logic function as Zod validation occurs before it
 
     it('should return error when file exists validation fails', async () => {
       const mockExecutor = createMockExecutorForCommands({});
@@ -253,27 +235,6 @@ describe('get_mac_bundle_id plugin', () => {
       expect(result.content[1].text).toBe(
         'Make sure the path points to a valid macOS app bundle (.app directory).',
       );
-    });
-
-    it('should handle schema validation error when appPath is null', async () => {
-      const mockExecutor = createMockExecutorForCommands({});
-      const mockFileSystemExecutor = createMockFileSystemExecutor({});
-
-      const result = await get_mac_bundle_idLogic(
-        { appPath: null },
-        mockExecutor,
-        mockFileSystemExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
     });
   });
 });

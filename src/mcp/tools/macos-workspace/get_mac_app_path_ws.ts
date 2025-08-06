@@ -6,8 +6,7 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { log, createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
@@ -42,12 +41,6 @@ export async function get_mac_app_path_wsLogic(
   params: GetMacAppPathWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
   const configuration = params.configuration ?? 'Debug';
 
   log('info', `Getting app path for scheme ${params.scheme} on platform ${XcodePlatform.macOS}`);

@@ -8,7 +8,7 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import {
   DependencyError,
   AxeError,
@@ -52,15 +52,6 @@ export async function long_pressLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'long_press';
-  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
-  const xValidation = validateRequiredParam('x', params.x);
-  if (!xValidation.isValid) return xValidation.errorResponse!;
-  const yValidation = validateRequiredParam('y', params.y);
-  if (!yValidation.isValid) return yValidation.errorResponse!;
-  const durationValidation = validateRequiredParam('duration', params.duration);
-  if (!durationValidation.isValid) return durationValidation.errorResponse!;
-
   const { simulatorUuid, x, y, duration } = params;
   // AXe uses touch command with --down, --up, and --delay for long press
   const delayInSeconds = Number(duration) / 1000; // Convert ms to seconds

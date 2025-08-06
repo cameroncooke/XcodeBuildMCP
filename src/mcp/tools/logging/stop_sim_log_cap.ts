@@ -6,7 +6,6 @@
 
 import { z } from 'zod';
 import { stopLogCapture as _stopLogCapture } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { ToolResponse, createTextContent } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 import { getDefaultCommandExecutor } from '../../../utils/command.js';
@@ -23,11 +22,6 @@ type StopSimLogCapParams = z.infer<typeof stopSimLogCapSchema>;
  * Business logic for stopping simulator log capture session
  */
 export async function stop_sim_log_capLogic(params: StopSimLogCapParams): Promise<ToolResponse> {
-  const validationResult = validateRequiredParam('logSessionId', params.logSessionId);
-  if (!validationResult.isValid) {
-    return validationResult.errorResponse!;
-  }
-
   const { logContent, error } = await _stopLogCapture(params.logSessionId);
   if (error) {
     return {

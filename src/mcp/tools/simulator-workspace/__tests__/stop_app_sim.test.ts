@@ -109,46 +109,9 @@ describe('stop_app_sim plugin', () => {
       });
     });
 
-    it('should handle missing simulatorUuid', async () => {
-      mockExecutor = createMockExecutor({ success: true });
-
-      const result = await stop_app_simLogic(
-        {
-          simulatorUuid: undefined,
-          bundleId: 'com.example.App',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle missing bundleId', async () => {
-      mockExecutor = createMockExecutor({ success: true });
-
-      const result = await stop_app_simLogic(
-        { simulatorUuid: 'test-uuid', bundleId: undefined },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'bundleId' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
+    // Note: Parameter validation tests removed because validation is now handled
+    // by the createTypedTool wrapper using Zod schema validation.
+    // Invalid parameters are caught before reaching the logic function.
 
     it('should handle exception during execution', async () => {
       mockExecutor = async () => {

@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import {
   log,
-  validateRequiredParam,
   createTextResponse,
   CommandExecutor,
   getDefaultCommandExecutor,
@@ -97,19 +96,6 @@ export async function get_sim_app_path_name_wsLogic(
   params: GetSimAppPathNameWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Parameter validation
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-  const platformValidation = validateRequiredParam('platform', params.platform);
-  if (!platformValidation.isValid) return platformValidation.errorResponse!;
-
-  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
   // Set defaults
   const workspacePath = params.workspacePath;
   const scheme = params.scheme;

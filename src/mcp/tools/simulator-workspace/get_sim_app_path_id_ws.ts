@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
@@ -30,19 +30,6 @@ export async function get_sim_app_path_id_wsLogic(
   params: GetSimAppPathIdWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-  const platformValidation = validateRequiredParam('platform', params.platform);
-  if (!platformValidation.isValid) return platformValidation.errorResponse!;
-
-  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
   log('info', `Getting app path for scheme ${params.scheme} on platform ${params.platform}`);
 
   try {

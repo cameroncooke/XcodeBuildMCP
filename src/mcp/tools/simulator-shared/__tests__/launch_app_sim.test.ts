@@ -227,55 +227,29 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should handle validation failures for simulatorUuid', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: '',
-        error: '',
+      // Test the actual handler which includes Zod validation
+      const result = await launchAppSim.handler({
+        bundleId: 'com.example.testapp',
+        // simulatorUuid is missing
       });
 
-      const result = await launch_app_simLogic(
-        {
-          simulatorUuid: undefined,
-          bundleId: 'com.example.testapp',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('simulatorUuid');
+      expect(result.content[0].text).toContain('Required');
     });
 
     it('should handle validation failures for bundleId', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: '',
-        error: '',
+      // Test the actual handler which includes Zod validation
+      const result = await launchAppSim.handler({
+        simulatorUuid: 'test-uuid-123',
+        // bundleId is missing
       });
 
-      const result = await launch_app_simLogic(
-        {
-          simulatorUuid: 'test-uuid-123',
-          bundleId: undefined,
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'bundleId' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('bundleId');
+      expect(result.content[0].text).toContain('Required');
     });
 
     it('should handle command failure during app container check', async () => {

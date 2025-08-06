@@ -221,50 +221,36 @@ describe('launch_app_sim tool', () => {
       });
     });
 
-    it('should handle validation failures for simulatorUuid', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'App launched successfully',
-        error: '',
+    it('should handle validation failures for simulatorUuid via handler', async () => {
+      // Test Zod validation by calling the handler with invalid params
+      const result = await launchAppSim.handler({
+        bundleId: 'com.example.testapp',
+        // simulatorUuid missing
       });
-
-      const result = await launch_app_simLogic(
-        {
-          bundleId: 'com.example.testapp',
-        },
-        mockExecutor,
-      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
           },
         ],
         isError: true,
       });
     });
 
-    it('should handle validation failures for bundleId', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'App launched successfully',
-        error: '',
+    it('should handle validation failures for bundleId via handler', async () => {
+      // Test Zod validation by calling the handler with invalid params
+      const result = await launchAppSim.handler({
+        simulatorUuid: 'test-uuid-123',
+        // bundleId missing
       });
-
-      const result = await launch_app_simLogic(
-        {
-          simulatorUuid: 'test-uuid-123',
-        },
-        mockExecutor,
-      );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'bundleId' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nbundleId: Required',
           },
         ],
         isError: true,

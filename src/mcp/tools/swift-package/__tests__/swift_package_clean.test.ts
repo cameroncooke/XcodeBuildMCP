@@ -81,18 +81,22 @@ describe('swift_package_clean plugin', () => {
   });
 
   describe('Response Logic Testing', () => {
-    it('should return validation error for missing packagePath', async () => {
-      const result = await swift_package_cleanLogic({}, createNoopExecutor());
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'packagePath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+    it('should handle valid params without validation errors in logic function', async () => {
+      // Note: The logic function assumes valid params since createTypedTool handles validation
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Package cleaned successfully',
       });
+
+      const result = await swift_package_cleanLogic(
+        {
+          packagePath: '/test/package',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toBe('✅ Swift package cleaned successfully.');
     });
 
     it('should return successful clean response', async () => {
@@ -117,6 +121,7 @@ describe('swift_package_clean plugin', () => {
           },
           { type: 'text', text: 'Package cleaned successfully' },
         ],
+        isError: false,
       });
     });
 
@@ -142,6 +147,7 @@ describe('swift_package_clean plugin', () => {
           },
           { type: 'text', text: '(clean completed silently)' },
         ],
+        isError: false,
       });
     });
 

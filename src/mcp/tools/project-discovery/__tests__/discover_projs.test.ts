@@ -66,17 +66,18 @@ describe('discover_projs plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error when workspaceRoot validation fails', async () => {
-      const result = await discover_projsLogic({ workspaceRoot: null }, mockFileSystemExecutor);
+    it('should handle workspaceRoot parameter correctly when provided', async () => {
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.readdir = async () => [];
+
+      const result = await discover_projsLogic(
+        { workspaceRoot: '/workspace' },
+        mockFileSystemExecutor,
+      );
 
       expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'workspaceRoot' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+        content: [{ type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' }],
+        isError: false,
       });
     });
 
@@ -217,22 +218,20 @@ describe('discover_projs plugin', () => {
       });
     });
 
-    it('should handle validation error when workspaceRoot is null', async () => {
+    it('should handle workspaceRoot parameter correctly', async () => {
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.readdir = async () => [];
+
       const result = await discover_projsLogic(
         {
-          workspaceRoot: null,
+          workspaceRoot: '/workspace',
         },
         mockFileSystemExecutor,
       );
 
       expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'workspaceRoot' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+        content: [{ type: 'text', text: 'Discovery finished. Found 0 projects and 0 workspaces.' }],
+        isError: false,
       });
     });
 

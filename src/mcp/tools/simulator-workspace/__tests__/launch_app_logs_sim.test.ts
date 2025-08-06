@@ -144,45 +144,34 @@ describe('launch_app_logs_sim tool', () => {
       });
     });
 
-    it('should handle validation failures for missing parameters', async () => {
-      const logCaptureStub = async () => ({
-        sessionId: 'test-session',
-        logFilePath: '/tmp/test.log',
-        processes: [],
-        error: undefined,
+    it('should handle validation failure for simulatorUuid via handler', async () => {
+      const result = await launchAppLogsSim.handler({
+        simulatorUuid: undefined,
+        bundleId: 'com.example.testapp',
       });
 
-      const resultMissingSimulator = await launch_app_logs_simLogic(
-        {
-          simulatorUuid: undefined as any,
-          bundleId: 'com.example.testapp',
-        },
-        logCaptureStub,
-      );
-
-      expect(resultMissingSimulator).toEqual({
+      expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
           },
         ],
         isError: true,
       });
+    });
 
-      const resultMissingBundle = await launch_app_logs_simLogic(
-        {
-          simulatorUuid: 'test-uuid-123',
-          bundleId: undefined as any,
-        },
-        logCaptureStub,
-      );
+    it('should handle validation failure for bundleId via handler', async () => {
+      const result = await launchAppLogsSim.handler({
+        simulatorUuid: 'test-uuid-123',
+        bundleId: undefined,
+      });
 
-      expect(resultMissingBundle).toEqual({
+      expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'bundleId' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nbundleId: Required',
           },
         ],
         isError: true,

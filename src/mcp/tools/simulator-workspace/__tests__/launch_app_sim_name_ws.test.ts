@@ -9,11 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import {
-  createMockExecutor,
-  createMockFileSystemExecutor,
-  createNoopExecutor,
-} from '../../../../utils/command.js';
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
 import launchAppSimNameWs, { launch_app_sim_name_wsLogic } from '../launch_app_sim_name_ws.ts';
 
 describe('launch_app_sim_name_ws plugin', () => {
@@ -368,46 +364,6 @@ describe('launch_app_sim_name_ws plugin', () => {
         '--port',
         '8080',
       ]);
-    });
-  });
-
-  describe('Parameter Validation', () => {
-    it('should handle validation failure for simulatorName', async () => {
-      const result = await launch_app_sim_name_wsLogic(
-        {
-          bundleId: 'com.example.app',
-        } as any,
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorName' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle validation failure for bundleId', async () => {
-      const result = await launch_app_sim_name_wsLogic(
-        {
-          simulatorName: 'iPhone 16',
-        } as any,
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'bundleId' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
     });
   });
 

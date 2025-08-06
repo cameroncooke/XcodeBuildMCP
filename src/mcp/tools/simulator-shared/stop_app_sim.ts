@@ -1,11 +1,6 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
-import {
-  log,
-  validateRequiredParam,
-  CommandExecutor,
-  getDefaultCommandExecutor,
-} from '../../../utils/index.js';
+import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Define schema as ZodObject
@@ -21,26 +16,10 @@ export async function stop_app_simLogic(
   params: StopAppSimParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse!;
-  }
-
-  const bundleIdValidation = validateRequiredParam('bundleId', params.bundleId);
-  if (!bundleIdValidation.isValid) {
-    return bundleIdValidation.errorResponse!;
-  }
-
   log('info', `Stopping app ${params.bundleId} in simulator ${params.simulatorUuid}`);
 
   try {
-    const command = [
-      'xcrun',
-      'simctl',
-      'terminate',
-      params.simulatorUuid as string,
-      params.bundleId as string,
-    ];
+    const command = ['xcrun', 'simctl', 'terminate', params.simulatorUuid, params.bundleId];
     const result = await executor(command, 'Stop App in Simulator', true, undefined);
 
     if (!result.success) {

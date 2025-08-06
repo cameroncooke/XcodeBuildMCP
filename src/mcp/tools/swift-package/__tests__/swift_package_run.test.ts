@@ -304,14 +304,15 @@ describe('swift_package_run plugin', () => {
 
   describe('Response Logic Testing', () => {
     it('should return validation error for missing packagePath', async () => {
-      const mockExecutor = createNoopExecutor();
-      const result = await swift_package_runLogic({}, mockExecutor);
+      // Since the tool now uses createTypedTool, Zod validation happens at the handler level
+      // Test the handler directly to see Zod validation
+      const result = await swiftPackageRun.handler({});
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'packagePath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\npackagePath: Required',
           },
         ],
         isError: true,

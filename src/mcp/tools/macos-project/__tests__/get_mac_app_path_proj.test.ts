@@ -6,11 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import {
-  createMockExecutor,
-  createNoopExecutor,
-  type CommandExecutor,
-} from '../../../../utils/command.js';
+import { createMockExecutor, type CommandExecutor } from '../../../../utils/command.js';
 import tool, { get_mac_app_path_projLogic } from '../get_mac_app_path_proj.js';
 
 describe('get_mac_app_path_proj', () => {
@@ -113,41 +109,8 @@ describe('get_mac_app_path_proj', () => {
       });
     });
 
-    it('should handle missing required projectPath parameter', async () => {
-      const args = {
-        scheme: 'MyApp',
-      };
-
-      const result = await get_mac_app_path_projLogic(args, createNoopExecutor());
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle missing required scheme parameter', async () => {
-      const args = {
-        projectPath: '/path/to/project.xcodeproj',
-      };
-
-      const result = await get_mac_app_path_projLogic(args, createNoopExecutor());
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
+    // Note: projectPath and scheme validation is now handled by Zod schema validation in createTypedTool
+    // These tests would not reach the logic function as Zod validation occurs before it
 
     it('should handle command failure', async () => {
       const mockExecutor = createMockExecutor({

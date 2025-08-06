@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { log } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
@@ -29,10 +29,6 @@ export async function list_schems_projLogic(
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', 'Listing schemes');
-
-  // Validate required parameter
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse!;
 
   try {
     // For listing schemes, we can't use executeXcodeBuild directly since it's not a standard action

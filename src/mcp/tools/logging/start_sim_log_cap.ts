@@ -6,7 +6,6 @@
 
 import { z } from 'zod';
 import { startLogCapture } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { ToolResponse, createTextContent } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
@@ -31,11 +30,6 @@ export async function start_sim_log_capLogic(
   _executor: CommandExecutor = getDefaultCommandExecutor(),
   logCaptureFunction: typeof startLogCapture = startLogCapture,
 ): Promise<ToolResponse> {
-  const validationResult = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!validationResult.isValid) {
-    return validationResult.errorResponse!;
-  }
-
   const paramsWithDefaults = {
     ...params,
     captureConsole: params.captureConsole ?? false,

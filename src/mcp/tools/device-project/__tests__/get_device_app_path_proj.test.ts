@@ -48,45 +48,8 @@ describe('get_device_app_path_proj plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return exact validation failure response for missing projectPath', async () => {
-      const result = await get_device_app_path_projLogic(
-        {
-          projectPath: null,
-          scheme: 'MyScheme',
-        },
-        createMockExecutor({ success: true }),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return exact validation failure response for missing scheme', async () => {
-      const result = await get_device_app_path_projLogic(
-        {
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: null,
-        },
-        createMockExecutor({ success: true }),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
+    // Note: Parameter validation is now handled by Zod schema validation in createTypedTool,
+    // so invalid parameters never reach the logic function. Schema validation is tested above.
 
     it('should generate correct xcodebuild command for iOS', async () => {
       const calls: Array<{

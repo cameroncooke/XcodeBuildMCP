@@ -379,25 +379,6 @@ describe('clean_ws plugin tests', () => {
       });
     });
 
-    it('should return error response for validation failure', async () => {
-      const result = await clean_wsLogic(
-        {
-          workspacePath: null,
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
     it('should handle spawn process error', async () => {
       const mockExecutor = createMockExecutor(new Error('spawn failed'));
 

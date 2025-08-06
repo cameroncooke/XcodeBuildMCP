@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { createTextResponse, validateRequiredParam } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import {
   DependencyError,
   AxeError,
@@ -65,13 +65,6 @@ export async function tapLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'tap';
-  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
-  const xValidation = validateRequiredParam('x', params.x);
-  if (!xValidation.isValid) return xValidation.errorResponse!;
-  const yValidation = validateRequiredParam('y', params.y);
-  if (!yValidation.isValid) return yValidation.errorResponse!;
-
   const { simulatorUuid, x, y, preDelay, postDelay } = params;
   const commandArgs = ['tap', '-x', String(x), '-y', String(y)];
   if (preDelay !== undefined) {

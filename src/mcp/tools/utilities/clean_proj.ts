@@ -9,7 +9,6 @@ import {
   log,
   XcodePlatform,
   executeXcodeBuildCommand,
-  validateRequiredParam,
   CommandExecutor,
   getDefaultCommandExecutor,
 } from '../../../utils/index.js';
@@ -42,13 +41,8 @@ export async function clean_projLogic(
   params: CleanProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Params are already validated, use directly
+  // Params are already validated by Zod schema, use directly
   const validated = params;
-
-  const projectPathValidation = validateRequiredParam('projectPath', validated.projectPath);
-  if (!projectPathValidation.isValid) {
-    return projectPathValidation.errorResponse!;
-  }
 
   log('info', 'Starting xcodebuild clean request');
 

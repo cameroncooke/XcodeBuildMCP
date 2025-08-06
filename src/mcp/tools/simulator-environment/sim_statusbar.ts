@@ -1,11 +1,6 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
-import {
-  log,
-  validateRequiredParam,
-  CommandExecutor,
-  getDefaultCommandExecutor,
-} from '../../../utils/index.js';
+import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Define schema as ZodObject
@@ -40,11 +35,6 @@ export async function sim_statusbarLogic(
   params: SimStatusbarParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse!;
-  }
-
   log(
     'info',
     `Setting simulator ${params.simulatorUuid} status bar data network to ${params.dataNetwork}`,

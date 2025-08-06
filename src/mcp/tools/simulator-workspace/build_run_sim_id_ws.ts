@@ -3,7 +3,6 @@ import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/c
 import {
   log,
   getDefaultCommandExecutor,
-  validateRequiredParam,
   createTextResponse,
   executeXcodeBuildCommand,
   CommandExecutor,
@@ -81,16 +80,6 @@ export async function build_run_sim_id_wsLogic(
   params: BuildRunSimIdWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
   // Provide defaults
   const processedParams = {
     ...params,

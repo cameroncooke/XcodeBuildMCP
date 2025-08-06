@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
@@ -38,16 +37,6 @@ export async function build_sim_id_wsLogic(
   params: BuildSimIdWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
   // Provide defaults
   const processedParams = {
     ...params,

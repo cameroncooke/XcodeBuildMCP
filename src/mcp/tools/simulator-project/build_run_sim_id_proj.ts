@@ -1,10 +1,6 @@
 import { z } from 'zod';
 import { log, getDefaultCommandExecutor, CommandExecutor } from '../../../utils/index.js';
-import {
-  validateRequiredParam,
-  createTextResponse,
-  executeXcodeBuildCommand,
-} from '../../../utils/index.js';
+import { createTextResponse, executeXcodeBuildCommand } from '../../../utils/index.js';
 import { ToolResponse, XcodePlatform, SharedBuildParams } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
@@ -77,16 +73,6 @@ export async function build_run_sim_id_projLogic(
   executor: CommandExecutor,
   executeXcodeBuildCommandFn: typeof executeXcodeBuildCommand = executeXcodeBuildCommand,
 ): Promise<ToolResponse> {
-  // Validate required parameters
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-  const simulatorIdValidation = validateRequiredParam('simulatorId', params.simulatorId);
-  if (!simulatorIdValidation.isValid) return simulatorIdValidation.errorResponse!;
-
   log('info', `Starting iOS Simulator build and run for scheme ${params.scheme} (internal)`);
 
   try {

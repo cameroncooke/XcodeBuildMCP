@@ -197,38 +197,36 @@ describe('stop_app_sim_id_ws plugin', () => {
   });
 
   describe('Parameter Validation', () => {
-    it('should handle validation failure for simulatorUuid', async () => {
-      const result = await stop_app_simLogic(
-        {
-          bundleId: 'com.example.app',
-        },
-        createNoopExecutor(),
-      );
+    it('should handle validation failure for simulatorUuid via handler', async () => {
+      // Test Zod validation by calling the handler with invalid params
+      const result = await stopAppSimIdWs.handler({
+        bundleId: 'com.example.app',
+        // simulatorUuid missing
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
           },
         ],
         isError: true,
       });
     });
 
-    it('should handle validation failure for bundleId', async () => {
-      const result = await stop_app_simLogic(
-        {
-          simulatorUuid: 'test-uuid-123',
-        },
-        createNoopExecutor(),
-      );
+    it('should handle validation failure for bundleId via handler', async () => {
+      // Test Zod validation by calling the handler with invalid params
+      const result = await stopAppSimIdWs.handler({
+        simulatorUuid: 'test-uuid-123',
+        // bundleId missing
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'bundleId' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nbundleId: Required',
           },
         ],
         isError: true,

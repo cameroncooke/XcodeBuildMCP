@@ -8,7 +8,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { ToolResponse, createImageContent } from '../../../types/common.js';
 import {
   log,
-  validateRequiredParam,
   SystemError,
   createErrorResponse,
   CommandExecutor,
@@ -35,9 +34,6 @@ export async function screenshotLogic(
   pathUtils: { tmpdir: () => string; join: (...paths: string[]) => string } = { ...path, tmpdir },
   uuidUtils: { v4: () => string } = { v4: uuidv4 },
 ): Promise<ToolResponse> {
-  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
-
   const { simulatorUuid } = params;
   const tempDir = pathUtils.tmpdir();
   const screenshotFilename = `screenshot_${uuidUtils.v4()}.png`;
@@ -102,6 +98,7 @@ export async function screenshotLogic(
 
         return {
           content: [createImageContent(base64Image, 'image/png')],
+          isError: false,
         };
       }
 
@@ -123,6 +120,7 @@ export async function screenshotLogic(
       // Return the optimized image (JPEG format, smaller size)
       return {
         content: [createImageContent(base64Image, 'image/jpeg')],
+        isError: false,
       };
     } catch (fileError) {
       log('error', `${LOG_PREFIX}/screenshot: Failed to process image file: ${fileError}`);

@@ -7,7 +7,6 @@
 
 import { z } from 'zod';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import {
   CommandExecutor,
@@ -49,11 +48,7 @@ export async function get_app_bundle_idLogic(
   executor: CommandExecutor,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
-  const appPathValidation = validateRequiredParam('appPath', params.appPath);
-  if (!appPathValidation.isValid) {
-    return appPathValidation.errorResponse!;
-  }
-
+  // Zod validation is handled by createTypedTool, so params.appPath is guaranteed to be a string
   const appPath = params.appPath;
 
   if (!fileSystemExecutor.existsSync(appPath)) {

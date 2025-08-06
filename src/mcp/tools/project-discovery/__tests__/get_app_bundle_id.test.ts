@@ -63,20 +63,14 @@ describe('get_app_bundle_id plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error when appPath validation fails', async () => {
-      const mockExecutor = createMockExecutorForCommands({});
-      const mockFileSystemExecutor = createMockFileSystemExecutor({});
-
-      const result = await get_app_bundle_idLogic(
-        { appPath: null },
-        mockExecutor,
-        mockFileSystemExecutor,
-      );
+      // Test validation through the handler which uses Zod validation
+      const result = await plugin.handler({});
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Required',
           },
         ],
         isError: true,
@@ -276,21 +270,14 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle schema validation error when appPath is null', async () => {
-      // Schema validation will throw before reaching validateRequiredParam
-      const mockExecutor = createMockExecutorForCommands({});
-      const mockFileSystemExecutor = createMockFileSystemExecutor({});
-
-      const result = await get_app_bundle_idLogic(
-        { appPath: null },
-        mockExecutor,
-        mockFileSystemExecutor,
-      );
+      // Test validation through the handler which uses Zod validation
+      const result = await plugin.handler({ appPath: null });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Expected string, received null',
           },
         ],
         isError: true,
@@ -298,16 +285,14 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle schema validation with missing appPath', async () => {
-      const mockExecutor = createMockExecutorForCommands({});
-      const mockFileSystemExecutor = createMockFileSystemExecutor({});
-
-      const result = await get_app_bundle_idLogic({}, mockExecutor, mockFileSystemExecutor);
+      // Test validation through the handler which uses Zod validation
+      const result = await plugin.handler({});
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Required',
           },
         ],
         isError: true,
@@ -315,20 +300,14 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle schema validation with undefined appPath', async () => {
-      const mockExecutor = createMockExecutorForCommands({});
-      const mockFileSystemExecutor = createMockFileSystemExecutor({});
-
-      const result = await get_app_bundle_idLogic(
-        { appPath: undefined },
-        mockExecutor,
-        mockFileSystemExecutor,
-      );
+      // Test validation through the handler which uses Zod validation
+      const result = await plugin.handler({ appPath: undefined });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Required',
           },
         ],
         isError: true,
@@ -336,22 +315,14 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should handle schema validation with number type appPath', async () => {
-      const mockExecutor = createMockExecutorForCommands({});
-      const mockFileSystemExecutor = createMockFileSystemExecutor({
-        existsSync: () => false,
-      });
-
-      const result = await get_app_bundle_idLogic(
-        { appPath: 123 },
-        mockExecutor,
-        mockFileSystemExecutor,
-      );
+      // Test validation through the handler which uses Zod validation
+      const result = await plugin.handler({ appPath: 123 });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "File not found: '123'. Please check the path and try again.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Expected string, received number',
           },
         ],
         isError: true,

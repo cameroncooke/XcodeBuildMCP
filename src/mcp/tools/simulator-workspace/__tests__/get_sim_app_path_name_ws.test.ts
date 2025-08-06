@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import {
-  createMockExecutor,
-  createMockFileSystemExecutor,
-  createNoopExecutor,
-} from '../../../../utils/command.js';
+import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
 import getSimAppPathNameWsTool, {
   get_sim_app_path_name_wsLogic,
 } from '../get_sim_app_path_name_ws.ts';
@@ -443,89 +439,8 @@ FULL_PRODUCT_NAME = MyApp.app
       });
     });
 
-    it('should handle missing workspacePath', async () => {
-      const result = await get_sim_app_path_name_wsLogic(
-        {
-          scheme: 'MyScheme',
-          platform: 'iOS Simulator',
-          simulatorName: 'iPhone 16',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle missing scheme', async () => {
-      const result = await get_sim_app_path_name_wsLogic(
-        {
-          workspacePath: '/path/to/Project.xcworkspace',
-          platform: 'iOS Simulator',
-          simulatorName: 'iPhone 16',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle missing platform', async () => {
-      const result = await get_sim_app_path_name_wsLogic(
-        {
-          workspacePath: '/path/to/Project.xcworkspace',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'platform' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle missing simulatorName', async () => {
-      const result = await get_sim_app_path_name_wsLogic(
-        {
-          workspacePath: '/path/to/Project.xcworkspace',
-          scheme: 'MyScheme',
-          platform: 'iOS Simulator',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorName' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
+    // Note: Parameter validation is now handled by Zod schema in createTypedTool wrapper
+    // The logic function expects valid parameters that have passed Zod validation
 
     it('should handle command failure', async () => {
       const mockExecutor = createMockExecutor({

@@ -43,43 +43,11 @@ describe('get_device_app_path_ws plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return exact validation error response for workspacePath', async () => {
-      const result = await get_device_app_path_wsLogic(
-        {
-          scheme: 'MyScheme',
-        },
-        createNoopExecutor(),
-      );
+    // Note: workspacePath validation is now handled by Zod schema in createTypedTool wrapper
+    // The logic function expects valid parameters that have passed Zod validation
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return exact validation error response for scheme', async () => {
-      const result = await get_device_app_path_wsLogic(
-        {
-          workspacePath: '/path/to/workspace.xcworkspace',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
+    // Note: scheme validation is now handled by Zod schema in createTypedTool wrapper
+    // The logic function expects valid parameters that have passed Zod validation
 
     it('should generate correct xcodebuild command for getting build settings', async () => {
       const calls: any[] = [];

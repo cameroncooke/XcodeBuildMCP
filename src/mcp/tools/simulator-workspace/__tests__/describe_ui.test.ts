@@ -61,14 +61,15 @@ describe('describe_ui tool', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should handle validation failure', async () => {
-      const result = await describe_uiLogic({}, mockExecutor, mockAxeHelpers);
+    it('should handle validation failure via handler', async () => {
+      // Test Zod validation by calling the handler with invalid params
+      const result = await describeUi.handler({});
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
           },
         ],
         isError: true,

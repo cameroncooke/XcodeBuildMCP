@@ -99,83 +99,8 @@ describe('build_run_sim_name_ws tool', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should handle validation failure for workspacePath', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'Mock output',
-      });
-
-      const result = await build_run_sim_name_wsLogic(
-        {
-          workspacePath: undefined,
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle validation failure for scheme', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'Mock output',
-      });
-
-      const result = await build_run_sim_name_wsLogic(
-        {
-          workspacePath: '/path/to/workspace',
-          scheme: undefined,
-          simulatorName: 'iPhone 16',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle validation failure for simulatorName', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'Mock output',
-      });
-
-      const result = await build_run_sim_name_wsLogic(
-        {
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorName: undefined,
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorName' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
+    // Note: Parameter validation is now handled by createTypedTool wrapper with Zod schema
+    // The logic function receives validated parameters, so these tests focus on business logic
 
     it('should handle simulator not found', async () => {
       const mockExecutor = createMockExecutor({
