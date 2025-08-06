@@ -58,7 +58,7 @@
     "url": "https://github.com/cameroncooke/XcodeBuildMCP/issues"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "github:cameroncooke/typescript-sdk#main",
+    "@modelcontextprotocol/sdk": "npm:@camsoft/mcp-sdk@^1.17.1",
     "@sentry/cli": "^2.43.1",
     "@sentry/node": "^9.15.0",
     "reloaderoo": "^1.0.1",

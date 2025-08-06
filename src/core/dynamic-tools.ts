@@ -4,7 +4,11 @@ import { WORKFLOW_LOADERS, WorkflowName, WORKFLOW_METADATA } from './generated-p
 import { ToolResponse } from '../types/common.js';
 import { PluginMeta } from './plugin-types.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { registerAndTrackTools } from '../utils/tool-registry.js';
+import {
+  registerAndTrackTools,
+  removeTrackedTools,
+  isToolRegistered,
+} from '../utils/tool-registry.js';
 import { ZodRawShape } from 'zod';
 
 // Track enabled workflows and their tools for replacement functionality
@@ -30,29 +34,28 @@ function wrapHandlerWithExecutor(handler: ToolHandler) {
 }
 
 /**
- * Clear tracking of currently enabled workflows
- * Note: MCP doesn't support removing tools, so this only clears our internal tracking.
- * Tool replacement happens by overriding existing tool registrations.
+ * Clear currently enabled workflows by actually removing registered tools
  */
 export function clearEnabledWorkflows(): void {
   if (enabledTools.size === 0) {
-    log('debug', 'No tools to clear from tracking');
+    log('debug', 'No tools to clear');
     return;
   }
 
   const clearedWorkflows = Array.from(enabledWorkflows);
-  const clearedToolCount = enabledTools.size;
+  const toolNamesToRemove = Array.from(enabledTools.keys());
+  const clearedToolCount = toolNamesToRemove.length;
 
-  log(
-    'info',
-    `Clearing tracking for ${clearedToolCount} tools from workflows: ${clearedWorkflows.join(', ')}`,
-  );
+  log('info', `Removing ${clearedToolCount} tools from workflows: ${clearedWorkflows.join(', ')}`);
 
-  // Clear our tracking - tools will be overridden by new registrations
+  // Actually remove the registered tools using the tool registry
+  const removedTools = removeTrackedTools(toolNamesToRemove);
+
+  // Clear our tracking
   enabledWorkflows.clear();
   enabledTools.clear();
 
-  log('debug', `✅ Cleared tracking for ${clearedToolCount} tools`);
+  log('info', `✅ Removed ${removedTools.length} tools successfully`);
 }
 
 /**
@@ -116,16 +119,22 @@ export async function enableWorkflows(
         callback: (args: Record<string, unknown>) => Promise<ToolResponse>;
       }> = [];
 
-      // Collect all tools from this workflow
+      // Collect all tools from this workflow, filtering out already-registered tools
       for (const toolKey of toolKeys) {
         const tool = workflowModule[toolKey] as PluginMeta | undefined;
 
         if (tool?.name && typeof tool.handler === 'function') {
+          // Always skip tools that are already registered (in all modes)
+          if (isToolRegistered(tool.name)) {
+            log('debug', `Skipping already registered tool: ${tool.name}`);
+            continue;
+          }
+
           toolsToRegister.push({
             name: tool.name,
             config: {
               description: tool.description ?? '',
-              inputSchema: tool.schema, // MCP SDK now handles complex types properly
+              inputSchema: tool.schema,
             },
             callback: wrapHandlerWithExecutor(tool.handler as ToolHandler),
           });
@@ -138,69 +147,29 @@ export async function enableWorkflows(
         }
       }
 
-      // Use bulk registration with proper types - no runtime checking needed
-      try {
-        const availableTools = toolsToRegister.filter((tool) => {
-          // In testing/development, check for duplicate registrations
-          // The MCP SDK handles this internally, so this is just for logging
-          log('debug', `Preparing to register tool: ${tool.name}`);
-          return true;
-        });
-
-        if (availableTools.length > 0) {
-          log('info', `🚀 Enabling ${availableTools.length} tools from '${workflowName}' workflow`);
-
-          // Convert to proper tool registration format, adapting callback signature
-          const toolRegistrations = availableTools.map((tool) => ({
-            name: tool.name,
-            config: {
-              description: tool.config.description,
-              inputSchema: tool.config.inputSchema as unknown, // Cast to unknown for SDK interface
-            },
-            // Adapt callback to match SDK's expected signature (args, extra) => result
-            callback: (args: unknown): Promise<ToolResponse> =>
-              tool.callback(args as Record<string, unknown>),
-          }));
-
-          // Use registerTools with proper types and tracking
-          const registeredTools = registerAndTrackTools(server, toolRegistrations);
-          log('info', `✅ Registered ${registeredTools.length} tools from '${workflowName}'`);
-          // registerTools() automatically sends tool list change notification internally
-        } else {
-          log(
-            'info',
-            `All ${toolsToRegister.length} tools from '${workflowName}' were already registered`,
-          );
-        }
-      } catch (error) {
-        log('error', `Failed to register tools from '${workflowName}': ${error}`);
-        // Fallback to simplified tool registration one at a time
+      // Register all tools using bulk registration
+      if (toolsToRegister.length > 0) {
         log(
           'info',
-          `🚀 Fallback: Enabling ${toolsToRegister.length} tools individually from '${workflowName}' workflow`,
+          `🚀 Registering ${toolsToRegister.length} tools from '${workflowName}' workflow`,
         );
-        for (const toolToRegister of toolsToRegister) {
-          try {
-            // Use the simplified registerTools method with single tool to avoid type complexity
-            const singleToolRegistration = [
-              {
-                name: toolToRegister.name,
-                config: {
-                  description: toolToRegister.config.description,
-                  inputSchema: toolToRegister.config.inputSchema as unknown, // Cast to unknown for SDK interface
-                },
-                // Adapt callback to match SDK's expected signature
-                callback: (args: unknown): Promise<ToolResponse> =>
-                  toolToRegister.callback(args as Record<string, unknown>),
-              },
-            ];
-            registerAndTrackTools(server, singleToolRegistration);
-            log('debug', `Registered tool: ${toolToRegister.name}`);
-          } catch (toolError) {
-            log('error', `Failed to register tool '${toolToRegister.name}': ${toolError}`);
-          }
-        }
-        log('info', `✅ Registered ${toolsToRegister.length} tools from '${workflowName}'`);
+
+        // Convert to proper tool registration format
+        const toolRegistrations = toolsToRegister.map((tool) => ({
+          name: tool.name,
+          config: {
+            description: tool.config.description,
+            inputSchema: tool.config.inputSchema as unknown,
+          },
+          callback: (args: unknown): Promise<ToolResponse> =>
+            tool.callback(args as Record<string, unknown>),
+        }));
+
+        // Use bulk registration - no fallback needed with proper duplicate handling
+        const registeredTools = registerAndTrackTools(server, toolRegistrations);
+        log('info', `✅ Registered ${registeredTools.length} tools from '${workflowName}'`);
+      } else {
+        log('info', `No new tools to register from '${workflowName}' (all already registered)`);
       }
 
       // Track the workflow as enabled
@@ -213,8 +182,7 @@ export async function enableWorkflows(
     }
   }
 
-  // No manual notification needed - registerTools() handles notifications automatically
-  log('debug', 'Tool list change notifications handled automatically by registerTools()');
+  // registerAndTrackTools() handles tool list change notifications automatically
 
   log(
     'info',

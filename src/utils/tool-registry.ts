@@ -40,6 +40,48 @@ export function registerAndTrackTools(
 }
 
 /**
+ * Check if a tool is already registered
+ */
+export function isToolRegistered(name: string): boolean {
+  return toolRegistry.has(name);
+}
+
+/**
+ * Remove a specific tracked tool by name
+ */
+export function removeTrackedTool(name: string): boolean {
+  const tool = toolRegistry.get(name);
+  if (!tool) {
+    return false;
+  }
+
+  try {
+    tool.remove();
+    toolRegistry.delete(name);
+    log('debug', `✅ Removed tool: ${name}`);
+    return true;
+  } catch (error) {
+    log('error', `❌ Failed to remove tool ${name}: ${error}`);
+    return false;
+  }
+}
+
+/**
+ * Remove multiple tracked tools by names
+ */
+export function removeTrackedTools(names: string[]): string[] {
+  const removedTools: string[] = [];
+
+  for (const name of names) {
+    if (removeTrackedTool(name)) {
+      removedTools.push(name);
+    }
+  }
+
+  return removedTools;
+}
+
+/**
  * Remove all currently tracked tools
  */
 export function removeAllTrackedTools(): void {
@@ -49,19 +91,10 @@ export function removeAllTrackedTools(): void {
     return;
   }
 
-  console.error(`Removing ${toolNames.length} tracked tools...`);
+  log('info', `Removing ${toolNames.length} tracked tools...`);
 
-  for (const [name, tool] of toolRegistry.entries()) {
-    try {
-      tool.remove();
-      console.error(`✅ Removed tool: ${name}`);
-    } catch (error) {
-      console.error(`❌ Failed to remove tool ${name}: ${error}`);
-    }
-  }
-
-  toolRegistry.clear();
-  console.error('✅ All tracked tools removed');
+  const removedTools = removeTrackedTools(toolNames);
+  log('info', `✅ Removed ${removedTools.length} tracked tools`);
 }
 
 /**
