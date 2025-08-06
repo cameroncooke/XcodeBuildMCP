@@ -8,7 +8,7 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import {
   DependencyError,
   AxeError,
@@ -99,11 +99,6 @@ export async function gestureLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'gesture';
-  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
-  const presetValidation = validateRequiredParam('preset', params.preset);
-  if (!presetValidation.isValid) return presetValidation.errorResponse!;
-
   const { simulatorUuid, preset, screenWidth, screenHeight, duration, delta, preDelay, postDelay } =
     params;
   const commandArgs = ['gesture', preset];

@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import path from 'node:path';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { createErrorResponse } from '../../../utils/index.js';
 import { log } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
@@ -19,9 +18,6 @@ export async function swift_package_cleanLogic(
   params: SwiftPackageCleanParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
-  if (!pkgValidation.isValid) return pkgValidation.errorResponse!;
-
   const resolvedPath = path.resolve(params.packagePath);
   const swiftArgs = ['package', '--package-path', resolvedPath, 'clean'];
 
@@ -42,6 +38,7 @@ export async function swift_package_cleanLogic(
         },
         { type: 'text', text: result.output || '(clean completed silently)' },
       ],
+      isError: false,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

@@ -50,18 +50,25 @@ describe('Describe UI Plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
-      const result = await describe_uiLogic({} as any, createNoopExecutor());
+    it('should handle missing simulatorUuid via schema validation', async () => {
+      // Test the actual handler (not just the logic function)
+      // This demonstrates that Zod validation catches missing parameters
+      const result = await describeUIPlugin.handler({});
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('simulatorUuid: Required');
+    });
+
+    it('should handle invalid simulatorUuid format via schema validation', async () => {
+      // Test the actual handler with invalid UUID format
+      const result = await describeUIPlugin.handler({
+        simulatorUuid: 'invalid-uuid-format',
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('Invalid Simulator UUID format');
     });
 
     it('should return success for valid describe_ui execution', async () => {

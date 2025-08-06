@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import {
   log,
-  validateRequiredParam,
   validateFileExists,
   CommandExecutor,
   FileSystemExecutor,
@@ -28,16 +27,6 @@ export async function install_app_simLogic(
   executor: CommandExecutor,
   fileSystem?: FileSystemExecutor,
 ): Promise<ToolResponse> {
-  const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse!;
-  }
-
-  const appPathValidation = validateRequiredParam('appPath', params.appPath);
-  if (!appPathValidation.isValid) {
-    return appPathValidation.errorResponse!;
-  }
-
   const appPathExistsValidation = validateFileExists(params.appPath, fileSystem);
   if (!appPathExistsValidation.isValid) {
     return appPathExistsValidation.errorResponse!;

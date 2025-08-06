@@ -87,25 +87,6 @@ describe('reset_simulator_location plugin', () => {
       });
     });
 
-    it('should handle missing simulatorUuid', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'Location reset successfully',
-      });
-
-      const result = await reset_simulator_locationLogic({}, mockExecutor);
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
     it('should handle exception during execution', async () => {
       const mockExecutor = createMockExecutor(new Error('Network error'));
 

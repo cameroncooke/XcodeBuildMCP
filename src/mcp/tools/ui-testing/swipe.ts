@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import {
   DependencyError,
   AxeError,
@@ -59,16 +59,6 @@ export async function swipeLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'swipe';
-  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
-  const x1Validation = validateRequiredParam('x1', params.x1);
-  if (!x1Validation.isValid) return x1Validation.errorResponse!;
-  const y1Validation = validateRequiredParam('y1', params.y1);
-  if (!y1Validation.isValid) return y1Validation.errorResponse!;
-  const x2Validation = validateRequiredParam('x2', params.x2);
-  if (!x2Validation.isValid) return x2Validation.errorResponse!;
-  const y2Validation = validateRequiredParam('y2', params.y2);
-  if (!y2Validation.isValid) return y2Validation.errorResponse!;
 
   const { simulatorUuid, x1, y1, x2, y2, duration, delta, preDelay, postDelay } = params;
   const commandArgs = [

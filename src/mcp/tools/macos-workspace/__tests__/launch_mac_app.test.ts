@@ -154,17 +154,13 @@ describe('launch_mac_app plugin', () => {
     });
 
     it('should return exact missing appPath validation response', async () => {
-      const result = await launch_mac_appLogic({});
+      // Note: Parameter validation is now handled by createTypedTool wrapper
+      // Testing the handler to verify Zod validation
+      const result = await launchMacApp.handler({});
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('appPath');
     });
   });
 });

@@ -252,42 +252,51 @@ describe('install_app_sim_id_ws tool', () => {
   });
 
   describe('Parameter Validation', () => {
-    it('should handle validation failure for simulatorUuid', async () => {
-      const result = await install_app_simLogic(
-        {
-          simulatorUuid: undefined,
-          appPath: '/path/to/app.app',
-        },
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
-      );
+    it('should test Zod validation through handler (missing simulatorUuid)', async () => {
+      // Test Zod validation by calling the handler with invalid params
+      const result = await installAppSimIdWs.handler({
+        appPath: '/path/to/app.app',
+        // simulatorUuid missing
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
           },
         ],
         isError: true,
       });
     });
 
-    it('should handle validation failure for appPath', async () => {
-      const result = await install_app_simLogic(
-        {
-          simulatorUuid: 'test-uuid-123',
-          appPath: undefined,
-        },
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
-      );
+    it('should test Zod validation through handler (missing appPath)', async () => {
+      // Test Zod validation by calling the handler with invalid params
+      const result = await installAppSimIdWs.handler({
+        simulatorUuid: 'test-uuid-123',
+        // appPath missing
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'appPath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Required',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should test Zod validation through handler (both parameters missing)', async () => {
+      // Test Zod validation by calling the handler with no params
+      const result = await installAppSimIdWs.handler({});
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required\nappPath: Required',
           },
         ],
         isError: true,

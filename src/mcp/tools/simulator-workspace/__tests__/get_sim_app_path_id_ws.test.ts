@@ -85,34 +85,6 @@ describe('get_sim_app_path_id_ws tool', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should handle validation failure for workspacePath', async () => {
-      const mockExecutor = createMockExecutor({
-        success: false,
-        error: 'Command failed without workspace path',
-      });
-
-      const result = await get_sim_app_path_id_wsLogic(
-        {
-          scheme: 'MyScheme',
-          platform: 'iOS Simulator',
-          simulatorId: 'test-uuid-123',
-          configuration: 'Debug',
-          useLatestOS: true,
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
     it('should handle successful app path retrieval for iOS Simulator', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
@@ -453,84 +425,6 @@ describe('get_sim_app_path_id_ws tool', () => {
           {
             type: 'text',
             text: 'Error retrieving app path: String exception',
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle scheme validation failure', async () => {
-      const mockExecutor = createMockExecutor({
-        success: false,
-        error: 'Command failed without scheme',
-      });
-
-      const result = await get_sim_app_path_id_wsLogic(
-        {
-          workspacePath: '/path/to/workspace',
-          platform: 'iOS Simulator',
-          simulatorId: 'test-uuid-123',
-          configuration: 'Debug',
-          useLatestOS: true,
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle platform validation failure', async () => {
-      const mockExecutor = createNoopExecutor();
-
-      const result = await get_sim_app_path_id_wsLogic(
-        {
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorId: 'test-uuid-123',
-          configuration: 'Debug',
-          useLatestOS: true,
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'platform' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle simulatorId validation failure', async () => {
-      const mockExecutor = createNoopExecutor();
-
-      const result = await get_sim_app_path_id_wsLogic(
-        {
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          platform: 'iOS Simulator',
-          configuration: 'Debug',
-          useLatestOS: true,
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
           },
         ],
         isError: true,

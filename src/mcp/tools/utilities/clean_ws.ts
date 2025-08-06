@@ -5,12 +5,7 @@
  */
 
 import { z } from 'zod';
-import {
-  log,
-  getDefaultCommandExecutor,
-  executeXcodeBuildCommand,
-  validateRequiredParam,
-} from '../../../utils/index.js';
+import { log, getDefaultCommandExecutor, executeXcodeBuildCommand } from '../../../utils/index.js';
 import { XcodePlatform } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { CommandExecutor } from '../../../utils/index.js';
@@ -38,11 +33,6 @@ export async function clean_wsLogic(
   params: CleanWsParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const workspacePathValidation = validateRequiredParam('workspacePath', params.workspacePath);
-  if (!workspacePathValidation.isValid) {
-    return workspacePathValidation.errorResponse!;
-  }
-
   log('info', 'Starting xcodebuild clean request (internal)');
 
   // For clean operations, we need to provide a default platform and configuration

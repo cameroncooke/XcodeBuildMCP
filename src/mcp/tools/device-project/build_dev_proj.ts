@@ -7,7 +7,6 @@
 
 import { z } from 'zod';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
@@ -32,12 +31,6 @@ export async function build_dev_projLogic(
   params: BuildDevProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
   const processedParams = {
     ...params,
     configuration: params.configuration ?? 'Debug', // Default config

@@ -110,24 +110,26 @@ describe('sim_statusbar tool', () => {
       });
     });
 
-    it('should handle validation failure', async () => {
+    it('should handle minimal valid parameters (Zod handles validation)', async () => {
+      // Note: With createTypedTool, Zod validation happens before the logic function is called
+      // So we test with a valid minimal parameter set since validation is handled upstream
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Status bar set successfully',
+      });
+
       const result = await sim_statusbarLogic(
         {
-          simulatorUuid: undefined as any,
+          simulatorUuid: 'test-uuid-123',
           dataNetwork: 'wifi',
         },
-        createMockExecutor({ success: true }),
+        mockExecutor,
       );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      // The logic function should execute normally with valid parameters
+      // Zod validation errors are handled by createTypedTool wrapper
+      expect(result.isError).toBe(undefined);
+      expect(result.content[0].text).toContain('Successfully set simulator');
     });
 
     it('should handle command failure', async () => {

@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import {
   DependencyError,
   AxeError,
@@ -55,9 +54,6 @@ export async function describe_uiLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'describe_ui';
-  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
-
   const { simulatorUuid } = params;
   const commandArgs = ['describe-ui'];
 

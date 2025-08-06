@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import {
   log,
-  validateRequiredParam,
   executeXcodeBuildCommand,
   getDefaultCommandExecutor,
   CommandExecutor,
@@ -40,16 +39,6 @@ export async function build_sim_name_projLogic(
   params: BuildSimNameProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Validate required parameters
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
   // Provide defaults
   const finalParams = {
     ...params,

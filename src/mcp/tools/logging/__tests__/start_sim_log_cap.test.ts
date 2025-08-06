@@ -82,49 +82,8 @@ describe('start_sim_log_cap plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
-      const result = await start_sim_log_capLogic(
-        { bundleId: 'com.example.app' } as any,
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle null bundleId parameter', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
-      const logCaptureStub = (params: any, executor: any) => {
-        return Promise.resolve({
-          sessionId: 'test-uuid-123',
-          logFilePath: '/tmp/test.log',
-          processes: [],
-          error: undefined,
-        });
-      };
-
-      const result = await start_sim_log_capLogic(
-        {
-          simulatorUuid: 'test-uuid',
-          bundleId: null,
-        } as any,
-        mockExecutor,
-        logCaptureStub,
-      );
-
-      expect(result.isError).toBeUndefined();
-      expect(result.content[0].text).toBe(
-        "Log capture started successfully. Session ID: test-uuid-123.\n\nNote: Only structured logs are being captured.\n\nNext Steps:\n1.  Interact with your simulator and app.\n2.  Use 'stop_sim_log_cap' with session ID 'test-uuid-123' to stop capture and retrieve logs.",
-      );
-    });
+    // Note: Parameter validation is now handled by createTypedTool wrapper
+    // Invalid parameters will not reach the logic function, so we test valid scenarios
 
     it('should return error when log capture fails', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: '' });

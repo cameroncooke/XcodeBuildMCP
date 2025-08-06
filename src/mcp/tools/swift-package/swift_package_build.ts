@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import path from 'node:path';
 import {
-  validateRequiredParam,
   createErrorResponse,
   log,
   CommandExecutor,
@@ -29,9 +28,6 @@ export async function swift_package_buildLogic(
   params: SwiftPackageBuildParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
-  if (!pkgValidation.isValid) return pkgValidation.errorResponse!;
-
   const resolvedPath = path.resolve(params.packagePath);
   const swiftArgs = ['build', '--package-path', resolvedPath];
 

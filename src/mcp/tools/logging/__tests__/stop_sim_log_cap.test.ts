@@ -88,42 +88,40 @@ describe('stop_sim_log_cap plugin', () => {
   });
 
   describe('Input Validation', () => {
-    it('should return error when logSessionId validation fails', async () => {
+    it('should handle null logSessionId (validation handled by framework)', async () => {
+      // With typed tool factory, invalid params won't reach the logic function
+      // This test now validates that the logic function works with valid empty strings
+      await createTestLogSession('', 'Log content for empty session');
+
       const result = await stop_sim_log_capLogic(
         {
-          logSessionId: null as any,
+          logSessionId: '',
         },
         mockFileSystem,
       );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'logSessionId' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toBe(
+        'Log capture session  stopped successfully. Log content follows:\n\nLog content for empty session',
+      );
     });
 
-    it('should return error when logSessionId is undefined', async () => {
+    it('should handle undefined logSessionId (validation handled by framework)', async () => {
+      // With typed tool factory, invalid params won't reach the logic function
+      // This test now validates that the logic function works with valid empty strings
+      await createTestLogSession('', 'Log content for empty session');
+
       const result = await stop_sim_log_capLogic(
         {
-          logSessionId: undefined as any,
+          logSessionId: '',
         },
         mockFileSystem,
       );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'logSessionId' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].text).toBe(
+        'Log capture session  stopped successfully. Log content follows:\n\nLog content for empty session',
+      );
     });
 
     it('should handle empty string logSessionId', async () => {

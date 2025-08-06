@@ -277,44 +277,6 @@ describe('Key Sequence Plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
-      const result = await key_sequenceLogic(
-        {
-          keyCodes: [40],
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return error for missing keyCodes', async () => {
-      const result = await key_sequenceLogic(
-        {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'keyCodes' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
     it('should return success for valid key sequence execution', async () => {
       const mockExecutor = createMockExecutor({
         success: true,

@@ -4,12 +4,8 @@
  * Using dependency injection for deterministic testing
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  createMockExecutor,
-  createNoopExecutor,
-  type CommandExecutor,
-} from '../../../../utils/command.js';
+import { describe, it, expect } from 'vitest';
+import { createMockExecutor, type CommandExecutor } from '../../../../utils/command.js';
 import getMacAppPathWs, { get_mac_app_path_wsLogic } from '../get_mac_app_path_ws.ts';
 
 describe('get_mac_app_path_ws plugin', () => {
@@ -219,38 +215,32 @@ describe('get_mac_app_path_ws plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return exact validation error response for workspacePath', async () => {
-      const result = await get_mac_app_path_wsLogic(
-        {
-          scheme: 'MyScheme',
-        },
-        createNoopExecutor(),
-      );
+    it('should return Zod validation error for missing workspacePath', async () => {
+      const result = await getMacAppPathWs.handler({
+        scheme: 'MyScheme',
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nworkspacePath: Required',
           },
         ],
         isError: true,
       });
     });
 
-    it('should return exact validation error response for scheme', async () => {
-      const result = await get_mac_app_path_wsLogic(
-        {
-          workspacePath: '/path/to/MyProject.xcworkspace',
-        },
-        createNoopExecutor(),
-      );
+    it('should return Zod validation error for missing scheme', async () => {
+      const result = await getMacAppPathWs.handler({
+        workspacePath: '/path/to/MyProject.xcworkspace',
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nscheme: Required',
           },
         ],
         isError: true,

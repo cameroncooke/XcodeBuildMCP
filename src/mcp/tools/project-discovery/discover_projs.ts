@@ -8,7 +8,6 @@
 import { z } from 'zod';
 import * as path from 'node:path';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { ToolResponse, createTextContent } from '../../../types/common.js';
 import {
   FileSystemExecutor,
@@ -162,10 +161,6 @@ export async function discover_projsLogic(
   params: DiscoverProjsParams,
   fileSystemExecutor: FileSystemExecutor,
 ): Promise<ToolResponse> {
-  // Validate required parameters
-  const workspaceValidation = validateRequiredParam('workspaceRoot', params.workspaceRoot);
-  if (!workspaceValidation.isValid) return workspaceValidation.errorResponse!;
-
   // Apply defaults
   const scanPath = params.scanPath ?? '.';
   const maxDepth = params.maxDepth ?? DEFAULT_MAX_DEPTH;

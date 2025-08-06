@@ -7,8 +7,7 @@
 
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
-import { log } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { log, createTextResponse } from '../../../utils/index.js';
 import {
   DependencyError,
   AxeError,
@@ -51,11 +50,6 @@ export async function buttonLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'button';
-  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
-  const buttonTypeValidation = validateRequiredParam('buttonType', params.buttonType);
-  if (!buttonTypeValidation.isValid) return buttonTypeValidation.errorResponse!;
-
   const { simulatorUuid, buttonType, duration } = params;
   const commandArgs = ['button', buttonType];
   if (duration !== undefined) {

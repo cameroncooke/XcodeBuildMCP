@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import path from 'node:path';
-import { createTextResponse, validateRequiredParam } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import { createErrorResponse } from '../../../utils/index.js';
 import { log } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
@@ -38,9 +38,6 @@ export async function swift_package_runLogic(
   params: SwiftPackageRunParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const pkgValidation = validateRequiredParam('packagePath', params.packagePath);
-  if (!pkgValidation.isValid) return pkgValidation.errorResponse!;
-
   const resolvedPath = path.resolve(params.packagePath);
   const timeout = Math.min(params.timeout ?? 30, 300) * 1000; // Convert to ms, max 5 minutes
 

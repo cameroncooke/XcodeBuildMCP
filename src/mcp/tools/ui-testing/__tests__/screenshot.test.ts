@@ -49,6 +49,38 @@ describe('Screenshot Plugin', () => {
     });
   });
 
+  describe('Plugin Handler Validation', () => {
+    it('should return Zod validation error for missing simulatorUuid', async () => {
+      const result = await screenshotPlugin.handler({});
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should return Zod validation error for invalid UUID format', async () => {
+      const result = await screenshotPlugin.handler({
+        simulatorUuid: 'invalid-uuid',
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Invalid Simulator UUID format',
+          },
+        ],
+        isError: true,
+      });
+    });
+  });
+
   describe('Command Generation', () => {
     it('should generate correct xcrun simctl command for basic screenshot', async () => {
       const capturedCommands: string[][] = [];
@@ -205,22 +237,26 @@ describe('Screenshot Plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
+    it('should handle parameter validation via plugin handler (not logic function)', async () => {
+      // Note: With Zod validation in createTypedTool, the screenshotLogic function
+      // will never receive invalid parameters - validation happens at the handler level.
+      // This test documents that screenshotLogic assumes valid parameters.
       const result = await screenshotLogic(
-        {} as any,
-        createNoopExecutor(),
-        createMockFileSystemExecutor(),
+        {
+          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        },
+        createMockExecutor({
+          success: true,
+          output: 'Screenshot saved',
+          error: undefined,
+        }),
+        createMockFileSystemExecutor({
+          readFile: async () => Buffer.from('fake-image-data', 'utf8').toString('utf8'),
+        }),
       );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(false);
+      expect(result.content[0].type).toBe('image');
     });
 
     it('should return success for valid screenshot capture', async () => {
@@ -252,6 +288,7 @@ describe('Screenshot Plugin', () => {
             mimeType: 'image/jpeg',
           },
         ],
+        isError: false,
       });
     });
 
@@ -345,6 +382,7 @@ describe('Screenshot Plugin', () => {
             mimeType: 'image/jpeg',
           },
         ],
+        isError: false,
       });
     });
 

@@ -46,41 +46,25 @@ describe('build_dev_ws plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return exact validation error response for workspacePath', async () => {
-      const result = await build_dev_wsLogic(
-        {
-          scheme: 'MyScheme',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+      const result = await buildDevWs.handler({
+        scheme: 'MyScheme',
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('workspacePath');
+      expect(result.content[0].text).toContain('Required');
     });
 
     it('should return exact validation error response for scheme', async () => {
-      const result = await build_dev_wsLogic(
-        {
-          workspacePath: '/path/to/workspace.xcworkspace',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+      const result = await buildDevWs.handler({
+        workspacePath: '/path/to/workspace.xcworkspace',
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('scheme');
+      expect(result.content[0].text).toContain('Required');
     });
 
     it('should generate correct xcodebuild command for workspace', async () => {

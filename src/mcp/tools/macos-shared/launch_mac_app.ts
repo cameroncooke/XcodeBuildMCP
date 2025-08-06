@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam, validateFileExists } from '../../../utils/index.js';
+import { validateFileExists } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import {
   CommandExecutor,
@@ -32,12 +32,6 @@ export async function launch_mac_appLogic(
   executor: CommandExecutor,
   fileSystem?: FileSystemExecutor,
 ): Promise<ToolResponse> {
-  // Validate required parameters
-  const appPathValidation = validateRequiredParam('appPath', params.appPath);
-  if (!appPathValidation.isValid) {
-    return appPathValidation.errorResponse!;
-  }
-
   // Validate that the app file exists
   const fileExistsValidation = validateFileExists(params.appPath, fileSystem);
   if (!fileExistsValidation.isValid) {

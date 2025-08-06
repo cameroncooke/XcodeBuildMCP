@@ -26,39 +26,32 @@ describe('show_build_set_proj plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should handle schema validation error when projectPath is null', async () => {
+    it('should execute with valid parameters', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
-        output: '',
+        output: 'Mock build settings output',
         error: undefined,
         process: { pid: 12345 },
       });
 
       const result = await show_build_set_projLogic(
-        { projectPath: null, scheme: 'MyScheme' },
+        { projectPath: '/valid/path.xcodeproj', scheme: 'MyScheme' },
         mockExecutor,
       );
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("Required parameter 'projectPath' is missing");
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('✅ Build settings for scheme MyScheme:');
     });
 
-    it('should handle schema validation error when scheme is null', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: '',
-        error: undefined,
-        process: { pid: 12345 },
+    it('should test Zod validation through handler', async () => {
+      // Test the actual tool handler which includes Zod validation
+      const result = await plugin.handler({
+        projectPath: null,
+        scheme: 'MyScheme',
       });
 
-      const result = await show_build_set_projLogic(
-        {
-          projectPath: '/path/to/MyProject.xcodeproj',
-          scheme: null,
-        },
-        mockExecutor,
-      );
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain("Required parameter 'scheme' is missing");
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('projectPath');
     });
 
     it('should return success with build settings', async () => {

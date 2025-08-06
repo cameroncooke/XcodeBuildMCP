@@ -101,23 +101,17 @@ describe('build_sim_name_ws tool', () => {
     it('should handle missing workspacePath parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
 
-      const result = await build_sim_name_wsLogic(
-        {
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+      // Since we removed manual validation, this test now checks that Zod validation works
+      // by testing the typed tool handler through the default export
+      const result = await buildSimNameWs.handler({
+        scheme: 'MyScheme',
+        simulatorName: 'iPhone 16',
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('workspacePath');
+      expect(result.content[0].text).toContain('Required');
     });
 
     it('should handle empty workspacePath parameter', async () => {
@@ -148,23 +142,17 @@ describe('build_sim_name_ws tool', () => {
     it('should handle missing scheme parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
 
-      const result = await build_sim_name_wsLogic(
-        {
-          workspacePath: '/path/to/workspace',
-          simulatorName: 'iPhone 16',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+      // Since we removed manual validation, this test now checks that Zod validation works
+      // by testing the typed tool handler through the default export
+      const result = await buildSimNameWs.handler({
+        workspacePath: '/path/to/workspace',
+        simulatorName: 'iPhone 16',
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('scheme');
+      expect(result.content[0].text).toContain('Required');
     });
 
     it('should handle empty scheme parameter', async () => {
@@ -195,23 +183,17 @@ describe('build_sim_name_ws tool', () => {
     it('should handle missing simulatorName parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
 
-      const result = await build_sim_name_wsLogic(
-        {
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorName' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+      // Since we removed manual validation, this test now checks that Zod validation works
+      // by testing the typed tool handler through the default export
+      const result = await buildSimNameWs.handler({
+        workspacePath: '/path/to/workspace',
+        scheme: 'MyScheme',
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('simulatorName');
+      expect(result.content[0].text).toContain('Required');
     });
 
     it('should handle empty simulatorName parameter', async () => {

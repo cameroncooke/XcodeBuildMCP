@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
@@ -23,16 +22,6 @@ export async function launch_app_simLogic(
   params: LaunchAppSimParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse!;
-  }
-
-  const bundleIdValidation = validateRequiredParam('bundleId', params.bundleId);
-  if (!bundleIdValidation.isValid) {
-    return bundleIdValidation.errorResponse!;
-  }
-
   log('info', `Starting xcrun simctl launch request for simulator ${params.simulatorUuid}`);
 
   // Check if the app is installed in the simulator

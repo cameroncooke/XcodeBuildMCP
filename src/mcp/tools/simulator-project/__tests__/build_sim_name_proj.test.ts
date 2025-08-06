@@ -79,82 +79,46 @@ describe('build_sim_name_proj plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return validation error for missing projectPath', async () => {
-      const mockExecutor = createMockExecutor({
-        success: false,
-        output: '',
-        error: '',
+    it('should return validation error for missing projectPath via handler (Zod validation)', async () => {
+      // Test via handler to trigger Zod validation since logic function
+      // no longer has manual validation - Zod handles this at the handler level
+      const result = await buildSimNameProj.handler({
+        scheme: 'MyScheme',
+        simulatorName: 'iPhone 16',
       });
 
-      const result = await build_sim_name_projLogic(
-        {
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('projectPath');
+      expect(result.content[0].text).toContain('Required');
     });
 
-    it('should return validation error for missing scheme', async () => {
-      const mockExecutor = createMockExecutor({
-        success: false,
-        output: '',
-        error: '',
+    it('should return validation error for missing scheme via handler (Zod validation)', async () => {
+      // Test via handler to trigger Zod validation since logic function
+      // no longer has manual validation - Zod handles this at the handler level
+      const result = await buildSimNameProj.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        simulatorName: 'iPhone 16',
       });
 
-      const result = await build_sim_name_projLogic(
-        {
-          projectPath: '/path/to/project.xcodeproj',
-          simulatorName: 'iPhone 16',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('scheme');
+      expect(result.content[0].text).toContain('Required');
     });
 
-    it('should return validation error for missing simulatorName', async () => {
-      const mockExecutor = createMockExecutor({
-        success: false,
-        output: '',
-        error: '',
+    it('should return validation error for missing simulatorName via handler (Zod validation)', async () => {
+      // Test via handler to trigger Zod validation since logic function
+      // no longer has manual validation - Zod handles this at the handler level
+      const result = await buildSimNameProj.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        scheme: 'MyScheme',
       });
 
-      const result = await build_sim_name_projLogic(
-        {
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorName' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('simulatorName');
+      expect(result.content[0].text).toContain('Required');
     });
 
     it('should return build error when build fails', async () => {

@@ -240,36 +240,54 @@ describe('Button Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return error for missing simulatorUuid', async () => {
-      const result = await buttonLogic({ buttonType: 'home' }, createNoopExecutor());
+      const result = await buttonPlugin.handler({ buttonType: 'home' });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('simulatorUuid: Required');
     });
 
     it('should return error for missing buttonType', async () => {
-      const result = await buttonLogic(
-        {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'buttonType' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+      const result = await buttonPlugin.handler({
+        simulatorUuid: '12345678-1234-1234-1234-123456789012',
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('buttonType: Required');
+    });
+
+    it('should return error for invalid simulatorUuid format', async () => {
+      const result = await buttonPlugin.handler({
+        simulatorUuid: 'invalid-uuid-format',
+        buttonType: 'home',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('Invalid Simulator UUID format');
+    });
+
+    it('should return error for invalid buttonType', async () => {
+      const result = await buttonPlugin.handler({
+        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        buttonType: 'invalid-button',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+    });
+
+    it('should return error for negative duration', async () => {
+      const result = await buttonPlugin.handler({
+        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        buttonType: 'home',
+        duration: -1,
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('Duration must be non-negative');
     });
 
     it('should return success for valid button press', async () => {

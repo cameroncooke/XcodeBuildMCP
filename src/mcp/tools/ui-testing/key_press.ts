@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import {
   DependencyError,
   AxeError,
@@ -44,11 +44,6 @@ export async function key_pressLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'key_press';
-  const simUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simUuidValidation.isValid) return simUuidValidation.errorResponse!;
-  const keyCodeValidation = validateRequiredParam('keyCode', params.keyCode);
-  if (!keyCodeValidation.isValid) return keyCodeValidation.errorResponse!;
-
   const { simulatorUuid, keyCode, duration } = params;
   const commandArgs = ['key', String(keyCode)];
   if (duration !== undefined) {

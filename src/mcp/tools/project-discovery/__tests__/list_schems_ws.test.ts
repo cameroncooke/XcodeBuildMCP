@@ -57,21 +57,15 @@ describe('list_schems_ws plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should handle missing workspacePath parameter', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: '',
-        error: undefined,
-        process: { pid: 12345 },
-      });
-
-      const result = await list_schems_wsLogic({ workspacePath: null }, mockExecutor);
+    it('should handle missing workspacePath parameter with Zod validation', async () => {
+      // Test the actual plugin handler to verify Zod validation works
+      const result = await plugin.handler({});
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nworkspacePath: Required',
           },
         ],
         isError: true,

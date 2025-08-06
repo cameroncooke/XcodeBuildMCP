@@ -49,73 +49,54 @@ describe('build_run_sim_id_proj plugin', () => {
       // Missing required fields
       expect(schema.safeParse({}).success).toBe(false);
     });
+
+    it('should return validation error through handler for missing required parameters', async () => {
+      // Test the actual tool handler which uses createTypedTool
+      const result = await buildRunSimIdProj.handler({
+        // Missing all required parameters
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('projectPath');
+      expect(result.content[0].text).toContain('scheme');
+      expect(result.content[0].text).toContain('simulatorId');
+    });
+
+    it('should return validation error through handler for invalid parameter types', async () => {
+      // Test the actual tool handler which uses createTypedTool
+      const result = await buildRunSimIdProj.handler({
+        projectPath: 123, // Should be string
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('projectPath');
+    });
   });
 
   describe('Parameter Validation', () => {
-    it('should return validation error for missing projectPath', async () => {
-      const mockExecutor = createMockExecutor({});
+    // Note: Parameter validation is now handled by createTypedTool and Zod schema
+    // The logic function expects all parameters to be valid when called
+    it('should handle valid parameters correctly', async () => {
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'Build failed for testing validation flow',
+      });
 
       const result = await build_run_sim_id_projLogic(
         {
+          projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorId: 'test-uuid',
         },
         mockExecutor,
       );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return validation error for missing scheme', async () => {
-      const mockExecutor = createMockExecutor({});
-
-      const result = await build_run_sim_id_projLogic(
-        {
-          projectPath: '/path/to/project.xcodeproj',
-          simulatorId: 'test-uuid',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return validation error for missing simulatorId', async () => {
-      const mockExecutor = createMockExecutor({});
-
-      const result = await build_run_sim_id_projLogic(
-        {
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Build failed for testing validation flow');
     });
   });
 

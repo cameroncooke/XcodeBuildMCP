@@ -99,25 +99,16 @@ describe('build_sim_id_ws tool', () => {
 
   describe('Parameter Validation', () => {
     it('should handle missing workspacePath parameter', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
-
-      const result = await build_sim_id_wsLogic(
-        {
-          scheme: 'MyScheme',
-          simulatorId: 'test-uuid-123',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+      // Test the handler directly since validation happens at the handler level
+      const result = await buildSimIdWs.handler({
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid-123',
+        // workspacePath missing
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('workspacePath');
     });
 
     it('should handle empty workspacePath parameter', async () => {
@@ -146,25 +137,16 @@ describe('build_sim_id_ws tool', () => {
     });
 
     it('should handle missing scheme parameter', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
-
-      const result = await build_sim_id_wsLogic(
-        {
-          workspacePath: '/path/to/workspace',
-          simulatorId: 'test-uuid-123',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+      // Test the handler directly since validation happens at the handler level
+      const result = await buildSimIdWs.handler({
+        workspacePath: '/path/to/workspace',
+        simulatorId: 'test-uuid-123',
+        // scheme missing
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('scheme');
     });
 
     it('should handle empty scheme parameter', async () => {
@@ -193,25 +175,16 @@ describe('build_sim_id_ws tool', () => {
     });
 
     it('should handle missing simulatorId parameter', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
-
-      const result = await build_sim_id_wsLogic(
-        {
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+      // Test the handler directly since validation happens at the handler level
+      const result = await buildSimIdWs.handler({
+        workspacePath: '/path/to/workspace',
+        scheme: 'MyScheme',
+        // simulatorId missing
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('simulatorId');
     });
 
     it('should handle empty simulatorId parameter', async () => {

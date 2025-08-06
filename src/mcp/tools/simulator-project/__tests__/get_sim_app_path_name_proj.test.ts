@@ -92,90 +92,38 @@ describe('get_sim_app_path_name_proj plugin', () => {
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return validation error for missing projectPath', async () => {
-      const result = await get_sim_app_path_name_projLogic(
-        {
-          scheme: 'MyScheme',
-          platform: 'iOS Simulator',
-          simulatorName: 'iPhone 16',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+  describe('Handler Validation (via createTypedTool)', () => {
+    it('should validate required parameters at handler level', async () => {
+      // Missing projectPath should be caught by Zod schema
+      const result = await getSimAppPathNameProj.handler({
+        scheme: 'MyScheme',
+        platform: 'iOS Simulator',
+        simulatorName: 'iPhone 16',
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('projectPath');
+      expect(result.content[0].text).toContain('Required');
     });
 
-    it('should return validation error for missing scheme', async () => {
-      const result = await get_sim_app_path_name_projLogic(
-        {
-          projectPath: '/path/to/project.xcodeproj',
-          platform: 'iOS Simulator',
-          simulatorName: 'iPhone 16',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+    it('should validate enum values at handler level', async () => {
+      // Invalid platform should be caught by Zod schema
+      const result = await getSimAppPathNameProj.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        scheme: 'MyScheme',
+        platform: 'Invalid Platform',
+        simulatorName: 'iPhone 16',
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('platform');
     });
+  });
 
-    it('should return validation error for missing platform', async () => {
-      const result = await get_sim_app_path_name_projLogic(
-        {
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'platform' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return validation error for missing simulatorName', async () => {
-      const result = await get_sim_app_path_name_projLogic(
-        {
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          platform: 'iOS Simulator',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorName' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
+  describe('Logic Behavior (Complete Literal Returns)', () => {
+    // Note: The logic function only receives validated params from createTypedTool.
 
     it('should return command error when command fails', async () => {
       const mockExecutor = createMockExecutor({

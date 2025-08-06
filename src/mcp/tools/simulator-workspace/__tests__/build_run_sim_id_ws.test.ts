@@ -324,22 +324,17 @@ describe('build_run_sim_id_ws tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle validation failure for workspacePath', async () => {
-      const mockExecutor = createMockExecutor({ success: true });
-
-      const result = await build_run_sim_id_wsLogic(
-        {
-          workspacePath: undefined,
-          scheme: 'MyScheme',
-          simulatorId: 'test-uuid-123',
-        },
-        mockExecutor,
-      );
+      const result = await buildRunSimIdWs.handler({
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid-123',
+        // Missing workspacePath
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nworkspacePath: Required',
           },
         ],
         isError: true,
@@ -347,22 +342,17 @@ describe('build_run_sim_id_ws tool', () => {
     });
 
     it('should handle validation failure for scheme', async () => {
-      const mockExecutor = createMockExecutor({ success: true });
-
-      const result = await build_run_sim_id_wsLogic(
-        {
-          workspacePath: '/path/to/workspace',
-          scheme: undefined,
-          simulatorId: 'test-uuid-123',
-        },
-        mockExecutor,
-      );
+      const result = await buildRunSimIdWs.handler({
+        workspacePath: '/path/to/workspace',
+        simulatorId: 'test-uuid-123',
+        // Missing scheme
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nscheme: Required',
           },
         ],
         isError: true,
@@ -370,22 +360,17 @@ describe('build_run_sim_id_ws tool', () => {
     });
 
     it('should handle validation failure for simulatorId', async () => {
-      const mockExecutor = createMockExecutor({ success: true });
-
-      const result = await build_run_sim_id_wsLogic(
-        {
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorId: undefined,
-        },
-        mockExecutor,
-      );
+      const result = await buildRunSimIdWs.handler({
+        workspacePath: '/path/to/workspace',
+        scheme: 'MyScheme',
+        // Missing simulatorId
+      });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorId' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Required',
           },
         ],
         isError: true,

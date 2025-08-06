@@ -57,45 +57,32 @@ describe('show_build_set_ws plugin', () => {
   });
 
   describe('Logic Function Behavior', () => {
-    it('should handle missing workspacePath', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: '',
-        error: undefined,
-        process: { pid: 12345 },
-      });
-
-      const result = await show_build_set_wsLogic({ scheme: 'MyScheme' }, mockExecutor);
+    it('should handle missing workspacePath through createTypedTool validation', async () => {
+      // Note: This test verifies the handler validates parameters via createTypedTool
+      // The logic function should never receive invalid parameters now
+      const result = await plugin.handler({ scheme: 'MyScheme' });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'workspacePath' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nworkspacePath: Required',
           },
         ],
         isError: true,
       });
     });
 
-    it('should handle missing scheme', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: '',
-        error: undefined,
-        process: { pid: 12345 },
-      });
-
-      const result = await show_build_set_wsLogic(
-        { workspacePath: '/path/to/MyProject.xcworkspace' },
-        mockExecutor,
-      );
+    it('should handle missing scheme through createTypedTool validation', async () => {
+      // Note: This test verifies the handler validates parameters via createTypedTool
+      // The logic function should never receive invalid parameters now
+      const result = await plugin.handler({ workspacePath: '/path/to/MyProject.xcworkspace' });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nscheme: Required',
           },
         ],
         isError: true,

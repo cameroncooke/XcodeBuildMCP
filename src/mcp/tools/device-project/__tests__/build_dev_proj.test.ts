@@ -47,45 +47,58 @@ describe('build_dev_proj plugin', () => {
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return exact validation failure response for missing projectPath', async () => {
-      const result = await build_dev_projLogic(
-        {
-          projectPath: null,
-          scheme: 'MyScheme',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'projectPath' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
+  describe('Parameter Validation (via Handler)', () => {
+    it('should return Zod validation error for missing projectPath', async () => {
+      const result = await buildDevProj.handler({
+        scheme: 'MyScheme',
       });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('projectPath');
+      expect(result.content[0].text).toContain('Required');
     });
 
-    it('should return exact validation failure response for missing scheme', async () => {
+    it('should return Zod validation error for missing scheme', async () => {
+      const result = await buildDevProj.handler({
+        projectPath: '/path/to/MyProject.xcodeproj',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('scheme');
+      expect(result.content[0].text).toContain('Required');
+    });
+
+    it('should return Zod validation error for invalid parameter types', async () => {
+      const result = await buildDevProj.handler({
+        projectPath: 123, // Should be string
+        scheme: 'MyScheme',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+    });
+  });
+
+  describe('Handler Behavior (Complete Literal Returns)', () => {
+    it('should pass validation and execute successfully with valid parameters', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Build succeeded',
+      });
+
       const result = await build_dev_projLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
-          scheme: null,
+          scheme: 'MyScheme',
         },
-        createNoopExecutor(),
+        mockExecutor,
       );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'scheme' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBeUndefined();
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0].text).toContain('✅ iOS Device Build build succeeded');
     });
 
     it('should verify command generation with mock executor', async () => {

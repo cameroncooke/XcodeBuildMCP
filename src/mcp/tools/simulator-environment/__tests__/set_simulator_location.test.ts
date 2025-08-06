@@ -202,27 +202,6 @@ describe('set_simulator_location tool', () => {
       });
     });
 
-    it('should handle validation failure for missing simulatorUuid', async () => {
-      const result = await set_simulator_locationLogic(
-        {
-          simulatorUuid: undefined as any,
-          latitude: 37.7749,
-          longitude: -122.4194,
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
     it('should handle latitude validation failure', async () => {
       const result = await set_simulator_locationLogic(
         {

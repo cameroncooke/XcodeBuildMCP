@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { log } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import { executeXcodeBuildCommand, XcodePlatform } from '../../../utils/index.js';
 import { ToolResponse, SharedBuildParams } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
@@ -67,16 +67,6 @@ export async function build_run_sim_name_projLogic(
   params: BuildRunSimNameProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Validate required parameters
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
   // Provide defaults for the core logic
   const processedParams: BuildRunSimNameProjParams = {
     projectPath: params.projectPath,

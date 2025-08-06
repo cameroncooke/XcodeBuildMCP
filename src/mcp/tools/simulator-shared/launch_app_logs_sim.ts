@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { ToolResponse, createTextContent } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { startLogCapture } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
@@ -40,16 +39,6 @@ export async function launch_app_logs_simLogic(
   executor: CommandExecutor = getDefaultCommandExecutor(),
   logCaptureFunction: LogCaptureFunction = startLogCapture,
 ): Promise<ToolResponse> {
-  const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse!;
-  }
-
-  const bundleIdValidation = validateRequiredParam('bundleId', params.bundleId);
-  if (!bundleIdValidation.isValid) {
-    return bundleIdValidation.errorResponse!;
-  }
-
   log('info', `Starting app launch with logs for simulator ${params.simulatorUuid}`);
 
   // Start log capture session

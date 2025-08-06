@@ -272,38 +272,8 @@ describe('Key Press Plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
-      const result = await key_pressLogic({ keyCode: 40 }, createNoopExecutor());
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return error for missing keyCode', async () => {
-      const result = await key_pressLogic(
-        {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        },
-        createNoopExecutor(),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: "Required parameter 'keyCode' is missing. Please provide a value for this parameter.",
-          },
-        ],
-        isError: true,
-      });
-    });
+    // Note: Parameter validation is now handled by Zod schema validation in createTypedTool wrapper.
+    // The key_pressLogic function expects valid parameters and focuses on business logic testing.
 
     it('should return success for valid key press execution', async () => {
       const mockExecutor = createMockExecutor({

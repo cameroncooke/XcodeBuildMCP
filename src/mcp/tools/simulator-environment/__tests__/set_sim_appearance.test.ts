@@ -102,20 +102,21 @@ describe('set_sim_appearance plugin', () => {
       });
     });
 
-    it('should handle missing simulatorUuid', async () => {
+    it('should handle missing simulatorUuid via Zod validation', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
         output: '',
         error: '',
       });
 
-      const result = await set_sim_appearanceLogic({ mode: 'dark' } as any, mockExecutor);
+      // Test the handler directly to trigger Zod validation
+      const result = await setSimAppearancePlugin.handler({ mode: 'dark' });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: "Required parameter 'simulatorUuid' is missing. Please provide a value for this parameter.",
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
           },
         ],
         isError: true,

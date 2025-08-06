@@ -1,11 +1,6 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
-import {
-  log,
-  validateRequiredParam,
-  CommandExecutor,
-  getDefaultCommandExecutor,
-} from '../../../utils/index.js';
+import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Define schema as ZodObject
@@ -31,11 +26,6 @@ async function executeSimctlCommandAndRespond(
   executor: CommandExecutor = getDefaultCommandExecutor(),
   extraValidation?: () => ToolResponse | null,
 ): Promise<ToolResponse> {
-  const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse!;
-  }
-
   if (extraValidation) {
     const validationResult = extraValidation();
     if (validationResult) {

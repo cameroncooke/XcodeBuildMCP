@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import { log, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { validateRequiredParam, createTextResponse } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
@@ -101,20 +101,7 @@ export async function get_sim_app_path_name_projLogic(
   params: GetSimAppPathNameProjParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  // Parameter validation
-  const projectValidation = validateRequiredParam('projectPath', params.projectPath);
-  if (!projectValidation.isValid) return projectValidation.errorResponse!;
-
-  const schemeValidation = validateRequiredParam('scheme', params.scheme);
-  if (!schemeValidation.isValid) return schemeValidation.errorResponse!;
-
-  const platformValidation = validateRequiredParam('platform', params.platform);
-  if (!platformValidation.isValid) return platformValidation.errorResponse!;
-
-  const simulatorNameValidation = validateRequiredParam('simulatorName', params.simulatorName);
-  if (!simulatorNameValidation.isValid) return simulatorNameValidation.errorResponse!;
-
-  // Set defaults
+  // Set defaults - Zod validation already ensures required params are present
   const projectPath = params.projectPath;
   const scheme = params.scheme;
   const platform = params.platform;

@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
 import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { validateRequiredParam } from '../../../utils/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Define schema as ZodObject
@@ -18,11 +17,6 @@ export async function boot_simLogic(
   params: BootSimParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const simulatorUuidValidation = validateRequiredParam('simulatorUuid', params.simulatorUuid);
-  if (!simulatorUuidValidation.isValid) {
-    return simulatorUuidValidation.errorResponse!;
-  }
-
   log('info', `Starting xcrun simctl boot request for simulator ${params.simulatorUuid}`);
 
   try {
