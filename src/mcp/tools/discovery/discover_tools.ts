@@ -14,6 +14,69 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Using McpServer type from SDK instead of custom interface
 
+// Configuration for LLM parameters - made configurable instead of hardcoded
+interface LLMConfig {
+  maxTokens: number;
+  temperature?: number;
+}
+
+// Default LLM configuration with environment variable overrides
+const getLLMConfig = (): LLMConfig => ({
+  maxTokens: process.env.XCODEBUILDMCP_LLM_MAX_TOKENS
+    ? parseInt(process.env.XCODEBUILDMCP_LLM_MAX_TOKENS, 10)
+    : 200,
+  temperature: process.env.XCODEBUILDMCP_LLM_TEMPERATURE
+    ? parseFloat(process.env.XCODEBUILDMCP_LLM_TEMPERATURE)
+    : undefined,
+});
+
+/**
+ * Sanitizes user input to prevent injection attacks and ensure safe LLM usage
+ * @param input The raw user input to sanitize
+ * @returns Sanitized input safe for LLM processing
+ */
+function sanitizeTaskDescription(input: string): string {
+  if (!input || typeof input !== 'string') {
+    throw new Error('Task description must be a non-empty string');
+  }
+
+  // Remove control characters and normalize whitespace
+  let sanitized = input
+    // eslint-disable-next-line no-control-regex -- Intentional control character removal for security
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Remove control characters
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+
+  // Length validation - prevent excessively long inputs
+  if (sanitized.length === 0) {
+    throw new Error('Task description cannot be empty after sanitization');
+  }
+
+  if (sanitized.length > 2000) {
+    sanitized = sanitized.substring(0, 2000);
+    log('warn', 'Task description truncated to 2000 characters for safety');
+  }
+
+  // Basic injection prevention - remove potential prompt injection patterns
+  const suspiciousPatterns = [
+    /ignore\s+previous\s+instructions/gi,
+    /forget\s+everything/gi,
+    /system\s*:/gi,
+    /assistant\s*:/gi,
+    /you\s+are\s+now/gi,
+    /act\s+as/gi,
+  ];
+
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(sanitized)) {
+      log('warn', 'Potentially suspicious pattern detected in task description');
+      sanitized = sanitized.replace(pattern, '[filtered]');
+    }
+  }
+
+  return sanitized;
+}
+
 // Define schema as ZodObject
 const discoverToolsSchema = z.object({
   task_description: z
@@ -47,8 +110,23 @@ export async function discover_toolsLogic(
   _executor?: unknown,
   deps?: Dependencies,
 ): Promise<ToolResponse> {
+  // Enhanced null safety checks
+  if (!args || typeof args !== 'object') {
+    return createTextResponse('Invalid arguments provided to discover_tools', true);
+  }
+
   const { task_description, additive } = args;
-  log('info', `Discovering tools for task: ${task_description}`);
+
+  // Sanitize the task description to prevent injection attacks
+  let sanitizedTaskDescription: string;
+  try {
+    sanitizedTaskDescription = sanitizeTaskDescription(task_description);
+    log('info', `Discovering tools for task: ${sanitizedTaskDescription}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Invalid task description';
+    log('error', `Task description sanitization failed: ${errorMessage}`);
+    return createTextResponse(`Invalid task description: ${errorMessage}`, true);
+  }
 
   try {
     // Get the server instance from the global context
@@ -74,10 +152,10 @@ export async function discover_toolsLogic(
       deps?.generateWorkflowDescriptions ?? generateWorkflowDescriptions
     )();
 
-    // 3. Construct the prompt for the LLM
+    // 3. Construct the prompt for the LLM using sanitized input
     const userPrompt = `You are an expert assistant for the XcodeBuildMCP server. Your task is to select the most relevant workflow for a user's Apple development request.
 
-The user wants to perform the following task: "${task_description}"
+The user wants to perform the following task: "${sanitizedTaskDescription}"
 
 IMPORTANT: Each workflow represents a complete end-to-end development workflow. Choose ONLY ONE workflow that best matches the user's project type and target platform:
 
@@ -98,39 +176,77 @@ ${workflowDescriptions}
 Respond with ONLY a JSON array containing ONE workflow name that best matches the task (e.g., ["simulator-workspace"]).
 Each workflow contains ALL tools needed for its complete development workflow - no need to combine workflows.`;
 
-    // 4. Send sampling request
-    log('debug', 'Sending sampling request to client LLM');
+    // 4. Send sampling request with configurable parameters
+    const llmConfig = getLLMConfig();
+    log('debug', `Sending sampling request to client LLM with maxTokens: ${llmConfig.maxTokens}`);
     if (!server.server?.createMessage) {
       throw new Error('Server does not support message creation');
     }
-    const samplingResult = await server.server.createMessage({
-      messages: [{ role: 'user', content: { type: 'text', text: userPrompt } }],
-      maxTokens: 200,
-    });
 
-    // 5. Parse the response
+    const samplingOptions: {
+      messages: Array<{ role: 'user'; content: { type: 'text'; text: string } }>;
+      maxTokens: number;
+      temperature?: number;
+    } = {
+      messages: [{ role: 'user', content: { type: 'text', text: userPrompt } }],
+      maxTokens: llmConfig.maxTokens,
+    };
+
+    // Only add temperature if configured
+    if (llmConfig.temperature !== undefined) {
+      samplingOptions.temperature = llmConfig.temperature;
+    }
+
+    const samplingResult = await server.server.createMessage(samplingOptions);
+
+    // 5. Parse the response with enhanced null safety checks
     let selectedWorkflows: string[] = [];
     try {
+      // Enhanced null safety - check if samplingResult exists and has expected structure
+      if (!samplingResult || typeof samplingResult !== 'object') {
+        throw new Error('Invalid sampling result: null or not an object');
+      }
+
       const content = (
         samplingResult as {
-          content: Array<{ type: 'text'; text: string }> | { type: 'text'; text: string };
+          content?: Array<{ type: 'text'; text: string }> | { type: 'text'; text: string } | null;
         }
       ).content;
+
+      if (!content) {
+        throw new Error('No content in sampling response');
+      }
+
       let responseText = '';
 
-      // Handle both array and single object content formats
-      if (Array.isArray(content) && content.length > 0 && content[0].type === 'text') {
-        responseText = content[0].text.trim();
+      // Handle both array and single object content formats with enhanced null checks
+      if (Array.isArray(content)) {
+        if (content.length === 0) {
+          throw new Error('Empty content array in sampling response');
+        }
+        const firstItem = content[0];
+        if (!firstItem || typeof firstItem !== 'object' || firstItem.type !== 'text') {
+          throw new Error('Invalid first content item in array');
+        }
+        if (!firstItem.text || typeof firstItem.text !== 'string') {
+          throw new Error('Invalid text content in first array item');
+        }
+        responseText = firstItem.text.trim();
       } else if (
         content &&
         typeof content === 'object' &&
         'type' in content &&
         content.type === 'text' &&
-        'text' in content
+        'text' in content &&
+        typeof content.text === 'string'
       ) {
-        responseText = (content.text as string).trim();
+        responseText = content.text.trim();
       } else {
         throw new Error('Invalid content format in sampling response');
+      }
+
+      if (!responseText) {
+        throw new Error('Empty response text after parsing');
       }
 
       log('debug', `LLM response: ${responseText}`);
@@ -161,24 +277,39 @@ Each workflow contains ALL tools needed for its complete development workflow - 
       }
     } catch (error) {
       log('error', `Failed to parse LLM response: ${error}`);
-      // Extract the response text for error reporting
+      // Extract the response text for error reporting with enhanced null safety
       let errorResponseText = 'Unknown response format';
       try {
-        const content = (
-          samplingResult as {
-            content: Array<{ type: 'text'; text: string }> | { type: 'text'; text: string };
+        if (samplingResult && typeof samplingResult === 'object') {
+          const content = (
+            samplingResult as {
+              content?:
+                | Array<{ type: 'text'; text: string }>
+                | { type: 'text'; text: string }
+                | null;
+            }
+          ).content;
+
+          if (content && Array.isArray(content) && content.length > 0) {
+            const firstItem = content[0];
+            if (
+              firstItem &&
+              typeof firstItem === 'object' &&
+              firstItem.type === 'text' &&
+              typeof firstItem.text === 'string'
+            ) {
+              errorResponseText = firstItem.text;
+            }
+          } else if (
+            content &&
+            typeof content === 'object' &&
+            'type' in content &&
+            content.type === 'text' &&
+            'text' in content &&
+            typeof content.text === 'string'
+          ) {
+            errorResponseText = content.text;
           }
-        ).content;
-        if (Array.isArray(content) && content.length > 0 && content[0].type === 'text') {
-          errorResponseText = content[0].text;
-        } else if (
-          content &&
-          typeof content === 'object' &&
-          'type' in content &&
-          content.type === 'text' &&
-          'text' in content
-        ) {
-          errorResponseText = content.text as string;
         }
       } catch {
         // Keep default error message
