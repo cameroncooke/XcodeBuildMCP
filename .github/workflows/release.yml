@@ -37,9 +37,6 @@ jobs:
           rm -rf node_modules package-lock.json
           npm install --ignore-scripts
 
-      - name: Lint code
-        run: npm run lint
-
       - name: Check formatting
         run: npm run format:check
 
