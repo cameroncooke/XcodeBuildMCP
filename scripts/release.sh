@@ -250,40 +250,98 @@ if ! git diff-index --quiet HEAD --; then
   exit 1
 fi
 
-# Version update
-echo ""
-echo "🔧 Setting version to $VERSION..."
-run "npm version \"$VERSION\" --no-git-tag-version"
+# Check if package.json already has this version (from previous attempt)
+CURRENT_PACKAGE_VERSION=$(node -p "require('./package.json').version")
+if [[ "$CURRENT_PACKAGE_VERSION" == "$VERSION" ]]; then
+  echo "📦 Version $VERSION already set in package.json"
+  SKIP_VERSION_UPDATE=true
+else
+  SKIP_VERSION_UPDATE=false
+fi
 
-# README update
-echo ""
-echo "📝 Updating version in README.md..."
-# Update version references in code examples using extended regex for precise semver matching
-run "sed -i '' -E 's/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/@'"$VERSION"'/g' README.md"
+if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
+  # Version update
+  echo ""
+  echo "🔧 Setting version to $VERSION..."
+  run "npm version \"$VERSION\" --no-git-tag-version"
 
-# Update URL-encoded version references in shield links
-echo "📝 Updating version in README.md shield links..."
-run "sed -i '' -E 's/npm%3Axcodebuildmcp%40[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/npm%3Axcodebuildmcp%40'"$VERSION"'/g' README.md"
+  # README update
+  echo ""
+  echo "📝 Updating version in README.md..."
+  # Update version references in code examples using extended regex for precise semver matching
+  run "sed -i '' -E 's/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/@'"$VERSION"'/g' README.md"
 
-# Git operations
-echo ""
-echo "📦 Committing version changes..."
-run "git add package.json README.md"
-run "git commit -m \"Release v$VERSION\""
-run "git tag \"v$VERSION\""
+  # Update URL-encoded version references in shield links
+  echo "📝 Updating version in README.md shield links..."
+  run "sed -i '' -E 's/npm%3Axcodebuildmcp%40[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/npm%3Axcodebuildmcp%40'"$VERSION"'/g' README.md"
+
+  # Git operations
+  echo ""
+  echo "📦 Committing version changes..."
+  run "git add package.json README.md"
+  run "git commit -m \"Release v$VERSION\""
+else
+  echo "⏭️  Skipping version update (already done)"
+fi
+
+# Create or recreate tag at current HEAD
+echo "🏷️  Creating tag v$VERSION..."
+run "git tag -f \"v$VERSION\""
 
 echo ""
 echo "🚀 Pushing to origin..."
 run "git push origin $BRANCH --tags"
 
+# Monitor the workflow and handle failures
 echo ""
-echo "🎯 Tag pushed! GitHub will automatically:"
-echo "  - Detect the new tag and start the release workflow"
-echo "  - Bundle AXe artifacts"
-echo "  - Build the project"
-echo "  - Publish to NPM"
-echo "  - Create the GitHub release"
-echo ""
-echo "✅ Release v$VERSION initiated!"
-echo "📝 Monitor the GitHub Actions workflow for completion"
-echo "📦 View workflow: https://github.com/cameroncooke/XcodeBuildMCP/actions"
+echo "⏳ Monitoring GitHub Actions workflow..."
+echo "This may take a few minutes..."
+
+# Wait for workflow to start
+sleep 5
+
+# Get the workflow run ID for this tag
+RUN_ID=$(gh run list --workflow=release.yml --limit=1 --json databaseId --jq '.[0].databaseId')
+
+if [[ -n "$RUN_ID" ]]; then
+  echo "📊 Workflow run ID: $RUN_ID"
+  echo "🔍 Watching workflow progress..."
+  echo "(Press Ctrl+C to detach and monitor manually)"
+  echo ""
+  
+  # Watch the workflow with exit status
+  if gh run watch "$RUN_ID" --exit-status; then
+    echo ""
+    echo "✅ Release v$VERSION completed successfully!"
+    echo "📦 View on NPM: https://www.npmjs.com/package/xcodebuildmcp/v/$VERSION"
+    echo "🎉 View release: https://github.com/cameroncooke/XcodeBuildMCP/releases/tag/v$VERSION"
+  else
+    echo ""
+    echo "❌ CI workflow failed!"
+    echo ""
+    echo "🧹 Cleaning up tags only (keeping version commit)..."
+    
+    # Delete remote tag
+    echo "  - Deleting remote tag v$VERSION..."
+    git push origin :refs/tags/v$VERSION 2>/dev/null || true
+    
+    # Delete local tag
+    echo "  - Deleting local tag v$VERSION..."
+    git tag -d v$VERSION
+    
+    echo ""
+    echo "✅ Tag cleanup complete!"
+    echo ""
+    echo "ℹ️  The version commit remains in your history."
+    echo "📝 To retry after fixing issues:"
+    echo "   1. Fix the CI issues"
+    echo "   2. Commit your fixes"
+    echo "   3. Run: ./scripts/release.sh $VERSION"
+    echo ""
+    echo "🔍 To see what failed: gh run view $RUN_ID --log-failed"
+    exit 1
+  fi
+else
+  echo "⚠️  Could not find workflow run. Please check manually:"
+  echo "https://github.com/cameroncooke/XcodeBuildMCP/actions"
+fi
