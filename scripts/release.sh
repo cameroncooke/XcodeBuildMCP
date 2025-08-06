@@ -5,16 +5,166 @@ set -e
 # This script handles only the GitHub release creation.
 # Building and NPM publishing are handled by GitHub workflows.
 #
-# Usage: ./scripts/release.sh <version> [--dry-run]
-VERSION=$1
+# Usage: ./scripts/release.sh [VERSION|BUMP_TYPE] [OPTIONS]
+# Run with --help for detailed usage information
+FIRST_ARG=$1
 DRY_RUN=false
+VERSION=""
+BUMP_TYPE=""
 
-# Validate version format
-if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?$ ]]; then
-  echo "❌ Invalid version format: $VERSION"
-  echo "Version must be in format: x.y.z or x.y.z-tag.n (e.g., 1.4.0 or 1.4.0-beta.3)"
-  exit 1
-fi
+# Function to show help
+show_help() {
+  cat << 'EOF'
+📦 GitHub Release Creator
+
+Creates releases with automatic semver bumping. Only handles GitHub release 
+creation - building and NPM publishing are handled by workflows.
+
+USAGE:
+    [VERSION|BUMP_TYPE] [OPTIONS]
+
+ARGUMENTS:
+    VERSION         Explicit version (e.g., 1.5.0, 2.0.0-beta.1)
+    BUMP_TYPE       major | minor [default] | patch
+
+OPTIONS:
+    --dry-run       Preview without executing
+    -h, --help      Show this help
+
+EXAMPLES:
+    (no args)       Interactive minor bump
+    major           Interactive major bump  
+    1.5.0           Use specific version
+    patch --dry-run Preview patch bump
+
+EOF
+  
+  local highest_version=$(get_highest_version)
+  if [[ -n "$highest_version" ]]; then
+    echo "CURRENT: $highest_version"
+    echo "NEXT: major=$(bump_version "$highest_version" "major") | minor=$(bump_version "$highest_version" "minor") | patch=$(bump_version "$highest_version" "patch")"
+  else
+    echo "No existing version tags found"
+  fi
+  echo ""
+}
+
+# Function to get the highest version from git tags
+get_highest_version() {
+  git tag | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?$' | sed 's/^v//' | sort -V | tail -1
+}
+
+# Function to parse version components
+parse_version() {
+  local version=$1
+  echo "$version" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+)(-.*)?$/\1 \2 \3 \4/'
+}
+
+# Function to bump version based on type
+bump_version() {
+  local current_version=$1
+  local bump_type=$2
+  
+  local parsed=($(parse_version "$current_version"))
+  local major=${parsed[0]}
+  local minor=${parsed[1]}
+  local patch=${parsed[2]}
+  local prerelease=${parsed[3]:-""}
+  
+  # Remove prerelease for stable version bumps
+  case $bump_type in
+    major)
+      echo "$((major + 1)).0.0"
+      ;;
+    minor)
+      echo "${major}.$((minor + 1)).0"
+      ;;
+    patch)
+      echo "${major}.${minor}.$((patch + 1))"
+      ;;
+    *)
+      echo "❌ Unknown bump type: $bump_type" >&2
+      exit 1
+      ;;
+  esac
+}
+
+# Function to validate version format
+validate_version() {
+  local version=$1
+  if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?$ ]]; then
+    echo "❌ Invalid version format: $version"
+    echo "Version must be in format: x.y.z or x.y.z-tag.n (e.g., 1.4.0 or 1.4.0-beta.3)"
+    return 1
+  fi
+  return 0
+}
+
+# Function to compare versions (returns 1 if first version is greater, 0 if equal, -1 if less)
+compare_versions() {
+  local version1=$1
+  local version2=$2
+  
+  # Remove prerelease parts for comparison
+  local v1_stable=$(echo "$version1" | sed -E 's/(-.*)?$//')
+  local v2_stable=$(echo "$version2" | sed -E 's/(-.*)?$//')
+  
+  if [[ "$v1_stable" == "$v2_stable" ]]; then
+    echo 0
+    return
+  fi
+  
+  # Use sort -V to compare versions
+  local sorted=$(printf "%s\n%s" "$v1_stable" "$v2_stable" | sort -V)
+  if [[ "$(echo "$sorted" | head -1)" == "$v1_stable" ]]; then
+    echo -1
+  else
+    echo 1
+  fi
+}
+
+# Function to ask for confirmation
+ask_confirmation() {
+  local suggested_version=$1
+  echo ""
+  echo "🚀 Suggested next version: $suggested_version"
+  read -p "Do you want to use this version? (y/N): " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Function to get version interactively
+get_version_interactively() {
+  echo ""
+  echo "Please enter the version manually:"
+  while true; do
+    read -p "Version: " manual_version
+    if validate_version "$manual_version"; then
+      local highest_version=$(get_highest_version)
+      if [[ -n "$highest_version" ]]; then
+        local comparison=$(compare_versions "$manual_version" "$highest_version")
+        if [[ $comparison -le 0 ]]; then
+          echo "❌ Version $manual_version is not newer than the highest existing version $highest_version"
+          continue
+        fi
+      fi
+      VERSION="$manual_version"
+      break
+    fi
+  done
+}
+
+# Check for help flags first
+for arg in "$@"; do
+  if [[ "$arg" == "-h" ]] || [[ "$arg" == "--help" ]]; then
+    show_help
+    exit 0
+  fi
+done
 
 # Check for arguments and set flags
 for arg in "$@"; do
@@ -23,14 +173,52 @@ for arg in "$@"; do
   fi
 done
 
-if [ -z "$VERSION" ]; then
-  echo "Usage: $0 <version> [--dry-run]"
-  echo ""
-  echo "This script creates a GitHub release and tag. The GitHub workflow will handle:"
-  echo "  - Building the project"
-  echo "  - Bundling AXe artifacts" 
-  echo "  - Publishing to NPM"
+# Determine version or bump type (ignore --dry-run flag)
+if [[ -z "$FIRST_ARG" ]] || [[ "$FIRST_ARG" == "--dry-run" ]]; then
+  # No argument provided, default to minor bump
+  BUMP_TYPE="minor"
+elif [[ "$FIRST_ARG" == "major" ]] || [[ "$FIRST_ARG" == "minor" ]] || [[ "$FIRST_ARG" == "patch" ]]; then
+  # Bump type provided
+  BUMP_TYPE="$FIRST_ARG"
+else
+  # Version string provided
+  if validate_version "$FIRST_ARG"; then
+    VERSION="$FIRST_ARG"
+  else
+    exit 1
+  fi
+fi
+
+# If bump type is set, calculate the suggested version
+if [[ -n "$BUMP_TYPE" ]]; then
+  HIGHEST_VERSION=$(get_highest_version)
+  if [[ -z "$HIGHEST_VERSION" ]]; then
+    echo "❌ No existing version tags found. Please provide a version manually."
+    get_version_interactively
+  else
+    SUGGESTED_VERSION=$(bump_version "$HIGHEST_VERSION" "$BUMP_TYPE")
+    
+    if ask_confirmation "$SUGGESTED_VERSION"; then
+      VERSION="$SUGGESTED_VERSION"
+    else
+      get_version_interactively
+    fi
+  fi
+fi
+
+# Final validation and version comparison
+if [[ -z "$VERSION" ]]; then
+  echo "❌ No version determined"
   exit 1
+fi
+
+HIGHEST_VERSION=$(get_highest_version)
+if [[ -n "$HIGHEST_VERSION" ]]; then
+  COMPARISON=$(compare_versions "$VERSION" "$HIGHEST_VERSION")
+  if [[ $COMPARISON -le 0 ]]; then
+    echo "❌ Version $VERSION is not newer than the highest existing version $HIGHEST_VERSION"
+    exit 1
+  fi
 fi
 
 # Detect current branch
