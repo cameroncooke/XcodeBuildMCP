@@ -41,7 +41,7 @@ export async function loadResources(): Promise<Map<string, ResourceMeta>> {
 
   for (const [resourceName, loader] of Object.entries(RESOURCE_LOADERS)) {
     try {
-      const resource = await loader();
+      const resource = (await loader()) as ResourceMeta;
 
       if (!resource.uri || !resource.handler || typeof resource.handler !== 'function') {
         throw new Error(`Invalid resource structure for ${resourceName}`);

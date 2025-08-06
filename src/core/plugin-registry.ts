@@ -27,14 +27,17 @@ export async function loadWorkflowGroups(): Promise<Map<string, WorkflowGroup>> 
   for (const [workflowName, loader] of Object.entries(WORKFLOW_LOADERS)) {
     try {
       // Dynamic import with code-splitting
-      const workflowModule = await loader();
+      const workflowModule = (await loader()) as {
+        workflow?: WorkflowMeta;
+        [key: string]: unknown;
+      };
 
       if (!workflowModule.workflow) {
         throw new Error(`Workflow metadata missing in ${workflowName}/index.js`);
       }
 
       // Validate required fields
-      const workflowMeta = workflowModule.workflow;
+      const workflowMeta = workflowModule.workflow as WorkflowMeta;
       if (!workflowMeta.name || typeof workflowMeta.name !== 'string') {
         throw new Error(
           `Invalid workflow.name in ${workflowName}/index.js: must be a non-empty string`,
@@ -95,8 +98,8 @@ export async function getWorkflowMetadata(directoryName: string): Promise<Workfl
     // Fall back to loading the actual module
     const loader = WORKFLOW_LOADERS[directoryName as WorkflowName];
     if (loader) {
-      const workflowModule = await loader();
-      return workflowModule.workflow || null;
+      const workflowModule = (await loader()) as { workflow?: WorkflowMeta };
+      return workflowModule.workflow ?? null;
     }
 
     return null;

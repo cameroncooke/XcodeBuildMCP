@@ -67,8 +67,9 @@ export class TemplateManager {
       platform === 'iOS'
         ? 'XCODEBUILD_MCP_IOS_TEMPLATE_VERSION'
         : 'XCODEBUILD_MCP_MACOS_TEMPLATE_VERSION';
-    const version =
-      process.env[envVarName] ?? process.env.XCODEBUILD_MCP_TEMPLATE_VERSION ?? defaultVersion;
+    const version = String(
+      process.env[envVarName] ?? process.env.XCODEBUILD_MCP_TEMPLATE_VERSION ?? defaultVersion,
+    );
 
     // Create temp directory for download
     const tempDir = join(tmpdir(), `xcodebuild-mcp-template-${randomUUID()}`);
