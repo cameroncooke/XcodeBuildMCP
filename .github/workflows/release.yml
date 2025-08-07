@@ -78,7 +78,21 @@ jobs:
 
       - name: Publish to NPM (production releases only)
         if: github.event_name == 'push'
-        run: npm publish --access public
+        run: |
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          # Determine the appropriate npm tag based on version
+          if [[ "$VERSION" == *"-beta"* ]]; then
+            NPM_TAG="beta"
+          elif [[ "$VERSION" == *"-alpha"* ]]; then
+            NPM_TAG="alpha"
+          elif [[ "$VERSION" == *"-rc"* ]]; then
+            NPM_TAG="rc"
+          else
+            # For stable releases, explicitly use latest tag
+            NPM_TAG="latest"
+          fi
+          echo "📦 Publishing to NPM with tag: $NPM_TAG"
+          npm publish --access public --tag "$NPM_TAG"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
