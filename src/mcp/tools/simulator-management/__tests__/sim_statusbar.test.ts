@@ -6,11 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import {
-  createMockExecutor,
-  createMockFileSystemExecutor,
-  type CommandExecutor,
-} from '../../../../utils/command.js';
+import { createMockExecutor, type CommandExecutor } from '../../../../utils/command.js';
 import simStatusbar, { sim_statusbarLogic } from '../sim_statusbar.ts';
 
 describe('sim_statusbar tool', () => {

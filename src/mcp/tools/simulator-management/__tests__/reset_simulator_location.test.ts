@@ -3,7 +3,7 @@ import { z } from 'zod';
 import resetSimulatorLocationPlugin, {
   reset_simulator_locationLogic,
 } from '../reset_simulator_location.ts';
-import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
+import { createMockExecutor } from '../../../../utils/command.js';
 
 describe('reset_simulator_location plugin', () => {
   describe('Export Field Validation (Literal)', () => {

@@ -83,7 +83,8 @@ const discoverToolsSchema = z.object({
     .string()
     .describe(
       'A detailed description of the development task you want to accomplish. ' +
-        "For example: 'I need to build my iOS app and run it on the iPhone 15 Pro simulator.'",
+        "For example: 'I need to build my iOS app and run it on the iPhone 16 simulator.' " +
+        'If working with Xcode projects, explicitly state whether you are using a .xcworkspace (workspace) or a .xcodeproj (project).',
     ),
   additive: z
     .boolean()
@@ -157,24 +158,28 @@ export async function discover_toolsLogic(
 
 The user wants to perform the following task: "${sanitizedTaskDescription}"
 
-IMPORTANT: Each workflow represents a complete end-to-end development workflow. Choose ONLY ONE workflow that best matches the user's project type and target platform:
+IMPORTANT: Select EXACTLY ONE workflow that best matches the user's task. In most cases, users are working with a project or workspace. Use this selection guide:
 
-**Project Type Selection Guide:**
-- If working with .xcworkspace files (CocoaPods, SPM, multi-project): Choose *-workspace workflows
-- If working with .xcodeproj files (single project): Choose *-project workflows  
-- If working with Swift Package Manager: Choose swift-package
-- If only exploring/discovering projects: Choose project-discovery
+Primary (project/workspace-based) workflows:
+- iOS simulator with .xcworkspace: choose "simulator-workspace"
+- iOS simulator with .xcodeproj: choose "simulator-project"
+- iOS physical device with .xcworkspace: choose "device-workspace"
+- iOS physical device with .xcodeproj: choose "device-project"
+- macOS with .xcworkspace: choose "macos-workspace"
+- macOS with .xcodeproj: choose "macos-project"
+- Swift Package Manager (no Xcode project): choose "swift-package"
 
-**Platform Selection Guide:**
-- iOS development on simulators: Choose simulator-workspace or simulator-project
-- iOS development on physical devices: Choose device-workspace or device-project
-- macOS development: Choose macos-workspace or macos-project
+Secondary (task-based, no project/workspace needed):
+- Simulator management (boot, list, open, status bar, appearance, GPS/location): choose "simulator-management"
+- Logging or log capture (simulator or device): choose "logging"
+- UI automation/gestures/screenshots on a simulator app: choose "ui-testing"
+- System/environment diagnostics or validation: choose "diagnostics"
+- Create new iOS/macOS projects from templates: choose "project-scaffolding"
 
-Available Workflows:
+All available workflows:
 ${workflowDescriptions}
 
-Respond with ONLY a JSON array containing ONE workflow name that best matches the task (e.g., ["simulator-workspace"]).
-Each workflow contains ALL tools needed for its complete development workflow - no need to combine workflows.`;
+Respond with ONLY a JSON array containing ONE workflow name that best matches the task (e.g., ["simulator-workspace"]).`;
 
     // 4. Send sampling request with configurable parameters
     const llmConfig = getLLMConfig();
@@ -364,7 +369,7 @@ Each workflow contains ALL tools needed for its complete development workflow - 
 export default {
   name: 'discover_tools',
   description:
-    'Analyzes a natural language task description to enable a relevant set of Xcode and Apple development tools. For best results, specify the target platform (iOS, macOS, watchOS, tvOS, visionOS) and project type (.xcworkspace or .xcodeproj).',
+    'Analyzes a natural language task description and enables the most relevant development workflow. Prioritizes project/workspace workflows (simulator/device/macOS) and also supports task-based workflows (simulator-management, logging, diagnostics) and Swift packages.',
   schema: discoverToolsSchema.shape, // MCP SDK compatibility
   handler: createTypedTool(
     discoverToolsSchema,

@@ -161,13 +161,15 @@ XcodeBuildMCP uses a **workflow-based architecture** with tools organized into  
 - `touch` - Perform touch down/up events at specific coordinates
 - `type_text` - Type text (supports US keyboard characters)
 
-#### 11. Simulator Environment Configuration (`simulator-environment`)
-**Purpose**: Simulator environment and configuration management (5 tools)
-- `reset_network_condition` - Resets network conditions to default in the simulator
+#### 11. Simulator Management (`simulator-management`)
+**Purpose**: Manage simulators and their environment (7 tools)
+- `boot_sim` - Boots an iOS simulator using its UUID
+- `list_sims` - Lists available iOS simulators with their UUIDs
+- `open_sim` - Opens the iOS Simulator app
 - `reset_simulator_location` - Resets the simulator's location to default
-- `set_network_condition` - Simulates different network conditions in the simulator
 - `set_sim_appearance` - Sets the appearance mode (dark/light) of an iOS simulator
 - `set_simulator_location` - Sets a custom GPS location for the simulator
+- `sim_statusbar` - Sets the data network indicator and status bar overrides in the iOS simulator
 
 #### 12. Logging & Monitoring (`logging`)
 **Purpose**: Log capture and monitoring across platforms (4 tools)
