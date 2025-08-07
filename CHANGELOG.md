@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.11.1] - 2025-08-07
+- Improved tool discovery to be more accurate and context-aware
+
 ## [v1.11.0] - 2025-08-07
 - Major refactor/rewrite to improve code quality and maintainability in preparation for future development
 - Added support for dynamic tools (VSCode only for now)
