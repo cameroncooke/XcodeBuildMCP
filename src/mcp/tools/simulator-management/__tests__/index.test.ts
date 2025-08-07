@@ -1,10 +1,10 @@
 /**
- * Tests for simulator-environment workflow metadata
+ * Tests for simulator-management workflow metadata
  */
 import { describe, it, expect } from 'vitest';
 import { workflow } from '../index.js';
 
-describe('simulator-environment workflow metadata', () => {
+describe('simulator-management workflow metadata', () => {
   describe('Workflow Structure', () => {
     it('should export workflow object with required properties', () => {
       expect(workflow).toHaveProperty('name');
