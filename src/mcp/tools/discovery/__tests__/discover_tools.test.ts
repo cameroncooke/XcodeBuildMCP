@@ -116,7 +116,7 @@ describe('discover_tools', () => {
 
     it('should have correct description', () => {
       expect(discoverTools.description).toBe(
-        'Analyzes a natural language task description to enable a relevant set of Xcode and Apple development tools. For best results, specify the target platform (iOS, macOS, watchOS, tvOS, visionOS) and project type (.xcworkspace or .xcodeproj).',
+        'Analyzes a natural language task description and enables the most relevant development workflow. Prioritizes project/workspace workflows (simulator/device/macOS) and also supports task-based workflows (simulator-management, logging, diagnostics) and Swift packages.',
       );
     });
 
@@ -656,9 +656,10 @@ describe('discover_tools', () => {
       const prompt = requestCall[0].messages[0].content.text;
 
       expect(prompt).toContain(taskDescription);
-      expect(prompt).toContain('Project Type Selection Guide');
-      expect(prompt).toContain('Platform Selection Guide');
-      expect(prompt).toContain('Available Workflows');
+      expect(prompt).toContain('Select EXACTLY ONE workflow');
+      expect(prompt).toContain('Primary (project/workspace-based) workflows:');
+      expect(prompt).toContain('Secondary (task-based, no project/workspace needed):');
+      expect(prompt).toContain('All available workflows:');
     });
 
     it('should provide clear selection guidelines in prompt', async () => {
@@ -693,11 +694,11 @@ describe('discover_tools', () => {
       const requestCall = requestCalls[0];
       const prompt = requestCall[0].messages[0].content.text;
 
-      expect(prompt).toContain('Choose ONLY ONE workflow');
-      expect(prompt).toContain('If working with .xcworkspace files');
-      expect(prompt).toContain('If working with .xcodeproj files');
-      expect(prompt).toContain('iOS development on simulators');
-      expect(prompt).toContain('macOS development');
+      expect(prompt).toContain('Select EXACTLY ONE workflow');
+      expect(prompt).toContain('.xcworkspace');
+      expect(prompt).toContain('.xcodeproj');
+      expect(prompt).toContain('simulator-management');
+      expect(prompt).toContain('macOS');
       expect(prompt).toContain('Respond with ONLY a JSON array');
     });
   });
