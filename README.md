@@ -26,10 +26,14 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
     - [Installing via Smithery](#installing-via-smithery)
     - [MCP Compatibility](#mcp-compatibility)
 - [Incremental build support](#incremental-build-support)
+- [Dynamic Tools](#dynamic-tools)
+  - [What is Dynamic Tools?](#what-is-dynamic-tools)
+  - [How to Enable Dynamic Tools](#how-to-enable-dynamic-tools)
+  - [Usage Example](#usage-example)
+  - [Client Compatibility](#client-compatibility)
 - [Code Signing for Device Deployment](#code-signing-for-device-deployment)
 - [Troubleshooting](#troubleshooting)
   - [Diagnostic Tool](#diagnostic-tool)
-  - [MCP Server Logs](#mcp-server-logs)
 - [Privacy](#privacy)
   - [What is sent to Sentry?](#what-is-sent-to-sentry)
   - [Opting Out of Sentry](#opting-out-of-sentry)
@@ -100,9 +104,8 @@ The XcodeBuildMCP server provides the following tool capabilities:
 For clients that support MCP resources XcodeBuildMCP provides efficient URI-based data access:
 
 - **Simulators Resource** (`xcodebuildmcp://simulators`): Direct access to available iOS simulators with UUIDs and states
-
-> [!IMPORTANT]
-> Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
+- **Devices Resource** (`xcodebuildmcp://devices`): Direct access to connected physical Apple devices with UDIDs and states
+- **Environment Resource** (`xcodebuildmcp://environment`): Direct access to environment information such as Xcode version, macOS version, and Node.js version
 
 ## Getting started
 
@@ -173,6 +176,9 @@ Then configure your MCP client to use mise to install XcodeBuildMCP:
 > [!NOTE]
 > When using mise avoid using the @latest tag as mise will cache the package and may not update to the latest version automatically, instead prefer an explicit version number.
 
+> [!IMPORTANT]
+> Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
+
 #### Installing via Smithery
 
 To install XcodeBuildMCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@cameroncooke/XcodeBuildMCP):
@@ -220,6 +226,60 @@ Example MCP client configuration:
 > [!IMPORTANT]
 > Please note that incremental builds support is currently highly experimental and your mileage may vary. Please report any issues you encounter to the [issue tracker](https://github.com/cameroncooke/XcodeBuildMCP/issues).
 
+## Dynamic Tools
+
+XcodeBuildMCP supports dynamic tool loading to optimize context window usage in AI assistants. This feature is particularly useful for managing the extensive toolset (80+ tools) that XcodeBuildMCP provides.
+
+### What is Dynamic Tools?
+
+By default, XcodeBuildMCP loads all available tools at startup (Static Mode), which provides immediate access to the complete toolset but uses a larger context window. Dynamic Tools mode solves this by:
+
+1. **Starting minimal**: Only essential tools like `discover_tools` and `discover_projs` are available initially
+2. **AI-powered discovery**: When an AI agent identifies XcodeBuildMCP can help with development tasks, it automatically uses the `discover_tools` tool
+3. **Intelligent loading**: The server uses an LLM call to identify the most relevant workflow group and dynamically loads only those tools
+4. **Context efficiency**: Reduces the initial context footprint from 80+ tools to just 2 discovery tools while maintaining full functionality
+
+### How to Enable Dynamic Tools
+
+To enable dynamic tools, set the `XCODEBUILDMCP_DYNAMIC_TOOLS` environment variable to `true`:
+
+Example MCP client configuration:
+```json
+{
+  "mcpServers": {
+    "XcodeBuildMCP": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "xcodebuildmcp@latest"
+      ],
+      "env": {
+        "XCODEBUILDMCP_DYNAMIC_TOOLS": "true"
+      }        
+    }
+  }
+}
+```
+
+### Usage Example
+
+Once enabled, AI agents automatically discover and load relevant tools based on context. For example, when you mention working on an iOS app or the agent detects iOS development tasks in your workspace, it will automatically use the `discover_tools` tool to load the appropriate simulator and project tools needed for your workflow.
+
+### Client Compatibility
+
+Dynamic Tools requires MCP clients that support **MCP Sampling** for the AI-powered tool discovery to function:
+
+| Editor | Dynamic Tools Support |
+|--------|----------------------|
+| **VS Code** | ✅ |
+| **Cursor** | ❌ (No MCP Sampling) |
+| **Windsurf** | ❌ (No MCP Sampling) |
+| **Claude Code** | ❌ (No MCP Sampling) |
+| **Claude Desktop** | ❌ (No MCP Sampling) |
+
+> [!NOTE]
+> For clients that don't support MCP Sampling, XcodeBuildMCP will automatically fall back to Static Mode, loading all tools at startup regardless of the `XCODEBUILDMCP_DYNAMIC_TOOLS` setting.
+
 ## Code Signing for Device Deployment
 
 For device deployment features to work, code signing must be properly configured in Xcode **before** using XcodeBuildMCP device tools:
@@ -254,17 +314,6 @@ The diagnostic tool will output comprehensive information about:
 - Feature availability status
 
 When reporting issues on GitHub, please include the full output from the diagnostic tool to help with troubleshooting.
-
-### MCP Server Logs
-
-It can be helpful to have access to the log messages from the MCP server to identify any issues. The logs are captured by the client application, for example in Cursor:
-
-Cursor:
-```bash
-find ~/Library/Application\ Support/Cursor/logs -name "Cursor MCP.log" -exec zip -r matching_logs.zip {} +
-```
-
-If your MCP client doesn't have log files you can run the server directly using the MCP Inspector tool see [Debugging](docs/CONTRIBUTING.md#debugging) for more information on how to do this. Once running the MCP tool prints all log messages to it's error pane, which can be helpful in diagnosing issues.
 
 ## Privacy
 

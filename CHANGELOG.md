@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.11.0] - 2025-08-07
+- Major refactor/rewrite to improve code quality and maintainability in preparation for future development
+- Added support for dynamic tools (VSCode only for now)
+- Added support for MCP Resources (devices, simulators, environment info)
+- Workaround for https://github.com/cameroncooke/XcodeBuildMCP/issues/66 and https://github.com/anthropics/claude-code/issues/1804 issues where Claude Code would only see the first text content from tool responses
+
 ## [v1.10.0] - 2025-06-10
 ### Added
 - **App Lifecycle Management**: New tools for stopping running applications
