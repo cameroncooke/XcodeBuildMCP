@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { ToolResponse } from '../../../types/common.js';
-import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+import { ToolResponse } from '../../../types/common.ts';
+import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.ts';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const setSimAppearanceSchema = z.object({

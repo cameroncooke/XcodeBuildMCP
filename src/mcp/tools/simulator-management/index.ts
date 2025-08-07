@@ -1,0 +1,16 @@
+/**
+ * Simulator Management workflow
+ *
+ * Provides tools for working with simulators like booting and opening simulators, launching apps,
+ * listing sims, stopping apps and setting sim environment options like location, network, statusbar and appearance.
+ */
+
+export const workflow = {
+  name: 'Simulator Management',
+  description:
+    'Tools for managing simulators from booting, opening simulators, listing simulators, stopping simulators and setting simulator environment options like location, network, statusbar and appearance.',
+  platforms: ['iOS'],
+  targets: ['simulator'],
+  projectTypes: ['project', 'workspace'],
+  capabilities: ['boot', 'open', 'list', 'appearance', 'location', 'network', 'statusbar'],
+};

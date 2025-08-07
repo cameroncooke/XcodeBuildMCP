@@ -204,14 +204,14 @@ if (command === 'help' || command === 'h') {
  */
 async function executeReloaderoo(reloaderooArgs) {
   const buildPath = path.resolve(__dirname, '..', 'build', 'index.js');
-  
+
   if (!fs.existsSync(buildPath)) {
     throw new Error('Build not found. Please run "npm run build" first.');
   }
-  
+
   const tempFile = `/tmp/reloaderoo-output-${Date.now()}.json`;
-  const command = `npx reloaderoo@latest inspect ${reloaderooArgs.join(' ')} -- node "${buildPath}"`;
-  
+  const command = `npx -y reloaderoo@latest inspect ${reloaderooArgs.join(' ')} -- node "${buildPath}"`;
+
   return new Promise((resolve, reject) => {
     const child = spawn('bash', ['-c', `${command} > "${tempFile}"`], {
       stdio: 'inherit'
@@ -225,22 +225,22 @@ async function executeReloaderoo(reloaderooArgs) {
         }
 
         const content = fs.readFileSync(tempFile, 'utf8');
-        
+
         // Remove stderr log lines and find JSON
         const lines = content.split('\n');
         const cleanLines = [];
-        
+
         for (const line of lines) {
           if (line.match(/^\[\d{4}-\d{2}-\d{2}T/) || line.includes('[INFO]') || line.includes('[DEBUG]') || line.includes('[ERROR]')) {
             continue;
           }
-          
+
           const trimmed = line.trim();
           if (trimmed) {
             cleanLines.push(line);
           }
         }
-        
+
         // Find JSON start
         let jsonStartIndex = -1;
         for (let i = 0; i < cleanLines.length; i++) {
@@ -249,12 +249,12 @@ async function executeReloaderoo(reloaderooArgs) {
             break;
           }
         }
-        
+
         if (jsonStartIndex === -1) {
           reject(new Error(`No JSON response found in output.\nOutput: ${content.substring(0, 500)}...`));
           return;
         }
-        
+
         const jsonText = cleanLines.slice(jsonStartIndex).join('\n');
         const response = JSON.parse(jsonText);
         resolve(response);
@@ -282,21 +282,21 @@ async function getRuntimeInfo() {
   try {
     const toolsResponse = await executeReloaderoo(['list-tools']);
     const resourcesResponse = await executeReloaderoo(['list-resources']);
-    
+
     let tools = [];
     let toolCount = 0;
-    
+
     if (toolsResponse.tools && Array.isArray(toolsResponse.tools)) {
       toolCount = toolsResponse.tools.length;
-      tools = toolsResponse.tools.map(tool => ({ 
+      tools = toolsResponse.tools.map(tool => ({
         name: tool.name,
         description: tool.description
       }));
     }
-    
+
     let resources = [];
     let resourceCount = 0;
-    
+
     if (resourcesResponse.resources && Array.isArray(resourcesResponse.resources)) {
       resourceCount = resourcesResponse.resources.length;
       resources = resourcesResponse.resources.map(resource => ({
@@ -305,7 +305,7 @@ async function getRuntimeInfo() {
         description: resource.title || resource.description || 'No description available'
       }));
     }
-    
+
     return {
       tools,
       resources,
@@ -328,11 +328,11 @@ function isReExportFile(filePath) {
     const lines = content.split('\n').map(line => line.trim());
 
     const codeLines = lines.filter(line => {
-      return line.length > 0 && 
-             !line.startsWith('//') && 
-             !line.startsWith('/*') &&
-             !line.startsWith('*') &&
-             line !== '*/';
+      return line.length > 0 &&
+        !line.startsWith('//') &&
+        !line.startsWith('/*') &&
+        !line.startsWith('*') &&
+        line !== '*/';
     });
 
     if (codeLines.length === 0) {
@@ -352,7 +352,7 @@ function isReExportFile(filePath) {
 function getWorkflowDirectories() {
   const workflowDirs = [];
   const entries = fs.readdirSync(toolsDir, { withFileTypes: true });
-  
+
   for (const entry of entries) {
     if (entry.isDirectory()) {
       const indexPath = path.join(toolsDir, entry.name, 'index.ts');
@@ -361,7 +361,7 @@ function getWorkflowDirectories() {
       }
     }
   }
-  
+
   return workflowDirs;
 }
 
@@ -372,7 +372,7 @@ async function getStaticInfo() {
   try {
     // Get workflow directories
     const workflowDirs = getWorkflowDirectories();
-    
+
     // Find all tool files
     const files = await glob('**/*.ts', {
       cwd: toolsDir,
@@ -387,23 +387,23 @@ async function getStaticInfo() {
     for (const file of files) {
       const toolName = path.basename(file, '.ts');
       const workflowDir = path.basename(path.dirname(file));
-      
+
       if (!toolsByWorkflow.has(workflowDir)) {
         toolsByWorkflow.set(workflowDir, { canonical: [], reExports: [] });
       }
-      
+
       if (isReExportFile(file)) {
-        reExportFiles.push({ 
-          name: toolName, 
-          file, 
+        reExportFiles.push({
+          name: toolName,
+          file,
           workflowDir,
           relativePath: path.relative(projectRoot, file)
         });
         toolsByWorkflow.get(workflowDir).reExports.push(toolName);
       } else {
-        canonicalTools.set(toolName, { 
+        canonicalTools.set(toolName, {
           name: toolName,
-          file, 
+          file,
           workflowDir,
           relativePath: path.relative(projectRoot, file)
         });
@@ -431,20 +431,20 @@ async function getStaticInfo() {
 function displaySummary(runtimeData, staticData) {
   console.log(`${colors.bright}${colors.blue}📊 XcodeBuildMCP Tools Summary${colors.reset}`);
   console.log('═'.repeat(60));
-  
+
   if (runtimeData) {
     console.log(`${colors.green}🚀 Runtime Analysis:${colors.reset}`);
     console.log(`   Mode: ${runtimeData.dynamicMode ? 'Dynamic' : 'Static'}`);
     console.log(`   Tools: ${runtimeData.toolCount}`);
     console.log(`   Resources: ${runtimeData.resourceCount}`);
     console.log(`   Total: ${runtimeData.toolCount + runtimeData.resourceCount}`);
-    
+
     if (runtimeData.dynamicMode) {
       console.log(`   ${colors.yellow}ℹ️  Dynamic mode: Only enabled workflow tools shown${colors.reset}`);
     }
     console.log();
   }
-  
+
   if (staticData) {
     console.log(`${colors.cyan}📁 Static Analysis:${colors.reset}`);
     console.log(`   Workflow directories: ${staticData.workflowDirs.length}`);
@@ -460,16 +460,16 @@ function displaySummary(runtimeData, staticData) {
  */
 function displayWorkflows(staticData) {
   if (!options.workflows || !staticData) return;
-  
+
   console.log(`${colors.bright}📂 Workflow Directories:${colors.reset}`);
   console.log('─'.repeat(40));
-  
+
   for (const workflowDir of staticData.workflowDirs) {
     const workflow = staticData.toolsByWorkflow.get(workflowDir) || { canonical: [], reExports: [] };
     const totalTools = workflow.canonical.length + workflow.reExports.length;
-    
+
     console.log(`${colors.green}• ${workflowDir}${colors.reset} (${totalTools} tools)`);
-    
+
     if (options.verbose) {
       if (workflow.canonical.length > 0) {
         console.log(`  ${colors.cyan}Canonical:${colors.reset} ${workflow.canonical.join(', ')}`);
@@ -487,11 +487,11 @@ function displayWorkflows(staticData) {
  */
 function displayTools(runtimeData, staticData) {
   if (!options.tools) return;
-  
+
   if (runtimeData) {
     console.log(`${colors.bright}🛠️  Runtime Tools (${runtimeData.toolCount}):${colors.reset}`);
     console.log('─'.repeat(40));
-    
+
     if (runtimeData.tools.length === 0) {
       console.log('   No tools available');
     } else {
@@ -506,11 +506,11 @@ function displayTools(runtimeData, staticData) {
     }
     console.log();
   }
-  
+
   if (staticData && options.static) {
     console.log(`${colors.bright}📁 Static Tools (${staticData.toolCount}):${colors.reset}`);
     console.log('─'.repeat(40));
-    
+
     if (staticData.tools.length === 0) {
       console.log('   No tools found');
     } else {
@@ -534,10 +534,10 @@ function displayTools(runtimeData, staticData) {
  */
 function displayResources(runtimeData) {
   if (!options.resources || !runtimeData) return;
-  
+
   console.log(`${colors.bright}📚 Resources (${runtimeData.resourceCount}):${colors.reset}`);
   console.log('─'.repeat(40));
-  
+
   if (runtimeData.resources.length === 0) {
     console.log('   No resources available');
   } else {
@@ -560,26 +560,26 @@ async function main() {
   try {
     let runtimeData = null;
     let staticData = null;
-    
+
     // Gather data based on options
     if (options.runtime) {
       console.log(`${colors.cyan}🔍 Gathering runtime information...${colors.reset}`);
       runtimeData = await getRuntimeInfo();
     }
-    
+
     if (options.static) {
       console.log(`${colors.cyan}📁 Performing static analysis...${colors.reset}`);
       staticData = await getStaticInfo();
     }
-    
+
     // For default command or workflows option, always gather static data for workflow info
     if (options.workflows && !staticData) {
       console.log(`${colors.cyan}📁 Gathering workflow information...${colors.reset}`);
       staticData = await getStaticInfo();
     }
-    
+
     console.log(); // Blank line after gathering
-    
+
     // Display based on command
     switch (command) {
       case 'count':
@@ -587,14 +587,14 @@ async function main() {
         displaySummary(runtimeData, staticData);
         displayWorkflows(staticData);
         break;
-        
+
       case 'list':
       case 'l':
         displaySummary(runtimeData, staticData);
         displayTools(runtimeData, staticData);
         displayResources(runtimeData);
         break;
-        
+
       case 'static':
       case 's':
         if (!staticData) {
@@ -603,7 +603,7 @@ async function main() {
         }
         displaySummary(null, staticData);
         displayWorkflows(staticData);
-        
+
         if (options.verbose) {
           displayTools(null, staticData);
           console.log(`${colors.bright}🔄 Re-export Files (${staticData.reExportCount}):${colors.reset}`);
@@ -614,16 +614,16 @@ async function main() {
           });
         }
         break;
-        
+
       default:
         // Default case (no command) - show runtime summary with workflows
         displaySummary(runtimeData, staticData);
         displayWorkflows(staticData);
         break;
     }
-    
+
     console.log(`${colors.green}✅ Analysis complete!${colors.reset}`);
-    
+
   } catch (error) {
     console.error(`${colors.red}❌ Error: ${error.message}${colors.reset}`);
     process.exit(1);
