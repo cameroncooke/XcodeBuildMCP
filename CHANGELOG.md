@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.11.2] - 2025-08-08
+- Fixed "registerTools is not a function" errors during package upgrades
+
 ## [v1.11.1] - 2025-08-07
 - Improved tool discovery to be more accurate and context-aware
 
