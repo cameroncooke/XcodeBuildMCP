@@ -10,7 +10,7 @@ import {
 } from '../../../core/dynamic-tools.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 import { getDefaultCommandExecutor } from '../../../utils/command.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 
 // Using McpServer type from SDK instead of custom interface
 
