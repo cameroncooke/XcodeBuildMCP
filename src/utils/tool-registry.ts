@@ -1,4 +1,4 @@
-import { McpServer, RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer, RegisteredTool } from '@camsoft/mcp-sdk/server/mcp.js';
 import { loadPlugins } from '../core/plugin-registry.js';
 import { ToolResponse } from '../types/common.js';
 import { log } from './logger.js';

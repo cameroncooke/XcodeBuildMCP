@@ -12,8 +12,8 @@
  * - Handling transport configuration (stdio)
  */
 
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
+import { StdioServerTransport } from '@camsoft/mcp-sdk/server/stdio.js';
 import { log } from '../utils/logger.js';
 import { version } from '../version.js';
 

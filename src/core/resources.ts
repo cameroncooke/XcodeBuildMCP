@@ -11,8 +11,8 @@
  * - Providing fallback compatibility for clients without resource support
  */
 
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
+import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
+import { ReadResourceResult } from '@camsoft/mcp-sdk/types.js';
 import { log, CommandExecutor } from '../utils/index.js';
 import { RESOURCE_LOADERS } from './generated-resources.js';
 

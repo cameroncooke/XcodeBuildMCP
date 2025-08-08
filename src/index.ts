@@ -18,7 +18,7 @@ import './utils/sentry.js';
 
 // Import server components
 import { createServer, startServer } from './server/server.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 
 // Import utilities
 import { log } from './utils/logger.js';

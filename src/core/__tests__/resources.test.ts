@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 
 import { registerResources, getAvailableResources, loadResources } from '../resources.js';
 

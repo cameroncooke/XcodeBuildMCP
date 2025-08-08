@@ -3,7 +3,7 @@ import { getDefaultCommandExecutor, CommandExecutor } from '../utils/command.js'
 import { WORKFLOW_LOADERS, WorkflowName, WORKFLOW_METADATA } from './generated-plugins.js';
 import { ToolResponse } from '../types/common.js';
 import { PluginMeta } from './plugin-types.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 import {
   registerAndTrackTools,
   removeTrackedTools,
