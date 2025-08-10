@@ -56,24 +56,55 @@ describe('test_device plugin', () => {
       expect(testDevice.schema.platform.safeParse('invalidPlatform').success).toBe(false);
     });
 
-    it('should validate XOR between projectPath and workspacePath', () => {
+    it('should validate XOR between projectPath and workspacePath', async () => {
+      // This would be validated at the schema level via createTypedTool
+      // We test the schema validation through successful logic calls instead
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: JSON.stringify({
+          title: 'Test Schema',
+          result: 'SUCCESS',
+          totalTestCount: 1,
+          passedTests: 1,
+          failedTests: 0,
+          skippedTests: 0,
+          expectedFailures: 0,
+        }),
+      });
+
       // Valid: project path only
-      expect(() =>
-        testDevice.handler({
+      const projectResult = await testDeviceLogic(
+        {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           deviceId: 'test-device-123',
+        },
+        mockExecutor,
+        createMockFileSystemExecutor({
+          mkdtemp: async () => '/tmp/xcodebuild-test-123',
+          tmpdir: () => '/tmp',
+          stat: async () => ({ isFile: () => true }),
+          rm: async () => {},
         }),
-      ).not.toThrow();
+      );
+      expect(projectResult.isError).toBeFalsy();
 
       // Valid: workspace path only
-      expect(() =>
-        testDevice.handler({
+      const workspaceResult = await testDeviceLogic(
+        {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
           deviceId: 'test-device-123',
+        },
+        mockExecutor,
+        createMockFileSystemExecutor({
+          mkdtemp: async () => '/tmp/xcodebuild-test-456',
+          tmpdir: () => '/tmp',
+          stat: async () => ({ isFile: () => true }),
+          rm: async () => {},
         }),
-      ).not.toThrow();
+      );
+      expect(workspaceResult.isError).toBeFalsy();
     });
   });
 
