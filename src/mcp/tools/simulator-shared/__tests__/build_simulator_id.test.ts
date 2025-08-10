@@ -63,6 +63,7 @@ describe('build_simulator_id tool', () => {
         schema.safeParse({
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
+          // simulatorId missing
         }).success,
       ).toBe(false);
 
@@ -70,15 +71,18 @@ describe('build_simulator_id tool', () => {
         schema.safeParse({
           workspacePath: '/path/to/workspace',
           simulatorId: 'test-uuid-123',
+          // scheme missing
         }).success,
       ).toBe(false);
 
+      // This should pass base schema validation (but would fail XOR validation at handler level)
       expect(
         schema.safeParse({
           scheme: 'MyScheme',
           simulatorId: 'test-uuid-123',
+          // Neither projectPath nor workspacePath - base schema allows this
         }).success,
-      ).toBe(false);
+      ).toBe(true);
 
       // Invalid types
       expect(
@@ -130,14 +134,19 @@ describe('build_simulator_id tool', () => {
 
     it('should handle empty string conversion for XOR validation', async () => {
       // Empty strings should be converted to undefined
-      const result = await buildSimulatorId.handler({
-        projectPath: '',
-        workspacePath: '/path/workspace.xcworkspace',
-        scheme: 'MyScheme',
-        simulatorId: 'test-uuid-123',
-      });
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      const result = await build_simulator_idLogic(
+        {
+          projectPath: '',
+          workspacePath: '/path/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
       // Should succeed because empty string projectPath becomes undefined
-      expect(result.isError).toBe(false);
+      expect(result.isError).toBeUndefined();
     });
   });
 
@@ -156,16 +165,12 @@ describe('build_simulator_id tool', () => {
     });
 
     it('should handle empty workspacePath parameter', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
-
-      const result = await build_simulator_idLogic(
-        {
-          workspacePath: '',
-          scheme: 'MyScheme',
-          simulatorId: 'test-uuid-123',
-        },
-        mockExecutor,
-      );
+      // Test with handler to get proper XOR validation
+      const result = await buildSimulatorId.handler({
+        workspacePath: '',
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid-123',
+      });
 
       // Empty string gets converted to undefined in preprocessing, so this will fail XOR validation
       expect(result.isError).toBe(true);
@@ -201,7 +206,7 @@ describe('build_simulator_id tool', () => {
       expect(result.content).toEqual([
         {
           type: 'text',
-          text: '✅ Build build succeeded for scheme .',
+          text: '✅ iOS Simulator Build build succeeded for scheme .',
         },
         {
           type: 'text',
@@ -211,7 +216,10 @@ describe('build_simulator_id tool', () => {
     });
 
     it('should handle empty simulatorId parameter', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+      const mockExecutor = createMockExecutor({
+        success: false,
+        error: 'For iOS Simulator platform, either simulatorId or simulatorName must be provided',
+      });
 
       const result = await build_simulator_idLogic(
         {
@@ -222,17 +230,11 @@ describe('build_simulator_id tool', () => {
         mockExecutor,
       );
 
-      // Empty string passes validation but may cause build issues
-      expect(result.content).toEqual([
-        {
-          type: 'text',
-          text: '✅ Build build succeeded for scheme MyScheme.',
-        },
-        {
-          type: 'text',
-          text: expect.stringContaining('Next Steps:'),
-        },
-      ]);
+      // Empty simulatorId causes early failure in destination construction
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toBe(
+        'For iOS Simulator platform, either simulatorId or simulatorName must be provided',
+      );
     });
 
     it('should handle invalid simulatorId parameter', async () => {
@@ -253,7 +255,7 @@ describe('build_simulator_id tool', () => {
 
       // Invalid simulatorId causes build failure
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('iOS Simulator Build operation failed');
+      expect(result.content[0].text).toContain('Unable to find a destination');
     });
   });
 
@@ -443,7 +445,7 @@ describe('build_simulator_id tool', () => {
 
       expect(result.isError).toBeUndefined();
       expect(result.content).toEqual([
-        { type: 'text', text: '✅ Build build succeeded for scheme MyScheme.' },
+        { type: 'text', text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.' },
         { type: 'text', text: expect.stringContaining('Next Steps:') },
       ]);
     });
@@ -466,7 +468,9 @@ describe('build_simulator_id tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('❌ [stderr]');
-      expect(result.content[1].text).toBe('❌ Build build failed for scheme MyScheme.');
+      expect(result.content[1].text).toBe(
+        '❌ iOS Simulator Build build failed for scheme MyScheme.',
+      );
     });
 
     it('should extract and format warnings from build output', async () => {
@@ -487,7 +491,7 @@ describe('build_simulator_id tool', () => {
       expect(result.isError).toBeUndefined();
       expect(result.content).toEqual([
         { type: 'text', text: '⚠️ Warning: warning: deprecated method used' },
-        { type: 'text', text: '✅ Build build succeeded for scheme MyScheme.' },
+        { type: 'text', text: '✅ iOS Simulator Build build succeeded for scheme MyScheme.' },
         { type: 'text', text: expect.stringContaining('Next Steps:') },
       ]);
     });
@@ -510,7 +514,7 @@ describe('build_simulator_id tool', () => {
         content: [
           {
             type: 'text',
-            text: 'Error during Build build: spawn xcodebuild ENOENT',
+            text: 'Error during iOS Simulator Build build: spawn xcodebuild ENOENT',
           },
         ],
         isError: true,
@@ -535,7 +539,7 @@ describe('build_simulator_id tool', () => {
         content: [
           {
             type: 'text',
-            text: 'Error during Build build: String error message',
+            text: 'Error during iOS Simulator Build build: String error message',
           },
         ],
         isError: true,
