@@ -194,6 +194,7 @@ describe('get_simulator_app_path_id tool', () => {
 4. Launch app: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`,
           },
         ],
+        isError: false,
       });
     });
 
@@ -230,6 +231,7 @@ describe('get_simulator_app_path_id tool', () => {
 4. Launch app: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`,
           },
         ],
+        isError: false,
       });
     });
 
@@ -266,6 +268,7 @@ describe('get_simulator_app_path_id tool', () => {
 4. Launch app: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`,
           },
         ],
+        isError: false,
       });
     });
 
@@ -302,6 +305,7 @@ describe('get_simulator_app_path_id tool', () => {
 4. Launch app: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`,
           },
         ],
+        isError: false,
       });
     });
 
@@ -534,7 +538,7 @@ describe('get_simulator_app_path_id tool', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await get_sim_app_path_id_wsLogic(
+      await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
@@ -591,7 +595,7 @@ describe('get_simulator_app_path_id tool', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await get_sim_app_path_id_wsLogic(
+      await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
@@ -648,7 +652,7 @@ describe('get_simulator_app_path_id tool', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await get_sim_app_path_id_wsLogic(
+      await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/Watch.xcworkspace',
           scheme: 'WatchScheme',
@@ -705,7 +709,7 @@ describe('get_simulator_app_path_id tool', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await get_sim_app_path_id_wsLogic(
+      await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/Vision.xcworkspace',
           scheme: 'VisionScheme',
