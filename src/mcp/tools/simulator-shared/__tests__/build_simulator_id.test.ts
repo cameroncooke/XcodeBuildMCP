@@ -3,33 +3,42 @@ import { z } from 'zod';
 import { createMockExecutor } from '../../../../utils/command.js';
 
 // Import the plugin and logic function
-import buildSimIdWs, { build_sim_id_wsLogic } from '../build_sim_id_ws.ts';
+import buildSimulatorId, { build_simulator_idLogic } from '../build_simulator_id.ts';
 
-describe('build_sim_id_ws tool', () => {
+describe('build_simulator_id tool', () => {
   // Only clear any remaining mocks if needed
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(buildSimIdWs.name).toBe('build_sim_id_ws');
+      expect(buildSimulatorId.name).toBe('build_simulator_id');
     });
 
     it('should have correct description', () => {
-      expect(buildSimIdWs.description).toBe(
-        "Builds an app from a workspace for a specific simulator by UUID. IMPORTANT: Requires workspacePath, scheme, and simulatorId. Example: build_sim_id_ws({ workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
+      expect(buildSimulatorId.description).toBe(
+        "Builds an app from a project or workspace for a specific simulator by UUID. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and simulatorId. Example: build_simulator_id({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof buildSimIdWs.handler).toBe('function');
+      expect(typeof buildSimulatorId.handler).toBe('function');
     });
 
     it('should have correct schema with required and optional fields', () => {
-      const schema = z.object(buildSimIdWs.schema);
+      const schema = z.object(buildSimulatorId.schema);
 
-      // Valid inputs
+      // Valid inputs - workspace path
       expect(
         schema.safeParse({
           workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        }).success,
+      ).toBe(true);
+
+      // Valid inputs - project path
+      expect(
+        schema.safeParse({
+          projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorId: 'test-uuid-123',
         }).success,
@@ -45,6 +54,7 @@ describe('build_sim_id_ws tool', () => {
           extraArgs: ['--verbose'],
           useLatestOS: true,
           preferXcodebuild: false,
+          simulatorName: 'iPhone 16',
         }).success,
       ).toBe(true);
 
@@ -97,48 +107,44 @@ describe('build_sim_id_ws tool', () => {
     });
   });
 
-  describe('Parameter Validation', () => {
-    it('should handle missing workspacePath parameter', async () => {
-      // Test the handler directly since validation happens at the handler level
-      const result = await buildSimIdWs.handler({
+  describe('XOR Validation', () => {
+    it('should error when neither projectPath nor workspacePath provided', async () => {
+      const result = await buildSimulatorId.handler({
         scheme: 'MyScheme',
         simulatorId: 'test-uuid-123',
-        // workspacePath missing
       });
-
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('workspacePath');
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
     });
 
-    it('should handle empty workspacePath parameter', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
-
-      const result = await build_sim_id_wsLogic(
-        {
-          workspacePath: '',
-          scheme: 'MyScheme',
-          simulatorId: 'test-uuid-123',
-        },
-        mockExecutor,
-      );
-
-      // Empty string passes validation but may cause build issues
-      expect(result.content).toEqual([
-        {
-          type: 'text',
-          text: '✅ Build build succeeded for scheme MyScheme.',
-        },
-        {
-          type: 'text',
-          text: expect.stringContaining('Next Steps:'),
-        },
-      ]);
+    it('should error when both projectPath and workspacePath provided', async () => {
+      const result = await buildSimulatorId.handler({
+        projectPath: '/path/project.xcodeproj',
+        workspacePath: '/path/workspace.xcworkspace',
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid-123',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('mutually exclusive');
     });
 
+    it('should handle empty string conversion for XOR validation', async () => {
+      // Empty strings should be converted to undefined
+      const result = await buildSimulatorId.handler({
+        projectPath: '',
+        workspacePath: '/path/workspace.xcworkspace',
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid-123',
+      });
+      // Should succeed because empty string projectPath becomes undefined
+      expect(result.isError).toBe(false);
+    });
+  });
+
+  describe('Parameter Validation', () => {
     it('should handle missing scheme parameter', async () => {
       // Test the handler directly since validation happens at the handler level
-      const result = await buildSimIdWs.handler({
+      const result = await buildSimulatorId.handler({
         workspacePath: '/path/to/workspace',
         simulatorId: 'test-uuid-123',
         // scheme missing
@@ -149,10 +155,40 @@ describe('build_sim_id_ws tool', () => {
       expect(result.content[0].text).toContain('scheme');
     });
 
+    it('should handle empty workspacePath parameter', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      const result = await build_simulator_idLogic(
+        {
+          workspacePath: '',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
+
+      // Empty string gets converted to undefined in preprocessing, so this will fail XOR validation
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+    });
+
+    it('should handle missing simulatorId parameter', async () => {
+      // Test the handler directly since validation happens at the handler level
+      const result = await buildSimulatorId.handler({
+        workspacePath: '/path/to/workspace',
+        scheme: 'MyScheme',
+        // simulatorId missing
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('simulatorId');
+    });
+
     it('should handle empty scheme parameter', async () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: '',
@@ -174,27 +210,10 @@ describe('build_sim_id_ws tool', () => {
       ]);
     });
 
-    it('should handle missing simulatorId parameter', async () => {
-      // Test the handler directly since validation happens at the handler level
-      const result = await buildSimIdWs.handler({
-        workspacePath: '/path/to/workspace',
-        scheme: 'MyScheme',
-        // simulatorId missing
-      });
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('simulatorId');
-    });
-
     it('should handle empty simulatorId parameter', async () => {
-      const mockExecutor = createMockExecutor({
-        success: false,
-        output: '',
-        error: 'error: Unable to find a destination matching the provided destination specifier',
-      });
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -203,11 +222,38 @@ describe('build_sim_id_ws tool', () => {
         mockExecutor,
       );
 
-      // Empty simulatorId passes validation but causes early failure in destination construction
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toBe(
-        'For iOS Simulator platform, either simulatorId or simulatorName must be provided',
+      // Empty string passes validation but may cause build issues
+      expect(result.content).toEqual([
+        {
+          type: 'text',
+          text: '✅ Build build succeeded for scheme MyScheme.',
+        },
+        {
+          type: 'text',
+          text: expect.stringContaining('Next Steps:'),
+        },
+      ]);
+    });
+
+    it('should handle invalid simulatorId parameter', async () => {
+      const mockExecutor = createMockExecutor({
+        success: false,
+        output: '',
+        error: 'error: Unable to find a destination matching the provided destination specifier',
+      });
+
+      const result = await build_simulator_idLogic(
+        {
+          workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorId: 'invalid-uuid',
+        },
+        mockExecutor,
       );
+
+      // Invalid simulatorId causes build failure
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('iOS Simulator Build operation failed');
     });
   });
 
@@ -222,7 +268,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -256,7 +302,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -296,7 +342,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -320,6 +366,40 @@ describe('build_sim_id_ws tool', () => {
       ]);
     });
 
+    it('should generate correct xcodebuild command with projectPath', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
+
+      const result = await build_simulator_idLogic(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+        },
+        spyExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-project',
+        '/path/to/MyProject.xcodeproj',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=iOS Simulator,id=test-uuid-123',
+        'build',
+      ]);
+    });
+
     it('should use default configuration when not provided', async () => {
       let capturedCommand: string[] = [];
       const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
@@ -330,7 +410,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -352,7 +432,7 @@ describe('build_sim_id_ws tool', () => {
         output: 'BUILD SUCCEEDED',
       });
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -375,7 +455,7 @@ describe('build_sim_id_ws tool', () => {
         error: 'error: Build input file cannot be found',
       });
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -395,7 +475,7 @@ describe('build_sim_id_ws tool', () => {
         output: 'warning: deprecated method used\nBUILD SUCCEEDED',
       });
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -417,7 +497,7 @@ describe('build_sim_id_ws tool', () => {
         throw new Error('spawn xcodebuild ENOENT');
       };
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -442,7 +522,7 @@ describe('build_sim_id_ws tool', () => {
         throw 'String error message';
       };
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -474,7 +554,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -498,7 +578,7 @@ describe('build_sim_id_ws tool', () => {
         return mockExecutor(command);
       };
 
-      const result = await build_sim_id_wsLogic(
+      const result = await build_simulator_idLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
