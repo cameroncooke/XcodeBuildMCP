@@ -1,36 +1,47 @@
 /**
- * Tests for build_run_sim_name_ws plugin
+ * Tests for build_run_simulator_name plugin (unified)
  * Following CLAUDE.md testing standards with dependency injection and literal validation
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
-import buildRunSimNameWs, { build_run_sim_name_wsLogic } from '../build_run_sim_name_ws.ts';
+import buildRunSimulatorName, {
+  build_run_simulator_nameLogic,
+} from '../build_run_simulator_name.js';
 
-describe('build_run_sim_name_ws tool', () => {
+describe('build_run_simulator_name tool', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(buildRunSimNameWs.name).toBe('build_run_sim_name_ws');
+      expect(buildRunSimulatorName.name).toBe('build_run_simulator_name');
     });
 
     it('should have correct description', () => {
-      expect(buildRunSimNameWs.description).toBe(
-        "Builds and runs an app from a workspace on a simulator specified by name. IMPORTANT: Requires workspacePath, scheme, and simulatorName. Example: build_run_sim_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+      expect(buildRunSimulatorName.description).toBe(
+        "Builds and runs an app from a project or workspace on a specific simulator by name. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and simulatorName. Example: build_run_simulator_name({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof buildRunSimNameWs.handler).toBe('function');
+      expect(typeof buildRunSimulatorName.handler).toBe('function');
     });
 
     it('should have correct schema with required and optional fields', () => {
-      const schema = z.object(buildRunSimNameWs.schema);
+      const schema = z.object(buildRunSimulatorName.schema);
 
-      // Valid inputs
+      // Valid inputs - workspace
       expect(
         schema.safeParse({
           workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        }).success,
+      ).toBe(true);
+
+      // Valid inputs - project
+      expect(
+        schema.safeParse({
+          projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         }).success,
@@ -59,7 +70,7 @@ describe('build_run_sim_name_ws tool', () => {
 
       expect(
         schema.safeParse({
-          workspacePath: '/path/to/workspace',
+          projectPath: '/path/to/project.xcodeproj',
           simulatorName: 'iPhone 16',
         }).success,
       ).toBe(false);
@@ -118,7 +129,7 @@ describe('build_run_sim_name_ws tool', () => {
         }),
       });
 
-      const result = await build_run_sim_name_wsLogic(
+      const result = await build_run_simulator_nameLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -144,7 +155,7 @@ describe('build_run_sim_name_ws tool', () => {
         error: 'Build failed with error',
       });
 
-      const result = await build_run_sim_name_wsLogic(
+      const result = await build_run_simulator_nameLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -209,7 +220,7 @@ describe('build_run_sim_name_ws tool', () => {
         }
       };
 
-      const result = await build_run_sim_name_wsLogic(
+      const result = await build_run_simulator_nameLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -229,7 +240,7 @@ describe('build_run_sim_name_ws tool', () => {
         error: 'Command failed',
       });
 
-      const result = await build_run_sim_name_wsLogic(
+      const result = await build_run_simulator_nameLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -249,7 +260,7 @@ describe('build_run_sim_name_ws tool', () => {
         error: 'String error',
       });
 
-      const result = await build_run_sim_name_wsLogic(
+      const result = await build_run_simulator_nameLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -289,7 +300,7 @@ describe('build_run_sim_name_ws tool', () => {
         };
       };
 
-      const result = await build_run_sim_name_wsLogic(
+      const result = await build_run_simulator_nameLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -359,7 +370,7 @@ describe('build_run_sim_name_ws tool', () => {
         }
       };
 
-      const result = await build_run_sim_name_wsLogic(
+      const result = await build_run_simulator_nameLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -454,7 +465,7 @@ describe('build_run_sim_name_ws tool', () => {
         }
       };
 
-      const result = await build_run_sim_name_wsLogic(
+      const result = await build_run_simulator_nameLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -533,7 +544,7 @@ describe('build_run_sim_name_ws tool', () => {
         };
       };
 
-      const result = await build_run_sim_name_wsLogic(
+      const result = await build_run_simulator_nameLogic(
         {
           workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
           scheme: 'My Scheme',
@@ -553,6 +564,84 @@ describe('build_run_sim_name_ws tool', () => {
         '--json',
       ]);
       expect(callHistory[0].logPrefix).toBe('List Simulators');
+    });
+  });
+
+  describe('XOR Validation', () => {
+    it('should error when neither projectPath nor workspacePath provided', async () => {
+      const result = await buildRunSimulatorName.handler({
+        scheme: 'MyScheme',
+        simulatorName: 'iPhone 16',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+    });
+
+    it('should error when both projectPath and workspacePath provided', async () => {
+      const result = await buildRunSimulatorName.handler({
+        projectPath: '/path/project.xcodeproj',
+        workspacePath: '/path/workspace.xcworkspace',
+        scheme: 'MyScheme',
+        simulatorName: 'iPhone 16',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('mutually exclusive');
+    });
+
+    it('should succeed with only projectPath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: JSON.stringify({
+          devices: {
+            'iOS 16.0': [
+              {
+                udid: 'test-uuid-123',
+                name: 'iPhone 16',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      });
+
+      const result = await build_run_simulator_nameLogic(
+        {
+          projectPath: '/path/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
+      expect(result.isError).toBe(false);
+    });
+
+    it('should succeed with only workspacePath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: JSON.stringify({
+          devices: {
+            'iOS 16.0': [
+              {
+                udid: 'test-uuid-123',
+                name: 'iPhone 16',
+                state: 'Booted',
+                isAvailable: true,
+              },
+            ],
+          },
+        }),
+      });
+
+      const result = await build_run_simulator_nameLogic(
+        {
+          workspacePath: '/path/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
+      expect(result.isError).toBe(false);
     });
   });
 });
