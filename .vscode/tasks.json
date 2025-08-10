@@ -1,0 +1,112 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vscode/master/extensions/npm/schemas/v1.1.1/tasks.schema.json",
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "npm",
+            "script": "build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$tsc"
+            ]
+        },
+        {
+            "label": "run",
+            "type": "npm",
+            "script": "inspect",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            }
+        },
+        {
+            "label": "test",
+            "type": "npm",
+            "script": "test",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "lint",
+            "type": "npm",
+            "script": "lint",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                "$eslint-stylish"
+            ]
+        },
+        {
+            "label": "lint:fix",
+            "type": "npm",
+            "script": "lint:fix",
+            "group": "build"
+        },
+        {
+            "label": "format",
+            "type": "npm",
+            "script": "format",
+            "group": "build"
+        },
+        {
+            "label": "typecheck (watch)",
+            "type": "shell",
+            "command": "npx tsc --noEmit --watch",
+            "isBackground": true,
+            "problemMatcher": [
+                "$tsc-watch"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "dev (watch)",
+            "type": "npm",
+            "script": "dev",
+            "isBackground": true,
+            "group": "build",
+            "presentation": {
+                "panel": "dedicated",
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "build: dev diagnostics",
+            "dependsOn": [
+                "lint",
+                "typecheck (watch)"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            }
+        }
+    ]
+}

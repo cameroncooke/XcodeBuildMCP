@@ -20,5 +20,12 @@
     "noEmit": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.test.ts", "tests-vitest/**/*", "plugins/**/*"]
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "tests-vitest/**/*",
+    "plugins/**/*",
+    "src/core/generated-plugins.ts",
+    "src/core/generated-resources.ts"
+  ]
 }

@@ -1,0 +1,58 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:example_projects}/spm",
+            "name": "Debug spm (spm)",
+            "program": "${workspaceFolder:example_projects}/spm/.build/debug/spm",
+            "preLaunchTask": "swift: Build Debug spm (spm)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:example_projects}/spm",
+            "name": "Release spm (spm)",
+            "program": "${workspaceFolder:example_projects}/spm/.build/release/spm",
+            "preLaunchTask": "swift: Build Release spm (spm)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:example_projects}/spm",
+            "name": "Debug quick-task (spm)",
+            "program": "${workspaceFolder:example_projects}/spm/.build/debug/quick-task",
+            "preLaunchTask": "swift: Build Debug quick-task (spm)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:example_projects}/spm",
+            "name": "Release quick-task (spm)",
+            "program": "${workspaceFolder:example_projects}/spm/.build/release/quick-task",
+            "preLaunchTask": "swift: Build Release quick-task (spm)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:example_projects}/spm",
+            "name": "Debug long-server (spm)",
+            "program": "${workspaceFolder:example_projects}/spm/.build/debug/long-server",
+            "preLaunchTask": "swift: Build Debug long-server (spm)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:example_projects}/spm",
+            "name": "Release long-server (spm)",
+            "program": "${workspaceFolder:example_projects}/spm/.build/release/long-server",
+            "preLaunchTask": "swift: Build Release long-server (spm)"
+        }
+    ]
+}

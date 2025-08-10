@@ -27,10 +27,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "check-migration": "node scripts/check-type-safety-migration.js --summary",
-    "check-migration:verbose": "node scripts/check-type-safety-migration.js --verbose",
-    "check-migration:unfixed": "node scripts/check-type-safety-migration.js --unfixed-only --verbose"
+    "test:coverage": "vitest run --coverage"
   },
   "files": [
     "build",

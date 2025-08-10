@@ -1,0 +1,39 @@
+{
+  "eslint.useFlatConfig": true,
+  "eslint.validate": [
+    "javascript",
+    "typescript"
+  ],
+  "eslint.runtime": "/opt/homebrew/bin/node",
+  "eslint.format.enable": true,
+  "eslint.nodePath": "${workspaceFolder}/node_modules",
+  "eslint.workingDirectories": [
+    {
+      "directory": "${workspaceFolder}",
+      "changeProcessCWD": true
+    }
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.tsserver.maxTsServerMemory": 4096,
+  "javascript.validate.enable": false,
+  "typescript.validate.enable": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.defaultFormatter": "vscode.typescript-language-features",
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "terminal.integrated.shellIntegration.decorationsEnabled": "never",
+  "vitest.nodeExecutable": "/opt/homebrew/bin/node",
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+}

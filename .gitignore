@@ -16,10 +16,12 @@ src/core/generated-resources.ts
 
 # IDE and editor files
 .idea/
-.vscode/
 .vscode/*
 !.vscode/mcp.json
 !.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/extensions.json
 *.swp
 *.swo
 .DS_Store
@@ -102,4 +104,3 @@ buildServer.json
 # Bundled AXe artifacts (generated during build)
 bundled/
 
-/.vscode/mcp.json
