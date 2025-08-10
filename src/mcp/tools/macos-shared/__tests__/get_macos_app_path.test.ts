@@ -218,7 +218,7 @@ describe('get_macos_app_path plugin', () => {
         arch: 'x86_64',
       };
 
-      await get_mac_app_path_wsLogic(args, mockExecutor);
+      await get_macos_app_pathLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);

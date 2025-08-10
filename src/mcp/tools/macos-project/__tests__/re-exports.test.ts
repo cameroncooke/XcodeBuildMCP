@@ -7,8 +7,8 @@ import { describe, it, expect } from 'vitest';
 // Import all re-export tools
 import testMacosProj from '../test_macos_proj.ts';
 import buildMacos from '../build_macos.ts';
-import buildRunMacWs from '../../macos-workspace/build_run_mac_ws.ts';
-import getMacAppPathWs from '../../macos-workspace/get_mac_app_path_ws.ts';
+import buildRunMacos from '../build_run_macos.ts';
+import getMacosAppPath from '../get_macos_app_path.ts';
 
 describe('macos-project re-exports', () => {
   describe('test_macos_proj re-export', () => {
@@ -29,21 +29,21 @@ describe('macos-project re-exports', () => {
     });
   });
 
-  describe('build_run_mac_ws re-export', () => {
-    it('should re-export build_run_mac_ws tool correctly', () => {
-      expect(buildRunMacWs.name).toBe('build_run_mac_ws');
-      expect(typeof buildRunMacWs.handler).toBe('function');
-      expect(buildRunMacWs.schema).toBeDefined();
-      expect(typeof buildRunMacWs.description).toBe('string');
+  describe('build_run_macos re-export', () => {
+    it('should re-export build_run_macos tool correctly', () => {
+      expect(buildRunMacos.name).toBe('build_run_macos');
+      expect(typeof buildRunMacos.handler).toBe('function');
+      expect(buildRunMacos.schema).toBeDefined();
+      expect(typeof buildRunMacos.description).toBe('string');
     });
   });
 
-  describe('get_mac_app_path_ws re-export', () => {
-    it('should re-export get_mac_app_path_ws tool correctly', () => {
-      expect(getMacAppPathWs.name).toBe('get_mac_app_path_ws');
-      expect(typeof getMacAppPathWs.handler).toBe('function');
-      expect(getMacAppPathWs.schema).toBeDefined();
-      expect(typeof getMacAppPathWs.description).toBe('string');
+  describe('get_macos_app_path re-export', () => {
+    it('should re-export get_macos_app_path tool correctly', () => {
+      expect(getMacosAppPath.name).toBe('get_macos_app_path');
+      expect(typeof getMacosAppPath.handler).toBe('function');
+      expect(getMacosAppPath.schema).toBeDefined();
+      expect(typeof getMacosAppPath.description).toBe('string');
     });
   });
 
@@ -51,8 +51,8 @@ describe('macos-project re-exports', () => {
     const reExports = [
       { tool: testMacosProj, name: 'test_macos_proj' },
       { tool: buildMacos, name: 'build_macos' },
-      { tool: buildRunMacWs, name: 'build_run_mac_ws' },
-      { tool: getMacAppPathWs, name: 'get_mac_app_path_ws' },
+      { tool: buildRunMacos, name: 'build_run_macos' },
+      { tool: getMacosAppPath, name: 'get_macos_app_path' },
     ];
 
     it('should have all required tool properties', () => {
