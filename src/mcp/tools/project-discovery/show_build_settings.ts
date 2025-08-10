@@ -1,0 +1,126 @@
+/**
+ * Project Discovery Plugin: Show Build Settings (Unified)
+ *
+ * Shows build settings from either a project or workspace using xcodebuild.
+ * Accepts mutually exclusive `projectPath` or `workspacePath`.
+ */
+
+import { z } from 'zod';
+import { log } from '../../../utils/index.js';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/index.js';
+import { ToolResponse } from '../../../types/common.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+
+// Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
+function nullifyEmptyStrings(value: unknown): unknown {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
+    for (const key of Object.keys(copy)) {
+      const v = copy[key];
+      if (typeof v === 'string' && v.trim() === '') copy[key] = undefined;
+    }
+    return copy;
+  }
+  return value;
+}
+
+// Unified schema: XOR between projectPath and workspacePath
+const baseSchemaObject = z.object({
+  projectPath: z.string().optional().describe('Path to the .xcodeproj file'),
+  workspacePath: z.string().optional().describe('Path to the .xcworkspace file'),
+  scheme: z.string().describe('Scheme name to show build settings for (Required)'),
+});
+
+const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
+
+const showBuildSettingsSchema = baseSchema
+  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+    message: 'Either projectPath or workspacePath is required.',
+  })
+  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+  });
+
+export type ShowBuildSettingsParams = z.infer<typeof showBuildSettingsSchema>;
+
+/**
+ * Business logic for showing build settings from a project or workspace.
+ * Exported for direct testing and reuse.
+ */
+export async function showBuildSettingsLogic(
+  params: ShowBuildSettingsParams,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  log('info', `Showing build settings for scheme ${params.scheme}`);
+
+  try {
+    // Create the command array for xcodebuild
+    const command = ['xcodebuild', '-showBuildSettings']; // -showBuildSettings as an option, not an action
+
+    const hasProjectPath = typeof params.projectPath === 'string';
+    const path = hasProjectPath ? params.projectPath : params.workspacePath;
+
+    if (hasProjectPath) {
+      command.push('-project', params.projectPath as string);
+    } else {
+      command.push('-workspace', params.workspacePath as string);
+    }
+
+    // Add the scheme
+    command.push('-scheme', params.scheme);
+
+    // Execute the command directly
+    const result = await executor(command, 'Show Build Settings', true);
+
+    if (!result.success) {
+      return createTextResponse(`Failed to show build settings: ${result.error}`, true);
+    }
+
+    // Create response based on which type was used (similar to workspace version with next steps)
+    const content = [
+      {
+        type: 'text',
+        text: hasProjectPath
+          ? `✅ Build settings for scheme ${params.scheme}:`
+          : '✅ Build settings retrieved successfully',
+      },
+      {
+        type: 'text',
+        text: result.output || 'Build settings retrieved successfully.',
+      },
+    ];
+
+    // Add next steps for workspace (similar to original workspace implementation)
+    if (!hasProjectPath && path) {
+      content.push({
+        type: 'text',
+        text: `Next Steps:
+- Build the workspace: macos_build_workspace({ workspacePath: "${path}", scheme: "${params.scheme}" })
+- For iOS: ios_simulator_build_by_name_workspace({ workspacePath: "${path}", scheme: "${params.scheme}", simulatorName: "iPhone 16" })
+- List schemes: list_schems_ws({ workspacePath: "${path}" })`,
+      });
+    }
+
+    return {
+      content,
+      isError: false,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('error', `Error showing build settings: ${errorMessage}`);
+    return createTextResponse(`Error showing build settings: ${errorMessage}`, true);
+  }
+}
+
+export default {
+  name: 'show_build_settings',
+  description:
+    "Shows build settings from either a project or workspace using xcodebuild. Provide exactly one of projectPath or workspacePath, plus scheme. Example: show_build_settings({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+  schema: baseSchemaObject.shape,
+  handler: createTypedTool<ShowBuildSettingsParams>(
+    showBuildSettingsSchema as unknown as z.ZodType<ShowBuildSettingsParams>,
+    showBuildSettingsLogic,
+    getDefaultCommandExecutor,
+  ),
+};
