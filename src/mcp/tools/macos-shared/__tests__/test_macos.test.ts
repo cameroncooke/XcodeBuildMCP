@@ -69,12 +69,13 @@ describe('test_macos plugin (unified)', () => {
         stat: async () => ({ isDirectory: () => true }),
       };
 
-      // Should fail when neither is provided
-      await expect(
-        testMacos.handler({
-          scheme: 'MyScheme',
-        }),
-      ).rejects.toThrow();
+      // Should return error response when neither is provided
+      const result = await testMacos.handler({
+        scheme: 'MyScheme',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
     });
 
     it('should validate that both projectPath and workspacePath cannot be provided', async () => {
@@ -90,14 +91,17 @@ describe('test_macos plugin (unified)', () => {
         stat: async () => ({ isDirectory: () => true }),
       };
 
-      // Should fail when both are provided
-      await expect(
-        testMacos.handler({
-          projectPath: '/path/to/project.xcodeproj',
-          workspacePath: '/path/to/workspace.xcworkspace',
-          scheme: 'MyScheme',
-        }),
-      ).rejects.toThrow();
+      // Should return error response when both are provided
+      const result = await testMacos.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyScheme',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain(
+        'projectPath and workspacePath are mutually exclusive',
+      );
     });
 
     it('should allow only projectPath', async () => {

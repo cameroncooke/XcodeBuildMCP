@@ -5,18 +5,18 @@
 import { describe, it, expect } from 'vitest';
 
 // Import all re-export tools
-import testMacosProj from '../test_macos_proj.ts';
+import testMacos from '../test_macos.ts';
 import buildMacos from '../build_macos.ts';
 import buildRunMacos from '../build_run_macos.ts';
 import getMacosAppPath from '../get_macos_app_path.ts';
 
 describe('macos-project re-exports', () => {
-  describe('test_macos_proj re-export', () => {
-    it('should re-export test_macos_proj tool correctly', () => {
-      expect(testMacosProj.name).toBe('test_macos_proj');
-      expect(typeof testMacosProj.handler).toBe('function');
-      expect(testMacosProj.schema).toBeDefined();
-      expect(typeof testMacosProj.description).toBe('string');
+  describe('test_macos re-export', () => {
+    it('should re-export test_macos tool correctly', () => {
+      expect(testMacos.name).toBe('test_macos');
+      expect(typeof testMacos.handler).toBe('function');
+      expect(testMacos.schema).toBeDefined();
+      expect(typeof testMacos.description).toBe('string');
     });
   });
 
@@ -49,7 +49,7 @@ describe('macos-project re-exports', () => {
 
   describe('All re-exports validation', () => {
     const reExports = [
-      { tool: testMacosProj, name: 'test_macos_proj' },
+      { tool: testMacos, name: 'test_macos' },
       { tool: buildMacos, name: 'build_macos' },
       { tool: buildRunMacos, name: 'build_run_macos' },
       { tool: getMacosAppPath, name: 'get_macos_app_path' },
