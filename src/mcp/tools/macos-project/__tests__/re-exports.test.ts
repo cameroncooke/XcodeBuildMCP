@@ -6,8 +6,7 @@ import { describe, it, expect } from 'vitest';
 
 // Import all re-export tools
 import testMacosProj from '../test_macos_proj.ts';
-import buildMacProj from '../build_mac_proj.ts';
-import buildMacWs from '../../macos-workspace/build_mac_ws.ts';
+import buildMacos from '../build_macos.ts';
 import buildRunMacWs from '../../macos-workspace/build_run_mac_ws.ts';
 import getMacAppPathWs from '../../macos-workspace/get_mac_app_path_ws.ts';
 
@@ -21,21 +20,12 @@ describe('macos-project re-exports', () => {
     });
   });
 
-  describe('build_mac_proj re-export', () => {
-    it('should re-export build_mac_proj tool correctly', () => {
-      expect(buildMacProj.name).toBe('build_mac_proj');
-      expect(typeof buildMacProj.handler).toBe('function');
-      expect(buildMacProj.schema).toBeDefined();
-      expect(typeof buildMacProj.description).toBe('string');
-    });
-  });
-
-  describe('build_mac_ws re-export', () => {
-    it('should re-export build_mac_ws tool correctly', () => {
-      expect(buildMacWs.name).toBe('build_mac_ws');
-      expect(typeof buildMacWs.handler).toBe('function');
-      expect(buildMacWs.schema).toBeDefined();
-      expect(typeof buildMacWs.description).toBe('string');
+  describe('build_macos re-export', () => {
+    it('should re-export build_macos tool correctly', () => {
+      expect(buildMacos.name).toBe('build_macos');
+      expect(typeof buildMacos.handler).toBe('function');
+      expect(buildMacos.schema).toBeDefined();
+      expect(typeof buildMacos.description).toBe('string');
     });
   });
 
@@ -60,8 +50,7 @@ describe('macos-project re-exports', () => {
   describe('All re-exports validation', () => {
     const reExports = [
       { tool: testMacosProj, name: 'test_macos_proj' },
-      { tool: buildMacProj, name: 'build_mac_proj' },
-      { tool: buildMacWs, name: 'build_mac_ws' },
+      { tool: buildMacos, name: 'build_macos' },
       { tool: buildRunMacWs, name: 'build_run_mac_ws' },
       { tool: getMacAppPathWs, name: 'get_mac_app_path_ws' },
     ];
