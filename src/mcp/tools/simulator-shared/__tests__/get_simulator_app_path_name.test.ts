@@ -1,29 +1,30 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
-import getSimAppPathNameWsTool, {
-  get_sim_app_path_name_wsLogic,
-} from '../get_sim_app_path_name_ws.ts';
+import getSimulatorAppPathNameTool, {
+  get_simulator_app_path_nameLogic,
+} from '../get_simulator_app_path_name.ts';
 
-describe('get_sim_app_path_name_ws plugin', () => {
+describe('get_simulator_app_path_name plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
-      expect(getSimAppPathNameWsTool.name).toBe('get_sim_app_path_name_ws');
+      expect(getSimulatorAppPathNameTool.name).toBe('get_simulator_app_path_name');
     });
 
     it('should have correct description field', () => {
-      expect(getSimAppPathNameWsTool.description).toBe(
-        "Gets the app bundle path for a simulator by name using a workspace. IMPORTANT: Requires workspacePath, scheme, platform, and simulatorName. Example: get_sim_app_path_name_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
+      expect(getSimulatorAppPathNameTool.description).toBe(
+        "Gets the app bundle path for a simulator by name using either a project or workspace file. IMPORTANT: Requires either projectPath OR workspacePath (not both), plus scheme, platform, and simulatorName. Example: get_simulator_app_path_name({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof getSimAppPathNameWsTool.handler).toBe('function');
+      expect(typeof getSimulatorAppPathNameTool.handler).toBe('function');
     });
 
     it('should have correct schema validation', () => {
-      const schema = z.object(getSimAppPathNameWsTool.schema);
+      const schema = z.object(getSimulatorAppPathNameTool.schema);
 
+      // Test with workspacePath only
       expect(
         schema.safeParse({
           workspacePath: '/path/to/workspace',
@@ -33,6 +34,17 @@ describe('get_sim_app_path_name_ws plugin', () => {
         }).success,
       ).toBe(true);
 
+      // Test with projectPath only
+      expect(
+        schema.safeParse({
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        }).success,
+      ).toBe(true);
+
+      // Test with additional optional parameters (workspace)
       expect(
         schema.safeParse({
           workspacePath: '/path/to/workspace',
@@ -64,6 +76,68 @@ describe('get_sim_app_path_name_ws plugin', () => {
     });
   });
 
+  describe('XOR Validation', () => {
+    it('should error when neither projectPath nor workspacePath provided', async () => {
+      const result = await getSimulatorAppPathNameTool.handler({
+        scheme: 'MyScheme',
+        platform: 'iOS Simulator',
+        simulatorName: 'iPhone 16',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+    });
+
+    it('should error when both projectPath and workspacePath provided', async () => {
+      const result = await getSimulatorAppPathNameTool.handler({
+        projectPath: '/path/project.xcodeproj',
+        workspacePath: '/path/workspace.xcworkspace',
+        scheme: 'MyScheme',
+        platform: 'iOS Simulator',
+        simulatorName: 'iPhone 16',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('mutually exclusive');
+    });
+
+    it('should accept projectPath without workspacePath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILT_PRODUCTS_DIR = /path/build\nFULL_PRODUCT_NAME = MyApp.app',
+      });
+
+      const result = await get_simulator_app_path_nameLogic(
+        {
+          projectPath: '/path/project.xcodeproj',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBe(false);
+    });
+
+    it('should accept workspacePath without projectPath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILT_PRODUCTS_DIR = /path/build\nFULL_PRODUCT_NAME = MyApp.app',
+      });
+
+      const result = await get_simulator_app_path_nameLogic(
+        {
+          workspacePath: '/path/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBe(false);
+    });
+  });
+
   describe('Command Generation', () => {
     it('should generate correct command with default parameters', async () => {
       const calls: Array<{
@@ -90,7 +164,7 @@ describe('get_sim_app_path_name_ws plugin', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await get_sim_app_path_name_wsLogic(
+      await get_simulator_app_path_nameLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
@@ -145,7 +219,7 @@ describe('get_sim_app_path_name_ws plugin', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await get_sim_app_path_name_wsLogic(
+      await get_simulator_app_path_nameLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
@@ -201,7 +275,7 @@ describe('get_sim_app_path_name_ws plugin', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await get_sim_app_path_name_wsLogic(
+      await get_simulator_app_path_nameLogic(
         {
           workspacePath: '/path/to/Watch.xcworkspace',
           scheme: 'WatchScheme',
@@ -256,7 +330,7 @@ describe('get_sim_app_path_name_ws plugin', () => {
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await get_sim_app_path_name_wsLogic(
+      await get_simulator_app_path_nameLogic(
         {
           workspacePath: '/path/to/Vision.xcworkspace',
           scheme: 'VisionScheme',
@@ -299,7 +373,7 @@ FULL_PRODUCT_NAME = MyApp.app
         `,
       });
 
-      const result = await get_sim_app_path_name_wsLogic(
+      const result = await get_simulator_app_path_nameLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
@@ -352,7 +426,7 @@ FULL_PRODUCT_NAME = MyApp.app
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await get_sim_app_path_name_wsLogic(
+      await get_simulator_app_path_nameLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
@@ -408,7 +482,7 @@ FULL_PRODUCT_NAME = MyApp.app
         return mockExecutor(args, taskName, safeToLog, logLevel);
       };
 
-      await get_sim_app_path_name_wsLogic(
+      await get_simulator_app_path_nameLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
@@ -448,7 +522,7 @@ FULL_PRODUCT_NAME = MyApp.app
         error: 'xcodebuild failed',
       });
 
-      const result = await get_sim_app_path_name_wsLogic(
+      const result = await get_simulator_app_path_nameLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
@@ -475,7 +549,7 @@ FULL_PRODUCT_NAME = MyApp.app
         output: 'No valid build settings found',
       });
 
-      const result = await get_sim_app_path_name_wsLogic(
+      const result = await get_simulator_app_path_nameLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
@@ -502,7 +576,7 @@ FULL_PRODUCT_NAME = MyApp.app
         error: 'Network error',
       });
 
-      const result = await get_sim_app_path_name_wsLogic(
+      const result = await get_simulator_app_path_nameLogic(
         {
           workspacePath: '/path/to/Project.xcworkspace',
           scheme: 'MyScheme',
