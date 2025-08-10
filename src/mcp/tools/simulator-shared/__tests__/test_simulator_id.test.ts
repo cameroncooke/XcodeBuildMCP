@@ -1,48 +1,126 @@
 /**
- * Tests for test_sim_id_ws plugin
+ * Tests for test_simulator_id plugin (unified)
  * Following CLAUDE.md testing standards with dependency injection and literal validation
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMockExecutor } from '../../../../utils/command.js';
-import testSimIdWs, { test_sim_id_wsLogic } from '../test_sim_id_ws.ts';
+import testSimulatorId, { test_simulator_idLogic } from '../test_simulator_id.js';
 
-describe('test_sim_id_ws plugin', () => {
+describe('test_simulator_id plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(testSimIdWs.name).toBe('test_sim_id_ws');
+      expect(testSimulatorId.name).toBe('test_simulator_id');
     });
 
     it('should have correct description', () => {
-      expect(testSimIdWs.description).toBe(
-        'Runs tests for a workspace on a simulator by UUID using xcodebuild test and parses xcresult output.',
+      expect(testSimulatorId.description).toBe(
+        'Runs tests for either a project or workspace on a simulator by UUID using xcodebuild test and parses xcresult output. Provide exactly one of projectPath or workspacePath. Example: test_simulator_id({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", simulatorId: "SIMULATOR_UUID" })',
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof testSimIdWs.handler).toBe('function');
+      expect(typeof testSimulatorId.handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
       // Test required fields
       expect(
-        testSimIdWs.schema.workspacePath.safeParse('/path/to/workspace.xcworkspace').success,
+        testSimulatorId.schema.projectPath.safeParse('/path/to/project.xcodeproj').success,
       ).toBe(true);
-      expect(testSimIdWs.schema.scheme.safeParse('MyScheme').success).toBe(true);
-      expect(testSimIdWs.schema.simulatorId.safeParse('test-uuid-123').success).toBe(true);
+      expect(
+        testSimulatorId.schema.workspacePath.safeParse('/path/to/workspace.xcworkspace').success,
+      ).toBe(true);
+      expect(testSimulatorId.schema.scheme.safeParse('MyScheme').success).toBe(true);
+      expect(testSimulatorId.schema.simulatorId.safeParse('test-uuid-123').success).toBe(true);
 
       // Test optional fields
-      expect(testSimIdWs.schema.configuration.safeParse('Debug').success).toBe(true);
-      expect(testSimIdWs.schema.derivedDataPath.safeParse('/path/to/derived').success).toBe(true);
-      expect(testSimIdWs.schema.extraArgs.safeParse(['--quiet']).success).toBe(true);
-      expect(testSimIdWs.schema.preferXcodebuild.safeParse(true).success).toBe(true);
-      expect(testSimIdWs.schema.useLatestOS.safeParse(true).success).toBe(true);
+      expect(testSimulatorId.schema.configuration.safeParse('Debug').success).toBe(true);
+      expect(testSimulatorId.schema.derivedDataPath.safeParse('/path/to/derived').success).toBe(
+        true,
+      );
+      expect(testSimulatorId.schema.extraArgs.safeParse(['--quiet']).success).toBe(true);
+      expect(testSimulatorId.schema.preferXcodebuild.safeParse(true).success).toBe(true);
+      expect(testSimulatorId.schema.useLatestOS.safeParse(true).success).toBe(true);
 
       // Test invalid inputs
-      expect(testSimIdWs.schema.workspacePath.safeParse(123).success).toBe(false);
-      expect(testSimIdWs.schema.extraArgs.safeParse('not-array').success).toBe(false);
-      expect(testSimIdWs.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
-      expect(testSimIdWs.schema.useLatestOS.safeParse('not-boolean').success).toBe(false);
+      expect(testSimulatorId.schema.projectPath.safeParse(123).success).toBe(false);
+      expect(testSimulatorId.schema.workspacePath.safeParse(123).success).toBe(false);
+      expect(testSimulatorId.schema.extraArgs.safeParse('not-array').success).toBe(false);
+      expect(testSimulatorId.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
+      expect(testSimulatorId.schema.useLatestOS.safeParse('not-boolean').success).toBe(false);
+    });
+  });
+
+  describe('XOR Validation', () => {
+    it('should error when neither projectPath nor workspacePath provided', async () => {
+      const result = await testSimulatorId.handler({
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid-123',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+    });
+
+    it('should error when both projectPath and workspacePath provided', async () => {
+      const result = await testSimulatorId.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid-123',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('mutually exclusive');
+    });
+
+    it('should allow only projectPath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      // Mock the handler to use our mock executor
+      const originalHandler = testSimulatorId.handler;
+      testSimulatorId.handler = async (args) => {
+        return test_simulator_idLogic(args as any, mockExecutor);
+      };
+
+      const result = await testSimulatorId.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid-123',
+      });
+
+      // Restore original handler
+      testSimulatorId.handler = originalHandler;
+
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should allow only workspacePath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      // Mock the handler to use our mock executor
+      const originalHandler = testSimulatorId.handler;
+      testSimulatorId.handler = async (args) => {
+        return test_simulator_idLogic(args as any, mockExecutor);
+      };
+
+      const result = await testSimulatorId.handler({
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyScheme',
+        simulatorId: 'test-uuid-123',
+      });
+
+      // Restore original handler
+      testSimulatorId.handler = originalHandler;
+
+      expect(result.isError).toBeUndefined();
     });
   });
 
@@ -53,7 +131,7 @@ describe('test_sim_id_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_sim_id_wsLogic(
+      const result = await test_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -74,7 +152,7 @@ describe('test_sim_id_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_sim_id_wsLogic(
+      const result = await test_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -95,7 +173,7 @@ describe('test_sim_id_ws plugin', () => {
         error: 'xcodebuild: error: Scheme not found',
       });
 
-      const result = await test_sim_id_wsLogic(
+      const result = await test_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'NonExistentScheme',
@@ -115,7 +193,7 @@ describe('test_sim_id_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_sim_id_wsLogic(
+      const result = await test_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -135,9 +213,34 @@ describe('test_sim_id_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_sim_id_wsLogic(
+      const result = await test_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorId: 'test-uuid-123',
+          configuration: 'Release',
+          derivedDataPath: '/custom/derived',
+          extraArgs: ['--verbose'],
+          useLatestOS: true,
+          preferXcodebuild: true,
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should handle optional parameters correctly with projectPath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await test_simulator_idLogic(
+        {
+          projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           simulatorId: 'test-uuid-123',
           configuration: 'Release',
@@ -160,7 +263,7 @@ describe('test_sim_id_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_sim_id_wsLogic(
+      const result = await test_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -180,7 +283,7 @@ describe('test_sim_id_ws plugin', () => {
         output: 'Test Suite All Tests passed\nExecuted 25 tests, with 0 failures',
       });
 
-      const result = await test_sim_id_wsLogic(
+      const result = await test_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -201,7 +304,7 @@ describe('test_sim_id_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_sim_id_wsLogic(
+      const result = await test_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -223,7 +326,7 @@ describe('test_sim_id_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_sim_id_wsLogic(
+      const result = await test_simulator_idLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
