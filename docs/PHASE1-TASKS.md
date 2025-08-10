@@ -70,7 +70,7 @@ Consolidate all project/workspace tool pairs (e.g., `tool_proj` and `tool_ws`) i
    - [x] Unified tool created  
    - [x] Re-exported to 6 workflows
    - [x] Old files deleted
-   - [x] Tests created (Note: Should have used mv approach)
+   - [x] Tests preserved using git mv + adaptations
 
 #### 🔄 In Progress
 None currently

@@ -1,5 +1,5 @@
 /**
- * Tests for unified list_schemes plugin
+ * Tests for list_schemes plugin
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { createMockExecutor } from '../../../../utils/command.js';
 import plugin, { listSchemesLogic } from '../list_schemes.js';
 
-describe('list_schemes plugin (unified)', () => {
+describe('list_schemes plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(plugin.name).toBe('list_schemes');
