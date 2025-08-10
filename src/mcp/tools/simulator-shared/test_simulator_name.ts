@@ -3,7 +3,6 @@ import { handleTestLogic } from '../../../utils/index.js';
 import { XcodePlatform } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
 function nullifyEmptyStrings(value: unknown): unknown {
@@ -81,11 +80,34 @@ export async function test_simulator_nameLogic(
 export default {
   name: 'test_simulator_name',
   description:
-    'Runs tests on a simulator by name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace).',
+    'Runs tests on a simulator by name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace). IMPORTANT: Requires either projectPath or workspacePath, plus scheme and simulatorName. Example: test_simulator_name({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", simulatorName: "iPhone 16" })',
   schema: baseSchemaObject.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    testSimulatorNameSchema,
-    test_simulator_nameLogic,
-    getDefaultCommandExecutor,
-  ),
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
+    try {
+      // Runtime validation with XOR constraints
+      const validatedParams = testSimulatorNameSchema.parse(args);
+      return await test_simulator_nameLogic(validatedParams, getDefaultCommandExecutor());
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Format validation errors in a user-friendly way
+        const errorMessages = error.errors.map((e) => {
+          const path = e.path.length > 0 ? `${e.path.join('.')}` : 'root';
+          return `${path}: ${e.message}`;
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Parameter validation failed. Invalid parameters:\n${errorMessages.join('\n')}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      // Re-throw unexpected errors
+      throw error;
+    }
+  },
 };

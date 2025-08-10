@@ -15,7 +15,7 @@ describe('test_simulator_name plugin', () => {
 
     it('should have correct description', () => {
       expect(testSimulatorName.description).toBe(
-        'Runs tests on a simulator by name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace).',
+        'Runs tests on a simulator by name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace). IMPORTANT: Requires either projectPath or workspacePath, plus scheme and simulatorName. Example: test_simulator_name({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", simulatorName: "iPhone 16" })',
       );
     });
 
