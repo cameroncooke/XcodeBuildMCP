@@ -40,9 +40,17 @@ describe('build_run_simulator_id tool', () => {
         }).success,
       ).toBe(true);
 
-      // Missing project/workspace path
+      // Missing project/workspace path - use refinement validation instead of base schema
+      const buildRunSimulatorIdSchemaForTest = z
+        .object(buildRunSimulatorId.schema)
+        .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+          message: 'Either projectPath or workspacePath is required.',
+        })
+        .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+          message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+        });
       expect(
-        schema.safeParse({
+        buildRunSimulatorIdSchemaForTest.safeParse({
           scheme: 'MyScheme',
           simulatorId: 'test-uuid-123',
         }).success,
@@ -163,7 +171,7 @@ describe('build_run_simulator_id tool', () => {
         'platform=iOS Simulator,id=test-uuid-123',
         'build',
       ]);
-      expect(callHistory[0].logPrefix).toBe('Build');
+      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
     });
 
     it('should generate correct xcodebuild command with all parameters', async () => {
@@ -221,7 +229,7 @@ describe('build_run_simulator_id tool', () => {
         '--verbose',
         'build',
       ]);
-      expect(callHistory[0].logPrefix).toBe('Build');
+      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
     });
 
     it('should generate correct build settings command after successful build', async () => {
@@ -429,7 +437,9 @@ describe('build_run_simulator_id tool', () => {
 
       // Should successfully process parameters and attempt build
       expect(result.isError).toBe(true); // Expected to fail due to missing simulator environment
-      expect(result.content[0].text).toContain('Failed to extract app path from build settings');
+      expect(result.content[0].text).toContain(
+        'Build succeeded, but could not find app path in build settings',
+      );
     });
 
     it('should handle successful build with project path', async () => {
@@ -449,7 +459,9 @@ describe('build_run_simulator_id tool', () => {
 
       // Should successfully process parameters and attempt build
       expect(result.isError).toBe(true); // Expected to fail due to missing simulator environment
-      expect(result.content[0].text).toContain('Failed to extract app path from build settings');
+      expect(result.content[0].text).toContain(
+        'Build succeeded, but could not find app path in build settings',
+      );
     });
   });
 });

@@ -10,7 +10,6 @@ import { log } from '../../../utils/index.js';
 import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
 function nullifyEmptyStrings(value: unknown): unknown {
@@ -74,7 +73,7 @@ async function _handleSimulatorBuildLogic(
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   const projectType = params.projectPath ? 'project' : 'workspace';
-  const filePath = params.projectPath || params.workspacePath;
+  const filePath = params.projectPath ?? params.workspacePath;
 
   log(
     'info',
@@ -122,9 +121,32 @@ export default {
   description:
     "Builds an app from a project or workspace for a specific simulator by UUID. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and simulatorId. Example: build_simulator_id({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorId: 'SIMULATOR_UUID' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    buildSimulatorIdSchema,
-    build_simulator_idLogic,
-    getDefaultCommandExecutor,
-  ),
+  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
+    try {
+      // Runtime validation with XOR constraints
+      const validatedParams = buildSimulatorIdSchema.parse(args);
+      return await build_simulator_idLogic(validatedParams, getDefaultCommandExecutor());
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        // Format validation errors in a user-friendly way
+        const errorMessages = error.errors.map((e) => {
+          const path = e.path.length > 0 ? `${e.path.join('.')}` : 'root';
+          return `${path}: ${e.message}`;
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Parameter validation failed. Invalid parameters:\n${errorMessages.join('\n')}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      // Re-throw unexpected errors
+      throw error;
+    }
+  },
 };
