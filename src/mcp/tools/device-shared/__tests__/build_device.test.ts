@@ -1,66 +1,81 @@
 /**
- * Tests for build_dev_proj plugin
+ * Tests for build_device plugin (unified)
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor, createNoopExecutor } from '../../../../utils/command.js';
-import buildDevProj, { build_dev_projLogic } from '../build_dev_proj.ts';
+import buildDevice, { buildDeviceLogic } from '../build_device.ts';
 
-describe('build_dev_proj plugin', () => {
+describe('build_device plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(buildDevProj.name).toBe('build_dev_proj');
+      expect(buildDevice.name).toBe('build_device');
     });
 
     it('should have correct description', () => {
-      expect(buildDevProj.description).toBe(
-        "Builds an app from a project file for a physical Apple device. IMPORTANT: Requires projectPath and scheme. Example: build_dev_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+      expect(buildDevice.description).toBe(
+        "Builds an app from a project or workspace for a physical Apple device. Provide exactly one of projectPath or workspacePath. Example: build_device({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof buildDevProj.handler).toBe('function');
+      expect(typeof buildDevice.handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
       // Test required fields
-      expect(
-        buildDevProj.schema.projectPath.safeParse('/path/to/MyProject.xcodeproj').success,
-      ).toBe(true);
-      expect(buildDevProj.schema.scheme.safeParse('MyScheme').success).toBe(true);
-
-      // Test optional fields
-      expect(buildDevProj.schema.configuration.safeParse('Debug').success).toBe(true);
-      expect(buildDevProj.schema.derivedDataPath.safeParse('/path/to/derived-data').success).toBe(
+      expect(buildDevice.schema.projectPath.safeParse('/path/to/MyProject.xcodeproj').success).toBe(
         true,
       );
-      expect(buildDevProj.schema.extraArgs.safeParse(['--arg1', '--arg2']).success).toBe(true);
-      expect(buildDevProj.schema.preferXcodebuild.safeParse(true).success).toBe(true);
+      expect(
+        buildDevice.schema.workspacePath.safeParse('/path/to/MyProject.xcworkspace').success,
+      ).toBe(true);
+      expect(buildDevice.schema.scheme.safeParse('MyScheme').success).toBe(true);
+
+      // Test optional fields
+      expect(buildDevice.schema.configuration.safeParse('Debug').success).toBe(true);
+      expect(buildDevice.schema.derivedDataPath.safeParse('/path/to/derived-data').success).toBe(
+        true,
+      );
+      expect(buildDevice.schema.extraArgs.safeParse(['--arg1', '--arg2']).success).toBe(true);
+      expect(buildDevice.schema.preferXcodebuild.safeParse(true).success).toBe(true);
 
       // Test invalid inputs
-      expect(buildDevProj.schema.projectPath.safeParse(null).success).toBe(false);
-      expect(buildDevProj.schema.scheme.safeParse(null).success).toBe(false);
-      expect(buildDevProj.schema.extraArgs.safeParse('not-array').success).toBe(false);
-      expect(buildDevProj.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
+      expect(buildDevice.schema.projectPath.safeParse(null).success).toBe(false);
+      expect(buildDevice.schema.workspacePath.safeParse(null).success).toBe(false);
+      expect(buildDevice.schema.scheme.safeParse(null).success).toBe(false);
+      expect(buildDevice.schema.extraArgs.safeParse('not-array').success).toBe(false);
+      expect(buildDevice.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
     });
   });
 
-  describe('Parameter Validation (via Handler)', () => {
-    it('should return Zod validation error for missing projectPath', async () => {
-      const result = await buildDevProj.handler({
+  describe('XOR Validation', () => {
+    it('should error when neither projectPath nor workspacePath provided', async () => {
+      const result = await buildDevice.handler({
         scheme: 'MyScheme',
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('projectPath');
-      expect(result.content[0].text).toContain('Required');
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
     });
 
+    it('should error when both projectPath and workspacePath provided', async () => {
+      const result = await buildDevice.handler({
+        projectPath: '/path/to/MyProject.xcodeproj',
+        workspacePath: '/path/to/MyProject.xcworkspace',
+        scheme: 'MyScheme',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('mutually exclusive');
+    });
+  });
+
+  describe('Parameter Validation (via Handler)', () => {
     it('should return Zod validation error for missing scheme', async () => {
-      const result = await buildDevProj.handler({
+      const result = await buildDevice.handler({
         projectPath: '/path/to/MyProject.xcodeproj',
       });
 
@@ -71,7 +86,7 @@ describe('build_dev_proj plugin', () => {
     });
 
     it('should return Zod validation error for invalid parameter types', async () => {
-      const result = await buildDevProj.handler({
+      const result = await buildDevice.handler({
         projectPath: 123, // Should be string
         scheme: 'MyScheme',
       });
@@ -82,15 +97,34 @@ describe('build_dev_proj plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should pass validation and execute successfully with valid parameters', async () => {
+    it('should pass validation and execute successfully with valid project parameters', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
         output: 'Build succeeded',
       });
 
-      const result = await build_dev_projLogic(
+      const result = await buildDeviceLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0].text).toContain('✅ iOS Device Build build succeeded');
+    });
+
+    it('should pass validation and execute successfully with valid workspace parameters', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Build succeeded',
+      });
+
+      const result = await buildDeviceLogic(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
         },
         mockExecutor,
@@ -124,7 +158,7 @@ describe('build_dev_proj plugin', () => {
         };
       };
 
-      await build_dev_projLogic(
+      await buildDeviceLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -159,7 +193,7 @@ describe('build_dev_proj plugin', () => {
         output: 'Build succeeded',
       });
 
-      const result = await build_dev_projLogic(
+      const result = await buildDeviceLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -187,7 +221,7 @@ describe('build_dev_proj plugin', () => {
         error: 'Compilation error',
       });
 
-      const result = await build_dev_projLogic(
+      const result = await buildDeviceLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -233,7 +267,7 @@ describe('build_dev_proj plugin', () => {
         };
       };
 
-      await build_dev_projLogic(
+      await buildDeviceLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
