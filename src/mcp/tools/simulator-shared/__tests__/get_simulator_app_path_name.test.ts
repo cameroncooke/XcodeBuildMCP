@@ -398,6 +398,7 @@ FULL_PRODUCT_NAME = MyApp.app
 4. Launch app: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`,
           },
         ],
+        isError: false,
       });
     });
 

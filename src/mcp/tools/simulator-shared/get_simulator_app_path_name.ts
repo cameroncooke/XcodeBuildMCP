@@ -259,6 +259,7 @@ export async function get_simulator_app_path_nameLogic(
           text: nextStepsText,
         },
       ],
+      isError: false,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
