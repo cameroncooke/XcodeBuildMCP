@@ -1,5 +1,5 @@
 /**
- * Tests for list_schems_proj plugin
+ * Tests for unified list_schemes plugin
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
@@ -7,17 +7,17 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../utils/command.js';
-import plugin, { list_schems_projLogic } from '../list_schems_proj.ts';
+import plugin, { listSchemesLogic } from '../list_schemes.js';
 
-describe('list_schems_proj plugin', () => {
+describe('list_schemes plugin (unified)', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(plugin.name).toBe('list_schems_proj');
+      expect(plugin.name).toBe('list_schemes');
     });
 
     it('should have correct description', () => {
       expect(plugin.description).toBe(
-        "Lists available schemes in the project file. IMPORTANT: Requires projectPath. Example: list_schems_proj({ projectPath: '/path/to/MyProject.xcodeproj' })",
+        "Lists available schemes for either a project or a workspace. Provide exactly one of projectPath or workspacePath. Example: list_schemes({ projectPath: '/path/to/MyProject.xcodeproj' })",
       );
     });
 
@@ -33,10 +33,11 @@ describe('list_schems_proj plugin', () => {
 
     it('should validate schema with invalid inputs', () => {
       const schema = z.object(plugin.schema);
-      expect(schema.safeParse({}).success).toBe(false);
+      // Base schema allows empty object - XOR validation is in refinements
+      expect(schema.safeParse({}).success).toBe(true);
       expect(schema.safeParse({ projectPath: 123 }).success).toBe(false);
       expect(schema.safeParse({ projectPath: null }).success).toBe(false);
-      expect(schema.safeParse({ projectPath: undefined }).success).toBe(false);
+      expect(schema.safeParse({ workspacePath: 123 }).success).toBe(false);
     });
   });
 
@@ -58,7 +59,7 @@ describe('list_schems_proj plugin', () => {
         MyProjectTests`,
       });
 
-      const result = await list_schems_projLogic(
+      const result = await listSchemesLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -76,8 +77,8 @@ describe('list_schems_proj plugin', () => {
           {
             type: 'text',
             text: `Next Steps:
-1. Build the app: macos_build_project({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject" })
-   or for iOS: ios_simulator_build_by_name_project({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject", simulatorName: "iPhone 16" })
+1. Build the app: build_mac_proj({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject" })
+   or for iOS: build_sim_name_proj({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject", simulatorName: "iPhone 16" })
 2. Show build settings: show_build_set_proj({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject" })`,
           },
         ],
@@ -91,7 +92,7 @@ describe('list_schems_proj plugin', () => {
         error: 'Project not found',
       });
 
-      const result = await list_schems_projLogic(
+      const result = await listSchemesLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -108,7 +109,7 @@ describe('list_schems_proj plugin', () => {
         output: 'Information about project "MyProject":\n    Targets:\n        MyProject',
       });
 
-      const result = await list_schems_projLogic(
+      const result = await listSchemesLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -135,7 +136,7 @@ describe('list_schems_proj plugin', () => {
 `,
       });
 
-      const result = await list_schems_projLogic(
+      const result = await listSchemesLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -164,7 +165,7 @@ describe('list_schems_proj plugin', () => {
         throw new Error('Command execution failed');
       };
 
-      const result = await list_schems_projLogic(
+      const result = await listSchemesLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -180,7 +181,7 @@ describe('list_schems_proj plugin', () => {
         throw 'String error';
       };
 
-      const result = await list_schems_projLogic(
+      const result = await listSchemesLogic(
         { projectPath: '/path/to/MyProject.xcodeproj' },
         mockExecutor,
       );
@@ -217,7 +218,7 @@ describe('list_schems_proj plugin', () => {
         };
       };
 
-      await list_schems_projLogic({ projectPath: '/path/to/MyProject.xcodeproj' }, mockExecutor);
+      await listSchemesLogic({ projectPath: '/path/to/MyProject.xcodeproj' }, mockExecutor);
 
       expect(calls).toEqual([
         [
@@ -235,8 +236,102 @@ describe('list_schems_proj plugin', () => {
       const result = await plugin.handler({});
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('projectPath');
-      expect(result.content[0].text).toContain('Required');
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+    });
+  });
+
+  describe('XOR Validation', () => {
+    it('should error when neither projectPath nor workspacePath provided', async () => {
+      const result = await plugin.handler({});
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+    });
+
+    it('should error when both projectPath and workspacePath provided', async () => {
+      const result = await plugin.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        workspacePath: '/path/to/workspace.xcworkspace',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('mutually exclusive');
+    });
+
+    it('should handle empty strings as undefined', async () => {
+      const result = await plugin.handler({
+        projectPath: '',
+        workspacePath: '',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+    });
+  });
+
+  describe('Workspace Support', () => {
+    it('should list schemes for workspace', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: `Information about workspace "MyWorkspace":
+    Schemes:
+        MyApp
+        MyAppTests`,
+      });
+
+      const result = await listSchemesLogic(
+        { workspacePath: '/path/to/MyProject.xcworkspace' },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: '✅ Available schemes:',
+          },
+          {
+            type: 'text',
+            text: 'MyApp\nMyAppTests',
+          },
+          {
+            type: 'text',
+            text: `Next Steps:
+1. Build the app: build_mac_ws({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp" })
+   or for iOS: build_sim_name_ws({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp", simulatorName: "iPhone 16" })
+2. Show build settings: show_build_set_ws({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp" })`,
+          },
+        ],
+        isError: false,
+      });
+    });
+
+    it('should generate correct workspace command', async () => {
+      const calls: any[] = [];
+      const mockExecutor = async (
+        command: string[],
+        action: string,
+        showOutput: boolean,
+        workingDir?: string,
+      ) => {
+        calls.push([command, action, showOutput, workingDir]);
+        return {
+          success: true,
+          output: `Information about workspace "MyWorkspace":
+    Schemes:
+        MyApp`,
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await listSchemesLogic({ workspacePath: '/path/to/MyProject.xcworkspace' }, mockExecutor);
+
+      expect(calls).toEqual([
+        [
+          ['xcodebuild', '-list', '-workspace', '/path/to/MyProject.xcworkspace'],
+          'List Schemes',
+          true,
+          undefined,
+        ],
+      ]);
     });
   });
 });
