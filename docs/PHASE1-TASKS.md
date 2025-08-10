@@ -1,79 +1,244 @@
-## Phase 1: Unify project/workspace tools (Clean)
+## Phase 1: Tool Consolidation Plan
 
-This checklist tracks the Phase 1 consolidation work for the Clean tool. Goal: a single canonical `clean` tool (XOR `projectPath` | `workspacePath`) re-exported into all existing workflows, without changing business logic.
+### Overview
+Consolidate all project/workspace tool pairs (e.g., `tool_proj` and `tool_ws`) into single canonical tools with XOR validation for `projectPath` vs `workspacePath`. Each unified tool will be re-exported to maintain compatibility with existing workflow groups.
 
-### Scope
-- Keep all workflow groups unchanged (e.g., `simulator-project`, `simulator-workspace`, `macos-*`, `device-*`).
-- Reduce duplicate tools by creating a single canonical tool and re-export it into each workflow group.
-- No changes to logic functions; only the tool interface is unified.
+### Consolidation Strategy
 
-### Tasks
+#### Tool Implementation Pattern
+1. **Create unified tool** with XOR validation:
+   - Accept both `projectPath` and `workspacePath` as optional parameters
+   - Add validation to ensure exactly one is provided (mutually exclusive)
+   - Use helper function to convert empty strings to undefined
+   - Maintain all existing business logic unchanged
 
-- [x] Canonical tool
-  - [x] Create `src/mcp/tools/utilities/clean.ts` (unified tool)
-  - [x] Schema: Mutually exclusive `projectPath` or `workspacePath`
-  - [x] Implement single logic function (no separate proj/ws logic files)
+2. **Placement**: Put canonical tool in most logical workflow:
+   - `utilities/` for general tools (clean)
+   - `project-discovery/` for discovery tools (list_schemes, show_build_set)
+   - Tool-specific workflow for specialized tools
 
-- [x] Logic files
-  - [x] Remove `src/mcp/tools/utilities/clean_proj.ts`
-  - [x] Remove `src/mcp/tools/utilities/clean_ws.ts`
+3. **Re-exports**: Create `toolname.ts` re-export in each workflow that needs it:
+   ```typescript
+   // Re-export unified tool for [workflow-name] workflow
+   export { default } from '../[canonical-location]/[toolname].js';
+   ```
 
-- [x] Re-export unified tool in all relevant workflow groups as `clean.ts`
-  - [x] `src/mcp/tools/simulator-project/clean.ts`
-  - [x] `src/mcp/tools/simulator-workspace/clean.ts`
-  - [x] `src/mcp/tools/macos-project/clean.ts`
-  - [x] `src/mcp/tools/macos-workspace/clean.ts`
-  - [x] `src/mcp/tools/device-project/clean.ts`
-  - [x] `src/mcp/tools/device-workspace/clean.ts`
+4. **Cleanup**: Delete old `tool_proj.ts` and `tool_ws.ts` files from all locations
 
-- [x] Remove obsolete per-variant re-exports (do not leave empty files)
-  - [x] Delete `clean_proj.ts` and `clean_ws.ts` from the six workflow groups above
+#### Test Preservation Strategy (CRITICAL)
+**DO NOT REWRITE TESTS** - Preserve existing test coverage by migrating and adapting:
 
-- [x] Tests
-  - [x] Add `src/mcp/tools/utilities/__tests__/clean.test.ts` for unified tool
-  - [x] Remove `utilities/__tests__/clean_proj.test.ts`
-  - [x] Remove `utilities/__tests__/clean_ws.test.ts`
-  - [x] Validate XOR behavior in handler (errors for none/both, success for single variant)
+1. **Choose base test file**: Select the more comprehensive test between `_proj` and `_ws` versions
 
-- [x] Documentation
-  - [x] Update `docs/TOOLS.md` to replace `clean_proj`/`clean_ws` with `clean`
-  - [x] Note that `clean` is available across project/workspace workflows via re-exports
-  - [x] Generalize developer guidance in `docs/TOOLS.md`, `docs/CONTRIBUTING.md`, and `docs/PLUGIN_DEVELOPMENT.md` (XOR modeling, root-level empty-string normalization, conditional requirements, command/message hygiene)
+2. **Move test file FIRST (before any edits)**:
+   ```bash
+   # Use git mv to preserve history
+   git mv src/mcp/tools/[location]/__tests__/tool_proj.test.ts \
+          src/mcp/tools/[canonical-location]/__tests__/tool.test.ts
+   
+   # Stage the move immediately
+   git add -A
+   
+   # IMPORTANT: Commit the move BEFORE making any edits
+   git commit -m "chore: move tool_proj test to unified location"
+   ```
+   
+3. **THEN make surgical edits** (as a separate commit):
+   - Update imports to reference unified tool
+   - Add XOR validation tests (neither/both parameter cases)
+   - Adapt existing tests to handle both project and workspace paths
+   - Keep all existing test logic and assertions intact
+   
+4. **Commit the adaptations separately**:
+   ```bash
+   git add src/mcp/tools/[canonical-location]/__tests__/tool.test.ts
+   git commit -m "test: adapt tool tests for unified project/workspace support"
+   ```
 
-- [x] Build, lint, tests
-  - [x] `npm run build`
-  - [x] `npm run format` (Prettier) and `npm run lint` (ESLint) — zero errors after format
-  - [x] `npm run test`
+**Why this matters**: Git tracks file moves better when the move is committed before edits. If you edit first or create a new file, Git sees it as a delete + add, losing history.
 
-- [x] Tool inventory validation
-  - [x] `node scripts/tools-cli.js count --runtime --static --workflows`
-  - [x] Confirm `clean` appears once canonically and via workflow re-exports
+### Tools to Consolidate
 
-- [ ] Commit & PR
-  - [ ] Commit on branch `feat/unify-project-workspace-tools`
-  - [ ] Prepare PR with summary, docs updates, and test results
+#### ✅ Completed
+1. **clean** (utilities/) - DONE
+   - [x] Unified tool created
+   - [x] Re-exported to 6 workflows
+   - [x] Old files deleted
+   - [x] Tests created
 
-### Quality & Validation
-- Lint/Format:
-  - Ran `npm run format` to apply Prettier; then `npm run lint` → no errors.
-  - No linter-disable comments added.
-- Unit tests:
-  - `utilities/__tests__/clean.test.ts` covers XOR validation:
-    - Error when neither `projectPath` nor `workspacePath` is provided.
-    - Error when both are provided.
-    - Success for single variant (project-only and workspace-only).
-- Integration tests (Reloaderoo):
-  - macOS project build → clean with derived data path:
-    - Build: `example_projects/macOS/MCPTest.xcodeproj` (scheme `MCPTest`) → success.
-    - DerivedData files before clean: 2239; after clean: 2146.
-  - iOS workspace build → clean with derived data path:
-    - Build: `example_projects/iOS_Calculator/CalculatorApp.xcworkspace` (scheme `CalculatorApp`, simulator `iPhone 16`) → success.
-    - DerivedData files before clean: 2036; after clean: 1879.
-  - Validation permutations:
-    - Project without selector succeeds (no scheme flag emitted)
-    - Workspace without selector fails validation (selector required), empty-string treated as missing
+2. **list_schemes** (project-discovery/) - DONE
+   - [x] Unified tool created  
+   - [x] Re-exported to 6 workflows
+   - [x] Old files deleted
+   - [x] Tests created (Note: Should have used mv approach)
+
+#### 🔄 In Progress
+None currently
+
+#### 📋 Remaining Tools
+
+**Project Discovery Tools:**
+- [ ] `show_build_set_proj` / `show_build_set_ws` → `show_build_settings`
+
+**Build Tools (per platform):**
+- [ ] `build_dev_proj` / `build_dev_ws` → `build_device`
+- [ ] `build_mac_proj` / `build_mac_ws` → `build_macos`
+- [ ] `build_sim_id_proj` / `build_sim_id_ws` → `build_simulator_id`
+- [ ] `build_sim_name_proj` / `build_sim_name_ws` → `build_simulator_name`
+
+**Build & Run Tools (per platform):**
+- [ ] `build_run_mac_proj` / `build_run_mac_ws` → `build_run_macos`
+- [ ] `build_run_sim_id_proj` / `build_run_sim_id_ws` → `build_run_simulator_id`
+- [ ] `build_run_sim_name_proj` / `build_run_sim_name_ws` → `build_run_simulator_name`
+
+**App Path Tools (per platform):**
+- [ ] `get_device_app_path_proj` / `get_device_app_path_ws` → `get_device_app_path`
+- [ ] `get_mac_app_path_proj` / `get_mac_app_path_ws` → `get_macos_app_path`
+- [ ] `get_sim_app_path_id_proj` / `get_sim_app_path_id_ws` → `get_simulator_app_path_id`
+- [ ] `get_sim_app_path_name_proj` / `get_sim_app_path_name_ws` → `get_simulator_app_path_name`
+
+**Test Tools (per platform):**
+- [ ] `test_device_proj` / `test_device_ws` → `test_device`
+- [ ] `test_macos_proj` / `test_macos_ws` → `test_macos`
+- [ ] `test_sim_id_proj` / `test_sim_id_ws` → `test_simulator_id`
+- [ ] `test_sim_name_proj` / `test_sim_name_ws` → `test_simulator_name`
+
+### Workflow for Each Tool
+
+1. **Analyze existing implementations**:
+   ```bash
+   # Compare project and workspace versions
+   diff src/mcp/tools/*/tool_proj.ts src/mcp/tools/*/tool_ws.ts
+   
+   # Check which test is more comprehensive
+   wc -l src/mcp/tools/*/__tests__/tool_proj.test.ts
+   wc -l src/mcp/tools/*/__tests__/tool_ws.test.ts
+   ```
+
+2. **Create unified tool**:
+   - Copy more complete version as base
+   - Add XOR validation for projectPath/workspacePath
+   - Adjust logic to handle both cases
+   - Commit this change first
+
+3. **Preserve tests (CRITICAL ORDER)**:
+   ```bash
+   # Step 3a: Move test file WITHOUT any edits
+   git mv src/mcp/tools/[location]/__tests__/tool_proj.test.ts \
+          src/mcp/tools/[canonical]/__tests__/tool.test.ts
+   
+   # Step 3b: Stage and commit the move IMMEDIATELY
+   git add -A
+   git commit -m "chore: move tool_proj test to unified location"
+   
+   # Step 3c: NOW make edits to the moved file
+   # - Update imports
+   # - Add XOR validation tests
+   # - Adapt for both project/workspace
+   
+   # Step 3d: Commit the edits as a separate commit
+   git add src/mcp/tools/[canonical]/__tests__/tool.test.ts
+   git commit -m "test: adapt tool tests for unified project/workspace"
+   ```
+
+4. **Create re-exports**:
+   ```bash
+   # For each workflow that had the tool
+   for workflow in device-project device-workspace macos-project macos-workspace simulator-project simulator-workspace; do
+     echo "// Re-export unified tool for $workflow workflow" > \
+       src/mcp/tools/$workflow/tool.ts
+     echo "export { default } from '../[canonical]/tool.js';" >> \
+       src/mcp/tools/$workflow/tool.ts
+   done
+   ```
+
+5. **Clean up old files**:
+   ```bash
+   # Delete old tool files
+   git rm src/mcp/tools/*/tool_proj.ts
+   git rm src/mcp/tools/*/tool_ws.ts
+   
+   # Delete the test file that wasn't moved
+   git rm src/mcp/tools/*/__tests__/tool_ws.test.ts
+   
+   # Commit the cleanup
+   git commit -m "chore: remove old project/workspace specific tool files"
+   ```
+
+6. **Validate**:
+   ```bash
+   npm run build
+   npm run test -- src/mcp/tools/[canonical]/__tests__/tool.test.ts
+   npm run lint
+   npm run format
+   
+   # If all passes, commit any formatting changes
+   git add -A
+   git commit -m "chore: format unified tool code"
+   ```
+
+### Common Patterns
+
+#### XOR Validation Helper
+```typescript
+// Convert empty strings to undefined
+function nullifyEmptyStrings(value: unknown): unknown {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
+    for (const key of Object.keys(copy)) {
+      const v = copy[key];
+      if (typeof v === 'string' && v.trim() === '') copy[key] = undefined;
+    }
+    return copy;
+  }
+  return value;
+}
+```
+
+#### Schema Pattern
+```typescript
+const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
+
+const toolSchema = baseSchema
+  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+    message: 'Either projectPath or workspacePath is required.',
+  })
+  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+  });
+```
+
+#### Test Adaptation Pattern
+```typescript
+// Add to existing test file after moving with mv:
+
+describe('XOR Validation', () => {
+  it('should error when neither projectPath nor workspacePath provided', async () => {
+    const result = await plugin.handler({});
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+  });
+
+  it('should error when both provided', async () => {
+    const result = await plugin.handler({
+      projectPath: '/path/project.xcodeproj',
+      workspacePath: '/path/workspace.xcworkspace',
+    });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('mutually exclusive');
+  });
+});
+```
+
+### Success Criteria
+- [ ] All project/workspace tool pairs consolidated
+- [ ] Tests preserved (not rewritten) with high coverage
+- [ ] No regressions in functionality
+- [ ] All workflow groups maintain same tool availability
+- [ ] Build, lint, and tests pass
+- [ ] Tool count reduced by ~50% (from pairs to singles)
 
 ### Notes
-- Phase 2 will consolidate workflow groups (e.g., merge `simulator-project` and `simulator-workspace`), after Phase 1 is validated.
-
-
+- Phase 2 will consolidate workflow groups themselves
+- Tool names may be refined during consolidation for clarity
+- Empty string handling is critical for MCP clients that send "" instead of undefined
