@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../utils/command.js';
-import plugin, { show_build_set_projLogic } from '../show_build_set_proj.ts';
+import plugin, { showBuildSettingsLogic } from '../show_build_settings.ts';
 
-describe('show_build_set_proj plugin', () => {
+describe('show_build_settings plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(plugin.name).toBe('show_build_set_proj');
+      expect(plugin.name).toBe('show_build_settings');
     });
 
     it('should have correct description', () => {
       expect(plugin.description).toBe(
-        "Shows build settings from a project file using xcodebuild. IMPORTANT: Requires projectPath and scheme. Example: show_build_set_proj({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+        "Shows build settings from either a project or workspace using xcodebuild. Provide exactly one of projectPath or workspacePath, plus scheme. Example: show_build_settings({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
       );
     });
 
@@ -34,7 +34,7 @@ describe('show_build_set_proj plugin', () => {
         process: { pid: 12345 },
       });
 
-      const result = await show_build_set_projLogic(
+      const result = await showBuildSettingsLogic(
         { projectPath: '/valid/path.xcodeproj', scheme: 'MyScheme' },
         mockExecutor,
       );
@@ -76,7 +76,7 @@ describe('show_build_set_proj plugin', () => {
         return mockExecutor(...args);
       };
 
-      const result = await show_build_set_projLogic(
+      const result = await showBuildSettingsLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -128,7 +128,7 @@ describe('show_build_set_proj plugin', () => {
         process: { pid: 12345 },
       });
 
-      const result = await show_build_set_projLogic(
+      const result = await showBuildSettingsLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'InvalidScheme',
@@ -147,7 +147,7 @@ describe('show_build_set_proj plugin', () => {
         throw new Error('Command execution failed');
       };
 
-      const result = await show_build_set_projLogic(
+      const result = await showBuildSettingsLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -162,7 +162,59 @@ describe('show_build_set_proj plugin', () => {
     });
   });
 
-  describe('show_build_set_projLogic function', () => {
+  describe('XOR Validation', () => {
+    it('should error when neither projectPath nor workspacePath provided', async () => {
+      const result = await plugin.handler({
+        scheme: 'MyScheme',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+    });
+
+    it('should error when both projectPath and workspacePath provided', async () => {
+      const result = await plugin.handler({
+        projectPath: '/path/project.xcodeproj',
+        workspacePath: '/path/workspace.xcworkspace',
+        scheme: 'MyScheme',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('mutually exclusive');
+    });
+
+    it('should work with projectPath only', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Mock build settings output',
+      });
+
+      const result = await showBuildSettingsLogic(
+        { projectPath: '/valid/path.xcodeproj', scheme: 'MyScheme' },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('✅ Build settings for scheme MyScheme:');
+    });
+
+    it('should work with workspacePath only', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Mock build settings output',
+      });
+
+      const result = await showBuildSettingsLogic(
+        { workspacePath: '/valid/path.xcworkspace', scheme: 'MyScheme' },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('✅ Build settings retrieved successfully');
+    });
+  });
+
+  describe('showBuildSettingsLogic function', () => {
     it('should return success with build settings', async () => {
       const calls: any[] = [];
       const mockExecutor = createMockExecutor({
@@ -185,7 +237,7 @@ describe('show_build_set_proj plugin', () => {
         return mockExecutor(...args);
       };
 
-      const result = await show_build_set_projLogic(
+      const result = await showBuildSettingsLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -237,7 +289,7 @@ describe('show_build_set_proj plugin', () => {
         process: { pid: 12345 },
       });
 
-      const result = await show_build_set_projLogic(
+      const result = await showBuildSettingsLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'InvalidScheme',
@@ -256,7 +308,7 @@ describe('show_build_set_proj plugin', () => {
         throw new Error('Command execution failed');
       };
 
-      const result = await show_build_set_projLogic(
+      const result = await showBuildSettingsLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
