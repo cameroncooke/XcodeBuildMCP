@@ -1,66 +1,212 @@
 /**
- * Tests for test_macos_ws plugin
+ * Tests for test_macos plugin (unified project/workspace)
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../../utils/command.js';
-import testMacosWs, { test_macos_wsLogic } from '../test_macos_ws.ts';
+import testMacos, { testMacosLogic } from '../test_macos.ts';
 
-describe('test_macos_ws plugin', () => {
+describe('test_macos plugin (unified)', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(testMacosWs.name).toBe('test_macos_ws');
+      expect(testMacos.name).toBe('test_macos');
     });
 
     it('should have correct description', () => {
-      expect(testMacosWs.description).toBe(
-        'Runs tests for a macOS workspace using xcodebuild test and parses xcresult output.',
+      expect(testMacos.description).toBe(
+        'Runs tests for a macOS project or workspace using xcodebuild test and parses xcresult output. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires scheme. Example: test_macos({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme" })',
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof testMacosWs.handler).toBe('function');
+      expect(typeof testMacos.handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
-      // Test required fields
+      // Test workspace path
       expect(
-        testMacosWs.schema.workspacePath.safeParse('/path/to/MyProject.xcworkspace').success,
+        testMacos.schema.workspacePath.safeParse('/path/to/MyProject.xcworkspace').success,
       ).toBe(true);
-      expect(testMacosWs.schema.scheme.safeParse('MyScheme').success).toBe(true);
 
-      // Test optional fields
-      expect(testMacosWs.schema.configuration.safeParse('Debug').success).toBe(true);
-      expect(testMacosWs.schema.derivedDataPath.safeParse('/path/to/derived-data').success).toBe(
+      // Test project path
+      expect(testMacos.schema.projectPath.safeParse('/path/to/MyProject.xcodeproj').success).toBe(
         true,
       );
-      expect(testMacosWs.schema.extraArgs.safeParse(['--arg1', '--arg2']).success).toBe(true);
-      expect(testMacosWs.schema.preferXcodebuild.safeParse(true).success).toBe(true);
+
+      // Test required scheme
+      expect(testMacos.schema.scheme.safeParse('MyScheme').success).toBe(true);
+
+      // Test optional fields
+      expect(testMacos.schema.configuration.safeParse('Debug').success).toBe(true);
+      expect(testMacos.schema.derivedDataPath.safeParse('/path/to/derived-data').success).toBe(
+        true,
+      );
+      expect(testMacos.schema.extraArgs.safeParse(['--arg1', '--arg2']).success).toBe(true);
+      expect(testMacos.schema.preferXcodebuild.safeParse(true).success).toBe(true);
 
       // Test invalid inputs
-      expect(testMacosWs.schema.workspacePath.safeParse(null).success).toBe(false);
-      expect(testMacosWs.schema.scheme.safeParse(null).success).toBe(false);
-      expect(testMacosWs.schema.extraArgs.safeParse('not-array').success).toBe(false);
-      expect(testMacosWs.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
+      expect(testMacos.schema.workspacePath.safeParse(null).success).toBe(false);
+      expect(testMacos.schema.projectPath.safeParse(null).success).toBe(false);
+      expect(testMacos.schema.scheme.safeParse(null).success).toBe(false);
+      expect(testMacos.schema.extraArgs.safeParse('not-array').success).toBe(false);
+      expect(testMacos.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return successful test response when xcodebuild succeeds', async () => {
+  describe('XOR Parameter Validation', () => {
+    it('should validate that either projectPath or workspacePath is provided', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_macos_wsLogic(
+      const mockFileSystemExecutor = {
+        mkdtemp: async () => '/tmp/test-123',
+        rm: async () => {},
+        tmpdir: () => '/tmp',
+        stat: async () => ({ isDirectory: () => true }),
+      };
+
+      // Should fail when neither is provided
+      await expect(
+        testMacos.handler({
+          scheme: 'MyScheme',
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('should validate that both projectPath and workspacePath cannot be provided', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const mockFileSystemExecutor = {
+        mkdtemp: async () => '/tmp/test-123',
+        rm: async () => {},
+        tmpdir: () => '/tmp',
+        stat: async () => ({ isDirectory: () => true }),
+      };
+
+      // Should fail when both are provided
+      await expect(
+        testMacos.handler({
+          projectPath: '/path/to/project.xcodeproj',
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('should allow only projectPath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const mockFileSystemExecutor = {
+        mkdtemp: async () => '/tmp/test-123',
+        rm: async () => {},
+        tmpdir: () => '/tmp',
+        stat: async () => ({ isDirectory: () => true }),
+      };
+
+      const result = await testMacosLogic(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should allow only workspacePath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const mockFileSystemExecutor = {
+        mkdtemp: async () => '/tmp/test-123',
+        rm: async () => {},
+        tmpdir: () => '/tmp',
+        stat: async () => ({ isDirectory: () => true }),
+      };
+
+      const result = await testMacosLogic(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+  });
+
+  describe('Handler Behavior (Complete Literal Returns)', () => {
+    it('should return successful test response with workspace when xcodebuild succeeds', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      // Mock file system dependencies
+      const mockFileSystemExecutor = {
+        mkdtemp: async () => '/tmp/test-123',
+        rm: async () => {},
+        tmpdir: () => '/tmp',
+        stat: async () => ({ isDirectory: () => true }),
+      };
+
+      const result = await testMacosLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
           configuration: 'Debug',
         },
         mockExecutor,
+        mockFileSystemExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should return successful test response with project when xcodebuild succeeds', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      // Mock file system dependencies
+      const mockFileSystemExecutor = {
+        mkdtemp: async () => '/tmp/test-123',
+        rm: async () => {},
+        tmpdir: () => '/tmp',
+        stat: async () => ({ isDirectory: () => true }),
+      };
+
+      const result = await testMacosLogic(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          configuration: 'Debug',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
       );
 
       expect(result.content).toBeDefined();
@@ -74,12 +220,21 @@ describe('test_macos_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_macos_wsLogic(
+      // Mock file system dependencies
+      const mockFileSystemExecutor = {
+        mkdtemp: async () => '/tmp/test-123',
+        rm: async () => {},
+        tmpdir: () => '/tmp',
+        stat: async () => ({ isDirectory: () => true }),
+      };
+
+      const result = await testMacosLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
         },
         mockExecutor,
+        mockFileSystemExecutor,
       );
 
       expect(result.content).toBeDefined();
@@ -93,7 +248,15 @@ describe('test_macos_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_macos_wsLogic(
+      // Mock file system dependencies
+      const mockFileSystemExecutor = {
+        mkdtemp: async () => '/tmp/test-123',
+        rm: async () => {},
+        tmpdir: () => '/tmp',
+        stat: async () => ({ isDirectory: () => true }),
+      };
+
+      const result = await testMacosLogic(
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
@@ -103,6 +266,7 @@ describe('test_macos_ws plugin', () => {
           preferXcodebuild: true,
         },
         mockExecutor,
+        mockFileSystemExecutor,
       );
 
       expect(result.content).toBeDefined();
@@ -116,12 +280,21 @@ describe('test_macos_ws plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_macos_wsLogic(
+      // Mock file system dependencies
+      const mockFileSystemExecutor = {
+        mkdtemp: async () => '/tmp/test-123',
+        rm: async () => {},
+        tmpdir: () => '/tmp',
+        stat: async () => ({ isDirectory: () => true }),
+      };
+
+      const result = await testMacosLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyApp',
         },
         mockExecutor,
+        mockFileSystemExecutor,
       );
 
       expect(result.content).toBeDefined();
@@ -167,27 +340,21 @@ describe('test_macos_ws plugin', () => {
         };
       };
 
-      // Mock temp directory dependencies using approved utility
-      const mockTempDirDeps = {
+      // Mock file system dependencies using approved utility
+      const mockFileSystemExecutor = {
         mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
         rm: async () => {},
-        join: (...args: string[]) => args.join('/'),
         tmpdir: () => '/tmp',
-      };
-
-      // Mock file system check using approved utility
-      const mockFileSystemDeps = {
         stat: async () => ({ isDirectory: () => true }),
       };
 
-      const result = await test_macos_wsLogic(
+      const result = await testMacosLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
         },
         mockExecutor,
-        mockTempDirDeps,
-        mockFileSystemDeps,
+        mockFileSystemExecutor,
       );
 
       // Verify commands were called with correct parameters
@@ -273,27 +440,21 @@ describe('test_macos_ws plugin', () => {
         return { success: true, output: '', error: undefined };
       };
 
-      // Mock temp directory dependencies
-      const mockTempDirDeps = {
+      // Mock file system dependencies
+      const mockFileSystemExecutor = {
         mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
         rm: async () => {},
-        join: (...args: string[]) => args.join('/'),
         tmpdir: () => '/tmp',
-      };
-
-      // Mock file system check
-      const mockFileSystemDeps = {
         stat: async () => ({ isDirectory: () => true }),
       };
 
-      const result = await test_macos_wsLogic(
+      const result = await testMacosLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
         },
         mockExecutor,
-        mockTempDirDeps,
-        mockFileSystemDeps,
+        mockFileSystemExecutor,
       );
 
       expect(result.content).toEqual(
@@ -345,20 +506,15 @@ describe('test_macos_ws plugin', () => {
         };
       };
 
-      // Mock temp directory dependencies
-      const mockTempDirDeps = {
+      // Mock file system dependencies
+      const mockFileSystemExecutor = {
         mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
         rm: async () => {},
-        join: (...args: string[]) => args.join('/'),
         tmpdir: () => '/tmp',
-      };
-
-      // Mock file system check
-      const mockFileSystemDeps = {
         stat: async () => ({ isDirectory: () => true }),
       };
 
-      const result = await test_macos_wsLogic(
+      const result = await testMacosLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -368,8 +524,7 @@ describe('test_macos_ws plugin', () => {
           preferXcodebuild: true,
         },
         mockExecutor,
-        mockTempDirDeps,
-        mockFileSystemDeps,
+        mockFileSystemExecutor,
       );
 
       expect(result.content).toEqual(
@@ -389,29 +544,23 @@ describe('test_macos_ws plugin', () => {
         output: 'Test Succeeded',
       });
 
-      // Mock temp directory dependencies - mkdtemp fails
-      const mockTempDirDeps = {
+      // Mock file system dependencies - mkdtemp fails
+      const mockFileSystemExecutor = {
         mkdtemp: async () => {
           throw new Error('Network error');
         },
         rm: async () => {},
-        join: (...args: string[]) => args.join('/'),
         tmpdir: () => '/tmp',
-      };
-
-      // Mock file system check
-      const mockFileSystemDeps = {
         stat: async () => ({ isDirectory: () => true }),
       };
 
-      const result = await test_macos_wsLogic(
+      const result = await testMacosLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
         },
         mockExecutor,
-        mockTempDirDeps,
-        mockFileSystemDeps,
+        mockFileSystemExecutor,
       );
 
       expect(result).toEqual({
