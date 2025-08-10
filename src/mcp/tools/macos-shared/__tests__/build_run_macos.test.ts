@@ -1,23 +1,25 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../utils/command.js';
-import tool, { build_run_mac_projLogic } from '../build_run_mac_proj.ts';
+import tool, { buildRunMacOSLogic } from '../build_run_macos.js';
 
-describe('build_run_mac_proj', () => {
+describe('build_run_macos', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should export the correct name', () => {
-      expect(tool.name).toBe('build_run_mac_proj');
+      expect(tool.name).toBe('build_run_macos');
     });
 
     it('should export the correct description', () => {
-      expect(tool.description).toBe('Builds and runs a macOS app from a project file in one step.');
+      expect(tool.description).toBe(
+        "Builds and runs a macOS app from a project or workspace in one step. Provide exactly one of projectPath or workspacePath. Example: build_run_macos({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+      );
     });
 
     it('should export a handler function', () => {
       expect(typeof tool.handler).toBe('function');
     });
 
-    it('should validate schema with valid inputs', () => {
+    it('should validate schema with valid project inputs', () => {
       const validInput = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
@@ -31,13 +33,54 @@ describe('build_run_mac_proj', () => {
       expect(schema.safeParse(validInput).success).toBe(true);
     });
 
-    it('should validate schema with minimal valid inputs', () => {
+    it('should validate schema with valid workspace inputs', () => {
+      const validInput = {
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyApp',
+        configuration: 'Debug',
+        derivedDataPath: '/path/to/derived',
+        arch: 'arm64',
+        extraArgs: ['--verbose'],
+        preferXcodebuild: true,
+      };
+      const schema = z.object(tool.schema);
+      expect(schema.safeParse(validInput).success).toBe(true);
+    });
+
+    it('should validate schema with minimal valid project inputs', () => {
       const validInput = {
         projectPath: '/path/to/project.xcodeproj',
         scheme: 'MyApp',
       };
       const schema = z.object(tool.schema);
       expect(schema.safeParse(validInput).success).toBe(true);
+    });
+
+    it('should validate schema with minimal valid workspace inputs', () => {
+      const validInput = {
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyApp',
+      };
+      const schema = z.object(tool.schema);
+      expect(schema.safeParse(validInput).success).toBe(true);
+    });
+
+    it('should reject inputs with both projectPath and workspacePath', () => {
+      const invalidInput = {
+        projectPath: '/path/to/project.xcodeproj',
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyApp',
+      };
+      const schema = z.object(tool.schema);
+      expect(schema.safeParse(invalidInput).success).toBe(true); // Base schema passes, but runtime validation should fail
+    });
+
+    it('should reject inputs with neither projectPath nor workspacePath', () => {
+      const invalidInput = {
+        scheme: 'MyApp',
+      };
+      const schema = z.object(tool.schema);
+      expect(schema.safeParse(invalidInput).success).toBe(true); // Base schema passes, but runtime validation should fail
     });
 
     it('should reject invalid projectPath', () => {
@@ -70,7 +113,7 @@ describe('build_run_mac_proj', () => {
   });
 
   describe('Command Generation and Response Logic', () => {
-    it('should successfully build and run macOS app', async () => {
+    it('should successfully build and run macOS app from project', async () => {
       // Track executor calls manually
       let callCount = 0;
       const executorCalls: any[] = [];
@@ -108,7 +151,7 @@ describe('build_run_mac_proj', () => {
         preferXcodebuild: false,
       };
 
-      const result = await build_run_mac_projLogic(args, mockExecutor);
+      const result = await buildRunMacOSLogic(args, mockExecutor);
 
       // Verify build command was called
       expect(executorCalls[0]).toEqual({
@@ -166,6 +209,102 @@ describe('build_run_mac_proj', () => {
       });
     });
 
+    it('should successfully build and run macOS app from workspace', async () => {
+      // Track executor calls manually
+      let callCount = 0;
+      const executorCalls: any[] = [];
+      const mockExecutor = (
+        command: string[],
+        description: string,
+        logOutput: boolean,
+        timeout?: number,
+      ) => {
+        callCount++;
+        executorCalls.push({ command, description, logOutput, timeout });
+
+        if (callCount === 1) {
+          // First call for build
+          return Promise.resolve({
+            success: true,
+            output: 'BUILD SUCCEEDED',
+            error: '',
+          });
+        } else if (callCount === 2) {
+          // Second call for build settings
+          return Promise.resolve({
+            success: true,
+            output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
+            error: '',
+          });
+        }
+        return Promise.resolve({ success: true, output: '', error: '' });
+      };
+
+      const args = {
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyApp',
+        configuration: 'Debug',
+        preferXcodebuild: false,
+      };
+
+      const result = await buildRunMacOSLogic(args, mockExecutor);
+
+      // Verify build command was called
+      expect(executorCalls[0]).toEqual({
+        command: [
+          'xcodebuild',
+          '-workspace',
+          '/path/to/workspace.xcworkspace',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=macOS',
+          'build',
+        ],
+        description: 'macOS Build',
+        logOutput: true,
+        timeout: undefined,
+      });
+
+      // Verify build settings command was called
+      expect(executorCalls[1]).toEqual({
+        command: [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/workspace.xcworkspace',
+          '-scheme',
+          'MyApp',
+          '-configuration',
+          'Debug',
+        ],
+        description: 'Get Build Settings for Launch',
+        logOutput: true,
+        timeout: undefined,
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: '✅ macOS Build build succeeded for scheme MyApp.',
+          },
+          {
+            type: 'text',
+            text: 'Next Steps:\n1. Get App Path: get_macos_app_path_workspace\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+          },
+          {
+            type: 'text',
+            text: '✅ macOS build and run succeeded for scheme MyApp. App launched: /path/to/build/MyApp.app',
+          },
+        ],
+        isError: false,
+      });
+    });
+
     it('should handle build failure', async () => {
       const mockExecutor = createMockExecutor({
         success: false,
@@ -180,7 +319,7 @@ describe('build_run_mac_proj', () => {
         preferXcodebuild: false,
       };
 
-      const result = await build_run_mac_projLogic(args, mockExecutor);
+      const result = await buildRunMacOSLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -226,7 +365,7 @@ describe('build_run_mac_proj', () => {
         preferXcodebuild: false,
       };
 
-      const result = await build_run_mac_projLogic(args, mockExecutor);
+      const result = await buildRunMacOSLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -289,7 +428,7 @@ describe('build_run_mac_proj', () => {
         preferXcodebuild: false,
       };
 
-      const result = await build_run_mac_projLogic(args, mockExecutor);
+      const result = await buildRunMacOSLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -327,11 +466,11 @@ describe('build_run_mac_proj', () => {
         preferXcodebuild: false,
       };
 
-      const result = await build_run_mac_projLogic(args, mockExecutor);
+      const result = await buildRunMacOSLogic(args, mockExecutor);
 
       expect(result).toEqual({
         content: [
-          { type: 'text', text: 'Error during macOS Build build: spawn xcodebuild ENOENT' },
+          { type: 'text', text: 'Error during macOS build and run: spawn xcodebuild ENOENT' },
         ],
         isError: true,
       });
@@ -375,7 +514,7 @@ describe('build_run_mac_proj', () => {
         preferXcodebuild: false,
       };
 
-      await build_run_mac_projLogic(args, mockExecutor);
+      await buildRunMacOSLogic(args, mockExecutor);
 
       expect(executorCalls[0]).toEqual({
         command: [
