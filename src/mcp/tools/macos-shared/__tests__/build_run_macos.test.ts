@@ -470,7 +470,7 @@ describe('build_run_macos', () => {
 
       expect(result).toEqual({
         content: [
-          { type: 'text', text: 'Error during macOS build and run: spawn xcodebuild ENOENT' },
+          { type: 'text', text: 'Error during macOS Build build: spawn xcodebuild ENOENT' },
         ],
         isError: true,
       });
