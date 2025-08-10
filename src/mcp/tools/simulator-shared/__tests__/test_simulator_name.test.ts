@@ -1,63 +1,132 @@
 /**
- * Tests for test_sim_name_proj plugin
+ * Tests for test_simulator_name plugin
  * Following CLAUDE.md testing standards with dependency injection and literal validation
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
-import testSimNameProj, { test_sim_name_projLogic } from '../test_sim_name_proj.ts';
+import testSimulatorName, { test_simulator_nameLogic } from '../test_simulator_name.js';
 
-describe('test_sim_name_proj plugin', () => {
+describe('test_simulator_name plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(testSimNameProj.name).toBe('test_sim_name_proj');
+      expect(testSimulatorName.name).toBe('test_simulator_name');
     });
 
     it('should have correct description', () => {
-      expect(testSimNameProj.description).toBe(
-        'Runs tests for a project on a simulator by name using xcodebuild test and parses xcresult output.',
+      expect(testSimulatorName.description).toBe(
+        'Runs tests on a simulator by name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace).',
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof testSimNameProj.handler).toBe('function');
+      expect(typeof testSimulatorName.handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
       // Test required fields
       expect(
-        testSimNameProj.schema.projectPath.safeParse('/path/to/project.xcodeproj').success,
+        testSimulatorName.schema.projectPath.safeParse('/path/to/project.xcodeproj').success,
       ).toBe(true);
-      expect(testSimNameProj.schema.scheme.safeParse('MyScheme').success).toBe(true);
-      expect(testSimNameProj.schema.simulatorName.safeParse('iPhone 16').success).toBe(true);
+      expect(
+        testSimulatorName.schema.workspacePath.safeParse('/path/to/workspace.xcworkspace').success,
+      ).toBe(true);
+      expect(testSimulatorName.schema.scheme.safeParse('MyScheme').success).toBe(true);
+      expect(testSimulatorName.schema.simulatorName.safeParse('iPhone 16').success).toBe(true);
 
       // Test optional fields
-      expect(testSimNameProj.schema.configuration.safeParse('Debug').success).toBe(true);
-      expect(testSimNameProj.schema.derivedDataPath.safeParse('/path/to/derived').success).toBe(
+      expect(testSimulatorName.schema.configuration.safeParse('Debug').success).toBe(true);
+      expect(testSimulatorName.schema.derivedDataPath.safeParse('/path/to/derived').success).toBe(
         true,
       );
-      expect(testSimNameProj.schema.extraArgs.safeParse(['--quiet']).success).toBe(true);
-      expect(testSimNameProj.schema.preferXcodebuild.safeParse(true).success).toBe(true);
-      expect(testSimNameProj.schema.useLatestOS.safeParse(true).success).toBe(true);
+      expect(testSimulatorName.schema.extraArgs.safeParse(['--quiet']).success).toBe(true);
+      expect(testSimulatorName.schema.preferXcodebuild.safeParse(true).success).toBe(true);
+      expect(testSimulatorName.schema.useLatestOS.safeParse(true).success).toBe(true);
 
       // Test invalid inputs
-      expect(testSimNameProj.schema.projectPath.safeParse(123).success).toBe(false);
-      expect(testSimNameProj.schema.extraArgs.safeParse('not-array').success).toBe(false);
-      expect(testSimNameProj.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
-      expect(testSimNameProj.schema.useLatestOS.safeParse('not-boolean').success).toBe(false);
+      expect(testSimulatorName.schema.projectPath.safeParse(123).success).toBe(false);
+      expect(testSimulatorName.schema.workspacePath.safeParse(123).success).toBe(false);
+      expect(testSimulatorName.schema.extraArgs.safeParse('not-array').success).toBe(false);
+      expect(testSimulatorName.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(
+        false,
+      );
+      expect(testSimulatorName.schema.useLatestOS.safeParse('not-boolean').success).toBe(false);
     });
   });
 
-  describe('Logic Function Behavior (Complete Literal Returns)', () => {
-    it('should handle missing parameters and generate test command', async () => {
+  describe('XOR Validation', () => {
+    it('should accept projectPath without workspacePath', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_sim_name_projLogic(
+      const result = await test_simulator_nameLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should accept workspacePath without projectPath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await test_simulator_nameLogic(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+  });
+
+  describe('Logic Function Behavior (Complete Literal Returns)', () => {
+    it('should handle project path and generate test command', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await test_simulator_nameLogic(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+          configuration: 'Debug',
+        },
+        mockExecutor,
+      );
+
+      expect(result.content).toBeDefined();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should handle workspace path and generate test command', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Test Suite All Tests passed',
+      });
+
+      const result = await test_simulator_nameLogic(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
           configuration: 'Debug',
@@ -76,7 +145,7 @@ describe('test_sim_name_proj plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_sim_name_projLogic(
+      const result = await test_simulator_nameLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -97,7 +166,7 @@ describe('test_sim_name_proj plugin', () => {
         error: 'xcodebuild: error: Scheme not found',
       });
 
-      const result = await test_sim_name_projLogic(
+      const result = await test_simulator_nameLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'NonExistentScheme',
@@ -117,9 +186,9 @@ describe('test_sim_name_proj plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_sim_name_projLogic(
+      const result = await test_simulator_nameLogic(
         {
-          projectPath: '/path/to/project.xcodeproj',
+          workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
@@ -137,9 +206,9 @@ describe('test_sim_name_proj plugin', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const result = await test_sim_name_projLogic(
+      const result = await test_simulator_nameLogic(
         {
-          projectPath: '/path/to/project.xcodeproj',
+          workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
           configuration: 'Release',
