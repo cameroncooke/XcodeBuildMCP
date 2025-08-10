@@ -1,5 +1,5 @@
 /**
- * Tests for build_mac_proj plugin
+ * Tests for build_macos plugin (unified)
  * Following CLAUDE.md testing standards with literal validation
  * Using pure dependency injection for deterministic testing
  * NO VITEST MOCKING ALLOWED - Only createMockExecutor and createMockFileSystemExecutor
@@ -8,47 +8,51 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../utils/command.js';
-import buildMacProj, { build_mac_projLogic } from '../build_mac_proj.ts';
+import buildMacOS, { buildMacOSLogic } from '../build_macos.js';
 
-describe('build_mac_proj plugin', () => {
+describe('build_macos plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(buildMacProj.name).toBe('build_mac_proj');
+      expect(buildMacOS.name).toBe('build_macos');
     });
 
     it('should have correct description', () => {
-      expect(buildMacProj.description).toBe(
-        'Builds a macOS app using xcodebuild from a project file.',
+      expect(buildMacOS.description).toBe(
+        "Builds a macOS app using xcodebuild from a project or workspace. Provide exactly one of projectPath or workspacePath. Example: build_macos({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof buildMacProj.handler).toBe('function');
+      expect(typeof buildMacOS.handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
       // Test required fields
-      expect(
-        buildMacProj.schema.projectPath.safeParse('/path/to/MyProject.xcodeproj').success,
-      ).toBe(true);
-      expect(buildMacProj.schema.scheme.safeParse('MyScheme').success).toBe(true);
-
-      // Test optional fields
-      expect(buildMacProj.schema.configuration.safeParse('Debug').success).toBe(true);
-      expect(buildMacProj.schema.derivedDataPath.safeParse('/path/to/derived-data').success).toBe(
+      expect(buildMacOS.schema.projectPath.safeParse('/path/to/MyProject.xcodeproj').success).toBe(
         true,
       );
-      expect(buildMacProj.schema.arch.safeParse('arm64').success).toBe(true);
-      expect(buildMacProj.schema.arch.safeParse('x86_64').success).toBe(true);
-      expect(buildMacProj.schema.extraArgs.safeParse(['--arg1', '--arg2']).success).toBe(true);
-      expect(buildMacProj.schema.preferXcodebuild.safeParse(true).success).toBe(true);
+      expect(
+        buildMacOS.schema.workspacePath.safeParse('/path/to/MyProject.xcworkspace').success,
+      ).toBe(true);
+      expect(buildMacOS.schema.scheme.safeParse('MyScheme').success).toBe(true);
+
+      // Test optional fields
+      expect(buildMacOS.schema.configuration.safeParse('Debug').success).toBe(true);
+      expect(buildMacOS.schema.derivedDataPath.safeParse('/path/to/derived-data').success).toBe(
+        true,
+      );
+      expect(buildMacOS.schema.arch.safeParse('arm64').success).toBe(true);
+      expect(buildMacOS.schema.arch.safeParse('x86_64').success).toBe(true);
+      expect(buildMacOS.schema.extraArgs.safeParse(['--arg1', '--arg2']).success).toBe(true);
+      expect(buildMacOS.schema.preferXcodebuild.safeParse(true).success).toBe(true);
 
       // Test invalid inputs
-      expect(buildMacProj.schema.projectPath.safeParse(null).success).toBe(false);
-      expect(buildMacProj.schema.scheme.safeParse(null).success).toBe(false);
-      expect(buildMacProj.schema.arch.safeParse('invalidArch').success).toBe(false);
-      expect(buildMacProj.schema.extraArgs.safeParse('not-array').success).toBe(false);
-      expect(buildMacProj.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
+      expect(buildMacOS.schema.projectPath.safeParse(null).success).toBe(false);
+      expect(buildMacOS.schema.workspacePath.safeParse(null).success).toBe(false);
+      expect(buildMacOS.schema.scheme.safeParse(null).success).toBe(false);
+      expect(buildMacOS.schema.arch.safeParse('invalidArch').success).toBe(false);
+      expect(buildMacOS.schema.extraArgs.safeParse('not-array').success).toBe(false);
+      expect(buildMacOS.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
     });
   });
 
@@ -59,7 +63,7 @@ describe('build_mac_proj plugin', () => {
         output: 'BUILD SUCCEEDED',
       });
 
-      const result = await build_mac_projLogic(
+      const result = await buildMacOSLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -87,7 +91,7 @@ describe('build_mac_proj plugin', () => {
         error: 'error: Compilation error in main.swift',
       });
 
-      const result = await build_mac_projLogic(
+      const result = await buildMacOSLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -116,7 +120,7 @@ describe('build_mac_proj plugin', () => {
         output: 'BUILD SUCCEEDED',
       });
 
-      const result = await build_mac_projLogic(
+      const result = await buildMacOSLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -150,7 +154,7 @@ describe('build_mac_proj plugin', () => {
         throw new Error('Network error');
       };
 
-      const result = await build_mac_projLogic(
+      const result = await buildMacOSLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -176,7 +180,7 @@ describe('build_mac_proj plugin', () => {
         throw new Error('Spawn error');
       };
 
-      const result = await build_mac_projLogic(
+      const result = await buildMacOSLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -207,7 +211,7 @@ describe('build_mac_proj plugin', () => {
         return mockExecutor(command);
       };
 
-      const result = await build_mac_projLogic(
+      const result = await buildMacOSLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -240,7 +244,7 @@ describe('build_mac_proj plugin', () => {
         return mockExecutor(command);
       };
 
-      const result = await build_mac_projLogic(
+      const result = await buildMacOSLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -281,7 +285,7 @@ describe('build_mac_proj plugin', () => {
         return mockExecutor(command);
       };
 
-      const result = await build_mac_projLogic(
+      const result = await buildMacOSLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -317,7 +321,7 @@ describe('build_mac_proj plugin', () => {
         return mockExecutor(command);
       };
 
-      const result = await build_mac_projLogic(
+      const result = await buildMacOSLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -351,7 +355,7 @@ describe('build_mac_proj plugin', () => {
         return mockExecutor(command);
       };
 
-      const result = await build_mac_projLogic(
+      const result = await buildMacOSLogic(
         {
           projectPath: '/Users/dev/My Project/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -372,6 +376,91 @@ describe('build_mac_proj plugin', () => {
         'platform=macOS',
         'build',
       ]);
+    });
+
+    it('should generate correct xcodebuild workspace command with minimal parameters', async () => {
+      let capturedCommand: string[] = [];
+      const mockExecutor = createMockExecutor({ success: true, output: 'BUILD SUCCEEDED' });
+
+      // Override the executor to capture the command
+      const spyExecutor = async (command: string[]) => {
+        capturedCommand = command;
+        return mockExecutor(command);
+      };
+
+      const result = await buildMacOSLogic(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        spyExecutor,
+      );
+
+      expect(capturedCommand).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/workspace.xcworkspace',
+        '-scheme',
+        'MyScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=macOS',
+        'build',
+      ]);
+    });
+  });
+
+  describe('XOR Validation', () => {
+    it('should error when neither projectPath nor workspacePath provided', async () => {
+      const result = await buildMacOS.handler({ scheme: 'MyScheme' });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+    });
+
+    it('should error when both projectPath and workspacePath provided', async () => {
+      const result = await buildMacOS.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyScheme',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('mutually exclusive');
+    });
+
+    it('should succeed with valid projectPath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+      });
+
+      const result = await buildMacOSLogic(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('should succeed with valid workspacePath', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+      });
+
+      const result = await buildMacOSLogic(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBeUndefined();
     });
   });
 });
