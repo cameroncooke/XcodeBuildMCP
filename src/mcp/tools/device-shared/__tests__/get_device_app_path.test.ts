@@ -1,49 +1,75 @@
 /**
- * Tests for get_device_app_path_proj plugin
+ * Tests for get_device_app_path plugin (unified)
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../../utils/command.js';
-import getDeviceAppPathProj, {
-  get_device_app_path_projLogic,
-} from '../get_device_app_path_proj.ts';
+import getDeviceAppPath, { get_device_app_pathLogic } from '../get_device_app_path.js';
 
-describe('get_device_app_path_proj plugin', () => {
+describe('get_device_app_path plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(getDeviceAppPathProj.name).toBe('get_device_app_path_proj');
+      expect(getDeviceAppPath.name).toBe('get_device_app_path');
     });
 
     it('should have correct description', () => {
-      expect(getDeviceAppPathProj.description).toBe(
-        "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using a project file. IMPORTANT: Requires projectPath and scheme. Example: get_device_app_path_proj({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
+      expect(getDeviceAppPath.description).toBe(
+        "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_device_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof getDeviceAppPathProj.handler).toBe('function');
+      expect(typeof getDeviceAppPath.handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
-      // Test required fields
+      // Test project path
       expect(
-        getDeviceAppPathProj.schema.projectPath.safeParse('/path/to/project.xcodeproj').success,
+        getDeviceAppPath.schema.projectPath.safeParse('/path/to/project.xcodeproj').success,
       ).toBe(true);
-      expect(getDeviceAppPathProj.schema.scheme.safeParse('MyScheme').success).toBe(true);
+
+      // Test workspace path
+      expect(
+        getDeviceAppPath.schema.workspacePath.safeParse('/path/to/workspace.xcworkspace').success,
+      ).toBe(true);
+
+      // Test required scheme field
+      expect(getDeviceAppPath.schema.scheme.safeParse('MyScheme').success).toBe(true);
 
       // Test optional fields
-      expect(getDeviceAppPathProj.schema.configuration.safeParse('Debug').success).toBe(true);
-      expect(getDeviceAppPathProj.schema.platform.safeParse('iOS').success).toBe(true);
-      expect(getDeviceAppPathProj.schema.platform.safeParse('watchOS').success).toBe(true);
-      expect(getDeviceAppPathProj.schema.platform.safeParse('tvOS').success).toBe(true);
-      expect(getDeviceAppPathProj.schema.platform.safeParse('visionOS').success).toBe(true);
+      expect(getDeviceAppPath.schema.configuration.safeParse('Debug').success).toBe(true);
+      expect(getDeviceAppPath.schema.platform.safeParse('iOS').success).toBe(true);
+      expect(getDeviceAppPath.schema.platform.safeParse('watchOS').success).toBe(true);
+      expect(getDeviceAppPath.schema.platform.safeParse('tvOS').success).toBe(true);
+      expect(getDeviceAppPath.schema.platform.safeParse('visionOS').success).toBe(true);
 
       // Test invalid inputs
-      expect(getDeviceAppPathProj.schema.projectPath.safeParse(null).success).toBe(false);
-      expect(getDeviceAppPathProj.schema.scheme.safeParse(null).success).toBe(false);
-      expect(getDeviceAppPathProj.schema.platform.safeParse('invalidPlatform').success).toBe(false);
+      expect(getDeviceAppPath.schema.projectPath.safeParse(null).success).toBe(false);
+      expect(getDeviceAppPath.schema.workspacePath.safeParse(null).success).toBe(false);
+      expect(getDeviceAppPath.schema.scheme.safeParse(null).success).toBe(false);
+      expect(getDeviceAppPath.schema.platform.safeParse('invalidPlatform').success).toBe(false);
+    });
+  });
+
+  describe('XOR Validation', () => {
+    it('should error when neither projectPath nor workspacePath provided', async () => {
+      const result = await getDeviceAppPath.handler({
+        scheme: 'MyScheme',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+    });
+
+    it('should error when both projectPath and workspacePath provided', async () => {
+      const result = await getDeviceAppPath.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyScheme',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('mutually exclusive');
     });
   });
 
@@ -75,7 +101,7 @@ describe('get_device_app_path_proj plugin', () => {
         });
       };
 
-      await get_device_app_path_projLogic(
+      await get_device_app_pathLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -127,7 +153,7 @@ describe('get_device_app_path_proj plugin', () => {
         });
       };
 
-      await get_device_app_path_projLogic(
+      await get_device_app_pathLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -156,6 +182,58 @@ describe('get_device_app_path_proj plugin', () => {
       });
     });
 
+    it('should generate correct xcodebuild command for workspace with iOS', async () => {
+      const calls: Array<{
+        args: any[];
+        description: string;
+        suppressErrors: boolean;
+        workingDirectory: string | undefined;
+      }> = [];
+
+      const mockExecutor = (
+        args: any[],
+        description: string,
+        suppressErrors: boolean,
+        workingDirectory: string | undefined,
+      ) => {
+        calls.push({ args, description, suppressErrors, workingDirectory });
+        return Promise.resolve({
+          success: true,
+          output:
+            'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
+          error: undefined,
+          process: { pid: 12345 },
+        });
+      };
+
+      await get_device_app_pathLogic(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        mockExecutor,
+      );
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toEqual({
+        args: [
+          'xcodebuild',
+          '-showBuildSettings',
+          '-workspace',
+          '/path/to/workspace.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-destination',
+          'generic/platform=iOS',
+        ],
+        description: 'Get App Path',
+        suppressErrors: true,
+        workingDirectory: undefined,
+      });
+    });
+
     it('should return exact successful app path retrieval response', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
@@ -163,7 +241,7 @@ describe('get_device_app_path_proj plugin', () => {
           'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
       });
 
-      const result = await get_device_app_path_projLogic(
+      const result = await get_device_app_pathLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -191,7 +269,7 @@ describe('get_device_app_path_proj plugin', () => {
         error: 'xcodebuild: error: The project does not exist.',
       });
 
-      const result = await get_device_app_path_projLogic(
+      const result = await get_device_app_pathLogic(
         {
           projectPath: '/path/to/nonexistent.xcodeproj',
           scheme: 'MyScheme',
@@ -216,7 +294,7 @@ describe('get_device_app_path_proj plugin', () => {
         output: 'Build settings without required fields',
       });
 
-      const result = await get_device_app_path_projLogic(
+      const result = await get_device_app_pathLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -259,7 +337,7 @@ describe('get_device_app_path_proj plugin', () => {
         });
       };
 
-      await get_device_app_path_projLogic(
+      await get_device_app_pathLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -293,7 +371,7 @@ describe('get_device_app_path_proj plugin', () => {
         return Promise.reject(new Error('Network error'));
       };
 
-      const result = await get_device_app_path_projLogic(
+      const result = await get_device_app_pathLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
@@ -317,7 +395,7 @@ describe('get_device_app_path_proj plugin', () => {
         return Promise.reject('String error');
       };
 
-      const result = await get_device_app_path_projLogic(
+      const result = await get_device_app_pathLogic(
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
