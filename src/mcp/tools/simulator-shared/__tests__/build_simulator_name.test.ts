@@ -77,7 +77,7 @@ describe('build_simulator_name tool', () => {
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         }).success,
-      ).toBe(false);
+      ).toBe(true); // Base schema allows both fields optional, XOR validation happens at handler level
 
       // Invalid types
       expect(
@@ -262,7 +262,7 @@ describe('build_simulator_name tool', () => {
       // Empty simulatorName passes validation but causes early failure in destination construction
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toBe(
-        '❌ [stderr] For iOS Simulator platform, either simulatorId or simulatorName must be provided',
+        'For iOS Simulator platform, either simulatorId or simulatorName must be provided',
       );
     });
   });
