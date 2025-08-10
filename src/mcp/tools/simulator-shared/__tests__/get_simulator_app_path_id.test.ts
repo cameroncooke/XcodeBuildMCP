@@ -3,31 +3,43 @@ import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../utils/command.js';
 
 // Import the plugin and logic function
-import getSimAppPathIdWs, { get_sim_app_path_id_wsLogic } from '../get_sim_app_path_id_ws.ts';
+import getSimulatorAppPathId, {
+  get_simulator_app_path_idLogic,
+} from '../get_simulator_app_path_id.js';
 
-describe('get_sim_app_path_id_ws tool', () => {
+describe('get_simulator_app_path_id tool', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(getSimAppPathIdWs.name).toBe('get_sim_app_path_id_ws');
+      expect(getSimulatorAppPathId.name).toBe('get_simulator_app_path_id');
     });
 
     it('should have correct description', () => {
-      expect(getSimAppPathIdWs.description).toBe(
-        "Gets the app bundle path for a simulator by UUID using a workspace. IMPORTANT: Requires workspacePath, scheme, platform, and simulatorId. Example: get_sim_app_path_id_ws({ workspacePath: '/path/to/workspace', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorId: 'SIMULATOR_UUID' })",
+      expect(getSimulatorAppPathId.description).toBe(
+        "Gets the app bundle path for a simulator by UUID using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_simulator_app_path_id({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorId: 'SIMULATOR_UUID' })",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof getSimAppPathIdWs.handler).toBe('function');
+      expect(typeof getSimulatorAppPathId.handler).toBe('function');
     });
 
     it('should have correct schema with required and optional fields', () => {
-      const schema = z.object(getSimAppPathIdWs.schema);
+      const schema = z.object(getSimulatorAppPathId.schema);
 
-      // Valid inputs
+      // Valid inputs with workspace
       expect(
         schema.safeParse({
           workspacePath: '/path/to/workspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        }).success,
+      ).toBe(true);
+
+      // Valid inputs with project
+      expect(
+        schema.safeParse({
+          projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
           platform: 'iOS Simulator',
           simulatorId: 'test-uuid-123',
@@ -84,6 +96,70 @@ describe('get_sim_app_path_id_ws tool', () => {
     });
   });
 
+  describe('XOR Validation', () => {
+    it('should error when neither projectPath nor workspacePath provided', async () => {
+      const result = await getSimulatorAppPathId.handler({
+        scheme: 'MyScheme',
+        platform: 'iOS Simulator',
+        simulatorId: 'test-uuid-123',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+    });
+
+    it('should error when both projectPath and workspacePath provided', async () => {
+      const result = await getSimulatorAppPathId.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        workspacePath: '/path/to/workspace.xcworkspace',
+        scheme: 'MyScheme',
+        platform: 'iOS Simulator',
+        simulatorId: 'test-uuid-123',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('mutually exclusive');
+    });
+
+    it('should work with projectPath only', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n',
+      });
+
+      const result = await get_simulator_app_path_idLogic(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('✅ App path retrieved successfully');
+    });
+
+    it('should work with workspacePath only', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n',
+      });
+
+      const result = await get_simulator_app_path_idLogic(
+        {
+          workspacePath: '/path/to/workspace.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'iOS Simulator',
+          simulatorId: 'test-uuid-123',
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('✅ App path retrieved successfully');
+    });
+  });
+
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle successful app path retrieval for iOS Simulator', async () => {
       const mockExecutor = createMockExecutor({
@@ -91,7 +167,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n',
       });
 
-      const result = await get_sim_app_path_id_wsLogic(
+      const result = await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -127,7 +203,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         output: 'BUILT_PRODUCTS_DIR = /path/to/watch/build\nFULL_PRODUCT_NAME = WatchApp.app\n',
       });
 
-      const result = await get_sim_app_path_id_wsLogic(
+      const result = await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'WatchScheme',
@@ -163,7 +239,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         output: 'BUILT_PRODUCTS_DIR = /path/to/tv/build\nFULL_PRODUCT_NAME = TVApp.app\n',
       });
 
-      const result = await get_sim_app_path_id_wsLogic(
+      const result = await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'TVScheme',
@@ -199,7 +275,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         output: 'BUILT_PRODUCTS_DIR = /path/to/vision/build\nFULL_PRODUCT_NAME = VisionApp.app\n',
       });
 
-      const result = await get_sim_app_path_id_wsLogic(
+      const result = await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'VisionScheme',
@@ -236,7 +312,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         error: 'Build settings command failed',
       });
 
-      const result = await get_sim_app_path_id_wsLogic(
+      const result = await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -265,7 +341,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         error: 'Command execution failed',
       });
 
-      const result = await get_sim_app_path_id_wsLogic(
+      const result = await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -294,7 +370,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         error: 'String error',
       });
 
-      const result = await get_sim_app_path_id_wsLogic(
+      const result = await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -323,7 +399,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         output: null,
       });
 
-      const result = await get_sim_app_path_id_wsLogic(
+      const result = await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -352,7 +428,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         output: 'Some output without build settings',
       });
 
-      const result = await get_sim_app_path_id_wsLogic(
+      const result = await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -380,7 +456,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         throw new Error('Test exception');
       };
 
-      const result = await get_sim_app_path_id_wsLogic(
+      const result = await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -408,7 +484,7 @@ describe('get_sim_app_path_id_ws tool', () => {
         throw 'String exception';
       };
 
-      const result = await get_sim_app_path_id_wsLogic(
+      const result = await get_simulator_app_path_idLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
