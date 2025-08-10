@@ -78,7 +78,7 @@ export async function showBuildSettingsLogic(
     }
 
     // Create response based on which type was used (similar to workspace version with next steps)
-    const content = [
+    const content: Array<{ type: 'text'; text: string }> = [
       {
         type: 'text',
         text: hasProjectPath
