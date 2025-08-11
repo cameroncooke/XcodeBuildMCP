@@ -211,4 +211,4 @@ For clients that support MCP resources, XcodeBuildMCP provides efficient URI-bas
 |--------------|-------------|---------------|
 | `xcodebuildmcp://simulators` | Available iOS simulators with UUIDs and states | `list_sims` |
 | `xcodebuildmcp://devices` | Available physical Apple devices with UUIDs, names, and connection status | `list_devices` |
-| `xcodebuildmcp://environment` | System health checks and environment validation | `doctor` |
+| `xcodebuildmcp://doctor` | System health checks and environment validation | `doctor` |
