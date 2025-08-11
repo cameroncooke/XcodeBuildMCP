@@ -1,26 +1,26 @@
 import { describe, it, expect } from 'vitest';
 
-import environmentResource, { environmentResourceLogic } from '../environment.js';
+import doctorResource, { doctorResourceLogic } from '../doctor.js';
 import { createMockExecutor } from '../../../utils/command.js';
 
-describe('environment resource', () => {
+describe('doctor resource', () => {
   describe('Export Field Validation', () => {
     it('should export correct uri', () => {
-      expect(environmentResource.uri).toBe('xcodebuildmcp://environment');
+      expect(doctorResource.uri).toBe('xcodebuildmcp://doctor');
     });
 
     it('should export correct description', () => {
-      expect(environmentResource.description).toBe(
-        'Comprehensive development environment doctor information and configuration status',
+      expect(doctorResource.description).toBe(
+        'Comprehensive development environment diagnostic information and configuration status',
       );
     });
 
     it('should export correct mimeType', () => {
-      expect(environmentResource.mimeType).toBe('text/plain');
+      expect(doctorResource.mimeType).toBe('text/plain');
     });
 
     it('should export handler function', () => {
-      expect(typeof environmentResource.handler).toBe('function');
+      expect(typeof doctorResource.handler).toBe('function');
     });
   });
 
@@ -31,7 +31,7 @@ describe('environment resource', () => {
         output: 'Mock command output',
       });
 
-      const result = await environmentResourceLogic(mockExecutor);
+      const result = await doctorResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('XcodeBuildMCP Doctor');
@@ -45,7 +45,7 @@ describe('environment resource', () => {
     it('should handle spawn errors by showing doctor info', async () => {
       const mockExecutor = createMockExecutor(new Error('spawn xcrun ENOENT'));
 
-      const result = await environmentResourceLogic(mockExecutor);
+      const result = await doctorResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('XcodeBuildMCP Doctor');
@@ -63,7 +63,7 @@ describe('environment resource', () => {
           output: 'Mock output',
         });
 
-        const result = await environmentResourceLogic(mockExecutor);
+        const result = await doctorResourceLogic(mockExecutor);
 
         expect(result.contents[0].text).toContain('## Troubleshooting Tips');
         expect(result.contents[0].text).toContain('brew tap cameroncooke/axe');
@@ -85,7 +85,7 @@ describe('environment resource', () => {
         output: 'Mock output',
       });
 
-      const result = await environmentResourceLogic(mockExecutor);
+      const result = await doctorResourceLogic(mockExecutor);
 
       expect(result.contents[0].text).toContain('### UI Automation (axe)');
       expect(result.contents[0].text).toContain('### Incremental Builds');
@@ -100,7 +100,7 @@ describe('environment resource', () => {
         error: 'Command failed',
       });
 
-      const result = await environmentResourceLogic(mockExecutor);
+      const result = await doctorResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
       expect(result.contents[0].text).toContain('XcodeBuildMCP Doctor');

@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to report an issue with XcodeBuildMCP!
-        
+
   - type: textarea
     id: description
     attributes:
@@ -32,12 +32,12 @@ body:
         ## System Information
         - platform: darwin
         - release: 25.0.0
-        - arch: arm64        
+        - arch: arm64
         ...
-        ```        
+        ```
     validations:
-      required: true      
-      
+      required: true
+
   - type: input
     id: editor-client
     attributes:
@@ -46,7 +46,7 @@ body:
       placeholder: Cursor 0.49.1
     validations:
       required: true
-      
+
   - type: input
     id: mcp-server-version
     attributes:
@@ -55,7 +55,7 @@ body:
       placeholder: 1.2.2
     validations:
       required: true
-      
+
   - type: input
     id: llm
     attributes:
@@ -64,7 +64,7 @@ body:
       placeholder: Claude 3.5 Sonnet
     validations:
       required: true
-      
+
   - type: textarea
     id: mcp-config
     attributes:
@@ -79,7 +79,7 @@ body:
         }
         ```
       render: json
-      
+
   - type: textarea
     id: steps
     attributes:
@@ -91,7 +91,7 @@ body:
         3. What failed or didn't work as expected
     validations:
       required: true
-      
+
   - type: textarea
     id: expected
     attributes:
@@ -100,7 +100,7 @@ body:
       placeholder: The AI should have been able to...
     validations:
       required: true
-      
+
   - type: textarea
     id: actual
     attributes:
@@ -109,7 +109,7 @@ body:
       placeholder: Instead, the AI...
     validations:
       required: true
-      
+
   - type: textarea
     id: error
     attributes:

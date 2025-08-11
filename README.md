@@ -33,7 +33,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
   - [Client Compatibility](#client-compatibility)
 - [Code Signing for Device Deployment](#code-signing-for-device-deployment)
 - [Troubleshooting](#troubleshooting)
-- [Doctor Tool](#doctor-tool)
+  - [Doctor Tool](#doctor-tool)
 - [Privacy](#privacy)
   - [What is sent to Sentry?](#what-is-sent-to-sentry)
   - [Opting Out of Sentry](#opting-out-of-sentry)
@@ -105,7 +105,7 @@ For clients that support MCP resources XcodeBuildMCP provides efficient URI-base
 
 - **Simulators Resource** (`xcodebuildmcp://simulators`): Direct access to available iOS simulators with UUIDs and states
 - **Devices Resource** (`xcodebuildmcp://devices`): Direct access to connected physical Apple devices with UDIDs and states
-- **Environment Resource** (`xcodebuildmcp://environment`): Direct access to environment information such as Xcode version, macOS version, and Node.js version
+- **Doctor Resource** (`xcodebuildmcp://doctor`): Direct access to environment information such as Xcode version, macOS version, and Node.js version
 
 ## Getting started
 
