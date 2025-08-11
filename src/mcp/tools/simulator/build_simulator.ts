@@ -1,8 +1,9 @@
 /**
- * Simulator Build Plugin: Build Simulator Name (Unified)
+ * Simulator Build Plugin: Build Simulator (Unified)
  *
- * Builds an app from a project or workspace for a specific simulator by name.
+ * Builds an app from a project or workspace for a specific simulator by UUID or name.
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
+ * Accepts mutually exclusive `simulatorId` or `simulatorName`.
  */
 
 import { z } from 'zod';
@@ -24,10 +25,14 @@ function nullifyEmptyStrings(value: unknown): unknown {
   return value;
 }
 
-// Unified schema: XOR between projectPath and workspacePath, sharing common options
+// Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
 const baseOptions = {
   scheme: z.string().describe('The scheme to use (Required)'),
-  simulatorName: z.string().describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
+  simulatorId: z
+    .string()
+    .optional()
+    .describe('UUID of the simulator to use (obtained from listSimulators)'),
+  simulatorName: z.string().optional().describe("Name of the simulator to use (e.g., 'iPhone 16')"),
   configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
   derivedDataPath: z
     .string()
@@ -44,7 +49,6 @@ const baseOptions = {
     .describe(
       'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
     ),
-  simulatorId: z.string().optional().describe('UUID of the simulator (optional)'),
 };
 
 const baseSchemaObject = z.object({
@@ -55,23 +59,37 @@ const baseSchemaObject = z.object({
 
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
 
-const buildSimulatorNameSchema = baseSchema
+const buildSimulatorSchema = baseSchema
   .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
     message: 'Either projectPath or workspacePath is required.',
   })
   .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
     message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+  })
+  .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
+    message: 'Either simulatorId or simulatorName is required.',
+  })
+  .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
+    message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
   });
 
-export type BuildSimulatorNameParams = z.infer<typeof buildSimulatorNameSchema>;
+export type BuildSimulatorParams = z.infer<typeof buildSimulatorSchema>;
 
 // Internal logic for building Simulator apps.
 async function _handleSimulatorBuildLogic(
-  params: BuildSimulatorNameParams,
+  params: BuildSimulatorParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<ToolResponse> {
   const projectType = params.projectPath ? 'project' : 'workspace';
   const filePath = params.projectPath ?? params.workspacePath;
+
+  // Log warning if useLatestOS is provided with simulatorId
+  if (params.simulatorId && params.useLatestOS !== undefined) {
+    log(
+      'warning',
+      `useLatestOS parameter is ignored when using simulatorId (UUID implies exact device/OS)`,
+    );
+  }
 
   log(
     'info',
@@ -84,13 +102,14 @@ async function _handleSimulatorBuildLogic(
     configuration: params.configuration ?? 'Debug',
   };
 
+  // executeXcodeBuildCommand handles both simulatorId and simulatorName
   return executeXcodeBuildCommand(
     sharedBuildParams,
     {
       platform: XcodePlatform.iOSSimulator,
       simulatorName: params.simulatorName,
       simulatorId: params.simulatorId,
-      useLatestOS: params.useLatestOS,
+      useLatestOS: params.simulatorId ? false : params.useLatestOS, // Ignore useLatestOS with ID
       logPrefix: 'iOS Simulator Build',
     },
     params.preferXcodebuild ?? false,
@@ -99,15 +118,15 @@ async function _handleSimulatorBuildLogic(
   );
 }
 
-export async function build_simulator_nameLogic(
-  params: BuildSimulatorNameParams,
+export async function build_simulatorLogic(
+  params: BuildSimulatorParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   // Provide defaults
-  const processedParams: BuildSimulatorNameParams = {
+  const processedParams: BuildSimulatorParams = {
     ...params,
     configuration: params.configuration ?? 'Debug',
-    useLatestOS: params.useLatestOS ?? true, // May be ignored by xcodebuild
+    useLatestOS: params.useLatestOS ?? true, // May be ignored if simulatorId is provided
     preferXcodebuild: params.preferXcodebuild ?? false,
   };
 
@@ -115,15 +134,15 @@ export async function build_simulator_nameLogic(
 }
 
 export default {
-  name: 'build_simulator_name',
+  name: 'build_simulator',
   description:
-    "Builds an app from a project or workspace for a specific simulator by name. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and simulatorName. Example: build_simulator_name({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+    "Builds an app from a project or workspace for a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_simulator({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     try {
       // Runtime validation with XOR constraints
-      const validatedParams = buildSimulatorNameSchema.parse(args);
-      return await build_simulator_nameLogic(validatedParams, getDefaultCommandExecutor());
+      const validatedParams = buildSimulatorSchema.parse(args);
+      return await build_simulatorLogic(validatedParams, getDefaultCommandExecutor());
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Format validation errors in a user-friendly way
