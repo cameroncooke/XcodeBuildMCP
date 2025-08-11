@@ -19,7 +19,7 @@ npm run format:check  # Prettier code checking
 npm run format        # Prettier code formatting
 npm run typecheck     # TypeScript type checking
 npm run inspect       # Run interactive MCP protocol inspector
-npm run diagnostic    # Diagnostic CLI
+npm run doctor        # Doctor CLI
 ```
 
 ### Development with Reloaderoo

@@ -1,10 +1,10 @@
 /**
- * Tests for diagnostics workflow metadata
+ * Tests for doctor workflow metadata
  */
 import { describe, it, expect } from 'vitest';
 import { workflow } from '../index.ts';
 
-describe('diagnostics workflow metadata', () => {
+describe('doctor workflow metadata', () => {
   describe('Workflow Structure', () => {
     it('should export workflow object with required properties', () => {
       expect(workflow).toHaveProperty('name');
@@ -14,12 +14,12 @@ describe('diagnostics workflow metadata', () => {
     });
 
     it('should have correct workflow name', () => {
-      expect(workflow.name).toBe('System Diagnostics');
+      expect(workflow.name).toBe('System Doctor');
     });
 
     it('should have correct description', () => {
       expect(workflow.description).toBe(
-        'Debug tools and system diagnostics for troubleshooting XcodeBuildMCP server, development environment, and tool availability.',
+        'Debug tools and system doctor for troubleshooting XcodeBuildMCP server, development environment, and tool availability.',
       );
     });
 
@@ -29,7 +29,8 @@ describe('diagnostics workflow metadata', () => {
 
     it('should have correct capabilities array', () => {
       expect(workflow.capabilities).toEqual([
-        'diagnostics',
+        'doctor',
+        'server-diagnostics',
         'troubleshooting',
         'system-analysis',
         'environment-validation',
@@ -58,7 +59,8 @@ describe('diagnostics workflow metadata', () => {
     });
 
     it('should contain expected capability values', () => {
-      expect(workflow.capabilities).toContain('diagnostics');
+      expect(workflow.capabilities).toContain('doctor');
+      expect(workflow.capabilities).toContain('server-diagnostics');
       expect(workflow.capabilities).toContain('troubleshooting');
       expect(workflow.capabilities).toContain('system-analysis');
       expect(workflow.capabilities).toContain('environment-validation');

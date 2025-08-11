@@ -9,7 +9,7 @@ import * as Sentry from '@sentry/node';
 import { version } from '../version.js';
 import { execSync } from 'child_process';
 
-// Inlined diagnostic functions to avoid circular dependencies
+// Inlined system info functions to avoid circular dependencies
 function getXcodeInfo(): { version: string; path: string; selectedXcode: string; error?: string } {
   try {
     const xcodebuildOutput = execSync('xcodebuild -version', { encoding: 'utf8' }).trim();
@@ -32,6 +32,7 @@ function getEnvironmentVariables(): Record<string, string> {
   const relevantVars = [
     'XCODEBUILDMCP_DEBUG',
     'INCREMENTAL_BUILDS_ENABLED',
+    'XCODEBUILDMCP_DYNAMIC_TOOLS',
     'PATH',
     'DEVELOPER_DIR',
     'HOME',

@@ -20,7 +20,7 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
 
 ### High-Level Objectives
 
-- Expose Xcode-related tools (build, test, deploy, diagnostics, UI automation) through MCP
+- Expose Xcode-related tools (build, test, deploy, UI automation, etc.) through MCP
 - Run as a long-lived stdio-based server for LLM agents, CLIs, or editors
 - Enable fine-grained, opt-in activation of individual tools or tool groups
 - Support incremental builds via experimental xcodemake with xcodebuild fallback
@@ -97,8 +97,8 @@ Main server entry point responsible for:
 - Process lifecycle management (SIGTERM, SIGINT)
 - Error handling and logging
 
-#### `src/diagnostic-cli.ts`
-Standalone diagnostic tool for:
+#### `src/doctor-cli.ts`
+Standalone doctor tool for:
 - Environment validation
 - Dependency checking
 - Configuration verification
@@ -370,7 +370,7 @@ describe('Tool Name', () => {
    - Compiles TypeScript with tsup
 
 2. **Build Configuration** (`tsup.config.ts`)
-   - Entry points: `index.ts`, `diagnostic-cli.ts`
+   - Entry points: `index.ts`, `doctor-cli.ts`
    - Output format: ESM
    - Target: Node 18+
    - Source maps enabled
@@ -379,7 +379,7 @@ describe('Tool Name', () => {
    ```
    build/
    ├── index.js          # Main server executable
-   ├── diagnostic-cli.js # Diagnostic tool
+   ├── doctor-cli.js # Doctor tool
    └── *.js.map         # Source maps
    ```
 
@@ -388,7 +388,7 @@ describe('Tool Name', () => {
 - **Name**: `xcodebuildmcp`
 - **Executables**:
   - `xcodebuildmcp` → Main server
-  - `xcodebuildmcp-diagnostic` → Diagnostic tool
+  - `xcodebuildmcp-doctor` → Doctor tool
 - **Dependencies**: Minimal runtime dependencies
 - **Platform**: macOS only (due to Xcode requirement)
 
@@ -439,7 +439,6 @@ The guide covers:
 1. **Use Tool Groups**: Enable only needed workflows
 2. **Enable Incremental Builds**: Set `INCREMENTAL_BUILDS_ENABLED=true`
 3. **Limit Log Capture**: Use structured logging when possible
-4. **Profile Performance**: Use diagnostic tool for bottleneck identification
 
 ## Security Considerations
 

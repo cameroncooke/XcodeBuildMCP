@@ -66,8 +66,8 @@ npx reloaderoo@latest inspect ping -- node build/index.js
 # List connected devices
 npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/index.js
 
-# Get diagnostic information
-npx reloaderoo@latest inspect call-tool diagnostic --params '{}' -- node build/index.js
+# Get doctor information
+npx reloaderoo@latest inspect call-tool doctor --params '{}' -- node build/index.js
 
 # List iOS simulators
 npx reloaderoo@latest inspect call-tool list_sims --params '{}' -- node build/index.js
@@ -209,7 +209,7 @@ Options:
   
 Examples:
   npx reloaderoo@latest info              # Show basic system information
-  npx reloaderoo@latest info --verbose    # Show detailed diagnostics
+  npx reloaderoo@latest info --verbose    # Show detailed system information
 ```
 
 ### Response Format
@@ -355,7 +355,7 @@ npx reloaderoo@latest proxy --log-level debug -- node build/index.js
 
 **JSON parsing errors:**
 ```bash
-# Check server information for diagnostics
+# Check server information for troubleshooting
 npx reloaderoo@latest inspect server-info -- node build/index.js
 
 # Ensure your server outputs valid JSON
@@ -386,7 +386,7 @@ npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build
 npx reloaderoo@latest proxy --debug -- node build/index.js  # For proxy mode
 npx reloaderoo@latest proxy --log-level debug -- node build/index.js  # For detailed proxy logging
 
-# View system diagnostics
+# View system information
 npx reloaderoo@latest info --verbose
 ```
 

@@ -116,7 +116,7 @@ describe('discover_tools', () => {
 
     it('should have correct description', () => {
       expect(discoverTools.description).toBe(
-        'Analyzes a natural language task description and enables the most relevant development workflow. Prioritizes project/workspace workflows (simulator/device/macOS) and also supports task-based workflows (simulator-management, logging, diagnostics) and Swift packages.',
+        'Analyzes a natural language task description and enables the most relevant development workflow. Prioritizes project/workspace workflows (simulator/device/macOS) and also supports task-based workflows (simulator-management, logging) and Swift packages.',
       );
     });
 

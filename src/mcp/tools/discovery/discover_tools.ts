@@ -173,7 +173,7 @@ Secondary (task-based, no project/workspace needed):
 - Simulator management (boot, list, open, status bar, appearance, GPS/location): choose "simulator-management"
 - Logging or log capture (simulator or device): choose "logging"
 - UI automation/gestures/screenshots on a simulator app: choose "ui-testing"
-- System/environment diagnostics or validation: choose "diagnostics"
+- System/environment diagnostics or validation: choose "doctor"
 - Create new iOS/macOS projects from templates: choose "project-scaffolding"
 
 All available workflows:
@@ -369,7 +369,7 @@ Respond with ONLY a JSON array containing ONE workflow name that best matches th
 export default {
   name: 'discover_tools',
   description:
-    'Analyzes a natural language task description and enables the most relevant development workflow. Prioritizes project/workspace workflows (simulator/device/macOS) and also supports task-based workflows (simulator-management, logging, diagnostics) and Swift packages.',
+    'Analyzes a natural language task description and enables the most relevant development workflow. Prioritizes project/workspace workflows (simulator/device/macOS) and also supports task-based workflows (simulator-management, logging) and Swift packages.',
   schema: discoverToolsSchema.shape, // MCP SDK compatibility
   handler: createTypedTool(
     discoverToolsSchema,

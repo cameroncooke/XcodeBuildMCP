@@ -195,19 +195,15 @@ XCODEBUILDMCP_DYNAMIC_TOOLS=true reloaderoo inspect mcp -- node build/index.js
 - **Dynamic Mode**: Only 1 tool (`discover_tools`) available initially
 - **Dynamic Discovery**: After calling `discover_tools`, additional workflow tools become available
 
-#### Using the diagnostic tool
+#### Using XcodeBuildMCP doctor tool
 
-Running the XcodeBuildMCP server with the environmental variable `XCODEBUILDMCP_DEBUG=true` will expose a new diagnostic tool which you can run using MCP Inspector:
+Running the XcodeBuildMCP server with the environmental variable `XCODEBUILDMCP_DEBUG=true` will expose a new doctor MCP tool called `doctor` which your agent can call to get information about the server's environment, available tools, and configuration status.
 
-```bash
-XCODEBUILDMCP_DEBUG=true npm run inspect
-```
-
-Alternatively, you can run the diagnostic tool directly:
-
-```bash
-node build/diagnostic-cli.js
-```
+> [!NOTE]
+> You can also call the doctor tool directly using the following command but be advised that the output may vary from that of the MCP tool call due to environmental differences:
+> ```bash
+> npm run doctor
+> ```
 
 #### Development Workflow with Reloaderoo
 

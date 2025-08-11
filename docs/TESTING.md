@@ -578,11 +578,11 @@ Black Box Testing means testing ONLY through external interfaces without any kno
    
    // ❌ FORBIDDEN - Using tools as native functions
    const devices = await list_devices();
-   const result = await diagnostic();
+   const result = await doctor();
    
    // ✅ CORRECT - Only through Reloaderoo inspect
    npx reloaderoo@latest inspect call-tool "list_devices" --params '{}' -- node build/index.js
-   npx reloaderoo@latest inspect call-tool "diagnostic" --params '{}' -- node build/index.js
+   npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/index.js
    ```
 
 ### WHY RELOADEROO INSPECT IS MANDATORY
@@ -643,7 +643,7 @@ jq -r '.tools[].name' /tmp/all_tools.json > /tmp/tool_names.txt
 ```bash
 # Create individual todo items for each of the 83+ tools
 # Example for first few tools:
-# 1. [ ] Test tool: diagnostic  
+# 1. [ ] Test tool: doctor  
 # 2. [ ] Test tool: list_devices
 # 3. [ ] Test tool: list_sims
 # ... (continue for ALL 83+ tools)
@@ -731,7 +731,7 @@ fi
 **CRITICAL: Tools must be tested in dependency order:**
 
 1. **Foundation Tools** (provide data for other tools):
-   - `diagnostic` - System info
+   - `doctor` - System info
    - `list_devices` - Device UUIDs
    - `list_sims` - Simulator UUIDs  
    - `discover_projs` - Project/workspace paths
@@ -959,9 +959,9 @@ done < /tmp/resource_uris.txt
 ```bash
 echo "=== FOUNDATION TOOL TESTING & DATA COLLECTION ==="
 
-# 1. Test diagnostic (no dependencies)
-echo "Testing diagnostic..."
-npx reloaderoo@latest inspect call-tool "diagnostic" --params '{}' -- node build/index.js 2>/dev/null
+# 1. Test doctor (no dependencies)
+echo "Testing doctor..."
+npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/index.js 2>/dev/null
 
 # 2. Collect device data
 echo "Collecting device UUIDs..."
@@ -1035,7 +1035,7 @@ done < /tmp/workspace_paths.txt
 ```bash
 # STEP 1: Test foundation tools (no parameters required)
 # Execute each command individually, wait for response, verify manually
-npx reloaderoo@latest inspect call-tool "diagnostic" --params '{}' -- node build/index.js
+npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/index.js
 # [Wait for response, read output, mark tool complete in task list]
 
 npx reloaderoo@latest inspect call-tool "list_devices" --params '{}' -- node build/index.js
@@ -1108,8 +1108,8 @@ npx reloaderoo@latest inspect call-tool "build_sim_id_proj" --params '{"projectP
 ### VALID TESTING SEQUENCE EXAMPLE
 ```bash
 # ✅ CORRECT - Step-by-step manual execution via Reloaderoo
-# Tool 1: Test diagnostic
-npx reloaderoo@latest inspect call-tool "diagnostic" --params '{}' -- node build/index.js
+# Tool 1: Test doctor
+npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/index.js
 # [Read response, verify, mark complete in TodoWrite]
 
 # Tool 2: Test list_devices  

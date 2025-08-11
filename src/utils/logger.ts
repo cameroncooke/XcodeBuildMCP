@@ -32,7 +32,11 @@ if (!SENTRY_ENABLED) {
  */
 export function log(level: string, message: string): void {
   // Suppress logging during tests to keep test output clean
-  if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
+  if (
+    process.env.VITEST === 'true' ||
+    process.env.NODE_ENV === 'test' ||
+    process.env.XCODEBUILDMCP_SILENCE_LOGS === 'true'
+  ) {
     return;
   }
 

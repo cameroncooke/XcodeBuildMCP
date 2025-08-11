@@ -33,7 +33,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
   - [Client Compatibility](#client-compatibility)
 - [Code Signing for Device Deployment](#code-signing-for-device-deployment)
 - [Troubleshooting](#troubleshooting)
-  - [Diagnostic Tool](#diagnostic-tool)
+- [Doctor Tool](#doctor-tool)
 - [Privacy](#privacy)
   - [What is sent to Sentry?](#what-is-sent-to-sentry)
   - [Opting Out of Sentry](#opting-out-of-sentry)
@@ -294,18 +294,18 @@ For device deployment features to work, code signing must be properly configured
 
 ## Troubleshooting
 
-If you encounter issues with XcodeBuildMCP, the diagnostic tool can help identify the problem by providing detailed information about your environment and dependencies.
+If you encounter issues with XcodeBuildMCP, the doctor tool can help identify the problem by providing detailed information about your environment and dependencies.
 
-### Diagnostic Tool
+### Doctor Tool
 
-The diagnostic tool is a standalone utility that checks your system configuration and reports on the status of all dependencies required by XcodeBuildMCP. It's particularly useful when reporting issues.
+The doctor tool is a standalone utility that checks your system configuration and reports on the status of all dependencies required by XcodeBuildMCP. It's particularly useful when reporting issues.
 
 ```bash
-# Run the diagnostic tool using npx
-npx --package xcodebuildmcp@latest xcodebuildmcp-diagnostic
+# Run the doctor tool using npx
+npx --package xcodebuildmcp@latest xcodebuildmcp-doctor
 ```
 
-The diagnostic tool will output comprehensive information about:
+The doctor tool will output comprehensive information about:
 
 - System and Node.js environment
 - Xcode installation and configuration
@@ -313,7 +313,7 @@ The diagnostic tool will output comprehensive information about:
 - Environment variables affecting XcodeBuildMCP
 - Feature availability status
 
-When reporting issues on GitHub, please include the full output from the diagnostic tool to help with troubleshooting.
+When reporting issues on GitHub, please include the full output from the doctor tool to help with troubleshooting.
 
 ## Privacy
 

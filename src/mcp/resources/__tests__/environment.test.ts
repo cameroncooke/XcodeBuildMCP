@@ -11,7 +11,7 @@ describe('environment resource', () => {
 
     it('should export correct description', () => {
       expect(environmentResource.description).toBe(
-        'Comprehensive development environment diagnostic information and configuration status',
+        'Comprehensive development environment doctor information and configuration status',
       );
     });
 
@@ -34,7 +34,7 @@ describe('environment resource', () => {
       const result = await environmentResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
-      expect(result.contents[0].text).toContain('# XcodeBuildMCP Diagnostic Report');
+      expect(result.contents[0].text).toContain('XcodeBuildMCP Doctor');
       expect(result.contents[0].text).toContain('## System Information');
       expect(result.contents[0].text).toContain('## Node.js Information');
       expect(result.contents[0].text).toContain('## Dependencies');
@@ -42,28 +42,41 @@ describe('environment resource', () => {
       expect(result.contents[0].text).toContain('## Feature Status');
     });
 
-    it('should handle spawn errors by showing diagnostic info', async () => {
+    it('should handle spawn errors by showing doctor info', async () => {
       const mockExecutor = createMockExecutor(new Error('spawn xcrun ENOENT'));
 
       const result = await environmentResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
-      expect(result.contents[0].text).toContain('# XcodeBuildMCP Diagnostic Report');
+      expect(result.contents[0].text).toContain('XcodeBuildMCP Doctor');
       expect(result.contents[0].text).toContain('Error: spawn xcrun ENOENT');
     });
 
-    it('should include required diagnostic sections', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'Mock output',
-      });
+    it('should include required doctor sections', async () => {
+      // Set dynamic tools environment variable to include discover_tools text
+      const originalValue = process.env.XCODEBUILDMCP_DYNAMIC_TOOLS;
+      process.env.XCODEBUILDMCP_DYNAMIC_TOOLS = 'true';
 
-      const result = await environmentResourceLogic(mockExecutor);
+      try {
+        const mockExecutor = createMockExecutor({
+          success: true,
+          output: 'Mock output',
+        });
 
-      expect(result.contents[0].text).toContain('## Troubleshooting Tips');
-      expect(result.contents[0].text).toContain('brew tap cameroncooke/axe');
-      expect(result.contents[0].text).toContain('INCREMENTAL_BUILDS_ENABLED=1');
-      expect(result.contents[0].text).toContain('discover_tools');
+        const result = await environmentResourceLogic(mockExecutor);
+
+        expect(result.contents[0].text).toContain('## Troubleshooting Tips');
+        expect(result.contents[0].text).toContain('brew tap cameroncooke/axe');
+        expect(result.contents[0].text).toContain('INCREMENTAL_BUILDS_ENABLED=1');
+        expect(result.contents[0].text).toContain('discover_tools');
+      } finally {
+        // Restore original environment variable
+        if (originalValue === undefined) {
+          delete process.env.XCODEBUILDMCP_DYNAMIC_TOOLS;
+        } else {
+          process.env.XCODEBUILDMCP_DYNAMIC_TOOLS = originalValue;
+        }
+      }
     });
 
     it('should provide feature status information', async () => {
@@ -90,7 +103,7 @@ describe('environment resource', () => {
       const result = await environmentResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
-      expect(result.contents[0].text).toContain('# XcodeBuildMCP Diagnostic Report');
+      expect(result.contents[0].text).toContain('XcodeBuildMCP Doctor');
     });
   });
 });

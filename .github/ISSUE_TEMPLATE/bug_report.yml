@@ -21,15 +21,18 @@ body:
     id: debug
     attributes:
       label: Debug Output
-      description: Output from the diagnostic tool, run `mise x npm:xcodebuildmcp@1.3.5 -- xcodebuildmcp-diagnostic` in your terminal (replacing the @ version with the version number you're using) and paste the output here
+      description: Ask your agent "Run the XcodeBuildMCP `doctor` tool and return the output as markdown verbatim" and then copy paste it here.
       placeholder: |
         ```
-        Running XcodeBuildMCP Diagnostic Tool (v1.3.5)...
-        Collecting system information and checking dependencies...
-        
-        [2025-05-07T10:06:22.737Z] [INFO] [Diagnostic]: Running diagnostic tool
-        # XcodeBuildMCP Diagnostic Report
-        
+        XcodeBuildMCP Doctor
+
+        Generated: 2025-08-11T17:42:29.812Z
+        Server Version: 1.11.2
+
+        ## System Information
+        - platform: darwin
+        - release: 25.0.0
+        - arch: arm64        
         ...
         ```        
     validations:
