@@ -7,7 +7,7 @@
   "type": "module",
   "bin": {
     "xcodebuildmcp": "build/index.js",
-    "xcodebuildmcp-diagnostic": "build/diagnostic-cli.js"
+    "xcodebuildmcp-doctor": "build/doctor-cli.js"
   },
   "scripts": {
     "build": "node -e \"const fs = require('fs'); const pkg = require('./package.json'); fs.writeFileSync('src/version.ts', \\`export const version = '\\${pkg.version}';\\nexport const iOSTemplateVersion = '\\${pkg.iOSTemplateVersion}';\\nexport const macOSTemplateVersion = '\\${pkg.macOSTemplateVersion}';\\n\\`)\" && tsup",
@@ -19,7 +19,7 @@
     "format:check": "prettier --check 'src/**/*.{js,ts}'",
     "typecheck": "npx tsc --noEmit",
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
-    "diagnostic": "node build/diagnostic-cli.js",
+    "doctor": "node build/doctor-cli.js",
     "tools": "node scripts/tools-cli.js",
     "tools:list": "node scripts/tools-cli.js list",
     "tools:static": "node scripts/tools-cli.js static",

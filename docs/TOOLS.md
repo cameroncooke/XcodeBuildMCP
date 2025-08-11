@@ -188,9 +188,9 @@ XcodeBuildMCP uses a **workflow-based architecture** with tools organized into  
 - `clean_proj` - Cleans build products for a specific project file using xcodebuild
 - `clean_ws` - Cleans build products for a specific workspace using xcodebuild
 
-#### 15. System Diagnostics (`diagnostics`)
-**Purpose**: System diagnostics and environment validation (1 tool)
-- `diagnostic` - Provides comprehensive information about the MCP server environment, available dependencies, and configuration status
+#### 15. System Doctor (`doctor`)
+**Purpose**: System health checks and environment validation (1 tool)
+- `doctor` - Provides comprehensive information about the MCP server environment, available dependencies, and configuration status
 
 
 ### Operating Modes
@@ -211,4 +211,4 @@ For clients that support MCP resources, XcodeBuildMCP provides efficient URI-bas
 |--------------|-------------|---------------|
 | `xcodebuildmcp://simulators` | Available iOS simulators with UUIDs and states | `list_sims` |
 | `xcodebuildmcp://devices` | Available physical Apple devices with UUIDs, names, and connection status | `list_devices` |
-| `xcodebuildmcp://environment` | System diagnostics and environment validation | `diagnostic` |
+| `xcodebuildmcp://environment` | System health checks and environment validation | `doctor` |

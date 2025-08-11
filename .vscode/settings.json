@@ -36,4 +36,9 @@
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
+  "chat.mcp.serverSampling": {
+    "XcodeBuildMCP/.vscode/mcp.json: XcodeBuildMCP-Dev": {
+      "allowedDuringChat": true
+    }
+  },
 }

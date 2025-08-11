@@ -98,7 +98,7 @@
             }
         },
         {
-            "label": "build: dev diagnostics",
+            "label": "build: dev doctor",
             "dependsOn": [
                 "lint",
                 "typecheck (watch)"

@@ -44,7 +44,7 @@ src/mcp/tools/
 ├── ui-testing/                 # UI automation tools
 ├── project-discovery/          # Project analysis tools
 ├── utilities/                  # General utilities
-├── diagnostics/                # Diagnostic tools
+├── doctor/                     # System health check tools
 ├── logging/                    # Log capture tools
 └── discovery/                  # Dynamic tool discovery
 ```
