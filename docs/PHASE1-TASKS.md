@@ -60,6 +60,8 @@ Consolidate all project/workspace tool pairs (e.g., `tool_proj` and `tool_ws`) i
 ### Tools to Consolidate
 
 #### ✅ Completed
+
+**Consolidation Tools:**
 1. **clean** (utilities/) - DONE
    - [x] Unified tool created
    - [x] Re-exported to 6 workflows
@@ -72,36 +74,111 @@ Consolidate all project/workspace tool pairs (e.g., `tool_proj` and `tool_ws`) i
    - [x] Old files deleted
    - [x] Tests preserved using git mv + adaptations
 
+3. **show_build_settings** (project-discovery/) - DONE
+   - [x] Unified tool created
+   - [x] Re-exported to 6 workflows
+   - [x] Old files deleted
+   - [x] Tests preserved using git mv + adaptations
+
+**Build Tools:**
+4. **build_device** (device-shared/) - DONE
+   - [x] Unified tool created
+   - [x] Re-exported to device-project and device-workspace
+   - [x] Old files deleted
+   - [x] Tests preserved using git mv + adaptations
+
+5. **build_macos** (macos-shared/) - DONE
+   - [x] Unified tool created
+   - [x] Re-exported to macos-project and macos-workspace
+   - [x] Old files deleted
+   - [x] Tests preserved using git mv + adaptations
+
+6. **build_simulator_id** (simulator-shared/) - DONE
+   - [x] Unified tool created
+   - [x] Re-exported to simulator-project and simulator-workspace
+   - [x] Old files deleted
+   - [x] Tests preserved using git mv + adaptations
+
+7. **build_simulator_name** (simulator-shared/) - DONE
+   - [x] Unified tool created
+   - [x] Re-exported to simulator-project and simulator-workspace
+   - [x] Old files deleted
+   - [x] Tests preserved using git mv + adaptations
+
+**Build & Run Tools:**
+8. **build_run_macos** (macos-shared/) - DONE
+   - [x] Unified tool created
+   - [x] Re-exported to macos-project and macos-workspace
+   - [x] Old files deleted
+   - [x] Tests preserved using git mv + adaptations
+
+9. **build_run_simulator_id** (simulator-shared/) - DONE
+   - [x] Unified tool created
+   - [x] Re-exported to simulator-project and simulator-workspace
+   - [x] Old files deleted
+   - [x] Tests preserved using git mv + adaptations
+
+10. **build_run_simulator_name** (simulator-shared/) - DONE
+    - [x] Unified tool created
+    - [x] Re-exported to simulator-project and simulator-workspace
+    - [x] Old files deleted
+    - [x] Tests preserved using git mv + adaptations
+
+**App Path Tools:**
+11. **get_device_app_path** (device-shared/) - DONE
+    - [x] Unified tool created
+    - [x] Re-exported to device-project and device-workspace
+    - [x] Old files deleted
+    - [x] Tests preserved using git mv + adaptations
+
+12. **get_macos_app_path** (macos-shared/) - DONE
+    - [x] Unified tool created
+    - [x] Re-exported to macos-project and macos-workspace
+    - [x] Old files deleted
+    - [x] Tests preserved using git mv + adaptations
+
+13. **get_simulator_app_path_id** (simulator-shared/) - DONE
+    - [x] Unified tool created
+    - [x] Re-exported to simulator-project and simulator-workspace
+    - [x] Old files deleted
+    - [x] Tests preserved using git mv + adaptations
+
+14. **get_simulator_app_path_name** (simulator-shared/) - DONE
+    - [x] Unified tool created
+    - [x] Re-exported to simulator-project and simulator-workspace
+    - [x] Old files deleted
+    - [x] Tests preserved using git mv + adaptations
+
+**Test Tools:**
+15. **test_device** (device-shared/) - DONE
+    - [x] Unified tool created
+    - [x] Re-exported to device-project and device-workspace
+    - [x] Old files deleted
+    - [x] Tests preserved using git mv + adaptations
+
+16. **test_macos** (macos-shared/) - DONE
+    - [x] Unified tool created
+    - [x] Re-exported to macos-project and macos-workspace
+    - [x] Old files deleted
+    - [x] Tests preserved using git mv + adaptations
+
+17. **test_simulator_id** (simulator-shared/) - DONE
+    - [x] Unified tool created
+    - [x] Re-exported to simulator-project and simulator-workspace
+    - [x] Old files deleted
+    - [x] Tests preserved using git mv + adaptations
+
+18. **test_simulator_name** (simulator-shared/) - DONE
+    - [x] Unified tool created
+    - [x] Re-exported to simulator-project and simulator-workspace
+    - [x] Old files deleted
+    - [x] Tests preserved using git mv + adaptations
+
 #### 🔄 In Progress
 None currently
 
 #### 📋 Remaining Tools
-
-**Project Discovery Tools:**
-- [ ] `show_build_set_proj` / `show_build_set_ws` → `show_build_settings`
-
-**Build Tools (per platform):**
-- [ ] `build_dev_proj` / `build_dev_ws` → `build_device`
-- [ ] `build_mac_proj` / `build_mac_ws` → `build_macos`
-- [ ] `build_sim_id_proj` / `build_sim_id_ws` → `build_simulator_id`
-- [ ] `build_sim_name_proj` / `build_sim_name_ws` → `build_simulator_name`
-
-**Build & Run Tools (per platform):**
-- [ ] `build_run_mac_proj` / `build_run_mac_ws` → `build_run_macos`
-- [ ] `build_run_sim_id_proj` / `build_run_sim_id_ws` → `build_run_simulator_id`
-- [ ] `build_run_sim_name_proj` / `build_run_sim_name_ws` → `build_run_simulator_name`
-
-**App Path Tools (per platform):**
-- [ ] `get_device_app_path_proj` / `get_device_app_path_ws` → `get_device_app_path`
-- [ ] `get_mac_app_path_proj` / `get_mac_app_path_ws` → `get_macos_app_path`
-- [ ] `get_sim_app_path_id_proj` / `get_sim_app_path_id_ws` → `get_simulator_app_path_id`
-- [ ] `get_sim_app_path_name_proj` / `get_sim_app_path_name_ws` → `get_simulator_app_path_name`
-
-**Test Tools (per platform):**
-- [ ] `test_device_proj` / `test_device_ws` → `test_device`
-- [ ] `test_macos_proj` / `test_macos_ws` → `test_macos`
-- [ ] `test_sim_id_proj` / `test_sim_id_ws` → `test_simulator_id`
-- [ ] `test_sim_name_proj` / `test_sim_name_ws` → `test_simulator_name`
+None - All tools have been successfully consolidated!
 
 ### Workflow for Each Tool
 
@@ -231,12 +308,12 @@ describe('XOR Validation', () => {
 ```
 
 ### Success Criteria
-- [ ] All project/workspace tool pairs consolidated
-- [ ] Tests preserved (not rewritten) with high coverage
-- [ ] No regressions in functionality
-- [ ] All workflow groups maintain same tool availability
-- [ ] Build, lint, and tests pass
-- [ ] Tool count reduced by ~50% (from pairs to singles)
+- [x] All project/workspace tool pairs consolidated
+- [x] Tests preserved (not rewritten) with high coverage
+- [x] No regressions in functionality
+- [x] All workflow groups maintain same tool availability
+- [x] Build, lint, and tests pass
+- [x] Tool count reduced by ~50% (from pairs to singles)
 
 ### Notes
 - Phase 2 will consolidate workflow groups themselves

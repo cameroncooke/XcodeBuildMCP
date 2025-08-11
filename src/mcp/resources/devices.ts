@@ -6,7 +6,7 @@
  */
 
 import { log, getDefaultCommandExecutor, CommandExecutor } from '../../utils/index.js';
-import { list_devicesLogic } from '../tools/device-shared/list_devices.js';
+import { list_devicesLogic } from '../tools/device/list_devices.js';
 
 // Testable resource logic separated from MCP handler
 export async function devicesResourceLogic(

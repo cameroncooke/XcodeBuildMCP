@@ -1,2 +1,2 @@
-// Re-export from simulator-shared to avoid duplication
-export { default } from '../simulator-shared/open_sim.ts';
+// Re-export from simulator to avoid duplication
+export { default } from '../simulator/open_sim.js';

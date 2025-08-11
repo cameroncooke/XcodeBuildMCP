@@ -6,7 +6,7 @@
  */
 
 import { log, getDefaultCommandExecutor, CommandExecutor } from '../../utils/index.js';
-import { list_simsLogic } from '../tools/simulator-shared/list_sims.js';
+import { list_simsLogic } from '../tools/simulator/list_sims.js';
 
 // Testable resource logic separated from MCP handler
 export async function simulatorsResourceLogic(
