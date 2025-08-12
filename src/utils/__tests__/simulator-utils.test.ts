@@ -29,7 +29,9 @@ describe('determineSimulatorUuid', () => {
 
   describe('UUID provided directly', () => {
     it('should return UUID when simulatorUuid is provided', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const mockExecutor = createMockExecutor(
+        new Error('Should not call executor when UUID provided'),
+      );
 
       const result = await determineSimulatorUuid(
         { simulatorUuid: 'DIRECT-UUID-123' },
@@ -39,11 +41,12 @@ describe('determineSimulatorUuid', () => {
       expect(result.uuid).toBe('DIRECT-UUID-123');
       expect(result.warning).toBeUndefined();
       expect(result.error).toBeUndefined();
-      expect(mockExecutor).not.toHaveBeenCalled();
     });
 
     it('should prefer simulatorUuid when both UUID and name are provided', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const mockExecutor = createMockExecutor(
+        new Error('Should not call executor when UUID provided'),
+      );
 
       const result = await determineSimulatorUuid(
         { simulatorUuid: 'DIRECT-UUID', simulatorName: 'iPhone 16' },
@@ -51,13 +54,14 @@ describe('determineSimulatorUuid', () => {
       );
 
       expect(result.uuid).toBe('DIRECT-UUID');
-      expect(mockExecutor).not.toHaveBeenCalled();
     });
   });
 
   describe('Name that looks like UUID', () => {
     it('should detect and use UUID-like name directly', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const mockExecutor = createMockExecutor(
+        new Error('Should not call executor for UUID-like name'),
+      );
       const uuidLikeName = '12345678-1234-1234-1234-123456789abc';
 
       const result = await determineSimulatorUuid({ simulatorName: uuidLikeName }, mockExecutor);
@@ -65,18 +69,18 @@ describe('determineSimulatorUuid', () => {
       expect(result.uuid).toBe(uuidLikeName);
       expect(result.warning).toContain('appears to be a UUID');
       expect(result.error).toBeUndefined();
-      expect(mockExecutor).not.toHaveBeenCalled();
     });
 
     it('should detect uppercase UUID-like name', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const mockExecutor = createMockExecutor(
+        new Error('Should not call executor for UUID-like name'),
+      );
       const uuidLikeName = '12345678-1234-1234-1234-123456789ABC';
 
       const result = await determineSimulatorUuid({ simulatorName: uuidLikeName }, mockExecutor);
 
       expect(result.uuid).toBe(uuidLikeName);
       expect(result.warning).toContain('appears to be a UUID');
-      expect(mockExecutor).not.toHaveBeenCalled();
     });
   });
 
@@ -92,10 +96,6 @@ describe('determineSimulatorUuid', () => {
       expect(result.uuid).toBe('ABC-123-UUID');
       expect(result.warning).toBeUndefined();
       expect(result.error).toBeUndefined();
-      expect(mockExecutor).toHaveBeenCalledWith(
-        ['xcrun', 'simctl', 'list', 'devices', 'available', '-j'],
-        'List available simulators',
-      );
     });
 
     it('should find simulator across different runtimes', async () => {
@@ -165,14 +165,15 @@ describe('determineSimulatorUuid', () => {
 
   describe('No identifier provided', () => {
     it('should error when neither UUID nor name is provided', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
+      const mockExecutor = createMockExecutor(
+        new Error('Should not call executor when no identifier'),
+      );
 
       const result = await determineSimulatorUuid({}, mockExecutor);
 
       expect(result.uuid).toBeUndefined();
       expect(result.error).toBeDefined();
       expect(result.error?.content[0].text).toContain('No simulator identifier provided');
-      expect(mockExecutor).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,33 +1,31 @@
 /**
- * Tests for build_run_simulator_name plugin (unified)
+ * Tests for build_run_simulator plugin (unified)
  * Following CLAUDE.md testing standards with dependency injection and literal validation
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
-import buildRunSimulatorName, {
-  build_run_simulator_nameLogic,
-} from '../build_run_simulator_name.js';
+import buildRunSimulator, { build_run_simulatorLogic } from '../build_run_simulator.js';
 
-describe('build_run_simulator_name tool', () => {
+describe('build_run_simulator tool', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(buildRunSimulatorName.name).toBe('build_run_simulator_name');
+      expect(buildRunSimulator.name).toBe('build_run_simulator');
     });
 
     it('should have correct description', () => {
-      expect(buildRunSimulatorName.description).toBe(
-        "Builds and runs an app from a project or workspace on a specific simulator by name. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and simulatorName. Example: build_run_simulator_name({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+      expect(buildRunSimulator.description).toBe(
+        "Builds and runs an app from a project or workspace on a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_run_simulator({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof buildRunSimulatorName.handler).toBe('function');
+      expect(typeof buildRunSimulator.handler).toBe('function');
     });
 
     it('should have correct schema with required and optional fields', () => {
-      const schema = z.object(buildRunSimulatorName.schema);
+      const schema = z.object(buildRunSimulator.schema);
 
       // Valid inputs - workspace
       expect(
@@ -61,12 +59,13 @@ describe('build_run_simulator_name tool', () => {
       ).toBe(true);
 
       // Invalid inputs - missing required fields
+      // Note: simulatorId/simulatorName are optional at schema level, XOR validation at runtime
       expect(
         schema.safeParse({
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
         }).success,
-      ).toBe(false);
+      ).toBe(true); // Schema validation passes, runtime XOR validation would catch missing simulator fields
 
       expect(
         schema.safeParse({
@@ -139,7 +138,7 @@ describe('build_run_simulator_name tool', () => {
         };
       };
 
-      const result = await build_run_simulator_nameLogic(
+      const result = await build_run_simulatorLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -165,7 +164,7 @@ describe('build_run_simulator_name tool', () => {
         error: 'Build failed with error',
       });
 
-      const result = await build_run_simulator_nameLogic(
+      const result = await build_run_simulatorLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -238,7 +237,7 @@ describe('build_run_simulator_name tool', () => {
         }
       };
 
-      const result = await build_run_simulator_nameLogic(
+      const result = await build_run_simulatorLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -258,7 +257,7 @@ describe('build_run_simulator_name tool', () => {
         error: 'Command failed',
       });
 
-      const result = await build_run_simulator_nameLogic(
+      const result = await build_run_simulatorLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -278,7 +277,7 @@ describe('build_run_simulator_name tool', () => {
         error: 'String error',
       });
 
-      const result = await build_run_simulator_nameLogic(
+      const result = await build_run_simulatorLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -318,7 +317,7 @@ describe('build_run_simulator_name tool', () => {
         };
       };
 
-      const result = await build_run_simulator_nameLogic(
+      const result = await build_run_simulatorLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -393,7 +392,7 @@ describe('build_run_simulator_name tool', () => {
         }
       };
 
-      const result = await build_run_simulator_nameLogic(
+      const result = await build_run_simulatorLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -493,7 +492,7 @@ describe('build_run_simulator_name tool', () => {
         }
       };
 
-      const result = await build_run_simulator_nameLogic(
+      const result = await build_run_simulatorLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -563,7 +562,7 @@ describe('build_run_simulator_name tool', () => {
         };
       };
 
-      const result = await build_run_simulator_nameLogic(
+      const result = await build_run_simulatorLogic(
         {
           workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
           scheme: 'My Scheme',
@@ -593,7 +592,7 @@ describe('build_run_simulator_name tool', () => {
 
   describe('XOR Validation', () => {
     it('should error when neither projectPath nor workspacePath provided', async () => {
-      const result = await buildRunSimulatorName.handler({
+      const result = await buildRunSimulator.handler({
         scheme: 'MyScheme',
         simulatorName: 'iPhone 16',
       });
@@ -602,7 +601,7 @@ describe('build_run_simulator_name tool', () => {
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
-      const result = await buildRunSimulatorName.handler({
+      const result = await buildRunSimulator.handler({
         projectPath: '/path/project.xcodeproj',
         workspacePath: '/path/workspace.xcworkspace',
         scheme: 'MyScheme',
@@ -619,7 +618,7 @@ describe('build_run_simulator_name tool', () => {
         error: 'Build failed',
       });
 
-      const result = await build_run_simulator_nameLogic(
+      const result = await build_run_simulatorLogic(
         {
           projectPath: '/path/project.xcodeproj',
           scheme: 'MyScheme',
@@ -639,7 +638,7 @@ describe('build_run_simulator_name tool', () => {
         error: 'Build failed',
       });
 
-      const result = await build_run_simulator_nameLogic(
+      const result = await build_run_simulatorLogic(
         {
           workspacePath: '/path/workspace.xcworkspace',
           scheme: 'MyScheme',

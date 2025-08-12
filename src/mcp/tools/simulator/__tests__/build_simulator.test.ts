@@ -58,12 +58,13 @@ describe('build_simulator tool', () => {
       ).toBe(true);
 
       // Invalid inputs - missing required fields
+      // Note: simulatorId/simulatorName are optional at schema level, XOR validation at runtime
       expect(
         schema.safeParse({
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
         }).success,
-      ).toBe(false);
+      ).toBe(true); // Schema validation passes, runtime XOR validation would catch missing simulator fields
 
       expect(
         schema.safeParse({
