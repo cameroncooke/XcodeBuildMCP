@@ -38,17 +38,12 @@ export async function boot_simLogic(
       content: [
         {
           type: 'text',
-          text: `Simulator booted successfully. Next steps:
-1. Open the Simulator app: open_sim({ enabled: true })
+          text: `✅ Simulator booted successfully. To make it visible, use: open_sim()
+
+Next steps:
+1. Open the Simulator app (makes it visible): open_sim()
 2. Install an app: install_app_sim({ simulatorUuid: "${params.simulatorUuid}", appPath: "PATH_TO_YOUR_APP" })
-3. Launch an app: launch_app_sim({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID" })
-4. Log capture options:
-   - Option 1: Capture structured logs only (app continues running):
-     start_sim_log_cap({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID" })
-   - Option 2: Capture both console and structured logs (app will restart):
-     start_sim_log_cap({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID", captureConsole: true })
-   - Option 3: Launch app with logs in one step:
-     launch_app_logs_sim({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID" })`,
+3. Launch an app: launch_app_sim({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID" })`,
         },
       ],
     };
@@ -69,7 +64,7 @@ export async function boot_simLogic(
 export default {
   name: 'boot_sim',
   description:
-    "Boots an iOS simulator. IMPORTANT: You MUST provide the simulatorUuid parameter. Example: boot_sim({ simulatorUuid: 'YOUR_UUID_HERE' })",
+    "Boots an iOS simulator. After booting, use open_sim() to make the simulator visible. IMPORTANT: You MUST provide the simulatorUuid parameter. Example: boot_sim({ simulatorUuid: 'YOUR_UUID_HERE' })",
   schema: bootSimSchema.shape, // MCP SDK compatibility
   handler: createTypedTool(bootSimSchema, boot_simLogic, getDefaultCommandExecutor),
 };

@@ -18,7 +18,7 @@ type LaunchAppSimNameParams = z.infer<typeof launchAppSimNameSchema>;
 export default {
   name: 'launch_app_sim_name',
   description:
-    "Launches an app in an iOS simulator by simulator name. IMPORTANT: You MUST provide both the simulatorName and bundleId parameters.\n\nNote: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_sim_name({ simulatorName: 'iPhone 16', bundleId: 'com.example.MyApp' })",
+    "Launches an app in an iOS simulator by simulator name. If simulator window isn't visible, use open_sim() first. IMPORTANT: You MUST provide both the simulatorName and bundleId parameters.\n\nNote: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_sim_name({ simulatorName: 'iPhone 16', bundleId: 'com.example.MyApp' })",
   schema: launchAppSimNameSchema.shape, // MCP SDK compatibility
   handler: createTypedTool(
     launchAppSimNameSchema,
