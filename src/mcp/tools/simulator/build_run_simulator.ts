@@ -1,8 +1,9 @@
 /**
- * Simulator Build & Run Plugin: Build Run Simulator Name (Unified)
+ * Simulator Build & Run Plugin: Build Run Simulator (Unified)
  *
- * Builds and runs an app from a project or workspace on a specific simulator by name.
+ * Builds and runs an app from a project or workspace on a specific simulator by UUID or name.
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
+ * Accepts mutually exclusive `simulatorId` or `simulatorName`.
  */
 
 import { z } from 'zod';
@@ -14,6 +15,7 @@ import {
   executeXcodeBuildCommand,
   CommandExecutor,
 } from '../../../utils/index.js';
+import { determineSimulatorUuid } from '../../../utils/simulator-utils.js';
 
 // Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
 function nullifyEmptyStrings(value: unknown): unknown {
@@ -28,10 +30,14 @@ function nullifyEmptyStrings(value: unknown): unknown {
   return value;
 }
 
-// Unified schema: XOR between projectPath and workspacePath, sharing common options
+// Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
 const baseOptions = {
   scheme: z.string().describe('The scheme to use (Required)'),
-  simulatorName: z.string().describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
+  simulatorId: z
+    .string()
+    .optional()
+    .describe('UUID of the simulator to use (obtained from listSimulators)'),
+  simulatorName: z.string().optional().describe("Name of the simulator to use (e.g., 'iPhone 16')"),
   configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
   derivedDataPath: z
     .string()
@@ -58,24 +64,38 @@ const baseSchemaObject = z.object({
 
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
 
-const buildRunSimulatorNameSchema = baseSchema
+const buildRunSimulatorSchema = baseSchema
   .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
     message: 'Either projectPath or workspacePath is required.',
   })
   .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
     message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+  })
+  .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
+    message: 'Either simulatorId or simulatorName is required.',
+  })
+  .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
+    message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
   });
 
-export type BuildRunSimulatorNameParams = z.infer<typeof buildRunSimulatorNameSchema>;
+export type BuildRunSimulatorParams = z.infer<typeof buildRunSimulatorSchema>;
 
 // Internal logic for building Simulator apps.
 async function _handleSimulatorBuildLogic(
-  params: BuildRunSimulatorNameParams,
+  params: BuildRunSimulatorParams,
   executor: CommandExecutor,
   executeXcodeBuildCommandFn: typeof executeXcodeBuildCommand = executeXcodeBuildCommand,
 ): Promise<ToolResponse> {
   const projectType = params.projectPath ? 'project' : 'workspace';
   const filePath = params.projectPath ?? params.workspacePath;
+
+  // Log warning if useLatestOS is provided with simulatorId
+  if (params.simulatorId && params.useLatestOS !== undefined) {
+    log(
+      'warning',
+      `useLatestOS parameter is ignored when using simulatorId (UUID implies exact device/OS)`,
+    );
+  }
 
   log(
     'info',
@@ -96,8 +116,9 @@ async function _handleSimulatorBuildLogic(
     sharedBuildParams,
     {
       platform: XcodePlatform.iOSSimulator,
+      simulatorId: params.simulatorId,
       simulatorName: params.simulatorName,
-      useLatestOS: params.useLatestOS,
+      useLatestOS: params.simulatorId ? false : params.useLatestOS,
       logPrefix: 'iOS Simulator Build',
     },
     params.preferXcodebuild as boolean,
@@ -107,8 +128,8 @@ async function _handleSimulatorBuildLogic(
 }
 
 // Exported business logic function for building and running iOS Simulator apps.
-export async function build_run_simulator_nameLogic(
-  params: BuildRunSimulatorNameParams,
+export async function build_run_simulatorLogic(
+  params: BuildRunSimulatorParams,
   executor: CommandExecutor,
   executeXcodeBuildCommandFn: typeof executeXcodeBuildCommand = executeXcodeBuildCommand,
 ): Promise<ToolResponse> {
@@ -148,7 +169,15 @@ export async function build_run_simulator_nameLogic(
     command.push('-configuration', params.configuration ?? 'Debug');
 
     // Handle destination for simulator
-    const destinationString = `platform=iOS Simulator,name=${params.simulatorName}${(params.useLatestOS ?? true) ? ',OS=latest' : ''}`;
+    let destinationString: string;
+    if (params.simulatorId) {
+      destinationString = `platform=iOS Simulator,id=${params.simulatorId}`;
+    } else if (params.simulatorName) {
+      destinationString = `platform=iOS Simulator,name=${params.simulatorName}${(params.useLatestOS ?? true) ? ',OS=latest' : ''}`;
+    } else {
+      // This shouldn't happen due to validation, but handle it
+      destinationString = 'platform=iOS Simulator';
+    }
     command.push('-destination', destinationString);
 
     // Add derived data path if provided
@@ -204,78 +233,21 @@ export async function build_run_simulator_nameLogic(
     log('info', `App bundle path for run: ${appBundlePath}`);
 
     // --- Find/Boot Simulator Step ---
-    let simulatorUuid: string | undefined;
-    try {
-      log('info', `Finding simulator UUID for name: ${params.simulatorName}`);
-      const simulatorsResult = await executor(
-        ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
-        'Find Simulator',
-      );
-      if (!simulatorsResult.success) {
-        throw new Error(simulatorsResult.error ?? 'Command failed');
-      }
-      const simulatorsOutput = simulatorsResult.output;
-      const simulatorsJson: unknown = JSON.parse(simulatorsOutput);
-      let foundSimulator: { name: string; udid: string; isAvailable: boolean } | null = null;
+    // Use our helper to determine the simulator UUID
+    const uuidResult = await determineSimulatorUuid(
+      { simulatorUuid: params.simulatorId, simulatorName: params.simulatorName },
+      executor,
+    );
 
-      // Find the simulator in the available devices list
-      if (simulatorsJson && typeof simulatorsJson === 'object' && 'devices' in simulatorsJson) {
-        const devicesObj = simulatorsJson.devices;
-        if (devicesObj && typeof devicesObj === 'object') {
-          for (const runtime in devicesObj) {
-            const devices = (devicesObj as Record<string, unknown>)[runtime];
-            if (Array.isArray(devices)) {
-              for (const device of devices) {
-                if (
-                  device &&
-                  typeof device === 'object' &&
-                  'name' in device &&
-                  'isAvailable' in device &&
-                  'udid' in device
-                ) {
-                  const deviceObj = device as {
-                    name: unknown;
-                    isAvailable: unknown;
-                    udid: unknown;
-                  };
-                  if (
-                    typeof deviceObj.name === 'string' &&
-                    typeof deviceObj.isAvailable === 'boolean' &&
-                    typeof deviceObj.udid === 'string' &&
-                    deviceObj.name === params.simulatorName &&
-                    deviceObj.isAvailable
-                  ) {
-                    foundSimulator = {
-                      name: deviceObj.name,
-                      udid: deviceObj.udid,
-                      isAvailable: deviceObj.isAvailable,
-                    };
-                    break;
-                  }
-                }
-              }
-              if (foundSimulator) break;
-            }
-          }
-        }
-      }
-
-      if (foundSimulator) {
-        simulatorUuid = foundSimulator.udid;
-        log('info', `Found simulator for run: ${foundSimulator.name} (${simulatorUuid})`);
-      } else {
-        return createTextResponse(
-          `Build succeeded, but could not find an available simulator named '${params.simulatorName}'. Use list_simulators({}) to check available devices.`,
-          true,
-        );
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      return createTextResponse(
-        `Build succeeded, but error finding simulator: ${errorMessage}`,
-        true,
-      );
+    if (uuidResult.error) {
+      return createTextResponse(`Build succeeded, but ${uuidResult.error.content[0].text}`, true);
     }
+
+    if (uuidResult.warning) {
+      log('warning', uuidResult.warning);
+    }
+
+    const simulatorUuid = uuidResult.uuid;
 
     if (!simulatorUuid) {
       return createTextResponse(
@@ -481,7 +453,9 @@ export async function build_run_simulator_nameLogic(
     // --- Success ---
     log('info', '✅ iOS simulator build & run succeeded.');
 
-    const target = `simulator name '${params.simulatorName}'`;
+    const target = params.simulatorId
+      ? `simulator UUID '${params.simulatorId}'`
+      : `simulator name '${params.simulatorName}'`;
     const sourceType = params.projectPath ? 'project' : 'workspace';
     const sourcePath = params.projectPath ?? params.workspacePath;
 
@@ -515,15 +489,15 @@ When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })
 }
 
 export default {
-  name: 'build_run_simulator_name',
+  name: 'build_run_simulator',
   description:
-    "Builds and runs an app from a project or workspace on a specific simulator by name. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and simulatorName. Example: build_run_simulator_name({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+    "Builds and runs an app from a project or workspace on a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_run_simulator({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     try {
       // Runtime validation with XOR constraints
-      const validatedParams = buildRunSimulatorNameSchema.parse(args);
-      return await build_run_simulator_nameLogic(validatedParams, getDefaultCommandExecutor());
+      const validatedParams = buildRunSimulatorSchema.parse(args);
+      return await build_run_simulatorLogic(validatedParams, getDefaultCommandExecutor());
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Format validation errors in a user-friendly way
