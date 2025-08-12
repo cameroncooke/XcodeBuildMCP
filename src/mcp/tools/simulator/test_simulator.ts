@@ -27,14 +27,27 @@ function nullifyEmptyStrings(value: unknown): unknown {
 
 // Define base schema object with all fields
 const baseSchemaObject = z.object({
-  projectPath: z.string().optional().describe('Path to the .xcodeproj file'),
-  workspacePath: z.string().optional().describe('Path to the .xcworkspace file'),
+  projectPath: z
+    .string()
+    .optional()
+    .describe('Path to .xcodeproj file. Provide EITHER this OR workspacePath, not both'),
+  workspacePath: z
+    .string()
+    .optional()
+    .describe('Path to .xcworkspace file. Provide EITHER this OR projectPath, not both'),
   scheme: z.string().describe('The scheme to use (Required)'),
   simulatorId: z
     .string()
     .optional()
-    .describe('UUID of the simulator to use (obtained from listSimulators)'),
-  simulatorName: z.string().optional().describe("Name of the simulator to use (e.g., 'iPhone 16')"),
+    .describe(
+      'UUID of the simulator (from list_sims). Provide EITHER this OR simulatorName, not both',
+    ),
+  simulatorName: z
+    .string()
+    .optional()
+    .describe(
+      "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
+    ),
   configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
   derivedDataPath: z
     .string()
