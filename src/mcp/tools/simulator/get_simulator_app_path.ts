@@ -1,7 +1,9 @@
 /**
- * Unified implementation of get_simulator_app_path_name tool
- * Gets the app bundle path for a simulator by name using either a project or workspace file
- * Supports both .xcodeproj and .xcworkspace files with XOR validation
+ * Simulator Get App Path Plugin: Get Simulator App Path (Unified)
+ *
+ * Gets the app bundle path for a simulator by UUID or name using either a project or workspace file.
+ * Accepts mutually exclusive `projectPath` or `workspacePath`.
+ * Accepts mutually exclusive `simulatorId` or `simulatorName`.
  */
 
 import { z } from 'zod';
@@ -88,43 +90,52 @@ function nullifyEmptyStrings(value: unknown): unknown {
 }
 
 // Define base schema
-const baseGetSimulatorAppPathNameSchema = z.object({
+const baseGetSimulatorAppPathSchema = z.object({
   projectPath: z.string().optional().describe('Path to the .xcodeproj file'),
   workspacePath: z.string().optional().describe('Path to the .xcworkspace file'),
   scheme: z.string().describe('The scheme to use (Required)'),
   platform: z
     .enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator'])
     .describe('Target simulator platform (Required)'),
-  simulatorName: z.string().describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
+  simulatorId: z
+    .string()
+    .optional()
+    .describe('UUID of the simulator to use (obtained from listSimulators)'),
+  simulatorName: z.string().optional().describe("Name of the simulator to use (e.g., 'iPhone 16')"),
   configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
   useLatestOS: z
     .boolean()
     .optional()
     .describe('Whether to use the latest OS version for the named simulator'),
-  simulatorId: z.string().optional().describe('Optional simulator UUID'),
   arch: z.string().optional().describe('Optional architecture'),
 });
 
 // Add XOR validation with preprocessing
-const getSimulatorAppPathNameSchema = z.preprocess(
+const getSimulatorAppPathSchema = z.preprocess(
   nullifyEmptyStrings,
-  baseGetSimulatorAppPathNameSchema
+  baseGetSimulatorAppPathSchema
     .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
       message: 'Either projectPath or workspacePath is required.',
     })
     .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
       message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    })
+    .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
+      message: 'Either simulatorId or simulatorName is required.',
+    })
+    .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
+      message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
     }),
 );
 
 // Use z.infer for type safety
-type GetSimulatorAppPathNameParams = z.infer<typeof getSimulatorAppPathNameSchema>;
+type GetSimulatorAppPathParams = z.infer<typeof getSimulatorAppPathSchema>;
 
 /**
  * Exported business logic function for getting app path
  */
-export async function get_simulator_app_path_nameLogic(
-  params: GetSimulatorAppPathNameParams,
+export async function get_simulator_app_pathLogic(
+  params: GetSimulatorAppPathParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   // Set defaults - Zod validation already ensures required params are present
@@ -132,11 +143,19 @@ export async function get_simulator_app_path_nameLogic(
   const workspacePath = params.workspacePath;
   const scheme = params.scheme;
   const platform = params.platform;
+  const simulatorId = params.simulatorId;
   const simulatorName = params.simulatorName;
   const configuration = params.configuration ?? 'Debug';
   const useLatestOS = params.useLatestOS ?? true;
-  const simulatorId = params.simulatorId;
   const arch = params.arch;
+
+  // Log warning if useLatestOS is provided with simulatorId
+  if (simulatorId && params.useLatestOS !== undefined) {
+    log(
+      'warning',
+      `useLatestOS parameter is ignored when using simulatorId (UUID implies exact device/OS)`,
+    );
+  }
 
   log('info', `Getting app path for scheme ${scheme} on platform ${platform}`);
 
@@ -169,7 +188,7 @@ export async function get_simulator_app_path_nameLogic(
       if (simulatorId) {
         destinationString = `platform=${platform},id=${simulatorId}`;
       } else if (simulatorName) {
-        destinationString = `platform=${platform},name=${simulatorName}${useLatestOS ? ',OS=latest' : ''}`;
+        destinationString = `platform=${platform},name=${simulatorName}${(simulatorId ? false : useLatestOS) ? ',OS=latest' : ''}`;
       } else {
         return createTextResponse(
           `For ${platform} platform, either simulatorId or simulatorName must be provided`,
@@ -269,13 +288,13 @@ export async function get_simulator_app_path_nameLogic(
 }
 
 export default {
-  name: 'get_simulator_app_path_name',
+  name: 'get_simulator_app_path',
   description:
-    "Gets the app bundle path for a simulator by name using either a project or workspace file. IMPORTANT: Requires either projectPath OR workspacePath (not both), plus scheme, platform, and simulatorName. Example: get_simulator_app_path_name({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
-  schema: baseGetSimulatorAppPathNameSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool<GetSimulatorAppPathNameParams>(
-    getSimulatorAppPathNameSchema as unknown as z.ZodType<GetSimulatorAppPathNameParams>,
-    get_simulator_app_path_nameLogic,
+    "Gets the app bundle path for a simulator by UUID or name using either a project or workspace file. IMPORTANT: Requires either projectPath OR workspacePath (not both), plus scheme, platform, and either simulatorId OR simulatorName (not both). Example: get_simulator_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
+  schema: baseGetSimulatorAppPathSchema.shape, // MCP SDK compatibility
+  handler: createTypedTool<GetSimulatorAppPathParams>(
+    getSimulatorAppPathSchema as unknown as z.ZodType<GetSimulatorAppPathParams>,
+    get_simulator_app_pathLogic,
     getDefaultCommandExecutor,
   ),
 };
