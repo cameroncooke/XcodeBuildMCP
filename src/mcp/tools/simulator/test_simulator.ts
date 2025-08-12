@@ -1,5 +1,13 @@
+/**
+ * Simulator Test Plugin: Test Simulator (Unified)
+ *
+ * Runs tests for a project or workspace on a simulator by UUID or name.
+ * Accepts mutually exclusive `projectPath` or `workspacePath`.
+ * Accepts mutually exclusive `simulatorId` or `simulatorName`.
+ */
+
 import { z } from 'zod';
-import { handleTestLogic } from '../../../utils/index.js';
+import { handleTestLogic, log } from '../../../utils/index.js';
 import { XcodePlatform } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
@@ -22,7 +30,11 @@ const baseSchemaObject = z.object({
   projectPath: z.string().optional().describe('Path to the .xcodeproj file'),
   workspacePath: z.string().optional().describe('Path to the .xcworkspace file'),
   scheme: z.string().describe('The scheme to use (Required)'),
-  simulatorName: z.string().describe("Name of the simulator to use (e.g., 'iPhone 16') (Required)"),
+  simulatorId: z
+    .string()
+    .optional()
+    .describe('UUID of the simulator to use (obtained from listSimulators)'),
+  simulatorName: z.string().optional().describe("Name of the simulator to use (e.g., 'iPhone 16')"),
   configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
   derivedDataPath: z
     .string()
@@ -44,8 +56,8 @@ const baseSchemaObject = z.object({
 // Apply preprocessor to handle empty strings
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
 
-// Apply XOR validation: exactly one of projectPath OR workspacePath required
-const testSimulatorNameSchema = baseSchema
+// Apply XOR validation: exactly one of projectPath OR workspacePath, and exactly one of simulatorId OR simulatorName required
+const testSimulatorSchema = baseSchema
   .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
     message: 'Either projectPath or workspacePath is required.',
   })
@@ -54,22 +66,31 @@ const testSimulatorNameSchema = baseSchema
   });
 
 // Use z.infer for type safety
-type TestSimulatorNameParams = z.infer<typeof testSimulatorNameSchema>;
+type TestSimulatorParams = z.infer<typeof testSimulatorSchema>;
 
-export async function test_simulator_nameLogic(
-  params: TestSimulatorNameParams,
+export async function test_simulatorLogic(
+  params: TestSimulatorParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  // Log warning if useLatestOS is provided with simulatorId
+  if (params.simulatorId && params.useLatestOS !== undefined) {
+    log(
+      'warning',
+      `useLatestOS parameter is ignored when using simulatorId (UUID implies exact device/OS)`,
+    );
+  }
+
   return handleTestLogic(
     {
       projectPath: params.projectPath,
       workspacePath: params.workspacePath,
       scheme: params.scheme,
+      simulatorId: params.simulatorId,
       simulatorName: params.simulatorName,
       configuration: params.configuration ?? 'Debug',
       derivedDataPath: params.derivedDataPath,
       extraArgs: params.extraArgs,
-      useLatestOS: params.useLatestOS ?? false,
+      useLatestOS: params.simulatorId ? false : (params.useLatestOS ?? false),
       preferXcodebuild: params.preferXcodebuild ?? false,
       platform: XcodePlatform.iOSSimulator,
     },
@@ -78,15 +99,15 @@ export async function test_simulator_nameLogic(
 }
 
 export default {
-  name: 'test_simulator_name',
+  name: 'test_simulator',
   description:
-    'Runs tests on a simulator by name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace). IMPORTANT: Requires either projectPath or workspacePath, plus scheme and simulatorName. Example: test_simulator_name({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", simulatorName: "iPhone 16" })',
+    'Runs tests on a simulator by UUID or name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace). IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: test_simulator({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", simulatorName: "iPhone 16" })',
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     try {
       // Runtime validation with XOR constraints
-      const validatedParams = testSimulatorNameSchema.parse(args);
-      return await test_simulator_nameLogic(validatedParams, getDefaultCommandExecutor());
+      const validatedParams = testSimulatorSchema.parse(args);
+      return await test_simulatorLogic(validatedParams, getDefaultCommandExecutor());
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Format validation errors in a user-friendly way
