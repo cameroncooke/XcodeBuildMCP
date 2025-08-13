@@ -11,7 +11,7 @@ describe('launch_app_sim tool', () => {
 
     it('should have correct description field', () => {
       expect(launchAppSim.description).toBe(
-        "Launches an app in an iOS simulator. IMPORTANT: You MUST provide both the simulatorUuid and bundleId parameters.\n\nNote: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_sim({ simulatorUuid: 'YOUR_UUID_HERE', bundleId: 'com.example.MyApp' })",
+        "Launches an app in an iOS simulator. If simulator window isn't visible, use open_sim() first. IMPORTANT: You MUST provide both the simulatorUuid and bundleId parameters.\n\nNote: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_sim({ simulatorUuid: 'YOUR_UUID_HERE', bundleId: 'com.example.MyApp' })",
       );
     });
 
@@ -92,21 +92,14 @@ describe('launch_app_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: 'App launched successfully in simulator test-uuid-123',
-          },
-          {
-            type: 'text',
-            text: `Next Steps:
-1. You can now interact with the app in the simulator.
-2. Log capture options:
-   - Option 1: Capture structured logs only (app continues running):
-     start_sim_log_cap({ simulatorUuid: "test-uuid-123", bundleId: "com.example.testapp" })
-   - Option 2: Capture both console and structured logs (app will restart):
-     start_sim_log_cap({ simulatorUuid: "test-uuid-123", bundleId: "com.example.testapp", captureConsole: true })
-   - Option 3: Restart with logs in one step:
-     launch_app_logs_sim({ simulatorUuid: "test-uuid-123", bundleId: "com.example.testapp" })
+            text: `✅ App launched successfully in simulator test-uuid-123. If simulator window isn't visible, use: open_sim()
 
-3. When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
+Next Steps:
+1. To see the simulator window (if hidden): open_sim()
+2. Log capture options:
+   - Capture structured logs: start_sim_log_cap({ simulatorUuid: "test-uuid-123", bundleId: "com.example.testapp" })
+   - Capture console+structured logs: start_sim_log_cap({ simulatorUuid: "test-uuid-123", bundleId: "com.example.testapp", captureConsole: true })
+3. When done, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
           },
         ],
       });
