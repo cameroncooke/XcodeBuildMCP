@@ -16,19 +16,7 @@ import {
   CommandExecutor,
 } from '../../../utils/index.js';
 import { determineSimulatorUuid } from '../../../utils/simulator-utils.js';
-
-// Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
-function nullifyEmptyStrings(value: unknown): unknown {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-    for (const key of Object.keys(copy)) {
-      const v = copy[key];
-      if (typeof v === 'string' && v.trim() === '') copy[key] = undefined;
-    }
-    return copy;
-  }
-  return value;
-}
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
 // Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
 const baseOptions = {

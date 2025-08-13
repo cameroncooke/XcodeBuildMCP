@@ -11,19 +11,7 @@ import { handleTestLogic, log } from '../../../utils/index.js';
 import { XcodePlatform } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
-
-// Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
-function nullifyEmptyStrings(value: unknown): unknown {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-    for (const key of Object.keys(copy)) {
-      const v = copy[key];
-      if (typeof v === 'string' && v.trim() === '') copy[key] = undefined;
-    }
-    return copy;
-  }
-  return value;
-}
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
 // Define base schema object with all fields
 const baseSchemaObject = z.object({

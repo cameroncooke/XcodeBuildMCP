@@ -11,6 +11,7 @@ import { executeXcodeBuildCommand } from '../../../utils/index.js';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
 // Types for dependency injection
 export interface BuildUtilsDependencies {
@@ -21,19 +22,6 @@ export interface BuildUtilsDependencies {
 const defaultBuildUtilsDependencies: BuildUtilsDependencies = {
   executeXcodeBuildCommand,
 };
-
-// Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
-function nullifyEmptyStrings(value: unknown): unknown {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-    for (const key of Object.keys(copy)) {
-      const v = copy[key];
-      if (typeof v === 'string' && v.trim() === '') copy[key] = undefined;
-    }
-    return copy;
-  }
-  return value;
-}
 
 // Unified schema: XOR between projectPath and workspacePath
 const baseSchemaObject = z.object({
@@ -104,7 +92,7 @@ export default {
     "Builds a macOS app using xcodebuild from a project or workspace. Provide exactly one of projectPath or workspacePath. Example: build_macos({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: createTypedTool<BuildMacOSParams>(
-    buildMacOSSchema as unknown as z.ZodType<BuildMacOSParams>,
+    buildMacOSSchema,
     buildMacOSLogic,
     getDefaultCommandExecutor,
   ),

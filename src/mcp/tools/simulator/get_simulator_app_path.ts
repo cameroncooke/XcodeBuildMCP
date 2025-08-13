@@ -12,6 +12,7 @@ import { createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
 const XcodePlatform = {
   macOS: 'macOS',
@@ -76,18 +77,7 @@ function constructDestinationString(
   return `platform=${platform}`;
 }
 
-// Convert empty strings to undefined for proper XOR validation
-function nullifyEmptyStrings(value: unknown): unknown {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-    for (const key of Object.keys(copy)) {
-      const v = copy[key];
-      if (typeof v === 'string' && v.trim() === '') copy[key] = undefined;
-    }
-    return copy;
-  }
-  return value;
-}
+
 
 // Define base schema
 const baseGetSimulatorAppPathSchema = z.object({
@@ -306,7 +296,7 @@ export default {
     "Gets the app bundle path for a simulator by UUID or name using either a project or workspace file. IMPORTANT: Requires either projectPath OR workspacePath (not both), plus scheme, platform, and either simulatorId OR simulatorName (not both). Example: get_simulator_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
   schema: baseGetSimulatorAppPathSchema.shape, // MCP SDK compatibility
   handler: createTypedTool<GetSimulatorAppPathParams>(
-    getSimulatorAppPathSchema as unknown as z.ZodType<GetSimulatorAppPathParams>,
+    getSimulatorAppPathSchema,
     get_simulator_app_pathLogic,
     getDefaultCommandExecutor,
   ),

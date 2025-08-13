@@ -146,10 +146,17 @@ function isReExportFile(filePath: string): boolean {
   const content = fs.readFileSync(filePath, 'utf-8');
 
   // Remove comments and empty lines, then check for re-export pattern
-  const cleanedLines = content
+  // First remove multi-line comments
+  let contentWithoutBlockComments = content.replace(/\/\*[\s\S]*?\*\//g, '');
+  
+  const cleanedLines = contentWithoutBlockComments
     .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !line.startsWith('//') && !line.startsWith('/*'));
+    .map((line) => {
+      // Remove inline comments but preserve the code before them
+      const codeBeforeComment = line.split('//')[0].trim();
+      return codeBeforeComment;
+    })
+    .filter((line) => line.length > 0);
 
   // Should have exactly one line: export { default } from '...';
   if (cleanedLines.length !== 1) {

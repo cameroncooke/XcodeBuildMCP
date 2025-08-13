@@ -15,19 +15,7 @@ import {
 import { XcodePlatform } from '../../../utils/index.js';
 import { ToolResponse, SharedBuildParams } from '../../../types/common.js';
 import { createErrorResponse } from '../../../utils/index.js';
-
-// Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
-function nullifyEmptyStrings(value: unknown): unknown {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-    for (const key of Object.keys(copy)) {
-      const v = copy[key];
-      if (typeof v === 'string' && v.trim() === '') copy[key] = undefined;
-    }
-    return copy;
-  }
-  return value;
-}
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
 // Unified schema: XOR between projectPath and workspacePath, sharing common options
 const baseOptions = {
@@ -113,7 +101,7 @@ export default {
     "Cleans build products for either a project or a workspace using xcodebuild. Provide exactly one of projectPath or workspacePath. Example: clean({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape,
   handler: createTypedTool<CleanParams>(
-    cleanSchema as unknown as z.ZodType<CleanParams>,
+    cleanSchema,
     cleanLogic,
     getDefaultCommandExecutor,
   ),

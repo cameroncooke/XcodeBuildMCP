@@ -11,19 +11,7 @@ import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index
 import { createTextResponse } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
-
-// Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
-function nullifyEmptyStrings(value: unknown): unknown {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-    for (const key of Object.keys(copy)) {
-      const v = copy[key];
-      if (typeof v === 'string' && v.trim() === '') copy[key] = undefined;
-    }
-    return copy;
-  }
-  return value;
-}
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
 // Unified schema: XOR between projectPath and workspacePath
 const baseSchemaObject = z.object({
@@ -63,9 +51,9 @@ export async function listSchemesLogic(
     const path = hasProjectPath ? params.projectPath : params.workspacePath;
 
     if (hasProjectPath) {
-      command.push('-project', params.projectPath as string);
+      command.push('-project', params.projectPath!);
     } else {
-      command.push('-workspace', params.workspacePath as string);
+      command.push('-workspace', params.workspacePath!);
     }
 
     const result = await executor(command, 'List Schemes', true);
@@ -91,9 +79,9 @@ export async function listSchemesLogic(
 
       // Note: After Phase 2, these will be unified tool names too
       nextStepsText = `Next Steps:
-1. Build the app: ${projectOrWorkspace === 'workspace' ? 'build_mac_ws' : 'build_mac_proj'}({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })
-   or for iOS: ${projectOrWorkspace === 'workspace' ? 'build_sim_name_ws' : 'build_sim_name_proj'}({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
-2. Show build settings: ${projectOrWorkspace === 'workspace' ? 'show_build_set_ws' : 'show_build_set_proj'}({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })`;
+1. Build the app: build_macos({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })
+   or for iOS: build_simulator_name({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
+2. Show build settings: show_build_settings({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })`;
     }
 
     return {
@@ -126,7 +114,7 @@ export default {
     "Lists available schemes for either a project or a workspace. Provide exactly one of projectPath or workspacePath. Example: list_schemes({ projectPath: '/path/to/MyProject.xcodeproj' })",
   schema: baseSchemaObject.shape,
   handler: createTypedTool<ListSchemesParams>(
-    listSchemesSchema as unknown as z.ZodType<ListSchemesParams>,
+    listSchemesSchema,
     listSchemesLogic,
     getDefaultCommandExecutor,
   ),

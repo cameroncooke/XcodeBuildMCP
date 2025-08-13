@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor } from '../../../../utils/command.js';
-import getDeviceAppPath, { get_device_app_pathLogic } from '../get_device_app_path.js';
+import getDeviceAppPath, { get_device_app_pathLogic } from '../get_device_app_path.ts';
 
 describe('get_device_app_path plugin', () => {
   describe('Export Field Validation (Literal)', () => {

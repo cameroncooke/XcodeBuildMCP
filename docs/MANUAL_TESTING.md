@@ -244,8 +244,8 @@ fi
    - `discover_projs` - Project/workspace paths
 
 2. **Discovery Tools** (provide metadata for build tools):
-   - `list_schems_proj` / `list_schems_ws` - Scheme names
-   - `show_build_set_proj` / `show_build_set_ws` - Build settings
+   - `list_schemes` - Scheme names
+   - `show_build_settings` - Build settings
 
 3. **Build Tools** (create artifacts for install tools):
    - `build_*` tools - Create app bundles
@@ -518,7 +518,7 @@ done < /tmp/project_paths.txt
 while IFS= read -r workspace_path; do
     if [ -n "$workspace_path" ]; then
         echo "Getting schemes for: $workspace_path"
-        npx reloaderoo@latest inspect call-tool "list_schems_ws" --params "{\"workspacePath\": \"$workspace_path\"}" -- node build/index.js 2>/dev/null > /tmp/ws_schemes_$$.json
+        npx reloaderoo@latest inspect call-tool "list_schemes" --params "{\"workspacePath\": \"$workspace_path\"}" -- node build/index.js 2>/dev/null > /tmp/ws_schemes_$$.json
         SCHEMES=$(jq -r '.content[1].text' /tmp/ws_schemes_$$.json 2>/dev/null || echo "NoScheme")
         echo "$workspace_path|$SCHEMES" >> /tmp/workspace_schemes.txt
         echo "Schemes captured for $workspace_path: $SCHEMES"
@@ -557,7 +557,7 @@ npx reloaderoo@latest inspect call-tool "list_schems_proj" --params '{"projectPa
 # [Record scheme names from response for build tools]
 
 # STEP 3: Test workspace tools (use discovered workspace paths)  
-npx reloaderoo@latest inspect call-tool "list_schems_ws" --params '{"workspacePath": "/actual/path/from/discover_projs.xcworkspace"}' -- node build/index.js
+npx reloaderoo@latest inspect call-tool "list_schemes" --params '{"workspacePath": "/actual/path/from/discover_projs.xcworkspace"}' -- node build/index.js
 # [Record scheme names from response for build tools]
 
 # STEP 4: Test simulator tools (use captured simulator UUIDs from step 1)

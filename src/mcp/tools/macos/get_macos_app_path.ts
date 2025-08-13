@@ -10,19 +10,7 @@ import { ToolResponse } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
-
-// Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
-function nullifyEmptyStrings(value: unknown): unknown {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-    for (const key of Object.keys(copy)) {
-      const v = copy[key];
-      if (typeof v === 'string' && v.trim() === '') copy[key] = undefined;
-    }
-    return copy;
-  }
-  return value;
-}
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
 // Unified schema: XOR between projectPath and workspacePath, sharing common options
 const baseOptions = {
@@ -82,8 +70,11 @@ export async function get_macos_app_pathLogic(
     // Add the project or workspace
     if (params.projectPath) {
       command.push('-project', params.projectPath);
+    } else if (params.workspacePath) {
+      command.push('-workspace', params.workspacePath);
     } else {
-      command.push('-workspace', params.workspacePath!);
+      // This should never happen due to schema validation
+      throw new Error('Neither projectPath nor workspacePath provided');
     }
 
     // Add the scheme and configuration
@@ -194,7 +185,7 @@ export default {
     "Gets the app bundle path for a macOS application using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_macos_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: createTypedTool<GetMacosAppPathParams>(
-    getMacosAppPathSchema as unknown as z.ZodType<GetMacosAppPathParams>,
+    getMacosAppPathSchema,
     get_macos_app_pathLogic,
     getDefaultCommandExecutor,
   ),

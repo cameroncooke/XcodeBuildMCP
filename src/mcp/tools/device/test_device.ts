@@ -18,19 +18,7 @@ import {
   getDefaultFileSystemExecutor,
 } from '../../../utils/command.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
-
-// Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
-function nullifyEmptyStrings(value: unknown): unknown {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-    for (const key of Object.keys(copy)) {
-      const v = copy[key];
-      if (typeof v === 'string' && v.trim() === '') copy[key] = undefined;
-    }
-    return copy;
-  }
-  return value;
-}
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
 // Unified schema: XOR between projectPath and workspacePath
 const baseSchemaObject = z.object({
@@ -265,7 +253,7 @@ export default {
     'Runs tests for an Apple project or workspace on a physical device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) using xcodebuild test and parses xcresult output. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires scheme and deviceId. Example: test_device({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", deviceId: "device-uuid" })',
   schema: baseSchemaObject.shape,
   handler: createTypedTool<TestDeviceParams>(
-    testDeviceSchema as unknown as z.ZodType<TestDeviceParams>,
+    testDeviceSchema,
     (params: TestDeviceParams) => {
       return testDeviceLogic(
         {

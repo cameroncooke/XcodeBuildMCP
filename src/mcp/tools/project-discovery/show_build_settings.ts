@@ -11,19 +11,7 @@ import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index
 import { createTextResponse } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
-
-// Helper: convert empty strings to undefined (shallow) so optional fields don't trip validation
-function nullifyEmptyStrings(value: unknown): unknown {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const copy: Record<string, unknown> = { ...(value as Record<string, unknown>) };
-    for (const key of Object.keys(copy)) {
-      const v = copy[key];
-      if (typeof v === 'string' && v.trim() === '') copy[key] = undefined;
-    }
-    return copy;
-  }
-  return value;
-}
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
 // Unified schema: XOR between projectPath and workspacePath
 const baseSchemaObject = z.object({
@@ -62,9 +50,9 @@ export async function showBuildSettingsLogic(
     const path = hasProjectPath ? params.projectPath : params.workspacePath;
 
     if (hasProjectPath) {
-      command.push('-project', params.projectPath as string);
+      command.push('-project', params.projectPath!);
     } else {
-      command.push('-workspace', params.workspacePath as string);
+      command.push('-workspace', params.workspacePath!);
     }
 
     // Add the scheme
@@ -98,7 +86,7 @@ export async function showBuildSettingsLogic(
         text: `Next Steps:
 - Build the workspace: macos_build_workspace({ workspacePath: "${path}", scheme: "${params.scheme}" })
 - For iOS: ios_simulator_build_by_name_workspace({ workspacePath: "${path}", scheme: "${params.scheme}", simulatorName: "iPhone 16" })
-- List schemes: list_schems_ws({ workspacePath: "${path}" })`,
+- List schemes: list_schemes({ workspacePath: "${path}" })`,
       });
     }
 
@@ -119,7 +107,7 @@ export default {
     "Shows build settings from either a project or workspace using xcodebuild. Provide exactly one of projectPath or workspacePath, plus scheme. Example: show_build_settings({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape,
   handler: createTypedTool<ShowBuildSettingsParams>(
-    showBuildSettingsSchema as unknown as z.ZodType<ShowBuildSettingsParams>,
+    showBuildSettingsSchema,
     showBuildSettingsLogic,
     getDefaultCommandExecutor,
   ),

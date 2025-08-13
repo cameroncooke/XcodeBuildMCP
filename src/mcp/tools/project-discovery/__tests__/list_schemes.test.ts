@@ -77,9 +77,9 @@ describe('list_schemes plugin', () => {
           {
             type: 'text',
             text: `Next Steps:
-1. Build the app: build_mac_proj({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject" })
-   or for iOS: build_sim_name_proj({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject", simulatorName: "iPhone 16" })
-2. Show build settings: show_build_set_proj({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject" })`,
+1. Build the app: build_macos({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject" })
+   or for iOS: build_simulator_name({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject", simulatorName: "iPhone 16" })
+2. Show build settings: show_build_settings({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject" })`,
           },
         ],
         isError: false,
@@ -294,9 +294,9 @@ describe('list_schemes plugin', () => {
           {
             type: 'text',
             text: `Next Steps:
-1. Build the app: build_mac_ws({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp" })
-   or for iOS: build_sim_name_ws({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp", simulatorName: "iPhone 16" })
-2. Show build settings: show_build_set_ws({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp" })`,
+1. Build the app: build_macos({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp" })
+   or for iOS: build_simulator_name({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp", simulatorName: "iPhone 16" })
+2. Show build settings: show_build_settings({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp" })`,
           },
         ],
         isError: false,
