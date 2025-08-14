@@ -253,7 +253,7 @@ export default {
     'Runs tests for an Apple project or workspace on a physical device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) using xcodebuild test and parses xcresult output. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires scheme and deviceId. Example: test_device({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", deviceId: "device-uuid" })',
   schema: baseSchemaObject.shape,
   handler: createTypedTool<TestDeviceParams>(
-    testDeviceSchema,
+    testDeviceSchema as z.ZodType<TestDeviceParams>,
     (params: TestDeviceParams) => {
       return testDeviceLogic(
         {

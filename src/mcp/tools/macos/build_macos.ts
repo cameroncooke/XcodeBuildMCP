@@ -92,7 +92,7 @@ export default {
     "Builds a macOS app using xcodebuild from a project or workspace. Provide exactly one of projectPath or workspacePath. Example: build_macos({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: createTypedTool<BuildMacOSParams>(
-    buildMacOSSchema,
+    buildMacOSSchema as z.ZodType<BuildMacOSParams>,
     buildMacOSLogic,
     getDefaultCommandExecutor,
   ),

@@ -77,8 +77,6 @@ function constructDestinationString(
   return `platform=${platform}`;
 }
 
-
-
 // Define base schema
 const baseGetSimulatorAppPathSchema = z.object({
   projectPath: z
@@ -296,7 +294,7 @@ export default {
     "Gets the app bundle path for a simulator by UUID or name using either a project or workspace file. IMPORTANT: Requires either projectPath OR workspacePath (not both), plus scheme, platform, and either simulatorId OR simulatorName (not both). Example: get_simulator_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
   schema: baseGetSimulatorAppPathSchema.shape, // MCP SDK compatibility
   handler: createTypedTool<GetSimulatorAppPathParams>(
-    getSimulatorAppPathSchema,
+    getSimulatorAppPathSchema as z.ZodType<GetSimulatorAppPathParams>,
     get_simulator_app_pathLogic,
     getDefaultCommandExecutor,
   ),

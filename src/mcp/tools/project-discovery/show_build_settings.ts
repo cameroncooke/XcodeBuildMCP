@@ -107,7 +107,7 @@ export default {
     "Shows build settings from either a project or workspace using xcodebuild. Provide exactly one of projectPath or workspacePath, plus scheme. Example: show_build_settings({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape,
   handler: createTypedTool<ShowBuildSettingsParams>(
-    showBuildSettingsSchema,
+    showBuildSettingsSchema as z.ZodType<ShowBuildSettingsParams>,
     showBuildSettingsLogic,
     getDefaultCommandExecutor,
   ),

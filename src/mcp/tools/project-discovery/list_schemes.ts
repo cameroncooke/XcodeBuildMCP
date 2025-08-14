@@ -114,7 +114,7 @@ export default {
     "Lists available schemes for either a project or a workspace. Provide exactly one of projectPath or workspacePath. Example: list_schemes({ projectPath: '/path/to/MyProject.xcodeproj' })",
   schema: baseSchemaObject.shape,
   handler: createTypedTool<ListSchemesParams>(
-    listSchemesSchema,
+    listSchemesSchema as z.ZodType<ListSchemesParams>,
     listSchemesLogic,
     getDefaultCommandExecutor,
   ),

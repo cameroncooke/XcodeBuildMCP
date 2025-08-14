@@ -66,7 +66,7 @@ export default {
     "Builds an app from a project or workspace for a physical Apple device. Provide exactly one of projectPath or workspacePath. Example: build_device({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape,
   handler: createTypedTool<BuildDeviceParams>(
-    buildDeviceSchema,
+    buildDeviceSchema as z.ZodType<BuildDeviceParams>,
     buildDeviceLogic,
     getDefaultCommandExecutor,
   ),

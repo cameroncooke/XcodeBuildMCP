@@ -185,7 +185,7 @@ export default {
     "Gets the app bundle path for a macOS application using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_macos_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: createTypedTool<GetMacosAppPathParams>(
-    getMacosAppPathSchema,
+    getMacosAppPathSchema as z.ZodType<GetMacosAppPathParams>,
     get_macos_app_pathLogic,
     getDefaultCommandExecutor,
   ),

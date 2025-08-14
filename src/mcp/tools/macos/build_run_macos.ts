@@ -210,7 +210,7 @@ export default {
     "Builds and runs a macOS app from a project or workspace in one step. Provide exactly one of projectPath or workspacePath. Example: build_run_macos({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: createTypedTool<BuildRunMacOSParams>(
-    buildRunMacOSSchema,
+    buildRunMacOSSchema as z.ZodType<BuildRunMacOSParams>,
     (params: BuildRunMacOSParams) =>
       buildRunMacOSLogic(
         {

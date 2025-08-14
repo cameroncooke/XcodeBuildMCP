@@ -161,7 +161,7 @@ export default {
     "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_device_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: createTypedTool<GetDeviceAppPathParams>(
-    getDeviceAppPathSchema,
+    getDeviceAppPathSchema as z.ZodType<GetDeviceAppPathParams>,
     get_device_app_pathLogic,
     getDefaultCommandExecutor,
   ),

@@ -306,7 +306,7 @@ export default {
     'Runs tests for a macOS project or workspace using xcodebuild test and parses xcresult output. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires scheme. Example: test_macos({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme" })',
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: createTypedTool<TestMacosParams>(
-    testMacosSchema,
+    testMacosSchema as z.ZodType<TestMacosParams>,
     (params: TestMacosParams) => {
       return testMacosLogic(params, getDefaultCommandExecutor(), getDefaultFileSystemExecutor());
     },

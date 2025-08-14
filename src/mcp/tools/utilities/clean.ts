@@ -101,7 +101,7 @@ export default {
     "Cleans build products for either a project or a workspace using xcodebuild. Provide exactly one of projectPath or workspacePath. Example: clean({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape,
   handler: createTypedTool<CleanParams>(
-    cleanSchema,
+    cleanSchema as z.ZodType<CleanParams>,
     cleanLogic,
     getDefaultCommandExecutor,
   ),

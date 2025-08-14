@@ -1,13 +1,13 @@
 /**
  * Schema Helper Utilities
- * 
+ *
  * Shared utility functions for schema validation and preprocessing.
  */
 
 /**
  * Convert empty strings to undefined in an object (shallow transformation)
  * Used for preprocessing Zod schemas with optional fields
- * 
+ *
  * @param value - The value to process
  * @returns The processed value with empty strings converted to undefined
  */
