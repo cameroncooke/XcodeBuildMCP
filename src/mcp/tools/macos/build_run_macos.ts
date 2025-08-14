@@ -113,8 +113,8 @@ async function _getAppPathFromBuildSettings(
 
     // Parse the output to extract the app path
     const buildSettingsOutput = result.output;
-    const builtProductsDirMatch = buildSettingsOutput.match(/BUILT_PRODUCTS_DIR = (.+)$/m);
-    const fullProductNameMatch = buildSettingsOutput.match(/FULL_PRODUCT_NAME = (.+)$/m);
+    const builtProductsDirMatch = buildSettingsOutput.match(/^\s*BUILT_PRODUCTS_DIR\s*=\s*(.+)$/m);
+    const fullProductNameMatch = buildSettingsOutput.match(/^\s*FULL_PRODUCT_NAME\s*=\s*(.+)$/m);
 
     if (!builtProductsDirMatch || !fullProductNameMatch) {
       return { success: false, error: 'Could not extract app path from build settings' };
