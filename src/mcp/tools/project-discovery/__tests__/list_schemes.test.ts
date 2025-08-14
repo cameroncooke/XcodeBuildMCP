@@ -78,7 +78,7 @@ describe('list_schemes plugin', () => {
             type: 'text',
             text: `Next Steps:
 1. Build the app: build_macos({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject" })
-   or for iOS: build_simulator({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject", simulatorName: "iPhone 16" })
+   or for iOS: build_sim({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject", simulatorName: "iPhone 16" })
 2. Show build settings: show_build_settings({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject" })`,
           },
         ],
@@ -295,7 +295,7 @@ describe('list_schemes plugin', () => {
             type: 'text',
             text: `Next Steps:
 1. Build the app: build_macos({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp" })
-   or for iOS: build_simulator({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp", simulatorName: "iPhone 16" })
+   or for iOS: build_sim({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp", simulatorName: "iPhone 16" })
 2. Show build settings: show_build_settings({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp" })`,
           },
         ],

@@ -97,10 +97,8 @@ export async function get_app_bundle_idLogic(
         {
           type: 'text',
           text: `Next Steps:
-- Install in simulator: install_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", appPath: "${appPath}" })
-- Launch in simulator: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "${bundleId}" })
-- Or install on device: install_app_device({ deviceId: "DEVICE_UDID", appPath: "${appPath}" })
-- Or launch on device: launch_app_device({ deviceId: "DEVICE_UDID", bundleId: "${bundleId}" })`,
+- Simulator: install_app_sim + launch_app_sim
+- Device: install_app_device + launch_app_device`,
         },
       ],
       isError: false,

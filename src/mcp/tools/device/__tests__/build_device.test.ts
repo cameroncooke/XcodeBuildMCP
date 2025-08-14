@@ -261,7 +261,7 @@ describe('build_device plugin', () => {
           },
           {
             type: 'text',
-            text: 'Next Steps:\n1. Get App Path: get_device_app_path\n2. Get Bundle ID: get_ios_bundle_id',
+            text: "Next Steps:\n1. Get app path: get_device_app_path({ scheme: 'MyScheme' })\n2. Get bundle ID: get_app_bundle_id({ appPath: 'PATH_FROM_STEP_1' })\n3. Launch: launch_app_device({ bundleId: 'BUNDLE_ID_FROM_STEP_2' })",
           },
         ],
       });

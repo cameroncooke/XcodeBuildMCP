@@ -298,34 +298,23 @@ Future builds will use the generated Makefile for improved performance.
     if (buildAction === 'build') {
       if (platformOptions.platform === XcodePlatform.macOS) {
         additionalInfo = `Next Steps:
-1. Get App Path: get_macos_app_path
-2. Get Bundle ID: get_macos_bundle_id
-3. Launch App: launch_macos_app`;
+1. Get app path: get_mac_app_path({ scheme: '${params.scheme}' })
+2. Get bundle ID: get_mac_bundle_id({ appPath: 'PATH_FROM_STEP_1' })
+3. Launch: launch_mac_app({ appPath: 'PATH_FROM_STEP_1' })`;
       } else if (platformOptions.platform === XcodePlatform.iOS) {
         additionalInfo = `Next Steps:
-1. Get App Path: get_device_app_path
-2. Get Bundle ID: get_ios_bundle_id`;
+1. Get app path: get_device_app_path({ scheme: '${params.scheme}' })
+2. Get bundle ID: get_app_bundle_id({ appPath: 'PATH_FROM_STEP_1' })
+3. Launch: launch_app_device({ bundleId: 'BUNDLE_ID_FROM_STEP_2' })`;
       } else if (isSimulatorPlatform) {
-        const idOrName = platformOptions.simulatorId ? 'id' : 'name';
         const simIdParam = platformOptions.simulatorId ? 'simulatorId' : 'simulatorName';
         const simIdValue = platformOptions.simulatorId ?? platformOptions.simulatorName;
 
         additionalInfo = `Next Steps:
-1. Get App Path: get_simulator_app_path_by_${idOrName}_${params.workspacePath ? 'workspace' : 'project'}({ ${simIdParam}: '${simIdValue}', scheme: '${params.scheme}' })
-2. Get Bundle ID: get_ios_bundle_id({ appPath: 'APP_PATH_FROM_STEP_1' })
-3. Choose one of the following options:
-   - Option 1: Launch app normally:
-     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })
-   - Option 2: Launch app with logs (captures both console and structured logs):
-     launch_app_with_logs_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })
-   - Option 3: Launch app normally, then capture structured logs only:
-     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })
-     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })
-   - Option 4: Launch app normally, then capture all logs (will restart app):
-     launch_app_in_simulator({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID' })
-     start_simulator_log_capture({ simulatorUuid: 'SIMULATOR_UUID', bundleId: 'APP_BUNDLE_ID', captureConsole: true })
-
-When done capturing logs, use: stop_and_get_simulator_log({ logSessionId: 'SESSION_ID' })`;
+1. Get app path: get_sim_app_path({ ${simIdParam}: '${simIdValue}', scheme: '${params.scheme}', platform: 'iOS Simulator' })
+2. Get bundle ID: get_app_bundle_id({ appPath: 'PATH_FROM_STEP_1' })
+3. Launch: launch_app_sim({ ${simIdParam}: '${simIdValue}', bundleId: 'BUNDLE_ID_FROM_STEP_2' })
+   Or with logs: launch_app_logs_sim({ ${simIdParam}: '${simIdValue}', bundleId: 'BUNDLE_ID_FROM_STEP_2' })`;
       }
     }
 

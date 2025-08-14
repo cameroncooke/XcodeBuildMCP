@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import testMacos from '../test_macos.ts';
 import buildMacos from '../build_macos.ts';
 import buildRunMacos from '../build_run_macos.ts';
-import getMacosAppPath from '../get_macos_app_path.ts';
+import getMacAppPath from '../get_mac_app_path.ts';
 
 describe('macos-project re-exports', () => {
   describe('test_macos re-export', () => {
@@ -38,12 +38,12 @@ describe('macos-project re-exports', () => {
     });
   });
 
-  describe('get_macos_app_path re-export', () => {
-    it('should re-export get_macos_app_path tool correctly', () => {
-      expect(getMacosAppPath.name).toBe('get_macos_app_path');
-      expect(typeof getMacosAppPath.handler).toBe('function');
-      expect(getMacosAppPath.schema).toBeDefined();
-      expect(typeof getMacosAppPath.description).toBe('string');
+  describe('get_mac_app_path re-export', () => {
+    it('should re-export get_mac_app_path tool correctly', () => {
+      expect(getMacAppPath.name).toBe('get_mac_app_path');
+      expect(typeof getMacAppPath.handler).toBe('function');
+      expect(getMacAppPath.schema).toBeDefined();
+      expect(typeof getMacAppPath.description).toBe('string');
     });
   });
 
@@ -52,7 +52,7 @@ describe('macos-project re-exports', () => {
       { tool: testMacos, name: 'test_macos' },
       { tool: buildMacos, name: 'build_macos' },
       { tool: buildRunMacos, name: 'build_run_macos' },
-      { tool: getMacosAppPath, name: 'get_macos_app_path' },
+      { tool: getMacAppPath, name: 'get_mac_app_path' },
     ];
 
     it('should have all required tool properties', () => {

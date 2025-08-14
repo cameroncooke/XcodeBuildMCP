@@ -9,13 +9,14 @@ export default [
     ignores: ['node_modules/**', 'build/**', 'dist/**', 'coverage/**', 'src/core/generated-plugins.ts', 'src/core/generated-resources.ts'],
   },
   {
-    files: ['**/*.{js,ts}'],
+    // TypeScript files in src/ directory (covered by tsconfig.json)
+    files: ['src/**/*.ts'],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'module',
       parser: tseslint.parser,
       parserOptions: {
-        project: ['./tsconfig.json', './tsconfig.test.json'],
+        project: ['./tsconfig.json'],
       },
     },
     plugins: {
@@ -55,6 +56,41 @@ export default [
       '@typescript-eslint/prefer-as-const': 'warn',
       '@typescript-eslint/prefer-nullish-coalescing': 'warn',
       '@typescript-eslint/prefer-optional-chain': 'warn',
+    },
+  },
+  {
+    // JavaScript and TypeScript files outside the main project (scripts/, etc.)
+    files: ['**/*.{js,ts}'],
+    ignores: ['src/**/*', '**/*.test.ts'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'module',
+      parser: tseslint.parser,
+      // No project reference for scripts - use standalone parsing
+    },
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+      'prettier': prettierPlugin,
+    },
+    rules: {
+      'prettier/prettier': 'error',
+      // Relaxed TypeScript rules for scripts since they're not in the main project
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', { 
+        argsIgnorePattern: 'never',
+        varsIgnorePattern: 'never' 
+      }],
+      'no-console': 'off', // Scripts are allowed to use console
+      
+      // Disable project-dependent rules for scripts
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/prefer-optional-chain': 'off',
     },
   },
   {

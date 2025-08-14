@@ -172,8 +172,8 @@ describe('simulators resource', () => {
       expect(result.contents[0].text).toContain('Next Steps:');
       expect(result.contents[0].text).toContain('boot_sim');
       expect(result.contents[0].text).toContain('open_sim');
-      expect(result.contents[0].text).toContain('build_ios_sim_id_proj');
-      expect(result.contents[0].text).toContain('get_sim_app_path_id_proj');
+      expect(result.contents[0].text).toContain('build_sim');
+      expect(result.contents[0].text).toContain('get_sim_app_path');
     });
   });
 });

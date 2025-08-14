@@ -15,7 +15,7 @@ describe('stop_app_sim plugin', () => {
 
     it('should have correct description field', () => {
       expect(plugin.description).toBe(
-        'Stops an app running in an iOS simulator. Requires simulatorUuid and bundleId.',
+        'Stops an app running in an iOS simulator by UUID or name. IMPORTANT: Provide either simulatorUuid OR simulatorName, plus bundleId. Example: stop_app_sim({ simulatorUuid: "UUID", bundleId: "com.example.MyApp" }) or stop_app_sim({ simulatorName: "iPhone 16", bundleId: "com.example.MyApp" })',
       );
     });
 

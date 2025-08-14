@@ -55,7 +55,7 @@ const XcodePlatform = {
   macOS: 'macOS',
 };
 
-export async function get_macos_app_pathLogic(
+export async function get_mac_app_pathLogic(
   params: GetMacosAppPathParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
@@ -177,13 +177,13 @@ export async function get_macos_app_pathLogic(
 }
 
 export default {
-  name: 'get_macos_app_path',
+  name: 'get_mac_app_path',
   description:
-    "Gets the app bundle path for a macOS application using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_macos_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
+    "Gets the app bundle path for a macOS application using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_mac_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: createTypedTool<GetMacosAppPathParams>(
     getMacosAppPathSchema as z.ZodType<GetMacosAppPathParams>,
-    get_macos_app_pathLogic,
+    get_mac_app_pathLogic,
     getDefaultCommandExecutor,
   ),
 };

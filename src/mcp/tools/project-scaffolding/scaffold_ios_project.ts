@@ -394,8 +394,8 @@ export async function scaffold_ios_projectLogic(
       message: `Successfully scaffolded iOS project "${params.projectName}" in ${projectPath}`,
       nextSteps: [
         `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
-        `Build for simulator: build_ios_sim_name_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}" --simulator-name "iPhone 16"`,
-        `Build and run on simulator: build_run_ios_sim_name_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}" --simulator-name "iPhone 16"`,
+        `Build for simulator: build_sim({ workspacePath: "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace", scheme: "${params.customizeNames ? params.projectName : 'MyProject'}", simulatorName: "iPhone 16" })`,
+        `Build and run on simulator: build_run_sim({ workspacePath: "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace", scheme: "${params.customizeNames ? params.projectName : 'MyProject'}", simulatorName: "iPhone 16" })`,
       ],
     };
 

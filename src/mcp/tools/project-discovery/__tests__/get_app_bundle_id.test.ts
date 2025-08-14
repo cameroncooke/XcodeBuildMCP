@@ -123,10 +123,8 @@ describe('get_app_bundle_id plugin', () => {
           {
             type: 'text',
             text: `Next Steps:
-- Install in simulator: install_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", appPath: "/path/to/MyApp.app" })
-- Launch in simulator: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "com.example.MyApp" })
-- Or install on device: install_app_device({ deviceId: "DEVICE_UDID", appPath: "/path/to/MyApp.app" })
-- Or launch on device: launch_app_device({ deviceId: "DEVICE_UDID", bundleId: "com.example.MyApp" })`,
+- Simulator: install_app_sim + launch_app_sim
+- Device: install_app_device + launch_app_device`,
           },
         ],
         isError: false,
@@ -160,10 +158,8 @@ describe('get_app_bundle_id plugin', () => {
           {
             type: 'text',
             text: `Next Steps:
-- Install in simulator: install_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", appPath: "/path/to/MyApp.app" })
-- Launch in simulator: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "com.example.MyApp" })
-- Or install on device: install_app_device({ deviceId: "DEVICE_UDID", appPath: "/path/to/MyApp.app" })
-- Or launch on device: launch_app_device({ deviceId: "DEVICE_UDID", bundleId: "com.example.MyApp" })`,
+- Simulator: install_app_sim + launch_app_sim
+- Device: install_app_device + launch_app_device`,
           },
         ],
         isError: false,

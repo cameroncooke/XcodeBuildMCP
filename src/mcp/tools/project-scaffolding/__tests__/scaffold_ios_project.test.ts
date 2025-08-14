@@ -388,8 +388,8 @@ describe('scaffold_ios_project plugin', () => {
                 message: 'Successfully scaffolded iOS project "TestIOSApp" in /tmp/test-projects',
                 nextSteps: [
                   'Important: Before working on the project make sure to read the README.md file in the workspace root directory.',
-                  'Build for simulator: build_ios_sim_name_ws --workspace-path "/tmp/test-projects/MyProject.xcworkspace" --scheme "MyProject" --simulator-name "iPhone 16"',
-                  'Build and run on simulator: build_run_ios_sim_name_ws --workspace-path "/tmp/test-projects/MyProject.xcworkspace" --scheme "MyProject" --simulator-name "iPhone 16"',
+                  'Build for simulator: build_sim({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject", simulatorName: "iPhone 16" })',
+                  'Build and run on simulator: build_run_sim({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject", simulatorName: "iPhone 16" })',
                 ],
               },
               null,
@@ -431,8 +431,8 @@ describe('scaffold_ios_project plugin', () => {
                 message: 'Successfully scaffolded iOS project "TestIOSApp" in /tmp/test-projects',
                 nextSteps: [
                   'Important: Before working on the project make sure to read the README.md file in the workspace root directory.',
-                  'Build for simulator: build_ios_sim_name_ws --workspace-path "/tmp/test-projects/TestIOSApp.xcworkspace" --scheme "TestIOSApp" --simulator-name "iPhone 16"',
-                  'Build and run on simulator: build_run_ios_sim_name_ws --workspace-path "/tmp/test-projects/TestIOSApp.xcworkspace" --scheme "TestIOSApp" --simulator-name "iPhone 16"',
+                  'Build for simulator: build_sim({ workspacePath: "/tmp/test-projects/TestIOSApp.xcworkspace", scheme: "TestIOSApp", simulatorName: "iPhone 16" })',
+                  'Build and run on simulator: build_run_sim({ workspacePath: "/tmp/test-projects/TestIOSApp.xcworkspace", scheme: "TestIOSApp", simulatorName: "iPhone 16" })',
                 ],
               },
               null,
@@ -466,8 +466,8 @@ describe('scaffold_ios_project plugin', () => {
                 message: 'Successfully scaffolded iOS project "TestIOSApp" in /tmp/test-projects',
                 nextSteps: [
                   'Important: Before working on the project make sure to read the README.md file in the workspace root directory.',
-                  'Build for simulator: build_ios_sim_name_ws --workspace-path "/tmp/test-projects/MyProject.xcworkspace" --scheme "MyProject" --simulator-name "iPhone 16"',
-                  'Build and run on simulator: build_run_ios_sim_name_ws --workspace-path "/tmp/test-projects/MyProject.xcworkspace" --scheme "MyProject" --simulator-name "iPhone 16"',
+                  'Build for simulator: build_sim({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject", simulatorName: "iPhone 16" })',
+                  'Build and run on simulator: build_run_sim({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject", simulatorName: "iPhone 16" })',
                 ],
               },
               null,

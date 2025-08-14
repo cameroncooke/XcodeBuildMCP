@@ -129,7 +129,7 @@ async function _handleSimulatorBuildLogic(
 }
 
 // Exported business logic function for building and running iOS Simulator apps.
-export async function build_run_simulatorLogic(
+export async function build_run_simLogic(
   params: BuildRunSimulatorParams,
   executor: CommandExecutor,
   executeXcodeBuildCommandFn: typeof executeXcodeBuildCommand = executeXcodeBuildCommand,
@@ -492,15 +492,15 @@ When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })
 }
 
 export default {
-  name: 'build_run_simulator',
+  name: 'build_run_sim',
   description:
-    "Builds and runs an app from a project or workspace on a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_run_simulator({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+    "Builds and runs an app from a project or workspace on a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_run_sim({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     try {
       // Runtime validation with XOR constraints
       const validatedParams = buildRunSimulatorSchema.parse(args);
-      return await build_run_simulatorLogic(validatedParams, getDefaultCommandExecutor());
+      return await build_run_simLogic(validatedParams, getDefaultCommandExecutor());
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Format validation errors in a user-friendly way

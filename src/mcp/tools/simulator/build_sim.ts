@@ -119,7 +119,7 @@ async function _handleSimulatorBuildLogic(
   );
 }
 
-export async function build_simulatorLogic(
+export async function build_simLogic(
   params: BuildSimulatorParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
@@ -135,15 +135,15 @@ export async function build_simulatorLogic(
 }
 
 export default {
-  name: 'build_simulator',
+  name: 'build_sim',
   description:
-    "Builds an app from a project or workspace for a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_simulator({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+    "Builds an app from a project or workspace for a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_sim({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     try {
       // Runtime validation with XOR constraints
       const validatedParams = buildSimulatorSchema.parse(args);
-      return await build_simulatorLogic(validatedParams, getDefaultCommandExecutor());
+      return await build_simLogic(validatedParams, getDefaultCommandExecutor());
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Format validation errors in a user-friendly way

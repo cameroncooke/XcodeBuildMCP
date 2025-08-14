@@ -1,31 +1,31 @@
 /**
- * Tests for build_run_simulator plugin (unified)
+ * Tests for build_run_sim plugin (unified)
  * Following CLAUDE.md testing standards with dependency injection and literal validation
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
-import buildRunSimulator, { build_run_simulatorLogic } from '../build_run_simulator.js';
+import buildRunSim, { build_run_simLogic } from '../build_run_sim.js';
 
-describe('build_run_simulator tool', () => {
+describe('build_run_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(buildRunSimulator.name).toBe('build_run_simulator');
+      expect(buildRunSim.name).toBe('build_run_sim');
     });
 
     it('should have correct description', () => {
-      expect(buildRunSimulator.description).toBe(
-        "Builds and runs an app from a project or workspace on a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_run_simulator({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
+      expect(buildRunSim.description).toBe(
+        "Builds and runs an app from a project or workspace on a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_run_sim({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof buildRunSimulator.handler).toBe('function');
+      expect(typeof buildRunSim.handler).toBe('function');
     });
 
     it('should have correct schema with required and optional fields', () => {
-      const schema = z.object(buildRunSimulator.schema);
+      const schema = z.object(buildRunSim.schema);
 
       // Valid inputs - workspace
       expect(
@@ -138,7 +138,7 @@ describe('build_run_simulator tool', () => {
         };
       };
 
-      const result = await build_run_simulatorLogic(
+      const result = await build_run_simLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -164,7 +164,7 @@ describe('build_run_simulator tool', () => {
         error: 'Build failed with error',
       });
 
-      const result = await build_run_simulatorLogic(
+      const result = await build_run_simLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -237,7 +237,7 @@ describe('build_run_simulator tool', () => {
         }
       };
 
-      const result = await build_run_simulatorLogic(
+      const result = await build_run_simLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -257,7 +257,7 @@ describe('build_run_simulator tool', () => {
         error: 'Command failed',
       });
 
-      const result = await build_run_simulatorLogic(
+      const result = await build_run_simLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -277,7 +277,7 @@ describe('build_run_simulator tool', () => {
         error: 'String error',
       });
 
-      const result = await build_run_simulatorLogic(
+      const result = await build_run_simLogic(
         {
           workspacePath: '/path/to/workspace',
           scheme: 'MyScheme',
@@ -317,7 +317,7 @@ describe('build_run_simulator tool', () => {
         };
       };
 
-      const result = await build_run_simulatorLogic(
+      const result = await build_run_simLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -392,7 +392,7 @@ describe('build_run_simulator tool', () => {
         }
       };
 
-      const result = await build_run_simulatorLogic(
+      const result = await build_run_simLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -492,7 +492,7 @@ describe('build_run_simulator tool', () => {
         }
       };
 
-      const result = await build_run_simulatorLogic(
+      const result = await build_run_simLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -562,7 +562,7 @@ describe('build_run_simulator tool', () => {
         };
       };
 
-      const result = await build_run_simulatorLogic(
+      const result = await build_run_simLogic(
         {
           workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
           scheme: 'My Scheme',
@@ -592,7 +592,7 @@ describe('build_run_simulator tool', () => {
 
   describe('XOR Validation', () => {
     it('should error when neither projectPath nor workspacePath provided', async () => {
-      const result = await buildRunSimulator.handler({
+      const result = await buildRunSim.handler({
         scheme: 'MyScheme',
         simulatorName: 'iPhone 16',
       });
@@ -601,7 +601,7 @@ describe('build_run_simulator tool', () => {
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
-      const result = await buildRunSimulator.handler({
+      const result = await buildRunSim.handler({
         projectPath: '/path/project.xcodeproj',
         workspacePath: '/path/workspace.xcworkspace',
         scheme: 'MyScheme',
@@ -618,7 +618,7 @@ describe('build_run_simulator tool', () => {
         error: 'Build failed',
       });
 
-      const result = await build_run_simulatorLogic(
+      const result = await build_run_simLogic(
         {
           projectPath: '/path/project.xcodeproj',
           scheme: 'MyScheme',
@@ -638,7 +638,7 @@ describe('build_run_simulator tool', () => {
         error: 'Build failed',
       });
 
-      const result = await build_run_simulatorLogic(
+      const result = await build_run_simLogic(
         {
           workspacePath: '/path/workspace.xcworkspace',
           scheme: 'MyScheme',

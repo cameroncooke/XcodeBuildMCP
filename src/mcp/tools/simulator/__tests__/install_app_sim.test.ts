@@ -278,7 +278,7 @@ describe('install_app_sim tool', () => {
           {
             type: 'text',
             text: `Next Steps:
-1. Open the Simulator app: open_sim({ enabled: true })
+1. Open the Simulator app: open_sim({})
 2. Launch the app: launch_app_sim({ simulatorUuid: "test-uuid-123", bundleId: "com.example.myapp" })`,
           },
         ],

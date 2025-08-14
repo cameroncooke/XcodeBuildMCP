@@ -1,5 +1,5 @@
 /**
- * Tests for set_simulator_location plugin
+ * Tests for set_sim_location plugin
  * Following CLAUDE.md testing standards with literal validation
  * Using pure dependency injection for deterministic testing
  */
@@ -7,28 +7,26 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../utils/command.js';
-import setSimulatorLocation, { set_simulator_locationLogic } from '../set_simulator_location.ts';
+import setSimLocation, { set_sim_locationLogic } from '../set_sim_location.ts';
 
-describe('set_simulator_location tool', () => {
+describe('set_sim_location tool', () => {
   // No mocks to clear since we use pure dependency injection
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(setSimulatorLocation.name).toBe('set_simulator_location');
+      expect(setSimLocation.name).toBe('set_sim_location');
     });
 
     it('should have correct description', () => {
-      expect(setSimulatorLocation.description).toBe(
-        'Sets a custom GPS location for the simulator.',
-      );
+      expect(setSimLocation.description).toBe('Sets a custom GPS location for the simulator.');
     });
 
     it('should have handler function', () => {
-      expect(typeof setSimulatorLocation.handler).toBe('function');
+      expect(typeof setSimLocation.handler).toBe('function');
     });
 
     it('should have correct schema with simulatorUuid string field and latitude/longitude number fields', () => {
-      const schema = z.object(setSimulatorLocation.schema);
+      const schema = z.object(setSimLocation.schema);
 
       // Valid inputs
       expect(
@@ -91,7 +89,7 @@ describe('set_simulator_location tool', () => {
         };
       };
 
-      await set_simulator_locationLogic(
+      await set_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,
@@ -123,7 +121,7 @@ describe('set_simulator_location tool', () => {
         };
       };
 
-      await set_simulator_locationLogic(
+      await set_sim_locationLogic(
         {
           simulatorUuid: 'different-uuid',
           latitude: 45.5,
@@ -155,7 +153,7 @@ describe('set_simulator_location tool', () => {
         };
       };
 
-      await set_simulator_locationLogic(
+      await set_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid',
           latitude: -90,
@@ -183,7 +181,7 @@ describe('set_simulator_location tool', () => {
         error: undefined,
       });
 
-      const result = await set_simulator_locationLogic(
+      const result = await set_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,
@@ -203,7 +201,7 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle latitude validation failure', async () => {
-      const result = await set_simulator_locationLogic(
+      const result = await set_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 95,
@@ -223,7 +221,7 @@ describe('set_simulator_location tool', () => {
     });
 
     it('should handle longitude validation failure', async () => {
-      const result = await set_simulator_locationLogic(
+      const result = await set_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,
@@ -249,7 +247,7 @@ describe('set_simulator_location tool', () => {
         error: 'Simulator not found',
       });
 
-      const result = await set_simulator_locationLogic(
+      const result = await set_sim_locationLogic(
         {
           simulatorUuid: 'invalid-uuid',
           latitude: 37.7749,
@@ -271,7 +269,7 @@ describe('set_simulator_location tool', () => {
     it('should handle exception with Error object', async () => {
       const mockExecutor = createMockExecutor(new Error('Connection failed'));
 
-      const result = await set_simulator_locationLogic(
+      const result = await set_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,
@@ -293,7 +291,7 @@ describe('set_simulator_location tool', () => {
     it('should handle exception with string error', async () => {
       const mockExecutor = createMockExecutor('String error');
 
-      const result = await set_simulator_locationLogic(
+      const result = await set_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,
@@ -319,7 +317,7 @@ describe('set_simulator_location tool', () => {
         error: undefined,
       });
 
-      const result = await set_simulator_locationLogic(
+      const result = await set_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 90,
@@ -345,7 +343,7 @@ describe('set_simulator_location tool', () => {
         error: undefined,
       });
 
-      const result = await set_simulator_locationLogic(
+      const result = await set_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: -90,
@@ -371,7 +369,7 @@ describe('set_simulator_location tool', () => {
         error: undefined,
       });
 
-      const result = await set_simulator_locationLogic(
+      const result = await set_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 0,
@@ -403,7 +401,7 @@ describe('set_simulator_location tool', () => {
         };
       };
 
-      await set_simulator_locationLogic(
+      await set_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
           latitude: 37.7749,

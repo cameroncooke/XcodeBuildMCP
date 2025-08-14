@@ -389,11 +389,9 @@ export async function list_devicesLogic(
     if (availableDevicesExist) {
       responseText += 'Next Steps:\n';
       responseText +=
-        "1. Build for device: build_ios_dev_ws({ workspacePath: 'PATH', scheme: 'SCHEME' })\n";
-      responseText +=
-        "2. Run tests: test_ios_dev_ws({ workspacePath: 'PATH', scheme: 'SCHEME' })\n";
-      responseText +=
-        "3. Get app path: get_ios_dev_app_path_ws({ workspacePath: 'PATH', scheme: 'SCHEME' })\n\n";
+        "1. Build for device: build_device({ scheme: 'SCHEME', deviceId: 'DEVICE_UDID' })\n";
+      responseText += "2. Run tests: test_device({ scheme: 'SCHEME', deviceId: 'DEVICE_UDID' })\n";
+      responseText += "3. Get app path: get_device_app_path({ scheme: 'SCHEME' })\n\n";
       responseText += 'Note: Use the device ID/UDID from above when required by other tools.\n';
     } else if (uniqueDevices.length > 0) {
       responseText +=

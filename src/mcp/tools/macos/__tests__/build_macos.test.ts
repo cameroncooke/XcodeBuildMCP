@@ -79,7 +79,7 @@ describe('build_macos plugin', () => {
           },
           {
             type: 'text',
-            text: 'Next Steps:\n1. Get App Path: get_macos_app_path\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+            text: "Next Steps:\n1. Get app path: get_mac_app_path({ scheme: 'MyScheme' })\n2. Get bundle ID: get_mac_bundle_id({ appPath: 'PATH_FROM_STEP_1' })\n3. Launch: launch_mac_app({ appPath: 'PATH_FROM_STEP_1' })",
           },
         ],
       });
@@ -141,7 +141,7 @@ describe('build_macos plugin', () => {
           },
           {
             type: 'text',
-            text: 'Next Steps:\n1. Get App Path: get_macos_app_path\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+            text: "Next Steps:\n1. Get app path: get_mac_app_path({ scheme: 'MyScheme' })\n2. Get bundle ID: get_mac_bundle_id({ appPath: 'PATH_FROM_STEP_1' })\n3. Launch: launch_mac_app({ appPath: 'PATH_FROM_STEP_1' })",
           },
         ],
       });

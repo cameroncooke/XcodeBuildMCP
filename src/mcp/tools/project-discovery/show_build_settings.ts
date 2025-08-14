@@ -84,8 +84,8 @@ export async function showBuildSettingsLogic(
       content.push({
         type: 'text',
         text: `Next Steps:
-- Build the workspace: macos_build_workspace({ workspacePath: "${path}", scheme: "${params.scheme}" })
-- For iOS: ios_simulator_build_by_name_workspace({ workspacePath: "${path}", scheme: "${params.scheme}", simulatorName: "iPhone 16" })
+- Build the workspace: build_macos({ workspacePath: "${path}", scheme: "${params.scheme}" })
+- For iOS: build_sim({ workspacePath: "${path}", scheme: "${params.scheme}", simulatorName: "iPhone 16" })
 - List schemes: list_schemes({ workspacePath: "${path}" })`,
       });
     }

@@ -135,7 +135,7 @@ type GetSimulatorAppPathParams = z.infer<typeof getSimulatorAppPathSchema>;
 /**
  * Exported business logic function for getting app path
  */
-export async function get_simulator_app_pathLogic(
+export async function get_sim_app_pathLogic(
   params: GetSimulatorAppPathParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
@@ -241,14 +241,14 @@ export async function get_simulator_app_pathLogic(
     let nextStepsText = '';
     if (platform === XcodePlatform.macOS) {
       nextStepsText = `Next Steps:
-1. Get bundle ID: get_macos_bundle_id({ appPath: "${appPath}" })
-2. Launch the app: launch_macos_app({ appPath: "${appPath}" })`;
+1. Get bundle ID: get_mac_bundle_id({ appPath: "${appPath}" })
+2. Launch the app: launch_mac_app({ appPath: "${appPath}" })`;
     } else if (isSimulatorPlatform) {
       nextStepsText = `Next Steps:
 1. Get bundle ID: get_app_bundle_id({ appPath: "${appPath}" })
-2. Boot simulator: boot_simulator({ simulatorUuid: "SIMULATOR_UUID" })
-3. Install app: install_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", appPath: "${appPath}" })
-4. Launch app: launch_app_in_simulator({ simulatorUuid: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`;
+2. Boot simulator: boot_sim({ simulatorUuid: "SIMULATOR_UUID" })
+3. Install app: install_app_sim({ simulatorUuid: "SIMULATOR_UUID", appPath: "${appPath}" })
+4. Launch app: launch_app_sim({ simulatorUuid: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`;
     } else if (
       [
         XcodePlatform.iOS,
@@ -289,13 +289,13 @@ export async function get_simulator_app_pathLogic(
 }
 
 export default {
-  name: 'get_simulator_app_path',
+  name: 'get_sim_app_path',
   description:
-    "Gets the app bundle path for a simulator by UUID or name using either a project or workspace file. IMPORTANT: Requires either projectPath OR workspacePath (not both), plus scheme, platform, and either simulatorId OR simulatorName (not both). Example: get_simulator_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
+    "Gets the app bundle path for a simulator by UUID or name using either a project or workspace file. IMPORTANT: Requires either projectPath OR workspacePath (not both), plus scheme, platform, and either simulatorId OR simulatorName (not both). Example: get_sim_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
   schema: baseGetSimulatorAppPathSchema.shape, // MCP SDK compatibility
   handler: createTypedTool<GetSimulatorAppPathParams>(
     getSimulatorAppPathSchema as z.ZodType<GetSimulatorAppPathParams>,
-    get_simulator_app_pathLogic,
+    get_sim_app_pathLogic,
     getDefaultCommandExecutor,
   ),
 };

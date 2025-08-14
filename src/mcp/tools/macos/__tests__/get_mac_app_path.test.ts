@@ -1,60 +1,58 @@
 /**
- * Tests for get_macos_app_path plugin (unified project/workspace)
+ * Tests for get_mac_app_path plugin (unified project/workspace)
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
 
 import { describe, it, expect } from 'vitest';
 import { createMockExecutor, type CommandExecutor } from '../../../../utils/command.js';
-import getMacosAppPath, { get_macos_app_pathLogic } from '../get_macos_app_path.js';
+import getMacAppPath, { get_mac_app_pathLogic } from '../get_mac_app_path.js';
 
-describe('get_macos_app_path plugin', () => {
+describe('get_mac_app_path plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(getMacosAppPath.name).toBe('get_macos_app_path');
+      expect(getMacAppPath.name).toBe('get_mac_app_path');
     });
 
     it('should have correct description', () => {
-      expect(getMacosAppPath.description).toBe(
-        "Gets the app bundle path for a macOS application using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_macos_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
+      expect(getMacAppPath.description).toBe(
+        "Gets the app bundle path for a macOS application using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_mac_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof getMacosAppPath.handler).toBe('function');
+      expect(typeof getMacAppPath.handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
       // Test workspace path
       expect(
-        getMacosAppPath.schema.workspacePath.safeParse('/path/to/MyProject.xcworkspace').success,
+        getMacAppPath.schema.workspacePath.safeParse('/path/to/MyProject.xcworkspace').success,
       ).toBe(true);
       // Test project path
       expect(
-        getMacosAppPath.schema.projectPath.safeParse('/path/to/MyProject.xcodeproj').success,
+        getMacAppPath.schema.projectPath.safeParse('/path/to/MyProject.xcodeproj').success,
       ).toBe(true);
-      expect(getMacosAppPath.schema.scheme.safeParse('MyScheme').success).toBe(true);
+      expect(getMacAppPath.schema.scheme.safeParse('MyScheme').success).toBe(true);
 
       // Test optional fields
-      expect(getMacosAppPath.schema.configuration.safeParse('Debug').success).toBe(true);
-      expect(getMacosAppPath.schema.arch.safeParse('arm64').success).toBe(true);
-      expect(getMacosAppPath.schema.arch.safeParse('x86_64').success).toBe(true);
-      expect(getMacosAppPath.schema.derivedDataPath.safeParse('/path/to/derived').success).toBe(
-        true,
-      );
-      expect(getMacosAppPath.schema.extraArgs.safeParse(['--verbose']).success).toBe(true);
+      expect(getMacAppPath.schema.configuration.safeParse('Debug').success).toBe(true);
+      expect(getMacAppPath.schema.arch.safeParse('arm64').success).toBe(true);
+      expect(getMacAppPath.schema.arch.safeParse('x86_64').success).toBe(true);
+      expect(getMacAppPath.schema.derivedDataPath.safeParse('/path/to/derived').success).toBe(true);
+      expect(getMacAppPath.schema.extraArgs.safeParse(['--verbose']).success).toBe(true);
 
       // Test invalid inputs
-      expect(getMacosAppPath.schema.workspacePath.safeParse(null).success).toBe(false);
-      expect(getMacosAppPath.schema.projectPath.safeParse(null).success).toBe(false);
-      expect(getMacosAppPath.schema.scheme.safeParse(null).success).toBe(false);
-      expect(getMacosAppPath.schema.arch.safeParse('invalidArch').success).toBe(false);
+      expect(getMacAppPath.schema.workspacePath.safeParse(null).success).toBe(false);
+      expect(getMacAppPath.schema.projectPath.safeParse(null).success).toBe(false);
+      expect(getMacAppPath.schema.scheme.safeParse(null).success).toBe(false);
+      expect(getMacAppPath.schema.arch.safeParse('invalidArch').success).toBe(false);
     });
   });
 
   describe('XOR Validation', () => {
     it('should error when neither projectPath nor workspacePath provided', async () => {
-      const result = await getMacosAppPath.handler({
+      const result = await getMacAppPath.handler({
         scheme: 'MyScheme',
       });
 
@@ -63,7 +61,7 @@ describe('get_macos_app_path plugin', () => {
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
-      const result = await getMacosAppPath.handler({
+      const result = await getMacAppPath.handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',
@@ -93,7 +91,7 @@ describe('get_macos_app_path plugin', () => {
         scheme: 'MyScheme',
       };
 
-      await get_macos_app_pathLogic(args, mockExecutor);
+      await get_mac_app_pathLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -132,7 +130,7 @@ describe('get_macos_app_path plugin', () => {
         scheme: 'MyScheme',
       };
 
-      await get_macos_app_pathLogic(args, mockExecutor);
+      await get_mac_app_pathLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -173,7 +171,7 @@ describe('get_macos_app_path plugin', () => {
         arch: 'arm64',
       };
 
-      await get_macos_app_pathLogic(args, mockExecutor);
+      await get_mac_app_pathLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -216,7 +214,7 @@ describe('get_macos_app_path plugin', () => {
         arch: 'x86_64',
       };
 
-      await get_macos_app_pathLogic(args, mockExecutor);
+      await get_mac_app_pathLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -260,7 +258,7 @@ describe('get_macos_app_path plugin', () => {
         extraArgs: ['--verbose'],
       };
 
-      await get_macos_app_pathLogic(args, mockExecutor);
+      await get_mac_app_pathLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -303,7 +301,7 @@ describe('get_macos_app_path plugin', () => {
         arch: 'arm64',
       };
 
-      await get_macos_app_pathLogic(args, mockExecutor);
+      await get_mac_app_pathLogic(args, mockExecutor);
 
       // Verify command generation with manual call tracking
       expect(calls).toHaveLength(1);
@@ -329,7 +327,7 @@ describe('get_macos_app_path plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return Zod validation error for missing scheme', async () => {
-      const result = await getMacosAppPath.handler({
+      const result = await getMacAppPath.handler({
         workspacePath: '/path/to/MyProject.xcworkspace',
       });
 
@@ -353,7 +351,7 @@ FULL_PRODUCT_NAME = MyApp.app
         `,
       });
 
-      const result = await get_macos_app_pathLogic(
+      const result = await get_mac_app_pathLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -384,7 +382,7 @@ FULL_PRODUCT_NAME = MyApp.app
         `,
       });
 
-      const result = await get_macos_app_pathLogic(
+      const result = await get_mac_app_pathLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
@@ -412,7 +410,7 @@ FULL_PRODUCT_NAME = MyApp.app
         error: 'error: No such scheme',
       });
 
-      const result = await get_macos_app_pathLogic(
+      const result = await get_mac_app_pathLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -437,7 +435,7 @@ FULL_PRODUCT_NAME = MyApp.app
         output: 'OTHER_SETTING = value',
       });
 
-      const result = await get_macos_app_pathLogic(
+      const result = await get_mac_app_pathLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -461,7 +459,7 @@ FULL_PRODUCT_NAME = MyApp.app
         throw new Error('Network error');
       };
 
-      const result = await get_macos_app_pathLogic(
+      const result = await get_mac_app_pathLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',

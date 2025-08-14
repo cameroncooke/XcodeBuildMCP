@@ -102,9 +102,8 @@ describe('get_mac_bundle_id plugin', () => {
           {
             type: 'text',
             text: `Next Steps:
-- Launch the app: launch_mac_app({ appPath: "/Applications/MyApp.app" })
-- Build from workspace: macos_build_workspace({ workspacePath: "PATH_TO_WORKSPACE", scheme: "SCHEME_NAME" })
-- Build from project: macos_build_project({ projectPath: "PATH_TO_PROJECT", scheme: "SCHEME_NAME" })`,
+- Launch: launch_mac_app({ appPath: "/Applications/MyApp.app" })
+- Build again: build_macos({ scheme: "SCHEME_NAME" })`,
           },
         ],
         isError: false,
@@ -138,9 +137,8 @@ describe('get_mac_bundle_id plugin', () => {
           {
             type: 'text',
             text: `Next Steps:
-- Launch the app: launch_mac_app({ appPath: "/Applications/MyApp.app" })
-- Build from workspace: macos_build_workspace({ workspacePath: "PATH_TO_WORKSPACE", scheme: "SCHEME_NAME" })
-- Build from project: macos_build_project({ projectPath: "PATH_TO_PROJECT", scheme: "SCHEME_NAME" })`,
+- Launch: launch_mac_app({ appPath: "/Applications/MyApp.app" })
+- Build again: build_macos({ scheme: "SCHEME_NAME" })`,
           },
         ],
         isError: false,

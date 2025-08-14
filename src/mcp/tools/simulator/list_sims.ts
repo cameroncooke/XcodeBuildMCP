@@ -115,11 +115,11 @@ export async function list_simsLogic(
 
       responseText += 'Next Steps:\n';
       responseText += "1. Boot a simulator: boot_sim({ simulatorUuid: 'UUID_FROM_ABOVE' })\n";
-      responseText += '2. Open the simulator UI: open_sim({ enabled: true })\n';
+      responseText += '2. Open the simulator UI: open_sim({})\n';
       responseText +=
-        "3. Build for simulator: build_ios_sim_id_proj({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })\n";
+        "3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })\n";
       responseText +=
-        "4. Get app path: get_sim_app_path_id_proj({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })";
+        "4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })";
 
       return {
         content: [

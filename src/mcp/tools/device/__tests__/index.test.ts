@@ -82,6 +82,7 @@ describe('device-project workflow metadata', () => {
 
     it('should contain expected project type values', () => {
       expect(workflow.projectTypes).toContain('project');
+      expect(workflow.projectTypes).toContain('workspace');
     });
 
     it('should contain expected capability values', () => {

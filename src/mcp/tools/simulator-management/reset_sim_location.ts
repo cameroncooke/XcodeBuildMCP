@@ -1,30 +1,29 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
-import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.ts';
+import { log } from '../../../utils/index.ts';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
-const setSimulatorLocationSchema = z.object({
+const resetSimulatorLocationSchema = z.object({
   simulatorUuid: z
     .string()
     .describe('UUID of the simulator to use (obtained from list_simulators)'),
-  latitude: z.number().describe('The latitude for the custom location.'),
-  longitude: z.number().describe('The longitude for the custom location.'),
 });
 
 // Use z.infer for type safety
-type SetSimulatorLocationParams = z.infer<typeof setSimulatorLocationSchema>;
+type ResetSimulatorLocationParams = z.infer<typeof resetSimulatorLocationSchema>;
 
 // Helper function to execute simctl commands and handle responses
 async function executeSimctlCommandAndRespond(
-  params: SetSimulatorLocationParams,
+  params: ResetSimulatorLocationParams,
   simctlSubCommand: string[],
   operationDescriptionForXcodeCommand: string,
   successMessage: string,
   failureMessagePrefix: string,
   operationLogContext: string,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
-  extraValidation?: () => ToolResponse | null,
+  executor: CommandExecutor,
+  extraValidation?: () => ToolResponse | undefined,
 ): Promise<ToolResponse> {
   if (extraValidation) {
     const validationResult = extraValidation();
@@ -68,58 +67,30 @@ async function executeSimctlCommandAndRespond(
   }
 }
 
-export async function set_simulator_locationLogic(
-  params: SetSimulatorLocationParams,
+export async function reset_sim_locationLogic(
+  params: ResetSimulatorLocationParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  const extraValidation = (): ToolResponse | null => {
-    if (params.latitude < -90 || params.latitude > 90) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: 'Latitude must be between -90 and 90 degrees',
-          },
-        ],
-      };
-    }
-    if (params.longitude < -180 || params.longitude > 180) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: 'Longitude must be between -180 and 180 degrees',
-          },
-        ],
-      };
-    }
-    return null;
-  };
-
-  log(
-    'info',
-    `Setting simulator ${params.simulatorUuid} location to ${params.latitude},${params.longitude}`,
-  );
+  log('info', `Resetting simulator ${params.simulatorUuid} location`);
 
   return executeSimctlCommandAndRespond(
     params,
-    ['location', params.simulatorUuid, 'set', `${params.latitude},${params.longitude}`],
-    'Set Simulator Location',
-    `Successfully set simulator ${params.simulatorUuid} location to ${params.latitude},${params.longitude}`,
-    'Failed to set simulator location',
-    'set simulator location',
+    ['location', params.simulatorUuid, 'clear'],
+    'Reset Simulator Location',
+    `Successfully reset simulator ${params.simulatorUuid} location.`,
+    'Failed to reset simulator location',
+    'reset simulator location',
     executor,
-    extraValidation,
   );
 }
 
 export default {
-  name: 'set_simulator_location',
-  description: 'Sets a custom GPS location for the simulator.',
-  schema: setSimulatorLocationSchema.shape, // MCP SDK compatibility
+  name: 'reset_sim_location',
+  description: "Resets the simulator's location to default.",
+  schema: resetSimulatorLocationSchema.shape, // MCP SDK compatibility
   handler: createTypedTool(
-    setSimulatorLocationSchema,
-    set_simulator_locationLogic,
+    resetSimulatorLocationSchema,
+    reset_sim_locationLogic,
     getDefaultCommandExecutor,
   ),
 };

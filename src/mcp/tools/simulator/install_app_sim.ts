@@ -73,7 +73,7 @@ export async function install_app_simLogic(
         {
           type: 'text',
           text: `Next Steps:
-1. Open the Simulator app: open_sim({ enabled: true })
+1. Open the Simulator app: open_sim({})
 2. Launch the app: launch_app_sim({ simulatorUuid: "${params.simulatorUuid}"${bundleId ? `, bundleId: "${bundleId}"` : ', bundleId: "YOUR_APP_BUNDLE_ID"'} })`,
         },
       ],

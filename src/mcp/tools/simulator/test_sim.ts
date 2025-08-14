@@ -69,7 +69,7 @@ const testSimulatorSchema = baseSchema
 // Use z.infer for type safety
 type TestSimulatorParams = z.infer<typeof testSimulatorSchema>;
 
-export async function test_simulatorLogic(
+export async function test_simLogic(
   params: TestSimulatorParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
@@ -100,15 +100,15 @@ export async function test_simulatorLogic(
 }
 
 export default {
-  name: 'test_simulator',
+  name: 'test_sim',
   description:
-    'Runs tests on a simulator by UUID or name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace). IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: test_simulator({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", simulatorName: "iPhone 16" })',
+    'Runs tests on a simulator by UUID or name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace). IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: test_sim({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", simulatorName: "iPhone 16" })',
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
     try {
       // Runtime validation with XOR constraints
       const validatedParams = testSimulatorSchema.parse(args);
-      return await test_simulatorLogic(validatedParams, getDefaultCommandExecutor());
+      return await test_simLogic(validatedParams, getDefaultCommandExecutor());
     } catch (error) {
       if (error instanceof z.ZodError) {
         // Format validation errors in a user-friendly way

@@ -1,28 +1,26 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import resetSimulatorLocationPlugin, {
-  reset_simulator_locationLogic,
-} from '../reset_simulator_location.ts';
+import resetSimLocationPlugin, { reset_sim_locationLogic } from '../reset_sim_location.ts';
 import { createMockExecutor } from '../../../../utils/command.js';
 
-describe('reset_simulator_location plugin', () => {
+describe('reset_sim_location plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
-      expect(resetSimulatorLocationPlugin.name).toBe('reset_simulator_location');
+      expect(resetSimLocationPlugin.name).toBe('reset_sim_location');
     });
 
     it('should have correct description field', () => {
-      expect(resetSimulatorLocationPlugin.description).toBe(
+      expect(resetSimLocationPlugin.description).toBe(
         "Resets the simulator's location to default.",
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof resetSimulatorLocationPlugin.handler).toBe('function');
+      expect(typeof resetSimLocationPlugin.handler).toBe('function');
     });
 
     it('should have correct schema validation', () => {
-      const schema = z.object(resetSimulatorLocationPlugin.schema);
+      const schema = z.object(resetSimLocationPlugin.schema);
 
       expect(
         schema.safeParse({
@@ -47,7 +45,7 @@ describe('reset_simulator_location plugin', () => {
         output: 'Location reset successfully',
       });
 
-      const result = await reset_simulator_locationLogic(
+      const result = await reset_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },
@@ -70,7 +68,7 @@ describe('reset_simulator_location plugin', () => {
         error: 'Command failed',
       });
 
-      const result = await reset_simulator_locationLogic(
+      const result = await reset_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },
@@ -90,7 +88,7 @@ describe('reset_simulator_location plugin', () => {
     it('should handle exception during execution', async () => {
       const mockExecutor = createMockExecutor(new Error('Network error'));
 
-      const result = await reset_simulator_locationLogic(
+      const result = await reset_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },
@@ -123,7 +121,7 @@ describe('reset_simulator_location plugin', () => {
         return mockExecutor(command, logPrefix);
       };
 
-      await reset_simulator_locationLogic(
+      await reset_sim_locationLogic(
         {
           simulatorUuid: 'test-uuid-123',
         },

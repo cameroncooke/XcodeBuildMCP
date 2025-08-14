@@ -147,8 +147,8 @@ function isReExportFile(filePath: string): boolean {
 
   // Remove comments and empty lines, then check for re-export pattern
   // First remove multi-line comments
-  let contentWithoutBlockComments = content.replace(/\/\*[\s\S]*?\*\//g, '');
-  
+  const contentWithoutBlockComments = content.replace(/\/\*[\s\S]*?\*\//g, '');
+
   const cleanedLines = contentWithoutBlockComments
     .split('\n')
     .map((line) => {
