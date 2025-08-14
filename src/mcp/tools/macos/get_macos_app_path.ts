@@ -81,22 +81,19 @@ export async function get_macos_app_pathLogic(
     command.push('-scheme', params.scheme);
     command.push('-configuration', configuration);
 
-    // Add optional derived data path (only for projects)
-    if (params.derivedDataPath && params.projectPath) {
+    // Add optional derived data path
+    if (params.derivedDataPath) {
       command.push('-derivedDataPath', params.derivedDataPath);
     }
 
-    // Handle destination for macOS (only for workspaces)
-    if (params.workspacePath) {
-      let destinationString = 'platform=macOS';
-      if (params.arch) {
-        destinationString += `,arch=${params.arch}`;
-      }
+    // Handle destination for macOS when arch is specified
+    if (params.arch) {
+      const destinationString = `platform=macOS,arch=${params.arch}`;
       command.push('-destination', destinationString);
     }
 
-    // Add extra arguments if provided (only for projects)
-    if (params.extraArgs && Array.isArray(params.extraArgs) && params.projectPath) {
+    // Add extra arguments if provided
+    if (params.extraArgs && Array.isArray(params.extraArgs)) {
       command.push(...params.extraArgs);
     }
 

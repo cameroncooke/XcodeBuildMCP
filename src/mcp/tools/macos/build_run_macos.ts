@@ -52,7 +52,7 @@ export type BuildRunMacOSParams = z.infer<typeof buildRunMacOSSchema>;
  */
 async function _handleMacOSBuildLogic(
   params: BuildRunMacOSParams,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
+  executor: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', `Starting macOS build for scheme ${params.scheme} (internal)`);
 
@@ -66,7 +66,7 @@ async function _handleMacOSBuildLogic(
       arch: params.arch,
       logPrefix: 'macOS Build',
     },
-    params.preferXcodebuild,
+    params.preferXcodebuild ?? false,
     'build',
     executor,
   );
@@ -74,8 +74,8 @@ async function _handleMacOSBuildLogic(
 
 async function _getAppPathFromBuildSettings(
   params: BuildRunMacOSParams,
-  executor: CommandExecutor = getDefaultCommandExecutor(),
-): Promise<{ success: boolean; appPath?: string; error?: string }> {
+  executor: CommandExecutor,
+): Promise<{ success: true; appPath: string } | { success: false; error: string }> {
   try {
     // Create the command array for xcodebuild
     const command = ['xcodebuild', '-showBuildSettings'];
@@ -163,11 +163,11 @@ export async function buildRunMacOSLogic(
       return response;
     }
 
-    const appPath = appPathResult.appPath; // We know this is a valid string now
+    const appPath = appPathResult.appPath; // success === true narrows to string
     log('info', `App path determined as: ${appPath}`);
 
     // 4. Launch the app using CommandExecutor
-    const launchResult = await executor(['open', appPath!], 'Launch macOS App', true);
+    const launchResult = await executor(['open', appPath], 'Launch macOS App', true);
 
     if (!launchResult.success) {
       log('error', `Build succeeded, but failed to launch app ${appPath}: ${launchResult.error}`);
@@ -211,14 +211,14 @@ export default {
   schema: baseSchemaObject.shape, // MCP SDK compatibility
   handler: createTypedTool<BuildRunMacOSParams>(
     buildRunMacOSSchema as z.ZodType<BuildRunMacOSParams>,
-    (params: BuildRunMacOSParams) =>
+    (params: BuildRunMacOSParams, executor) =>
       buildRunMacOSLogic(
         {
           ...params,
           configuration: params.configuration ?? 'Debug',
           preferXcodebuild: params.preferXcodebuild ?? false,
         },
-        getDefaultCommandExecutor(),
+        executor,
       ),
     getDefaultCommandExecutor,
   ),

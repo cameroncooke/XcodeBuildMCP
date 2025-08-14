@@ -69,6 +69,9 @@ async function parseXcresultBundle(
     if (!result.success) {
       throw new Error(result.error ?? 'Failed to execute xcresulttool');
     }
+    if (!result.output || result.output.trim().length === 0) {
+      throw new Error('xcresulttool returned no output');
+    }
 
     // Parse JSON response and format as human-readable
     const summaryData = JSON.parse(result.output) as Record<string, unknown>;
@@ -163,9 +166,19 @@ export async function testDeviceLogic(
     `Starting test run for scheme ${params.scheme} on platform ${params.platform ?? 'iOS'} (internal)`,
   );
 
+  let tempDir: string | undefined;
+  const cleanup = async (): Promise<void> => {
+    if (!tempDir) return;
+    try {
+      await fileSystemExecutor.rm(tempDir, { recursive: true, force: true });
+    } catch (cleanupError) {
+      log('warn', `Failed to clean up temporary directory: ${cleanupError}`);
+    }
+  };
+
   try {
     // Create temporary directory for xcresult bundle
-    const tempDir = await fileSystemExecutor.mkdtemp(
+    tempDir = await fileSystemExecutor.mkdtemp(
       join(fileSystemExecutor.tmpdir(), 'xcodebuild-test-'),
     );
     const resultBundlePath = join(tempDir, 'TestResults.xcresult');
@@ -214,7 +227,7 @@ export async function testDeviceLogic(
       log('info', 'Successfully parsed xcresult bundle');
 
       // Clean up temporary directory
-      await fileSystemExecutor.rm(tempDir, { recursive: true, force: true });
+      await cleanup();
 
       // Return combined result - preserve isError from testResult (test failures should be marked as errors)
       return {
@@ -231,12 +244,7 @@ export async function testDeviceLogic(
       // If parsing fails, return original test result
       log('warn', `Failed to parse xcresult bundle: ${parseError}`);
 
-      // Clean up temporary directory even if parsing fails
-      try {
-        await fileSystemExecutor.rm(tempDir, { recursive: true, force: true });
-      } catch (cleanupError) {
-        log('warn', `Failed to clean up temporary directory: ${cleanupError}`);
-      }
+      await cleanup();
 
       return testResult;
     }
@@ -244,6 +252,8 @@ export async function testDeviceLogic(
     const errorMessage = error instanceof Error ? error.message : String(error);
     log('error', `Error during test run: ${errorMessage}`);
     return createTextResponse(`Error during test run: ${errorMessage}`, true);
+  } finally {
+    await cleanup();
   }
 }
 
@@ -254,13 +264,13 @@ export default {
   schema: baseSchemaObject.shape,
   handler: createTypedTool<TestDeviceParams>(
     testDeviceSchema as z.ZodType<TestDeviceParams>,
-    (params: TestDeviceParams) => {
+    (params: TestDeviceParams, executor: CommandExecutor) => {
       return testDeviceLogic(
         {
           ...params,
           platform: params.platform ?? 'iOS',
         },
-        getDefaultCommandExecutor(),
+        executor,
         getDefaultFileSystemExecutor(),
       );
     },

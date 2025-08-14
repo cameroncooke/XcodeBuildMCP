@@ -80,7 +80,7 @@ export async function listSchemesLogic(
       // Note: After Phase 2, these will be unified tool names too
       nextStepsText = `Next Steps:
 1. Build the app: build_macos({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })
-   or for iOS: build_simulator_name({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
+   or for iOS: build_simulator({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
 2. Show build settings: show_build_settings({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })`;
     }
 

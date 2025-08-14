@@ -249,7 +249,7 @@ describe('scaffold_macos_project plugin', () => {
                 nextSteps: [
                   'Important: Before working on the project make sure to read the README.md file in the workspace root directory.',
                   'Build for macOS: build_macos({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject" })',
-                  'Run and run on macOS: build_run_mac_ws --workspace-path "/tmp/test-projects/MyProject.xcworkspace" --scheme "MyProject"',
+                  'Build & Run on macOS: build_run_macos({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject" })',
                 ],
               },
               null,
@@ -289,7 +289,7 @@ describe('scaffold_macos_project plugin', () => {
                 nextSteps: [
                   'Important: Before working on the project make sure to read the README.md file in the workspace root directory.',
                   'Build for macOS: build_macos({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject" })',
-                  'Run and run on macOS: build_run_mac_ws --workspace-path "/tmp/test-projects/MyProject.xcworkspace" --scheme "MyProject"',
+                  'Build & Run on macOS: build_run_macos({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject" })',
                 ],
               },
               null,

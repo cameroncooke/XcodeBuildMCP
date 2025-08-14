@@ -365,7 +365,7 @@ export async function scaffold_macos_projectLogic(
       nextSteps: [
         `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
         `Build for macOS: build_macos({ workspacePath: "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace", scheme: "${params.customizeNames ? params.projectName : 'MyProject'}" })`,
-        `Run and run on macOS: build_run_mac_ws --workspace-path "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace" --scheme "${params.customizeNames ? params.projectName : 'MyProject'}"`,
+        `Build & Run on macOS: build_run_macos({ workspacePath: "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace", scheme: "${params.customizeNames ? params.projectName : 'MyProject'}" })`,
       ],
     };
 
