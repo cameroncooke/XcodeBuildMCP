@@ -107,8 +107,6 @@ describe('get_macos_app_path plugin', () => {
           'MyScheme',
           '-configuration',
           'Debug',
-          '-destination',
-          'platform=macOS',
         ],
         'Get App Path',
         true,

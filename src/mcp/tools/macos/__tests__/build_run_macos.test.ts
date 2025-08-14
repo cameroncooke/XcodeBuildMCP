@@ -198,7 +198,7 @@ describe('build_run_macos', () => {
           },
           {
             type: 'text',
-            text: 'Next Steps:\n1. Get App Path: get_macos_app_path_project\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+            text: 'Next Steps:\n1. Get App Path: get_macos_app_path\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
           },
           {
             type: 'text',
@@ -294,7 +294,7 @@ describe('build_run_macos', () => {
           },
           {
             type: 'text',
-            text: 'Next Steps:\n1. Get App Path: get_macos_app_path_workspace\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+            text: 'Next Steps:\n1. Get App Path: get_macos_app_path\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
           },
           {
             type: 'text',
@@ -375,7 +375,7 @@ describe('build_run_macos', () => {
           },
           {
             type: 'text',
-            text: 'Next Steps:\n1. Get App Path: get_macos_app_path_project\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+            text: 'Next Steps:\n1. Get App Path: get_macos_app_path\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
           },
           {
             type: 'text',
@@ -438,7 +438,7 @@ describe('build_run_macos', () => {
           },
           {
             type: 'text',
-            text: 'Next Steps:\n1. Get App Path: get_macos_app_path_project\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
+            text: 'Next Steps:\n1. Get App Path: get_macos_app_path\n2. Get Bundle ID: get_macos_bundle_id\n3. Launch App: launch_macos_app',
           },
           {
             type: 'text',

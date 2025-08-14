@@ -298,12 +298,12 @@ Future builds will use the generated Makefile for improved performance.
     if (buildAction === 'build') {
       if (platformOptions.platform === XcodePlatform.macOS) {
         additionalInfo = `Next Steps:
-1. Get App Path: get_macos_app_path_${params.workspacePath ? 'workspace' : 'project'}
+1. Get App Path: get_macos_app_path
 2. Get Bundle ID: get_macos_bundle_id
 3. Launch App: launch_macos_app`;
       } else if (platformOptions.platform === XcodePlatform.iOS) {
         additionalInfo = `Next Steps:
-1. Get App Path: get_ios_device_app_path_${params.workspacePath ? 'workspace' : 'project'}
+1. Get App Path: get_device_app_path
 2. Get Bundle ID: get_ios_bundle_id`;
       } else if (isSimulatorPlatform) {
         const idOrName = platformOptions.simulatorId ? 'id' : 'name';

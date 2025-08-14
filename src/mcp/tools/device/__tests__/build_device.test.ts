@@ -209,7 +209,7 @@ describe('build_device plugin', () => {
           },
           {
             type: 'text',
-            text: 'Next Steps:\n1. Get App Path: get_ios_device_app_path_project\n2. Get Bundle ID: get_ios_bundle_id',
+            text: 'Next Steps:\n1. Get App Path: get_device_app_path\n2. Get Bundle ID: get_ios_bundle_id',
           },
         ],
       });
