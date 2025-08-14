@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse, XcodePlatform } from '../../../types/common.js';
 import { log } from '../../../utils/index.js';
 import { createTextResponse } from '../../../utils/index.js';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
@@ -42,18 +42,6 @@ const getDeviceAppPathSchema = baseSchema
 // Use z.infer for type safety
 type GetDeviceAppPathParams = z.infer<typeof getDeviceAppPathSchema>;
 
-const XcodePlatform = {
-  iOS: 'iOS',
-  watchOS: 'watchOS',
-  tvOS: 'tvOS',
-  visionOS: 'visionOS',
-  iOSSimulator: 'iOS Simulator',
-  watchOSSimulator: 'watchOS Simulator',
-  tvOSSimulator: 'tvOS Simulator',
-  visionOSSimulator: 'visionOS Simulator',
-  macOS: 'macOS',
-};
-
 export async function get_device_app_pathLogic(
   params: GetDeviceAppPathParams,
   executor: CommandExecutor,
@@ -81,7 +69,7 @@ export async function get_device_app_pathLogic(
       command.push('-workspace', params.workspacePath);
     } else {
       // This should never happen due to schema validation
-      throw new Error('Neither projectPath nor workspacePath provided');
+      throw new Error('Either projectPath or workspacePath is required.');
     }
 
     // Add the scheme and configuration
@@ -117,8 +105,8 @@ export async function get_device_app_pathLogic(
     }
 
     const buildSettingsOutput = result.output;
-    const builtProductsDirMatch = buildSettingsOutput.match(/BUILT_PRODUCTS_DIR = (.+)$/m);
-    const fullProductNameMatch = buildSettingsOutput.match(/FULL_PRODUCT_NAME = (.+)$/m);
+    const builtProductsDirMatch = buildSettingsOutput.match(/^\s*BUILT_PRODUCTS_DIR\s*=\s*(.+)$/m);
+    const fullProductNameMatch = buildSettingsOutput.match(/^\s*FULL_PRODUCT_NAME\s*=\s*(.+)$/m);
 
     if (!builtProductsDirMatch || !fullProductNameMatch) {
       return createTextResponse(

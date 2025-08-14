@@ -74,7 +74,7 @@ export async function get_macos_app_pathLogic(
       command.push('-workspace', params.workspacePath);
     } else {
       // This should never happen due to schema validation
-      throw new Error('Neither projectPath nor workspacePath provided');
+      throw new Error('Either projectPath or workspacePath is required.');
     }
 
     // Add the scheme and configuration
@@ -125,8 +125,8 @@ export async function get_macos_app_pathLogic(
     }
 
     const buildSettingsOutput = result.output;
-    const builtProductsDirMatch = buildSettingsOutput.match(/BUILT_PRODUCTS_DIR = (.+)$/m);
-    const fullProductNameMatch = buildSettingsOutput.match(/FULL_PRODUCT_NAME = (.+)$/m);
+    const builtProductsDirMatch = buildSettingsOutput.match(/^\s*BUILT_PRODUCTS_DIR\s*=\s*(.+)$/m);
+    const fullProductNameMatch = buildSettingsOutput.match(/^\s*FULL_PRODUCT_NAME\s*=\s*(.+)$/m);
 
     if (!builtProductsDirMatch || !fullProductNameMatch) {
       return {

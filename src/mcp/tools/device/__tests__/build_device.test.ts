@@ -135,6 +135,58 @@ describe('build_device plugin', () => {
       expect(result.content[0].text).toContain('✅ iOS Device Build build succeeded');
     });
 
+    it('should verify workspace command generation with mock executor', async () => {
+      const commandCalls: Array<{
+        args: string[];
+        logPrefix: string;
+        silent: boolean;
+        timeout: number | undefined;
+      }> = [];
+
+      const stubExecutor = async (
+        args: string[],
+        logPrefix: string,
+        silent: boolean,
+        timeout?: number,
+      ) => {
+        commandCalls.push({ args, logPrefix, silent, timeout });
+        return {
+          success: true,
+          output: 'Build succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await buildDeviceLogic(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+        },
+        stubExecutor,
+      );
+
+      expect(commandCalls).toHaveLength(1);
+      expect(commandCalls[0]).toEqual({
+        args: [
+          'xcodebuild',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'generic/platform=iOS',
+          'build',
+        ],
+        logPrefix: 'iOS Device Build',
+        silent: true,
+        timeout: undefined,
+      });
+    });
+
     it('should verify command generation with mock executor', async () => {
       const commandCalls: Array<{
         args: string[];
