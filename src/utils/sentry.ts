@@ -30,9 +30,7 @@ function getXcodeInfo(): { version: string; path: string; selectedXcode: string;
 
 function getEnvironmentVariables(): Record<string, string> {
   const relevantVars = [
-    'XCODEBUILDMCP_DEBUG',
     'INCREMENTAL_BUILDS_ENABLED',
-    'XCODEBUILDMCP_DYNAMIC_TOOLS',
     'PATH',
     'DEVELOPER_DIR',
     'HOME',
@@ -45,6 +43,12 @@ function getEnvironmentVariables(): Record<string, string> {
   const envVars: Record<string, string> = {};
   relevantVars.forEach((varName) => {
     envVars[varName] = process.env[varName] ?? '';
+  });
+
+  Object.keys(process.env).forEach((key) => {
+    if (key.startsWith('XCODEBUILDMCP_')) {
+      envVars[key] = process.env[key] ?? '';
+    }
   });
 
   return envVars;
@@ -78,7 +82,9 @@ function checkBinaryAvailability(binary: string): { available: boolean; version?
 }
 
 Sentry.init({
-  dsn: 'https://798607831167c7b9fe2f2912f5d3c665@o4509258288332800.ingest.de.sentry.io/4509258293837904',
+  dsn:
+    process.env.SENTRY_DSN ??
+    'https://798607831167c7b9fe2f2912f5d3c665@o4509258288332800.ingest.de.sentry.io/4509258293837904',
 
   // Setting this option to true will send default PII data to Sentry
   // For example, automatic IP address collection on events
@@ -88,40 +94,30 @@ Sentry.init({
   release: `xcodebuildmcp@${version}`,
 
   // Set environment based on NODE_ENV
-  environment: process.env.NODE_ENV ?? 'development',
+  environment: process.env.NODE_ENV ?? 'production',
 
   // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring
   // We recommend adjusting this value in production
   tracesSampleRate: 1.0,
 });
 
+const axeAvailable = checkBinaryAvailability('axe');
+const miseAvailable = checkBinaryAvailability('mise');
+const envVars = getEnvironmentVariables();
+const xcodeInfo = getXcodeInfo();
+
 // Add additional context that might be helpful for debugging
 const tags: Record<string, string> = {
   nodeVersion: process.version,
   platform: process.platform,
   arch: process.arch,
+  axeAvailable: axeAvailable.available ? 'true' : 'false',
+  axeVersion: axeAvailable.version ?? 'Unknown',
+  miseAvailable: miseAvailable.available ? 'true' : 'false',
+  miseVersion: miseAvailable.version ?? 'Unknown',
+  ...Object.fromEntries(Object.entries(envVars).map(([k, v]) => [`env_${k}`, v ?? ''])),
+  xcodeVersion: xcodeInfo.version ?? 'Unknown',
+  xcodePath: xcodeInfo.path ?? 'Unknown',
 };
-
-// Only add Xcode Info if it's available
-const xcodeInfo = getXcodeInfo();
-if (!xcodeInfo.error) {
-  tags.xcodeVersion = xcodeInfo.version;
-  tags.xcodePath = xcodeInfo.path;
-} else {
-  tags.xcodeVersion = 'Unknown';
-  tags.xcodePath = 'Unknown';
-}
-
-const envVars = getEnvironmentVariables();
-tags.env_XCODEBUILDMCP_DEBUG = envVars['XCODEBUILDMCP_DEBUG'] ?? 'false';
-tags.env_XCODEMAKE_ENABLED = envVars['INCREMENTAL_BUILDS_ENABLED'] ?? 'false';
-
-const miseAvailable = checkBinaryAvailability('mise');
-tags.miseAvailable = miseAvailable.available ? 'true' : 'false';
-tags.miseVersion = miseAvailable.version ?? 'Unknown';
-
-const axeAvailable = checkBinaryAvailability('axe');
-tags.axeAvailable = axeAvailable.available ? 'true' : 'false';
-tags.axeVersion = axeAvailable.version ?? 'Unknown';
 
 Sentry.setTags(tags);
