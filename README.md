@@ -261,6 +261,44 @@ Example MCP client configuration:
 }
 ```
 
+### Selective Workflow Loading (Static Mode)
+
+For clients that don't support MCP Sampling but still want to reduce context window usage, you can selectively load only specific workflows using the `XCODEBUILDMCP_ENABLED_WORKFLOWS` environment variable:
+
+```json
+{
+  "mcpServers": {
+    "XcodeBuildMCP": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "xcodebuildmcp@latest"
+      ],
+      "env": {
+        "XCODEBUILDMCP_ENABLED_WORKFLOWS": "simulator,device,project-discovery"
+      }        
+    }
+  }
+}
+```
+
+**Available Workflows:**
+- `device` (14 tools) - iOS Device Development
+- `simulator` (18 tools) - iOS Simulator Development
+- `simulator-management` (7 tools) - Simulator Management
+- `swift-package` (6 tools) - Swift Package Manager
+- `project-discovery` (5 tools) - Project Discovery
+- `macos` (11 tools) - macOS Development
+- `ui-testing` (11 tools) - UI Testing & Automation
+- `logging` (4 tools) - Log Capture & Management
+- `project-scaffolding` (2 tools) - Project Scaffolding
+- `utilities` (1 tool) - Project Utilities
+- `doctor` (1 tool) - System Doctor
+- `discovery` (1 tool) - Dynamic Tool Discovery
+
+> [!NOTE]
+> The `XCODEBUILDMCP_ENABLED_WORKFLOWS` setting only works in Static Mode. If `XCODEBUILDMCP_DYNAMIC_TOOLS=true` is set, the selective workflow setting will be ignored.
+
 ### Usage Example
 
 Once enabled, AI agents automatically discover and load relevant tools based on context. For example, when you mention working on an iOS app or the agent detects iOS development tasks in your workspace, it will automatically use the `discover_tools` tool to load the appropriate simulator and project tools needed for your workflow.

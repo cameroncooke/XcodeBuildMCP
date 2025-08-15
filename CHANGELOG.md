@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+### Added
+- **Selective Workflow Loading**: New `XCODEBUILDMCP_ENABLED_WORKFLOWS` environment variable allows loading only specific workflow groups in static mode, reducing context window usage for clients that don't support MCP sampling
+
 ## [v1.11.2] - 2025-08-08
 - Fixed "registerTools is not a function" errors during package upgrades
 
