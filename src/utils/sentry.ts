@@ -93,8 +93,8 @@ Sentry.init({
   // Set release version to match application version
   release: `xcodebuildmcp@${version}`,
 
-  // Set environment based on NODE_ENV
-  environment: process.env.NODE_ENV ?? 'production',
+  // Always report under production environment
+  environment: 'production',
 
   // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring
   // We recommend adjusting this value in production
