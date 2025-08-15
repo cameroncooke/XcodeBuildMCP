@@ -34,7 +34,11 @@ import process from 'node:process';
 
 // Import resource management
 import { registerResources } from './core/resources.js';
-import { registerDiscoveryTools, registerAllToolsStatic } from './utils/tool-registry.js';
+import {
+  registerDiscoveryTools,
+  registerAllToolsStatic,
+  registerSelectedWorkflows,
+} from './utils/tool-registry.js';
 
 /**
  * Main function to start the server
@@ -72,9 +76,17 @@ async function main(): Promise<void> {
       await registerDiscoveryTools(server);
       log('info', '💡 Use discover_tools to enable additional workflows based on your task.');
     } else {
-      // EXPLICIT STATIC MODE: Load all tools immediately
-      log('info', '🚀 Initializing server in static tools mode...');
-      await registerAllToolsStatic(server);
+      // STATIC MODE: Check for selective workflows
+      const enabledWorkflows = process.env.XCODEBUILDMCP_ENABLED_WORKFLOWS;
+
+      if (enabledWorkflows) {
+        const workflowNames = enabledWorkflows.split(',');
+        log('info', `🚀 Initializing server with selected workflows: ${workflowNames.join(', ')}`);
+        await registerSelectedWorkflows(server, workflowNames);
+      } else {
+        log('info', '🚀 Initializing server in static tools mode...');
+        await registerAllToolsStatic(server);
+      }
     }
 
     await registerResources(server);

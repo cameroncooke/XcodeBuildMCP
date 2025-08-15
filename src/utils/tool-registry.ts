@@ -146,6 +146,44 @@ export async function registerDiscoveryTools(server: McpServer): Promise<void> {
 }
 
 /**
+ * Register selected workflows based on environment variable
+ */
+export async function registerSelectedWorkflows(
+  server: McpServer,
+  workflowNames: string[],
+): Promise<void> {
+  const { loadWorkflowGroups } = await import('../core/plugin-registry.js');
+  const workflowGroups = await loadWorkflowGroups();
+  const selectedTools = [];
+
+  for (const workflowName of workflowNames) {
+    const workflow = workflowGroups.get(workflowName.trim());
+    if (workflow) {
+      for (const tool of workflow.tools) {
+        selectedTools.push({
+          name: tool.name,
+          config: {
+            description: tool.description ?? '',
+            inputSchema: tool.schema,
+          },
+          callback: (args: unknown): Promise<ToolResponse> =>
+            tool.handler(args as Record<string, unknown>),
+        });
+      }
+    }
+  }
+
+  if (selectedTools.length > 0) {
+    server.registerTools(selectedTools);
+  }
+
+  log(
+    'info',
+    `✅ Registered ${selectedTools.length} tools from workflows: ${workflowNames.join(', ')}`,
+  );
+}
+
+/**
  * Register all tools (static mode) - no tracking needed since these won't be removed
  */
 export async function registerAllToolsStatic(server: McpServer): Promise<void> {
