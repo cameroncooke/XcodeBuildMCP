@@ -16,6 +16,7 @@ import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 import { StdioServerTransport } from '@camsoft/mcp-sdk/server/stdio.js';
 import { log } from '../utils/logger.js';
 import { version } from '../version.js';
+import * as Sentry from '@sentry/node';
 
 /**
  * Create and configure the MCP server
@@ -23,7 +24,7 @@ import { version } from '../version.js';
  */
 export function createServer(): McpServer {
   // Create server instance
-  const server = new McpServer(
+  const baseServer = new McpServer(
     {
       name: 'xcodebuildmcp',
       version,
@@ -42,8 +43,11 @@ export function createServer(): McpServer {
     },
   );
 
+  // Wrap server with Sentry for MCP instrumentation
+  const server = Sentry.wrapMcpServerWithSentry(baseServer);
+
   // Log server initialization
-  log('info', `Server initialized (version ${version})`);
+  log('info', `Server initialized with Sentry MCP instrumentation (version ${version})`);
 
   return server;
 }

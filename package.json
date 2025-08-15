@@ -60,7 +60,7 @@
   "dependencies": {
     "@camsoft/mcp-sdk": "^1.17.1",
     "@sentry/cli": "^2.43.1",
-    "@sentry/node": "^9.15.0",
+    "@sentry/node": "^10.5.0",
     "uuid": "^11.1.0",
     "zod": "^3.24.2"
   },
