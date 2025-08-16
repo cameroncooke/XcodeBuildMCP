@@ -6,7 +6,7 @@ yarn-error.log*
 
 # TypeScript build output
 dist/
-build/
+/build/
 *.tsbuildinfo
 
 # Auto-generated files
