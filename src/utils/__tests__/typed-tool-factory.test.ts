@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createTypedTool } from '../typed-tool-factory.js';
-import { createMockExecutor } from '../command.js';
+import { createMockExecutor } from '../../test-utils/mock-executors.js';
 import { ToolResponse } from '../../types/common.js';
 
 // Test schema and types

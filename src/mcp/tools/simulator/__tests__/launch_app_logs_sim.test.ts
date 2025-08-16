@@ -10,7 +10,7 @@ import launchAppLogsSim, {
   launch_app_logs_simLogic,
   LogCaptureFunction,
 } from '../launch_app_logs_sim.ts';
-import { createMockExecutor } from '../../../../utils/command.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
 
 describe('launch_app_logs_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {

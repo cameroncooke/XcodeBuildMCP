@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import plugin, { start_sim_log_capLogic } from '../start_sim_log_cap.ts';
-import { createMockExecutor } from '../../../../utils/command.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
 
 describe('start_sim_log_cap plugin', () => {
   // Reset any test state if needed

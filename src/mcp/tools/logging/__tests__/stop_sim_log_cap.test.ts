@@ -14,7 +14,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import stopSimLogCap, { stop_sim_log_capLogic } from '../stop_sim_log_cap.ts';
-import { createMockFileSystemExecutor } from '../../../../utils/command.js';
+import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.js';
 import { activeLogSessions } from '../../../../utils/log_capture.js';
 
 describe('stop_sim_log_cap plugin', () => {

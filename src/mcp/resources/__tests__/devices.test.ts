@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import devicesResource, { devicesResourceLogic } from '../devices.js';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor } from '../../../test-utils/mock-executors.js';
 
 describe('devices resource', () => {
   describe('Export Field Validation', () => {

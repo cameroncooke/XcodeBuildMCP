@@ -10,11 +10,8 @@ import { z } from 'zod';
 import { log } from '../../../utils/index.js';
 import { activeDeviceLogSessions } from './start_device_log_cap.js';
 import { ToolResponse } from '../../../types/common.js';
-import {
-  FileSystemExecutor,
-  getDefaultFileSystemExecutor,
-  getDefaultCommandExecutor,
-} from '../../../utils/command.js';
+import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
+import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 interface DeviceLogSession {

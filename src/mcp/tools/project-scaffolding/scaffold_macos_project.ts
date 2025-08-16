@@ -12,10 +12,10 @@ import { TemplateManager } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import {
   CommandExecutor,
-  FileSystemExecutor,
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
 } from '../../../utils/command.js';
+import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 
 // Common base schema for both iOS and macOS
 const BaseScaffoldSchema = z.object({

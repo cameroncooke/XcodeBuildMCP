@@ -9,7 +9,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
-} from '../../../../utils/command.js';
+} from '../../../../test-utils/mock-executors.js';
 import swiftPackageTest, { swift_package_testLogic } from '../swift_package_test.ts';
 
 describe('swift_package_test plugin', () => {

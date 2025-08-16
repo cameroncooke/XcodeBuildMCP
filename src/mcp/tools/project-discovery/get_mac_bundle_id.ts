@@ -9,10 +9,10 @@ import { log } from '../../../utils/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import {
   CommandExecutor,
-  FileSystemExecutor,
   getDefaultFileSystemExecutor,
   getDefaultCommandExecutor,
 } from '../../../utils/command.js';
+import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 /**

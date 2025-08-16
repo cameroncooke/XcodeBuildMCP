@@ -4,7 +4,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
-} from '../../../../utils/command.js';
+} from '../../../../test-utils/mock-executors.js';
 import plugin, { stop_app_simLogic } from '../stop_app_sim.js';
 
 describe('stop_app_sim plugin', () => {

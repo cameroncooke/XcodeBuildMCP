@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../../utils/command.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
 import buildMacOS, { buildMacOSLogic } from '../build_macos.js';
 
 describe('build_macos plugin', () => {

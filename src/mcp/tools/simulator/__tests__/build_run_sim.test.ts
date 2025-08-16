@@ -5,7 +5,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+} from '../../../../test-utils/mock-executors.js';
 import buildRunSim, { build_run_simLogic } from '../build_run_sim.js';
 
 describe('build_run_sim tool', () => {
