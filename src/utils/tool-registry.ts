@@ -1,7 +1,7 @@
 import { McpServer, RegisteredTool } from '@camsoft/mcp-sdk/server/mcp.js';
-import { loadPlugins } from '../core/plugin-registry.js';
-import { ToolResponse } from '../types/common.js';
-import { log } from './logger.js';
+import { loadPlugins } from '../core/plugin-registry.ts';
+import { ToolResponse } from '../types/common.ts';
+import { log } from './logger.ts';
 
 // Global registry to track registered tools for cleanup
 const toolRegistry = new Map<string, RegisteredTool>();

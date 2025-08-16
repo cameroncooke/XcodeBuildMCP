@@ -6,15 +6,15 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../../utils/logging/index.js';
-import { ToolResponse } from '../../../types/common.js';
+import { log } from '../../../utils/logging/index.ts';
+import { ToolResponse } from '../../../types/common.ts';
 import {
   CommandExecutor,
   getDefaultFileSystemExecutor,
   getDefaultCommandExecutor,
-} from '../../../utils/command.js';
+} from '../../../utils/command.ts';
 import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const getAppBundleIdSchema = z.object({

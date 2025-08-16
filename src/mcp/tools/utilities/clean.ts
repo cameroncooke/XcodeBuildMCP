@@ -6,13 +6,13 @@
  */
 
 import { z } from 'zod';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
-import type { CommandExecutor } from '../../../utils/execution/index.js';
-import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
-import { executeXcodeBuildCommand } from '../../../utils/build/index.js';
-import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.js';
-import { createErrorResponse } from '../../../utils/responses/index.js';
-import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import type { CommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
+import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.ts';
+import { createErrorResponse } from '../../../utils/responses/index.ts';
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, sharing common options
 const baseOptions = {

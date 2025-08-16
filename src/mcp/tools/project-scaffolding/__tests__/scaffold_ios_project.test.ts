@@ -13,7 +13,7 @@ import scaffoldIosProject, { scaffold_ios_projectLogic } from '../scaffold_ios_p
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
-} from '../../../../test-utils/mock-executors.js';
+} from '../../../../test-utils/mock-executors.ts';
 
 describe('scaffold_ios_project plugin', () => {
   let mockCommandExecutor: any;

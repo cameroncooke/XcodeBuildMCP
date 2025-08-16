@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import longPressPlugin, { long_pressLogic } from '../long_press.ts';
 
 describe('Long Press Plugin', () => {

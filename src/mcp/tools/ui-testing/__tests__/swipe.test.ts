@@ -4,8 +4,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.js';
-import { SystemError, DependencyError } from '../../../../utils/responses/index.js';
+import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
+import { SystemError, DependencyError } from '../../../../utils/responses/index.ts';
 
 // Import the plugin module to test
 import swipePlugin, { AxeHelpers, swipeLogic, SwipeParams } from '../swipe.ts';

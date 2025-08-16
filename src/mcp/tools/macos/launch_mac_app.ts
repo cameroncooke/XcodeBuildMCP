@@ -6,12 +6,12 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../../utils/logging/index.js';
-import { validateFileExists } from '../../../utils/validation/index.js';
-import { ToolResponse } from '../../../types/common.js';
-import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.js';
-import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+import { log } from '../../../utils/logging/index.ts';
+import { validateFileExists } from '../../../utils/validation/index.ts';
+import { ToolResponse } from '../../../types/common.ts';
+import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const launchMacAppSchema = z.object({

@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import touchPlugin, { touchLogic } from '../touch.ts';
 
 describe('Touch Plugin', () => {

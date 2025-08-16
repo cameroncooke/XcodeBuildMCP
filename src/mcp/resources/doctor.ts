@@ -5,7 +5,8 @@
  * This resource reuses the existing doctor tool logic to maintain consistency.
  */
 
-import { log, getDefaultCommandExecutor, CommandExecutor } from '../../utils/index.ts';
+import { log } from '../../utils/logging/index.ts';
+import { getDefaultCommandExecutor, CommandExecutor } from '../../utils/execution/index.ts';
 import { doctorLogic } from '../tools/doctor/doctor.ts';
 
 // Testable resource logic separated from MCP handler

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ToolResponse } from '../types/common.js';
+import { ToolResponse } from '../types/common.ts';
 
 export interface PluginMeta {
   readonly name: string; // Verb used by MCP

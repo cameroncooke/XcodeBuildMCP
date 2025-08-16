@@ -10,7 +10,7 @@ import swiftPackageStop, {
   createMockProcessManager,
   swift_package_stopLogic,
   type ProcessManager,
-} from '../swift_package_stop.js';
+} from '../swift_package_stop.ts';
 
 /**
  * Mock process implementation for testing

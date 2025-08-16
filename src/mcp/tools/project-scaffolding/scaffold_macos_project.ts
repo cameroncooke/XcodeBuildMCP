@@ -6,15 +6,15 @@
 
 import { z } from 'zod';
 import { join, dirname, basename } from 'path';
-import { log } from '../../../utils/logging/index.js';
-import { ValidationError } from '../../../utils/responses/index.js';
-import { TemplateManager } from '../../../utils/template/index.js';
-import { ToolResponse } from '../../../types/common.js';
+import { log } from '../../../utils/logging/index.ts';
+import { ValidationError } from '../../../utils/responses/index.ts';
+import { TemplateManager } from '../../../utils/template/index.ts';
+import { ToolResponse } from '../../../types/common.ts';
 import {
   CommandExecutor,
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
-} from '../../../utils/command.js';
+} from '../../../utils/command.ts';
 import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 
 // Common base schema for both iOS and macOS

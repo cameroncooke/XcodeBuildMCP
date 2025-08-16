@@ -3,7 +3,7 @@ import { z } from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
-} from '../../../../test-utils/mock-executors.js';
+} from '../../../../test-utils/mock-executors.ts';
 
 // Import the plugin and logic function
 import listSims, { list_simsLogic } from '../list_sims.ts';

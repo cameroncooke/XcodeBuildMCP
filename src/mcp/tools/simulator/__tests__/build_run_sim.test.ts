@@ -8,8 +8,8 @@ import { z } from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
-} from '../../../../test-utils/mock-executors.js';
-import buildRunSim, { build_run_simLogic } from '../build_run_sim.js';
+} from '../../../../test-utils/mock-executors.ts';
+import buildRunSim, { build_run_simLogic } from '../build_run_sim.ts';
 
 describe('build_run_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {

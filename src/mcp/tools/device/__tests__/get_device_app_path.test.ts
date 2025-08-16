@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import getDeviceAppPath, { get_device_app_pathLogic } from '../get_device_app_path.ts';
 
 describe('get_device_app_path plugin', () => {

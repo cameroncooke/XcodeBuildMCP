@@ -1,16 +1,16 @@
 import { z } from 'zod';
-import type { ToolResponse } from '../../../types/common.js';
-import { log } from '../../../utils/logging/index.js';
-import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.js';
-import type { CommandExecutor } from '../../../utils/execution/index.js';
-import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
+import type { ToolResponse } from '../../../types/common.ts';
+import { log } from '../../../utils/logging/index.ts';
+import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
+import type { CommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
   getBundledAxeEnvironment,
-} from '../../../utils/axe-helpers.js';
-import { DependencyError, AxeError, SystemError } from '../../../utils/errors.js';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+} from '../../../utils/axe-helpers.ts';
+import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 export interface AxeHelpers {
   getAxePath: () => string | null;

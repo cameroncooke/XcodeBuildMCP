@@ -7,17 +7,17 @@
 
 import { z } from 'zod';
 import { join } from 'path';
-import { ToolResponse, XcodePlatform } from '../../../types/common.js';
-import { log } from '../../../utils/logging/index.js';
-import { executeXcodeBuildCommand } from '../../../utils/build/index.js';
-import { createTextResponse } from '../../../utils/responses/index.js';
-import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.js';
+import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
+import { log } from '../../../utils/logging/index.ts';
+import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
+import { createTextResponse } from '../../../utils/responses/index.ts';
+import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
 import {
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
-} from '../../../utils/execution/index.js';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
-import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
+} from '../../../utils/execution/index.ts';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
 const baseSchemaObject = z.object({

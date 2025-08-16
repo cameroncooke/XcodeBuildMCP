@@ -59,10 +59,16 @@ export default [
       
       // Prevent barrel imports to maintain architectural improvements
       'no-restricted-imports': ['error', {
-        patterns: [{
-          group: ['**/utils/index.js', '../utils/index.js', '../../utils/index.js', '../../../utils/index.js'],
-          message: 'Barrel imports from utils/index.js are prohibited. Use focused facade imports instead (e.g., utils/logging/index.js, utils/execution/index.js).'
-        }]
+        patterns: [
+          {
+            group: ['**/utils/index.js', '../utils/index.js', '../../utils/index.js', '../../../utils/index.js', '**/utils/index.ts', '../utils/index.ts', '../../utils/index.ts', '../../../utils/index.ts'],
+            message: 'Barrel imports from utils/index are prohibited. Use focused facade imports instead (e.g., utils/logging/index.ts, utils/execution/index.ts).'
+          },
+          {
+            group: ['./**/*.js', '../**/*.js'],
+            message: 'Import TypeScript files with .ts extension, not .js. This ensures compatibility with native TypeScript runtimes like Bun and Deno. Change .js to .ts in your import path.'
+          }
+        ]
       }],
     },
   },

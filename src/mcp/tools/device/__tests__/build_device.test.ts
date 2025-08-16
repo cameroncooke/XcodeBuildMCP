@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import buildDevice, { buildDeviceLogic } from '../build_device.ts';
 
 describe('build_device plugin', () => {

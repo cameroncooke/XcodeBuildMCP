@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import keySequencePlugin, { key_sequenceLogic } from '../key_sequence.ts';
 
 describe('Key Sequence Plugin', () => {

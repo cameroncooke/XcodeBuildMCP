@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import stopAppDevice, { stop_app_deviceLogic } from '../stop_app_device.ts';
 
 describe('stop_app_device plugin', () => {

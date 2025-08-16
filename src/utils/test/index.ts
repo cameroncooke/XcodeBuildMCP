@@ -1,1 +1,1 @@
-export { handleTestLogic } from '../test-common.js';
+export { handleTestLogic } from '../test-common.ts';

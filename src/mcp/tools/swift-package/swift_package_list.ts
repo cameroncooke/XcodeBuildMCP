@@ -4,9 +4,9 @@
 // Import the shared activeProcesses map from swift_package_run
 // This maintains the same behavior as the original implementation
 import { z } from 'zod';
-import { ToolResponse, createTextContent } from '../../../types/common.js';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
-import { getDefaultCommandExecutor } from '../../../utils/command.js';
+import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { getDefaultCommandExecutor } from '../../../utils/command.ts';
 
 interface ProcessInfo {
   executableName?: string;

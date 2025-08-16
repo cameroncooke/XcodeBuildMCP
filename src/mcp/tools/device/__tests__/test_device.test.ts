@@ -9,8 +9,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
-} from '../../../../test-utils/mock-executors.js';
-import testDevice, { testDeviceLogic } from '../test_device.js';
+} from '../../../../test-utils/mock-executors.ts';
+import testDevice, { testDeviceLogic } from '../test_device.ts';
 
 describe('test_device plugin', () => {
   describe('Export Field Validation (Literal)', () => {

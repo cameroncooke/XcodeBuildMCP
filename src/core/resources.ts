@@ -13,9 +13,9 @@
 
 import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 import { ReadResourceResult } from '@camsoft/mcp-sdk/types.js';
-import { log } from '../utils/logging/index.js';
-import type { CommandExecutor } from '../utils/execution/index.js';
-import { RESOURCE_LOADERS } from './generated-resources.js';
+import { log } from '../utils/logging/index.ts';
+import type { CommandExecutor } from '../utils/execution/index.ts';
+import { RESOURCE_LOADERS } from './generated-resources.ts';
 
 /**
  * Resource metadata interface

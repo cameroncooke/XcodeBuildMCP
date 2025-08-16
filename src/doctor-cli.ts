@@ -7,9 +7,9 @@
  * to the console. It's designed to be run directly via npx or mise.
  */
 
-import { version } from './version.js';
-import { doctorLogic } from './mcp/tools/doctor/doctor.js';
-import { getDefaultCommandExecutor } from './utils/execution/index.js';
+import { version } from './version.ts';
+import { doctorLogic } from './mcp/tools/doctor/doctor.ts';
+import { getDefaultCommandExecutor } from './utils/execution/index.ts';
 
 async function runDoctor(): Promise<void> {
   try {

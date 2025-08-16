@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import describeUIPlugin, { describe_uiLogic } from '../describe_ui.ts';
 
 describe('Describe UI Plugin', () => {

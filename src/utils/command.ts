@@ -12,13 +12,13 @@
 import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { tmpdir as osTmpdir } from 'os';
-import { log } from './logger.js';
+import { log } from './logger.ts';
 import { FileSystemExecutor } from './FileSystemExecutor.ts';
 import { CommandExecutor, CommandResponse } from './CommandExecutor.ts';
 
 // Re-export types for backward compatibility
-export { CommandExecutor, CommandResponse } from './CommandExecutor.js';
-export { FileSystemExecutor } from './FileSystemExecutor.js';
+export { CommandExecutor, CommandResponse } from './CommandExecutor.ts';
+export { FileSystemExecutor } from './FileSystemExecutor.ts';
 
 /**
  * Default executor implementation using spawn (current production behavior)

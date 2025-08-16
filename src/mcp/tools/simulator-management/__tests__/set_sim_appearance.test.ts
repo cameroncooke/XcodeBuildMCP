@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import setSimAppearancePlugin, { set_sim_appearanceLogic } from '../set_sim_appearance.ts';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 
 describe('set_sim_appearance plugin', () => {
   describe('Export Field Validation (Literal)', () => {

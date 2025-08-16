@@ -8,7 +8,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
-} from '../../../../test-utils/mock-executors.js';
+} from '../../../../test-utils/mock-executors.ts';
 import typeTextPlugin, { type_textLogic } from '../type_text.ts';
 
 // Mock axe helpers for dependency injection

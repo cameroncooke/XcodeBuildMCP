@@ -12,8 +12,8 @@
  * which build upon these core functions to provide higher-level abstractions.
  */
 
-import { log } from './logger.js';
-import { XcodePlatform } from '../types/common.js';
+import { log } from './logger.ts';
+import { XcodePlatform } from '../types/common.ts';
 
 // Re-export XcodePlatform for use in other modules
 export { XcodePlatform };

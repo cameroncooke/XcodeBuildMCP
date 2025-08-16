@@ -4,8 +4,8 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
-} from '../../../../test-utils/mock-executors.js';
-import plugin, { stop_app_simLogic } from '../stop_app_sim.js';
+} from '../../../../test-utils/mock-executors.ts';
+import plugin, { stop_app_simLogic } from '../stop_app_sim.ts';
 
 describe('stop_app_sim plugin', () => {
   describe('Export Field Validation (Literal)', () => {

@@ -8,7 +8,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
-} from '../../../../test-utils/mock-executors.js';
+} from '../../../../test-utils/mock-executors.ts';
 import gesturePlugin, { gestureLogic } from '../gesture.ts';
 
 describe('Gesture Plugin', () => {

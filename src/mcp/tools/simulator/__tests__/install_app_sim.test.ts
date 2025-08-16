@@ -4,7 +4,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
-} from '../../../../test-utils/mock-executors.js';
+} from '../../../../test-utils/mock-executors.ts';
 import installAppSim, { install_app_simLogic } from '../install_app_sim.ts';
 
 describe('install_app_sim tool', () => {

@@ -7,8 +7,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
-import buildMacOS, { buildMacOSLogic } from '../build_macos.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import buildMacOS, { buildMacOSLogic } from '../build_macos.ts';
 
 describe('build_macos plugin', () => {
   describe('Export Field Validation (Literal)', () => {

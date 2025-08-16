@@ -6,7 +6,7 @@
  */
 
 import { execSync } from 'child_process';
-import { log } from './logger.js';
+import { log } from './logger.ts';
 
 /**
  * Interface for environment detection abstraction

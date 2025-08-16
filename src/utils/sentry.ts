@@ -6,7 +6,7 @@
  */
 
 import * as Sentry from '@sentry/node';
-import { version } from '../version.js';
+import { version } from '../version.ts';
 import { execSync } from 'child_process';
 
 // Inlined system info functions to avoid circular dependencies

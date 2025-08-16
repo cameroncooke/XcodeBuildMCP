@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import swiftPackageRun, { swift_package_runLogic } from '../swift_package_run.ts';
 
 describe('swift_package_run plugin', () => {

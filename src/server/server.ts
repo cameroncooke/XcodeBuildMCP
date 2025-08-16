@@ -14,8 +14,8 @@
 
 import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 import { StdioServerTransport } from '@camsoft/mcp-sdk/server/stdio.js';
-import { log } from '../utils/logger.js';
-import { version } from '../version.js';
+import { log } from '../utils/logger.ts';
+import { version } from '../version.ts';
 import * as Sentry from '@sentry/node';
 
 /**

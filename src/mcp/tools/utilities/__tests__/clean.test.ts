@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import tool, { cleanLogic } from '../clean.ts';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 
 describe('clean (unified) tool', () => {
   it('exports correct name/description/schema/handler', () => {
