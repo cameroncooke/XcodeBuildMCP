@@ -9,12 +9,9 @@ import * as path from 'path';
 import * as os from 'os';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
-import {
-  log,
-  CommandExecutor,
-  FileSystemExecutor,
-  getDefaultCommandExecutor,
-} from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
+import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 

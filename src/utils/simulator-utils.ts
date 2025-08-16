@@ -2,9 +2,10 @@
  * Simulator utility functions for name to UUID resolution
  */
 
-import { CommandExecutor } from './command.js';
+import type { CommandExecutor } from './execution/index.js';
 import { ToolResponse } from '../types/common.js';
-import { createErrorResponse, log } from './index.js';
+import { log } from './logging/index.js';
+import { createErrorResponse } from './responses/index.js';
 
 /**
  * UUID regex pattern to check if a string looks like a UUID

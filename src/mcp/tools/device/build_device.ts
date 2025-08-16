@@ -7,8 +7,9 @@
 
 import { z } from 'zod';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
-import { executeXcodeBuildCommand } from '../../../utils/index.js';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
+import { executeXcodeBuildCommand } from '../../../utils/build-utils.js';
+import type { CommandExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 

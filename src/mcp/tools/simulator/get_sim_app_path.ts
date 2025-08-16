@@ -7,9 +7,10 @@
  */
 
 import { z } from 'zod';
-import { log, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { createTextResponse } from '../../../utils/index.js';
-import { CommandExecutor } from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
+import { createTextResponse } from '../../../utils/responses/index.js';
+import type { CommandExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';

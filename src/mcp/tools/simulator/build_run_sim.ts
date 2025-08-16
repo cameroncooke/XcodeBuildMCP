@@ -8,13 +8,11 @@
 
 import { z } from 'zod';
 import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.js';
-import {
-  log,
-  getDefaultCommandExecutor,
-  createTextResponse,
-  executeXcodeBuildCommand,
-  CommandExecutor,
-} from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
+import { createTextResponse } from '../../../utils/responses/index.js';
+import { executeXcodeBuildCommand } from '../../../utils/build/index.js';
+import type { CommandExecutor } from '../../../utils/execution/index.js';
 import { determineSimulatorUuid } from '../../../utils/simulator-utils.js';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 

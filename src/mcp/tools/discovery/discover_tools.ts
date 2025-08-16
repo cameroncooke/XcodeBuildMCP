@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { createTextResponse } from '../../../utils/index.js';
-import { log } from '../../../utils/index.js';
+import { createTextResponse } from '../../../utils/responses/index.js';
+import { log } from '../../../utils/logging/index.js';
 // Removed CreateMessageResultSchema import as it's no longer used
 import { ToolResponse } from '../../../types/common.js';
 import {
@@ -9,7 +9,7 @@ import {
   generateWorkflowDescriptions,
 } from '../../../core/dynamic-tools.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
-import { getDefaultCommandExecutor } from '../../../utils/command.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
 import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 
 // Using McpServer type from SDK instead of custom interface

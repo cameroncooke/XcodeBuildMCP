@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import {
   CommandExecutor,

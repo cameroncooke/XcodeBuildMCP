@@ -6,11 +6,11 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../../utils/index.js';
-import { validateFileExists } from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
+import { validateFileExists } from '../../../utils/validation/index.js';
 import { ToolResponse } from '../../../types/common.js';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
-import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
+import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Define schema as ZodObject

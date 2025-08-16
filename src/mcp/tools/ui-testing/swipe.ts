@@ -6,20 +6,16 @@
 
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
-import { log } from '../../../utils/index.js';
-import { createTextResponse } from '../../../utils/index.js';
-import {
-  DependencyError,
-  AxeError,
-  SystemError,
-  createErrorResponse,
-} from '../../../utils/index.js';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
+import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.js';
+import { DependencyError, AxeError, SystemError } from '../../../utils/errors.js';
+import type { CommandExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
   getBundledAxeEnvironment,
-} from '../../../utils/index.js';
+} from '../../../utils/axe-helpers.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Define schema as ZodObject

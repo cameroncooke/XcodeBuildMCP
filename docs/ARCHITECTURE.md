@@ -38,17 +38,22 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
    - MCP server created with stdio transport
    - Plugin discovery system initialized
 
-3. **Plugin Discovery & Loading**
-   - `loadPlugins()` scans `src/mcp/tools/` directory automatically
-   - `loadResources()` scans `src/mcp/resources/` directory automatically
-   - Each tool exports standardized interface (`name`, `description`, `schema`, `handler`)
-   - Tools are self-contained with no external dependencies
-   - Dynamic vs static mode determines loading behavior
+3. **Plugin Discovery (Build-Time)**
+   - A build-time script (`build-plugins/plugin-discovery.ts`) scans the `src/mcp/tools/` and `src/mcp/resources/` directories
+   - It generates `src/core/generated-plugins.ts` and `src/core/generated-resources.ts` with dynamic import maps
+   - This approach improves startup performance by avoiding synchronous file system scans and enables code-splitting
+   - Tool code is only loaded when needed, reducing initial memory footprint
 
-4. **Tool Registration**
-   - Discovered tools automatically registered with server
+4. **Plugin & Resource Loading (Runtime)**
+   - At runtime, `loadPlugins()` and `loadResources()` use the generated loaders from the previous step
+   - In **Static Mode**, all workflow loaders are executed at startup to register all tools
+   - In **Dynamic Mode**, only the `discover_tools` tool is registered initially
+   - The `enableWorkflows` function in `src/core/dynamic-tools.ts` uses generated loaders to dynamically import and register selected workflow tools on demand
+
+5. **Tool Registration**
+   - Discovered tools automatically registered with server using pre-generated maps
    - No manual registration or configuration required
-   - Environment variables can still control dynamic tool discovery
+   - Environment variables control dynamic tool discovery behavior
 
 5. **Request Handling**
    - MCP client calls tool → server routes to tool handler
@@ -85,6 +90,66 @@ Tools are self-contained units that export a standardized interface. They don't 
 - Zod schemas for runtime validation
 - Generic type constraints ensure compile-time safety
 
+## Module Organization and Import Strategy
+
+### Focused Facades Pattern
+
+XcodeBuildMCP has migrated from a traditional "barrel file" export pattern (`src/utils/index.ts`) to a more structured **focused facades** pattern. Each distinct area of functionality within `src/utils` is exposed through its own `index.ts` file in a dedicated subdirectory.
+
+**Example Structure:**
+
+```
+src/utils/
+├── execution/
+│   └── index.ts  # Facade for CommandExecutor, FileSystemExecutor
+├── logging/
+│   └── index.ts  # Facade for the logger
+├── responses/
+│   └── index.ts  # Facade for error types and response creators
+├── validation/
+│   └── index.ts  # Facade for validation utilities
+├── axe/
+│   └── index.ts  # Facade for axe UI automation helpers
+├── plugin-registry/
+│   └── index.ts  # Facade for plugin system utilities
+├── xcodemake/
+│   └── index.ts  # Facade for xcodemake utilities
+├── template/
+│   └── index.ts  # Facade for template management utilities
+├── version/
+│   └── index.ts  # Facade for version information
+├── test/
+│   └── index.ts  # Facade for test utilities
+├── log-capture/
+│   └── index.ts  # Facade for log capture utilities
+└── index.ts      # Deprecated barrel file (legacy/external use only)
+```
+
+This approach offers several architectural benefits:
+
+- **Clear Dependencies**: It makes the dependency graph explicit. Importing from `utils/execution` clearly indicates a dependency on command execution logic
+- **Reduced Coupling**: Modules only import the functionality they need, reducing coupling between unrelated utility components
+- **Prevention of Circular Dependencies**: It's much harder to create circular dependencies, which were a risk with the large barrel file
+- **Improved Tree-Shaking**: Bundlers can more effectively eliminate unused code
+- **Performance**: Eliminates loading of unused modules, reducing startup time and memory usage
+
+### ESLint Enforcement
+
+To maintain this architecture, an ESLint rule in `eslint.config.js` explicitly forbids importing from the deprecated barrel file within the `src/` directory.
+
+**ESLint Rule Snippet** (`eslint.config.js`):
+
+```javascript
+'no-restricted-imports': ['error', {
+  patterns: [{
+    group: ['**/utils/index.js', '../utils/index.js', '../../utils/index.js', '../../../utils/index.js'],
+    message: 'Barrel imports from utils/index.js are prohibited. Use focused facade imports instead (e.g., utils/logging/index.js, utils/execution/index.js).'
+  }]
+}],
+```
+
+This rule prevents regression to the previous barrel import pattern and ensures all new code follows the focused facade architecture.
+
 ## Component Details
 
 ### Entry Points
@@ -116,12 +181,12 @@ MCP server wrapper providing:
 ### Tool Discovery System
 
 #### `src/core/plugin-registry.ts`
-Automatic plugin loading system:
-- Scans `src/mcp/tools/` directory structure using glob patterns
-- Dynamically imports plugin modules
-- Validates plugin interface compliance
-- Handles both default exports and named exports (for re-exports)
-- Supports workflow group metadata via `index.js` files
+Runtime plugin loading system that leverages build-time generated code:
+- Uses `WORKFLOW_LOADERS` and `WORKFLOW_METADATA` maps from the generated `src/core/generated-plugins.ts` file
+- `loadWorkflowGroups()` iterates through the loaders, dynamically importing each workflow module using `await loader()`
+- Validates that each imported module contains the required `workflow` metadata export
+- Aggregates all tools from the loaded workflows into a single map
+- This system eliminates runtime file system scanning, providing significant startup performance boost
 
 #### `src/core/plugin-types.ts`
 Plugin type definitions:
@@ -131,49 +196,74 @@ Plugin type definitions:
 
 ### Tool Implementation
 
-Each plugin (`src/mcp/tools/*/*.js`) follows this standardized pattern:
+Each tool is implemented in TypeScript and follows a standardized pattern that separates the core business logic from the MCP handler boilerplate. This is achieved using the `createTypedTool` factory, which provides compile-time and runtime type safety.
 
-```javascript
-// 1. Import dependencies and schemas
+**Standard Tool Pattern** (`src/mcp/tools/some-workflow/some_tool.ts`):
+
+```typescript
 import { z } from 'zod';
-import { log } from '../../src/utils/logger.js';
-import { executeCommand } from '../../src/utils/command.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+import type { CommandExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
+import { log } from '../../../utils/logging/index.js';
+import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.js';
 
-// 2. Define and export plugin
-export default {
-  name: 'tool_name',
-  description: 'Tool description for AI agents',
+// 1. Define the Zod schema for parameters
+const someToolSchema = z.object({
+  requiredParam: z.string().describe('Description for AI'),
+  optionalParam: z.boolean().optional().describe('Optional parameter'),
+});
+
+// 2. Infer the parameter type from the schema
+type SomeToolParams = z.infer<typeof someToolSchema>;
+
+// 3. Implement the core logic in a separate, testable function
+// This function receives strongly-typed parameters and an injected executor.
+export async function someToolLogic(
+  params: SomeToolParams,
+  executor: CommandExecutor,
+): Promise<ToolResponse> {
+  log('info', `Executing some_tool with param: ${params.requiredParam}`);
   
-  // 3. Define parameter schema
-  schema: {
-    requiredParam: z.string().describe('Description for AI'),
-    optionalParam: z.string().optional().describe('Optional parameter')
-  },
-  
-  // 4. Implement handler function
-  async handler(params) {
-    try {
-      // 5. Execute tool logic using shared utilities
-      const result = await executeCommand(['some', 'command']);
-      
-      // 6. Return standardized response
-      return {
-        content: [{ type: 'text', text: result.output }],
-        isError: false
-      };
-    } catch (error) {
-      return {
-        content: [{ type: 'text', text: `Error: ${error.message}` }],
-        isError: true
-      };
+  try {
+    const result = await executor(['some', 'command'], 'Some Tool Operation');
+    
+    if (!result.success) {
+      return createErrorResponse('Operation failed', result.error);
     }
+    
+    return createTextResponse(`✅ Success: ${result.output}`);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return createErrorResponse('Tool execution failed', errorMessage);
   }
+}
+
+// 4. Export the tool definition for auto-discovery
+export default {
+  name: 'some_tool',
+  description: 'Tool description for AI agents. Example: some_tool({ requiredParam: "value" })',
+  schema: someToolSchema.shape, // Expose shape for MCP SDK
+  
+  // 5. Create the handler using the type-safe factory
+  handler: createTypedTool(
+    someToolSchema,
+    someToolLogic,
+    getDefaultCommandExecutor,
+  ),
 };
+```
+
+This pattern ensures that:
+- The `someToolLogic` function is highly testable via dependency injection
+- Zod handles all runtime parameter validation automatically
+- The handler is type-safe, preventing unsafe access to parameters
+- Import paths use focused facades for clear dependency management
 ```
 
 ### MCP Resources System
 
-XcodeBuildMCP provides dual interfaces: traditional MCP tools and efficient MCP resources for supported clients. Resources are located in `src/mcp/resources/` and are automatically discovered. For more details on creating resources, see the [Plugin Development Guide](docs/PLUGIN_DEVELOPMENT.md).
+XcodeBuildMCP provides dual interfaces: traditional MCP tools and efficient MCP resources for supported clients. Resources are located in `src/mcp/resources/` and are automatically discovered **at build time**. The build process generates `src/core/generated-resources.ts`, which contains dynamic loaders for each resource, improving startup performance. For more details on creating resources, see the [Plugin Development Guide](docs/PLUGIN_DEVELOPMENT.md).
 
 #### Resource Architecture
 
@@ -201,7 +291,8 @@ Resources can reuse existing tool logic for consistency:
 
 ```typescript
 // src/mcp/resources/some_resource.ts
-import { log, getDefaultCommandExecutor, CommandExecutor } from '../../utils/index.js';
+import { log } from '../../utils/logging/index.js';
+import { getDefaultCommandExecutor, CommandExecutor } from '../../utils/execution/index.js';
 import { getSomeResourceLogic } from '../tools/some-workflow/get_some_resource.js';
 
 // Testable resource logic separated from MCP handler
@@ -330,12 +421,12 @@ For detailed guidelines, see the [Testing Guide](docs/TESTING.md).
 
 ### Test Structure Example
 
-Tests inject mock "executors" for external interactions like command-line execution or file system access. This allows for deterministic testing of tool logic without mocking the implementation itself.
+Tests inject mock "executors" for external interactions like command-line execution or file system access. This allows for deterministic testing of tool logic without mocking the implementation itself. The project provides helper functions like `createMockExecutor` and `createMockFileSystemExecutor` in `src/test-utils/mock-executors.ts` to facilitate this pattern.
 
 ```typescript
 import { describe, it, expect } from 'vitest';
-import { toolNameLogic } from '../tool-file.js'; // Import the logic function
-import { createMockExecutor } from '../../../utils/test-common.js';
+import { someToolLogic } from '../tool-file.js'; // Import the logic function
+import { createMockExecutor } from '../../../test-utils/mock-executors.js';
 
 describe('Tool Name', () => {
   it('should execute successfully', async () => {
@@ -346,7 +437,7 @@ describe('Tool Name', () => {
     });
 
     // 2. Call the tool's logic function, injecting the mock executor
-    const result = await toolNameLogic({ param: 'value' }, mockExecutor);
+    const result = await someToolLogic({ requiredParam: 'value' }, mockExecutor);
     
     // 3. Assert the final result
     expect(result).toEqual({
@@ -367,15 +458,24 @@ describe('Tool Name', () => {
    ```
    - Reads version from `package.json`
    - Generates `src/version.ts`
+
+2. **Plugin & Resource Loader Generation**
+   - The `build-plugins/plugin-discovery.ts` script is executed
+   - It scans `src/mcp/tools/` and `src/mcp/resources/` to find all workflows and resources
+   - It generates `src/core/generated-plugins.ts` and `src/core/generated-resources.ts` with dynamic import maps
+   - This eliminates runtime file system scanning and enables code-splitting
+
+3. **TypeScript Compilation**
+   - `tsup` compiles the TypeScript source, including the newly generated files, into JavaScript
    - Compiles TypeScript with tsup
 
-2. **Build Configuration** (`tsup.config.ts`)
+4. **Build Configuration** (`tsup.config.ts`)
    - Entry points: `index.ts`, `doctor-cli.ts`
    - Output format: ESM
    - Target: Node 18+
    - Source maps enabled
 
-3. **Distribution Structure**
+5. **Distribution Structure**
    ```
    build/
    ├── index.js          # Main server executable
@@ -417,6 +517,9 @@ The guide covers:
 
 ### Startup Performance
 
+- **Build-Time Plugin Discovery**: The server avoids expensive and slow file system scans at startup by using pre-generated loader maps. This is the single most significant performance optimization
+- **Code-Splitting**: In Dynamic Mode, tool code is only loaded into memory when its workflow is enabled, reducing the initial memory footprint and parse time
+- **Focused Facades**: Using targeted imports instead of a large barrel file improves module resolution speed for the Node.js runtime
 - **Lazy Loading**: Tools only initialized when registered
 - **Selective Registration**: Fewer tools = faster startup
 - **Minimal Dependencies**: Fast module resolution

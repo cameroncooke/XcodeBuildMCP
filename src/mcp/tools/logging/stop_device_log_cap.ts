@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import type { ChildProcess } from 'child_process';
 import { z } from 'zod';
-import { log } from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
 import { activeDeviceLogSessions } from './start_device_log_cap.js';
 import { ToolResponse } from '../../../types/common.js';
 import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';

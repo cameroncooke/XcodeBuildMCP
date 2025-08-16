@@ -17,9 +17,45 @@
  * It's used by virtually all other modules for status reporting and error logging.
  */
 
-import * as Sentry from '@sentry/node';
+import { createRequire } from 'node:module';
+// Note: Removed "import * as Sentry from '@sentry/node'" to prevent native module loading at import time
 
 const SENTRY_ENABLED = process.env.SENTRY_DISABLED !== 'true';
+
+function isTestEnv(): boolean {
+  return (
+    process.env.VITEST === 'true' ||
+    process.env.NODE_ENV === 'test' ||
+    process.env.XCODEBUILDMCP_SILENCE_LOGS === 'true'
+  );
+}
+
+type SentryModule = typeof import('@sentry/node');
+
+const require = createRequire(import.meta.url);
+let cachedSentry: SentryModule | null = null;
+
+function loadSentrySync(): SentryModule | null {
+  if (!SENTRY_ENABLED || isTestEnv()) return null;
+  if (cachedSentry) return cachedSentry;
+  try {
+    cachedSentry = require('@sentry/node') as SentryModule;
+    return cachedSentry;
+  } catch {
+    // If @sentry/node is not installed in some environments, fail silently.
+    return null;
+  }
+}
+
+function withSentry(cb: (s: SentryModule) => void): void {
+  const s = loadSentrySync();
+  if (!s) return;
+  try {
+    cb(s);
+  } catch {
+    // no-op: avoid throwing inside logger
+  }
+}
 
 if (!SENTRY_ENABLED) {
   log('info', 'Sentry disabled due to SENTRY_DISABLED environment variable');
@@ -44,7 +80,7 @@ export function log(level: string, message: string): void {
   const logMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
 
   if (level === 'error' && SENTRY_ENABLED) {
-    Sentry.captureMessage(logMessage);
+    withSentry((s) => s.captureMessage(logMessage));
   }
 
   // It's important to use console.error here to ensure logs don't interfere with MCP protocol communication

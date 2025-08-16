@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import path from 'node:path';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { createTextResponse } from '../../../utils/index.js';
-import { createErrorResponse } from '../../../utils/index.js';
-import { log } from '../../../utils/index.js';
+import type { CommandExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
+import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.js';
+import { log } from '../../../utils/logging/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 

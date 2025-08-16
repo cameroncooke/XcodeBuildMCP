@@ -1,12 +1,9 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
-import {
-  log,
-  validateFileExists,
-  CommandExecutor,
-  FileSystemExecutor,
-  getDefaultCommandExecutor,
-} from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
+import { validateFileExists } from '../../../utils/validation/index.js';
+import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Define schema as ZodObject

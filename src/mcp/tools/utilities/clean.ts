@@ -7,14 +7,11 @@
 
 import { z } from 'zod';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
-import {
-  CommandExecutor,
-  getDefaultCommandExecutor,
-  executeXcodeBuildCommand,
-} from '../../../utils/index.js';
-import { XcodePlatform } from '../../../utils/index.js';
-import { ToolResponse, SharedBuildParams } from '../../../types/common.js';
-import { createErrorResponse } from '../../../utils/index.js';
+import type { CommandExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
+import { executeXcodeBuildCommand } from '../../../utils/build/index.js';
+import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.js';
+import { createErrorResponse } from '../../../utils/responses/index.js';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
 // Unified schema: XOR between projectPath and workspacePath, sharing common options

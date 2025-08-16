@@ -8,15 +8,14 @@
 import { z } from 'zod';
 import { join } from 'path';
 import { ToolResponse, XcodePlatform } from '../../../types/common.js';
-import { log } from '../../../utils/index.js';
-import { executeXcodeBuildCommand } from '../../../utils/index.js';
-import { createTextResponse } from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
+import { executeXcodeBuildCommand } from '../../../utils/build/index.js';
+import { createTextResponse } from '../../../utils/responses/index.js';
+import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.js';
 import {
-  CommandExecutor,
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
-} from '../../../utils/command.js';
-import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
+} from '../../../utils/execution/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
