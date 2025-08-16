@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import plugin, { discover_projsLogic } from '../discover_projs.ts';
-import { createMockFileSystemExecutor } from '../../../../utils/index.js';
+import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.js';
 
 describe('discover_projs plugin', () => {
   let mockFileSystemExecutor: any;

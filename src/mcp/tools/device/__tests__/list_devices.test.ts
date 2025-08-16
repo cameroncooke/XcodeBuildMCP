@@ -7,7 +7,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+} from '../../../../test-utils/mock-executors.js';
 
 // Import the logic function and re-export
 import listDevices, { list_devicesLogic } from '../list_devices.ts';

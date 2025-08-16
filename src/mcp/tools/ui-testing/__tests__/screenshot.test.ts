@@ -8,7 +8,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
-} from '../../../../utils/command.js';
+} from '../../../../test-utils/mock-executors.js';
 import screenshotPlugin, { screenshotLogic } from '../screenshot.ts';
 
 describe('Screenshot Plugin', () => {

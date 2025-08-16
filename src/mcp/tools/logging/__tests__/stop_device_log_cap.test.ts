@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import plugin, { stop_device_log_capLogic } from '../stop_device_log_cap.js';
 import { activeDeviceLogSessions } from '../start_device_log_cap.js';
-import { createMockFileSystemExecutor } from '../../../../utils/command.js';
+import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.js';
 
 // Note: Logger is allowed to execute normally (integration testing pattern)
 

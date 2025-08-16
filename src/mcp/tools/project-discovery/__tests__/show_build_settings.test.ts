@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../../utils/command.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
 import plugin, { showBuildSettingsLogic } from '../show_build_settings.ts';
 
 describe('show_build_settings plugin', () => {

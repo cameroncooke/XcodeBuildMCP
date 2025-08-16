@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+} from '../../../../test-utils/mock-executors.js';
 
 // Import the plugin and logic function
 import listSims, { list_simsLogic } from '../list_sims.ts';

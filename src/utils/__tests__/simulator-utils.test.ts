@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { determineSimulatorUuid } from '../simulator-utils.js';
-import { createMockExecutor } from '../command.js';
+import { createMockExecutor } from '../../test-utils/mock-executors.js';
 
 describe('determineSimulatorUuid', () => {
   const mockSimulatorListOutput = JSON.stringify({

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor, type CommandExecutor } from '../../../../utils/command.js';
+import { createMockExecutor, type CommandExecutor } from '../../../../test-utils/mock-executors.js';
 import getMacAppPath, { get_mac_app_pathLogic } from '../get_mac_app_path.js';
 
 describe('get_mac_app_path plugin', () => {

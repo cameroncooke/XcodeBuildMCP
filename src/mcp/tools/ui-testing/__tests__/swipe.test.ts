@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../utils/command.js';
+import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.js';
 import { SystemError, DependencyError } from '../../../../utils/index.js';
 
 // Import the plugin module to test

@@ -92,7 +92,7 @@ function generateWorkflowSection(workflow: WorkflowInfo): string {
     content += `- \`${tool.name}\` - ${cleanDescription}\n`;
   }
 
-  return content + '\n';
+  return content;
 }
 
 /**
@@ -108,21 +108,13 @@ function generateToolsDocumentation(analysis: StaticAnalysisResult): string {
 
 XcodeBuildMCP provides ${stats.canonicalTools} tools organized into ${stats.workflowCount} workflow groups for comprehensive Apple development workflows.
 
-## Key Changes (v1.11+)
-
-**Unified Tool Architecture**: Tools that previously had separate variants (e.g., \`build_sim_id\`, \`build_sim_name\`) have been consolidated into unified tools that accept either parameter using XOR validation.
-
-**XOR Parameter Pattern**: Many tools now use mutually exclusive parameters (e.g., \`simulatorId\` OR \`simulatorName\`, never both) enforced via Zod schema refinements. This reduces the total tool count from ~85 to ${stats.canonicalTools} while maintaining full functionality.
-
 ## Workflow Groups
 
 ${sortedWorkflows.map((workflow) => generateWorkflowSection(workflow)).join('')}
-
 ## Summary Statistics
 
 - **Total Tools**: ${stats.canonicalTools} canonical tools + ${stats.reExportTools} re-exports = ${stats.totalTools} total
 - **Workflow Groups**: ${stats.workflowCount}
-- **Analysis Method**: Static AST parsing with TypeScript compiler API
 
 ---
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../../utils/command.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
 import tool, { buildRunMacOSLogic } from '../build_run_macos.js';
 
 describe('build_run_macos', () => {

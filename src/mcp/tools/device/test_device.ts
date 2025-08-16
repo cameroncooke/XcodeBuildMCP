@@ -14,9 +14,9 @@ import { createTextResponse } from '../../../utils/index.js';
 import {
   CommandExecutor,
   getDefaultCommandExecutor,
-  FileSystemExecutor,
   getDefaultFileSystemExecutor,
 } from '../../../utils/command.js';
+import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 

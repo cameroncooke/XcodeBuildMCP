@@ -10,7 +10,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
 import scaffoldIosProject, { scaffold_ios_projectLogic } from '../scaffold_ios_project.ts';
-import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/index.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+} from '../../../../test-utils/mock-executors.js';
 
 describe('scaffold_ios_project plugin', () => {
   let mockCommandExecutor: any;

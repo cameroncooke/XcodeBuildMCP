@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import doctorResource, { doctorResourceLogic } from '../doctor.js';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor } from '../../../test-utils/mock-executors.js';
 
 describe('doctor resource', () => {
   describe('Export Field Validation', () => {

@@ -14,7 +14,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
   createMockExecutor,
-} from '../../../../utils/command.js';
+} from '../../../../test-utils/mock-executors.js';
 import plugin, { scaffold_macos_projectLogic } from '../scaffold_macos_project.js';
 import { TemplateManager } from '../../../../utils/index.js';
 

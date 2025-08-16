@@ -23,7 +23,7 @@
 import * as fs from 'fs';
 import { log } from './logger.js';
 import { ToolResponse, ValidationResult } from '../types/common.js';
-import { FileSystemExecutor } from './command.js';
+import { FileSystemExecutor } from './FileSystemExecutor.ts';
 import { getDefaultEnvironmentDetector } from './environment.js';
 
 /**

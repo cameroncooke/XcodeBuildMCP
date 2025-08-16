@@ -4,7 +4,10 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+} from '../../../../test-utils/mock-executors.js';
 import plugin, { start_device_log_capLogic } from '../start_device_log_cap.ts';
 
 describe('start_device_log_cap plugin', () => {

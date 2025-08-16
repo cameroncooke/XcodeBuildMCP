@@ -3,7 +3,8 @@ import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 import { log } from './logger.js';
 import { iOSTemplateVersion, macOSTemplateVersion } from '../version.js';
-import { CommandExecutor, FileSystemExecutor } from './command.js';
+import { CommandExecutor } from './command.js';
+import { FileSystemExecutor } from './FileSystemExecutor.ts';
 
 /**
  * Template manager for downloading and managing project templates

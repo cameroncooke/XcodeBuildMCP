@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor } from '../../../../utils/command.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
 import installAppDevice, { install_app_deviceLogic } from '../install_app_device.ts';
 
 describe('install_app_device plugin', () => {

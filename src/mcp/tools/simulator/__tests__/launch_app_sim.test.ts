@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../../utils/command.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
 import launchAppSim, { launch_app_simLogic } from '../launch_app_sim.js';
 
 describe('launch_app_sim tool', () => {

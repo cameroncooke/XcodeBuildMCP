@@ -6,7 +6,10 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createMockExecutor, createMockFileSystemExecutor } from '../../../../utils/command.js';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+} from '../../../../test-utils/mock-executors.js';
 import testDevice, { testDeviceLogic } from '../test_device.js';
 
 describe('test_device plugin', () => {
