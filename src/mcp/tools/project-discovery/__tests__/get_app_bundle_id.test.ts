@@ -14,7 +14,7 @@ import plugin, { get_app_bundle_idLogic } from '../get_app_bundle_id.ts';
 import {
   createMockFileSystemExecutor,
   createCommandMatchingMockExecutor,
-} from '../../../../test-utils/mock-executors.js';
+} from '../../../../test-utils/mock-executors.ts';
 
 describe('get_app_bundle_id plugin', () => {
   // Helper function to create mock executor for command matching

@@ -1,1 +1,1 @@
-export { isXcodemakeEnabled, isXcodemakeAvailable, doesMakefileExist } from '../xcodemake.js';
+export { isXcodemakeEnabled, isXcodemakeAvailable, doesMakefileExist } from '../xcodemake.ts';

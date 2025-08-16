@@ -17,12 +17,12 @@ import { exec } from 'child_process';
 import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { log } from './logger.js';
-import { XcodePlatform } from './xcode.js';
-import { executeXcodeBuildCommand } from './build-utils.js';
-import { createTextResponse, consolidateContentForClaudeCode } from './validation.js';
-import { ToolResponse } from '../types/common.js';
-import { CommandExecutor, getDefaultCommandExecutor } from './command.js';
+import { log } from './logger.ts';
+import { XcodePlatform } from './xcode.ts';
+import { executeXcodeBuildCommand } from './build-utils.ts';
+import { createTextResponse, consolidateContentForClaudeCode } from './validation.ts';
+import { ToolResponse } from '../types/common.ts';
+import { CommandExecutor, getDefaultCommandExecutor } from './command.ts';
 
 /**
  * Type definition for test summary structure from xcresulttool

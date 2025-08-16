@@ -1,15 +1,15 @@
 import { z } from 'zod';
-import { createTextResponse } from '../../../utils/responses/index.js';
-import { log } from '../../../utils/logging/index.js';
+import { createTextResponse } from '../../../utils/responses/index.ts';
+import { log } from '../../../utils/logging/index.ts';
 // Removed CreateMessageResultSchema import as it's no longer used
-import { ToolResponse } from '../../../types/common.js';
+import { ToolResponse } from '../../../types/common.ts';
 import {
   enableWorkflows,
   getAvailableWorkflows,
   generateWorkflowDescriptions,
-} from '../../../core/dynamic-tools.js';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
-import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
+} from '../../../core/dynamic-tools.ts';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 
 // Using McpServer type from SDK instead of custom interface

@@ -8,8 +8,8 @@
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { createTextResponse } from './validation.js';
-import { ToolResponse } from '../types/common.js';
+import { createTextResponse } from './validation.ts';
+import { ToolResponse } from '../types/common.ts';
 
 // Get bundled AXe path - always use the bundled version for consistency
 const __filename = fileURLToPath(import.meta.url);

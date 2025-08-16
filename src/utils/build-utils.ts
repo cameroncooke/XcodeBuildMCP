@@ -17,11 +17,11 @@
  * while adding build-specific behavior, formatting, and error handling.
  */
 
-import { log } from './logger.js';
-import { XcodePlatform, constructDestinationString } from './xcode.js';
-import { CommandExecutor } from './command.js';
-import { ToolResponse, SharedBuildParams, PlatformBuildOptions } from '../types/common.js';
-import { createTextResponse, consolidateContentForClaudeCode } from './validation.js';
+import { log } from './logger.ts';
+import { XcodePlatform, constructDestinationString } from './xcode.ts';
+import { CommandExecutor } from './command.ts';
+import { ToolResponse, SharedBuildParams, PlatformBuildOptions } from '../types/common.ts';
+import { createTextResponse, consolidateContentForClaudeCode } from './validation.ts';
 import {
   isXcodemakeEnabled,
   isXcodemakeAvailable,
@@ -29,7 +29,7 @@ import {
   executeMakeCommand,
   doesMakefileExist,
   doesMakeLogFileExist,
-} from './xcodemake.js';
+} from './xcodemake.ts';
 import path from 'path';
 
 /**

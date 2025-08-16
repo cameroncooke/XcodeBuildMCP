@@ -7,11 +7,11 @@
 
 import { z } from 'zod';
 import * as path from 'node:path';
-import { log } from '../../../utils/logging/index.js';
-import { ToolResponse, createTextContent } from '../../../types/common.js';
-import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
+import { log } from '../../../utils/logging/index.ts';
+import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
 import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Constants
 const DEFAULT_MAX_DEPTH = 5;

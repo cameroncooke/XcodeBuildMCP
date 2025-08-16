@@ -3,8 +3,8 @@ import * as path from 'path';
 import * as os from 'os';
 import type { ChildProcess } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
-import { log } from '../utils/logger.js';
-import { CommandExecutor, getDefaultCommandExecutor } from './command.js';
+import { log } from '../utils/logger.ts';
+import { CommandExecutor, getDefaultCommandExecutor } from './command.ts';
 
 /**
  * Log file retention policy:

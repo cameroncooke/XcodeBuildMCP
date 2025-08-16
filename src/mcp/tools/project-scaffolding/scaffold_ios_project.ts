@@ -6,15 +6,15 @@
 
 import { z } from 'zod';
 import { join, dirname, basename } from 'path';
-import { log } from '../../../utils/logging/index.js';
-import { ValidationError } from '../../../utils/responses/index.js';
-import { TemplateManager } from '../../../utils/template/index.js';
-import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.js';
+import { log } from '../../../utils/logging/index.ts';
+import { ValidationError } from '../../../utils/responses/index.ts';
+import { TemplateManager } from '../../../utils/template/index.ts';
+import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
 import {
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
-} from '../../../utils/execution/index.js';
-import { ToolResponse } from '../../../types/common.js';
+} from '../../../utils/execution/index.ts';
+import { ToolResponse } from '../../../types/common.ts';
 
 // Common base schema for both iOS and macOS
 const BaseScaffoldSchema = z.object({

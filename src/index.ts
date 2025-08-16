@@ -14,31 +14,31 @@
  */
 
 // Import Sentry instrumentation
-import './utils/sentry.js';
+import './utils/sentry.ts';
 
 // Import server components
-import { createServer, startServer } from './server/server.js';
+import { createServer, startServer } from './server/server.ts';
 import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 
 // Import utilities
-import { log } from './utils/logger.js';
+import { log } from './utils/logger.ts';
 
 // Import version
-import { version } from './version.js';
+import { version } from './version.ts';
 
 // Import xcodemake utilities
-import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.js';
+import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.ts';
 
 // Import process for stdout configuration
 import process from 'node:process';
 
 // Import resource management
-import { registerResources } from './core/resources.js';
+import { registerResources } from './core/resources.ts';
 import {
   registerDiscoveryTools,
   registerAllToolsStatic,
   registerSelectedWorkflows,
-} from './utils/tool-registry.js';
+} from './utils/tool-registry.ts';
 
 /**
  * Main function to start the server

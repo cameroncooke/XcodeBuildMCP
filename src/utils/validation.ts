@@ -21,10 +21,10 @@
  */
 
 import * as fs from 'fs';
-import { log } from './logger.js';
-import { ToolResponse, ValidationResult } from '../types/common.js';
+import { log } from './logger.ts';
+import { ToolResponse, ValidationResult } from '../types/common.ts';
 import { FileSystemExecutor } from './FileSystemExecutor.ts';
-import { getDefaultEnvironmentDetector } from './environment.js';
+import { getDefaultEnvironmentDetector } from './environment.ts';
 
 /**
  * Creates a text response with the given message

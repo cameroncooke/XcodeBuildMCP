@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 
-import { registerResources, getAvailableResources, loadResources } from '../resources.js';
+import { registerResources, getAvailableResources, loadResources } from '../resources.ts';
 
 describe('resources', () => {
   let mockServer: McpServer;

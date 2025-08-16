@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 
 // Import the plugin and logic function
-import buildSim, { build_simLogic } from '../build_sim.js';
+import buildSim, { build_simLogic } from '../build_sim.ts';
 
 describe('build_sim tool', () => {
   // Only clear any remaining mocks if needed

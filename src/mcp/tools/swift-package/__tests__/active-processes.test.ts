@@ -11,7 +11,7 @@ import {
   removeProcess,
   clearAllProcesses,
   type ProcessInfo,
-} from '../active-processes.js';
+} from '../active-processes.ts';
 
 describe('active-processes module', () => {
   // Clear the map before each test

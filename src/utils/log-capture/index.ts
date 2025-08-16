@@ -1,1 +1,1 @@
-export { startLogCapture, stopLogCapture } from '../log_capture.js';
+export { startLogCapture, stopLogCapture } from '../log_capture.ts';

@@ -5,10 +5,10 @@
  * This resource reuses the existing list_devices tool logic to maintain consistency.
  */
 
-import { log } from '../../utils/logging/index.js';
-import type { CommandExecutor } from '../../utils/execution/index.js';
-import { getDefaultCommandExecutor } from '../../utils/execution/index.js';
-import { list_devicesLogic } from '../tools/device/list_devices.js';
+import { log } from '../../utils/logging/index.ts';
+import type { CommandExecutor } from '../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../utils/execution/index.ts';
+import { list_devicesLogic } from '../tools/device/list_devices.ts';
 
 // Testable resource logic separated from MCP handler
 export async function devicesResourceLogic(

@@ -1,14 +1,14 @@
-import { log } from '../utils/logger.js';
-import { getDefaultCommandExecutor, CommandExecutor } from '../utils/command.js';
-import { WORKFLOW_LOADERS, WorkflowName, WORKFLOW_METADATA } from './generated-plugins.js';
-import { ToolResponse } from '../types/common.js';
-import { PluginMeta } from './plugin-types.js';
+import { log } from '../utils/logger.ts';
+import { getDefaultCommandExecutor, CommandExecutor } from '../utils/command.ts';
+import { WORKFLOW_LOADERS, WorkflowName, WORKFLOW_METADATA } from './generated-plugins.ts';
+import { ToolResponse } from '../types/common.ts';
+import { PluginMeta } from './plugin-types.ts';
 import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 import {
   registerAndTrackTools,
   removeTrackedTools,
   isToolRegistered,
-} from '../utils/tool-registry.js';
+} from '../utils/tool-registry.ts';
 import { ZodRawShape } from 'zod';
 
 // Track enabled workflows and their tools for replacement functionality

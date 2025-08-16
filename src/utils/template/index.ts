@@ -1,1 +1,1 @@
-export { TemplateManager } from '../template-manager.js';
+export { TemplateManager } from '../template-manager.ts';

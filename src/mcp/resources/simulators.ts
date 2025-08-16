@@ -5,10 +5,10 @@
  * This resource reuses the existing list_sims tool logic to maintain consistency.
  */
 
-import { log } from '../../utils/logging/index.js';
-import { getDefaultCommandExecutor } from '../../utils/execution/index.js';
-import type { CommandExecutor } from '../../utils/execution/index.js';
-import { list_simsLogic } from '../tools/simulator/list_sims.js';
+import { log } from '../../utils/logging/index.ts';
+import { getDefaultCommandExecutor } from '../../utils/execution/index.ts';
+import type { CommandExecutor } from '../../utils/execution/index.ts';
+import { list_simsLogic } from '../tools/simulator/list_sims.ts';
 
 // Testable resource logic separated from MCP handler
 export async function simulatorsResourceLogic(

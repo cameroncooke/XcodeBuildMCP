@@ -10,9 +10,9 @@
  */
 
 import { z } from 'zod';
-import { ToolResponse } from '../types/common.js';
-import type { CommandExecutor } from './execution/index.js';
-import { createErrorResponse } from './responses/index.js';
+import { ToolResponse } from '../types/common.ts';
+import type { CommandExecutor } from './execution/index.ts';
+import { createErrorResponse } from './responses/index.ts';
 
 /**
  * Creates a type-safe tool handler that validates parameters at runtime

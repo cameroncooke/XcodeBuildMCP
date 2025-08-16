@@ -13,8 +13,8 @@
  * - Auto-downloading xcodemake if enabled but not found
  */
 
-import { log } from './logger.js';
-import { CommandResponse, getDefaultCommandExecutor } from './command.js';
+import { log } from './logger.ts';
+import { CommandResponse, getDefaultCommandExecutor } from './command.ts';
 import { existsSync, readdirSync } from 'fs';
 import * as path from 'path';
 import * as os from 'os';

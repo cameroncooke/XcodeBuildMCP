@@ -7,12 +7,12 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../../utils/logging/index.js';
-import { executeXcodeBuildCommand } from '../../../utils/build/index.js';
-import { ToolResponse, XcodePlatform } from '../../../types/common.js';
-import type { CommandExecutor } from '../../../utils/execution/index.js';
-import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
-import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
+import { log } from '../../../utils/logging/index.ts';
+import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
+import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
+import type { CommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
 const baseOptions = {

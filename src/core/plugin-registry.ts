@@ -1,5 +1,5 @@
-import type { PluginMeta, WorkflowGroup, WorkflowMeta } from './plugin-types.js';
-import { WORKFLOW_LOADERS, WorkflowName, WORKFLOW_METADATA } from './generated-plugins.js';
+import type { PluginMeta, WorkflowGroup, WorkflowMeta } from './plugin-types.ts';
+import { WORKFLOW_LOADERS, WorkflowName, WORKFLOW_METADATA } from './generated-plugins.ts';
 
 export async function loadPlugins(): Promise<Map<string, PluginMeta>> {
   const plugins = new Map<string, PluginMeta>();

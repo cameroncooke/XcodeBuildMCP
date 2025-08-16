@@ -7,14 +7,14 @@
  */
 
 import { z } from 'zod';
-import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.js';
-import { log } from '../../../utils/logging/index.js';
-import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
-import { createTextResponse } from '../../../utils/responses/index.js';
-import { executeXcodeBuildCommand } from '../../../utils/build/index.js';
-import type { CommandExecutor } from '../../../utils/execution/index.js';
-import { determineSimulatorUuid } from '../../../utils/simulator-utils.js';
-import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
+import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.ts';
+import { log } from '../../../utils/logging/index.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { createTextResponse } from '../../../utils/responses/index.ts';
+import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
+import type { CommandExecutor } from '../../../utils/execution/index.ts';
+import { determineSimulatorUuid } from '../../../utils/simulator-utils.ts';
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
 const baseOptions = {

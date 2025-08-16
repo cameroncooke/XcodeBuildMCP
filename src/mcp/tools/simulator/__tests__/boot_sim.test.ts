@@ -10,7 +10,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
-} from '../../../../test-utils/mock-executors.js';
+} from '../../../../test-utils/mock-executors.ts';
 import bootSim, { boot_simLogic } from '../boot_sim.ts';
 
 describe('boot_sim tool', () => {

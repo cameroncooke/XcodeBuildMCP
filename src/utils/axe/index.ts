@@ -3,4 +3,4 @@ export {
   getAxePath,
   getBundledAxeEnvironment,
   areAxeToolsAvailable,
-} from '../axe-helpers.js';
+} from '../axe-helpers.ts';

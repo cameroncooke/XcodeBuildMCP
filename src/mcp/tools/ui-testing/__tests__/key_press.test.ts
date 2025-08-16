@@ -8,8 +8,8 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
-} from '../../../../test-utils/mock-executors.js';
-import keyPressPlugin, { key_pressLogic } from '../key_press.js';
+} from '../../../../test-utils/mock-executors.ts';
+import keyPressPlugin, { key_pressLogic } from '../key_press.ts';
 
 describe('Key Press Plugin', () => {
   describe('Export Field Validation (Literal)', () => {

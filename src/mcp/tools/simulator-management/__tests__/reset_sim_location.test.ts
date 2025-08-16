@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import resetSimLocationPlugin, { reset_sim_locationLogic } from '../reset_sim_location.ts';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 
 describe('reset_sim_location plugin', () => {
   describe('Export Field Validation (Literal)', () => {

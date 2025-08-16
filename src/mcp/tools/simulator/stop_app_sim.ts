@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { ToolResponse } from '../../../types/common.js';
-import { log } from '../../../utils/logging/index.js';
-import type { CommandExecutor } from '../../../utils/execution/index.js';
-import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
-import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
+import { ToolResponse } from '../../../types/common.ts';
+import { log } from '../../../utils/logging/index.ts';
+import type { CommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between simulatorUuid and simulatorName
 const baseOptions = {

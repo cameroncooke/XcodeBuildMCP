@@ -5,15 +5,15 @@ import * as path from 'path';
 import { tmpdir } from 'os';
 import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import { ToolResponse, createImageContent } from '../../../types/common.js';
-import { log } from '../../../utils/logging/index.js';
-import { createErrorResponse, SystemError } from '../../../utils/responses/index.js';
-import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.js';
+import { ToolResponse, createImageContent } from '../../../types/common.ts';
+import { log } from '../../../utils/logging/index.ts';
+import { createErrorResponse, SystemError } from '../../../utils/responses/index.ts';
+import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
 import {
   getDefaultFileSystemExecutor,
   getDefaultCommandExecutor,
-} from '../../../utils/execution/index.js';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+} from '../../../utils/execution/index.ts';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 const LOG_PREFIX = '[Screenshot]';
 

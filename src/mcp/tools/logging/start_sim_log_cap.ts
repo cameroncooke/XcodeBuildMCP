@@ -5,10 +5,10 @@
  */
 
 import { z } from 'zod';
-import { startLogCapture } from '../../../utils/log-capture/index.js';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
-import { ToolResponse, createTextContent } from '../../../types/common.js';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
+import { startLogCapture } from '../../../utils/log-capture/index.ts';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
+import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const startSimLogCapSchema = z.object({

@@ -9,7 +9,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
-} from '../../../../test-utils/mock-executors.js';
+} from '../../../../test-utils/mock-executors.ts';
 import swiftPackageClean, { swift_package_cleanLogic } from '../swift_package_clean.ts';
 
 describe('swift_package_clean plugin', () => {

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import swiftPackageList, { swift_package_listLogic } from '../swift_package_list.js';
+import swiftPackageList, { swift_package_listLogic } from '../swift_package_list.ts';
 
 describe('swift_package_list plugin', () => {
   // No mocks to clear with pure dependency injection

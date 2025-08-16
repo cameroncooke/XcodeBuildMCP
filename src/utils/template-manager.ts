@@ -1,9 +1,9 @@
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
-import { log } from './logger.js';
-import { iOSTemplateVersion, macOSTemplateVersion } from '../version.js';
-import { CommandExecutor } from './command.js';
+import { log } from './logger.ts';
+import { iOSTemplateVersion, macOSTemplateVersion } from '../version.ts';
+import { CommandExecutor } from './command.ts';
 import { FileSystemExecutor } from './FileSystemExecutor.ts';
 
 /**

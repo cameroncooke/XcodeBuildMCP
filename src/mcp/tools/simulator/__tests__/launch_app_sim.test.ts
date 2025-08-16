@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
-import launchAppSim, { launch_app_simLogic } from '../launch_app_sim.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import launchAppSim, { launch_app_simLogic } from '../launch_app_sim.ts';
 
 describe('launch_app_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {

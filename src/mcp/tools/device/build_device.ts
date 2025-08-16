@@ -6,12 +6,12 @@
  */
 
 import { z } from 'zod';
-import { ToolResponse, XcodePlatform } from '../../../types/common.js';
-import { executeXcodeBuildCommand } from '../../../utils/build-utils.js';
-import type { CommandExecutor } from '../../../utils/execution/index.js';
-import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
-import { createTypedTool } from '../../../utils/typed-tool-factory.js';
-import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
+import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
+import { executeXcodeBuildCommand } from '../../../utils/build-utils.ts';
+import type { CommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
 const baseSchemaObject = z.object({

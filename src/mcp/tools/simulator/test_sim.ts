@@ -7,13 +7,13 @@
  */
 
 import { z } from 'zod';
-import { handleTestLogic } from '../../../utils/test/index.js';
-import { log } from '../../../utils/logging/index.js';
-import { XcodePlatform } from '../../../types/common.js';
-import { ToolResponse } from '../../../types/common.js';
-import type { CommandExecutor } from '../../../utils/execution/index.js';
-import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
-import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
+import { handleTestLogic } from '../../../utils/test/index.ts';
+import { log } from '../../../utils/logging/index.ts';
+import { XcodePlatform } from '../../../types/common.ts';
+import { ToolResponse } from '../../../types/common.ts';
+import type { CommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Define base schema object with all fields
 const baseSchemaObject = z.object({

@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor, type CommandExecutor } from '../../../../test-utils/mock-executors.js';
-import getMacAppPath, { get_mac_app_pathLogic } from '../get_mac_app_path.js';
+import { createMockExecutor, type CommandExecutor } from '../../../../test-utils/mock-executors.ts';
+import getMacAppPath, { get_mac_app_pathLogic } from '../get_mac_app_path.ts';
 
 describe('get_mac_app_path plugin', () => {
   describe('Export Field Validation (Literal)', () => {

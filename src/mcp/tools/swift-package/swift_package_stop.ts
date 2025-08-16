@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.js';
-import { getProcess, removeProcess, type ProcessInfo } from './active-processes.js';
-import { ToolResponse } from '../../../types/common.js';
+import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
+import { getProcess, removeProcess, type ProcessInfo } from './active-processes.ts';
+import { ToolResponse } from '../../../types/common.ts';
 
 // Define schema as ZodObject
 const swiftPackageStopSchema = z.object({

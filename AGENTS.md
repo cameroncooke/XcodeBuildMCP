@@ -165,6 +165,34 @@ This approach ensures that tests are robust, easy to maintain, and verify the ac
 
 For complete guidelines, refer to @docs/TESTING.md.
 
+## TypeScript Import Standards
+
+This project uses **TypeScript file extensions** (`.ts`) for all relative imports to ensure compatibility with native TypeScript runtimes.
+
+### Import Rules
+
+- ✅ **Use `.ts` extensions**: `import { tool } from './tool.ts'`
+- ✅ **Use `.ts` for re-exports**: `export { default } from '../shared/tool.ts'`
+- ✅ **External packages use `.js`**: `import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js'`
+- ❌ **Never use `.js` for internal files**: `import { tool } from './tool.js'` ← ESLint error
+
+### Benefits
+
+1. **Future-proof**: Compatible with native TypeScript runtimes (Bun, Deno, Node.js --loader)
+2. **IDE Experience**: Direct navigation to source TypeScript files
+3. **Consistency**: Import path matches the actual file you're editing
+4. **Modern Standard**: Aligns with TypeScript 4.7+ `allowImportingTsExtensions`
+
+### ESLint Enforcement
+
+The project automatically enforces this standard:
+
+```bash
+npm run lint  # Will catch .js imports for internal files
+```
+
+This ensures all new code follows the `.ts` import pattern and maintains compatibility with both current and future TypeScript execution environments.
+
 ## Release Process
 
 Follow standardized development workflow with feature branches, structured pull requests, and linear commit history. **Never push to main directly or force push without permission.**

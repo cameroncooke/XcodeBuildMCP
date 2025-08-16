@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
-import { log } from '../../../utils/index.ts';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.ts';
+import { log } from '../../../utils/logging/index.ts';
+import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject

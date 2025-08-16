@@ -1,17 +1,17 @@
 import * as os from 'os';
-import type { CommandExecutor } from '../../../../utils/execution/index.js';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import {
   loadWorkflowGroups,
   loadPlugins,
   getEnabledWorkflows,
-} from '../../../../utils/plugin-registry/index.js';
-import { areAxeToolsAvailable } from '../../../../utils/axe/index.js';
+} from '../../../../utils/plugin-registry/index.ts';
+import { areAxeToolsAvailable } from '../../../../utils/axe/index.ts';
 import {
   isXcodemakeEnabled,
   isXcodemakeAvailable,
   doesMakefileExist,
-} from '../../../../utils/xcodemake/index.js';
-import { getTrackedToolNames } from '../../../../utils/tool-registry.js';
+} from '../../../../utils/xcodemake/index.ts';
+import { getTrackedToolNames } from '../../../../utils/tool-registry.ts';
 
 export interface BinaryChecker {
   checkBinaryAvailability(binary: string): Promise<{ available: boolean; version?: string }>;
