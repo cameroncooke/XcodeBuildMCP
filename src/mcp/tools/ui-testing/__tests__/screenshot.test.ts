@@ -9,6 +9,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../../test-utils/mock-executors.ts';
+import { SystemError } from '../../../../utils/responses/index.ts';
 import screenshotPlugin, { screenshotLogic } from '../screenshot.ts';
 
 describe('Screenshot Plugin', () => {
@@ -388,7 +389,6 @@ describe('Screenshot Plugin', () => {
 
     it('should handle SystemError from command execution', async () => {
       const mockExecutor = async () => {
-        const SystemError = (await import('../../../../utils/index.js')).SystemError;
         throw new SystemError('System error occurred');
       };
 

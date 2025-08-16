@@ -11,6 +11,7 @@ import {
   createMockFileSystemExecutor,
   createCommandMatchingMockExecutor,
 } from '../../../../test-utils/mock-executors.ts';
+import { SystemError } from '../../../../utils/responses/index.ts';
 import screenshotPlugin, { screenshotLogic } from '../../ui-testing/screenshot.ts';
 
 describe('screenshot plugin', () => {
@@ -444,7 +445,6 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle SystemError exceptions', async () => {
-      const { SystemError } = await import('../../../../utils/index.js');
       const mockExecutor = createMockExecutor(new SystemError('System error occurred'));
 
       const mockPathDeps = {
