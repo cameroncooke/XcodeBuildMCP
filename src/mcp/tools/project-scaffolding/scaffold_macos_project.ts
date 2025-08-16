@@ -6,9 +6,9 @@
 
 import { z } from 'zod';
 import { join, dirname, basename } from 'path';
-import { log } from '../../../utils/index.js';
-import { ValidationError } from '../../../utils/index.js';
-import { TemplateManager } from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
+import { ValidationError } from '../../../utils/responses/index.js';
+import { TemplateManager } from '../../../utils/template/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import {
   CommandExecutor,

@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { createTextResponse } from '../../../utils/index.js';
-import { createErrorResponse } from '../../../utils/index.js';
+import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.js';
 import { getProcess, removeProcess, type ProcessInfo } from './active-processes.js';
 import { ToolResponse } from '../../../types/common.js';
 

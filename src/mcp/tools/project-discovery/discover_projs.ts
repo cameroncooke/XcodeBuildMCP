@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import * as path from 'node:path';
-import { log } from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
 import { ToolResponse, createTextContent } from '../../../types/common.js';
 import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.js';
 import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';

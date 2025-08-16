@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { stopLogCapture as _stopLogCapture } from '../../../utils/index.js';
+import { stopLogCapture as _stopLogCapture } from '../../../utils/log-capture/index.js';
 import { ToolResponse, createTextContent } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 import { getDefaultCommandExecutor } from '../../../utils/command.js';

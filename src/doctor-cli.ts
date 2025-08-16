@@ -9,7 +9,7 @@
 
 import { version } from './version.js';
 import { doctorLogic } from './mcp/tools/doctor/doctor.js';
-import { getDefaultCommandExecutor } from './utils/index.js';
+import { getDefaultCommandExecutor } from './utils/execution/index.js';
 
 async function runDoctor(): Promise<void> {
   try {

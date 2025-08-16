@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
-import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
+import type { CommandExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.js';
 
 // Unified schema: XOR between simulatorUuid and simulatorName

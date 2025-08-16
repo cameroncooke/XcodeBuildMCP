@@ -5,9 +5,10 @@
  */
 
 import { z } from 'zod';
-import { log } from '../../../utils/index.js';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
-import { version } from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
+import type { CommandExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
+import { version } from '../../../utils/version/index.js';
 import { ToolResponse } from '../../../types/common.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 import { type DoctorDependencies, createDoctorDependencies } from './lib/doctor.deps.ts';

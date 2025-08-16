@@ -13,7 +13,8 @@
 
 import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 import { ReadResourceResult } from '@camsoft/mcp-sdk/types.js';
-import { log, CommandExecutor } from '../utils/index.js';
+import { log } from '../utils/logging/index.js';
+import type { CommandExecutor } from '../utils/execution/index.js';
 import { RESOURCE_LOADERS } from './generated-resources.js';
 
 /**

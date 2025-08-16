@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.js';
-import { log, CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import { log } from '../../../utils/logging/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
+import type { CommandExecutor } from '../../../utils/execution/index.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Define schema as ZodObject

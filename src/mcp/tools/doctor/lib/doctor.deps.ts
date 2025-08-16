@@ -1,14 +1,16 @@
 import * as os from 'os';
+import type { CommandExecutor } from '../../../../utils/execution/index.js';
 import {
-  CommandExecutor,
   loadWorkflowGroups,
   loadPlugins,
-  areAxeToolsAvailable,
+  getEnabledWorkflows,
+} from '../../../../utils/plugin-registry/index.js';
+import { areAxeToolsAvailable } from '../../../../utils/axe/index.js';
+import {
   isXcodemakeEnabled,
   isXcodemakeAvailable,
   doesMakefileExist,
-  getEnabledWorkflows,
-} from '../../../../utils/index.js';
+} from '../../../../utils/xcodemake/index.js';
 import { getTrackedToolNames } from '../../../../utils/tool-registry.js';
 
 export interface BinaryChecker {

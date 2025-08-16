@@ -1,4 +1,6 @@
-// Export all utilities for plugin consumption
+/**
+ * This barrel will be removed in a future release after a deprecation period.
+ */
 export * from './logger.js';
 export * from './command.js';
 export * from './CommandExecutor.js';

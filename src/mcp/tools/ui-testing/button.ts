@@ -1,25 +1,15 @@
-/**
- * Hardware Button Plugin
- *
- * Press hardware buttons on iOS simulator including apple-pay, home, lock, side-button, and siri.
- * Supports optional duration parameter for extended button presses.
- */
-
 import { z } from 'zod';
-import { ToolResponse } from '../../../types/common.js';
-import { log, createTextResponse } from '../../../utils/index.js';
-import {
-  DependencyError,
-  AxeError,
-  SystemError,
-  createErrorResponse,
-} from '../../../utils/index.js';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/index.js';
+import type { ToolResponse } from '../../../types/common.js';
+import { log } from '../../../utils/logging/index.js';
+import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.js';
+import type { CommandExecutor } from '../../../utils/execution/index.js';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.js';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
   getBundledAxeEnvironment,
-} from '../../../utils/index.js';
+} from '../../../utils/axe-helpers.js';
+import { DependencyError, AxeError, SystemError } from '../../../utils/errors.js';
 import { createTypedTool } from '../../../utils/typed-tool-factory.js';
 
 // Define schema as ZodObject
