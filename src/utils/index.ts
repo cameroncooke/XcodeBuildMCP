@@ -1,6 +1,8 @@
 // Export all utilities for plugin consumption
 export * from './logger.js';
 export * from './command.js';
+export * from './CommandExecutor.js';
+export * from './FileSystemExecutor.js';
 export * from './validation.js';
 export * from './errors.js';
 export * from './build-utils.js';

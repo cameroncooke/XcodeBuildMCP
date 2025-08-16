@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor } from '../../../../utils/command.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
 import launchAppDevice, { launch_app_deviceLogic } from '../launch_app_device.ts';
 
 describe('launch_app_device plugin (device-shared)', () => {

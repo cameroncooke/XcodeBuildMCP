@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 
 import simulatorsResource, { simulatorsResourceLogic } from '../simulators.js';
-import { createMockExecutor } from '../../../utils/command.js';
+import { createMockExecutor } from '../../../test-utils/mock-executors.js';
 
 describe('simulators resource', () => {
   describe('Export Field Validation', () => {

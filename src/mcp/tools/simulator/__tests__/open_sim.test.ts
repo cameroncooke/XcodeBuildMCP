@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
-import { createMockExecutor, CommandExecutor } from '../../../../utils/command.js';
+import { createMockExecutor, type CommandExecutor } from '../../../../test-utils/mock-executors.js';
 import openSim, { open_simLogic } from '../open_sim.ts';
 
 describe('open_sim tool', () => {

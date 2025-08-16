@@ -8,7 +8,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
-} from '../../../../utils/command.js';
+} from '../../../../test-utils/mock-executors.js';
 import keyPressPlugin, { key_pressLogic } from '../key_press.js';
 
 describe('Key Press Plugin', () => {

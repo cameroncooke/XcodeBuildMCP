@@ -10,7 +10,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createCommandMatchingMockExecutor,
-} from '../../../../utils/command.js';
+} from '../../../../test-utils/mock-executors.js';
 import screenshotPlugin, { screenshotLogic } from '../../ui-testing/screenshot.ts';
 
 describe('screenshot plugin', () => {

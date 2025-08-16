@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { createMockExecutor } from '../../../../utils/command.js';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.js';
 import testMacos, { testMacosLogic } from '../test_macos.ts';
 
 describe('test_macos plugin (unified)', () => {
