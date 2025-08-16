@@ -456,9 +456,8 @@ async function scaffoldProject(
   // Get template path from TemplateManager
   let templatePath;
   try {
-    // Import the default command executor if not provided
+    // Use the default command executor if not provided
     if (!commandExecutor) {
-      const { getDefaultCommandExecutor } = await import('../../../utils/index.js');
       commandExecutor = getDefaultCommandExecutor();
     }
 

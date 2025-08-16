@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
-import { executeXcodeBuildCommand } from '../../../utils/build-utils.ts';
+import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';

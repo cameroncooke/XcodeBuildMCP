@@ -192,7 +192,7 @@ describe('scaffold_macos_project plugin', () => {
 
       // Restore original TemplateManager for command generation tests
       const { TemplateManager: OriginalTemplateManager } = await import(
-        '../../../../utils/index.js'
+        '../../../../utils/template/index.ts'
       );
       (TemplateManager as any).getTemplatePath = OriginalTemplateManager.getTemplatePath;
       (TemplateManager as any).cleanup = OriginalTemplateManager.cleanup;

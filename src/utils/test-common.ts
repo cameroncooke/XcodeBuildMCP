@@ -19,7 +19,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { log } from './logger.ts';
 import { XcodePlatform } from './xcode.ts';
-import { executeXcodeBuildCommand } from './build-utils.ts';
+import { executeXcodeBuildCommand } from './build/index.ts';
 import { createTextResponse, consolidateContentForClaudeCode } from './validation.ts';
 import { ToolResponse } from '../types/common.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from './command.ts';
