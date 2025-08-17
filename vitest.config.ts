@@ -21,10 +21,10 @@ export default defineConfig({
       '**/__pycache__/**',
       '**/dist/**'
     ],
-    pool: 'vmThreads',
+    pool: 'threads',
     poolOptions: {
-      vmThreads: {
-        maxThreads: 1
+      threads: {
+        maxThreads: 4
       }
     },
     env: {
