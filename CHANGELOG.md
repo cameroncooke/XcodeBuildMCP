@@ -1,8 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [1.12.0] - 2025-08-17
 ### Added
-- **Selective Workflow Loading**: New `XCODEBUILDMCP_ENABLED_WORKFLOWS` environment variable allows loading only specific workflow groups in static mode, reducing context window usage for clients that don't support MCP sampling
+- Unify project/workspace and sim id/name tools into a single tools reducing the number of tools from 81 to 59, this helps reduce the client agent's context window size by 27%!
+- **Selective Workflow Loading**: New `XCODEBUILDMCP_ENABLED_WORKFLOWS` environment variable allows loading only specific workflow groups in static mode, reducing context window usage for clients that don't support MCP sampling (Thanks to @codeman9 for their first contribution!)
+- Rename `diagnosics` tool and cli to `doctor`
+- Add Sentry instrumentation to track MCP usage statistics (can be disabled by setting `XCODEBUILDMCP_SENTRY_DISABLED=true`)
+- Add support for MCP setLevel handler to allow clients to control the log level of the MCP server
 
 ## [v1.11.2] - 2025-08-08
 - Fixed "registerTools is not a function" errors during package upgrades
@@ -86,7 +90,7 @@
 
 ## [v1.4.0-beta.3] - 2025-05-07
 - Fixed issue where incremental builds would only work for "Debug" build configurations
-- 
+-
 ## [v1.4.0-beta.2] - 2025-05-07
 - Same as beta 1 but has the latest features from the main release channel
 
