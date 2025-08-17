@@ -20,7 +20,8 @@
 import { createRequire } from 'node:module';
 // Note: Removed "import * as Sentry from '@sentry/node'" to prevent native module loading at import time
 
-const SENTRY_ENABLED = process.env.SENTRY_DISABLED !== 'true';
+const SENTRY_ENABLED =
+  process.env.SENTRY_DISABLED !== 'true' && process.env.XCODEBUILDMCP_SENTRY_DISABLED !== 'true';
 
 function isTestEnv(): boolean {
   return (
@@ -58,7 +59,11 @@ function withSentry(cb: (s: SentryModule) => void): void {
 }
 
 if (!SENTRY_ENABLED) {
-  log('info', 'Sentry disabled due to SENTRY_DISABLED environment variable');
+  if (process.env.SENTRY_DISABLED === 'true') {
+    log('info', 'Sentry disabled due to SENTRY_DISABLED environment variable');
+  } else if (process.env.XCODEBUILDMCP_SENTRY_DISABLED === 'true') {
+    log('info', 'Sentry disabled due to XCODEBUILDMCP_SENTRY_DISABLED environment variable');
+  }
 }
 
 /**
