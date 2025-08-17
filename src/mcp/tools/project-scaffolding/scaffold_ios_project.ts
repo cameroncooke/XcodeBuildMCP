@@ -457,9 +457,7 @@ async function scaffoldProject(
   let templatePath;
   try {
     // Use the default command executor if not provided
-    if (!commandExecutor) {
-      commandExecutor = getDefaultCommandExecutor();
-    }
+    commandExecutor ??= getDefaultCommandExecutor();
 
     templatePath = await TemplateManager.getTemplatePath(
       platform,
