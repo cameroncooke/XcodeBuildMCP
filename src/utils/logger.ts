@@ -23,6 +23,23 @@ import { createRequire } from 'node:module';
 const SENTRY_ENABLED =
   process.env.SENTRY_DISABLED !== 'true' && process.env.XCODEBUILDMCP_SENTRY_DISABLED !== 'true';
 
+// Log levels in order of severity (lower number = more severe)
+const LOG_LEVELS = {
+  emergency: 0,
+  alert: 1,
+  critical: 2,
+  error: 3,
+  warning: 4,
+  notice: 5,
+  info: 6,
+  debug: 7,
+} as const;
+
+export type LogLevel = keyof typeof LOG_LEVELS;
+
+// Client-requested log level (null means no filtering)
+let clientLogLevel: LogLevel | null = null;
+
 function isTestEnv(): boolean {
   return (
     process.env.VITEST === 'true' ||
@@ -67,17 +84,56 @@ if (!SENTRY_ENABLED) {
 }
 
 /**
+ * Set the minimum log level for client-requested filtering
+ * @param level The minimum log level to output
+ */
+export function setLogLevel(level: LogLevel): void {
+  clientLogLevel = level;
+  log('debug', `Log level set to: ${level}`);
+}
+
+/**
+ * Get the current client-requested log level
+ * @returns The current log level or null if no filtering is active
+ */
+export function getLogLevel(): LogLevel | null {
+  return clientLogLevel;
+}
+
+/**
+ * Check if a log level should be output based on client settings
+ * @param level The log level to check
+ * @returns true if the message should be logged
+ */
+function shouldLog(level: string): boolean {
+  // Suppress logging during tests to keep test output clean
+  if (isTestEnv()) {
+    return false;
+  }
+
+  // If no client level set, log everything
+  if (clientLogLevel === null) {
+    return true;
+  }
+
+  // Check if the level is valid
+  const levelKey = level.toLowerCase() as LogLevel;
+  if (!(levelKey in LOG_LEVELS)) {
+    return true; // Log unknown levels
+  }
+
+  // Only log if the message level is at or above the client's requested level
+  return LOG_LEVELS[levelKey] <= LOG_LEVELS[clientLogLevel];
+}
+
+/**
  * Log a message with the specified level
- * @param level The log level (info, warning, error, debug)
+ * @param level The log level (emergency, alert, critical, error, warning, notice, info, debug)
  * @param message The message to log
  */
 export function log(level: string, message: string): void {
-  // Suppress logging during tests to keep test output clean
-  if (
-    process.env.VITEST === 'true' ||
-    process.env.NODE_ENV === 'test' ||
-    process.env.XCODEBUILDMCP_SILENCE_LOGS === 'true'
-  ) {
+  // Check if we should log this level
+  if (!shouldLog(level)) {
     return;
   }
 

@@ -29,6 +29,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 - [Dynamic Tools](#dynamic-tools)
   - [What is Dynamic Tools?](#what-is-dynamic-tools)
   - [How to Enable Dynamic Tools](#how-to-enable-dynamic-tools)
+  - [Selective Workflow Loading (Static Mode)](#selective-workflow-loading-static-mode)
   - [Usage Example](#usage-example)
   - [Client Compatibility](#client-compatibility)
 - [Code Signing for Device Deployment](#code-signing-for-device-deployment)
@@ -79,7 +80,7 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - **Clean Artifacts**: Remove build artifacts and derived data for fresh builds
 
 ### Simulator management
-- **Simulator Control**: List, boot, and open simulators 
+- **Simulator Control**: List, boot, and open simulators
 - **App Lifecycle**: Complete app management - install, launch, and stop apps on simulators
 - **Log Capture**: Capture run-time logs from a simulator
 - **UI Automation**: Interact with simulator UI elements
@@ -121,7 +122,7 @@ For clients that support MCP resources XcodeBuildMCP provides efficient URI-base
 
 For a quick install, you can use the following links:
 
-- [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAbGF0ZXN0In0%3D)
+- [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=XcodeBuildMCP&config=eyJ0eXBlIjoic3RkaW8iLCJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAbGF0ZXN0IiwiZW52Ijp7IklOQ1JFTUVOVEFMX0JVSUxEU19FTkFCTEVEIjoiZmFsc2UiLCJYQ09ERUJVSUxETUNQX1NFTlRSWV9ESVNBQkxFRCI6ImZhbHNlIn19)
 - [<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D)
 - [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D&quality=insiders)
 
@@ -177,7 +178,7 @@ Then configure your MCP client to use mise to install XcodeBuildMCP:
 > When using mise avoid using the @latest tag as mise will cache the package and may not update to the latest version automatically, instead prefer an explicit version number.
 
 > [!IMPORTANT]
-> Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros. 
+> Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros.
 
 #### Installing via Smithery
 
@@ -194,7 +195,7 @@ XcodeBuildMCP supports both MCP tools, resources and sampling. At time of writin
 | Editor | Tools | Resources | Samplng |
 |--------|-------|-----------|---------|
 | **VS Code** | ✅ | ✅ | ✅ |
-| **Cursor** | ✅ | ❌ | ❌ | 
+| **Cursor** | ✅ | ❌ | ❌ |
 | **Windsurf** | ✅ | ❌ | ❌ |
 | **Claude Code** | ✅ | ✅ | ❌ |
 | **Claude Desktop** | ✅ | ✅ | ❌ |
@@ -217,7 +218,7 @@ Example MCP client configuration:
       ],
       "env": {
         "INCREMENTAL_BUILDS_ENABLED": "true"
-      }        
+      }
     }
   }
 }
@@ -255,7 +256,7 @@ Example MCP client configuration:
       ],
       "env": {
         "XCODEBUILDMCP_DYNAMIC_TOOLS": "true"
-      }        
+      }
     }
   }
 }
@@ -276,7 +277,7 @@ For clients that don't support MCP Sampling but still want to reduce context win
       ],
       "env": {
         "XCODEBUILDMCP_ENABLED_WORKFLOWS": "simulator,device,project-discovery"
-      }        
+      }
     }
   }
 }
@@ -362,7 +363,7 @@ This project uses [Sentry](https://sentry.io/) for error monitoring and diagnost
 - Error logs may include details such as error messages, stack traces, and (in some cases) file paths or project names. You can review the sources in this repository to see exactly what is logged.
 
 ### Opting Out of Sentry
-- If you do not wish to send error logs to Sentry, you can opt out by setting the environment variable `SENTRY_DISABLED=true`.
+- If you do not wish to send error logs to Sentry, you can opt out by setting the environment variable `XCODEBUILDMCP_SENTRY_DISABLED=true`.
 
 Example MCP client configuration:
 ```json
@@ -375,8 +376,8 @@ Example MCP client configuration:
         "xcodebuildmcp@latest"
       ],
       "env": {
-        "SENTRY_DISABLED": "true"
-      }        
+        "XCODEBUILDMCP_SENTRY_DISABLED": "true"
+      }
     }
   }
 }

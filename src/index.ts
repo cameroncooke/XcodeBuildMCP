@@ -20,8 +20,11 @@ import './utils/sentry.ts';
 import { createServer, startServer } from './server/server.ts';
 import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 
+// Import MCP types for logging
+import { SetLevelRequestSchema } from '@camsoft/mcp-sdk/types.js';
+
 // Import utilities
-import { log } from './utils/logger.ts';
+import { log, setLogLevel, type LogLevel } from './utils/logger.ts';
 
 // Import version
 import { version } from './version.ts';
@@ -63,6 +66,14 @@ async function main(): Promise<void> {
 
     // Create the server
     const server = createServer();
+
+    // Register logging/setLevel handler
+    server.server.setRequestHandler(SetLevelRequestSchema, async (request) => {
+      const { level } = request.params;
+      setLogLevel(level as LogLevel);
+      log('info', `Client requested log level: ${level}`);
+      return {}; // Empty result as per MCP spec
+    });
 
     // Make server available globally for dynamic tools
     (globalThis as { mcpServer?: McpServer }).mcpServer = server;
