@@ -43,11 +43,10 @@ async function defaultExecutor(
     // For shell execution, we need to format as ['sh', '-c', 'full command string']
     const commandString = command
       .map((arg) => {
-        // If the argument contains spaces or special characters, wrap it in quotes
-        // Ensure existing quotes are escaped
-        if (/[\s,"'=]/.test(arg) && !/^".*"$/.test(arg)) {
-          // Check if needs quoting and isn't already quoted
-          return `"${arg.replace(/(["\\])/g, '\\$1')}"`; // Escape existing quotes and backslashes
+        // Shell metacharacters that require quoting: space, quotes, equals, dollar, backticks, semicolons, pipes, etc.
+        if (/[\s,"'=$`;&|<>(){}[\]\\*?~]/.test(arg) && !/^".*"$/.test(arg)) {
+          // Escape all quotes and backslashes, then wrap in double quotes
+          return `"${arg.replace(/(["\\])/g, '\\$1')}"`;
         }
         return arg;
       })

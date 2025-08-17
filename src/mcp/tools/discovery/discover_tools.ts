@@ -21,14 +21,28 @@ interface LLMConfig {
 }
 
 // Default LLM configuration with environment variable overrides
-const getLLMConfig = (): LLMConfig => ({
-  maxTokens: process.env.XCODEBUILDMCP_LLM_MAX_TOKENS
-    ? parseInt(process.env.XCODEBUILDMCP_LLM_MAX_TOKENS, 10)
-    : 200,
-  temperature: process.env.XCODEBUILDMCP_LLM_TEMPERATURE
-    ? parseFloat(process.env.XCODEBUILDMCP_LLM_TEMPERATURE)
-    : undefined,
-});
+const getLLMConfig = (): LLMConfig => {
+  let maxTokens = 200; // default
+  if (process.env.XCODEBUILDMCP_LLM_MAX_TOKENS) {
+    const parsed = parseInt(process.env.XCODEBUILDMCP_LLM_MAX_TOKENS, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      maxTokens = parsed;
+    }
+  }
+
+  let temperature: number | undefined;
+  if (process.env.XCODEBUILDMCP_LLM_TEMPERATURE) {
+    const parsed = parseFloat(process.env.XCODEBUILDMCP_LLM_TEMPERATURE);
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 2) {
+      temperature = parsed;
+    }
+  }
+
+  return {
+    maxTokens,
+    temperature,
+  };
+};
 
 /**
  * Sanitizes user input to prevent injection attacks and ensure safe LLM usage
