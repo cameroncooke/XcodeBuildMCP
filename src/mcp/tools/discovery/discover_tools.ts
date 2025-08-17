@@ -175,12 +175,9 @@ The user wants to perform the following task: "${sanitizedTaskDescription}"
 IMPORTANT: Select EXACTLY ONE workflow that best matches the user's task. In most cases, users are working with a project or workspace. Use this selection guide:
 
 Primary (project/workspace-based) workflows:
-- iOS simulator with .xcworkspace: choose "simulator-workspace"
-- iOS simulator with .xcodeproj: choose "simulator-project"
-- iOS physical device with .xcworkspace: choose "device-workspace"
-- iOS physical device with .xcodeproj: choose "device-project"
-- macOS with .xcworkspace: choose "macos-workspace"
-- macOS with .xcodeproj: choose "macos-project"
+- iOS simulator (supports both .xcworkspace and .xcodeproj): choose "simulator"
+- iOS physical device (supports both .xcworkspace and .xcodeproj): choose "device"
+- macOS (supports both .xcworkspace and .xcodeproj): choose "macos"
 - Swift Package Manager (no Xcode project): choose "swift-package"
 
 Secondary (task-based, no project/workspace needed):
@@ -189,11 +186,13 @@ Secondary (task-based, no project/workspace needed):
 - UI automation/gestures/screenshots on a simulator app: choose "ui-testing"
 - System/environment diagnostics or validation: choose "doctor"
 - Create new iOS/macOS projects from templates: choose "project-scaffolding"
+- Project discovery and analysis: choose "project-discovery"
+- General utilities: choose "utilities"
 
 All available workflows:
 ${workflowDescriptions}
 
-Respond with ONLY a JSON array containing ONE workflow name that best matches the task (e.g., ["simulator-workspace"]).`;
+Respond with ONLY a JSON array containing ONE workflow name that best matches the task (e.g., ["simulator"]).`;
 
     // 4. Send sampling request with configurable parameters
     const llmConfig = getLLMConfig();

@@ -191,6 +191,11 @@ export async function registerAllToolsStatic(server: McpServer): Promise<void> {
   const allTools = [];
 
   for (const plugin of plugins.values()) {
+    // Exclude discovery tools in static mode - they should only be available in dynamic mode
+    if (plugin.name === 'discover_tools') {
+      continue;
+    }
+
     allTools.push({
       name: plugin.name,
       config: {
