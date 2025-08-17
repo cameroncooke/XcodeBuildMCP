@@ -165,7 +165,7 @@ Then configure your MCP client to use mise to install XcodeBuildMCP:
       "command": "mise",
       "args": [
         "x",
-        "npm:xcodebuildmcp@1.11.2",
+        "npm:xcodebuildmcp@1.12.0",
         "--",
         "xcodebuildmcp"
       ]
