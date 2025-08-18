@@ -31,6 +31,8 @@ export function createMockExecutor(
         output?: string;
         error?: string;
         process?: unknown;
+        exitCode?: number;
+        shouldThrow?: Error;
       }
     | Error
     | string,
@@ -42,6 +44,13 @@ export function createMockExecutor(
     };
   }
 
+  // If shouldThrow is specified, return executor that rejects with that error
+  if (result.shouldThrow) {
+    return async () => {
+      throw result.shouldThrow;
+    };
+  }
+
   const mockProcess = {
     pid: 12345,
     stdout: null,
@@ -50,7 +59,7 @@ export function createMockExecutor(
     stdio: [null, null, null],
     killed: false,
     connected: false,
-    exitCode: result.success === false ? 1 : 0,
+    exitCode: result.exitCode ?? (result.success === false ? 1 : 0),
     signalCode: null,
     spawnargs: [],
     spawnfile: 'sh',
@@ -61,6 +70,7 @@ export function createMockExecutor(
     output: result.output ?? '',
     error: result.error,
     process: (result.process ?? mockProcess) as ChildProcess,
+    exitCode: result.exitCode ?? (result.success === false ? 1 : 0),
   });
 }
 
@@ -104,6 +114,7 @@ export function createCommandMatchingMockExecutor(
       output?: string;
       error?: string;
       process?: unknown;
+      exitCode?: number;
     }
   >,
 ): CommandExecutor {
@@ -132,7 +143,7 @@ export function createCommandMatchingMockExecutor(
       stdio: [null, null, null],
       killed: false,
       connected: false,
-      exitCode: result.success === false ? 1 : 0,
+      exitCode: result.exitCode ?? (result.success === false ? 1 : 0),
       signalCode: null,
       spawnargs: [],
       spawnfile: 'sh',
@@ -143,6 +154,7 @@ export function createCommandMatchingMockExecutor(
       output: result.output ?? '',
       error: result.error,
       process: (result.process ?? mockProcess) as ChildProcess,
+      exitCode: result.exitCode ?? (result.success === false ? 1 : 0),
     };
   };
 }

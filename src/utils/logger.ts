@@ -37,6 +37,13 @@ const LOG_LEVELS = {
 
 export type LogLevel = keyof typeof LOG_LEVELS;
 
+/**
+ * Optional context for logging to control Sentry capture
+ */
+export interface LogContext {
+  sentry?: boolean;
+}
+
 // Client-requested log level (null means no filtering)
 let clientLogLevel: LogLevel | null = null;
 
@@ -130,8 +137,9 @@ function shouldLog(level: string): boolean {
  * Log a message with the specified level
  * @param level The log level (emergency, alert, critical, error, warning, notice, info, debug)
  * @param message The message to log
+ * @param context Optional context to control Sentry capture and other behavior
  */
-export function log(level: string, message: string): void {
+export function log(level: string, message: string, context?: LogContext): void {
   // Check if we should log this level
   if (!shouldLog(level)) {
     return;
@@ -140,7 +148,11 @@ export function log(level: string, message: string): void {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
 
-  if (level === 'error' && SENTRY_ENABLED) {
+  // Default: error level goes to Sentry
+  // But respect explicit override from context
+  const captureToSentry = SENTRY_ENABLED && (context?.sentry ?? level === 'error');
+
+  if (captureToSentry) {
     withSentry((s) => s.captureMessage(logMessage));
   }
 
