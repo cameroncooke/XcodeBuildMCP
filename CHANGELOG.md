@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.1] - 2025-08-18
+### Improved
+- **Sentry Logging**: No longer logs domain errors to Sentry, now only logs MCP server errors.
+
 ## [1.12.0] - 2025-08-17
 ### Added
 - Unify project/workspace and sim id/name tools into a single tools reducing the number of tools from 81 to 59, this helps reduce the client agent's context window size by 27%!
