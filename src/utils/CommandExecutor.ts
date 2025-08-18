@@ -19,4 +19,5 @@ export interface CommandResponse {
   output: string;
   error?: string;
   process: ChildProcess;
+  exitCode?: number;
 }

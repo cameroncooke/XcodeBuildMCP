@@ -247,9 +247,13 @@ export async function executeXcodeBuildCommand(
     }
 
     if (!result.success) {
-      log('error', `${platformOptions.logPrefix} ${buildAction} failed: ${result.error}`);
+      const isMcpError = result.exitCode === 64;
 
-      // Create concise error response with warnings/errors included
+      log(
+        isMcpError ? 'error' : 'warning',
+        `${platformOptions.logPrefix} ${buildAction} failed: ${result.error}`,
+        { sentry: isMcpError },
+      );
       const errorResponse = createTextResponse(
         `❌ ${platformOptions.logPrefix} ${buildAction} failed for scheme ${params.scheme}.`,
         true,
@@ -339,7 +343,16 @@ Future builds will use the generated Makefile for improved performance.
     return consolidateContentForClaudeCode(successResponse);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    log('error', `Error during ${platformOptions.logPrefix} ${buildAction}: ${errorMessage}`);
+
+    const isSpawnError =
+      error instanceof Error &&
+      'code' in error &&
+      ['ENOENT', 'EACCES', 'EPERM'].includes((error as NodeJS.ErrnoException).code ?? '');
+
+    log('error', `Error during ${platformOptions.logPrefix} ${buildAction}: ${errorMessage}`, {
+      sentry: !isSpawnError,
+    });
+
     return consolidateContentForClaudeCode(
       createTextResponse(
         `Error during ${platformOptions.logPrefix} ${buildAction}: ${errorMessage}`,

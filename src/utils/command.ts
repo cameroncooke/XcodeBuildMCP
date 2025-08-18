@@ -126,6 +126,7 @@ async function defaultExecutor(
           output: stdout,
           error: success ? undefined : stderr,
           process: childProcess,
+          exitCode: code ?? undefined,
         };
 
         resolve(response);
