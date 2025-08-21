@@ -33,9 +33,21 @@ const baseOptions = {
       'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
     ),
   platform: z
-    .enum(['macOS', 'iOS', 'iOS Simulator', 'watchOS', 'watchOS Simulator', 'tvOS', 'tvOS Simulator', 'visionOS', 'visionOS Simulator'])
+    .enum([
+      'macOS',
+      'iOS',
+      'iOS Simulator',
+      'watchOS',
+      'watchOS Simulator',
+      'tvOS',
+      'tvOS Simulator',
+      'visionOS',
+      'visionOS Simulator',
+    ])
     .optional()
-    .describe('Optional: Platform to clean for (defaults to iOS). Choose from macOS, iOS, iOS Simulator, watchOS, watchOS Simulator, tvOS, tvOS Simulator, visionOS, visionOS Simulator'),
+    .describe(
+      'Optional: Platform to clean for (defaults to iOS). Choose from macOS, iOS, iOS Simulator, watchOS, watchOS Simulator, tvOS, tvOS Simulator, visionOS, visionOS Simulator',
+    ),
 };
 
 const baseSchemaObject = z.object({
@@ -71,11 +83,32 @@ export async function cleanLogic(
       'Invalid parameters:\nscheme: scheme is required when workspacePath is provided.',
     );
   }
-  
+
   // Use provided platform or default to iOS
   const targetPlatform = params.platform ?? 'iOS';
-  const platformEnum = XcodePlatform[targetPlatform as keyof typeof XcodePlatform];
-  
+
+  // Map human-friendly platform names to XcodePlatform enum values
+  // This is safer than direct key lookup and handles the space-containing simulator names
+  const platformMap = {
+    macOS: XcodePlatform.macOS,
+    iOS: XcodePlatform.iOS,
+    'iOS Simulator': XcodePlatform.iOSSimulator,
+    watchOS: XcodePlatform.watchOS,
+    'watchOS Simulator': XcodePlatform.watchOSSimulator,
+    tvOS: XcodePlatform.tvOS,
+    'tvOS Simulator': XcodePlatform.tvOSSimulator,
+    visionOS: XcodePlatform.visionOS,
+    'visionOS Simulator': XcodePlatform.visionOSSimulator,
+  };
+
+  const platformEnum = platformMap[targetPlatform];
+  if (!platformEnum) {
+    return createErrorResponse(
+      'Parameter validation failed',
+      `Invalid parameters:\nplatform: unsupported value "${targetPlatform}".`,
+    );
+  }
+
   const hasProjectPath = typeof params.projectPath === 'string';
   const typedParams: SharedBuildParams = {
     ...(hasProjectPath
@@ -89,10 +122,22 @@ export async function cleanLogic(
     extraArgs: params.extraArgs,
   };
 
+  // For clean operations, simulator platforms should be mapped to their device equivalents
+  // since clean works at the build product level, not runtime level, and build products
+  // are shared between device and simulator platforms
+  const cleanPlatformMap: Partial<Record<XcodePlatform, XcodePlatform>> = {
+    [XcodePlatform.iOSSimulator]: XcodePlatform.iOS,
+    [XcodePlatform.watchOSSimulator]: XcodePlatform.watchOS,
+    [XcodePlatform.tvOSSimulator]: XcodePlatform.tvOS,
+    [XcodePlatform.visionOSSimulator]: XcodePlatform.visionOS,
+  };
+
+  const cleanPlatform = cleanPlatformMap[platformEnum] ?? platformEnum;
+
   return executeXcodeBuildCommand(
     typedParams,
     {
-      platform: platformEnum,
+      platform: cleanPlatform,
       logPrefix: 'Clean',
     },
     false,

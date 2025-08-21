@@ -50,54 +50,75 @@ describe('clean (unified) tool', () => {
   });
 
   it('uses iOS platform by default', async () => {
-    const mock = createMockExecutor({ success: true, output: 'clean success' });
-    const result = await cleanLogic({ projectPath: '/p.xcodeproj', scheme: 'App' } as any, mock);
+    let capturedCommand: string[] = [];
+    const mockExecutor = async (command: string[]) => {
+      capturedCommand = command;
+      return { success: true, output: 'clean success' };
+    };
+
+    const result = await cleanLogic(
+      { projectPath: '/p.xcodeproj', scheme: 'App' } as any,
+      mockExecutor,
+    );
     expect(result.isError).not.toBe(true);
-    
-    // Check that the executor was called with iOS platform arguments
-    expect(mock).toHaveBeenCalled();
-    const commandArgs = mock.mock.calls[0][0];
-    expect(commandArgs).toContain('-destination');
-    expect(commandArgs).toContain('platform=iOS');
+
+    // Check that the command contains iOS platform destination
+    const commandStr = capturedCommand.join(' ');
+    expect(commandStr).toContain('-destination');
+    expect(commandStr).toContain('platform=iOS');
   });
 
   it('accepts custom platform parameter', async () => {
-    const mock = createMockExecutor({ success: true, output: 'clean success' });
-    const result = await cleanLogic({ 
-      projectPath: '/p.xcodeproj', 
-      scheme: 'App',
-      platform: 'macOS'
-    } as any, mock);
+    let capturedCommand: string[] = [];
+    const mockExecutor = async (command: string[]) => {
+      capturedCommand = command;
+      return { success: true, output: 'clean success' };
+    };
+
+    const result = await cleanLogic(
+      {
+        projectPath: '/p.xcodeproj',
+        scheme: 'App',
+        platform: 'macOS',
+      } as any,
+      mockExecutor,
+    );
     expect(result.isError).not.toBe(true);
-    
-    // Check that the executor was called with macOS platform arguments
-    expect(mock).toHaveBeenCalled();
-    const commandArgs = mock.mock.calls[0][0];
-    expect(commandArgs).toContain('-destination');
-    expect(commandArgs).toContain('platform=macOS');
+
+    // Check that the command contains macOS platform destination
+    const commandStr = capturedCommand.join(' ');
+    expect(commandStr).toContain('-destination');
+    expect(commandStr).toContain('platform=macOS');
   });
 
-  it('accepts iOS Simulator platform parameter', async () => {
-    const mock = createMockExecutor({ success: true, output: 'clean success' });
-    const result = await cleanLogic({ 
-      projectPath: '/p.xcodeproj', 
-      scheme: 'App',
-      platform: 'iOS Simulator'
-    } as any, mock);
+  it('accepts iOS Simulator platform parameter (maps to iOS for clean)', async () => {
+    let capturedCommand: string[] = [];
+    const mockExecutor = async (command: string[]) => {
+      capturedCommand = command;
+      return { success: true, output: 'clean success' };
+    };
+
+    const result = await cleanLogic(
+      {
+        projectPath: '/p.xcodeproj',
+        scheme: 'App',
+        platform: 'iOS Simulator',
+      } as any,
+      mockExecutor,
+    );
     expect(result.isError).not.toBe(true);
-    
-    // Check that the executor was called with iOS Simulator platform arguments
-    expect(mock).toHaveBeenCalled();
-    const commandArgs = mock.mock.calls[0][0];
-    expect(commandArgs).toContain('-destination');
-    expect(commandArgs).toContain('platform=iOS Simulator');
+
+    // For clean operations, iOS Simulator should be mapped to iOS platform
+    const commandStr = capturedCommand.join(' ');
+    expect(commandStr).toContain('-destination');
+    expect(commandStr).toContain('platform=iOS');
   });
 
   it('handler validation: rejects invalid platform values', async () => {
     const result = await (tool as any).handler({
       projectPath: '/p.xcodeproj',
       scheme: 'App',
-      platform: 'InvalidPlatform'
+      platform: 'InvalidPlatform',
     });
     expect(result.isError).toBe(true);
     const text = String(result.content?.[1]?.text ?? result.content?.[0]?.text ?? '');
