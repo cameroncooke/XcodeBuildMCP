@@ -48,4 +48,59 @@ describe('clean (unified) tool', () => {
     const text = String(result.content?.[1]?.text ?? result.content?.[0]?.text ?? '');
     expect(text).toContain('Invalid parameters');
   });
+
+  it('uses iOS platform by default', async () => {
+    const mock = createMockExecutor({ success: true, output: 'clean success' });
+    const result = await cleanLogic({ projectPath: '/p.xcodeproj', scheme: 'App' } as any, mock);
+    expect(result.isError).not.toBe(true);
+    
+    // Check that the executor was called with iOS platform arguments
+    expect(mock).toHaveBeenCalled();
+    const commandArgs = mock.mock.calls[0][0];
+    expect(commandArgs).toContain('-destination');
+    expect(commandArgs).toContain('platform=iOS');
+  });
+
+  it('accepts custom platform parameter', async () => {
+    const mock = createMockExecutor({ success: true, output: 'clean success' });
+    const result = await cleanLogic({ 
+      projectPath: '/p.xcodeproj', 
+      scheme: 'App',
+      platform: 'macOS'
+    } as any, mock);
+    expect(result.isError).not.toBe(true);
+    
+    // Check that the executor was called with macOS platform arguments
+    expect(mock).toHaveBeenCalled();
+    const commandArgs = mock.mock.calls[0][0];
+    expect(commandArgs).toContain('-destination');
+    expect(commandArgs).toContain('platform=macOS');
+  });
+
+  it('accepts iOS Simulator platform parameter', async () => {
+    const mock = createMockExecutor({ success: true, output: 'clean success' });
+    const result = await cleanLogic({ 
+      projectPath: '/p.xcodeproj', 
+      scheme: 'App',
+      platform: 'iOS Simulator'
+    } as any, mock);
+    expect(result.isError).not.toBe(true);
+    
+    // Check that the executor was called with iOS Simulator platform arguments
+    expect(mock).toHaveBeenCalled();
+    const commandArgs = mock.mock.calls[0][0];
+    expect(commandArgs).toContain('-destination');
+    expect(commandArgs).toContain('platform=iOS Simulator');
+  });
+
+  it('handler validation: rejects invalid platform values', async () => {
+    const result = await (tool as any).handler({
+      projectPath: '/p.xcodeproj',
+      scheme: 'App',
+      platform: 'InvalidPlatform'
+    });
+    expect(result.isError).toBe(true);
+    const text = String(result.content?.[1]?.text ?? result.content?.[0]?.text ?? '');
+    expect(text).toContain('Invalid parameters');
+  });
 });

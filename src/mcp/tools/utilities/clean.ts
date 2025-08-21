@@ -32,6 +32,10 @@ const baseOptions = {
     .describe(
       'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
     ),
+  platform: z
+    .enum(['macOS', 'iOS', 'iOS Simulator', 'watchOS', 'watchOS Simulator', 'tvOS', 'tvOS Simulator', 'visionOS', 'visionOS Simulator'])
+    .optional()
+    .describe('Optional: Platform to clean for (defaults to iOS). Choose from macOS, iOS, iOS Simulator, watchOS, watchOS Simulator, tvOS, tvOS Simulator, visionOS, visionOS Simulator'),
 };
 
 const baseSchemaObject = z.object({
@@ -67,6 +71,11 @@ export async function cleanLogic(
       'Invalid parameters:\nscheme: scheme is required when workspacePath is provided.',
     );
   }
+  
+  // Use provided platform or default to iOS
+  const targetPlatform = params.platform ?? 'iOS';
+  const platformEnum = XcodePlatform[targetPlatform as keyof typeof XcodePlatform];
+  
   const hasProjectPath = typeof params.projectPath === 'string';
   const typedParams: SharedBuildParams = {
     ...(hasProjectPath
@@ -83,7 +92,7 @@ export async function cleanLogic(
   return executeXcodeBuildCommand(
     typedParams,
     {
-      platform: XcodePlatform.macOS,
+      platform: platformEnum,
       logPrefix: 'Clean',
     },
     false,
@@ -95,7 +104,7 @@ export async function cleanLogic(
 export default {
   name: 'clean',
   description:
-    "Cleans build products for either a project or a workspace using xcodebuild. Provide exactly one of projectPath or workspacePath. Example: clean({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+    "Cleans build products for either a project or a workspace using xcodebuild. Provide exactly one of projectPath or workspacePath. Platform defaults to iOS if not specified. Example: clean({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', platform: 'iOS' })",
   schema: baseSchemaObject.shape,
   handler: createTypedTool<CleanParams>(
     cleanSchema as z.ZodType<CleanParams>,
