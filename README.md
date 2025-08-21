@@ -19,18 +19,20 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Configure your MCP client](#configure-your-mcp-client)
-    - [Quick install](#quick-install)
-    - [Manual installation](#manual-installation)
-    - [Alternative installation method using mise](#alternative-installation-method-using-mise)
-    - [Installing via Smithery](#installing-via-smithery)
+    - [One click install](#one-click-install)
+    - [General installation](#general-installation)
+    - [Specific client installation instructions](#specific-client-installation-instructions)
+      - [OpenAI Codex CLI](#openai-codex-cli)
+      - [Claude Code CLI](#claude-code-cli)
+      - [Smithery](#smithery)
     - [MCP Compatibility](#mcp-compatibility)
 - [Incremental build support](#incremental-build-support)
 - [Dynamic Tools](#dynamic-tools)
   - [What is Dynamic Tools?](#what-is-dynamic-tools)
   - [How to Enable Dynamic Tools](#how-to-enable-dynamic-tools)
-  - [Selective Workflow Loading (Static Mode)](#selective-workflow-loading-static-mode)
   - [Usage Example](#usage-example)
   - [Client Compatibility](#client-compatibility)
+  - [Selective Workflow Loading (Static Mode)](#selective-workflow-loading-static-mode)
 - [Code Signing for Device Deployment](#code-signing-for-device-deployment)
 - [Troubleshooting](#troubleshooting)
   - [Doctor Tool](#doctor-tool)
@@ -117,75 +119,67 @@ For clients that support MCP resources XcodeBuildMCP provides efficient URI-base
 
 ### Configure your MCP client
 
-#### Quick install
+#### One click install
 
 For a quick install, you can use the following links:
 
-- [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=XcodeBuildMCP&config=eyJ0eXBlIjoic3RkaW8iLCJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAbGF0ZXN0IiwiZW52Ijp7IklOQ1JFTUVOVEFMX0JVSUxEU19FTkFCTEVEIjoiZmFsc2UiLCJYQ09ERUJVSUxETUNQX1NFTlRSWV9ESVNBQkxFRCI6ImZhbHNlIn19)
-- [<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D)
-- [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D&quality=insiders)
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=XcodeBuildMCP&config=eyJ0eXBlIjoic3RkaW8iLCJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAbGF0ZXN0IiwiZW52Ijp7IklOQ1JFTUVOVEFMX0JVSUxEU19FTkFCTEVEIjoiZmFsc2UiLCJYQ09ERUJVSUxETUNQX1NFTlRSWV9ESVNBQkxFRCI6ImZhbHNlIn19)
 
-#### Manual installation
+[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D)
 
-Configure your MCP client (Windsurf, Cursor, Claude Desktop, Claude Code etc.) to use the XcodeBuildMCP server by ammending your client application's MCP configuration.
+[<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D&quality=insiders)
+
+#### General installation
+
+Most MCP clients (Cursor, VS Code, Windsurf, Claude Desktop etc) have standardised on the following JSON configuration format, just add the the following to your client's JSON configuration's `mcpServers` object:
 
 ```json
-{
-  "mcpServers": {
-    "XcodeBuildMCP": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "xcodebuildmcp@latest"
-      ]
-    }
-  }
+"XcodeBuildMCP": {
+  "command": "npx",
+  "args": [
+    "-y",
+    "xcodebuildmcp@latest"
+  ]
 }
 ```
 
-#### Alternative installation method using mise
+#### Specific client installation instructions
 
-Alternatively, you can use XcodeBuildMCP without a specific installation of Node.js by using `mise` to install it:
+##### OpenAI Codex CLI
+
+Codex uses a toml configuration file to configure MCP servers. To configure XcodeBuildMCP with [OpenAI's Codex CLI](https://github.com/openai/codex), add the following configuration to your Codex CLI config file:
+
+```toml
+[mcp_servers.XcodeBuildMCP]
+command = "npx"
+args = ["-y", "xcodebuildmcp@latest"]
+env = { "INCREMENTAL_BUILDS_ENABLED" = "false", "XCODEBUILDMCP_SENTRY_DISABLED" = "false" }
+```
+
+For more information see [OpenAI Codex MCP Server Configuration](https://github.com/openai/codex/blob/main/codex-rs/config.md#mcp_servers) documentation.
+
+##### Claude Code CLI
+
+To use XcodeBuildMCP with [Claude Code](https://code.anthropic.com), you can add it via the command line:
 
 ```bash
-# macOS (Homebrew)
-brew install mise
+# Add XcodeBuildMCP server to Claude Code
+claude mcp add XcodeBuildMCP npx xcodebuildmcp@latest
 
-# Other installation methods
-# See https://mise.jdx.dev/getting-started.html
+# Or with environment variables
+claude mcp add XcodeBuildMCP npx xcodebuildmcp@latest -H INCREMENTAL_BUILDS_ENABLED=false -H XCODEBUILDMCP_SENTRY_DISABLED=false
 ```
 
-Then configure your MCP client to use mise to install XcodeBuildMCP:
-
-```json
-{
-  "mcpServers": {
-    "XcodeBuildMCP": {
-      "command": "mise",
-      "args": [
-        "x",
-        "npm:xcodebuildmcp@1.12.2",
-        "--",
-        "xcodebuildmcp"
-      ]
-    }
-  }
-}
-```
-
-> [!NOTE]
-> When using mise avoid using the @latest tag as mise will cache the package and may not update to the latest version automatically, instead prefer an explicit version number.
-
-> [!IMPORTANT]
-> Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros.
-
-#### Installing via Smithery
+##### Smithery
 
 To install XcodeBuildMCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@cameroncooke/XcodeBuildMCP):
 
 ```bash
 npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client claude
 ```
+
+> [!IMPORTANT]
+> Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros.
 
 #### MCP Compatibility
 
@@ -205,20 +199,12 @@ XcodeBuildMCP includes experimental support for incremental builds. This feature
 
 To enable incremental builds, set the `INCREMENTAL_BUILDS_ENABLED` environment variable to `true`:
 
-Example MCP client configuration:
+Example MCP configuration:
 ```json
-{
-  "mcpServers": {
-    "XcodeBuildMCP": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "xcodebuildmcp@latest"
-      ],
-      "env": {
-        "INCREMENTAL_BUILDS_ENABLED": "true"
-      }
-    }
+"XcodeBuildMCP": {
+  ...
+  "env": {
+    "INCREMENTAL_BUILDS_ENABLED": "true"
   }
 }
 ```
@@ -245,39 +231,42 @@ To enable dynamic tools, set the `XCODEBUILDMCP_DYNAMIC_TOOLS` environment varia
 
 Example MCP client configuration:
 ```json
-{
-  "mcpServers": {
-    "XcodeBuildMCP": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "xcodebuildmcp@latest"
-      ],
-      "env": {
-        "XCODEBUILDMCP_DYNAMIC_TOOLS": "true"
-      }
-    }
+"XcodeBuildMCP": {
+  ...
+  "env": {
+    "XCODEBUILDMCP_DYNAMIC_TOOLS": "true"
   }
 }
 ```
+
+### Usage Example
+
+Once enabled, AI agents automatically discover and load relevant tools based on context. For example, when you mention working on an iOS app or the agent detects iOS development tasks in your workspace, it will automatically use the `discover_tools` tool to load the appropriate simulator and project tools needed for your workflow.
+
+### Client Compatibility
+
+Dynamic Tools requires MCP clients that support **MCP Sampling** for the AI-powered tool discovery to function:
+
+| Editor | Dynamic Tools Support |
+|--------|----------------------|
+| **VS Code** | ✅ |
+| **Cursor** | ❌ (No MCP Sampling) |
+| **Windsurf** | ❌ (No MCP Sampling) |
+| **Claude Code** | ❌ (No MCP Sampling) |
+| **Claude Desktop** | ❌ (No MCP Sampling) |
+
+> [!NOTE]
+> For clients that don't support MCP Sampling, XcodeBuildMCP will automatically fall back to Static Mode, loading all tools at startup regardless of the `XCODEBUILDMCP_DYNAMIC_TOOLS` setting.
 
 ### Selective Workflow Loading (Static Mode)
 
 For clients that don't support MCP Sampling but still want to reduce context window usage, you can selectively load only specific workflows using the `XCODEBUILDMCP_ENABLED_WORKFLOWS` environment variable:
 
 ```json
-{
-  "mcpServers": {
-    "XcodeBuildMCP": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "xcodebuildmcp@latest"
-      ],
-      "env": {
-        "XCODEBUILDMCP_ENABLED_WORKFLOWS": "simulator,device,project-discovery"
-      }
-    }
+"XcodeBuildMCP": {
+  ...
+  "env": {
+    "XCODEBUILDMCP_ENABLED_WORKFLOWS": "simulator,device,project-discovery"
   }
 }
 ```
@@ -298,25 +287,6 @@ For clients that don't support MCP Sampling but still want to reduce context win
 
 > [!NOTE]
 > The `XCODEBUILDMCP_ENABLED_WORKFLOWS` setting only works in Static Mode. If `XCODEBUILDMCP_DYNAMIC_TOOLS=true` is set, the selective workflow setting will be ignored.
-
-### Usage Example
-
-Once enabled, AI agents automatically discover and load relevant tools based on context. For example, when you mention working on an iOS app or the agent detects iOS development tasks in your workspace, it will automatically use the `discover_tools` tool to load the appropriate simulator and project tools needed for your workflow.
-
-### Client Compatibility
-
-Dynamic Tools requires MCP clients that support **MCP Sampling** for the AI-powered tool discovery to function:
-
-| Editor | Dynamic Tools Support |
-|--------|----------------------|
-| **VS Code** | ✅ |
-| **Cursor** | ❌ (No MCP Sampling) |
-| **Windsurf** | ❌ (No MCP Sampling) |
-| **Claude Code** | ❌ (No MCP Sampling) |
-| **Claude Desktop** | ❌ (No MCP Sampling) |
-
-> [!NOTE]
-> For clients that don't support MCP Sampling, XcodeBuildMCP will automatically fall back to Static Mode, loading all tools at startup regardless of the `XCODEBUILDMCP_DYNAMIC_TOOLS` setting.
 
 ## Code Signing for Device Deployment
 
@@ -366,18 +336,10 @@ This project uses [Sentry](https://sentry.io/) for error monitoring and diagnost
 
 Example MCP client configuration:
 ```json
-{
-  "mcpServers": {
-    "XcodeBuildMCP": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "xcodebuildmcp@latest"
-      ],
-      "env": {
-        "XCODEBUILDMCP_SENTRY_DISABLED": "true"
-      }
-    }
+"XcodeBuildMCP": {
+  ...
+  "env": {
+    "XCODEBUILDMCP_SENTRY_DISABLED": "true"
   }
 }
 ```

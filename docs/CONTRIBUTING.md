@@ -39,7 +39,7 @@ brew install axe
 
 ### Configure your MCP client
 
-To configure your MCP client to use your local XcodeBuildMCP server you can use the following configuration:
+Most MCP clients (Cursor, VS Code, Windsurf, Claude Desktop etc) have standardised on the following JSON configuration format, just add the the following to your client's JSON configuration's `mcpServers` object:
 
 ```json
 {
@@ -56,7 +56,7 @@ To configure your MCP client to use your local XcodeBuildMCP server you can use 
 
 ### Developing using VS Code
 
-VS Code is especially good for developing XcodeBuildMCP as it has a built-in way to view MCP client/server logs as well as the ability to configure MCP servers at a project level. It probably has the most comprehensive support for MCP development. 
+VS Code is especially good for developing XcodeBuildMCP as it has a built-in way to view MCP client/server logs as well as the ability to configure MCP servers at a project level. It probably has the most comprehensive support for MCP development.
 
 To make your development workflow in VS Code more efficient:
 
@@ -107,16 +107,12 @@ reloaderoo -- node build/index.js
 
 **MCP Client Configuration for Proxy Mode**:
 ```json
-{
-  "mcpServers": {
-    "XcodeBuildMCP": {
-      "command": "reloaderoo",
-      "args": ["--", "node", "/path/to/XcodeBuildMCP/build/index.js"],
-      "env": {
-        "XCODEBUILDMCP_DYNAMIC_TOOLS": "true",
-        "XCODEBUILDMCP_DEBUG": "true"
-      }
-    }
+"XcodeBuildMCP": {
+  "command": "reloaderoo",
+  "args": ["--", "node", "/path/to/XcodeBuildMCP/build/index.js"],
+  "env": {
+    "XCODEBUILDMCP_DYNAMIC_TOOLS": "true",
+    "XCODEBUILDMCP_DEBUG": "true"
   }
 }
 ```
@@ -132,7 +128,7 @@ reloaderoo inspect mcp -- node build/index.js
 **Available Debug Tools**:
 - `list_tools` - List all server tools
 - `call_tool` - Execute any server tool with parameters
-- `list_resources` - List all server resources  
+- `list_resources` - List all server resources
 - `read_resource` - Read any server resource
 - `list_prompts` - List all server prompts
 - `get_prompt` - Get any server prompt
@@ -141,41 +137,20 @@ reloaderoo inspect mcp -- node build/index.js
 
 **MCP Client Configuration for Inspection Mode**:
 ```json
-{
-  "mcpServers": {
-    "XcodeBuildMCP": {
-      "command": "node",
-      "args": [
-        "/path/to/reloaderoo/dist/bin/reloaderoo.js",
-        "inspect", "mcp",
-        "--working-dir", "/path/to/XcodeBuildMCP",
-        "--",
-        "node", "/path/to/XcodeBuildMCP/build/index.js"
-      ],
-      "env": {
-        "XCODEBUILDMCP_DYNAMIC_TOOLS": "true", 
-        "XCODEBUILDMCP_DEBUG": "true"
-      }
-    }
+"XcodeBuildMCP": {
+  "command": "node",
+  "args": [
+    "/path/to/reloaderoo/dist/bin/reloaderoo.js",
+    "inspect", "mcp",
+    "--working-dir", "/path/to/XcodeBuildMCP",
+    "--",
+    "node", "/path/to/XcodeBuildMCP/build/index.js"
+  ],
+  "env": {
+    "XCODEBUILDMCP_DYNAMIC_TOOLS": "true",
+    "XCODEBUILDMCP_DEBUG": "true"
   }
 }
-```
-
-##### Testing Dynamic Tool Discovery
-
-When testing dynamic tool discovery with reloaderoo inspection mode:
-
-```typescript
-// Test the discover_tools functionality
-await call_tool("discover_tools", {
-  "task_description": "I want to build and test an iOS app for the simulator"
-});
-
-// Verify only discover_tools is initially available
-await list_tools(); // Should show 1 tool in dynamic mode, 84+ in static mode
-
-// Check server information
-await get_server_info();
 ```
 
 #### Operating Mode Testing
@@ -186,13 +161,13 @@ Test both static and dynamic modes during development:
 # Test static mode (all tools loaded immediately)
 XCODEBUILDMCP_DYNAMIC_TOOLS=false reloaderoo inspect mcp -- node build/index.js
 
-# Test dynamic mode (only discover_tools initially available)  
+# Test dynamic mode (only discover_tools initially available)
 XCODEBUILDMCP_DYNAMIC_TOOLS=true reloaderoo inspect mcp -- node build/index.js
 ```
 
 **Key Differences to Test**:
-- **Static Mode**: ~84+ tools available immediately via `list_tools`
-- **Dynamic Mode**: Only 1 tool (`discover_tools`) available initially
+- **Static Mode**: 50+ tools available immediately via `list_tools`
+- **Dynamic Mode**: Only 2 tools (`discover_tools` and `discover_projs`) available initially
 - **Dynamic Discovery**: After calling `discover_tools`, additional workflow tools become available
 
 #### Using XcodeBuildMCP doctor tool
@@ -211,8 +186,8 @@ Running the XcodeBuildMCP server with the environmental variable `XCODEBUILDMCP_
    ```bash
    # Terminal 1: Start in hot-reload mode
    reloaderoo -- node build/index.js
-   
-   # Terminal 2: Start build watcher  
+
+   # Terminal 2: Start build watcher
    npm run build:watch
    ```
 
@@ -324,26 +299,22 @@ When developing or testing changes to the templates:
    ```bash
    # For iOS template development
    export XCODEBUILDMCP_IOS_TEMPLATE_PATH=/path/to/XcodeBuildMCP-iOS-Template
-   
+
    # For macOS template development
    export XCODEBUILDMCP_MACOS_TEMPLATE_PATH=/path/to/XcodeBuildMCP-macOS-Template
    ```
 
 3. When using MCP clients, add these environment variables to your MCP configuration:
-   ```json
-   {
-     "mcpServers": {
-       "XcodeBuildMCP": {
-         "command": "node",
-         "args": ["/path_to/XcodeBuildMCP/build/index.js"],
-         "env": {
-           "XCODEBUILDMCP_IOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-iOS-Template",
-           "XCODEBUILDMCP_MACOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-macOS-Template"
-         }
-       }
-     }
-   }
-   ```
+```json
+"XcodeBuildMCP": {
+  "command": "node",
+  "args": ["/path_to/XcodeBuildMCP/build/index.js"],
+  "env": {
+    "XCODEBUILDMCP_IOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-iOS-Template",
+    "XCODEBUILDMCP_MACOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-macOS-Template"
+  }
+}
+```
 
 4. The scaffold tools will use your local templates instead of downloading from GitHub releases.
 
