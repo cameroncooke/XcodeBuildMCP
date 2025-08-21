@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.12.2] - 2025-08-21
+### Fixed
+- **Clean tool**: Fixed issue where clean would fail for simulators
+
 ## [1.12.1] - 2025-08-18
 ### Improved
 - **Sentry Logging**: No longer logs domain errors to Sentry, now only logs MCP server errors.

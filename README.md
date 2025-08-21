@@ -2,9 +2,8 @@
 
 A Model Context Protocol (MCP) server that provides Xcode-related tools for integration with AI assistants and other MCP clients.
 
-[![npm version](https://badge.fury.io/js/xcodebuildmcp.svg)](https://badge.fury.io/js/xcodebuildmcp) [![CI](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml) [![CodeQL](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/github-code-scanning/codeql) [![pkg.pr.new](https://pkg.pr.new/badge/cameroncooke/XcodeBuildMCP)](https://pkg.pr.new/~/cameroncooke/XcodeBuildMCP)
-[![Licence: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/e0f4ab6d-e867-4c6e-90cd-77363faaafcc)
+[![CI](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml)
+[![npm version](https://badge.fury.io/js/xcodebuildmcp.svg)](https://badge.fury.io/js/xcodebuildmcp) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node->=18.x-brightgreen.svg)](https://nodejs.org/) [![Xcode 16](https://img.shields.io/badge/Xcode-16-blue.svg)](https://developer.apple.com/xcode/) [![macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/) [![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io/) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/cameroncooke/XcodeBuildMCP)
 
 ## Table of contents
 
@@ -397,6 +396,8 @@ https://github.com/user-attachments/assets/e3c08d75-8be6-4857-b4d0-9350b26ef086
 
 ## Contributing
 
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/) [![Node.js](https://img.shields.io/badge/node->=18.x-brightgreen.svg)](https://nodejs.org/)
+
 Contributions are welcome! Here's how you can help improve XcodeBuildMCP.
 
 See our documentation for development:
@@ -409,14 +410,3 @@ See our documentation for development:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## MCP Server Verification
-
-### Glama.ai
-
-<a href="https://glama.ai/mcp/servers/@cameroncooke/XcodeBuildMCP">
-  <img width="380" height="200" src="https://glama.ai/mcp/servers/@cameroncooke/XcodeBuildMCP/badge" alt="XcodeBuildMCP MCP server" />
-</a>
-
-### MseeP.a
-
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/cameroncooke-xcodebuildmcp-badge.png)](https://mseep.ai/app/cameroncooke-xcodebuildmcp)
