@@ -14,10 +14,10 @@ import { existsSync } from 'fs';
 import { tmpdir as osTmpdir } from 'os';
 import { log } from './logger.ts';
 import { FileSystemExecutor } from './FileSystemExecutor.ts';
-import { CommandExecutor, CommandResponse } from './CommandExecutor.ts';
+import { CommandExecutor, CommandResponse, CommandExecOptions } from './CommandExecutor.ts';
 
 // Re-export types for backward compatibility
-export { CommandExecutor, CommandResponse } from './CommandExecutor.ts';
+export { CommandExecutor, CommandResponse, CommandExecOptions } from './CommandExecutor.ts';
 export { FileSystemExecutor } from './FileSystemExecutor.ts';
 
 /**
@@ -26,7 +26,7 @@ export { FileSystemExecutor } from './FileSystemExecutor.ts';
  * @param command An array of command and arguments
  * @param logPrefix Prefix for logging
  * @param useShell Whether to use shell execution (true) or direct execution (false)
- * @param env Additional environment variables
+ * @param opts Optional execution options (env: environment variables to merge with process.env, cwd: working directory)
  * @param detached Whether to spawn process without waiting for completion (for streaming/background processes)
  * @returns Promise resolving to command response with the process
  */
@@ -34,7 +34,7 @@ async function defaultExecutor(
   command: string[],
   logPrefix?: string,
   useShell: boolean = true,
-  env?: Record<string, string>,
+  opts?: CommandExecOptions,
   detached: boolean = false,
 ): Promise<CommandResponse> {
   // Properly escape arguments for shell
@@ -66,11 +66,9 @@ async function defaultExecutor(
 
     const spawnOpts: Parameters<typeof spawn>[2] = {
       stdio: ['ignore', 'pipe', 'pipe'], // ignore stdin, pipe stdout/stderr
+      env: { ...process.env, ...(opts?.env ?? {}) },
+      cwd: opts?.cwd,
     };
-
-    if (env) {
-      spawnOpts.env = { ...process.env, ...env };
-    }
 
     const childProcess = spawn(executable, args, spawnOpts);
 

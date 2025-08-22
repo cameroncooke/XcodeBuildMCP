@@ -11,7 +11,12 @@ import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
-import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
+import { normalizeTestRunnerEnv } from '../../../utils/environment.ts';
+import type {
+  CommandExecutor,
+  FileSystemExecutor,
+  CommandExecOptions,
+} from '../../../utils/execution/index.ts';
 import {
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
@@ -33,6 +38,12 @@ const baseSchemaObject = z.object({
     .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
     .optional()
     .describe('Target platform (defaults to iOS)'),
+  testRunnerEnv: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      'Environment variables to pass to the test runner (TEST_RUNNER_ prefix added automatically)',
+    ),
 });
 
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
@@ -185,6 +196,11 @@ export async function testDeviceLogic(
     // Add resultBundlePath to extraArgs
     const extraArgs = [...(params.extraArgs ?? []), `-resultBundlePath`, resultBundlePath];
 
+    // Prepare execution options with TEST_RUNNER_ environment variables
+    const execOpts: CommandExecOptions | undefined = params.testRunnerEnv
+      ? { env: normalizeTestRunnerEnv(params.testRunnerEnv) }
+      : undefined;
+
     // Run the test command
     const testResult = await executeXcodeBuildCommand(
       {
@@ -206,6 +222,7 @@ export async function testDeviceLogic(
       params.preferXcodebuild,
       'test',
       executor,
+      execOpts,
     );
 
     // Parse xcresult bundle if it exists, regardless of whether tests passed or failed

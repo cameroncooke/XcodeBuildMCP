@@ -19,7 +19,7 @@
 
 import { log } from './logger.ts';
 import { XcodePlatform, constructDestinationString } from './xcode.ts';
-import { CommandExecutor } from './command.ts';
+import { CommandExecutor, CommandExecOptions } from './command.ts';
 import { ToolResponse, SharedBuildParams, PlatformBuildOptions } from '../types/common.ts';
 import { createTextResponse, consolidateContentForClaudeCode } from './validation.ts';
 import {
@@ -47,6 +47,7 @@ export async function executeXcodeBuildCommand(
   preferXcodebuild: boolean = false,
   buildAction: string = 'build',
   executor: CommandExecutor,
+  execOpts?: CommandExecOptions,
 ): Promise<ToolResponse> {
   // Collect warnings, errors, and stderr messages from the build output
   const buildMessages: { type: 'text'; text: string }[] = [];
@@ -225,7 +226,7 @@ export async function executeXcodeBuildCommand(
       }
     } else {
       // Use standard xcodebuild
-      result = await executor(command, platformOptions.logPrefix, true, undefined);
+      result = await executor(command, platformOptions.logPrefix, true, execOpts);
     }
 
     // Grep warnings and errors from stdout (build output)

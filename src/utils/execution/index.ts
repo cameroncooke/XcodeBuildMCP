@@ -5,5 +5,5 @@
 export { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from '../command.ts';
 
 // Types
-export type { CommandExecutor, CommandResponse } from '../CommandExecutor.ts';
+export type { CommandExecutor, CommandResponse, CommandExecOptions } from '../CommandExecutor.ts';
 export type { FileSystemExecutor } from '../FileSystemExecutor.ts';

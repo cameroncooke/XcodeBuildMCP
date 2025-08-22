@@ -1,5 +1,10 @@
 import { ChildProcess } from 'child_process';
 
+export interface CommandExecOptions {
+  env?: Record<string, string>;
+  cwd?: string;
+}
+
 /**
  * Command executor function type for dependency injection
  */
@@ -7,7 +12,7 @@ export type CommandExecutor = (
   command: string[],
   logPrefix?: string,
   useShell?: boolean,
-  env?: Record<string, string>,
+  opts?: CommandExecOptions,
   detached?: boolean,
 ) => Promise<CommandResponse>;
 /**

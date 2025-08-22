@@ -54,6 +54,12 @@ const baseSchemaObject = z.object({
     .describe(
       'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
     ),
+  testRunnerEnv: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      'Environment variables to pass to the test runner (TEST_RUNNER_ prefix added automatically)',
+    ),
 });
 
 // Apply preprocessor to handle empty strings
@@ -96,6 +102,7 @@ export async function test_simLogic(
       useLatestOS: params.simulatorId ? false : (params.useLatestOS ?? false),
       preferXcodebuild: params.preferXcodebuild ?? false,
       platform: XcodePlatform.iOSSimulator,
+      testRunnerEnv: params.testRunnerEnv,
     },
     executor,
   );
