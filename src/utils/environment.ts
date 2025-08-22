@@ -66,3 +66,21 @@ export const defaultEnvironmentDetector = new ProductionEnvironmentDetector();
 export function getDefaultEnvironmentDetector(): EnvironmentDetector {
   return defaultEnvironmentDetector;
 }
+
+/**
+ * Normalizes a set of user-provided environment variables by ensuring they are
+ * prefixed with TEST_RUNNER_. Variables already prefixed are preserved.
+ *
+ * Example:
+ *  normalizeTestRunnerEnv({ FOO: '1', TEST_RUNNER_BAR: '2' })
+ *  => { TEST_RUNNER_FOO: '1', TEST_RUNNER_BAR: '2' }
+ */
+export function normalizeTestRunnerEnv(vars: Record<string, string>): Record<string, string> {
+  const normalized: Record<string, string> = {};
+  for (const [key, value] of Object.entries(vars ?? {})) {
+    if (value == null) continue;
+    const prefixedKey = key.startsWith('TEST_RUNNER_') ? key : `TEST_RUNNER_${key}`;
+    normalized[prefixedKey] = value;
+  }
+  return normalized;
+}

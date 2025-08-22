@@ -21,8 +21,9 @@ import { log } from './logger.ts';
 import { XcodePlatform } from './xcode.ts';
 import { executeXcodeBuildCommand } from './build/index.ts';
 import { createTextResponse, consolidateContentForClaudeCode } from './validation.ts';
+import { normalizeTestRunnerEnv } from './environment.ts';
 import { ToolResponse } from '../types/common.ts';
-import { CommandExecutor, getDefaultCommandExecutor } from './command.ts';
+import { CommandExecutor, CommandExecOptions, getDefaultCommandExecutor } from './command.ts';
 
 /**
  * Type definition for test summary structure from xcresulttool
@@ -157,6 +158,7 @@ export async function handleTestLogic(
     extraArgs?: string[];
     preferXcodebuild?: boolean;
     platform: XcodePlatform;
+    testRunnerEnv?: Record<string, string>;
   },
   executor?: CommandExecutor,
 ): Promise<ToolResponse> {
@@ -172,6 +174,11 @@ export async function handleTestLogic(
 
     // Add resultBundlePath to extraArgs
     const extraArgs = [...(params.extraArgs ?? []), `-resultBundlePath`, resultBundlePath];
+
+    // Prepare execution options with TEST_RUNNER_ environment variables
+    const execOpts: CommandExecOptions | undefined = params.testRunnerEnv
+      ? { env: normalizeTestRunnerEnv(params.testRunnerEnv) }
+      : undefined;
 
     // Run the test command
     const testResult = await executeXcodeBuildCommand(
@@ -190,6 +197,7 @@ export async function handleTestLogic(
       params.preferXcodebuild,
       'test',
       executor ?? getDefaultCommandExecutor(),
+      execOpts,
     );
 
     // Parse xcresult bundle if it exists, regardless of whether tests passed or failed
