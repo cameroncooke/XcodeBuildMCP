@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.12.3] - 2025-08-22
+- Pass environment variables to test runs on device, simulator, and macOS via an optional testRunnerEnv input (auto-prefixed as TEST_RUNNER_).
+
 ## [1.12.2] - 2025-08-21
 ### Fixed
 - **Clean tool**: Fixed issue where clean would fail for simulators
