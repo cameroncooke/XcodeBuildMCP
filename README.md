@@ -214,7 +214,7 @@ Example MCP configuration:
 
 ## Dynamic Tools
 
-XcodeBuildMCP supports dynamic tool loading to optimize context window usage in AI assistants. This feature is particularly useful for managing the extensive toolset (80+ tools) that XcodeBuildMCP provides.
+XcodeBuildMCP supports dynamic tool loading to optimize context window usage in AI assistants. This feature is particularly useful for managing the extensive toolset that XcodeBuildMCP provides.
 
 ### What is Dynamic Tools?
 
@@ -223,7 +223,7 @@ By default, XcodeBuildMCP loads all available tools at startup (Static Mode), wh
 1. **Starting minimal**: Only essential tools like `discover_tools` and `discover_projs` are available initially
 2. **AI-powered discovery**: When an AI agent identifies XcodeBuildMCP can help with development tasks, it automatically uses the `discover_tools` tool
 3. **Intelligent loading**: The server uses an LLM call to identify the most relevant workflow group and dynamically loads only those tools
-4. **Context efficiency**: Reduces the initial context footprint from 80+ tools to just 2 discovery tools while maintaining full functionality
+4. **Context efficiency**: Reduces the initial context footprint from the entire list of tools to just 2 discovery tools while maintaining full functionality
 
 ### How to Enable Dynamic Tools
 
