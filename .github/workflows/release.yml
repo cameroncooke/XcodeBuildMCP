@@ -125,7 +125,23 @@ jobs:
 
       - name: Publish to MCP Registry
         if: github.event_name == 'push'
-        run: ./mcp-publisher publish
+        run: |
+          echo "🚢 Publishing to MCP Registry with retries..."
+          attempts=0
+          max_attempts=5
+          delay=5
+          until ./mcp-publisher publish; do
+            rc=$?
+            attempts=$((attempts+1))
+            if [ $attempts -ge $max_attempts ]; then
+              echo "❌ Publish failed after $attempts attempts (exit $rc)"
+              exit $rc
+            fi
+            echo "⚠️ Publish failed (exit $rc). Retrying in ${delay}s... (attempt ${attempts}/${max_attempts})"
+            sleep $delay
+            delay=$((delay*2))
+          done
+          echo "✅ Publish succeeded."
 
       - name: Create GitHub Release (production releases only)
         if: github.event_name == 'push'
