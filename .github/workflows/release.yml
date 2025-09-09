@@ -80,6 +80,11 @@ jobs:
         if: github.event_name == 'push'
         run: |
           VERSION="${{ steps.get_version.outputs.VERSION }}"
+          # Skip if this exact version is already published (idempotent reruns)
+          if npm view xcodebuildmcp@"$VERSION" version >/dev/null 2>&1; then
+            echo "✅ xcodebuildmcp@$VERSION already on NPM. Skipping publish."
+            exit 0
+          fi
           # Determine the appropriate npm tag based on version
           if [[ "$VERSION" == *"-beta"* ]]; then
             NPM_TAG="beta"
