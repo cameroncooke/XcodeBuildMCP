@@ -96,6 +96,31 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Setup Go (for MCP Publisher)
+        if: github.event_name == 'push'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install MCP Publisher
+        if: github.event_name == 'push'
+        run: |
+          echo "📥 Fetching MCP Publisher"
+          git clone https://github.com/modelcontextprotocol/registry publisher-repo
+          cd publisher-repo
+          make publisher
+          cp cmd/publisher/bin/mcp-publisher ../mcp-publisher
+          cd ..
+          chmod +x mcp-publisher
+
+      - name: Login to MCP Registry (OIDC)
+        if: github.event_name == 'push'
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish to MCP Registry
+        if: github.event_name == 'push'
+        run: ./mcp-publisher publish
+
       - name: Create GitHub Release (production releases only)
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v1
@@ -139,4 +164,5 @@ jobs:
             echo "🎉 Production release completed!"
             echo "Version: ${{ steps.get_version.outputs.VERSION }}"
             echo "📦 NPM: https://www.npmjs.com/package/xcodebuildmcp/v/${{ steps.get_version.outputs.VERSION }}"
+            echo "📚 MCP Registry: published via mcp-publisher"
           fi

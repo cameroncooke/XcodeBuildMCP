@@ -275,13 +275,36 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
   echo "📝 Updating version in README.md shield links..."
   run "sed -i '' -E 's/npm%3Axcodebuildmcp%40[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/npm%3Axcodebuildmcp%40'"$VERSION"'/g' README.md"
 
+  # server.json update
+  echo ""
+  if [[ -f server.json ]]; then
+    echo "📝 Updating server.json version to $VERSION..."
+    run "node -e \"const fs=require('fs');const f='server.json';const j=JSON.parse(fs.readFileSync(f,'utf8'));j.version='$VERSION';if(Array.isArray(j.packages)){j.packages=j.packages.map(p=>({...p,version:'$VERSION'}));}fs.writeFileSync(f,JSON.stringify(j,null,2)+'\n');\""
+  else
+    echo "⚠️  server.json not found; skipping update"
+  fi
+
   # Git operations
   echo ""
   echo "📦 Committing version changes..."
-  run "git add package.json README.md"
+  if [[ -f server.json ]]; then
+    run "git add package.json README.md server.json"
+  else
+    run "git add package.json README.md"
+  fi
   run "git commit -m \"Release v$VERSION\""
 else
   echo "⏭️  Skipping version update (already done)"
+  # Ensure server.json still matches the desired version (in case of a partial previous run)
+  if [[ -f server.json ]]; then
+    CURRENT_SERVER_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('server.json','utf8')).version||'')")
+    if [[ "$CURRENT_SERVER_VERSION" != "$VERSION" ]]; then
+      echo "📝 Aligning server.json to $VERSION..."
+      run "node -e \"const fs=require('fs');const f='server.json';const j=JSON.parse(fs.readFileSync(f,'utf8'));j.version='$VERSION';if(Array.isArray(j.packages)){j.packages=j.packages.map(p=>({...p,version:'$VERSION'}));}fs.writeFileSync(f,JSON.stringify(j,null,2)+'\\n');\""
+      run "git add server.json"
+      run "git commit -m \"Align server.json for v$VERSION\""
+    fi
+  fi
 fi
 
 # Create or recreate tag at current HEAD
