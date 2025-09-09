@@ -119,9 +119,21 @@ jobs:
           cd ..
           chmod +x mcp-publisher
 
-      - name: Login to MCP Registry (OIDC)
+      - name: Login to MCP Registry (DNS)
         if: github.event_name == 'push'
-        run: ./mcp-publisher login github-oidc
+        env:
+          MCP_DNS_PRIVATE_KEY: ${{ secrets.MCP_DNS_PRIVATE_KEY }}
+        run: |
+          echo "🔐 Using DNS authentication for com.xcodebuildmcp/* namespace"
+          if [ -z "${MCP_DNS_PRIVATE_KEY}" ]; then
+            echo "❌ Missing secrets.MCP_DNS_PRIVATE_KEY"
+            echo "Add your DNS private key (hex) as a GitHub secret named MCP_DNS_PRIVATE_KEY."
+            echo "Generate/extract with:"
+            echo "  openssl genpkey -algorithm Ed25519 -out key.pem"
+            echo "  openssl pkey -in key.pem -noout -text | grep -A3 'priv:' | tail -n +2 | tr -d ' :\\n'"
+            exit 1
+          fi
+          ./mcp-publisher login dns --domain xcodebuildmcp.com --private-key "${MCP_DNS_PRIVATE_KEY}"
 
       - name: Publish to MCP Registry
         if: github.event_name == 'push'

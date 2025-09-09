@@ -338,6 +338,8 @@ if [[ -n "$RUN_ID" ]]; then
     echo "✅ Release v$VERSION completed successfully!"
     echo "📦 View on NPM: https://www.npmjs.com/package/xcodebuildmcp/v/$VERSION"
     echo "🎉 View release: https://github.com/cameroncooke/XcodeBuildMCP/releases/tag/v$VERSION"
+    # MCP Registry verification link
+    echo "🔎 Verify MCP Registry: https://registry.modelcontextprotocol.io/v0/servers?search=io.github.cameroncooke/XcodeBuildMCP&version=latest"
   else
     echo ""
     echo "❌ CI workflow failed!"

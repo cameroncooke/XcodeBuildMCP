@@ -1,11 +1,12 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
-  "name": "io.github.cameroncooke/XcodeBuildMCP",
+  "name": "com.xcodebuildmcp/XcodeBuildMCP",
   "description": "XcodeBuildMCP provides tools for Xcode project management, simulator management, and app utilities.",
   "status": "active",
   "repository": {
     "url": "https://github.com/cameroncooke/XcodeBuildMCP",
-    "source": "github"
+    "source": "github",
+    "id": "945551361"
   },
   "version": "1.12.8",
   "packages": [
@@ -16,7 +17,58 @@
       "version": "1.12.8",
       "transport": {
         "type": "stdio"
-      }
+      },
+      "runtime_hint": "npx",
+      "environment_variables": [
+        {
+          "name": "INCREMENTAL_BUILDS_ENABLED",
+          "description": "Enable experimental xcodemake incremental builds (true/false or 1/0).",
+          "format": "boolean",
+          "default": "false",
+          "choices": [
+            "true",
+            "false",
+            "1",
+            "0"
+          ]
+        },
+        {
+          "name": "XCODEBUILDMCP_DYNAMIC_TOOLS",
+          "description": "Enable AI-powered dynamic tool discovery to load only relevant workflows.",
+          "format": "boolean",
+          "default": "false",
+          "choices": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "XCODEBUILDMCP_ENABLED_WORKFLOWS",
+          "description": "Comma-separated list of workflows to load in Static Mode (e.g., 'simulator,device,project-discovery').",
+          "format": "string",
+          "default": ""
+        },
+        {
+          "name": "XCODEBUILDMCP_SENTRY_DISABLED",
+          "description": "Disable Sentry error reporting (preferred flag).",
+          "format": "boolean",
+          "default": "false",
+          "choices": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "name": "XCODEBUILDMCP_DEBUG",
+          "description": "Enable verbose debug logging from the server.",
+          "format": "boolean",
+          "default": "false",
+          "choices": [
+            "true",
+            "false"
+          ]
+        }
+      ]
     }
   ]
 }

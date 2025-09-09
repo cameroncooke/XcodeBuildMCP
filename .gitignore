@@ -106,3 +106,4 @@ bundled/
 
 /.mcpregistry_github_token
 /.mcpregistry_registry_token
+/key.pem
