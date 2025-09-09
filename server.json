@@ -7,13 +7,13 @@
     "url": "https://github.com/cameroncooke/XcodeBuildMCP",
     "source": "github"
   },
-  "version": "1.12.7",
+  "version": "1.12.8",
   "packages": [
     {
       "registry_type": "npm",
       "registry_base_url": "https://registry.npmjs.org",
       "identifier": "xcodebuildmcp",
-      "version": "1.12.7",
+      "version": "1.12.8",
       "transport": {
         "type": "stdio"
       }
