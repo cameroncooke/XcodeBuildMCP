@@ -7,25 +7,16 @@
     "url": "https://github.com/cameroncooke/XcodeBuildMCP",
     "source": "github"
   },
-  "version": "1.12.3",
+  "version": "1.12.7",
   "packages": [
     {
       "registry_type": "npm",
       "registry_base_url": "https://registry.npmjs.org",
       "identifier": "xcodebuildmcp",
-      "version": "1.12.3",
+      "version": "1.12.7",
       "transport": {
         "type": "stdio"
-      },
-      "environment_variables": [
-        {
-          "description": "Your API key for the service",
-          "is_required": true,
-          "format": "string",
-          "is_secret": true,
-          "name": "YOUR_API_KEY"
-        }
-      ]
+      }
     }
   ]
 }
