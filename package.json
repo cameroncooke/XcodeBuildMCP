@@ -1,6 +1,6 @@
 {
   "name": "xcodebuildmcp",
-  "version": "1.12.4",
+  "version": "1.12.5",
   "mcpName": "io.github.cameroncooke/XcodeBuildMCP",
   "iOSTemplateVersion": "v1.0.8",
   "macOSTemplateVersion": "v1.0.5",
