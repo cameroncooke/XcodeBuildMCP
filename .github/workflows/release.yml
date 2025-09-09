@@ -109,7 +109,8 @@ jobs:
           git clone https://github.com/modelcontextprotocol/registry publisher-repo
           cd publisher-repo
           make publisher
-          cp cmd/publisher/bin/mcp-publisher ../mcp-publisher
+          # The publisher binary is output to bin/mcp-publisher by the Makefile
+          cp bin/mcp-publisher ../mcp-publisher
           cd ..
           chmod +x mcp-publisher
 
