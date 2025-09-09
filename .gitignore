@@ -104,3 +104,5 @@ buildServer.json
 # Bundled AXe artifacts (generated during build)
 bundled/
 
+/.mcpregistry_github_token
+/.mcpregistry_registry_token
