@@ -68,7 +68,7 @@ XcodeBuildMCP provides 60 tools organized into 12 workflow groups for comprehens
 ### Simulator Management (`simulator-management`)
 **Purpose**: Tools for managing simulators from booting, opening simulators, listing simulators, stopping simulators, erasing simulator content and settings, and setting simulator environment options like location, network, statusbar and appearance. (5 tools)
 
-- `erase_sims` - Erases simulator content and settings. Provide exactly one of: simulatorUuid or all=true.
+- `erase_sims` - Erases simulator content and settings. Provide exactly one of: simulatorUuid or all=true. Optional: shutdownFirst to shut down before erasing.
 - `reset_sim_location` - Resets the simulator's location to default.
 - `set_sim_appearance` - Sets the appearance mode (dark/light) of an iOS simulator.
 - `set_sim_location` - Sets a custom GPS location for the simulator.
