@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import { ToolResponse, type ToolResponseContent } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 const eraseSimsBaseSchema = z.object({
-  simulatorUuid: z.string().optional().describe('UUID of the simulator to erase.'),
+  simulatorUdid: z.string().uuid().optional().describe('UDID of the simulator to erase.'),
   all: z.boolean().optional().describe('When true, erases all simulators.'),
   shutdownFirst: z
     .boolean()
@@ -15,10 +15,10 @@ const eraseSimsBaseSchema = z.object({
 
 const eraseSimsSchema = eraseSimsBaseSchema.refine(
   (v) => {
-    const selectors = (v.simulatorUuid ? 1 : 0) + (v.all === true ? 1 : 0);
+    const selectors = (v.simulatorUdid ? 1 : 0) + (v.all === true ? 1 : 0);
     return selectors === 1;
   },
-  { message: 'Provide exactly one of: simulatorUuid OR all=true.' },
+  { message: 'Provide exactly one of: simulatorUdid or all=true.' },
 );
 
 type EraseSimsParams = z.infer<typeof eraseSimsSchema>;
@@ -28,8 +28,8 @@ export async function erase_simsLogic(
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   try {
-    if (params.simulatorUuid) {
-      const udid = params.simulatorUuid;
+    if (params.simulatorUdid) {
+      const udid = params.simulatorUdid;
       log(
         'info',
         `Erasing simulator ${udid}${params.shutdownFirst ? ' (shutdownFirst=true)' : ''}`,
@@ -66,7 +66,7 @@ export async function erase_simsLogic(
             { type: 'text', text: `Failed to erase simulator: ${errText}` },
             {
               type: 'text',
-              text: `Tool hint: The simulator appears to be Booted. Re-run erase_sims with { simulatorUuid: '${udid}', shutdownFirst: true } to shut it down before erasing.`,
+              text: `Tool hint: The simulator appears to be Booted. Re-run erase_sims with { simulatorUdid: '${udid}', shutdownFirst: true } to shut it down before erasing.`,
             },
           ],
         };
@@ -100,7 +100,9 @@ export async function erase_simsLogic(
       );
       if (!result.success) {
         const errText = result.error ?? 'Unknown error';
-        const content = [{ type: 'text', text: `Failed to erase all simulators: ${errText}` }];
+        const content: ToolResponseContent[] = [
+          { type: 'text', text: `Failed to erase all simulators: ${errText}` },
+        ];
         if (
           /Unable to erase contents and settings.*Booted/i.test(errText) &&
           !params.shutdownFirst
@@ -116,7 +118,7 @@ export async function erase_simsLogic(
     }
 
     return {
-      content: [{ type: 'text', text: 'Invalid parameters: provide simulatorUuid or all=true.' }],
+      content: [{ type: 'text', text: 'Invalid parameters: provide simulatorUdid or all=true.' }],
     };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -128,7 +130,7 @@ export async function erase_simsLogic(
 export default {
   name: 'erase_sims',
   description:
-    'Erases simulator content and settings. Provide exactly one of: simulatorUuid or all=true. Optional: shutdownFirst to shut down before erasing.',
+    'Erases simulator content and settings. Provide exactly one of: simulatorUdid or all=true. Optional: shutdownFirst to shut down before erasing.',
   schema: eraseSimsBaseSchema.shape,
   handler: createTypedTool(eraseSimsSchema, erase_simsLogic, getDefaultCommandExecutor),
 };
