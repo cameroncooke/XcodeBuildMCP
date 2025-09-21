@@ -21,7 +21,7 @@ describe('simulator-management workflow metadata', () => {
 
     it('should have correct description', () => {
       expect(workflow.description).toBe(
-        'Tools for managing simulators from booting, opening simulators, listing simulators, stopping simulators and setting simulator environment options like location, network, statusbar and appearance.',
+        'Tools for managing simulators from booting, opening simulators, listing simulators, stopping simulators, erasing simulator content and settings, and setting simulator environment options like location, network, statusbar and appearance.',
       );
     });
 
@@ -46,6 +46,7 @@ describe('simulator-management workflow metadata', () => {
         'location',
         'network',
         'statusbar',
+        'erase',
       ]);
     });
   });
