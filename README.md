@@ -86,6 +86,7 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - **Log Capture**: Capture run-time logs from a simulator
 - **UI Automation**: Interact with simulator UI elements
 - **Screenshot**: Capture screenshots from a simulator
+- **Video Capture**: Start/stop simulator video capture to MP4
 
 ### Device management
 - **Device Discovery**: List connected physical Apple devices over USB or Wi-Fi

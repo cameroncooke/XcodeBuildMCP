@@ -68,7 +68,7 @@ else
     echo "📥 Downloading latest AXe release from GitHub..."
     
     # Get latest release download URL
-    LATEST_RELEASE_URL="https://github.com/cameroncooke/AXe/releases/download/v1.0.0/AXe-macOS-v1.0.0.tar.gz"
+    LATEST_RELEASE_URL="https://github.com/cameroncooke/AXe/releases/download/v1.1.0/AXe-macOS-v1.1.0.tar.gz"
     
     # Create temp directory
     mkdir -p "$AXE_TEMP_DIR"
