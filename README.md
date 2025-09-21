@@ -274,7 +274,7 @@ For clients that don't support MCP Sampling but still want to reduce context win
 **Available Workflows:**
 - `device` (14 tools) - iOS Device Development
 - `simulator` (18 tools) - iOS Simulator Development
-- `simulator-management` (7 tools) - Simulator Management
+- `simulator-management` (8 tools) - Simulator Management
 - `swift-package` (6 tools) - Swift Package Manager
 - `project-discovery` (5 tools) - Project Discovery
 - `macos` (11 tools) - macOS Development
@@ -371,4 +371,3 @@ See our documentation for development:
 ## Licence
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
