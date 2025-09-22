@@ -86,6 +86,7 @@ The XcodeBuildMCP server provides the following tool capabilities:
 - **Log Capture**: Capture run-time logs from a simulator
 - **UI Automation**: Interact with simulator UI elements
 - **Screenshot**: Capture screenshots from a simulator
+- **Video Capture**: Start/stop simulator video capture to MP4 (AXe v1.1.0+)
 
 ### Device management
 - **Device Discovery**: List connected physical Apple devices over USB or Wi-Fi
@@ -117,7 +118,9 @@ For clients that support MCP resources XcodeBuildMCP provides efficient URI-base
 - Xcode 16.x or later
 - Node 18.x or later
 
-### Configure your MCP client
+> Video capture requires the bundled AXe binary (v1.1.0+). Run `npm run bundle:axe` once locally before using `record_sim_video`. This is not required for unit tests.
+
+Configure your MCP client
 
 #### One click install
 
