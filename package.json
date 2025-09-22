@@ -1,6 +1,6 @@
 {
   "name": "xcodebuildmcp",
-  "version": "1.13.1",
+  "version": "1.14.0",
   "mcpName": "com.xcodebuildmcp/XcodeBuildMCP",
   "iOSTemplateVersion": "v1.0.8",
   "macOSTemplateVersion": "v1.0.5",
