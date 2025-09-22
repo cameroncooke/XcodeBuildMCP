@@ -1,5 +1,5 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-16/server.schema.json",
   "name": "com.xcodebuildmcp/XcodeBuildMCP",
   "description": "XcodeBuildMCP provides tools for Xcode project management, simulator management, and app utilities.",
   "status": "active",
@@ -11,15 +11,15 @@
   "version": "1.14.0",
   "packages": [
     {
-      "registry_type": "npm",
-      "registry_base_url": "https://registry.npmjs.org",
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "xcodebuildmcp",
       "version": "1.14.0",
       "transport": {
         "type": "stdio"
       },
-      "runtime_hint": "npx",
-      "environment_variables": [
+      "runtimeHint": "npx",
+      "environmentVariables": [
         {
           "name": "INCREMENTAL_BUILDS_ENABLED",
           "description": "Enable experimental xcodemake incremental builds (true/false or 1/0).",
