@@ -17,7 +17,7 @@ show_help() {
   cat << 'EOF'
 📦 GitHub Release Creator
 
-Creates releases with automatic semver bumping. Only handles GitHub release 
+Creates releases with automatic semver bumping. Only handles GitHub release
 creation - building and NPM publishing are handled by workflows.
 
 USAGE:
@@ -33,12 +33,12 @@ OPTIONS:
 
 EXAMPLES:
     (no args)       Interactive minor bump
-    major           Interactive major bump  
+    major           Interactive major bump
     1.5.0           Use specific version
     patch --dry-run Preview patch bump
 
 EOF
-  
+
   local highest_version=$(get_highest_version)
   if [[ -n "$highest_version" ]]; then
     echo "CURRENT: $highest_version"
@@ -64,13 +64,13 @@ parse_version() {
 bump_version() {
   local current_version=$1
   local bump_type=$2
-  
+
   local parsed=($(parse_version "$current_version"))
   local major=${parsed[0]}
   local minor=${parsed[1]}
   local patch=${parsed[2]}
   local prerelease=${parsed[3]:-""}
-  
+
   # Remove prerelease for stable version bumps
   case $bump_type in
     major)
@@ -104,16 +104,16 @@ validate_version() {
 compare_versions() {
   local version1=$1
   local version2=$2
-  
+
   # Remove prerelease parts for comparison
   local v1_stable=$(echo "$version1" | sed -E 's/(-.*)?$//')
   local v2_stable=$(echo "$version2" | sed -E 's/(-.*)?$//')
-  
+
   if [[ "$v1_stable" == "$v2_stable" ]]; then
     echo 0
     return
   fi
-  
+
   # Use sort -V to compare versions
   local sorted=$(printf "%s\n%s" "$v1_stable" "$v2_stable" | sort -V)
   if [[ "$(echo "$sorted" | head -1)" == "$v1_stable" ]]; then
@@ -197,7 +197,7 @@ if [[ -n "$BUMP_TYPE" ]]; then
     get_version_interactively
   else
     SUGGESTED_VERSION=$(bump_version "$HIGHEST_VERSION" "$BUMP_TYPE")
-    
+
     if ask_confirmation "$SUGGESTED_VERSION"; then
       VERSION="$SUGGESTED_VERSION"
     else
@@ -331,7 +331,7 @@ if [[ -n "$RUN_ID" ]]; then
   echo "🔍 Watching workflow progress..."
   echo "(Press Ctrl+C to detach and monitor manually)"
   echo ""
-  
+
   # Watch the workflow with exit status
   if gh run watch "$RUN_ID" --exit-status; then
     echo ""
@@ -339,7 +339,7 @@ if [[ -n "$RUN_ID" ]]; then
     echo "📦 View on NPM: https://www.npmjs.com/package/xcodebuildmcp/v/$VERSION"
     echo "🎉 View release: https://github.com/cameroncooke/XcodeBuildMCP/releases/tag/v$VERSION"
     # MCP Registry verification link
-    echo "🔎 Verify MCP Registry: https://registry.modelcontextprotocol.io/v0/servers?search=io.github.cameroncooke/XcodeBuildMCP&version=latest"
+    echo "🔎 Verify MCP Registry: https://registry.modelcontextprotocol.io/v0/servers?search=com.xcodebuildmcp/XcodeBuildMCP&version=latest
   else
     echo ""
     echo "❌ CI workflow failed!"
@@ -353,15 +353,15 @@ if [[ -n "$RUN_ID" ]]; then
       exit 0
     fi
     echo "🧹 Cleaning up tags only (keeping version commit)..."
-    
+
     # Delete remote tag
     echo "  - Deleting remote tag v$VERSION..."
     git push origin :refs/tags/v$VERSION 2>/dev/null || true
-    
+
     # Delete local tag
     echo "  - Deleting local tag v$VERSION..."
     git tag -d v$VERSION
-    
+
     echo ""
     echo "✅ Tag cleanup complete!"
     echo ""
