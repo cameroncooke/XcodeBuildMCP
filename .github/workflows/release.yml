@@ -101,60 +101,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Setup Go (for MCP Publisher)
-        if: github.event_name == 'push'
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-
-      - name: Install MCP Publisher
-        if: github.event_name == 'push'
-        run: |
-          echo "📥 Fetching MCP Publisher"
-          git clone https://github.com/modelcontextprotocol/registry publisher-repo
-          cd publisher-repo
-          make publisher
-          # The publisher binary is output to bin/mcp-publisher by the Makefile
-          cp bin/mcp-publisher ../mcp-publisher
-          cd ..
-          chmod +x mcp-publisher
-
-      - name: Login to MCP Registry (DNS)
-        if: github.event_name == 'push'
-        env:
-          MCP_DNS_PRIVATE_KEY: ${{ secrets.MCP_DNS_PRIVATE_KEY }}
-        run: |
-          echo "🔐 Using DNS authentication for com.xcodebuildmcp/* namespace"
-          if [ -z "${MCP_DNS_PRIVATE_KEY}" ]; then
-            echo "❌ Missing secrets.MCP_DNS_PRIVATE_KEY"
-            echo "Add your DNS private key (hex) as a GitHub secret named MCP_DNS_PRIVATE_KEY."
-            echo "Generate/extract with:"
-            echo "  openssl genpkey -algorithm Ed25519 -out key.pem"
-            echo "  openssl pkey -in key.pem -noout -text | grep -A3 'priv:' | tail -n +2 | tr -d ' :\\n'"
-            exit 1
-          fi
-          ./mcp-publisher login dns --domain xcodebuildmcp.com --private-key "${MCP_DNS_PRIVATE_KEY}"
-
-      - name: Publish to MCP Registry
-        if: github.event_name == 'push'
-        run: |
-          echo "🚢 Publishing to MCP Registry with retries..."
-          attempts=0
-          max_attempts=5
-          delay=5
-          until ./mcp-publisher publish; do
-            rc=$?
-            attempts=$((attempts+1))
-            if [ $attempts -ge $max_attempts ]; then
-              echo "❌ Publish failed after $attempts attempts (exit $rc)"
-              exit $rc
-            fi
-            echo "⚠️ Publish failed (exit $rc). Retrying in ${delay}s... (attempt ${attempts}/${max_attempts})"
-            sleep $delay
-            delay=$((delay*2))
-          done
-          echo "✅ Publish succeeded."
-
       - name: Create GitHub Release (production releases only)
         if: github.event_name == 'push'
         uses: softprops/action-gh-release@v1
@@ -198,5 +144,73 @@ jobs:
             echo "🎉 Production release completed!"
             echo "Version: ${{ steps.get_version.outputs.VERSION }}"
             echo "📦 NPM: https://www.npmjs.com/package/xcodebuildmcp/v/${{ steps.get_version.outputs.VERSION }}"
-            echo "📚 MCP Registry: published via mcp-publisher"
+            echo "📚 MCP Registry: publish attempted in separate job (mcp_registry)"
           fi
+
+  mcp_registry:
+    if: github.event_name == 'push'
+    needs: release
+    runs-on: ubuntu-latest
+    env:
+      MCP_DNS_PRIVATE_KEY: ${{ secrets.MCP_DNS_PRIVATE_KEY }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from tag
+        id: get_version_mcp
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "🚢 MCP publish for version: $VERSION"
+
+      - name: Missing secret — skip MCP publish
+        if: env.MCP_DNS_PRIVATE_KEY == ''
+        run: |
+          echo "⚠️ Skipping MCP Registry publish: secrets.MCP_DNS_PRIVATE_KEY is not set."
+          echo "This is optional and does not affect the release."
+
+      - name: Setup Go (for MCP Publisher)
+        if: env.MCP_DNS_PRIVATE_KEY != ''
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install MCP Publisher
+        if: env.MCP_DNS_PRIVATE_KEY != ''
+        run: |
+          echo "📥 Fetching MCP Publisher"
+          git clone https://github.com/modelcontextprotocol/registry publisher-repo
+          cd publisher-repo
+          make publisher
+          cp bin/mcp-publisher ../mcp-publisher
+          cd ..
+          chmod +x mcp-publisher
+
+      - name: Login to MCP Registry (DNS)
+        if: env.MCP_DNS_PRIVATE_KEY != ''
+        run: |
+          echo "🔐 Using DNS authentication for com.xcodebuildmcp/* namespace"
+          ./mcp-publisher login dns --domain xcodebuildmcp.com --private-key "${MCP_DNS_PRIVATE_KEY}"
+
+      - name: Publish to MCP Registry (best-effort)
+        if: env.MCP_DNS_PRIVATE_KEY != ''
+        run: |
+          echo "🚢 Publishing to MCP Registry with retries..."
+          attempts=0
+          max_attempts=5
+          delay=5
+          until ./mcp-publisher publish; do
+            rc=$?
+            attempts=$((attempts+1))
+            if [ $attempts -ge $max_attempts ]; then
+              echo "⚠️ MCP Registry publish failed after $attempts attempts (exit $rc). Skipping without failing workflow."
+              exit 0
+            fi
+            echo "⚠️ Publish failed (exit $rc). Retrying in ${delay}s... (attempt ${attempts}/${max_attempts})"
+            sleep $delay
+            delay=$((delay*2))
+          done
+          echo "✅ MCP Registry publish succeeded."

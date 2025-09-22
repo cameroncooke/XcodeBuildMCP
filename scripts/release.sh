@@ -344,6 +344,14 @@ if [[ -n "$RUN_ID" ]]; then
     echo ""
     echo "❌ CI workflow failed!"
     echo ""
+    # Prefer job state: if the primary 'release' job succeeded, treat as success.
+    RELEASE_JOB_CONCLUSION=$(gh run view "$RUN_ID" --json jobs --jq '.jobs[] | select(.name=="release") | .conclusion')
+    if [ "$RELEASE_JOB_CONCLUSION" = "success" ]; then
+      echo "⚠️ Workflow reported failure, but primary 'release' job concluded SUCCESS."
+      echo "✅ Treating release as successful. Tag v$VERSION is kept."
+      echo "📦 Verify on NPM: https://www.npmjs.com/package/xcodebuildmcp/v/$VERSION"
+      exit 0
+    fi
     echo "🧹 Cleaning up tags only (keeping version commit)..."
     
     # Delete remote tag
