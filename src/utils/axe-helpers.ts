@@ -10,6 +10,8 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { createTextResponse } from './validation.ts';
 import { ToolResponse } from '../types/common.ts';
+import type { CommandExecutor } from './execution/index.ts';
+import { getDefaultCommandExecutor } from './execution/index.ts';
 
 // Get bundled AXe path - always use the bundled version for consistency
 const __filename = fileURLToPath(import.meta.url);
@@ -52,4 +54,49 @@ export function createAxeNotAvailableResponse(): ToolResponse {
       'Please reinstall xcodebuildmcp or report this issue.',
     true,
   );
+}
+
+/**
+ * Compare two semver strings a and b.
+ * Returns 1 if a > b, -1 if a < b, 0 if equal.
+ */
+function compareSemver(a: string, b: string): number {
+  const pa = a.split('.').map((n) => parseInt(n, 10));
+  const pb = b.split('.').map((n) => parseInt(n, 10));
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const da = Number.isFinite(pa[i]) ? pa[i] : 0;
+    const db = Number.isFinite(pb[i]) ? pb[i] : 0;
+    if (da > db) return 1;
+    if (da < db) return -1;
+  }
+  return 0;
+}
+
+/**
+ * Determine whether the bundled AXe meets a minimum version requirement.
+ * Runs `axe --version` and parses a semantic version (e.g., "1.1.0").
+ * If AXe is missing or the version cannot be parsed, returns false.
+ */
+export async function isAxeAtLeastVersion(
+  required: string,
+  executor?: CommandExecutor,
+): Promise<boolean> {
+  const axePath = getAxePath();
+  if (!axePath) return false;
+
+  const exec = executor ?? getDefaultCommandExecutor();
+  try {
+    const res = await exec([axePath, '--version'], 'AXe Version', true);
+    if (!res.success) return false;
+
+    const output = res.output ?? '';
+    const versionMatch = output.match(/(\d+\.\d+\.\d+)/);
+    if (!versionMatch) return false;
+
+    const current = versionMatch[1];
+    return compareSemver(current, required) >= 0;
+  } catch {
+    return false;
+  }
 }

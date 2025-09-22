@@ -13,6 +13,21 @@ AXE_TEMP_DIR="/tmp/axe-download-$$"
 
 echo "🔨 Preparing AXe artifacts for bundling..."
 
+# Single source of truth for AXe version (overridable)
+# 1) Use $AXE_VERSION if provided in env
+# 2) Else, use repo-level pin from .axe-version if present
+# 3) Else, fall back to default below
+DEFAULT_AXE_VERSION="1.1.1"
+VERSION_FILE="$PROJECT_ROOT/.axe-version"
+if [ -n "${AXE_VERSION}" ]; then
+    PINNED_AXE_VERSION="${AXE_VERSION}"
+elif [ -f "$VERSION_FILE" ]; then
+    PINNED_AXE_VERSION="$(cat "$VERSION_FILE" | tr -d ' \n\r')"
+else
+    PINNED_AXE_VERSION="$DEFAULT_AXE_VERSION"
+fi
+echo "📌 Using AXe version: $PINNED_AXE_VERSION"
+
 # Clean up any existing bundled directory
 if [ -d "$BUNDLED_DIR" ]; then
     echo "🧹 Cleaning existing bundled directory..."
@@ -22,41 +37,41 @@ fi
 # Create bundled directory
 mkdir -p "$BUNDLED_DIR"
 
-# Use local AXe build if available, otherwise download from GitHub releases
-if [ -d "$AXE_LOCAL_DIR" ] && [ -f "$AXE_LOCAL_DIR/Package.swift" ]; then
+# Use local AXe build if available (unless AXE_FORCE_REMOTE=1), otherwise download from GitHub releases
+if [ -z "${AXE_FORCE_REMOTE}" ] && [ -d "$AXE_LOCAL_DIR" ] && [ -f "$AXE_LOCAL_DIR/Package.swift" ]; then
     echo "🏠 Using local AXe source at $AXE_LOCAL_DIR"
     cd "$AXE_LOCAL_DIR"
-    
+
     # Build AXe in release configuration
     echo "🔨 Building AXe in release configuration..."
     swift build --configuration release
-    
+
     # Check if build succeeded
     if [ ! -f ".build/release/axe" ]; then
         echo "❌ AXe build failed - binary not found"
         exit 1
     fi
-    
+
     echo "✅ AXe build completed successfully"
-    
+
     # Copy binary to bundled directory
     echo "📦 Copying AXe binary..."
     cp ".build/release/axe" "$BUNDLED_DIR/"
-    
+
     # Fix rpath to find frameworks in Frameworks/ subdirectory
     echo "🔧 Configuring AXe binary rpath for bundled frameworks..."
     install_name_tool -add_rpath "@executable_path/Frameworks" "$BUNDLED_DIR/axe"
-    
+
     # Create Frameworks directory and copy frameworks
     echo "📦 Copying frameworks..."
     mkdir -p "$BUNDLED_DIR/Frameworks"
-    
+
     # Copy frameworks with better error handling
     for framework in .build/release/*.framework; do
         if [ -d "$framework" ]; then
             echo "📦 Copying framework: $(basename "$framework")"
             cp -r "$framework" "$BUNDLED_DIR/Frameworks/"
-            
+
             # Only copy nested frameworks if they exist
             if [ -d "$framework/Frameworks" ]; then
                 echo "📦 Found nested frameworks in $(basename "$framework")"
@@ -66,30 +81,30 @@ if [ -d "$AXE_LOCAL_DIR" ] && [ -f "$AXE_LOCAL_DIR/Package.swift" ]; then
     done
 else
     echo "📥 Downloading latest AXe release from GitHub..."
-    
-    # Get latest release download URL
-    LATEST_RELEASE_URL="https://github.com/cameroncooke/AXe/releases/download/v1.0.0/AXe-macOS-v1.0.0.tar.gz"
-    
+
+    # Construct release download URL from pinned version
+    AXE_RELEASE_URL="https://github.com/cameroncooke/AXe/releases/download/v${PINNED_AXE_VERSION}/AXe-macOS-v${PINNED_AXE_VERSION}.tar.gz"
+
     # Create temp directory
     mkdir -p "$AXE_TEMP_DIR"
     cd "$AXE_TEMP_DIR"
-    
+
     # Download and extract the release
-    echo "📥 Downloading AXe release archive..."
-    curl -L -o "axe-release.tar.gz" "$LATEST_RELEASE_URL"
-    
+    echo "📥 Downloading AXe release archive ($AXE_RELEASE_URL)..."
+    curl -L -o "axe-release.tar.gz" "$AXE_RELEASE_URL"
+
     echo "📦 Extracting AXe release archive..."
     tar -xzf "axe-release.tar.gz"
-    
+
     # Find the extracted directory (might be named differently)
     EXTRACTED_DIR=$(find . -type d -name "*AXe*" -o -name "*axe*" | head -1)
     if [ -z "$EXTRACTED_DIR" ]; then
         # If no AXe directory found, assume files are in current directory
         EXTRACTED_DIR="."
     fi
-    
+
     cd "$EXTRACTED_DIR"
-    
+
     # Copy binary
     if [ -f "axe" ]; then
         echo "📦 Copying AXe binary..."
@@ -104,11 +119,11 @@ else
         ls -la
         exit 1
     fi
-    
+
     # Copy frameworks if they exist
     echo "📦 Copying frameworks..."
     mkdir -p "$BUNDLED_DIR/Frameworks"
-    
+
     if [ -d "Frameworks" ]; then
         cp -r Frameworks/* "$BUNDLED_DIR/Frameworks/"
     elif [ -d "lib" ]; then
