@@ -15,6 +15,7 @@ type Session = {
   sessionId: string;
   startedAt: number;
   buffer: string;
+  ended: boolean;
 };
 
 const sessions = new Map<string, Session>();
@@ -29,7 +30,7 @@ function ensureSignalHandlersAttached(): void {
   if (signalHandlersAttached) return;
   signalHandlersAttached = true;
 
-  const stopAll = () => {
+  const stopAll = (): void => {
     for (const [simulatorUuid, sess] of sessions) {
       try {
         const child = sess.process as ChildProcess | undefined;
@@ -114,6 +115,7 @@ export async function startSimulatorVideoCapture(
     sessionId: createSessionId(simulatorUuid),
     startedAt: Date.now(),
     buffer: '',
+    ended: false,
   };
 
   try {
@@ -133,6 +135,18 @@ export async function startSimulatorVideoCapture(
     });
   } catch {
     // ignore stream listener setup failures
+  }
+
+  // Track when the child process naturally ends, so stop can short-circuit
+  try {
+    child.once?.('exit', () => {
+      session.ended = true;
+    });
+    child.once?.('close', () => {
+      session.ended = true;
+    });
+  } catch {
+    // ignore
   }
 
   sessions.set(simulatorUuid, session);
@@ -184,15 +198,33 @@ export async function stopSimulatorVideoCapture(
     }
   }
 
-  // Wait for process to close
-  await new Promise<void>((resolve) => {
+  // Wait for process to close (avoid hanging if it already exited)
+  await new Promise<void>((resolve): void => {
     if (!child) return resolve();
-    try {
-      child.once('close', () => resolve());
-      child.once('exit', () => resolve());
-    } catch {
-      resolve();
+
+    // If process has already ended, resolve immediately
+    const alreadyEnded = (session as Session).ended === true;
+    const hasExitCode = (child as ChildProcess).exitCode !== null;
+    const hasSignal = (child as unknown as { signalCode?: string | null }).signalCode != null;
+    if (alreadyEnded || hasExitCode || hasSignal) {
+      return resolve();
     }
+
+    let resolved = false;
+    const finish = (): void => {
+      if (!resolved) {
+        resolved = true;
+        resolve();
+      }
+    };
+    try {
+      child.once('close', finish);
+      child.once('exit', finish);
+    } catch {
+      return finish();
+    }
+    // Safety timeout to prevent indefinite hangs
+    setTimeout(finish, 5000);
   });
 
   const combinedOutput = session.buffer;
