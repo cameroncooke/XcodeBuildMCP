@@ -177,6 +177,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
+          cache: false # avoid warning about missing go.sum
 
       - name: Install MCP Publisher
         if: env.MCP_DNS_PRIVATE_KEY != ''
@@ -193,7 +194,20 @@ jobs:
         if: env.MCP_DNS_PRIVATE_KEY != ''
         run: |
           echo "🔐 Using DNS authentication for com.xcodebuildmcp/* namespace"
-          ./mcp-publisher login dns --domain xcodebuildmcp.com --private-key "${MCP_DNS_PRIVATE_KEY}"
+          attempts=0
+          max_attempts=5
+          delay=5
+          until ./mcp-publisher login dns --domain xcodebuildmcp.com --private-key "${MCP_DNS_PRIVATE_KEY}"; do
+            rc=$?
+            attempts=$((attempts+1))
+            if [ $attempts -ge $max_attempts ]; then
+              echo "::warning::MCP Registry login failed after $attempts attempts (exit $rc). Proceeding to publish attempt which will also retry."
+              break
+            fi
+            echo "⚠️ Login failed (exit $rc). Retrying in ${delay}s... (attempt ${attempts}/${max_attempts})"
+            sleep $delay
+            delay=$((delay*2))
+          done
 
       - name: Publish to MCP Registry (best-effort)
         if: env.MCP_DNS_PRIVATE_KEY != ''
@@ -207,6 +221,7 @@ jobs:
             attempts=$((attempts+1))
             if [ $attempts -ge $max_attempts ]; then
               echo "⚠️ MCP Registry publish failed after $attempts attempts (exit $rc). Skipping without failing workflow."
+              echo "MCP_STATUS=FAILED" >> $GITHUB_ENV
               exit 0
             fi
             echo "⚠️ Publish failed (exit $rc). Retrying in ${delay}s... (attempt ${attempts}/${max_attempts})"
@@ -214,3 +229,27 @@ jobs:
             delay=$((delay*2))
           done
           echo "✅ MCP Registry publish succeeded."
+          echo "MCP_STATUS=SUCCESS" >> $GITHUB_ENV
+
+      - name: Mark MCP publish skipped
+        if: env.MCP_DNS_PRIVATE_KEY == ''
+        run: |
+          echo "MCP_STATUS=SKIPPED" >> $GITHUB_ENV
+
+      - name: MCP Publish Summary
+        if: always()
+        run: |
+          case "${MCP_STATUS}" in
+            SUCCESS)
+              echo "✅ MCP Registry publish completed successfully."
+              ;;
+            SKIPPED)
+              echo "⚠️ MCP Registry publish skipped (missing MCP_DNS_PRIVATE_KEY)."
+              ;;
+            FAILED)
+              echo "::warning::MCP Registry publish failed after retries (best-effort). Release remains successful."
+              ;;
+            *)
+              echo "ℹ️ MCP Registry publish status unknown."
+              ;;
+          esac
