@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.14.0] - 2025-09-22
+- Add video capture tool for simulators
+
+## [1.13.1] - 2025-09-21
+- Add simulator erase content and settings tool
+
 ## [1.12.3] - 2025-08-22
 - Pass environment variables to test runs on device, simulator, and macOS via an optional testRunnerEnv input (auto-prefixed as TEST_RUNNER_).
 
