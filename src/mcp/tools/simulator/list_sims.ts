@@ -42,11 +42,11 @@ function parseTextOutput(textOutput: string): SimulatorDevice[] {
     // Match device lines like "    iPhone 17 Pro (UUID) (Booted)"
     // UUID pattern is flexible to handle test UUIDs like "test-uuid-123"
     const deviceMatch = line.match(
-      /^\s{4}(.+?)\s+\(([^)]+)\)\s+\((Booted|Shutdown|Booting|Shutting Down)\)(?:\s+\(unavailable.*\))?$/i,
+      /^\s+(.+?)\s+\(([^)]+)\)\s+\((Booted|Shutdown|Booting|Shutting Down)\)(\s+\(unavailable.*\))?$/i,
     );
     if (deviceMatch && currentRuntime) {
-      const [, name, udid, state] = deviceMatch;
-      const isUnavailable = line.includes('unavailable');
+      const [, name, udid, state, unavailableSuffix] = deviceMatch;
+      const isUnavailable = Boolean(unavailableSuffix);
       if (!isUnavailable) {
         devices.push({
           name: name.trim(),

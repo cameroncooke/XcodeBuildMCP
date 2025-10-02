@@ -186,6 +186,68 @@ Next Steps:
       });
     });
 
+    it('should merge devices from text that are missing from JSON', async () => {
+      const mockJsonOutput = JSON.stringify({
+        devices: {
+          'iOS 18.6': [
+            {
+              name: 'iPhone 15',
+              udid: 'json-uuid-123',
+              isAvailable: true,
+              state: 'Shutdown',
+            },
+          ],
+        },
+      });
+
+      const mockTextOutput = `== Devices ==
+-- iOS 18.6 --
+    iPhone 15 (json-uuid-123) (Shutdown)
+-- iOS 26.0 --
+    iPhone 17 Pro (text-uuid-456) (Shutdown)`;
+
+      const mockExecutor = async (command: string[]) => {
+        if (command.includes('--json')) {
+          return {
+            success: true,
+            output: mockJsonOutput,
+            error: undefined,
+            process: { pid: 12345 },
+          };
+        }
+        return {
+          success: true,
+          output: mockTextOutput,
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
+
+      // Should contain both iOS 18.6 from JSON and iOS 26.0 from text
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: `Available iOS Simulators:
+
+iOS 18.6:
+- iPhone 15 (json-uuid-123)
+
+iOS 26.0:
+- iPhone 17 Pro (text-uuid-456)
+
+Next Steps:
+1. Boot a simulator: boot_sim({ simulatorUuid: 'UUID_FROM_ABOVE' })
+2. Open the simulator UI: open_sim({})
+3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })
+4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })`,
+          },
+        ],
+      });
+    });
+
     it('should handle command failure', async () => {
       const mockExecutor = createMockExecutor({
         success: false,
