@@ -49,7 +49,7 @@ describe('list_sims tool', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle successful simulator listing', async () => {
-      const mockOutput = JSON.stringify({
+      const mockJsonOutput = JSON.stringify({
         devices: {
           'iOS 17.0': [
             {
@@ -62,31 +62,51 @@ describe('list_sims tool', () => {
         },
       });
 
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: mockOutput,
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const mockTextOutput = `== Devices ==
+-- iOS 17.0 --
+    iPhone 15 (test-uuid-123) (Shutdown)`;
 
-      // Track calls manually
-      const wrappedExecutor = async (
+      // Create a mock executor that returns different outputs based on command
+      const mockExecutor = async (
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
         env?: Record<string, string>,
       ) => {
         callHistory.push({ command, logPrefix, useShell, env });
-        return mockExecutor(command, logPrefix, useShell, env);
+
+        // Return JSON output for JSON command
+        if (command.includes('--json')) {
+          return {
+            success: true,
+            output: mockJsonOutput,
+            error: undefined,
+            process: { pid: 12345 },
+          };
+        }
+
+        // Return text output for text command
+        return {
+          success: true,
+          output: mockTextOutput,
+          error: undefined,
+          process: { pid: 12345 },
+        };
       };
 
-      const result = await list_simsLogic({ enabled: true }, wrappedExecutor);
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
-      // Verify command was called correctly
-      expect(callHistory).toHaveLength(1);
+      // Verify both commands were called
+      expect(callHistory).toHaveLength(2);
       expect(callHistory[0]).toEqual({
-        command: ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
-        logPrefix: 'List Simulators',
+        command: ['xcrun', 'simctl', 'list', 'devices', '--json'],
+        logPrefix: 'List Simulators (JSON)',
+        useShell: true,
+        env: undefined,
+      });
+      expect(callHistory[1]).toEqual({
+        command: ['xcrun', 'simctl', 'list', 'devices'],
+        logPrefix: 'List Simulators (Text)',
         useShell: true,
         env: undefined,
       });
@@ -111,7 +131,7 @@ Next Steps:
     });
 
     it('should handle successful listing with booted simulator', async () => {
-      const mockOutput = JSON.stringify({
+      const mockJsonOutput = JSON.stringify({
         devices: {
           'iOS 17.0': [
             {
@@ -124,12 +144,26 @@ Next Steps:
         },
       });
 
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: mockOutput,
-        error: undefined,
-        process: { pid: 12345 },
-      });
+      const mockTextOutput = `== Devices ==
+-- iOS 17.0 --
+    iPhone 15 (test-uuid-123) (Booted)`;
+
+      const mockExecutor = async (command: string[]) => {
+        if (command.includes('--json')) {
+          return {
+            success: true,
+            output: mockJsonOutput,
+            error: undefined,
+            process: { pid: 12345 },
+          };
+        }
+        return {
+          success: true,
+          output: mockTextOutput,
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
@@ -141,6 +175,68 @@ Next Steps:
 
 iOS 17.0:
 - iPhone 15 (test-uuid-123) [Booted]
+
+Next Steps:
+1. Boot a simulator: boot_sim({ simulatorUuid: 'UUID_FROM_ABOVE' })
+2. Open the simulator UI: open_sim({})
+3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })
+4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })`,
+          },
+        ],
+      });
+    });
+
+    it('should merge devices from text that are missing from JSON', async () => {
+      const mockJsonOutput = JSON.stringify({
+        devices: {
+          'iOS 18.6': [
+            {
+              name: 'iPhone 15',
+              udid: 'json-uuid-123',
+              isAvailable: true,
+              state: 'Shutdown',
+            },
+          ],
+        },
+      });
+
+      const mockTextOutput = `== Devices ==
+-- iOS 18.6 --
+    iPhone 15 (json-uuid-123) (Shutdown)
+-- iOS 26.0 --
+    iPhone 17 Pro (text-uuid-456) (Shutdown)`;
+
+      const mockExecutor = async (command: string[]) => {
+        if (command.includes('--json')) {
+          return {
+            success: true,
+            output: mockJsonOutput,
+            error: undefined,
+            process: { pid: 12345 },
+          };
+        }
+        return {
+          success: true,
+          output: mockTextOutput,
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      const result = await list_simsLogic({ enabled: true }, mockExecutor);
+
+      // Should contain both iOS 18.6 from JSON and iOS 26.0 from text
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: `Available iOS Simulators:
+
+iOS 18.6:
+- iPhone 15 (json-uuid-123)
+
+iOS 26.0:
+- iPhone 17 Pro (text-uuid-456)
 
 Next Steps:
 1. Boot a simulator: boot_sim({ simulatorUuid: 'UUID_FROM_ABOVE' })
@@ -172,21 +268,48 @@ Next Steps:
       });
     });
 
-    it('should handle JSON parse failure', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'invalid json',
-        error: undefined,
-        process: { pid: 12345 },
-      });
+    it('should handle JSON parse failure and fall back to text parsing', async () => {
+      const mockTextOutput = `== Devices ==
+-- iOS 17.0 --
+    iPhone 15 (test-uuid-456) (Shutdown)`;
+
+      const mockExecutor = async (command: string[]) => {
+        // JSON command returns invalid JSON
+        if (command.includes('--json')) {
+          return {
+            success: true,
+            output: 'invalid json',
+            error: undefined,
+            process: { pid: 12345 },
+          };
+        }
+
+        // Text command returns valid text output
+        return {
+          success: true,
+          output: mockTextOutput,
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       const result = await list_simsLogic({ enabled: true }, mockExecutor);
 
+      // Should fall back to text parsing and extract devices
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'invalid json',
+            text: `Available iOS Simulators:
+
+iOS 17.0:
+- iPhone 15 (test-uuid-456)
+
+Next Steps:
+1. Boot a simulator: boot_sim({ simulatorUuid: 'UUID_FROM_ABOVE' })
+2. Open the simulator UI: open_sim({})
+3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })
+4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })`,
           },
         ],
       });

@@ -65,16 +65,36 @@ describe('simulators resource', () => {
       expect(result.contents[0].text).toContain('Command failed');
     });
 
-    it('should handle JSON parsing errors', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'invalid json',
-      });
+    it('should handle JSON parsing errors and fall back to text parsing', async () => {
+      const mockTextOutput = `== Devices ==
+-- iOS 17.0 --
+    iPhone 15 (test-uuid-123) (Shutdown)`;
+
+      const mockExecutor = async (command: string[]) => {
+        // JSON command returns invalid JSON
+        if (command.includes('--json')) {
+          return {
+            success: true,
+            output: 'invalid json',
+            error: undefined,
+            process: { pid: 12345 },
+          };
+        }
+
+        // Text command returns valid text output
+        return {
+          success: true,
+          output: mockTextOutput,
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
 
       const result = await simulatorsResourceLogic(mockExecutor);
 
       expect(result.contents).toHaveLength(1);
-      expect(result.contents[0].text).toBe('invalid json');
+      expect(result.contents[0].text).toContain('iPhone 15 (test-uuid-123)');
+      expect(result.contents[0].text).toContain('iOS 17.0');
     });
 
     it('should handle spawn errors', async () => {

@@ -18,10 +18,48 @@ interface SimulatorDevice {
   udid: string;
   state: string;
   isAvailable: boolean;
+  runtime?: string;
 }
 
 interface SimulatorData {
   devices: Record<string, SimulatorDevice[]>;
+}
+
+// Parse text output as fallback for Apple simctl JSON bugs (e.g., duplicate runtime IDs)
+function parseTextOutput(textOutput: string): SimulatorDevice[] {
+  const devices: SimulatorDevice[] = [];
+  const lines = textOutput.split('\n');
+  let currentRuntime = '';
+
+  for (const line of lines) {
+    // Match runtime headers like "-- iOS 26.0 --" or "-- iOS 18.6 --"
+    const runtimeMatch = line.match(/^-- ([\w\s.]+) --$/);
+    if (runtimeMatch) {
+      currentRuntime = runtimeMatch[1];
+      continue;
+    }
+
+    // Match device lines like "    iPhone 17 Pro (UUID) (Booted)"
+    // UUID pattern is flexible to handle test UUIDs like "test-uuid-123"
+    const deviceMatch = line.match(
+      /^\s+(.+?)\s+\(([^)]+)\)\s+\((Booted|Shutdown|Booting|Shutting Down)\)(\s+\(unavailable.*\))?$/i,
+    );
+    if (deviceMatch && currentRuntime) {
+      const [, name, udid, state, unavailableSuffix] = deviceMatch;
+      const isUnavailable = Boolean(unavailableSuffix);
+      if (!isUnavailable) {
+        devices.push({
+          name: name.trim(),
+          udid,
+          state,
+          isAvailable: true,
+          runtime: currentRuntime,
+        });
+      }
+    }
+  }
+
+  return devices;
 }
 
 function isSimulatorData(value: unknown): value is SimulatorData {
@@ -68,79 +106,99 @@ export async function list_simsLogic(
   log('info', 'Starting xcrun simctl list devices request');
 
   try {
-    const command = ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'];
-    const result = await executor(command, 'List Simulators', true);
+    // Try JSON first for structured data
+    const jsonCommand = ['xcrun', 'simctl', 'list', 'devices', '--json'];
+    const jsonResult = await executor(jsonCommand, 'List Simulators (JSON)', true);
 
-    if (!result.success) {
+    if (!jsonResult.success) {
       return {
         content: [
           {
             type: 'text',
-            text: `Failed to list simulators: ${result.error}`,
+            text: `Failed to list simulators: ${jsonResult.error}`,
           },
         ],
       };
     }
 
+    // Parse JSON output
+    let jsonDevices: Record<string, SimulatorDevice[]> = {};
     try {
-      const parsedData: unknown = JSON.parse(result.output);
-
-      if (!isSimulatorData(parsedData)) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: 'Failed to parse simulator data: Invalid format',
-            },
-          ],
-        };
+      const parsedData: unknown = JSON.parse(jsonResult.output);
+      if (isSimulatorData(parsedData)) {
+        jsonDevices = parsedData.devices;
       }
-
-      const simulatorsData: SimulatorData = parsedData;
-      let responseText = 'Available iOS Simulators:\n\n';
-
-      for (const runtime in simulatorsData.devices) {
-        const devices = simulatorsData.devices[runtime];
-
-        if (devices.length === 0) continue;
-
-        responseText += `${runtime}:\n`;
-
-        for (const device of devices) {
-          if (device.isAvailable) {
-            responseText += `- ${device.name} (${device.udid})${device.state === 'Booted' ? ' [Booted]' : ''}\n`;
-          }
-        }
-
-        responseText += '\n';
-      }
-
-      responseText += 'Next Steps:\n';
-      responseText += "1. Boot a simulator: boot_sim({ simulatorUuid: 'UUID_FROM_ABOVE' })\n";
-      responseText += '2. Open the simulator UI: open_sim({})\n';
-      responseText +=
-        "3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })\n";
-      responseText +=
-        "4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })";
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: responseText,
-          },
-        ],
-      };
     } catch {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: result.output,
-          },
-        ],
-      };
+      log('warn', 'Failed to parse JSON output, falling back to text parsing');
     }
+
+    // Fallback to text parsing for Apple simctl bugs (duplicate runtime IDs in iOS 26.0 beta)
+    const textCommand = ['xcrun', 'simctl', 'list', 'devices'];
+    const textResult = await executor(textCommand, 'List Simulators (Text)', true);
+
+    const textDevices = textResult.success ? parseTextOutput(textResult.output) : [];
+
+    // Merge JSON and text devices, preferring JSON but adding any missing from text
+    const allDevices: Record<string, SimulatorDevice[]> = { ...jsonDevices };
+    const jsonUUIDs = new Set<string>();
+
+    // Collect all UUIDs from JSON
+    for (const runtime in jsonDevices) {
+      for (const device of jsonDevices[runtime]) {
+        if (device.isAvailable) {
+          jsonUUIDs.add(device.udid);
+        }
+      }
+    }
+
+    // Add devices from text that aren't in JSON (handles Apple's duplicate runtime ID bug)
+    for (const textDevice of textDevices) {
+      if (!jsonUUIDs.has(textDevice.udid)) {
+        const runtime = textDevice.runtime ?? 'Unknown Runtime';
+        if (!allDevices[runtime]) {
+          allDevices[runtime] = [];
+        }
+        allDevices[runtime].push(textDevice);
+        log(
+          'info',
+          `Added missing device from text parsing: ${textDevice.name} (${textDevice.udid})`,
+        );
+      }
+    }
+
+    // Format output
+    let responseText = 'Available iOS Simulators:\n\n';
+
+    for (const runtime in allDevices) {
+      const devices = allDevices[runtime].filter((d) => d.isAvailable);
+
+      if (devices.length === 0) continue;
+
+      responseText += `${runtime}:\n`;
+
+      for (const device of devices) {
+        responseText += `- ${device.name} (${device.udid})${device.state === 'Booted' ? ' [Booted]' : ''}\n`;
+      }
+
+      responseText += '\n';
+    }
+
+    responseText += 'Next Steps:\n';
+    responseText += "1. Boot a simulator: boot_sim({ simulatorUuid: 'UUID_FROM_ABOVE' })\n";
+    responseText += '2. Open the simulator UI: open_sim({})\n';
+    responseText +=
+      "3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })\n";
+    responseText +=
+      "4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })";
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: responseText,
+        },
+      ],
+    };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     log('error', `Error listing simulators: ${errorMessage}`);
