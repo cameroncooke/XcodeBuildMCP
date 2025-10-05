@@ -110,7 +110,7 @@ describe('createSessionAwareTool', () => {
     expect(result.content[0].text).toContain('Tip: set session defaults');
   });
 
-  it('exclusivePairs should prune conflicting session defaults when user provides null', async () => {
+  it('exclusivePairs should NOT prune session defaults when user provides null (treat as not provided)', async () => {
     const handlerWithExclusive = createSessionAwareTool<Params>({
       internalSchema,
       logicFunction: logic,
@@ -125,14 +125,15 @@ describe('createSessionAwareTool', () => {
     sessionStore.setDefaults({
       scheme: 'App',
       projectPath: '/path/proj.xcodeproj',
+      simulatorId: 'SIM-1',
     });
 
     const res = await handlerWithExclusive({ workspacePath: null as unknown as string });
-    expect(res.isError).toBe(true);
-    expect(res.content[0].text).toContain('Provide a project or workspace');
+    expect(res.isError).toBe(false);
+    expect(res.content[0].text).toBe('OK');
   });
 
-  it('exclusivePairs should prune when user provides undefined (key present)', async () => {
+  it('exclusivePairs should NOT prune when user provides undefined (key present)', async () => {
     const handlerWithExclusive = createSessionAwareTool<Params>({
       internalSchema,
       logicFunction: logic,
@@ -147,10 +148,11 @@ describe('createSessionAwareTool', () => {
     sessionStore.setDefaults({
       scheme: 'App',
       projectPath: '/path/proj.xcodeproj',
+      simulatorId: 'SIM-1',
     });
 
     const res = await handlerWithExclusive({ workspacePath: undefined as unknown as string });
-    expect(res.isError).toBe(true);
-    expect(res.content[0].text).toContain('Provide a project or workspace');
+    expect(res.isError).toBe(false);
+    expect(res.content[0].text).toBe('OK');
   });
 });

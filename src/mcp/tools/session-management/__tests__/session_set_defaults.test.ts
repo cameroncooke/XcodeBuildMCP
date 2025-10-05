@@ -88,5 +88,25 @@ describe('session-set-defaults tool', () => {
       expect(current.simulatorName).toBe('iPhone 16');
       expect(current.simulatorId).toBeUndefined();
     });
+
+    it('should reject when both projectPath and workspacePath are provided', async () => {
+      const res = await plugin.handler({
+        projectPath: '/app/App.xcodeproj',
+        workspacePath: '/app/App.xcworkspace',
+      });
+      expect(res.isError).toBe(true);
+      expect(res.content[0].text).toContain('Parameter validation failed');
+      expect(res.content[0].text).toContain('projectPath and workspacePath are mutually exclusive');
+    });
+
+    it('should reject when both simulatorId and simulatorName are provided', async () => {
+      const res = await plugin.handler({
+        simulatorId: 'SIM-1',
+        simulatorName: 'iPhone 16',
+      });
+      expect(res.isError).toBe(true);
+      expect(res.content[0].text).toContain('Parameter validation failed');
+      expect(res.content[0].text).toContain('simulatorId and simulatorName are mutually exclusive');
+    });
   });
 });

@@ -4,7 +4,7 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import type { ToolResponse } from '../../../types/common.ts';
 
-const schemaObj = z.object({
+const baseSchema = z.object({
   projectPath: z.string().optional(),
   workspacePath: z.string().optional(),
   scheme: z.string().optional(),
@@ -15,6 +15,16 @@ const schemaObj = z.object({
   useLatestOS: z.boolean().optional(),
   arch: z.enum(['arm64', 'x86_64']).optional(),
 });
+
+const schemaObj = baseSchema
+  .refine((v) => !(v.projectPath && v.workspacePath), {
+    message: 'projectPath and workspacePath are mutually exclusive',
+    path: ['projectPath'],
+  })
+  .refine((v) => !(v.simulatorId && v.simulatorName), {
+    message: 'simulatorId and simulatorName are mutually exclusive',
+    path: ['simulatorId'],
+  });
 
 type Params = z.infer<typeof schemaObj>;
 
@@ -42,6 +52,6 @@ export default {
   name: 'session-set-defaults',
   description:
     'Set the session defaults needed by many tools. Most tools require one or more session defaults to be set before they can be used. Agents should set the relevant defaults at the beginning of a session.',
-  schema: schemaObj.shape,
+  schema: baseSchema.shape,
   handler: createTypedTool(schemaObj, sessionSetDefaultsLogic, getDefaultCommandExecutor),
 };

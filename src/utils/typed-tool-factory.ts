@@ -89,19 +89,26 @@ export function createSessionAwareTool<TParams>(opts: {
 
   return async (rawArgs: Record<string, unknown>): Promise<ToolResponse> => {
     try {
-      // Start with session defaults merged with explicit args (args override session)
-      const merged: Record<string, unknown> = { ...sessionStore.getAll(), ...rawArgs };
+      // Sanitize args: treat null/undefined as "not provided" so they don't override session defaults
+      const sanitizedArgs: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(rawArgs)) {
+        if (v !== null && v !== undefined) sanitizedArgs[k] = v;
+      }
 
-      // Apply exclusive pair pruning: if caller provided/touched any key in a pair (even null/undefined),
-      // remove other keys from that pair which came only from session defaults (not explicitly provided).
-      // This ensures requirements and validation reflect the effective, post-prune payload.
+      // Start with session defaults merged with explicit args (args override session)
+      const merged: Record<string, unknown> = { ...sessionStore.getAll(), ...sanitizedArgs };
+
+      // Apply exclusive pair pruning: only when caller provided a concrete (non-null/undefined) value
+      // for any key in the pair. When activated, drop other keys in the pair coming from session defaults.
       for (const pair of exclusivePairs) {
-        const userTouched = pair.some((k) => Object.prototype.hasOwnProperty.call(rawArgs, k));
-        if (userTouched) {
-          for (const k of pair) {
-            if (rawArgs[k] == null && merged[k] != null) {
-              delete merged[k];
-            }
+        const userProvidedConcrete = pair.some((k) =>
+          Object.prototype.hasOwnProperty.call(sanitizedArgs, k),
+        );
+        if (!userProvidedConcrete) continue;
+
+        for (const k of pair) {
+          if (!Object.prototype.hasOwnProperty.call(sanitizedArgs, k) && k in merged) {
+            delete merged[k];
           }
         }
       }
