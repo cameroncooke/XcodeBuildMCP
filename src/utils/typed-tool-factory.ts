@@ -92,11 +92,12 @@ export function createSessionAwareTool<TParams>(opts: {
       // Start with session defaults merged with explicit args (args override session)
       const merged: Record<string, unknown> = { ...sessionStore.getAll(), ...rawArgs };
 
-      // Apply exclusive pair pruning: if caller provided a key in a pair, remove other keys
-      // from that pair which came only from session defaults (not explicitly provided)
+      // Apply exclusive pair pruning: if caller provided/touched any key in a pair (even null/undefined),
+      // remove other keys from that pair which came only from session defaults (not explicitly provided).
+      // This ensures requirements and validation reflect the effective, post-prune payload.
       for (const pair of exclusivePairs) {
-        const provided = pair.filter((k) => rawArgs[k] != null);
-        if (provided.length > 0) {
+        const userTouched = pair.some((k) => Object.prototype.hasOwnProperty.call(rawArgs, k));
+        if (userTouched) {
           for (const k of pair) {
             if (rawArgs[k] == null && merged[k] != null) {
               delete merged[k];

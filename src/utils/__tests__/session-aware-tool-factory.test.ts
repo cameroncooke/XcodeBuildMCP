@@ -109,4 +109,48 @@ describe('createSessionAwareTool', () => {
     expect(result.content[0].text).toContain('Parameter validation failed');
     expect(result.content[0].text).toContain('Tip: set session defaults');
   });
+
+  it('exclusivePairs should prune conflicting session defaults when user provides null', async () => {
+    const handlerWithExclusive = createSessionAwareTool<Params>({
+      internalSchema,
+      logicFunction: logic,
+      getExecutor: () => createMockExecutor({ success: true }),
+      requirements: [
+        { allOf: ['scheme'], message: 'scheme is required' },
+        { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+      ],
+      exclusivePairs: [['projectPath', 'workspacePath']],
+    });
+
+    sessionStore.setDefaults({
+      scheme: 'App',
+      projectPath: '/path/proj.xcodeproj',
+    });
+
+    const res = await handlerWithExclusive({ workspacePath: null as unknown as string });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('Provide a project or workspace');
+  });
+
+  it('exclusivePairs should prune when user provides undefined (key present)', async () => {
+    const handlerWithExclusive = createSessionAwareTool<Params>({
+      internalSchema,
+      logicFunction: logic,
+      getExecutor: () => createMockExecutor({ success: true }),
+      requirements: [
+        { allOf: ['scheme'], message: 'scheme is required' },
+        { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+      ],
+      exclusivePairs: [['projectPath', 'workspacePath']],
+    });
+
+    sessionStore.setDefaults({
+      scheme: 'App',
+      projectPath: '/path/proj.xcodeproj',
+    });
+
+    const res = await handlerWithExclusive({ workspacePath: undefined as unknown as string });
+    expect(res.isError).toBe(true);
+    expect(res.content[0].text).toContain('Provide a project or workspace');
+  });
 });
