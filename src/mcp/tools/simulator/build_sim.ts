@@ -12,6 +12,7 @@ import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
@@ -135,37 +136,33 @@ export async function build_simLogic(
   return _handleSimulatorBuildLogic(processedParams, executor);
 }
 
+// Public schema = internal minus session-managed fields
+const publicSchemaObject = baseSchemaObject.omit({
+  projectPath: true,
+  workspacePath: true,
+  scheme: true,
+  configuration: true,
+  simulatorId: true,
+  simulatorName: true,
+  useLatestOS: true,
+} as const);
+
 export default {
   name: 'build_sim',
-  description:
-    "Builds an app from a project or workspace for a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_sim({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-  schema: baseSchemaObject.shape, // MCP SDK compatibility
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    try {
-      // Runtime validation with XOR constraints
-      const validatedParams = buildSimulatorSchema.parse(args);
-      return await build_simLogic(validatedParams, getDefaultCommandExecutor());
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        // Format validation errors in a user-friendly way
-        const errorMessages = error.errors.map((e) => {
-          const path = e.path.length > 0 ? `${e.path.join('.')}` : 'root';
-          return `${path}: ${e.message}`;
-        });
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Parameter validation failed. Invalid parameters:\n${errorMessages.join('\n')}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      // Re-throw unexpected errors
-      throw error;
-    }
-  },
+  description: 'Builds an app for an iOS simulator.',
+  schema: publicSchemaObject.shape, // MCP SDK compatibility (public inputs only)
+  handler: createSessionAwareTool<BuildSimulatorParams>({
+    internalSchema: buildSimulatorSchema as unknown as z.ZodType<BuildSimulatorParams>,
+    logicFunction: build_simLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { allOf: ['scheme'], message: 'scheme is required' },
+      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+    ],
+    exclusivePairs: [
+      ['projectPath', 'workspacePath'],
+      ['simulatorId', 'simulatorName'],
+    ],
+  }),
 };
