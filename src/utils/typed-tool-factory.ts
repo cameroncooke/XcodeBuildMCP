@@ -95,6 +95,20 @@ export function createSessionAwareTool<TParams>(opts: {
         if (v !== null && v !== undefined) sanitizedArgs[k] = v;
       }
 
+      // Factory-level mutual exclusivity check: if user provides multiple explicit values
+      // within an exclusive group, reject early even if tool schema doesn't enforce XOR.
+      for (const pair of exclusivePairs) {
+        const provided = pair.filter((k) => Object.prototype.hasOwnProperty.call(sanitizedArgs, k));
+        if (provided.length >= 2) {
+          return createErrorResponse(
+            'Parameter validation failed',
+            `Invalid parameters:\nMutually exclusive parameters provided: ${provided.join(
+              ', ',
+            )}. Provide only one.`,
+          );
+        }
+      }
+
       // Start with session defaults merged with explicit args (args override session)
       const merged: Record<string, unknown> = { ...sessionStore.getAll(), ...sanitizedArgs };
 

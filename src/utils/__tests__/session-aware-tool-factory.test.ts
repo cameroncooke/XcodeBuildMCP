@@ -155,4 +155,36 @@ describe('createSessionAwareTool', () => {
     expect(res.isError).toBe(false);
     expect(res.content[0].text).toBe('OK');
   });
+
+  it('rejects when multiple explicit args in an exclusive pair are provided (factory-level)', async () => {
+    const internalSchemaNoXor = z.object({
+      scheme: z.string(),
+      projectPath: z.string().optional(),
+      workspacePath: z.string().optional(),
+    });
+
+    const handlerNoXor = createSessionAwareTool<z.infer<typeof internalSchemaNoXor>>({
+      internalSchema: internalSchemaNoXor,
+      logicFunction: (async () => ({
+        content: [{ type: 'text', text: 'OK' }],
+        isError: false,
+      })) as any,
+      getExecutor: () => createMockExecutor({ success: true }),
+      requirements: [{ allOf: ['scheme'], message: 'scheme is required' }],
+      exclusivePairs: [['projectPath', 'workspacePath']],
+    });
+
+    const res = await handlerNoXor({
+      scheme: 'App',
+      projectPath: '/path/a.xcodeproj',
+      workspacePath: '/path/b.xcworkspace',
+    });
+
+    expect(res.isError).toBe(true);
+    const msg = res.content[0].text;
+    expect(msg).toContain('Parameter validation failed');
+    expect(msg).toContain('Mutually exclusive parameters provided');
+    expect(msg).toContain('projectPath');
+    expect(msg).toContain('workspacePath');
+  });
 });
