@@ -19,6 +19,17 @@ const schemaObj = z.object({
 type Params = z.infer<typeof schemaObj>;
 
 export async function sessionSetDefaultsLogic(params: Params): Promise<ToolResponse> {
+  // Clear mutually exclusive counterparts before merging new defaults
+  const toClear = new Set<keyof SessionDefaults>();
+  if (Object.prototype.hasOwnProperty.call(params, 'projectPath')) toClear.add('workspacePath');
+  if (Object.prototype.hasOwnProperty.call(params, 'workspacePath')) toClear.add('projectPath');
+  if (Object.prototype.hasOwnProperty.call(params, 'simulatorId')) toClear.add('simulatorName');
+  if (Object.prototype.hasOwnProperty.call(params, 'simulatorName')) toClear.add('simulatorId');
+
+  if (toClear.size > 0) {
+    sessionStore.clear(Array.from(toClear));
+  }
+
   sessionStore.setDefaults(params as Partial<SessionDefaults>);
   const current = sessionStore.getAll();
   return {

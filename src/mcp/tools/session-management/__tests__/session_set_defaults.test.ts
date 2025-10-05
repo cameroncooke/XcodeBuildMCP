@@ -56,5 +56,37 @@ describe('session-set-defaults tool', () => {
       expect(result.content[0].text).toContain('Parameter validation failed');
       expect(result.content[0].text).toContain('useLatestOS');
     });
+
+    it('should clear workspacePath when projectPath is set', async () => {
+      sessionStore.setDefaults({ workspacePath: '/old/App.xcworkspace' });
+      await sessionSetDefaultsLogic({ projectPath: '/new/App.xcodeproj' });
+      const current = sessionStore.getAll();
+      expect(current.projectPath).toBe('/new/App.xcodeproj');
+      expect(current.workspacePath).toBeUndefined();
+    });
+
+    it('should clear projectPath when workspacePath is set', async () => {
+      sessionStore.setDefaults({ projectPath: '/old/App.xcodeproj' });
+      await sessionSetDefaultsLogic({ workspacePath: '/new/App.xcworkspace' });
+      const current = sessionStore.getAll();
+      expect(current.workspacePath).toBe('/new/App.xcworkspace');
+      expect(current.projectPath).toBeUndefined();
+    });
+
+    it('should clear simulatorName when simulatorId is set', async () => {
+      sessionStore.setDefaults({ simulatorName: 'iPhone 16' });
+      await sessionSetDefaultsLogic({ simulatorId: 'SIM-UUID' });
+      const current = sessionStore.getAll();
+      expect(current.simulatorId).toBe('SIM-UUID');
+      expect(current.simulatorName).toBeUndefined();
+    });
+
+    it('should clear simulatorId when simulatorName is set', async () => {
+      sessionStore.setDefaults({ simulatorId: 'SIM-UUID' });
+      await sessionSetDefaultsLogic({ simulatorName: 'iPhone 16' });
+      const current = sessionStore.getAll();
+      expect(current.simulatorName).toBe('iPhone 16');
+      expect(current.simulatorId).toBeUndefined();
+    });
   });
 });
