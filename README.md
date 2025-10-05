@@ -170,7 +170,7 @@ To use XcodeBuildMCP with [Claude Code](https://code.anthropic.com), you can add
 claude mcp add XcodeBuildMCP npx xcodebuildmcp@latest
 
 # Or with environment variables
-claude mcp add XcodeBuildMCP npx xcodebuildmcp@latest -H INCREMENTAL_BUILDS_ENABLED=false -H XCODEBUILDMCP_SENTRY_DISABLED=false
+claude mcp add XcodeBuildMCP npx xcodebuildmcp@latest -e INCREMENTAL_BUILDS_ENABLED=false -e XCODEBUILDMCP_SENTRY_DISABLED=false
 ```
 
 ##### Smithery
