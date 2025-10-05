@@ -462,7 +462,7 @@ mcpli --raw session-show-defaults -- node build/index.js
 
 ```bash
 # Optionally provide a scratch derived data path and a short timeout
-mcpli --tool-timeout=60 --raw build_sim --derivedDataPath "/tmp/XBMCP_DD" -- node build/index.js
+mcpli --tool-timeout=60 --raw build-sim --derivedDataPath "/tmp/XBMCP_DD" -- node build/index.js
 ```
 
 Troubleshooting:
@@ -478,6 +478,7 @@ Notes:
 
 - Public schemas for session‑aware tools intentionally omit session fields (e.g., `scheme`, `projectPath`, `simulatorName`). Provide them once via `session-set-defaults` and then call the tool with zero/minimal flags.
 - Use `--tool-timeout=<seconds>` to cap long‑running builds during manual testing.
+- mcpli CLI normalizes tool names: tools exported with underscores (e.g., `build_sim`) can be invoked with hyphens (e.g., `build-sim`). Copy/paste samples using hyphens are valid because mcpli converts underscores to dashes.
 
 ## Next Steps
 
