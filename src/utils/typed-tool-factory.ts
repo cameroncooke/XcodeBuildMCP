@@ -64,11 +64,11 @@ export type SessionRequirement =
   | { allOf: (keyof SessionDefaults)[]; message?: string }
   | { oneOf: (keyof SessionDefaults)[]; message?: string };
 
-function missingFromArgsAndSession(
+function missingFromMerged(
   keys: (keyof SessionDefaults)[],
-  args: Record<string, unknown>,
+  merged: Record<string, unknown>,
 ): string[] {
-  return keys.filter((k) => args[k] == null && sessionStore.get(k) == null);
+  return keys.filter((k) => merged[k] == null);
 }
 
 export function createSessionAwareTool<TParams>(opts: {
@@ -107,7 +107,7 @@ export function createSessionAwareTool<TParams>(opts: {
 
       for (const req of requirements) {
         if ('allOf' in req) {
-          const missing = missingFromArgsAndSession(req.allOf, rawArgs);
+          const missing = missingFromMerged(req.allOf, merged);
           if (missing.length > 0) {
             return createErrorResponse(
               'Missing required session defaults',
