@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../types/common.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { createErrorResponse } from './responses/index.ts';
+import { sessionStore, type SessionDefaults } from './session-store.ts';
 
 /**
  * Creates a type-safe tool handler that validates parameters at runtime
@@ -54,6 +55,73 @@ export function createTypedTool<TParams>(
       }
 
       // Re-throw unexpected errors (they'll be caught by the MCP framework)
+      throw error;
+    }
+  };
+}
+
+export type SessionRequirement =
+  | { allOf: (keyof SessionDefaults)[]; message?: string }
+  | { oneOf: (keyof SessionDefaults)[]; message?: string };
+
+function missingFromArgsAndSession(
+  keys: (keyof SessionDefaults)[],
+  args: Record<string, unknown>,
+): string[] {
+  return keys.filter((k) => args[k] == null && sessionStore.get(k) == null);
+}
+
+export function createSessionAwareTool<TParams>(opts: {
+  internalSchema: z.ZodType<TParams>;
+  logicFunction: (params: TParams, executor: CommandExecutor) => Promise<ToolResponse>;
+  getExecutor: () => CommandExecutor;
+  sessionKeys?: (keyof SessionDefaults)[];
+  requirements?: SessionRequirement[];
+}) {
+  const { internalSchema, logicFunction, getExecutor, requirements = [] } = opts;
+
+  return async (rawArgs: Record<string, unknown>): Promise<ToolResponse> => {
+    try {
+      const merged: Record<string, unknown> = { ...sessionStore.getAll(), ...rawArgs };
+
+      for (const req of requirements) {
+        if ('allOf' in req) {
+          const missing = missingFromArgsAndSession(req.allOf, rawArgs);
+          if (missing.length > 0) {
+            return createErrorResponse(
+              'Missing required session defaults',
+              `${req.message ?? `Required: ${req.allOf.join(', ')}`}\n` +
+                `Set with: session-set-defaults { ${missing
+                  .map((k) => `"${k}": "..."`)
+                  .join(', ')} }`,
+            );
+          }
+        } else if ('oneOf' in req) {
+          const satisfied = req.oneOf.some((k) => merged[k] != null);
+          if (!satisfied) {
+            return createErrorResponse(
+              'Missing required session defaults',
+              `${req.message ?? `Provide one of: ${req.oneOf.join(', ')}`}\n` +
+                `Set with: session-set-defaults { "${req.oneOf[0]}": "..." }`,
+            );
+          }
+        }
+      }
+
+      const validated = internalSchema.parse(merged);
+      return await logicFunction(validated, getExecutor());
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errorMessages = error.errors.map((e) => {
+          const path = e.path.length > 0 ? `${e.path.join('.')}` : 'root';
+          return `${path}: ${e.message}`;
+        });
+
+        return createErrorResponse(
+          'Parameter validation failed',
+          `Invalid parameters:\n${errorMessages.join('\n')}\nTip: set session defaults via session-set-defaults`,
+        );
+      }
       throw error;
     }
   };

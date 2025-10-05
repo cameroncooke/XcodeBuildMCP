@@ -1,0 +1,38 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { sessionStore } from '../session-store.ts';
+
+describe('SessionStore', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
+  it('should set and get defaults', () => {
+    sessionStore.setDefaults({ scheme: 'App', useLatestOS: true });
+    expect(sessionStore.get('scheme')).toBe('App');
+    expect(sessionStore.get('useLatestOS')).toBe(true);
+  });
+
+  it('should merge defaults on set', () => {
+    sessionStore.setDefaults({ scheme: 'App' });
+    sessionStore.setDefaults({ simulatorName: 'iPhone 16' });
+    const all = sessionStore.getAll();
+    expect(all.scheme).toBe('App');
+    expect(all.simulatorName).toBe('iPhone 16');
+  });
+
+  it('should clear specific keys', () => {
+    sessionStore.setDefaults({ scheme: 'App', simulatorId: 'SIM-1', deviceId: 'DEV-1' });
+    sessionStore.clear(['simulatorId']);
+    const all = sessionStore.getAll();
+    expect(all.scheme).toBe('App');
+    expect(all.simulatorId).toBeUndefined();
+    expect(all.deviceId).toBe('DEV-1');
+  });
+
+  it('should clear all when no keys provided', () => {
+    sessionStore.setDefaults({ scheme: 'App', simulatorId: 'SIM-1' });
+    sessionStore.clear();
+    const all = sessionStore.getAll();
+    expect(Object.keys(all).length).toBe(0);
+  });
+});
