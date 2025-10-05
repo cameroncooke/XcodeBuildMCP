@@ -19,7 +19,9 @@ describe('session-management workflow metadata', () => {
     });
 
     it('should have correct description', () => {
-      expect(workflow.description).toBe('Manage session defaults for XcodeBuildMCP tools.');
+      expect(workflow.description).toBe(
+        'Manage session defaults for projectPath/workspacePath, scheme, configuration, simulatorName/simulatorId, deviceId, useLatestOS and arch. These defaults are required by many tools and must be set before attempting to call tools that would depend on these values.',
+      );
     });
 
     it('should have correct platforms array', () => {

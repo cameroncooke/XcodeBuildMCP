@@ -185,7 +185,7 @@ const publicSchemaObject = baseSchemaObject.omit(
 
 export default {
   name: 'build_sim',
-  description: 'Builds an app for a simulator using session defaults (scheme/project/sim).',
+  description: 'Builds an app for an iOS simulator.',
   schema: publicSchemaObject.shape, // what the MCP client sees
   handler: createSessionAwareTool<BuildSimulatorParams>({
     internalSchema: buildSimulatorSchema,
@@ -356,11 +356,26 @@ import plugin, { sessionClearDefaultsLogic } from '../session_clear_defaults.ts'
   - `npm run lint`
   - `npm run test`
 
+### Minimal Changes Policy for Tests (Enforced)
+
+- Only make material, essential edits to tests required by the code change (e.g., new preflight error messages or added/removed fields).
+- Do not change sample input values or defaults in tests (e.g., flipping a boolean like `preferXcodebuild`) unless strictly necessary to validate behavior.
+- Preserve the original intent and coverage of logic-function tests; keep handler vs logic boundaries intact.
+- When session-awareness is added, prefer setting/clearing session defaults around tests rather than altering existing assertions or sample inputs.
+
+### Tool Description Policy (Enforced)
+
+- Keep tool descriptions concise (maximum one short sentence).
+- Do not mention session defaults, setup steps, examples, or parameter relationships in descriptions.
+- Use clear, imperative phrasing (e.g., "Builds an app for an iOS simulator.").
+- Apply consistently across all migrated tools; update any tests that assert `description` to match the concise string only.
+
 ## Commit & Review Protocol (Enforced)
 
 At the end of each numbered step above:
 
 1. Ensure all checks pass: `typecheck`, `lint`, `test`.
+   - Verify tool descriptions comply with the Tool Description Policy (concise, no session-defaults mention).
 2. Stage only the files for that step.
 3. Prepare a concise commit message focused on the “why”.
 4. Request manual review and approval before committing. Do not push.
@@ -407,6 +422,59 @@ Note on commit hooks and selective commits:
 - **Inspect/reset**:
   - `session-show-defaults {}`
   - `session-clear-defaults { "all": true }`
+
+## Manual Testing with mcpli (CLI)
+
+The following commands exercise the session workflow end‑to‑end using the built server.
+
+1) Build the server (required after code changes):
+
+```bash
+npm run build
+```
+
+2) Discover a scheme (optional helper):
+
+```bash
+mcpli --raw list-schemes --projectPath "/Volumes/Developer/XcodeBuildMCP/example_projects/iOS/MCPTest.xcodeproj" -- node build/index.js
+```
+
+3) Set the session defaults (project/workspace, scheme, and simulator):
+
+```bash
+mcpli --raw session-set-defaults \
+  --projectPath "/Volumes/Developer/XcodeBuildMCP/example_projects/iOS/MCPTest.xcodeproj" \
+  --scheme MCPTest \
+  --simulatorName "iPhone 16" \
+  -- node build/index.js
+```
+
+4) Verify defaults are stored:
+
+```bash
+mcpli --raw session-show-defaults -- node build/index.js
+```
+
+5) Run a session‑aware tool with zero or minimal args (defaults are merged automatically):
+
+```bash
+# Optionally provide a scratch derived data path and a short timeout
+mcpli --tool-timeout=60 --raw build-sim --derivedDataPath "/tmp/XBMCP_DD" -- node build/index.js
+```
+
+Troubleshooting:
+
+- If you see validation errors like “Missing required session defaults …”, (re)run step 3 with the missing keys.
+- If you see connect ECONNREFUSED or the daemon appears flaky:
+  - Check logs: `mcpli daemon log --since=10m -- node build/index.js`
+  - Restart daemon: `mcpli daemon restart -- node build/index.js`
+  - Clean daemon state: `mcpli daemon clean -- node build/index.js` then `mcpli daemon start -- node build/index.js`
+  - After code changes, always: `npm run build` then `mcpli daemon restart -- node build/index.js`
+
+Notes:
+
+- Public schemas for session‑aware tools intentionally omit session fields (e.g., `scheme`, `projectPath`, `simulatorName`). Provide them once via `session-set-defaults` and then call the tool with zero/minimal flags.
+- Use `--tool-timeout=<seconds>` to cap long‑running builds during manual testing.
 
 ## Next Steps
 
