@@ -354,7 +354,10 @@ import plugin, { sessionClearDefaultsLogic } from '../session_clear_defaults.ts'
 - Always run locally before requesting review:
   - `npm run typecheck`
   - `npm run lint`
+  - `npm run format:check`
+  - `npm run build`
   - `npm run test`
+  - Perform a quick manual CLI check (mcpli or reloaderoo) per the Manual Testing section
 
 ### Minimal Changes Policy for Tests (Enforced)
 
@@ -374,7 +377,7 @@ import plugin, { sessionClearDefaultsLogic } from '../session_clear_defaults.ts'
 
 At the end of each numbered step above:
 
-1. Ensure all checks pass: `typecheck`, `lint`, `test`.
+1. Ensure all checks pass: `typecheck`, `lint`, `format:check`, `build`, `test`; then perform a quick manual CLI test (mcpli or reloaderoo) per the Manual Testing section.
    - Verify tool descriptions comply with the Tool Description Policy (concise, no session-defaults mention).
 2. Stage only the files for that step.
 3. Prepare a concise commit message focused on the “why”.
