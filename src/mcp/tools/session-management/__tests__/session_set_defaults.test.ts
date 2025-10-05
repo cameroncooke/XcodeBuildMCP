@@ -14,7 +14,7 @@ describe('session-set-defaults tool', () => {
 
     it('should have correct description', () => {
       expect(plugin.description).toBe(
-        'Set the session defaults needed by many tools. Most tools require one or more session defaults to be set before they can be used. Agents should set the relevent defaults at the beginning of a session.',
+        'Set the session defaults needed by many tools. Most tools require one or more session defaults to be set before they can be used. Agents should set the relevant defaults at the beginning of a session.',
       );
     });
 

@@ -459,7 +459,7 @@ mcpli --raw session-show-defaults -- node build/index.js
 
 ```bash
 # Optionally provide a scratch derived data path and a short timeout
-mcpli --tool-timeout=60 --raw build-sim --derivedDataPath "/tmp/XBMCP_DD" -- node build/index.js
+mcpli --tool-timeout=60 --raw build_sim --derivedDataPath "/tmp/XBMCP_DD" -- node build/index.js
 ```
 
 Troubleshooting:

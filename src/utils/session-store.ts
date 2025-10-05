@@ -21,9 +21,14 @@ class SessionStore {
   }
 
   clear(keys?: (keyof SessionDefaults)[]): void {
-    if (!keys || keys.length === 0) {
+    if (keys == null) {
       this.defaults = {};
       log('info', '[Session] All defaults cleared');
+      return;
+    }
+    if (keys.length === 0) {
+      // No-op when an empty array is provided (e.g., empty UI selection)
+      log('info', '[Session] No keys provided to clear; no changes made');
       return;
     }
     for (const k of keys) delete this.defaults[k];

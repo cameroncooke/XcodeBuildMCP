@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import plugin, { sessionClearDefaultsLogic } from '../session_clear_defaults.ts';
 
@@ -13,6 +13,10 @@ describe('session-clear-defaults tool', () => {
       useLatestOS: true,
       arch: 'arm64',
     });
+  });
+
+  afterEach(() => {
+    sessionStore.clear();
   });
 
   describe('Export Field Validation (Literal)', () => {

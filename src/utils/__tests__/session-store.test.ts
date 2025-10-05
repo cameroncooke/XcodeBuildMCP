@@ -35,4 +35,12 @@ describe('SessionStore', () => {
     const all = sessionStore.getAll();
     expect(Object.keys(all).length).toBe(0);
   });
+
+  it('should be a no-op when empty keys array provided', () => {
+    sessionStore.setDefaults({ scheme: 'App', simulatorId: 'SIM-1' });
+    sessionStore.clear([]);
+    const all = sessionStore.getAll();
+    expect(all.scheme).toBe('App');
+    expect(all.simulatorId).toBe('SIM-1');
+  });
 });

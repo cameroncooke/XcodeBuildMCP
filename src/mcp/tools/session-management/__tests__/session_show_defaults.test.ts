@@ -1,9 +1,13 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import plugin from '../session_show_defaults.ts';
 
 describe('session-show-defaults tool', () => {
   beforeEach(() => {
+    sessionStore.clear();
+  });
+
+  afterEach(() => {
     sessionStore.clear();
   });
 

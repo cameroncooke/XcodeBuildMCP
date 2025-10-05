@@ -77,12 +77,33 @@ export function createSessionAwareTool<TParams>(opts: {
   getExecutor: () => CommandExecutor;
   sessionKeys?: (keyof SessionDefaults)[];
   requirements?: SessionRequirement[];
+  exclusivePairs?: (keyof SessionDefaults)[][]; // when args provide one side, drop conflicting session-default side(s)
 }) {
-  const { internalSchema, logicFunction, getExecutor, requirements = [] } = opts;
+  const {
+    internalSchema,
+    logicFunction,
+    getExecutor,
+    requirements = [],
+    exclusivePairs = [],
+  } = opts;
 
   return async (rawArgs: Record<string, unknown>): Promise<ToolResponse> => {
     try {
+      // Start with session defaults merged with explicit args (args override session)
       const merged: Record<string, unknown> = { ...sessionStore.getAll(), ...rawArgs };
+
+      // Apply exclusive pair pruning: if caller provided a key in a pair, remove other keys
+      // from that pair which came only from session defaults (not explicitly provided)
+      for (const pair of exclusivePairs) {
+        const provided = pair.filter((k) => rawArgs[k] != null);
+        if (provided.length > 0) {
+          for (const k of pair) {
+            if (rawArgs[k] == null && merged[k] != null) {
+              delete merged[k];
+            }
+          }
+        }
+      }
 
       for (const req of requirements) {
         if ('allOf' in req) {
@@ -99,10 +120,13 @@ export function createSessionAwareTool<TParams>(opts: {
         } else if ('oneOf' in req) {
           const satisfied = req.oneOf.some((k) => merged[k] != null);
           if (!satisfied) {
+            const options = req.oneOf.join(', ');
+            const setHints = req.oneOf
+              .map((k) => `session-set-defaults { "${k}": "..." }`)
+              .join(' OR ');
             return createErrorResponse(
               'Missing required session defaults',
-              `${req.message ?? `Provide one of: ${req.oneOf.join(', ')}`}\n` +
-                `Set with: session-set-defaults { "${req.oneOf[0]}": "..." }`,
+              `${req.message ?? `Provide one of: ${options}`}\nSet with: ${setHints}`,
             );
           }
         }

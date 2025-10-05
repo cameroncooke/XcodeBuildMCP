@@ -160,5 +160,9 @@ export default {
       { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
       { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
     ],
+    exclusivePairs: [
+      ['projectPath', 'workspacePath'],
+      ['simulatorId', 'simulatorName'],
+    ],
   }),
 };
