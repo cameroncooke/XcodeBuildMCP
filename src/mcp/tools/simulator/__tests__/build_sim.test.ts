@@ -1,12 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 // Import the plugin and logic function
 import buildSim, { build_simLogic } from '../build_sim.ts';
 
 describe('build_sim tool', () => {
-  // Only clear any remaining mocks if needed
+  beforeEach(() => {
+    sessionStore.clear();
+  });
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
@@ -14,140 +17,48 @@ describe('build_sim tool', () => {
     });
 
     it('should have correct description', () => {
-      expect(buildSim.description).toBe(
-        "Builds an app from a project or workspace for a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_sim({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-      );
+      expect(buildSim.description).toBe('Builds an app for an iOS simulator.');
     });
 
     it('should have handler function', () => {
       expect(typeof buildSim.handler).toBe('function');
     });
 
-    it('should have correct schema with required and optional fields', () => {
+    it('should have correct public schema (only non-session fields)', () => {
       const schema = z.object(buildSim.schema);
 
-      // Valid inputs - workspace
-      expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(true);
+      // Public schema should allow empty input
+      expect(schema.safeParse({}).success).toBe(true);
 
-      // Valid inputs - project
+      // Valid public inputs
       expect(
         schema.safeParse({
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(true);
-
-      expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-          configuration: 'Release',
           derivedDataPath: '/path/to/derived',
           extraArgs: ['--verbose'],
-          useLatestOS: true,
           preferXcodebuild: false,
         }).success,
       ).toBe(true);
 
-      // Invalid inputs - missing required fields
-      // Note: simulatorId/simulatorName are optional at schema level, XOR validation at runtime
-      expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-        }).success,
-      ).toBe(true); // Schema validation passes, runtime XOR validation would catch missing simulator fields
-
-      expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(true); // Base schema allows both fields optional, XOR validation happens at handler level
-
-      // Invalid types
-      expect(
-        schema.safeParse({
-          workspacePath: 123,
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 123,
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorName: 123,
-        }).success,
-      ).toBe(false);
-    });
-
-    it('should validate XOR constraint between projectPath and workspacePath', () => {
-      const schema = z.object(buildSim.schema);
-
-      // Both projectPath and workspacePath provided - should be invalid
-      expect(
-        schema.safeParse({
-          projectPath: '/path/to/project.xcodeproj',
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(true); // Schema validation passes, but handler validation will catch this
-
-      // Neither provided - should be invalid
-      expect(
-        schema.safeParse({
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(true); // Schema validation passes, but handler validation will catch this
+      // Invalid types on public inputs
+      expect(schema.safeParse({ derivedDataPath: 123 }).success).toBe(false);
+      expect(schema.safeParse({ extraArgs: [123] }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
     });
   });
 
   describe('Parameter Validation', () => {
     it('should handle missing both projectPath and workspacePath', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
-
-      // Since we use XOR validation, this should fail at the handler level
       const result = await buildSim.handler({
         scheme: 'MyScheme',
         simulatorName: 'iPhone 16',
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
     it('should handle both projectPath and workspacePath provided', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
-
-      // Since we use XOR validation, this should fail at the handler level
       const result = await buildSim.handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace',
@@ -157,9 +68,9 @@ describe('build_sim tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain(
-        'projectPath and workspacePath are mutually exclusive',
-      );
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
+      expect(result.content[0].text).toContain('projectPath');
+      expect(result.content[0].text).toContain('workspacePath');
     });
 
     it('should handle empty workspacePath parameter', async () => {
@@ -188,19 +99,14 @@ describe('build_sim tool', () => {
     });
 
     it('should handle missing scheme parameter', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
-
-      // Since we removed manual validation, this test now checks that Zod validation works
-      // by testing the typed tool handler through the default export
       const result = await buildSim.handler({
         workspacePath: '/path/to/workspace',
         simulatorName: 'iPhone 16',
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('scheme');
-      expect(result.content[0].text).toContain('Required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('scheme is required');
     });
 
     it('should handle empty scheme parameter', async () => {
@@ -229,17 +135,14 @@ describe('build_sim tool', () => {
     });
 
     it('should handle missing both simulatorId and simulatorName', async () => {
-      const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
-
-      // Should fail with XOR validation
       const result = await buildSim.handler({
         workspacePath: '/path/to/workspace',
         scheme: 'MyScheme',
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('Either simulatorId or simulatorName is required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide simulatorId or simulatorName');
     });
 
     it('should handle both simulatorId and simulatorName provided', async () => {
@@ -255,9 +158,9 @@ describe('build_sim tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain(
-        'simulatorId and simulatorName are mutually exclusive',
-      );
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
+      expect(result.content[0].text).toContain('simulatorId');
+      expect(result.content[0].text).toContain('simulatorName');
     });
 
     it('should handle empty simulatorName parameter', async () => {

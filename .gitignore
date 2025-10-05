@@ -108,3 +108,4 @@ bundled/
 /.mcpregistry_registry_token
 /key.pem
 .mcpli
+.factory
