@@ -14,6 +14,7 @@ import { ToolResponse } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define base schema object with all fields
 const baseSchemaObject = z.object({
@@ -72,6 +73,12 @@ const testSimulatorSchema = baseSchema
   })
   .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
     message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+  })
+  .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
+    message: 'Either simulatorId or simulatorName is required.',
+  })
+  .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
+    message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
   });
 
 // Use z.infer for type safety
@@ -108,37 +115,32 @@ export async function test_simLogic(
   );
 }
 
+const publicSchemaObject = baseSchemaObject.omit({
+  projectPath: true,
+  workspacePath: true,
+  scheme: true,
+  simulatorId: true,
+  simulatorName: true,
+  configuration: true,
+  useLatestOS: true,
+} as const);
+
 export default {
   name: 'test_sim',
-  description:
-    'Runs tests on a simulator by UUID or name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace). IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: test_sim({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", simulatorName: "iPhone 16" })',
-  schema: baseSchemaObject.shape, // MCP SDK compatibility
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    try {
-      // Runtime validation with XOR constraints
-      const validatedParams = testSimulatorSchema.parse(args);
-      return await test_simLogic(validatedParams, getDefaultCommandExecutor());
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        // Format validation errors in a user-friendly way
-        const errorMessages = error.errors.map((e) => {
-          const path = e.path.length > 0 ? `${e.path.join('.')}` : 'root';
-          return `${path}: ${e.message}`;
-        });
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Parameter validation failed. Invalid parameters:\n${errorMessages.join('\n')}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      // Re-throw unexpected errors
-      throw error;
-    }
-  },
+  description: 'Runs tests on an iOS simulator.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<TestSimulatorParams>({
+    internalSchema: testSimulatorSchema as unknown as z.ZodType<TestSimulatorParams>,
+    logicFunction: test_simLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { allOf: ['scheme'], message: 'scheme is required' },
+      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+    ],
+    exclusivePairs: [
+      ['projectPath', 'workspacePath'],
+      ['simulatorId', 'simulatorName'],
+    ],
+  }),
 };
