@@ -12,7 +12,7 @@ import { createTextResponse } from '../../../utils/responses/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 const XcodePlatform = {
@@ -289,14 +289,33 @@ export async function get_sim_app_pathLogic(
   }
 }
 
+const publicSchemaObject = baseGetSimulatorAppPathSchema.omit({
+  projectPath: true,
+  workspacePath: true,
+  scheme: true,
+  simulatorId: true,
+  simulatorName: true,
+  configuration: true,
+  useLatestOS: true,
+  arch: true,
+} as const);
+
 export default {
   name: 'get_sim_app_path',
-  description:
-    "Gets the app bundle path for a simulator by UUID or name using either a project or workspace file. IMPORTANT: Requires either projectPath OR workspacePath (not both), plus scheme, platform, and either simulatorId OR simulatorName (not both). Example: get_sim_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'iOS Simulator', simulatorName: 'iPhone 16' })",
-  schema: baseGetSimulatorAppPathSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool<GetSimulatorAppPathParams>(
-    getSimulatorAppPathSchema as z.ZodType<GetSimulatorAppPathParams>,
-    get_sim_app_pathLogic,
-    getDefaultCommandExecutor,
-  ),
+  description: 'Retrieves the built app path for an iOS simulator.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<GetSimulatorAppPathParams>({
+    internalSchema: getSimulatorAppPathSchema as unknown as z.ZodType<GetSimulatorAppPathParams>,
+    logicFunction: get_sim_app_pathLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { allOf: ['scheme'], message: 'scheme is required' },
+      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+    ],
+    exclusivePairs: [
+      ['projectPath', 'workspacePath'],
+      ['simulatorId', 'simulatorName'],
+    ],
+  }),
 };
