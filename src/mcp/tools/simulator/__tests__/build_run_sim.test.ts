@@ -5,109 +5,50 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import {
-  createMockExecutor,
-  createMockFileSystemExecutor,
-} from '../../../../test-utils/mock-executors.ts';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 import buildRunSim, { build_run_simLogic } from '../build_run_sim.ts';
 
 describe('build_run_sim tool', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(buildRunSim.name).toBe('build_run_sim');
     });
 
     it('should have correct description', () => {
-      expect(buildRunSim.description).toBe(
-        "Builds and runs an app from a project or workspace on a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_run_sim({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-      );
+      expect(buildRunSim.description).toBe('Builds and runs an app on an iOS simulator.');
     });
 
     it('should have handler function', () => {
       expect(typeof buildRunSim.handler).toBe('function');
     });
 
-    it('should have correct schema with required and optional fields', () => {
+    it('should expose only non-session fields in public schema', () => {
       const schema = z.object(buildRunSim.schema);
 
-      // Valid inputs - workspace
-      expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(true);
-
-      // Valid inputs - project
-      expect(
-        schema.safeParse({
-          projectPath: '/path/to/project.xcodeproj',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({}).success).toBe(true);
 
       expect(
         schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-          configuration: 'Release',
           derivedDataPath: '/path/to/derived',
           extraArgs: ['--verbose'],
-          useLatestOS: true,
           preferXcodebuild: false,
         }).success,
       ).toBe(true);
 
-      // Invalid inputs - missing required fields
-      // Note: simulatorId/simulatorName are optional at schema level, XOR validation at runtime
-      expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-        }).success,
-      ).toBe(true); // Schema validation passes, runtime XOR validation would catch missing simulator fields
+      expect(schema.safeParse({ derivedDataPath: 123 }).success).toBe(false);
+      expect(schema.safeParse({ extraArgs: [123] }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
 
-      expect(
-        schema.safeParse({
-          projectPath: '/path/to/project.xcodeproj',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(true); // Base schema allows this, XOR validation happens in handler
-
-      // Invalid types
-      expect(
-        schema.safeParse({
-          workspacePath: 123,
-          scheme: 'MyScheme',
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 123,
-          simulatorName: 'iPhone 16',
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          workspacePath: '/path/to/workspace',
-          scheme: 'MyScheme',
-          simulatorName: 123,
-        }).success,
-      ).toBe(false);
+      const schemaKeys = Object.keys(buildRunSim.schema).sort();
+      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs', 'preferXcodebuild'].sort());
+      expect(schemaKeys).not.toContain('scheme');
+      expect(schemaKeys).not.toContain('simulatorName');
+      expect(schemaKeys).not.toContain('projectPath');
     });
   });
 
@@ -600,7 +541,8 @@ describe('build_run_sim tool', () => {
         simulatorName: 'iPhone 16',
       });
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
@@ -611,7 +553,10 @@ describe('build_run_sim tool', () => {
         simulatorName: 'iPhone 16',
       });
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('mutually exclusive');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
+      expect(result.content[0].text).toContain('projectPath');
+      expect(result.content[0].text).toContain('workspacePath');
     });
 
     it('should succeed with only projectPath', async () => {
