@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
@@ -489,37 +490,32 @@ When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })
   }
 }
 
+const publicSchemaObject = baseSchemaObject.omit({
+  projectPath: true,
+  workspacePath: true,
+  scheme: true,
+  configuration: true,
+  simulatorId: true,
+  simulatorName: true,
+  useLatestOS: true,
+} as const);
+
 export default {
   name: 'build_run_sim',
-  description:
-    "Builds and runs an app from a project or workspace on a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName. IMPORTANT: Requires either projectPath or workspacePath, plus scheme and either simulatorId or simulatorName. Example: build_run_sim({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', simulatorName: 'iPhone 16' })",
-  schema: baseSchemaObject.shape, // MCP SDK compatibility
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    try {
-      // Runtime validation with XOR constraints
-      const validatedParams = buildRunSimulatorSchema.parse(args);
-      return await build_run_simLogic(validatedParams, getDefaultCommandExecutor());
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        // Format validation errors in a user-friendly way
-        const errorMessages = error.errors.map((e) => {
-          const path = e.path.length > 0 ? `${e.path.join('.')}` : 'root';
-          return `${path}: ${e.message}`;
-        });
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Parameter validation failed. Invalid parameters:\n${errorMessages.join('\n')}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      // Re-throw unexpected errors
-      throw error;
-    }
-  },
+  description: 'Builds and runs an app on an iOS simulator.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<BuildRunSimulatorParams>({
+    internalSchema: buildRunSimulatorSchema as unknown as z.ZodType<BuildRunSimulatorParams>,
+    logicFunction: build_run_simLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { allOf: ['scheme'], message: 'scheme is required' },
+      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+    ],
+    exclusivePairs: [
+      ['projectPath', 'workspacePath'],
+      ['simulatorId', 'simulatorName'],
+    ],
+  }),
 };
