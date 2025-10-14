@@ -4,40 +4,35 @@
  * Using dependency injection for deterministic testing
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import plugin, { listSchemesLogic } from '../list_schemes.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('list_schemes plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(plugin.name).toBe('list_schemes');
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        "Lists available schemes for either a project or a workspace. Provide exactly one of projectPath or workspacePath. Example: list_schemes({ projectPath: '/path/to/MyProject.xcodeproj' })",
-      );
+      expect(plugin.description).toBe('Lists schemes for a project or workspace.');
     });
 
     it('should have handler function', () => {
       expect(typeof plugin.handler).toBe('function');
     });
 
-    it('should validate schema with valid inputs', () => {
-      const schema = z.object(plugin.schema);
-      expect(schema.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(true);
-      expect(schema.safeParse({ projectPath: '/Users/dev/App.xcodeproj' }).success).toBe(true);
-    });
-
-    it('should validate schema with invalid inputs', () => {
-      const schema = z.object(plugin.schema);
-      // Base schema allows empty object - XOR validation is in refinements
+    it('should expose an empty public schema', () => {
+      const schema = z.object(plugin.schema).strict();
       expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ projectPath: 123 }).success).toBe(false);
-      expect(schema.safeParse({ projectPath: null }).success).toBe(false);
-      expect(schema.safeParse({ workspacePath: 123 }).success).toBe(false);
+      expect(schema.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(false);
+      expect(Object.keys(plugin.schema)).toEqual([]);
     });
   });
 
@@ -235,8 +230,8 @@ describe('list_schemes plugin', () => {
       // to verify Zod validation works properly. The createTypedTool wrapper handles validation.
       const result = await plugin.handler({});
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
   });
 
@@ -244,7 +239,8 @@ describe('list_schemes plugin', () => {
     it('should error when neither projectPath nor workspacePath provided', async () => {
       const result = await plugin.handler({});
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
@@ -253,7 +249,7 @@ describe('list_schemes plugin', () => {
         workspacePath: '/path/to/workspace.xcworkspace',
       });
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('mutually exclusive');
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
     });
 
     it('should handle empty strings as undefined', async () => {
@@ -262,7 +258,8 @@ describe('list_schemes plugin', () => {
         workspacePath: '',
       });
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
   });
 

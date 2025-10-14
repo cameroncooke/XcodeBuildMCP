@@ -92,7 +92,9 @@ export function createSessionAwareTool<TParams>(opts: {
       // Sanitize args: treat null/undefined as "not provided" so they don't override session defaults
       const sanitizedArgs: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(rawArgs)) {
-        if (v !== null && v !== undefined) sanitizedArgs[k] = v;
+        if (v === null || v === undefined) continue;
+        if (typeof v === 'string' && v.trim() === '') continue;
+        sanitizedArgs[k] = v;
       }
 
       // Factory-level mutual exclusivity check: if user provides multiple explicit values

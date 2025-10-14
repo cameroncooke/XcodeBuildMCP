@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
@@ -146,14 +146,24 @@ export async function cleanLogic(
   );
 }
 
+const publicSchemaObject = baseSchemaObject.omit({
+  projectPath: true,
+  workspacePath: true,
+  scheme: true,
+  configuration: true,
+} as const);
+
 export default {
   name: 'clean',
-  description:
-    "Cleans build products for either a project or a workspace using xcodebuild. Provide exactly one of projectPath or workspacePath. Platform defaults to iOS if not specified. Example: clean({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', platform: 'iOS' })",
-  schema: baseSchemaObject.shape,
-  handler: createTypedTool<CleanParams>(
-    cleanSchema as z.ZodType<CleanParams>,
-    cleanLogic,
-    getDefaultCommandExecutor,
-  ),
+  description: 'Cleans build products with xcodebuild.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<CleanParams>({
+    internalSchema: cleanSchema as unknown as z.ZodType<CleanParams>,
+    logicFunction: cleanLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+    ],
+    exclusivePairs: [['projectPath', 'workspacePath']],
+  }),
 };

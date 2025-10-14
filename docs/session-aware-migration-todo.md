@@ -5,11 +5,11 @@ _Audit date: October 6, 2025_
 Reference: `docs/session_management_plan.md`
 
 ## Utilities
-- [ ] `src/mcp/tools/utilities/clean.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`.
+- [x] `src/mcp/tools/utilities/clean.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`.
 
 ## Project Discovery
-- [ ] `src/mcp/tools/project-discovery/list_schemes.ts` — session defaults: `projectPath`, `workspacePath`.
-- [ ] `src/mcp/tools/project-discovery/show_build_settings.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`.
+- [x] `src/mcp/tools/project-discovery/list_schemes.ts` — session defaults: `projectPath`, `workspacePath`.
+- [x] `src/mcp/tools/project-discovery/show_build_settings.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`.
 
 ## Device Workflows
 - [ ] `src/mcp/tools/device/build_device.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`.
