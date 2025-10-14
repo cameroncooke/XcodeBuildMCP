@@ -1,27 +1,32 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import plugin, { showBuildSettingsLogic } from '../show_build_settings.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('show_build_settings plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(plugin.name).toBe('show_build_settings');
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        "Shows build settings from either a project or workspace using xcodebuild. Provide exactly one of projectPath or workspacePath, plus scheme. Example: show_build_settings({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-      );
+      expect(plugin.description).toBe('Shows xcodebuild build settings.');
     });
 
     it('should have handler function', () => {
       expect(typeof plugin.handler).toBe('function');
     });
 
-    it('should have schema object', () => {
-      expect(plugin.schema).toBeDefined();
-      expect(typeof plugin.schema).toBe('object');
+    it('should expose an empty public schema', () => {
+      const schema = z.object(plugin.schema).strict();
+      expect(schema.safeParse({}).success).toBe(true);
+      expect(schema.safeParse({ projectPath: '/path.xcodeproj' }).success).toBe(false);
+      expect(schema.safeParse({ scheme: 'App' }).success).toBe(false);
+      expect(Object.keys(plugin.schema)).toEqual([]);
     });
   });
 
@@ -50,8 +55,8 @@ describe('show_build_settings plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('projectPath');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
     it('should return success with build settings', async () => {
@@ -169,7 +174,8 @@ describe('show_build_settings plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
@@ -180,7 +186,7 @@ describe('show_build_settings plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('mutually exclusive');
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
     });
 
     it('should work with projectPath only', async () => {
@@ -211,6 +217,28 @@ describe('show_build_settings plugin', () => {
 
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toContain('✅ Build settings retrieved successfully');
+    });
+  });
+
+  describe('Session requirement handling', () => {
+    it('should require scheme when not provided', async () => {
+      const result = await plugin.handler({
+        projectPath: '/path/to/MyProject.xcodeproj',
+      } as any);
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('scheme is required');
+    });
+
+    it('should surface project/workspace requirement even with scheme default', async () => {
+      sessionStore.setDefaults({ scheme: 'MyScheme' });
+
+      const result = await plugin.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
   });
 

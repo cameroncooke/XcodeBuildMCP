@@ -1,20 +1,43 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
 import tool, { cleanLogic } from '../clean.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('clean (unified) tool', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   it('exports correct name/description/schema/handler', () => {
     expect(tool.name).toBe('clean');
-    expect(typeof tool.description).toBe('string');
-    expect(tool.schema).toBeDefined();
+    expect(tool.description).toBe('Cleans build products with xcodebuild.');
     expect(typeof tool.handler).toBe('function');
+
+    const schema = z.object(tool.schema).strict();
+    expect(schema.safeParse({}).success).toBe(true);
+    expect(
+      schema.safeParse({
+        derivedDataPath: '/tmp/Derived',
+        extraArgs: ['--quiet'],
+        preferXcodebuild: true,
+        platform: 'iOS Simulator',
+      }).success,
+    ).toBe(true);
+    expect(schema.safeParse({ configuration: 'Debug' }).success).toBe(false);
+
+    const schemaKeys = Object.keys(tool.schema).sort();
+    expect(schemaKeys).toEqual(
+      ['derivedDataPath', 'extraArgs', 'platform', 'preferXcodebuild'].sort(),
+    );
   });
 
   it('handler validation: error when neither projectPath nor workspacePath provided', async () => {
     const result = await (tool as any).handler({});
     expect(result.isError).toBe(true);
-    const text = String(result.content?.[1]?.text ?? result.content?.[0]?.text ?? '');
-    expect(text).toContain('Invalid parameters');
+    const text = String(result.content?.[0]?.text ?? '');
+    expect(text).toContain('Missing required session defaults');
+    expect(text).toContain('Provide a project or workspace');
   });
 
   it('handler validation: error when both projectPath and workspacePath provided', async () => {
@@ -23,8 +46,8 @@ describe('clean (unified) tool', () => {
       workspacePath: '/w.xcworkspace',
     });
     expect(result.isError).toBe(true);
-    const text = String(result.content?.[1]?.text ?? result.content?.[0]?.text ?? '');
-    expect(text).toContain('Invalid parameters');
+    const text = String(result.content?.[0]?.text ?? '');
+    expect(text).toContain('Mutually exclusive parameters provided');
   });
 
   it('runs project-path flow via logic', async () => {
@@ -45,8 +68,9 @@ describe('clean (unified) tool', () => {
   it('handler validation: requires scheme when workspacePath is provided', async () => {
     const result = await (tool as any).handler({ workspacePath: '/w.xcworkspace' });
     expect(result.isError).toBe(true);
-    const text = String(result.content?.[1]?.text ?? result.content?.[0]?.text ?? '');
-    expect(text).toContain('Invalid parameters');
+    const text = String(result.content?.[0]?.text ?? '');
+    expect(text).toContain('Parameter validation failed');
+    expect(text).toContain('scheme is required when workspacePath is provided');
   });
 
   it('uses iOS platform by default', async () => {
@@ -121,7 +145,8 @@ describe('clean (unified) tool', () => {
       platform: 'InvalidPlatform',
     });
     expect(result.isError).toBe(true);
-    const text = String(result.content?.[1]?.text ?? result.content?.[0]?.text ?? '');
-    expect(text).toContain('Invalid parameters');
+    const text = String(result.content?.[0]?.text ?? '');
+    expect(text).toContain('Parameter validation failed');
+    expect(text).toContain('platform');
   });
 });

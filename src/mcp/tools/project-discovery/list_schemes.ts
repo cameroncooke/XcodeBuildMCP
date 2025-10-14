@@ -11,7 +11,7 @@ import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
@@ -109,14 +109,22 @@ export async function listSchemesLogic(
   }
 }
 
+const publicSchemaObject = baseSchemaObject.omit({
+  projectPath: true,
+  workspacePath: true,
+} as const);
+
 export default {
   name: 'list_schemes',
-  description:
-    "Lists available schemes for either a project or a workspace. Provide exactly one of projectPath or workspacePath. Example: list_schemes({ projectPath: '/path/to/MyProject.xcodeproj' })",
-  schema: baseSchemaObject.shape,
-  handler: createTypedTool<ListSchemesParams>(
-    listSchemesSchema as z.ZodType<ListSchemesParams>,
-    listSchemesLogic,
-    getDefaultCommandExecutor,
-  ),
+  description: 'Lists schemes for a project or workspace.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<ListSchemesParams>({
+    internalSchema: listSchemesSchema as unknown as z.ZodType<ListSchemesParams>,
+    logicFunction: listSchemesLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+    ],
+    exclusivePairs: [['projectPath', 'workspacePath']],
+  }),
 };
