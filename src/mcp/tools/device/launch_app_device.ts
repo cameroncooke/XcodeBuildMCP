@@ -10,7 +10,7 @@ import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -141,12 +141,12 @@ export async function launch_app_deviceLogic(
 
 export default {
   name: 'launch_app_device',
-  description:
-    'Launches an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and bundleId.',
-  schema: launchAppDeviceSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    launchAppDeviceSchema,
-    launch_app_deviceLogic,
-    getDefaultCommandExecutor,
-  ),
+  description: 'Launches an app on a connected device.',
+  schema: launchAppDeviceSchema.omit({ deviceId: true } as const).shape,
+  handler: createSessionAwareTool<LaunchAppDeviceParams>({
+    internalSchema: launchAppDeviceSchema as unknown as z.ZodType<LaunchAppDeviceParams>,
+    logicFunction: launch_app_deviceLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],
+  }),
 };

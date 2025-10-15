@@ -21,7 +21,7 @@ import {
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
 } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
@@ -275,21 +275,30 @@ export async function testDeviceLogic(
 
 export default {
   name: 'test_device',
-  description:
-    'Runs tests for an Apple project or workspace on a physical device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) using xcodebuild test and parses xcresult output. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires scheme and deviceId. Example: test_device({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", deviceId: "device-uuid" })',
-  schema: baseSchemaObject.shape,
-  handler: createTypedTool<TestDeviceParams>(
-    testDeviceSchema as z.ZodType<TestDeviceParams>,
-    (params: TestDeviceParams, executor: CommandExecutor) => {
-      return testDeviceLogic(
+  description: 'Runs tests on a physical Apple device.',
+  schema: baseSchemaObject.omit({
+    projectPath: true,
+    workspacePath: true,
+    scheme: true,
+    deviceId: true,
+    configuration: true,
+  } as const).shape,
+  handler: createSessionAwareTool<TestDeviceParams>({
+    internalSchema: testDeviceSchema as unknown as z.ZodType<TestDeviceParams>,
+    logicFunction: (params: TestDeviceParams, executor: CommandExecutor) =>
+      testDeviceLogic(
         {
           ...params,
           platform: params.platform ?? 'iOS',
         },
         executor,
         getDefaultFileSystemExecutor(),
-      );
-    },
-    getDefaultCommandExecutor,
-  ),
+      ),
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { allOf: ['scheme', 'deviceId'], message: 'Provide scheme and deviceId' },
+      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+    ],
+    exclusivePairs: [['projectPath', 'workspacePath']],
+  }),
 };

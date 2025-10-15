@@ -4,50 +4,40 @@
  * Using dependency injection for deterministic testing
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import buildDevice, { buildDeviceLogic } from '../build_device.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('build_device plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(buildDevice.name).toBe('build_device');
     });
 
     it('should have correct description', () => {
-      expect(buildDevice.description).toBe(
-        "Builds an app from a project or workspace for a physical Apple device. Provide exactly one of projectPath or workspacePath. Example: build_device({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-      );
+      expect(buildDevice.description).toBe('Builds an app for a connected device.');
     });
 
     it('should have handler function', () => {
       expect(typeof buildDevice.handler).toBe('function');
     });
 
-    it('should validate schema correctly', () => {
-      // Test required fields
-      expect(buildDevice.schema.projectPath.safeParse('/path/to/MyProject.xcodeproj').success).toBe(
-        true,
-      );
+    it('should expose only optional build-tuning fields in public schema', () => {
+      const schema = z.object(buildDevice.schema).strict();
+      expect(schema.safeParse({}).success).toBe(true);
       expect(
-        buildDevice.schema.workspacePath.safeParse('/path/to/MyProject.xcworkspace').success,
+        schema.safeParse({ derivedDataPath: '/path/to/derived-data', extraArgs: [] }).success,
       ).toBe(true);
-      expect(buildDevice.schema.scheme.safeParse('MyScheme').success).toBe(true);
+      expect(schema.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(false);
 
-      // Test optional fields
-      expect(buildDevice.schema.configuration.safeParse('Debug').success).toBe(true);
-      expect(buildDevice.schema.derivedDataPath.safeParse('/path/to/derived-data').success).toBe(
-        true,
-      );
-      expect(buildDevice.schema.extraArgs.safeParse(['--arg1', '--arg2']).success).toBe(true);
-      expect(buildDevice.schema.preferXcodebuild.safeParse(true).success).toBe(true);
-
-      // Test invalid inputs
-      expect(buildDevice.schema.projectPath.safeParse(null).success).toBe(false);
-      expect(buildDevice.schema.workspacePath.safeParse(null).success).toBe(false);
-      expect(buildDevice.schema.scheme.safeParse(null).success).toBe(false);
-      expect(buildDevice.schema.extraArgs.safeParse('not-array').success).toBe(false);
-      expect(buildDevice.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
+      const schemaKeys = Object.keys(buildDevice.schema).sort();
+      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs', 'preferXcodebuild']);
     });
   });
 
@@ -58,7 +48,8 @@ describe('build_device plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
@@ -69,7 +60,8 @@ describe('build_device plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('mutually exclusive');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
     });
   });
 
@@ -80,9 +72,8 @@ describe('build_device plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('scheme');
-      expect(result.content[0].text).toContain('Required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('scheme is required');
     });
 
     it('should return Zod validation error for invalid parameter types', async () => {
@@ -93,6 +84,10 @@ describe('build_device plugin', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('projectPath');
+      expect(result.content[0].text).toContain(
+        'Tip: set session defaults via session-set-defaults',
+      );
     });
   });
 

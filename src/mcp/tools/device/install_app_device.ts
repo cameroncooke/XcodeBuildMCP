@@ -10,7 +10,7 @@ import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const installAppDeviceSchema = z.object({
@@ -82,12 +82,12 @@ export async function install_app_deviceLogic(
 
 export default {
   name: 'install_app_device',
-  description:
-    'Installs an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and appPath.',
-  schema: installAppDeviceSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    installAppDeviceSchema,
-    install_app_deviceLogic,
-    getDefaultCommandExecutor,
-  ),
+  description: 'Installs an app on a connected device.',
+  schema: installAppDeviceSchema.omit({ deviceId: true } as const).shape,
+  handler: createSessionAwareTool<InstallAppDeviceParams>({
+    internalSchema: installAppDeviceSchema as unknown as z.ZodType<InstallAppDeviceParams>,
+    logicFunction: install_app_deviceLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],
+  }),
 };

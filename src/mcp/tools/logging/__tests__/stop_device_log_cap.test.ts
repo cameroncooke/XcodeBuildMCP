@@ -2,9 +2,10 @@
  * Tests for stop_device_log_cap plugin
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+import { EventEmitter } from 'events';
 import { z } from 'zod';
 import plugin, { stop_device_log_capLogic } from '../stop_device_log_cap.ts';
-import { activeDeviceLogSessions } from '../start_device_log_cap.ts';
+import { activeDeviceLogSessions, type DeviceLogSession } from '../start_device_log_cap.ts';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 
 // Note: Logger is allowed to execute normally (integration testing pattern)
@@ -57,17 +58,25 @@ describe('stop_device_log_cap plugin', () => {
         exitCode?: number | null;
       } = {},
     ) {
-      const testProcess = {
+      const emitter = new EventEmitter();
+      const processState = {
         killed: options.killed ?? false,
-        exitCode: options.exitCode !== undefined ? options.exitCode : null,
+        exitCode: options.exitCode ?? (options.killed ? 0 : null),
         killCalls: [] as string[],
-        kill: function (signal?: string) {
+        kill(signal?: string) {
+          if (this.killed) {
+            return false;
+          }
           this.killCalls.push(signal ?? 'SIGTERM');
           this.killed = true;
+          this.exitCode = 0;
+          emitter.emit('close', 0);
+          return true;
         },
       };
 
-      return testProcess;
+      const testProcess = Object.assign(emitter, processState);
+      return testProcess as typeof testProcess;
     }
 
     it('should handle stop log capture when session not found', async () => {
@@ -98,10 +107,11 @@ describe('stop_device_log_cap plugin', () => {
       });
 
       activeDeviceLogSessions.set(testSessionId, {
-        process: testProcess,
+        process: testProcess as unknown as DeviceLogSession['process'],
         logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
         bundleId: 'com.example.MyApp',
+        hasEnded: false,
       });
 
       // Configure test file system for successful operation
@@ -142,10 +152,11 @@ describe('stop_device_log_cap plugin', () => {
       });
 
       activeDeviceLogSessions.set(testSessionId, {
-        process: testProcess,
+        process: testProcess as unknown as DeviceLogSession['process'],
         logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
         bundleId: 'com.example.MyApp',
+        hasEnded: false,
       });
 
       // Configure test file system for successful operation
@@ -183,10 +194,11 @@ describe('stop_device_log_cap plugin', () => {
       });
 
       activeDeviceLogSessions.set(testSessionId, {
-        process: testProcess,
+        process: testProcess as unknown as DeviceLogSession['process'],
         logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
         bundleId: 'com.example.MyApp',
+        hasEnded: false,
       });
 
       // Configure test file system for access failure (file doesn't exist)
@@ -224,10 +236,11 @@ describe('stop_device_log_cap plugin', () => {
       });
 
       activeDeviceLogSessions.set(testSessionId, {
-        process: testProcess,
+        process: testProcess as unknown as DeviceLogSession['process'],
         logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
         bundleId: 'com.example.MyApp',
+        hasEnded: false,
       });
 
       // Configure test file system for successful access but failed read
@@ -267,10 +280,11 @@ describe('stop_device_log_cap plugin', () => {
       });
 
       activeDeviceLogSessions.set(testSessionId, {
-        process: testProcess,
+        process: testProcess as unknown as DeviceLogSession['process'],
         logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
         bundleId: 'com.example.MyApp',
+        hasEnded: false,
       });
 
       // Configure test file system for access failure with string error

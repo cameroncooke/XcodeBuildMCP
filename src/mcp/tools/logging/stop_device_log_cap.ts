@@ -5,23 +5,13 @@
  */
 
 import * as fs from 'fs';
-import type { ChildProcess } from 'child_process';
 import { z } from 'zod';
 import { log } from '../../../utils/logging/index.ts';
-import { activeDeviceLogSessions } from './start_device_log_cap.ts';
+import { activeDeviceLogSessions, type DeviceLogSession } from './start_device_log_cap.ts';
 import { ToolResponse } from '../../../types/common.ts';
 import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
 import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
-
-interface DeviceLogSession {
-  process:
-    | ChildProcess
-    | { killed?: boolean; exitCode?: number | null; kill?: (signal?: string) => boolean };
-  logFilePath: string;
-  deviceUuid: string;
-  bundleId: string;
-}
 
 // Define schema as ZodObject
 const stopDeviceLogCapSchema = z.object({
@@ -32,23 +22,6 @@ const stopDeviceLogCapSchema = z.object({
 type StopDeviceLogCapParams = z.infer<typeof stopDeviceLogCapSchema>;
 
 /**
- * Type guard to validate device log session structure
- */
-function isValidDeviceLogSession(session: unknown): session is DeviceLogSession {
-  return (
-    typeof session === 'object' &&
-    session !== null &&
-    'process' in session &&
-    'logFilePath' in session &&
-    'deviceUuid' in session &&
-    'bundleId' in session &&
-    typeof (session as DeviceLogSession).logFilePath === 'string' &&
-    typeof (session as DeviceLogSession).deviceUuid === 'string' &&
-    typeof (session as DeviceLogSession).bundleId === 'string'
-  );
-}
-
-/**
  * Business logic for stopping device log capture session
  */
 export async function stop_device_log_capLogic(
@@ -57,8 +30,8 @@ export async function stop_device_log_capLogic(
 ): Promise<ToolResponse> {
   const { logSessionId } = params;
 
-  const sessionData: unknown = activeDeviceLogSessions.get(logSessionId);
-  if (!sessionData) {
+  const session = activeDeviceLogSessions.get(logSessionId);
+  if (!session) {
     log('warning', `Device log session not found: ${logSessionId}`);
     return {
       content: [
@@ -71,35 +44,26 @@ export async function stop_device_log_capLogic(
     };
   }
 
-  // Validate session structure
-  if (!isValidDeviceLogSession(sessionData)) {
-    log('error', `Invalid device log session structure for session ${logSessionId}`);
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Failed to stop device log capture session ${logSessionId}: Invalid session structure`,
-        },
-      ],
-      isError: true,
-    };
-  }
-
-  const session = sessionData as DeviceLogSession;
-
   try {
     log('info', `Attempting to stop device log capture session: ${logSessionId}`);
-    const logFilePath = session.logFilePath;
 
-    if (!session.process.killed && session.process.exitCode === null) {
+    const shouldSignalStop =
+      !(session.hasEnded ?? false) &&
+      session.process.killed !== true &&
+      session.process.exitCode == null;
+
+    if (shouldSignalStop) {
       session.process.kill?.('SIGTERM');
     }
 
+    await waitForSessionToFinish(session);
+
+    if (session.logStream) {
+      await ensureStreamClosed(session.logStream);
+    }
+
+    const logFilePath = session.logFilePath;
     activeDeviceLogSessions.delete(logSessionId);
-    log(
-      'info',
-      `Device log capture session ${logSessionId} stopped. Log file retained at: ${logFilePath}`,
-    );
 
     // Check file access
     if (!fileSystemExecutor.existsSync(logFilePath)) {
@@ -108,6 +72,11 @@ export async function stop_device_log_capLogic(
 
     const fileContent = await fileSystemExecutor.readFile(logFilePath, 'utf-8');
     log('info', `Successfully read device log content from ${logFilePath}`);
+
+    log(
+      'info',
+      `Device log capture session ${logSessionId} stopped. Log file retained at: ${logFilePath}`,
+    );
 
     return {
       content: [
@@ -129,6 +98,67 @@ export async function stop_device_log_capLogic(
       ],
       isError: true,
     };
+  }
+}
+
+type WriteStreamWithClosed = fs.WriteStream & { closed?: boolean };
+
+async function ensureStreamClosed(stream: fs.WriteStream): Promise<void> {
+  const typedStream = stream as WriteStreamWithClosed;
+  if (typedStream.destroyed || typedStream.closed) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    const onClose = (): void => resolve();
+    typedStream.once('close', onClose);
+    typedStream.end();
+  }).catch(() => {
+    // Ignore cleanup errors – best-effort close
+  });
+}
+
+async function waitForSessionToFinish(session: DeviceLogSession): Promise<void> {
+  if (session.hasEnded) {
+    return;
+  }
+
+  if (session.process.exitCode != null) {
+    session.hasEnded = true;
+    return;
+  }
+
+  if (typeof session.process.once === 'function') {
+    await new Promise<void>((resolve) => {
+      const onClose = (): void => {
+        clearTimeout(timeout);
+        session.hasEnded = true;
+        resolve();
+      };
+
+      const timeout = setTimeout(() => {
+        session.process.removeListener?.('close', onClose);
+        session.hasEnded = true;
+        resolve();
+      }, 1000);
+
+      session.process.once('close', onClose);
+
+      if (session.hasEnded || session.process.exitCode != null) {
+        session.process.removeListener?.('close', onClose);
+        onClose();
+      }
+    });
+    return;
+  }
+
+  // Fallback polling for minimal mock processes (primarily in tests)
+  for (let i = 0; i < 20; i += 1) {
+    if (session.hasEnded || session.process.exitCode != null) {
+      session.hasEnded = true;
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
 }
 

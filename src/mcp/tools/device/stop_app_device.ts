@@ -10,7 +10,7 @@ import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const stopAppDeviceSchema = z.object({
@@ -84,8 +84,12 @@ export async function stop_app_deviceLogic(
 
 export default {
   name: 'stop_app_device',
-  description:
-    'Stops an app running on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and processId.',
-  schema: stopAppDeviceSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(stopAppDeviceSchema, stop_app_deviceLogic, getDefaultCommandExecutor),
+  description: 'Stops a running app on a connected device.',
+  schema: stopAppDeviceSchema.omit({ deviceId: true } as const).shape,
+  handler: createSessionAwareTool<StopAppDeviceParams>({
+    internalSchema: stopAppDeviceSchema as unknown as z.ZodType<StopAppDeviceParams>,
+    logicFunction: stop_app_deviceLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],
+  }),
 };

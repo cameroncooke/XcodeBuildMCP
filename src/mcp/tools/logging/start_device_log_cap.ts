@@ -7,13 +7,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import type { ChildProcess } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 /**
  * Log file retention policy for device logs:
@@ -28,7 +29,16 @@ const DEVICE_LOG_FILE_PREFIX = 'xcodemcp_device_log_';
 // - Devices use 'xcrun devicectl' with console output only (no OSLog streaming)
 // The different command structures and output formats make sharing infrastructure complex.
 // However, both follow similar patterns for session management and log retention.
-export const activeDeviceLogSessions = new Map();
+export interface DeviceLogSession {
+  process: ChildProcess;
+  logFilePath: string;
+  deviceUuid: string;
+  bundleId: string;
+  logStream?: fs.WriteStream;
+  hasEnded: boolean;
+}
+
+export const activeDeviceLogSessions = new Map<string, DeviceLogSession>();
 
 /**
  * Start a log capture session for an iOS device by launching the app with console output.
@@ -51,6 +61,8 @@ export async function startDeviceLogCapture(
   const logFileName = `${DEVICE_LOG_FILE_PREFIX}${logSessionId}.log`;
   const logFilePath = path.join(os.tmpdir(), logFileName);
 
+  let logStream: fs.WriteStream | undefined;
+
   try {
     // Use injected file system executor or default
     if (fileSystemExecutor) {
@@ -61,7 +73,7 @@ export async function startDeviceLogCapture(
       await fs.promises.writeFile(logFilePath, '');
     }
 
-    const logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
+    logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
 
     logStream.write(
       `\n--- Device log capture for bundle ID: ${bundleId} on device: ${deviceUuid} ---\n`,
@@ -84,22 +96,98 @@ export async function startDeviceLogCapture(
       'Device Log Capture',
       true,
       undefined,
+      true,
     );
 
-    // For testing purposes, we'll simulate process management
-    // In actual usage, the process would be managed by the executor result
-    activeDeviceLogSessions.set(logSessionId, {
-      process: result.process,
+    if (!result.success) {
+      log(
+        'error',
+        `Device log capture process reported failure: ${result.error ?? 'unknown error'}`,
+      );
+      if (logStream && !logStream.destroyed) {
+        logStream.write(
+          `\n--- Device log capture failed to start ---\n${result.error ?? 'Unknown error'}\n`,
+        );
+        logStream.end();
+      }
+      return {
+        sessionId: '',
+        error: result.error ?? 'Failed to start device log capture',
+      };
+    }
+
+    const childProcess = result.process;
+    if (!childProcess) {
+      throw new Error('Device log capture process handle was not returned');
+    }
+
+    const session: DeviceLogSession = {
+      process: childProcess,
       logFilePath,
       deviceUuid,
       bundleId,
+      logStream,
+      hasEnded: false,
+    };
+
+    const handleOutput = (chunk: unknown): void => {
+      if (!logStream || logStream.destroyed) return;
+      const text =
+        typeof chunk === 'string'
+          ? chunk
+          : chunk instanceof Buffer
+            ? chunk.toString('utf8')
+            : String(chunk ?? '');
+      if (text.length > 0) {
+        logStream.write(text);
+      }
+    };
+
+    childProcess.stdout?.setEncoding?.('utf8');
+    childProcess.stdout?.on?.('data', handleOutput);
+    childProcess.stderr?.setEncoding?.('utf8');
+    childProcess.stderr?.on?.('data', handleOutput);
+
+    const cleanupStreams = (): void => {
+      childProcess.stdout?.off?.('data', handleOutput);
+      childProcess.stderr?.off?.('data', handleOutput);
+    };
+
+    childProcess.once?.('error', (err) => {
+      log(
+        'error',
+        `Device log capture process error (session ${logSessionId}): ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
     });
+
+    childProcess.once?.('close', (code) => {
+      cleanupStreams();
+      session.hasEnded = true;
+      if (logStream && !logStream.destroyed && !logStream.closed) {
+        logStream.write(`\n--- Device log capture ended (exit code: ${code ?? 'unknown'}) ---\n`);
+        logStream.end();
+      }
+    });
+
+    // For testing purposes, we'll simulate process management
+    // In actual usage, the process would be managed by the executor result
+    activeDeviceLogSessions.set(logSessionId, session);
 
     log('info', `Device log capture started with session ID: ${logSessionId}`);
     return { sessionId: logSessionId };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     log('error', `Failed to start device log capture: ${message}`);
+    if (logStream && !logStream.destroyed && !logStream.closed) {
+      try {
+        logStream.write(`\n--- Device log capture failed: ${message} ---\n`);
+      } catch {
+        // ignore secondary stream write failures
+      }
+      logStream.end();
+    }
     return { sessionId: '', error: message };
   }
 }
@@ -197,12 +285,12 @@ export async function start_device_log_capLogic(
 
 export default {
   name: 'start_device_log_cap',
-  description:
-    'Starts capturing logs from a specified Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) by launching the app with console output. Returns a session ID.',
-  schema: startDeviceLogCapSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    startDeviceLogCapSchema,
-    start_device_log_capLogic,
-    getDefaultCommandExecutor,
-  ),
+  description: 'Starts log capture on a connected device.',
+  schema: startDeviceLogCapSchema.omit({ deviceId: true } as const).shape,
+  handler: createSessionAwareTool<StartDeviceLogCapParams>({
+    internalSchema: startDeviceLogCapSchema as unknown as z.ZodType<StartDeviceLogCapParams>,
+    logicFunction: start_device_log_capLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],
+  }),
 };
