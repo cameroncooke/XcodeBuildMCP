@@ -12,15 +12,15 @@ Reference: `docs/session_management_plan.md`
 - [x] `src/mcp/tools/project-discovery/show_build_settings.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`.
 
 ## Device Workflows
-- [ ] `src/mcp/tools/device/build_device.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`.
-- [ ] `src/mcp/tools/device/test_device.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `deviceId`, `configuration`.
-- [ ] `src/mcp/tools/device/get_device_app_path.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`.
-- [ ] `src/mcp/tools/device/install_app_device.ts` — session defaults: `deviceId`.
-- [ ] `src/mcp/tools/device/launch_app_device.ts` — session defaults: `deviceId`.
-- [ ] `src/mcp/tools/device/stop_app_device.ts` — session defaults: `deviceId`.
+- [x] `src/mcp/tools/device/build_device.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`.
+- [x] `src/mcp/tools/device/test_device.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `deviceId`, `configuration`.
+- [x] `src/mcp/tools/device/get_device_app_path.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`.
+- [x] `src/mcp/tools/device/install_app_device.ts` — session defaults: `deviceId`.
+- [x] `src/mcp/tools/device/launch_app_device.ts` — session defaults: `deviceId`.
+- [x] `src/mcp/tools/device/stop_app_device.ts` — session defaults: `deviceId`.
 
 ## Device Logging
-- [ ] `src/mcp/tools/logging/start_device_log_cap.ts` — session defaults: `deviceId`.
+- [x] `src/mcp/tools/logging/start_device_log_cap.ts` — session defaults: `deviceId`.
 
 ## macOS Workflows
 - [ ] `src/mcp/tools/macos/build_macos.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`, `arch`.

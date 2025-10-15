@@ -7,21 +7,24 @@
  * Uses createMockExecutor for command execution and manual stubs for file operations.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import launchAppDevice, { launch_app_deviceLogic } from '../launch_app_device.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('launch_app_device plugin (device-shared)', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(launchAppDevice.name).toBe('launch_app_device');
     });
 
     it('should have correct description', () => {
-      expect(launchAppDevice.description).toBe(
-        'Launches an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and bundleId.',
-      );
+      expect(launchAppDevice.description).toBe('Launches an app on a connected device.');
     });
 
     it('should have handler function', () => {
@@ -29,42 +32,25 @@ describe('launch_app_device plugin (device-shared)', () => {
     });
 
     it('should validate schema with valid inputs', () => {
-      const schema = z.object(launchAppDevice.schema);
-      expect(
-        schema.safeParse({
-          deviceId: 'test-device-123',
-          bundleId: 'com.example.app',
-        }).success,
-      ).toBe(true);
-      expect(
-        schema.safeParse({
-          deviceId: '00008030-001E14BE2288802E',
-          bundleId: 'com.apple.calculator',
-        }).success,
-      ).toBe(true);
+      const schema = z.object(launchAppDevice.schema).strict();
+      expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
+      expect(schema.safeParse({}).success).toBe(false);
+      expect(Object.keys(launchAppDevice.schema)).toEqual(['bundleId']);
     });
 
     it('should validate schema with invalid inputs', () => {
-      const schema = z.object(launchAppDevice.schema);
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(
-        schema.safeParse({
-          deviceId: null,
-          bundleId: 'com.example.app',
-        }).success,
-      ).toBe(false);
-      expect(
-        schema.safeParse({
-          deviceId: 'test-device-123',
-          bundleId: null,
-        }).success,
-      ).toBe(false);
-      expect(
-        schema.safeParse({
-          deviceId: 123,
-          bundleId: 'com.example.app',
-        }).success,
-      ).toBe(false);
+      const schema = z.object(launchAppDevice.schema).strict();
+      expect(schema.safeParse({ bundleId: null }).success).toBe(false);
+      expect(schema.safeParse({ bundleId: 123 }).success).toBe(false);
+    });
+  });
+
+  describe('Handler Requirements', () => {
+    it('should require deviceId when not provided', async () => {
+      const result = await launchAppDevice.handler({ bundleId: 'com.example.app' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('deviceId is required');
     });
   });
 

@@ -4,36 +4,46 @@
  * Using dependency injection for deterministic testing
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import stopAppDevice, { stop_app_deviceLogic } from '../stop_app_device.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('stop_app_device plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(stopAppDevice.name).toBe('stop_app_device');
     });
 
     it('should have correct description', () => {
-      expect(stopAppDevice.description).toBe(
-        'Stops an app running on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and processId.',
-      );
+      expect(stopAppDevice.description).toBe('Stops a running app on a connected device.');
     });
 
     it('should have handler function', () => {
       expect(typeof stopAppDevice.handler).toBe('function');
     });
 
-    it('should validate schema correctly', () => {
-      // Test required fields
-      expect(stopAppDevice.schema.deviceId.safeParse('test-device-123').success).toBe(true);
-      expect(stopAppDevice.schema.processId.safeParse(12345).success).toBe(true);
+    it('should require processId in public schema', () => {
+      const schema = z.object(stopAppDevice.schema).strict();
+      expect(schema.safeParse({ processId: 12345 }).success).toBe(true);
+      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({ deviceId: 'test-device-123' }).success).toBe(false);
 
-      // Test invalid inputs
-      expect(stopAppDevice.schema.deviceId.safeParse(null).success).toBe(false);
-      expect(stopAppDevice.schema.deviceId.safeParse(123).success).toBe(false);
-      expect(stopAppDevice.schema.processId.safeParse(null).success).toBe(false);
-      expect(stopAppDevice.schema.processId.safeParse('not-number').success).toBe(false);
+      expect(Object.keys(stopAppDevice.schema)).toEqual(['processId']);
+    });
+  });
+
+  describe('Handler Requirements', () => {
+    it('should require deviceId when not provided', async () => {
+      const result = await stopAppDevice.handler({ processId: 12345 });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('deviceId is required');
     });
   });
 

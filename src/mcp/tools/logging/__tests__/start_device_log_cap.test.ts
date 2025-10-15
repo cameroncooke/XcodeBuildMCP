@@ -8,7 +8,11 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import plugin, { start_device_log_capLogic } from '../start_device_log_cap.ts';
+import plugin, {
+  start_device_log_capLogic,
+  activeDeviceLogSessions,
+} from '../start_device_log_cap.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('start_device_log_cap plugin', () => {
   // Mock state tracking
@@ -26,6 +30,11 @@ describe('start_device_log_cap plugin', () => {
   mkdirCalls = [];
   writeFileCalls = [];
 
+  beforeEach(() => {
+    sessionStore.clear();
+    activeDeviceLogSessions.clear();
+  });
+
   describe('Plugin Structure', () => {
     it('should export an object with required properties', () => {
       expect(plugin).toHaveProperty('name');
@@ -39,27 +48,31 @@ describe('start_device_log_cap plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        'Starts capturing logs from a specified Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) by launching the app with console output. Returns a session ID.',
-      );
+      expect(plugin.description).toBe('Starts log capture on a connected device.');
     });
 
     it('should have correct schema structure', () => {
       // Schema should be a plain object for MCP protocol compliance
       expect(typeof plugin.schema).toBe('object');
-      expect(plugin.schema).toHaveProperty('deviceId');
-      expect(plugin.schema).toHaveProperty('bundleId');
+      expect(Object.keys(plugin.schema)).toEqual(['bundleId']);
 
       // Validate that schema fields are Zod types that can be used for validation
-      const schema = z.object(plugin.schema);
-      expect(schema.safeParse({ deviceId: 'test-device', bundleId: 'com.test.app' }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ deviceId: 123, bundleId: 'com.test.app' }).success).toBe(false);
+      const schema = z.object(plugin.schema).strict();
+      expect(schema.safeParse({ bundleId: 'com.test.app' }).success).toBe(true);
+      expect(schema.safeParse({}).success).toBe(false);
     });
 
     it('should have handler as a function', () => {
       expect(typeof plugin.handler).toBe('function');
+    });
+  });
+
+  describe('Handler Requirements', () => {
+    it('should require deviceId when not provided', async () => {
+      const result = await plugin.handler({ bundleId: 'com.example.MyApp' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('deviceId is required');
     });
   });
 

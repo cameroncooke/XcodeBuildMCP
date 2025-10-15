@@ -4,11 +4,17 @@
  * Using dependency injection for deterministic testing
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import getDeviceAppPath, { get_device_app_pathLogic } from '../get_device_app_path.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('get_device_app_path plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(getDeviceAppPath.name).toBe('get_device_app_path');
@@ -16,7 +22,7 @@ describe('get_device_app_path plugin', () => {
 
     it('should have correct description', () => {
       expect(getDeviceAppPath.description).toBe(
-        "Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_device_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
+        'Retrieves the built app path for a connected device.',
       );
     });
 
@@ -24,32 +30,14 @@ describe('get_device_app_path plugin', () => {
       expect(typeof getDeviceAppPath.handler).toBe('function');
     });
 
-    it('should validate schema correctly', () => {
-      // Test project path
-      expect(
-        getDeviceAppPath.schema.projectPath.safeParse('/path/to/project.xcodeproj').success,
-      ).toBe(true);
+    it('should expose only platform in public schema', () => {
+      const schema = z.object(getDeviceAppPath.schema).strict();
+      expect(schema.safeParse({}).success).toBe(true);
+      expect(schema.safeParse({ platform: 'iOS' }).success).toBe(true);
+      expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(false);
 
-      // Test workspace path
-      expect(
-        getDeviceAppPath.schema.workspacePath.safeParse('/path/to/workspace.xcworkspace').success,
-      ).toBe(true);
-
-      // Test required scheme field
-      expect(getDeviceAppPath.schema.scheme.safeParse('MyScheme').success).toBe(true);
-
-      // Test optional fields
-      expect(getDeviceAppPath.schema.configuration.safeParse('Debug').success).toBe(true);
-      expect(getDeviceAppPath.schema.platform.safeParse('iOS').success).toBe(true);
-      expect(getDeviceAppPath.schema.platform.safeParse('watchOS').success).toBe(true);
-      expect(getDeviceAppPath.schema.platform.safeParse('tvOS').success).toBe(true);
-      expect(getDeviceAppPath.schema.platform.safeParse('visionOS').success).toBe(true);
-
-      // Test invalid inputs
-      expect(getDeviceAppPath.schema.projectPath.safeParse(null).success).toBe(false);
-      expect(getDeviceAppPath.schema.workspacePath.safeParse(null).success).toBe(false);
-      expect(getDeviceAppPath.schema.scheme.safeParse(null).success).toBe(false);
-      expect(getDeviceAppPath.schema.platform.safeParse('invalidPlatform').success).toBe(false);
+      const schemaKeys = Object.keys(getDeviceAppPath.schema).sort();
+      expect(schemaKeys).toEqual(['platform']);
     });
   });
 
@@ -59,7 +47,8 @@ describe('get_device_app_path plugin', () => {
         scheme: 'MyScheme',
       });
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
@@ -69,7 +58,27 @@ describe('get_device_app_path plugin', () => {
         scheme: 'MyScheme',
       });
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('mutually exclusive');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
+    });
+  });
+
+  describe('Handler Requirements', () => {
+    it('should require scheme when missing', async () => {
+      const result = await getDeviceAppPath.handler({
+        projectPath: '/path/to/project.xcodeproj',
+      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('scheme is required');
+    });
+
+    it('should require project or workspace when scheme default exists', async () => {
+      sessionStore.setDefaults({ scheme: 'MyScheme' });
+
+      const result = await getDeviceAppPath.handler({});
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
   });
 

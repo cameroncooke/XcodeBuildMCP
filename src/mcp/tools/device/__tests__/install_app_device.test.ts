@@ -4,35 +4,48 @@
  * Using dependency injection for deterministic testing
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import installAppDevice, { install_app_deviceLogic } from '../install_app_device.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('install_app_device plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
+  describe('Handler Requirements', () => {
+    it('should require deviceId when session defaults are missing', async () => {
+      const result = await installAppDevice.handler({
+        appPath: '/path/to/test.app',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('deviceId is required');
+    });
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(installAppDevice.name).toBe('install_app_device');
     });
 
     it('should have correct description', () => {
-      expect(installAppDevice.description).toBe(
-        'Installs an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and appPath.',
-      );
+      expect(installAppDevice.description).toBe('Installs an app on a connected device.');
     });
 
     it('should have handler function', () => {
       expect(typeof installAppDevice.handler).toBe('function');
     });
 
-    it('should validate schema correctly', () => {
-      // Test required fields
-      expect(installAppDevice.schema.deviceId.safeParse('test-device-123').success).toBe(true);
-      expect(installAppDevice.schema.appPath.safeParse('/path/to/test.app').success).toBe(true);
+    it('should require appPath in public schema', () => {
+      const schema = z.object(installAppDevice.schema).strict();
+      expect(schema.safeParse({ appPath: '/path/to/test.app' }).success).toBe(true);
+      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({ deviceId: 'test-device-123' }).success).toBe(false);
 
-      // Test invalid inputs
-      expect(installAppDevice.schema.deviceId.safeParse(null).success).toBe(false);
-      expect(installAppDevice.schema.deviceId.safeParse(123).success).toBe(false);
-      expect(installAppDevice.schema.appPath.safeParse(null).success).toBe(false);
+      expect(Object.keys(installAppDevice.schema)).toEqual(['appPath']);
     });
   });
 

@@ -10,7 +10,7 @@ import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
@@ -63,12 +63,21 @@ export async function buildDeviceLogic(
 
 export default {
   name: 'build_device',
-  description:
-    "Builds an app from a project or workspace for a physical Apple device. Provide exactly one of projectPath or workspacePath. Example: build_device({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-  schema: baseSchemaObject.shape,
-  handler: createTypedTool<BuildDeviceParams>(
-    buildDeviceSchema as z.ZodType<BuildDeviceParams>,
-    buildDeviceLogic,
-    getDefaultCommandExecutor,
-  ),
+  description: 'Builds an app for a connected device.',
+  schema: baseSchemaObject.omit({
+    projectPath: true,
+    workspacePath: true,
+    scheme: true,
+    configuration: true,
+  } as const).shape,
+  handler: createSessionAwareTool<BuildDeviceParams>({
+    internalSchema: buildDeviceSchema as unknown as z.ZodType<BuildDeviceParams>,
+    logicFunction: buildDeviceLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { allOf: ['scheme'], message: 'scheme is required' },
+      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+    ],
+    exclusivePairs: [['projectPath', 'workspacePath']],
+  }),
 };
