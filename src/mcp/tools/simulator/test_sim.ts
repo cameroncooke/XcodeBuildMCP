@@ -8,13 +8,13 @@
 
 import { z } from 'zod';
 import { handleTestLogic } from '../../../utils/test/index.ts';
-import { log } from '../../../utils/logging/index.ts';
-import { XcodePlatform } from '../../../types/common.ts';
 import { ToolResponse } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
+import { logUseLatestOSWarning } from '../../../utils/simulator-validation.ts';
+import { mapPlatformStringToEnum } from '../../../utils/platform-utils.ts';
 
 // Define base schema object with all fields
 const baseSchemaObject = z.object({
@@ -27,6 +27,11 @@ const baseSchemaObject = z.object({
     .optional()
     .describe('Path to .xcworkspace file. Provide EITHER this OR projectPath, not both'),
   scheme: z.string().describe('The scheme to use (Required)'),
+  platform: z
+    .enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator', 'macOS'])
+    .optional()
+    .default('iOS Simulator')
+    .describe('Target simulator platform (defaults to iOS Simulator)'),
   simulatorId: z
     .string()
     .optional()
@@ -74,27 +79,25 @@ const testSimulatorSchema = baseSchema
   .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
     message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
   })
-  .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
-    message: 'Either simulatorId or simulatorName is required.',
-  })
   .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
     message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
+  })
+  .refine((val) => val.platform !== 'macOS', {
+    message:
+      'macOS platform is not supported by test_sim. Use test_macos tool instead for macOS projects.',
   });
 
 // Use z.infer for type safety
-type TestSimulatorParams = z.infer<typeof testSimulatorSchema>;
+export type TestSimulatorParams = z.infer<typeof testSimulatorSchema>;
 
 export async function test_simLogic(
   params: TestSimulatorParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  const platform = mapPlatformStringToEnum(params.platform);
+
   // Log warning if useLatestOS is provided with simulatorId
-  if (params.simulatorId && params.useLatestOS !== undefined) {
-    log(
-      'warning',
-      `useLatestOS parameter is ignored when using simulatorId (UUID implies exact device/OS)`,
-    );
-  }
+  logUseLatestOSWarning(params.simulatorId, params.useLatestOS);
 
   return handleTestLogic(
     {
@@ -108,39 +111,40 @@ export async function test_simLogic(
       extraArgs: params.extraArgs,
       useLatestOS: params.simulatorId ? false : (params.useLatestOS ?? false),
       preferXcodebuild: params.preferXcodebuild ?? false,
-      platform: XcodePlatform.iOSSimulator,
+      platform: platform,
       testRunnerEnv: params.testRunnerEnv,
     },
     executor,
   );
 }
 
-const publicSchemaObject = baseSchemaObject.omit({
-  projectPath: true,
-  workspacePath: true,
-  scheme: true,
-  simulatorId: true,
-  simulatorName: true,
-  configuration: true,
-  useLatestOS: true,
-} as const);
-
 export default {
   name: 'test_sim',
-  description: 'Runs tests on an iOS simulator.',
-  schema: publicSchemaObject.shape,
-  handler: createSessionAwareTool<TestSimulatorParams>({
-    internalSchema: testSimulatorSchema as unknown as z.ZodType<TestSimulatorParams>,
-    logicFunction: test_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
-    ],
-    exclusivePairs: [
+  description: `Runs tests on a simulator by UUID or name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace).
+
+**Session Workflow**: You can provide parameters explicitly OR set defaults once with session-set-defaults.
+
+Required parameters (provide explicitly OR via session):
+- scheme: The scheme to test
+- projectPath OR workspacePath: Path to project or workspace
+- simulatorId OR simulatorName: Simulator identifier
+
+Example with explicit parameters:
+test_sim({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme", simulatorName: "iPhone 16" })
+
+Example with session defaults:
+1. Set defaults once: session-set-defaults({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme" })
+2. Then call with minimal params: test_sim({ simulatorName: "iPhone 16" })`,
+  schema: baseSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<TestSimulatorParams>(
+    // Type assertion required: Zod's .refine() changes the schema type signature,
+    // but the validated output type is still TestSimulatorParams
+    testSimulatorSchema as unknown as z.ZodType<TestSimulatorParams>,
+    test_simLogic,
+    getDefaultCommandExecutor,
+    [
       ['projectPath', 'workspacePath'],
       ['simulatorId', 'simulatorName'],
     ],
-  }),
+  ),
 };

@@ -29,15 +29,29 @@ describe('get_sim_app_path tool', () => {
       expect(typeof getSimAppPath.handler).toBe('function');
     });
 
-    it('should expose only platform in public schema', () => {
+    it('should expose base schema fields (all optional, platform required)', () => {
       const schema = z.object(getSimAppPath.schema);
 
-      expect(schema.safeParse({ platform: 'iOS Simulator' }).success).toBe(true);
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(schema.safeParse({ platform: 'iOS' }).success).toBe(false);
+      // Valid cases
+      expect(schema.safeParse({ platform: 'iOS Simulator', scheme: 'MyScheme' }).success).toBe(true);
+      expect(schema.safeParse({ platform: 'watchOS Simulator', scheme: 'MyScheme', projectPath: '/path' }).success).toBe(true);
 
+      // Invalid platform value
+      expect(schema.safeParse({ platform: 'iOS', scheme: 'MyScheme' }).success).toBe(false);
+
+      // Schema exposes base fields
       const schemaKeys = Object.keys(getSimAppPath.schema).sort();
-      expect(schemaKeys).toEqual(['platform']);
+      expect(schemaKeys).toEqual([
+        'arch',
+        'configuration',
+        'platform',
+        'projectPath',
+        'scheme',
+        'simulatorId',
+        'simulatorName',
+        'useLatestOS',
+        'workspacePath',
+      ]);
     });
   });
 
@@ -48,7 +62,8 @@ describe('get_sim_app_path tool', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('scheme is required');
+      expect(result.content[0].text).toContain('scheme');
+      expect(result.content[0].text).toContain('Required');
     });
 
     it('should require project or workspace when scheme default exists', async () => {
@@ -59,21 +74,29 @@ describe('get_sim_app_path tool', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Provide a project or workspace');
+      expect(result.content[0].text).toContain('projectPath');
+      expect(result.content[0].text).toContain('workspacePath');
+      expect(result.content[0].text).toContain('required');
     });
 
-    it('should require simulator identifier when scheme and project defaults exist', async () => {
-      sessionStore.setDefaults({
-        scheme: 'MyScheme',
-        projectPath: '/path/to/project.xcodeproj',
-      });
+    it('should require simulator identifier when scheme and project are provided', async () => {
+      // Call logic directly to bypass session validation with fake paths
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
 
-      const result = await getSimAppPath.handler({
-        platform: 'iOS Simulator',
-      });
+      const result = await get_sim_app_pathLogic(
+        {
+          scheme: 'MyScheme',
+          projectPath: '/path/to/project.xcodeproj',
+          platform: 'iOS Simulator',
+          // Missing simulatorId and simulatorName - should fail validation
+        } as any, // Type assertion needed to test invalid params
+        mockExecutor,
+      );
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Provide simulatorId or simulatorName');
+      expect(result.content[0].text).toContain('iOS Simulator');
+      expect(result.content[0].text).toContain('simulatorId');
+      expect(result.content[0].text).toContain('simulatorName');
     });
 
     it('should error when both projectPath and workspacePath provided explicitly', async () => {
@@ -86,25 +109,24 @@ describe('get_sim_app_path tool', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
+      expect(result.content[0].text).toContain('mutually exclusive');
       expect(result.content[0].text).toContain('projectPath');
       expect(result.content[0].text).toContain('workspacePath');
     });
 
     it('should error when both simulatorId and simulatorName provided explicitly', async () => {
-      sessionStore.setDefaults({
-        scheme: 'MyScheme',
-        workspacePath: '/path/to/workspace.xcworkspace',
-      });
+      // Set only scheme in session (no path validation issues)
+      sessionStore.setDefaults({ scheme: 'MyScheme' });
 
       const result = await getSimAppPath.handler({
         platform: 'iOS Simulator',
+        workspacePath: '/path/to/workspace.xcworkspace', // Explicit path, no session validation
         simulatorId: 'SIM-UUID',
         simulatorName: 'iPhone 16',
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
+      expect(result.content[0].text).toContain('mutually exclusive');
       expect(result.content[0].text).toContain('simulatorId');
       expect(result.content[0].text).toContain('simulatorName');
     });

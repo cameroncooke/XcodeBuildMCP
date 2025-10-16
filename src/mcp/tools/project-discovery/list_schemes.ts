@@ -109,22 +109,18 @@ export async function listSchemesLogic(
   }
 }
 
-const publicSchemaObject = baseSchemaObject.omit({
-  projectPath: true,
-  workspacePath: true,
-} as const);
+// Public schema = all fields optional (session defaults can provide values)
+// This allows agents to provide parameters explicitly OR rely on session defaults
+const publicSchemaObject = baseSchemaObject;
 
 export default {
   name: 'list_schemes',
   description: 'Lists schemes for a project or workspace.',
   schema: publicSchemaObject.shape,
-  handler: createSessionAwareTool<ListSchemesParams>({
-    internalSchema: listSchemesSchema as unknown as z.ZodType<ListSchemesParams>,
-    logicFunction: listSchemesLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
+  handler: createSessionAwareTool<ListSchemesParams>(
+    listSchemesSchema as unknown as z.ZodType<ListSchemesParams>,
+    listSchemesLogic,
+    getDefaultCommandExecutor,
+    [['projectPath', 'workspacePath']],
+  ),
 };

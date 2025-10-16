@@ -216,3 +216,4 @@ https://github.com/modelcontextprotocol/inspector
 ### MCP Client SDKs
 
 https://github.com/modelcontextprotocol/typescript-sdk
+- Add to memory so I don't have to explain it to you again

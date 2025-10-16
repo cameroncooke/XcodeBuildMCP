@@ -359,6 +359,32 @@ Example MCP client configuration:
 ### Building and running iOS app in Claude Desktop
 https://github.com/user-attachments/assets/e3c08d75-8be6-4857-b4d0-9350b26ef086
 
+## Testing
+
+XcodeBuildMCP provides comprehensive testing support for all Apple platforms through dedicated testing tools.
+
+### Platform-Specific Testing
+
+- **iOS/watchOS/tvOS/visionOS**: Use `test_sim` for simulator testing or `test_device` for physical device testing
+- **macOS**: Use the dedicated `test_macos` tool for macOS project testing
+- **iPad**: Ensure test targets have proper `TARGETED_DEVICE_FAMILY` settings
+
+### Common Issues
+
+#### iPad Testing: "target does not support platform"
+If you encounter errors like:
+```
+Cannot test target on iPad Pro: target does not support iPad's platform: com.apple.platform.iphonesimulator
+```
+
+This indicates the test target lacks iPad support. See our [iPad Testing Troubleshooting Guide](docs/IPAD_TESTING_TROUBLESHOOTING.md) for detailed solutions.
+
+### Diagnostic Tools
+
+- Use the diagnostic script: `./scripts/diagnose-ipad-testing.sh`
+- Check test target configuration: `show_build_settings`
+- List available simulators: `list_sims`
+
 ## Contributing
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/) [![Node.js](https://img.shields.io/badge/node->=18.x-brightgreen.svg)](https://nodejs.org/)

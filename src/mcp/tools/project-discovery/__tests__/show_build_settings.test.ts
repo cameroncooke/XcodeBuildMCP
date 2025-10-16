@@ -21,12 +21,21 @@ describe('show_build_settings plugin', () => {
       expect(typeof plugin.handler).toBe('function');
     });
 
-    it('should expose an empty public schema', () => {
-      const schema = z.object(plugin.schema).strict();
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ projectPath: '/path.xcodeproj' }).success).toBe(false);
-      expect(schema.safeParse({ scheme: 'App' }).success).toBe(false);
-      expect(Object.keys(plugin.schema)).toEqual([]);
+    it('should have correct public schema (all fields optional for session integration)', () => {
+      const schema = z.object(plugin.schema);
+
+      // Public schema: projectPath and workspacePath are optional, scheme is required
+      // But scheme can come from session defaults or explicit parameters
+      expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' }).success).toBe(true);
+      expect(schema.safeParse({ workspacePath: '/path/to/workspace.xcworkspace', scheme: 'MyScheme' }).success).toBe(true);
+
+      // Missing scheme should fail (scheme is required in public schema)
+      expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(false);
+      expect(schema.safeParse({}).success).toBe(false);
+
+      // Verify the schema has the expected fields
+      const schemaKeys = Object.keys(plugin.schema).sort();
+      expect(schemaKeys).toEqual(['projectPath', 'scheme', 'workspacePath'].sort());
     });
   });
 
@@ -55,8 +64,8 @@ describe('show_build_settings plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Missing required session defaults');
-      expect(result.content[0].text).toContain('Provide a project or workspace');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
     });
 
     it('should return success with build settings', async () => {
@@ -174,8 +183,8 @@ describe('show_build_settings plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Missing required session defaults');
-      expect(result.content[0].text).toContain('Provide a project or workspace');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
@@ -186,7 +195,8 @@ describe('show_build_settings plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('projectPath and workspacePath are mutually exclusive');
     });
 
     it('should work with projectPath only', async () => {
@@ -227,8 +237,8 @@ describe('show_build_settings plugin', () => {
       } as any);
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Missing required session defaults');
-      expect(result.content[0].text).toContain('scheme is required');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('scheme');
     });
 
     it('should surface project/workspace requirement even with scheme default', async () => {
@@ -237,8 +247,8 @@ describe('show_build_settings plugin', () => {
       const result = await plugin.handler({});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Missing required session defaults');
-      expect(result.content[0].text).toContain('Provide a project or workspace');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
     });
   });
 

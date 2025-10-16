@@ -16,7 +16,7 @@ describe('build_device plugin', () => {
 
     it('should have correct description', () => {
       expect(buildDevice.description).toBe(
-        "Builds an app from a project or workspace for a physical Apple device. Provide exactly one of projectPath or workspacePath. Example: build_device({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+        "Builds an app from a project or workspace for a physical Apple device. Provide exactly one of projectPath or workspacePath. Example: build_device({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', platform: 'visionOS' })",
       );
     });
 
@@ -41,6 +41,13 @@ describe('build_device plugin', () => {
       );
       expect(buildDevice.schema.extraArgs.safeParse(['--arg1', '--arg2']).success).toBe(true);
       expect(buildDevice.schema.preferXcodebuild.safeParse(true).success).toBe(true);
+
+      // Test platform parameter
+      expect(buildDevice.schema.platform.safeParse('iOS').success).toBe(true);
+      expect(buildDevice.schema.platform.safeParse('visionOS').success).toBe(true);
+      expect(buildDevice.schema.platform.safeParse('watchOS').success).toBe(true);
+      expect(buildDevice.schema.platform.safeParse('tvOS').success).toBe(true);
+      expect(buildDevice.schema.platform.safeParse('invalidPlatform').success).toBe(false);
 
       // Test invalid inputs
       expect(buildDevice.schema.projectPath.safeParse(null).success).toBe(false);
@@ -352,6 +359,148 @@ describe('build_device plugin', () => {
         silent: true,
         timeout: undefined,
       });
+    });
+
+    it('should build for visionOS platform when specified', async () => {
+      const commandCalls: Array<{
+        args: string[];
+        logPrefix: string;
+        silent: boolean;
+        timeout: number | undefined;
+      }> = [];
+
+      const stubExecutor = async (
+        args: string[],
+        logPrefix: string,
+        silent: boolean,
+        timeout?: number,
+      ) => {
+        commandCalls.push({ args, logPrefix, silent, timeout });
+        return {
+          success: true,
+          output: 'Build succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await buildDeviceLogic(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+          platform: 'visionOS',
+        },
+        stubExecutor,
+      );
+
+      expect(commandCalls).toHaveLength(1);
+      expect(commandCalls[0]).toEqual({
+        args: [
+          'xcodebuild',
+          '-project',
+          '/path/to/MyProject.xcodeproj',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'generic/platform=visionOS',
+          'build',
+        ],
+        logPrefix: 'visionOS Device Build',
+        silent: true,
+        timeout: undefined,
+      });
+    });
+
+    it('should build for watchOS platform when specified', async () => {
+      const commandCalls: Array<{
+        args: string[];
+        logPrefix: string;
+        silent: boolean;
+        timeout: number | undefined;
+      }> = [];
+
+      const stubExecutor = async (
+        args: string[],
+        logPrefix: string,
+        silent: boolean,
+        timeout?: number,
+      ) => {
+        commandCalls.push({ args, logPrefix, silent, timeout });
+        return {
+          success: true,
+          output: 'Build succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await buildDeviceLogic(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyScheme',
+          platform: 'watchOS',
+        },
+        stubExecutor,
+      );
+
+      expect(commandCalls).toHaveLength(1);
+      expect(commandCalls[0]).toEqual({
+        args: [
+          'xcodebuild',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'generic/platform=watchOS',
+          'build',
+        ],
+        logPrefix: 'watchOS Device Build',
+        silent: true,
+        timeout: undefined,
+      });
+    });
+
+    it('should default to iOS platform when not specified', async () => {
+      const commandCalls: Array<{
+        args: string[];
+        logPrefix: string;
+        silent: boolean;
+        timeout: number | undefined;
+      }> = [];
+
+      const stubExecutor = async (
+        args: string[],
+        logPrefix: string,
+        silent: boolean,
+        timeout?: number,
+      ) => {
+        commandCalls.push({ args, logPrefix, silent, timeout });
+        return {
+          success: true,
+          output: 'Build succeeded',
+          error: undefined,
+          process: { pid: 12345 },
+        };
+      };
+
+      await buildDeviceLogic(
+        {
+          projectPath: '/path/to/MyProject.xcodeproj',
+          scheme: 'MyScheme',
+        },
+        stubExecutor,
+      );
+
+      expect(commandCalls).toHaveLength(1);
+      expect(commandCalls[0].args).toContain('generic/platform=iOS');
+      expect(commandCalls[0].logPrefix).toBe('iOS Device Build');
     });
   });
 });

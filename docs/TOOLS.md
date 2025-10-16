@@ -11,7 +11,7 @@ XcodeBuildMCP provides 61 tools organized into 12 workflow groups for comprehens
 ### iOS Device Development (`device`)
 **Purpose**: Complete iOS development workflow for both .xcodeproj and .xcworkspace files targeting physical devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Build, test, deploy, and debug apps on real hardware. (7 tools)
 
-- `build_device` - Builds an app from a project or workspace for a physical Apple device. Provide exactly one of projectPath or workspacePath. Example: build_device({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })
+- `build_device` - Builds an app from a project or workspace for a physical Apple device. Supports iOS, visionOS, watchOS, and tvOS. Provide exactly one of projectPath or workspacePath. Example: build_device({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', platform: 'visionOS' })
 - `get_device_app_path` - Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_device_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })
 - `install_app_device` - Installs an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and appPath.
 - `launch_app_device` - Launches an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and bundleId.
@@ -32,7 +32,7 @@ XcodeBuildMCP provides 61 tools organized into 12 workflow groups for comprehens
 - `open_sim` - Opens the iOS Simulator app.
 - `record_sim_video` - Starts or stops video capture for an iOS simulator using AXe. Provide exactly one of start=true or stop=true. On stop, outputFile is required. fps defaults to 30.
 - `stop_app_sim` - Stops an app running in an iOS simulator by UUID or name. or stop_app_sim({ simulatorName: "iPhone 16", bundleId: "com.example.MyApp" })
-- `test_sim` - Runs tests on a simulator by UUID or name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace).
+- `test_sim` - Runs tests on a simulator by UUID or name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace). Note: For macOS projects, use the `test_macos` tool instead. For iPad testing issues (e.g., "target does not support platform"), see [iPad Testing Troubleshooting Guide](IPAD_TESTING_TROUBLESHOOTING.md).
 ### Log Capture & Management (`logging`)
 **Purpose**: Log capture and management tools for iOS simulators and physical devices. Start, stop, and analyze application and system logs during development and testing. (4 tools)
 

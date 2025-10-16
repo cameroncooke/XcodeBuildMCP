@@ -289,33 +289,19 @@ export async function get_sim_app_pathLogic(
   }
 }
 
-const publicSchemaObject = baseGetSimulatorAppPathSchema.omit({
-  projectPath: true,
-  workspacePath: true,
-  scheme: true,
-  simulatorId: true,
-  simulatorName: true,
-  configuration: true,
-  useLatestOS: true,
-  arch: true,
-} as const);
+const publicSchemaObject = baseGetSimulatorAppPathSchema;
 
 export default {
   name: 'get_sim_app_path',
   description: 'Retrieves the built app path for an iOS simulator.',
   schema: publicSchemaObject.shape,
-  handler: createSessionAwareTool<GetSimulatorAppPathParams>({
-    internalSchema: getSimulatorAppPathSchema as unknown as z.ZodType<GetSimulatorAppPathParams>,
-    logicFunction: get_sim_app_pathLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
-    ],
-    exclusivePairs: [
+  handler: createSessionAwareTool<GetSimulatorAppPathParams>(
+    getSimulatorAppPathSchema as unknown as z.ZodType<GetSimulatorAppPathParams>,
+    get_sim_app_pathLogic,
+    getDefaultCommandExecutor,
+    [
       ['projectPath', 'workspacePath'],
       ['simulatorId', 'simulatorName'],
     ],
-  }),
+  ),
 };

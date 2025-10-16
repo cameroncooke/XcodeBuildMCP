@@ -1,13 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import plugin, { sessionClearDefaultsLogic } from '../session_clear_defaults.ts';
 
 describe('session-clear-defaults tool', () => {
+  let tempDir: string;
+  let testProjectPath: string;
+
   beforeEach(() => {
     sessionStore.clear();
+    // Create a temporary directory and test file
+    tempDir = mkdtempSync(join(tmpdir(), 'session-clear-defaults-test-'));
+    testProjectPath = join(tempDir, 'proj.xcodeproj');
+    writeFileSync(testProjectPath, 'test content');
+
     sessionStore.setDefaults({
       scheme: 'MyScheme',
-      projectPath: '/path/to/proj.xcodeproj',
+      projectPath: testProjectPath,
       simulatorName: 'iPhone 16',
       deviceId: 'DEVICE-123',
       useLatestOS: true,
@@ -17,6 +28,12 @@ describe('session-clear-defaults tool', () => {
 
   afterEach(() => {
     sessionStore.clear();
+    // Clean up temporary directory
+    try {
+      rmSync(tempDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -47,7 +64,7 @@ describe('session-clear-defaults tool', () => {
       const current = sessionStore.getAll();
       expect(current.scheme).toBeUndefined();
       expect(current.deviceId).toBeUndefined();
-      expect(current.projectPath).toBe('/path/to/proj.xcodeproj');
+      expect(current.projectPath).toBe(testProjectPath);
       expect(current.simulatorName).toBe('iPhone 16');
       expect(current.useLatestOS).toBe(true);
       expect(current.arch).toBe('arm64');

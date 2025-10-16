@@ -55,13 +55,14 @@ async function generateWorkflowLoaders() {
         const toolFiles = readdirSync(dirPath, { withFileTypes: true })
           .filter(dirent => dirent.isFile())
           .map(dirent => dirent.name)
-          .filter(name => 
-            (name.endsWith('.ts') || name.endsWith('.js')) && 
-            name !== 'index.ts' && 
+          .filter(name =>
+            (name.endsWith('.ts') || name.endsWith('.js')) &&
+            name !== 'index.ts' &&
             name !== 'index.js' &&
             !name.endsWith('.test.ts') &&
             !name.endsWith('.test.js') &&
-            name !== 'active-processes.ts' // Special exclusion for swift-package
+            name !== 'active-processes.ts' && // Special exclusion for swift-package
+            name !== 'shared-schemas.ts' // Shared schemas, not a tool
           );
 
         // Generate dynamic loader function that loads workflow and all its tools

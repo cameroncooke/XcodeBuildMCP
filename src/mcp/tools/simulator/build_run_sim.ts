@@ -7,7 +7,7 @@
  */
 
 import { z } from 'zod';
-import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.ts';
+import { ToolResponse, SharedBuildParams } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
@@ -16,50 +16,14 @@ import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { determineSimulatorUuid } from '../../../utils/simulator-utils.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
+import { simulatorCommonOptions, projectWorkspaceOptions } from './shared-schemas.ts';
+import { logUseLatestOSWarning } from '../../../utils/simulator-validation.ts';
+import { mapPlatformStringToEnum } from '../../../utils/platform-utils.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
-const baseOptions = {
-  scheme: z.string().describe('The scheme to use (Required)'),
-  simulatorId: z
-    .string()
-    .optional()
-    .describe(
-      'UUID of the simulator (from list_sims). Provide EITHER this OR simulatorName, not both',
-    ),
-  simulatorName: z
-    .string()
-    .optional()
-    .describe(
-      "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
-    ),
-  configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-  derivedDataPath: z
-    .string()
-    .optional()
-    .describe('Path where build products and other derived data will go'),
-  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-  useLatestOS: z
-    .boolean()
-    .optional()
-    .describe('Whether to use the latest OS version for the named simulator'),
-  preferXcodebuild: z
-    .boolean()
-    .optional()
-    .describe(
-      'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-    ),
-};
-
 const baseSchemaObject = z.object({
-  projectPath: z
-    .string()
-    .optional()
-    .describe('Path to .xcodeproj file. Provide EITHER this OR workspacePath, not both'),
-  workspacePath: z
-    .string()
-    .optional()
-    .describe('Path to .xcworkspace file. Provide EITHER this OR projectPath, not both'),
-  ...baseOptions,
+  ...projectWorkspaceOptions,
+  ...simulatorCommonOptions,
 });
 
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
@@ -89,17 +53,15 @@ async function _handleSimulatorBuildLogic(
   const projectType = params.projectPath ? 'project' : 'workspace';
   const filePath = params.projectPath ?? params.workspacePath;
 
+  const platform = mapPlatformStringToEnum(params.platform);
+  const platformName = params.platform ?? 'iOS Simulator';
+
   // Log warning if useLatestOS is provided with simulatorId
-  if (params.simulatorId && params.useLatestOS !== undefined) {
-    log(
-      'warning',
-      `useLatestOS parameter is ignored when using simulatorId (UUID implies exact device/OS)`,
-    );
-  }
+  logUseLatestOSWarning(params.simulatorId, params.useLatestOS);
 
   log(
     'info',
-    `Starting iOS Simulator build for scheme ${params.scheme} from ${projectType}: ${filePath}`,
+    `Starting ${platformName} build for scheme ${params.scheme} from ${projectType}: ${filePath}`,
   );
 
   // Create SharedBuildParams object with required configuration property
@@ -115,11 +77,11 @@ async function _handleSimulatorBuildLogic(
   return executeXcodeBuildCommandFn(
     sharedBuildParams,
     {
-      platform: XcodePlatform.iOSSimulator,
+      platform: platform,
       simulatorId: params.simulatorId,
       simulatorName: params.simulatorName,
       useLatestOS: params.simulatorId ? false : params.useLatestOS,
-      logPrefix: 'iOS Simulator Build',
+      logPrefix: `${platformName} Build`,
     },
     params.preferXcodebuild as boolean,
     'build',
@@ -127,7 +89,7 @@ async function _handleSimulatorBuildLogic(
   );
 }
 
-// Exported business logic function for building and running iOS Simulator apps.
+// Exported business logic function for building and running Simulator apps.
 export async function build_run_simLogic(
   params: BuildRunSimulatorParams,
   executor: CommandExecutor,
@@ -135,10 +97,11 @@ export async function build_run_simLogic(
 ): Promise<ToolResponse> {
   const projectType = params.projectPath ? 'project' : 'workspace';
   const filePath = params.projectPath ?? params.workspacePath;
+  const platformName = params.platform ?? 'iOS Simulator';
 
   log(
     'info',
-    `Starting iOS Simulator build and run for scheme ${params.scheme} from ${projectType}: ${filePath}`,
+    `Starting ${platformName} build and run for scheme ${params.scheme} from ${projectType}: ${filePath}`,
   );
 
   try {
@@ -169,14 +132,15 @@ export async function build_run_simLogic(
     command.push('-configuration', params.configuration ?? 'Debug');
 
     // Handle destination for simulator
+    const platformForDestination = params.platform ?? 'iOS Simulator';
     let destinationString: string;
     if (params.simulatorId) {
-      destinationString = `platform=iOS Simulator,id=${params.simulatorId}`;
+      destinationString = `platform=${platformForDestination},id=${params.simulatorId}`;
     } else if (params.simulatorName) {
-      destinationString = `platform=iOS Simulator,name=${params.simulatorName}${(params.useLatestOS ?? true) ? ',OS=latest' : ''}`;
+      destinationString = `platform=${platformForDestination},name=${params.simulatorName}${(params.useLatestOS ?? true) ? ',OS=latest' : ''}`;
     } else {
       // This shouldn't happen due to validation, but handle it
-      destinationString = 'platform=iOS Simulator';
+      destinationString = `platform=${platformForDestination}`;
     }
     command.push('-destination', destinationString);
 
@@ -453,7 +417,7 @@ export async function build_run_simLogic(
     }
 
     // --- Success ---
-    log('info', '✅ iOS simulator build & run succeeded.');
+    log('info', `✅ ${platformName} simulator build & run succeeded.`);
 
     const target = params.simulatorId
       ? `simulator UUID '${params.simulatorId}'`
@@ -465,9 +429,9 @@ export async function build_run_simLogic(
       content: [
         {
           type: 'text',
-          text: `✅ iOS simulator build and run succeeded for scheme ${params.scheme} from ${sourceType} ${sourcePath} targeting ${target}.
-          
-The app (${bundleId}) is now running in the iOS Simulator. 
+          text: `✅ ${platformName} simulator build and run succeeded for scheme ${params.scheme} from ${sourceType} ${sourcePath} targeting ${target}.
+
+The app (${bundleId}) is now running in the ${platformName}.
 If you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.
 
 Next Steps:
@@ -485,37 +449,29 @@ When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    log('error', `Error in iOS Simulator build and run: ${errorMessage}`);
-    return createTextResponse(`Error in iOS Simulator build and run: ${errorMessage}`, true);
+    const platformName = params.platform ?? 'iOS Simulator';
+    log('error', `Error in ${platformName} build and run: ${errorMessage}`);
+    return createTextResponse(`Error in ${platformName} build and run: ${errorMessage}`, true);
   }
 }
 
-const publicSchemaObject = baseSchemaObject.omit({
-  projectPath: true,
-  workspacePath: true,
-  scheme: true,
-  configuration: true,
-  simulatorId: true,
-  simulatorName: true,
-  useLatestOS: true,
-} as const);
+// Public schema = all fields optional (session defaults can provide values)
+// This allows agents to provide parameters explicitly OR rely on session defaults
+const publicSchemaObject = baseSchemaObject;
 
 export default {
   name: 'build_run_sim',
-  description: 'Builds and runs an app on an iOS simulator.',
+  description: 'Builds and runs an app on a simulator.',
   schema: publicSchemaObject.shape,
-  handler: createSessionAwareTool<BuildRunSimulatorParams>({
-    internalSchema: buildRunSimulatorSchema as unknown as z.ZodType<BuildRunSimulatorParams>,
-    logicFunction: build_run_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
-    ],
-    exclusivePairs: [
+  handler: createSessionAwareTool<BuildRunSimulatorParams>(
+    // Type assertion required: Zod's .refine() changes the schema type signature,
+    // but the validated output type is still BuildRunSimulatorParams
+    buildRunSimulatorSchema as unknown as z.ZodType<BuildRunSimulatorParams>,
+    build_run_simLogic,
+    getDefaultCommandExecutor,
+    [
       ['projectPath', 'workspacePath'],
       ['simulatorId', 'simulatorName'],
     ],
-  }),
+  ),
 };

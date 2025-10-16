@@ -14,7 +14,10 @@ describe('clean (unified) tool', () => {
     expect(tool.description).toBe('Cleans build products with xcodebuild.');
     expect(typeof tool.handler).toBe('function');
 
-    const schema = z.object(tool.schema).strict();
+    const schema = z.object(tool.schema);
+
+    // Public schema allows all fields to be optional
+    // Session defaults or handler validation will catch missing required ones
     expect(schema.safeParse({}).success).toBe(true);
     expect(
       schema.safeParse({
@@ -24,11 +27,14 @@ describe('clean (unified) tool', () => {
         platform: 'iOS Simulator',
       }).success,
     ).toBe(true);
-    expect(schema.safeParse({ configuration: 'Debug' }).success).toBe(false);
+    expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(true);
+    expect(schema.safeParse({ workspacePath: '/path/to/workspace.xcworkspace' }).success).toBe(true);
+    expect(schema.safeParse({ scheme: 'MyScheme' }).success).toBe(true);
 
+    // All fields should be present in schema (as optional)
     const schemaKeys = Object.keys(tool.schema).sort();
     expect(schemaKeys).toEqual(
-      ['derivedDataPath', 'extraArgs', 'platform', 'preferXcodebuild'].sort(),
+      ['configuration', 'derivedDataPath', 'extraArgs', 'platform', 'preferXcodebuild', 'projectPath', 'workspacePath', 'scheme'].sort(),
     );
   });
 
@@ -36,8 +42,8 @@ describe('clean (unified) tool', () => {
     const result = await (tool as any).handler({});
     expect(result.isError).toBe(true);
     const text = String(result.content?.[0]?.text ?? '');
-    expect(text).toContain('Missing required session defaults');
-    expect(text).toContain('Provide a project or workspace');
+    expect(text).toContain('Parameter validation failed');
+    expect(text).toContain('Either projectPath or workspacePath is required');
   });
 
   it('handler validation: error when both projectPath and workspacePath provided', async () => {
@@ -47,7 +53,8 @@ describe('clean (unified) tool', () => {
     });
     expect(result.isError).toBe(true);
     const text = String(result.content?.[0]?.text ?? '');
-    expect(text).toContain('Mutually exclusive parameters provided');
+    expect(text).toContain('Parameter validation failed');
+    expect(text).toContain('projectPath and workspacePath are mutually exclusive');
   });
 
   it('runs project-path flow via logic', async () => {

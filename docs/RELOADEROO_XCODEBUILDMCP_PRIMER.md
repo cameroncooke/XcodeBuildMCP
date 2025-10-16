@@ -50,9 +50,13 @@ Use jq to parse the output to get just the content response:
 
 ## iOS Device Development
 
-- **`build_device`**: Builds an app for a physical device.
+- **`build_device`**: Builds an app for a physical device (iOS, visionOS, watchOS, tvOS).
   ```bash
+  # iOS device (default)
   npx reloaderoo@latest inspect -q call-tool build_device --params '{"projectPath": "/path/to/MyProject.xcodeproj", "scheme": "MyScheme"}' -q -- npx xcodebuildmcp@latest
+
+  # visionOS device
+  npx reloaderoo@latest inspect -q call-tool build_device --params '{"projectPath": "/path/to/MyProject.xcodeproj", "scheme": "MyScheme", "platform": "visionOS"}' -q -- npx xcodebuildmcp@latest
   ```
 - **`get_device_app_path`**: Gets the `.app` bundle path for a device build.
   ```bash

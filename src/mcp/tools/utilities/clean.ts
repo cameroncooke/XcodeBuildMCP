@@ -146,24 +146,16 @@ export async function cleanLogic(
   );
 }
 
-const publicSchemaObject = baseSchemaObject.omit({
-  projectPath: true,
-  workspacePath: true,
-  scheme: true,
-  configuration: true,
-} as const);
+const publicSchemaObject = baseSchemaObject;
 
 export default {
   name: 'clean',
   description: 'Cleans build products with xcodebuild.',
   schema: publicSchemaObject.shape,
-  handler: createSessionAwareTool<CleanParams>({
-    internalSchema: cleanSchema as unknown as z.ZodType<CleanParams>,
-    logicFunction: cleanLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
+  handler: createSessionAwareTool<CleanParams>(
+    cleanSchema as unknown as z.ZodType<CleanParams>,
+    cleanLogic,
+    getDefaultCommandExecutor,
+    [['projectPath', 'workspacePath']],
+  ),
 };

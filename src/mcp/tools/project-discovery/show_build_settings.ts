@@ -102,24 +102,16 @@ export async function showBuildSettingsLogic(
   }
 }
 
-const publicSchemaObject = baseSchemaObject.omit({
-  projectPath: true,
-  workspacePath: true,
-  scheme: true,
-} as const);
+const publicSchemaObject = baseSchemaObject;
 
 export default {
   name: 'show_build_settings',
   description: 'Shows xcodebuild build settings.',
   schema: publicSchemaObject.shape,
-  handler: createSessionAwareTool<ShowBuildSettingsParams>({
-    internalSchema: showBuildSettingsSchema as unknown as z.ZodType<ShowBuildSettingsParams>,
-    logicFunction: showBuildSettingsLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
+  handler: createSessionAwareTool<ShowBuildSettingsParams>(
+    showBuildSettingsSchema as unknown as z.ZodType<ShowBuildSettingsParams>,
+    showBuildSettingsLogic,
+    getDefaultCommandExecutor,
+    [['projectPath', 'workspacePath']],
+  ),
 };
