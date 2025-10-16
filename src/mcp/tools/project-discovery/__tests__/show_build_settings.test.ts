@@ -1,27 +1,41 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import plugin, { showBuildSettingsLogic } from '../show_build_settings.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('show_build_settings plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(plugin.name).toBe('show_build_settings');
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        "Shows build settings from either a project or workspace using xcodebuild. Provide exactly one of projectPath or workspacePath, plus scheme. Example: show_build_settings({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-      );
+      expect(plugin.description).toBe('Shows xcodebuild build settings.');
     });
 
     it('should have handler function', () => {
       expect(typeof plugin.handler).toBe('function');
     });
 
-    it('should have schema object', () => {
-      expect(plugin.schema).toBeDefined();
-      expect(typeof plugin.schema).toBe('object');
+    it('should have correct public schema (all fields optional for session integration)', () => {
+      const schema = z.object(plugin.schema);
+
+      // Public schema: projectPath and workspacePath are optional, scheme is required
+      // But scheme can come from session defaults or explicit parameters
+      expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' }).success).toBe(true);
+      expect(schema.safeParse({ workspacePath: '/path/to/workspace.xcworkspace', scheme: 'MyScheme' }).success).toBe(true);
+
+      // Missing scheme should fail (scheme is required in public schema)
+      expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(false);
+      expect(schema.safeParse({}).success).toBe(false);
+
+      // Verify the schema has the expected fields
+      const schemaKeys = Object.keys(plugin.schema).sort();
+      expect(schemaKeys).toEqual(['projectPath', 'scheme', 'workspacePath'].sort());
     });
   });
 
@@ -51,7 +65,7 @@ describe('show_build_settings plugin', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('projectPath');
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
     });
 
     it('should return success with build settings', async () => {
@@ -169,6 +183,7 @@ describe('show_build_settings plugin', () => {
       });
 
       expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
       expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
     });
 
@@ -180,7 +195,8 @@ describe('show_build_settings plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('mutually exclusive');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('projectPath and workspacePath are mutually exclusive');
     });
 
     it('should work with projectPath only', async () => {
@@ -211,6 +227,28 @@ describe('show_build_settings plugin', () => {
 
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toContain('✅ Build settings retrieved successfully');
+    });
+  });
+
+  describe('Session requirement handling', () => {
+    it('should require scheme when not provided', async () => {
+      const result = await plugin.handler({
+        projectPath: '/path/to/MyProject.xcodeproj',
+      } as any);
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('scheme');
+    });
+
+    it('should surface project/workspace requirement even with scheme default', async () => {
+      sessionStore.setDefaults({ scheme: 'MyScheme' });
+
+      const result = await plugin.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
     });
   });
 

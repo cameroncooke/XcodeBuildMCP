@@ -11,7 +11,7 @@ import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
@@ -102,14 +102,16 @@ export async function showBuildSettingsLogic(
   }
 }
 
+const publicSchemaObject = baseSchemaObject;
+
 export default {
   name: 'show_build_settings',
-  description:
-    "Shows build settings from either a project or workspace using xcodebuild. Provide exactly one of projectPath or workspacePath, plus scheme. Example: show_build_settings({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-  schema: baseSchemaObject.shape,
-  handler: createTypedTool<ShowBuildSettingsParams>(
-    showBuildSettingsSchema as z.ZodType<ShowBuildSettingsParams>,
+  description: 'Shows xcodebuild build settings.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<ShowBuildSettingsParams>(
+    showBuildSettingsSchema as unknown as z.ZodType<ShowBuildSettingsParams>,
     showBuildSettingsLogic,
     getDefaultCommandExecutor,
+    [['projectPath', 'workspacePath']],
   ),
 };

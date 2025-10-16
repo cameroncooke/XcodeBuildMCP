@@ -11,7 +11,7 @@ import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
@@ -109,14 +109,18 @@ export async function listSchemesLogic(
   }
 }
 
+// Public schema = all fields optional (session defaults can provide values)
+// This allows agents to provide parameters explicitly OR rely on session defaults
+const publicSchemaObject = baseSchemaObject;
+
 export default {
   name: 'list_schemes',
-  description:
-    "Lists available schemes for either a project or a workspace. Provide exactly one of projectPath or workspacePath. Example: list_schemes({ projectPath: '/path/to/MyProject.xcodeproj' })",
-  schema: baseSchemaObject.shape,
-  handler: createTypedTool<ListSchemesParams>(
-    listSchemesSchema as z.ZodType<ListSchemesParams>,
+  description: 'Lists schemes for a project or workspace.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<ListSchemesParams>(
+    listSchemesSchema as unknown as z.ZodType<ListSchemesParams>,
     listSchemesLogic,
     getDefaultCommandExecutor,
+    [['projectPath', 'workspacePath']],
   ),
 };

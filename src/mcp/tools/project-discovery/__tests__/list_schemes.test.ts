@@ -4,40 +4,38 @@
  * Using dependency injection for deterministic testing
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import plugin, { listSchemesLogic } from '../list_schemes.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('list_schemes plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(plugin.name).toBe('list_schemes');
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        "Lists available schemes for either a project or a workspace. Provide exactly one of projectPath or workspacePath. Example: list_schemes({ projectPath: '/path/to/MyProject.xcodeproj' })",
-      );
+      expect(plugin.description).toBe('Lists schemes for a project or workspace.');
     });
 
     it('should have handler function', () => {
       expect(typeof plugin.handler).toBe('function');
     });
 
-    it('should validate schema with valid inputs', () => {
+    it('should have correct public schema (all fields optional for session integration)', () => {
       const schema = z.object(plugin.schema);
-      expect(schema.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(true);
-      expect(schema.safeParse({ projectPath: '/Users/dev/App.xcodeproj' }).success).toBe(true);
-    });
 
-    it('should validate schema with invalid inputs', () => {
-      const schema = z.object(plugin.schema);
-      // Base schema allows empty object - XOR validation is in refinements
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ projectPath: 123 }).success).toBe(false);
-      expect(schema.safeParse({ projectPath: null }).success).toBe(false);
-      expect(schema.safeParse({ workspacePath: 123 }).success).toBe(false);
+      // Public schema allows all fields to be optional
+      // Session defaults or handler validation will catch missing required ones
+      expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(true);
+      expect(schema.safeParse({ workspacePath: '/path/to/workspace.xcworkspace' }).success).toBe(true);
+      expect(schema.safeParse({}).success).toBe(true); // All optional
     });
   });
 
@@ -232,7 +230,7 @@ describe('list_schemes plugin', () => {
 
     it('should handle validation when testing with missing projectPath via plugin handler', async () => {
       // Note: Direct logic function calls bypass Zod validation, so we test the actual plugin handler
-      // to verify Zod validation works properly. The createTypedTool wrapper handles validation.
+      // to verify Zod validation works properly. The createSessionAwareTool wrapper handles validation.
       const result = await plugin.handler({});
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
@@ -244,6 +242,7 @@ describe('list_schemes plugin', () => {
     it('should error when neither projectPath nor workspacePath provided', async () => {
       const result = await plugin.handler({});
       expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
       expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
     });
 
@@ -253,7 +252,8 @@ describe('list_schemes plugin', () => {
         workspacePath: '/path/to/workspace.xcworkspace',
       });
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('mutually exclusive');
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('projectPath and workspacePath are mutually exclusive');
     });
 
     it('should handle empty strings as undefined', async () => {
@@ -262,6 +262,7 @@ describe('list_schemes plugin', () => {
         workspacePath: '',
       });
       expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
       expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
     });
   });
