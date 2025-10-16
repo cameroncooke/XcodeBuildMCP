@@ -1,0 +1,811 @@
+
+> xcodebuildmcp@1.14.1 test
+> vitest run
+
+
+ RUN  v3.2.4 /Users/dalecarman/Groove Jones Dropbox/Dale Carman/Projects/dev/XcodeBuildMCP
+
+ ❯ src/mcp/tools/simulator/__tests__/build_sim.test.ts (31 tests | 6 failed) 13ms
+   ✓ build_sim tool > Export Field Validation (Literal) > should have correct name 1ms
+   ✓ build_sim tool > Export Field Validation (Literal) > should have correct description 0ms
+   ✓ build_sim tool > Export Field Validation (Literal) > should have handler function 0ms
+   ✓ build_sim tool > Export Field Validation (Literal) > should have correct public schema (all fields optional for session integration) 1ms
+   ✓ build_sim tool > Parameter Validation > should handle missing both projectPath and workspacePath 0ms
+   ✓ build_sim tool > Parameter Validation > should handle both projectPath and workspacePath provided 0ms
+   ✓ build_sim tool > Parameter Validation > should handle empty workspacePath parameter 1ms
+   ✓ build_sim tool > Parameter Validation > should handle missing scheme parameter 0ms
+   ✓ build_sim tool > Parameter Validation > should handle empty scheme parameter 0ms
+   ✓ build_sim tool > Parameter Validation > should handle missing both simulatorId and simulatorName 0ms
+   ✓ build_sim tool > Parameter Validation > should handle both simulatorId and simulatorName provided 0ms
+   ✓ build_sim tool > Parameter Validation > should handle empty simulatorName parameter 0ms
+   ✓ build_sim tool > Command Generation > should generate correct build command with minimal parameters (workspace) 0ms
+   ✓ build_sim tool > Command Generation > should generate correct build command with minimal parameters (project) 0ms
+   ✓ build_sim tool > Command Generation > should generate correct build command with all optional parameters 0ms
+   ✓ build_sim tool > Command Generation > should handle paths with spaces in command generation 0ms
+   ✓ build_sim tool > Command Generation > should generate correct build command with useLatestOS set to true 0ms
+   ✓ build_sim tool > Response Processing > should handle successful build 0ms
+   ✓ build_sim tool > Response Processing > should handle successful build with all optional parameters 0ms
+   ✓ build_sim tool > Response Processing > should handle build failure 0ms
+   ✓ build_sim tool > Response Processing > should handle build warnings 0ms
+   ✓ build_sim tool > Response Processing > should handle command executor errors 0ms
+   ✓ build_sim tool > Response Processing > should handle mixed warning and error output 0ms
+   ✓ build_sim tool > Response Processing > should use default configuration when not provided 0ms
+   ✓ build_sim tool > Error Handling > should handle catch block exceptions 0ms
+   × build_sim tool > Empty String Handling > should treat empty string scheme as missing via preprocessor 4ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+   × build_sim tool > Empty String Handling > should treat whitespace-only scheme as missing via preprocessor 1ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+   × build_sim tool > Empty String Handling > should treat empty projectPath as missing 1ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+   × build_sim tool > Empty String Handling > should treat empty workspacePath as missing 0ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+   × build_sim tool > Empty String Handling > should treat empty simulatorName as missing 0ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'Provide simulatorId or simulatorName'
+   × build_sim tool > Empty String Handling > should handle empty string in session defaults combined with explicit params 0ms
+     → Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+ ❯ src/mcp/tools/simulator/__tests__/build_run_sim.test.ts (23 tests | 6 failed) 13ms
+   ✓ build_run_sim tool > Export Field Validation (Literal) > should have correct name 1ms
+   ✓ build_run_sim tool > Export Field Validation (Literal) > should have correct description 0ms
+   ✓ build_run_sim tool > Export Field Validation (Literal) > should have handler function 0ms
+   ✓ build_run_sim tool > Export Field Validation (Literal) > should have correct public schema (all fields optional for session integration) 1ms
+   ✓ build_run_sim tool > Handler Behavior (Complete Literal Returns) > should handle simulator not found 1ms
+   ✓ build_run_sim tool > Handler Behavior (Complete Literal Returns) > should handle build failure 0ms
+   ✓ build_run_sim tool > Handler Behavior (Complete Literal Returns) > should handle successful build and run 0ms
+   ✓ build_run_sim tool > Handler Behavior (Complete Literal Returns) > should handle exception with Error object 0ms
+   ✓ build_run_sim tool > Handler Behavior (Complete Literal Returns) > should handle exception with string error 0ms
+   ✓ build_run_sim tool > Command Generation > should generate correct simctl list command with minimal parameters 0ms
+   ✓ build_run_sim tool > Command Generation > should generate correct build command after finding simulator 0ms
+   ✓ build_run_sim tool > Command Generation > should generate correct build settings command after successful build 0ms
+   ✓ build_run_sim tool > Command Generation > should handle paths with spaces in command generation 0ms
+   ✓ build_run_sim tool > XOR Validation > should error when neither projectPath nor workspacePath provided 0ms
+   ✓ build_run_sim tool > XOR Validation > should error when both projectPath and workspacePath provided 0ms
+   ✓ build_run_sim tool > XOR Validation > should succeed with only projectPath 0ms
+   ✓ build_run_sim tool > XOR Validation > should succeed with only workspacePath 0ms
+   × build_run_sim tool > Empty String Handling > should treat empty string scheme as missing via preprocessor 4ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+   × build_run_sim tool > Empty String Handling > should treat whitespace-only scheme as missing via preprocessor 1ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+   × build_run_sim tool > Empty String Handling > should treat empty projectPath as missing 1ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+   × build_run_sim tool > Empty String Handling > should treat empty workspacePath as missing 0ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+   × build_run_sim tool > Empty String Handling > should treat empty simulatorName as missing 0ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'Provide simulatorId or simulatorName'
+   × build_run_sim tool > Empty String Handling > should handle empty string in session defaults combined with explicit params 0ms
+     → Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+ ❯ src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts (24 tests | 7 failed) 19ms
+   ✓ session-set-defaults tool > Export Field Validation (Literal) > should have correct name 1ms
+   ✓ session-set-defaults tool > Export Field Validation (Literal) > should have correct description 1ms
+   ✓ session-set-defaults tool > Export Field Validation (Literal) > should have handler function 0ms
+   ✓ session-set-defaults tool > Export Field Validation (Literal) > should have schema object 0ms
+   ✓ session-set-defaults tool > Handler Behavior > should set provided defaults and return updated state 1ms
+   ✓ session-set-defaults tool > Handler Behavior > should validate parameter types via Zod 1ms
+   ✓ session-set-defaults tool > Handler Behavior > should clear workspacePath when projectPath is set 1ms
+   ✓ session-set-defaults tool > Handler Behavior > should clear projectPath when workspacePath is set 1ms
+   ✓ session-set-defaults tool > Handler Behavior > should clear simulatorName when simulatorId is set 0ms
+   ✓ session-set-defaults tool > Handler Behavior > should clear simulatorId when simulatorName is set 0ms
+   ✓ session-set-defaults tool > Handler Behavior > should reject when both projectPath and workspacePath are provided 1ms
+   ✓ session-set-defaults tool > Handler Behavior > should reject when both simulatorId and simulatorName are provided 0ms
+   ✓ session-set-defaults tool > File Path Validation > should reject invalid projectPath that does not exist 0ms
+   ✓ session-set-defaults tool > File Path Validation > should reject invalid workspacePath that does not exist 0ms
+   ✓ session-set-defaults tool > File Path Validation > should accept valid projectPath that exists 0ms
+   ✓ session-set-defaults tool > File Path Validation > should accept valid workspacePath that exists 0ms
+   × session-set-defaults tool > File Path Validation > should reject setting new projectPath when workspacePath exists 4ms
+     → expected false to be true // Object.is equality
+   × session-set-defaults tool > File Path Validation > should reject setting new workspacePath when projectPath exists 1ms
+     → expected false to be true // Object.is equality
+   × session-set-defaults tool > Empty String Handling > should convert empty string scheme to undefined via preprocessor 1ms
+     → 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+   × session-set-defaults tool > Empty String Handling > should convert whitespace-only string to undefined via preprocessor 0ms
+     → 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+   × session-set-defaults tool > Empty String Handling > should convert empty projectPath to undefined 1ms
+     → 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+   × session-set-defaults tool > Empty String Handling > should convert empty workspacePath to undefined 1ms
+     → 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+   × session-set-defaults tool > Empty String Handling > should convert empty simulatorName to undefined 0ms
+     → 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+   ✓ session-set-defaults tool > Empty String Handling > should not affect valid non-empty strings 1ms
+ ❯ src/mcp/tools/simulator/__tests__/test_sim.test.ts (29 tests | 10 failed) 17ms
+   ✓ test_sim tool > Export Field Validation (Literal) > should have correct name 1ms
+   ✓ test_sim tool > Export Field Validation (Literal) > should have handler function 0ms
+   ✓ test_sim tool > Export Field Validation (Literal) > should have correct public schema (all fields optional for session integration) 1ms
+   ✓ test_sim tool > Parameter Validation > should handle missing both projectPath and workspacePath 0ms
+   ✓ test_sim tool > Parameter Validation > should handle both projectPath and workspacePath provided 0ms
+   ✓ test_sim tool > Parameter Validation > should handle missing scheme parameter 0ms
+   ✓ test_sim tool > Parameter Validation > should handle missing both simulatorId and simulatorName 0ms
+   ✓ test_sim tool > Parameter Validation > should handle both simulatorId and simulatorName provided 0ms
+   ✓ test_sim tool > Parameter Validation > should reject macOS platform 1ms
+   × test_sim tool > Session Defaults Integration > should prioritize explicit parameters over session defaults via logic 2ms
+     → Invalid projectPath: /session/path.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+   ✓ test_sim tool > Session Defaults Integration > should merge session defaults with explicit parameters via logic 1ms
+   × test_sim tool > Session Defaults Integration > should validate requirements after session merge 0ms
+     → Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+   × test_sim tool > Session Defaults Integration > should reject conflicting session defaults 0ms
+     → Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+   ✓ test_sim tool > Session Defaults Integration > should allow explicit parameter to override session default without conflict via logic 1ms
+   ✓ test_sim tool > Error Messages > should provide helpful error when no session defaults and missing required params 0ms
+   ✓ test_sim tool > Error Messages > should show clear recovery path in error messages 0ms
+   ✓ test_sim tool > Command Generation > should generate correct test command with minimal parameters (workspace) 1ms
+   ✓ test_sim tool > Command Generation > should generate correct test command with minimal parameters (project) 1ms
+   ✓ test_sim tool > Response Processing > should handle successful test 1ms
+   ✓ test_sim tool > Response Processing > should handle test failure 1ms
+   ✓ test_sim tool > Response Processing > should handle command executor errors 1ms
+   ✓ test_sim tool > Preserves Existing Validation > should still reject both projectPath and workspacePath when explicit 0ms
+   × test_sim tool > Preserves Existing Validation > should still reject macOS platform 0ms
+     → Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+   × test_sim tool > Empty String Handling > should treat empty string scheme as missing via preprocessor 2ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+   × test_sim tool > Empty String Handling > should treat whitespace-only scheme as missing via preprocessor 0ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+   × test_sim tool > Empty String Handling > should treat empty projectPath as missing 1ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+   × test_sim tool > Empty String Handling > should treat empty workspacePath as missing 0ms
+     → expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+   × test_sim tool > Empty String Handling > should treat empty simulatorName as missing 1ms
+     → 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+   × test_sim tool > Empty String Handling > should handle empty string in session defaults combined with explicit params 0ms
+     → Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+ ✓ src/mcp/tools/swift-package/__tests__/swift_package_stop.test.ts (14 tests) 24ms
+ ✓ src/core/__tests__/resources.test.ts (9 tests) 51ms
+ ✓ src/mcp/tools/logging/__tests__/start_device_log_cap.test.ts (11 tests) 43ms
+ ✓ src/utils/__tests__/session-store.test.ts (19 tests) 8ms
+ ✓ src/utils/__tests__/session-aware-tool-factory.test.ts (8 tests) 6ms
+ ✓ src/mcp/tools/logging/__tests__/stop_sim_log_cap.test.ts (16 tests) 7ms
+ ✓ src/mcp/tools/ui-testing/__tests__/touch.test.ts (21 tests) 6ms
+ ✓ src/mcp/tools/ui-testing/__tests__/button.test.ts (20 tests) 6ms
+ ✓ src/mcp/tools/ui-testing/__tests__/key_sequence.test.ts (15 tests) 7ms
+ ✓ src/mcp/resources/__tests__/doctor.test.ts (9 tests) 260ms
+ ✓ src/mcp/tools/ui-testing/__tests__/swipe.test.ts (17 tests) 6ms
+ ✓ src/mcp/tools/ui-testing/__tests__/key_press.test.ts (15 tests) 6ms
+ ✓ src/mcp/tools/discovery/__tests__/discover_tools.test.ts (21 tests) 5ms
+ ✓ src/mcp/tools/ui-testing/__tests__/long_press.test.ts (14 tests) 6ms
+ ✓ src/mcp/tools/ui-testing/__tests__/type_text.test.ts (17 tests) 5ms
+ ✓ src/mcp/tools/ui-testing/__tests__/describe_ui.test.ts (12 tests) 5ms
+ ✓ src/mcp/tools/macos/__tests__/test_macos.test.ts (17 tests) 5ms
+ ✓ src/mcp/tools/ui-testing/__tests__/gesture.test.ts (15 tests) 5ms
+ ✓ src/mcp/tools/ui-testing/__tests__/tap.test.ts (27 tests) 5ms
+ ✓ src/mcp/tools/session-management/__tests__/session_clear_defaults.test.ts (8 tests) 5ms
+ ✓ src/mcp/tools/device/__tests__/build_device.test.ts (18 tests) 5ms
+ ✓ src/mcp/tools/macos/__tests__/get_mac_app_path.test.ts (18 tests) 4ms
+ ✓ src/mcp/tools/simulator/__tests__/screenshot.test.ts (16 tests) 5ms
+ ✓ src/mcp/tools/macos/__tests__/build_macos.test.ts (19 tests) 4ms
+ ✓ src/mcp/tools/ui-testing/__tests__/screenshot.test.ts (18 tests) 4ms
+ ✓ src/mcp/tools/project-scaffolding/__tests__/scaffold_ios_project.test.ts (15 tests | 3 skipped) 5ms
+ ✓ src/mcp/tools/device/__tests__/test_device.test.ts (11 tests) 4ms
+ ✓ src/mcp/tools/macos/__tests__/build_run_macos.test.ts (19 tests) 4ms
+ ✓ src/mcp/tools/swift-package/__tests__/swift_package_run.test.ts (16 tests) 4ms
+ ✓ src/mcp/tools/device/__tests__/get_device_app_path.test.ts (15 tests) 4ms
+ ✓ src/mcp/tools/project-discovery/__tests__/list_schemes.test.ts (18 tests) 4ms
+ ✓ src/mcp/tools/device/__tests__/launch_app_device.test.ts (15 tests) 4ms
+ ✓ src/mcp/tools/project-discovery/__tests__/show_build_settings.test.ts (16 tests) 4ms
+ ✓ src/mcp/tools/macos/__tests__/launch_mac_app.test.ts (15 tests) 4ms
+ ✓ src/mcp/tools/project-discovery/__tests__/discover_projs.test.ts (18 tests) 4ms
+ ✓ src/mcp/tools/project-scaffolding/__tests__/scaffold_macos_project.test.ts (14 tests) 4ms
+ ✓ src/mcp/tools/simulator-management/__tests__/set_sim_location.test.ts (17 tests) 3ms
+ ✓ src/mcp/tools/simulator-management/__tests__/sim_statusbar.test.ts (12 tests) 3ms
+ ✓ src/mcp/tools/utilities/__tests__/clean.test.ts (10 tests) 4ms
+ ✓ src/mcp/tools/simulator/__tests__/list_sims.test.ts (11 tests) 4ms
+ ✓ src/mcp/tools/project-discovery/__tests__/get_mac_bundle_id.test.ts (11 tests) 4ms
+ ✓ src/mcp/tools/logging/__tests__/start_sim_log_cap.test.ts (11 tests) 3ms
+ ✓ src/mcp/resources/__tests__/devices.test.ts (9 tests) 3ms
+ ✓ src/mcp/tools/project-discovery/__tests__/get_app_bundle_id.test.ts (16 tests) 4ms
+ ✓ src/mcp/tools/swift-package/__tests__/swift_package_test.test.ts (11 tests) 3ms
+ ✓ src/mcp/tools/simulator/__tests__/launch_app_sim.test.ts (13 tests) 3ms
+ ✓ src/mcp/tools/simulator/__tests__/boot_sim.test.ts (10 tests) 3ms
+ ✓ src/mcp/tools/swift-package/__tests__/swift_package_build.test.ts (12 tests) 3ms
+ ✓ src/mcp/tools/simulator/__tests__/install_app_sim.test.ts (14 tests) 3ms
+ ✓ src/mcp/tools/doctor/__tests__/doctor.test.ts (9 tests) 3ms
+ ✓ src/mcp/tools/macos/__tests__/stop_mac_app.test.ts (12 tests) 3ms
+ ✓ src/utils/__tests__/typed-tool-factory.test.ts (7 tests) 3ms
+ ✓ src/mcp/tools/simulator-management/__tests__/set_sim_appearance.test.ts (9 tests) 3ms
+ ✓ src/mcp/tools/logging/__tests__/stop_device_log_cap.test.ts (11 tests) 3ms
+ ✓ src/mcp/tools/swift-package/__tests__/swift_package_clean.test.ts (10 tests) 3ms
+ ✓ src/mcp/tools/simulator-management/__tests__/erase_sims.test.ts (12 tests) 3ms
+ ✓ src/mcp/tools/simulator/__tests__/launch_app_logs_sim.test.ts (11 tests) 3ms
+ ✓ src/mcp/tools/simulator/__tests__/index.test.ts (13 tests) 2ms
+ ✓ src/mcp/tools/device/__tests__/install_app_device.test.ts (13 tests) 3ms
+ ✓ src/mcp/tools/device/__tests__/list_devices.test.ts (10 tests) 3ms
+ ✓ src/mcp/tools/simulator/__tests__/record_sim_video.test.ts (5 tests) 3ms
+ ✓ src/mcp/resources/__tests__/simulators.test.ts (12 tests) 3ms
+ ✓ src/mcp/tools/ui-testing/__tests__/index.test.ts (12 tests) 3ms
+ ✓ src/mcp/tools/logging/__tests__/index.test.ts (12 tests) 3ms
+ ✓ src/mcp/tools/device/__tests__/stop_app_device.test.ts (13 tests) 3ms
+ ✓ src/mcp/tools/doctor/__tests__/index.test.ts (10 tests) 3ms
+ ✓ src/mcp/tools/simulator/__tests__/stop_app_sim.test.ts (8 tests) 2ms
+ ✓ src/mcp/tools/device/__tests__/index.test.ts (13 tests) 3ms
+ ✓ src/mcp/tools/macos/__tests__/index.test.ts (13 tests) 2ms
+ ✓ src/mcp/tools/utilities/__tests__/index.test.ts (13 tests) 3ms
+ ✓ src/mcp/tools/swift-package/__tests__/index.test.ts (13 tests) 2ms
+ ✓ src/mcp/tools/simulator/__tests__/open_sim.test.ts (9 tests) 2ms
+ ✓ src/mcp/tools/simulator-management/__tests__/reset_sim_location.test.ts (8 tests) 2ms
+ ✓ src/mcp/tools/project-scaffolding/__tests__/index.test.ts (13 tests) 3ms
+ ✓ src/utils/__tests__/environment.test.ts (18 tests) 2ms
+ ✓ src/mcp/tools/project-discovery/__tests__/index.test.ts (10 tests) 2ms
+ ✓ src/utils/__tests__/build-utils.test.ts (11 tests) 3ms
+ ✓ src/mcp/tools/swift-package/__tests__/swift_package_list.test.ts (16 tests) 3ms
+ ✓ src/mcp/tools/swift-package/__tests__/active-processes.test.ts (12 tests) 2ms
+ ✓ src/utils/__tests__/test-runner-env-integration.test.ts (8 tests) 2ms
+ ✓ src/mcp/tools/device/__tests__/re-exports.test.ts (8 tests) 2ms
+ ✓ src/utils/__tests__/simulator-utils.test.ts (11 tests) 2ms
+ ✓ src/mcp/tools/session-management/__tests__/index.test.ts (8 tests) 2ms
+ ✓ src/mcp/tools/macos/__tests__/re-exports.test.ts (8 tests) 2ms
+ ✓ src/mcp/tools/session-management/__tests__/session_show_defaults.test.ts (6 tests) 2ms
+ ✓ src/mcp/tools/simulator-management/__tests__/index.test.ts (7 tests) 2ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 29 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts > session-set-defaults tool > File Path Validation > should reject setting new projectPath when workspacePath exists
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts:196:30
+    194|       const result = await sessionSetDefaultsLogic({ projectPath });
+    195| 
+    196|       expect(result.isError).toBe(true);
+       |                              ^
+    197|       expect(result.content[0].text).toContain('Failed to set defaults…
+    198|       expect(result.content[0].text).toContain('Session already has wo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/29]⎯
+
+ FAIL  src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts > session-set-defaults tool > File Path Validation > should reject setting new workspacePath when projectPath exists
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts:213:30
+    211|       const result = await sessionSetDefaultsLogic({ workspacePath });
+    212| 
+    213|       expect(result.isError).toBe(true);
+       |                              ^
+    214|       expect(result.content[0].text).toContain('Failed to set defaults…
+    215|       expect(result.content[0].text).toContain('Session already has pr…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/29]⎯
+
+ FAIL  src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts > session-set-defaults tool > Empty String Handling > should convert empty string scheme to undefined via preprocessor
+Error: 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+ ❯ getDefaultCommandExecutor src/utils/command.ts:201:11
+    199| export function getDefaultCommandExecutor(): CommandExecutor {
+    200|   if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test'…
+    201|     throw new Error(
+       |           ^
+    202|       `🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨\n` +
+    203|         `This test is trying to use the default command executor inste…
+ ❯ Object.handler src/utils/typed-tool-factory.ts:42:51
+ ❯ src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts:221:35
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/29]⎯
+
+ FAIL  src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts > session-set-defaults tool > Empty String Handling > should convert whitespace-only string to undefined via preprocessor
+Error: 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+ ❯ getDefaultCommandExecutor src/utils/command.ts:201:11
+    199| export function getDefaultCommandExecutor(): CommandExecutor {
+    200|   if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test'…
+    201|     throw new Error(
+       |           ^
+    202|       `🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨\n` +
+    203|         `This test is trying to use the default command executor inste…
+ ❯ Object.handler src/utils/typed-tool-factory.ts:42:51
+ ❯ src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts:229:35
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/29]⎯
+
+ FAIL  src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts > session-set-defaults tool > Empty String Handling > should convert empty projectPath to undefined
+Error: 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+ ❯ getDefaultCommandExecutor src/utils/command.ts:201:11
+    199| export function getDefaultCommandExecutor(): CommandExecutor {
+    200|   if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test'…
+    201|     throw new Error(
+       |           ^
+    202|       `🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨\n` +
+    203|         `This test is trying to use the default command executor inste…
+ ❯ Object.handler src/utils/typed-tool-factory.ts:42:51
+ ❯ src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts:237:35
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/29]⎯
+
+ FAIL  src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts > session-set-defaults tool > Empty String Handling > should convert empty workspacePath to undefined
+Error: 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+ ❯ getDefaultCommandExecutor src/utils/command.ts:201:11
+    199| export function getDefaultCommandExecutor(): CommandExecutor {
+    200|   if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test'…
+    201|     throw new Error(
+       |           ^
+    202|       `🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨\n` +
+    203|         `This test is trying to use the default command executor inste…
+ ❯ Object.handler src/utils/typed-tool-factory.ts:42:51
+ ❯ src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts:245:35
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/29]⎯
+
+ FAIL  src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts > session-set-defaults tool > Empty String Handling > should convert empty simulatorName to undefined
+Error: 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+ ❯ getDefaultCommandExecutor src/utils/command.ts:201:11
+    199| export function getDefaultCommandExecutor(): CommandExecutor {
+    200|   if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test'…
+    201|     throw new Error(
+       |           ^
+    202|       `🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨\n` +
+    203|         `This test is trying to use the default command executor inste…
+ ❯ Object.handler src/utils/typed-tool-factory.ts:42:51
+ ❯ src/mcp/tools/session-management/__tests__/session_set_defaults.test.ts:253:35
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_run_sim.test.ts > build_run_sim tool > Empty String Handling > should treat empty string scheme as missing via preprocessor
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- scheme is required[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ scheme: Required[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/build_run_sim.test.ts:616:38
+    614| 
+    615|       expect(result.isError).toBe(true);
+    616|       expect(result.content[0].text).toContain('scheme is required');
+       |                                      ^
+    617|     });
+    618| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_run_sim.test.ts > build_run_sim tool > Empty String Handling > should treat whitespace-only scheme as missing via preprocessor
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- scheme is required[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ scheme: Required[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/build_run_sim.test.ts:627:38
+    625| 
+    626|       expect(result.isError).toBe(true);
+    627|       expect(result.content[0].text).toContain('scheme is required');
+       |                                      ^
+    628|     });
+    629| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_run_sim.test.ts > build_run_sim tool > Empty String Handling > should treat empty projectPath as missing
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [7mProvide a[27m project or workspace[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ [7mroot: Either[27m project[7mPath[27m or workspace[7mPath is required.[27m[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/build_run_sim.test.ts:638:38
+    636| 
+    637|       expect(result.isError).toBe(true);
+    638|       expect(result.content[0].text).toContain('Provide a project or w…
+       |                                      ^
+    639|     });
+    640| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_run_sim.test.ts > build_run_sim tool > Empty String Handling > should treat empty workspacePath as missing
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [7mProvide a[27m project or workspace[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ [7mroot: Either[27m project[7mPath[27m or workspace[7mPath is required.[27m[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/build_run_sim.test.ts:649:38
+    647| 
+    648|       expect(result.isError).toBe(true);
+    649|       expect(result.content[0].text).toContain('Provide a project or w…
+       |                                      ^
+    650|     });
+    651| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_run_sim.test.ts > build_run_sim tool > Empty String Handling > should treat empty simulatorName as missing
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'Provide simulatorId or simulatorName'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Provide simulatorId or simulatorName[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ root: Either simulatorId or simulatorName is required.[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/build_run_sim.test.ts:660:38
+    658| 
+    659|       expect(result.isError).toBe(true);
+    660|       expect(result.content[0].text).toContain('Provide simulatorId or…
+       |                                      ^
+    661|     });
+    662| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_run_sim.test.ts > build_run_sim tool > Empty String Handling > should handle empty string in session defaults combined with explicit params
+Error: Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+ ❯ SessionStore.setDefaults src/utils/session-store.ts:26:13
+     24|       !existsSync(partial.projectPath)
+     25|     ) {
+     26|       throw new Error(
+       |             ^
+     27|         `Invalid projectPath: ${partial.projectPath} does not exist. `…
+     28|           `Provide a valid path to an existing .xcodeproj file.`,
+ ❯ src/mcp/tools/simulator/__tests__/build_run_sim.test.ts:664:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_sim.test.ts > build_sim tool > Empty String Handling > should treat empty string scheme as missing via preprocessor
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- scheme is required[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ scheme: Required[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/build_sim.test.ts:700:38
+    698| 
+    699|       expect(result.isError).toBe(true);
+    700|       expect(result.content[0].text).toContain('scheme is required');
+       |                                      ^
+    701|     });
+    702| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_sim.test.ts > build_sim tool > Empty String Handling > should treat whitespace-only scheme as missing via preprocessor
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- scheme is required[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ scheme: Required[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/build_sim.test.ts:711:38
+    709| 
+    710|       expect(result.isError).toBe(true);
+    711|       expect(result.content[0].text).toContain('scheme is required');
+       |                                      ^
+    712|     });
+    713| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_sim.test.ts > build_sim tool > Empty String Handling > should treat empty projectPath as missing
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [7mProvide a[27m project or workspace[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ [7mroot: Either[27m project[7mPath[27m or workspace[7mPath is required.[27m[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/build_sim.test.ts:722:38
+    720| 
+    721|       expect(result.isError).toBe(true);
+    722|       expect(result.content[0].text).toContain('Provide a project or w…
+       |                                      ^
+    723|     });
+    724| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_sim.test.ts > build_sim tool > Empty String Handling > should treat empty workspacePath as missing
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [7mProvide a[27m project or workspace[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ [7mroot: Either[27m project[7mPath[27m or workspace[7mPath is required.[27m[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/build_sim.test.ts:733:38
+    731| 
+    732|       expect(result.isError).toBe(true);
+    733|       expect(result.content[0].text).toContain('Provide a project or w…
+       |                                      ^
+    734|     });
+    735| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_sim.test.ts > build_sim tool > Empty String Handling > should treat empty simulatorName as missing
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'Provide simulatorId or simulatorName'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- Provide simulatorId or simulatorName[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ root: Either simulatorId or simulatorName is required.[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/build_sim.test.ts:744:38
+    742| 
+    743|       expect(result.isError).toBe(true);
+    744|       expect(result.content[0].text).toContain('Provide simulatorId or…
+       |                                      ^
+    745|     });
+    746| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/build_sim.test.ts > build_sim tool > Empty String Handling > should handle empty string in session defaults combined with explicit params
+Error: Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+ ❯ SessionStore.setDefaults src/utils/session-store.ts:26:13
+     24|       !existsSync(partial.projectPath)
+     25|     ) {
+     26|       throw new Error(
+       |             ^
+     27|         `Invalid projectPath: ${partial.projectPath} does not exist. `…
+     28|           `Provide a valid path to an existing .xcodeproj file.`,
+ ❯ src/mcp/tools/simulator/__tests__/build_sim.test.ts:748:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/test_sim.test.ts > test_sim tool > Session Defaults Integration > should prioritize explicit parameters over session defaults via logic
+Error: Invalid projectPath: /session/path.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+ ❯ SessionStore.setDefaults src/utils/session-store.ts:26:13
+     24|       !existsSync(partial.projectPath)
+     25|     ) {
+     26|       throw new Error(
+       |             ^
+     27|         `Invalid projectPath: ${partial.projectPath} does not exist. `…
+     28|           `Provide a valid path to an existing .xcodeproj file.`,
+ ❯ src/mcp/tools/simulator/__tests__/test_sim.test.ts:135:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/test_sim.test.ts > test_sim tool > Session Defaults Integration > should validate requirements after session merge
+Error: Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+ ❯ SessionStore.setDefaults src/utils/session-store.ts:26:13
+     24|       !existsSync(partial.projectPath)
+     25|     ) {
+     26|       throw new Error(
+       |             ^
+     27|         `Invalid projectPath: ${partial.projectPath} does not exist. `…
+     28|           `Provide a valid path to an existing .xcodeproj file.`,
+ ❯ src/mcp/tools/simulator/__tests__/test_sim.test.ts:185:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/test_sim.test.ts > test_sim tool > Session Defaults Integration > should reject conflicting session defaults
+Error: Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+ ❯ SessionStore.setDefaults src/utils/session-store.ts:26:13
+     24|       !existsSync(partial.projectPath)
+     25|     ) {
+     26|       throw new Error(
+       |             ^
+     27|         `Invalid projectPath: ${partial.projectPath} does not exist. `…
+     28|           `Provide a valid path to an existing .xcodeproj file.`,
+ ❯ src/mcp/tools/simulator/__tests__/test_sim.test.ts:199:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/test_sim.test.ts > test_sim tool > Preserves Existing Validation > should still reject macOS platform
+Error: Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+ ❯ SessionStore.setDefaults src/utils/session-store.ts:26:13
+     24|       !existsSync(partial.projectPath)
+     25|     ) {
+     26|       throw new Error(
+       |             ^
+     27|         `Invalid projectPath: ${partial.projectPath} does not exist. `…
+     28|           `Provide a valid path to an existing .xcodeproj file.`,
+ ❯ src/mcp/tools/simulator/__tests__/test_sim.test.ts:417:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/test_sim.test.ts > test_sim tool > Empty String Handling > should treat empty string scheme as missing via preprocessor
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- scheme is required[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ scheme: Required[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/test_sim.test.ts:442:38
+    440| 
+    441|       expect(result.isError).toBe(true);
+    442|       expect(result.content[0].text).toContain('scheme is required');
+       |                                      ^
+    443|     });
+    444| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/test_sim.test.ts > test_sim tool > Empty String Handling > should treat whitespace-only scheme as missing via preprocessor
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'scheme is required'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- scheme is required[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ scheme: Required[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/test_sim.test.ts:453:38
+    451| 
+    452|       expect(result.isError).toBe(true);
+    453|       expect(result.content[0].text).toContain('scheme is required');
+       |                                      ^
+    454|     });
+    455| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/test_sim.test.ts > test_sim tool > Empty String Handling > should treat empty projectPath as missing
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [7mProvide a[27m project or workspace[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ [7mroot: Either[27m project[7mPath[27m or workspace[7mPath is required.[27m[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/test_sim.test.ts:464:38
+    462| 
+    463|       expect(result.isError).toBe(true);
+    464|       expect(result.content[0].text).toContain('Provide a project or w…
+       |                                      ^
+    465|     });
+    466| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/test_sim.test.ts > test_sim tool > Empty String Handling > should treat empty workspacePath as missing
+AssertionError: expected 'Error: Parameter validation failed\nD…' to contain 'Provide a project or workspace'
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [7mProvide a[27m project or workspace[39m
+[31m+ Error: Parameter validation failed[39m
+[31m+ Details: Invalid parameters:[39m
+[31m+ [7mroot: Either[27m project[7mPath[27m or workspace[7mPath is required.[27m[39m
+[31m+ Tip: set session defaults via session-set-defaults[39m
+
+ ❯ src/mcp/tools/simulator/__tests__/test_sim.test.ts:475:38
+    473| 
+    474|       expect(result.isError).toBe(true);
+    475|       expect(result.content[0].text).toContain('Provide a project or w…
+       |                                      ^
+    476|     });
+    477| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/test_sim.test.ts > test_sim tool > Empty String Handling > should treat empty simulatorName as missing
+Error: 🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨
+This test is trying to use the default command executor instead of a mock.
+Fix: Pass createMockExecutor() as the commandExecutor parameter in your test.
+Example: await plugin.handler(args, createMockExecutor({success: true}), mockFileSystem)
+See docs/TESTING.md for proper testing patterns.
+ ❯ getDefaultCommandExecutor src/utils/command.ts:201:11
+    199| export function getDefaultCommandExecutor(): CommandExecutor {
+    200|   if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test'…
+    201|     throw new Error(
+       |           ^
+    202|       `🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨\n` +
+    203|         `This test is trying to use the default command executor inste…
+ ❯ Object.handler src/utils/typed-tool-factory.ts:158:45
+ ❯ src/mcp/tools/simulator/__tests__/test_sim.test.ts:479:36
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/29]⎯
+
+ FAIL  src/mcp/tools/simulator/__tests__/test_sim.test.ts > test_sim tool > Empty String Handling > should handle empty string in session defaults combined with explicit params
+Error: Invalid projectPath: /path/to/project.xcodeproj does not exist. Provide a valid path to an existing .xcodeproj file.
+ ❯ SessionStore.setDefaults src/utils/session-store.ts:26:13
+     24|       !existsSync(partial.projectPath)
+     25|     ) {
+     26|       throw new Error(
+       |             ^
+     27|         `Invalid projectPath: ${partial.projectPath} does not exist. `…
+     28|           `Provide a valid path to an existing .xcodeproj file.`,
+ ❯ src/mcp/tools/simulator/__tests__/test_sim.test.ts:490:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/29]⎯
+
+
+ Test Files  4 failed | 86 passed (90)
+      Tests  29 failed | 1192 passed | 3 skipped (1224)
+   Start at  12:22:42
+   Duration  2.39s (transform 730ms, setup 0ms, collect 1.57s, tests 733ms, environment 7ms, prepare 2.75s)
+

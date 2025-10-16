@@ -1,12 +1,35 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { z } from 'zod';
 import { createSessionAwareTool } from '../typed-tool-factory.ts';
 import { sessionStore } from '../session-store.ts';
 import { createMockExecutor } from '../../test-utils/mock-executors.ts';
 
 describe('createSessionAwareTool', () => {
+  let tempDir: string;
+  let testProjectPath: string;
+  let testProjectPath2: string;
+
   beforeEach(() => {
     sessionStore.clear();
+    // Create a temporary directory and test files
+    tempDir = mkdtempSync(join(tmpdir(), 'session-aware-tool-test-'));
+    testProjectPath = join(tempDir, 'proj.xcodeproj');
+    testProjectPath2 = join(tempDir, 'a.xcodeproj');
+    writeFileSync(testProjectPath, 'test content');
+    writeFileSync(testProjectPath2, 'test content');
+  });
+
+  afterEach(() => {
+    sessionStore.clear();
+    // Clean up temporary directory
+    try {
+      rmSync(tempDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
   });
 
   const internalSchema = z
@@ -32,21 +55,14 @@ describe('createSessionAwareTool', () => {
     return { content: [{ type: 'text', text: 'OK' }], isError: false };
   }
 
-  const handler = createSessionAwareTool<Params>({
-    internalSchema,
-    logicFunction: logic,
-    getExecutor: () => createMockExecutor({ success: true }),
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
-    ],
-  });
+  const handler = createSessionAwareTool<Params>(internalSchema, logic, () =>
+    createMockExecutor({ success: true }),
+  );
 
   it('should merge session defaults and satisfy requirements', async () => {
     sessionStore.setDefaults({
       scheme: 'App',
-      projectPath: '/path/proj.xcodeproj',
+      projectPath: testProjectPath,
       simulatorId: 'SIM-1',
     });
 
@@ -57,26 +73,18 @@ describe('createSessionAwareTool', () => {
 
   it('should prefer explicit args over session defaults (same key wins)', async () => {
     // Create a handler that echoes the chosen scheme
-    const echoHandler = createSessionAwareTool<Params>({
+    const echoHandler = createSessionAwareTool<Params>(
       internalSchema,
-      logicFunction: async (params) => ({
+      async (params) => ({
         content: [{ type: 'text', text: params.scheme }],
         isError: false,
       }),
-      getExecutor: () => createMockExecutor({ success: true }),
-      requirements: [
-        { allOf: ['scheme'], message: 'scheme is required' },
-        { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-        {
-          oneOf: ['simulatorId', 'simulatorName'],
-          message: 'Provide simulatorId or simulatorName',
-        },
-      ],
-    });
+      () => createMockExecutor({ success: true }),
+    );
 
     sessionStore.setDefaults({
       scheme: 'Default',
-      projectPath: '/a.xcodeproj',
+      projectPath: testProjectPath2,
       simulatorId: 'SIM-A',
     });
     const result = await echoHandler({ scheme: 'FromArgs' });
@@ -84,107 +92,67 @@ describe('createSessionAwareTool', () => {
     expect(result.content[0].text).toBe('FromArgs');
   });
 
-  it('should return friendly error when allOf requirement missing', async () => {
-    const result = await handler({ projectPath: '/p.xcodeproj', simulatorId: 'SIM-1' });
+  it('should return Zod validation error when required field missing', async () => {
+    const result = await handler({ projectPath: testProjectPath, simulatorId: 'SIM-1' });
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('Missing required session defaults');
-    expect(result.content[0].text).toContain('scheme is required');
+    expect(result.content[0].text).toContain('Parameter validation failed');
+    expect(result.content[0].text).toContain('scheme');
+    expect(result.content[0].text).toContain('session-set-defaults');
   });
 
-  it('should return friendly error when oneOf requirement missing', async () => {
+  it('should return Zod validation error when neither project nor workspace provided', async () => {
     const result = await handler({ scheme: 'App', simulatorId: 'SIM-1' });
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('Missing required session defaults');
-    expect(result.content[0].text).toContain('Provide a project or workspace');
+    expect(result.content[0].text).toContain('Parameter validation failed');
+    expect(result.content[0].text).toContain('projectPath');
+    expect(result.content[0].text).toContain('workspacePath');
   });
 
   it('should surface Zod validation errors with tip when invalid', async () => {
-    const badHandler = createSessionAwareTool<any>({
-      internalSchema,
-      logicFunction: logic,
-      getExecutor: () => createMockExecutor({ success: true }),
-    });
+    const badHandler = createSessionAwareTool<any>(internalSchema, logic, () =>
+      createMockExecutor({ success: true }),
+    );
     const result = await badHandler({ scheme: 123 });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('Parameter validation failed');
     expect(result.content[0].text).toContain('Tip: set session defaults');
   });
 
-  it('exclusivePairs should NOT prune session defaults when user provides null (treat as not provided)', async () => {
-    const handlerWithExclusive = createSessionAwareTool<Params>({
-      internalSchema,
-      logicFunction: logic,
-      getExecutor: () => createMockExecutor({ success: true }),
-      requirements: [
-        { allOf: ['scheme'], message: 'scheme is required' },
-        { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-      ],
-      exclusivePairs: [['projectPath', 'workspacePath']],
-    });
-
+  it('should handle null values without interfering with session defaults', async () => {
     sessionStore.setDefaults({
       scheme: 'App',
-      projectPath: '/path/proj.xcodeproj',
+      projectPath: testProjectPath,
       simulatorId: 'SIM-1',
     });
 
-    const res = await handlerWithExclusive({ workspacePath: null as unknown as string });
+    const res = await handler({ workspacePath: null as unknown as string });
     expect(res.isError).toBe(false);
     expect(res.content[0].text).toBe('OK');
   });
 
-  it('exclusivePairs should NOT prune when user provides undefined (key present)', async () => {
-    const handlerWithExclusive = createSessionAwareTool<Params>({
-      internalSchema,
-      logicFunction: logic,
-      getExecutor: () => createMockExecutor({ success: true }),
-      requirements: [
-        { allOf: ['scheme'], message: 'scheme is required' },
-        { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-      ],
-      exclusivePairs: [['projectPath', 'workspacePath']],
-    });
-
+  it('should handle undefined values without interfering with session defaults', async () => {
     sessionStore.setDefaults({
       scheme: 'App',
-      projectPath: '/path/proj.xcodeproj',
+      projectPath: testProjectPath,
       simulatorId: 'SIM-1',
     });
 
-    const res = await handlerWithExclusive({ workspacePath: undefined as unknown as string });
+    const res = await handler({ workspacePath: undefined as unknown as string });
     expect(res.isError).toBe(false);
     expect(res.content[0].text).toBe('OK');
   });
 
-  it('rejects when multiple explicit args in an exclusive pair are provided (factory-level)', async () => {
-    const internalSchemaNoXor = z.object({
-      scheme: z.string(),
-      projectPath: z.string().optional(),
-      workspacePath: z.string().optional(),
-    });
-
-    const handlerNoXor = createSessionAwareTool<z.infer<typeof internalSchemaNoXor>>({
-      internalSchema: internalSchemaNoXor,
-      logicFunction: (async () => ({
-        content: [{ type: 'text', text: 'OK' }],
-        isError: false,
-      })) as any,
-      getExecutor: () => createMockExecutor({ success: true }),
-      requirements: [{ allOf: ['scheme'], message: 'scheme is required' }],
-      exclusivePairs: [['projectPath', 'workspacePath']],
-    });
-
-    const res = await handlerNoXor({
+  it('should reject mutually exclusive parameters via Zod validation', async () => {
+    const res = await handler({
       scheme: 'App',
-      projectPath: '/path/a.xcodeproj',
+      projectPath: testProjectPath,
       workspacePath: '/path/b.xcworkspace',
+      simulatorId: 'SIM-1',
     });
 
     expect(res.isError).toBe(true);
     const msg = res.content[0].text;
     expect(msg).toContain('Parameter validation failed');
-    expect(msg).toContain('Mutually exclusive parameters provided');
-    expect(msg).toContain('projectPath');
-    expect(msg).toContain('workspacePath');
+    expect(msg).toContain('mutually exclusive');
   });
 });

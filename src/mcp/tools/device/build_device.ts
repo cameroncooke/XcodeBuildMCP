@@ -12,6 +12,7 @@ import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
+import { mapPlatformStringToEnum } from '../../../utils/platform-utils.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
 const baseSchemaObject = z.object({
@@ -22,6 +23,10 @@ const baseSchemaObject = z.object({
   derivedDataPath: z.string().optional().describe('Path to derived data directory'),
   extraArgs: z.array(z.string()).optional().describe('Additional arguments to pass to xcodebuild'),
   preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
+  platform: z
+    .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
+    .optional()
+    .describe('Target platform (defaults to iOS)'),
 });
 
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
@@ -49,11 +54,16 @@ export async function buildDeviceLogic(
     configuration: params.configuration ?? 'Debug', // Default config
   };
 
+  // Map platform string to XcodePlatform enum using utility function
+  // Note: For device builds, we use the raw platform value if provided, defaulting to iOS
+  const platform = params.platform ? mapPlatformStringToEnum(params.platform) : XcodePlatform.iOS;
+  const platformName = params.platform ?? 'iOS';
+
   return executeXcodeBuildCommand(
     processedParams,
     {
-      platform: XcodePlatform.iOS,
-      logPrefix: 'iOS Device Build',
+      platform,
+      logPrefix: `${platformName} Device Build`,
     },
     params.preferXcodebuild ?? false,
     'build',
@@ -64,7 +74,7 @@ export async function buildDeviceLogic(
 export default {
   name: 'build_device',
   description:
-    "Builds an app from a project or workspace for a physical Apple device. Provide exactly one of projectPath or workspacePath. Example: build_device({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
+    "Builds an app from a project or workspace for a physical Apple device. Provide exactly one of projectPath or workspacePath. Example: build_device({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', platform: 'visionOS' })",
   schema: baseSchemaObject.shape,
   handler: createTypedTool<BuildDeviceParams>(
     buildDeviceSchema as z.ZodType<BuildDeviceParams>,

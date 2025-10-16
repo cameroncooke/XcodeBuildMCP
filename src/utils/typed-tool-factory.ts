@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { ToolResponse } from '../types/common.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { createErrorResponse } from './responses/index.ts';
-import { sessionStore, type SessionDefaults } from './session-store.ts';
+import { sessionStore } from './session-store.ts';
 
 /**
  * Creates a type-safe tool handler that validates parameters at runtime
@@ -60,115 +60,84 @@ export function createTypedTool<TParams>(
   };
 }
 
-export type SessionRequirement =
-  | { allOf: (keyof SessionDefaults)[]; message?: string }
-  | { oneOf: (keyof SessionDefaults)[]; message?: string };
+/**
+ * Converts Zod validation errors to user-friendly ToolResponse with session hints.
+ */
+function createSessionAwareError(zodError: z.ZodError): ToolResponse {
+  const errorMessages = zodError.errors.map((err) => {
+    const field = err.path.join('.');
+    let message = `${field || 'root'}: ${err.message}`;
 
-function missingFromMerged(
-  keys: (keyof SessionDefaults)[],
-  merged: Record<string, unknown>,
-): string[] {
-  return keys.filter((k) => merged[k] == null);
+    // Add session-set-defaults hint for missing required fields
+    if (err.code === 'invalid_type' && err.received === 'undefined') {
+      message += `\n  Tip: Set via session-set-defaults({ "${field}": "value" })`;
+    }
+
+    return message;
+  });
+
+  return createErrorResponse(
+    'Parameter validation failed',
+    `Invalid parameters:\n${errorMessages.join('\n\n')}\n\nTip: set session defaults via session-set-defaults or provide explicitly`,
+  );
 }
 
-export function createSessionAwareTool<TParams>(opts: {
-  internalSchema: z.ZodType<TParams>;
-  logicFunction: (params: TParams, executor: CommandExecutor) => Promise<ToolResponse>;
-  getExecutor: () => CommandExecutor;
-  sessionKeys?: (keyof SessionDefaults)[];
-  requirements?: SessionRequirement[];
-  exclusivePairs?: (keyof SessionDefaults)[][]; // when args provide one side, drop conflicting session-default side(s)
-}) {
-  const {
-    internalSchema,
-    logicFunction,
-    getExecutor,
-    requirements = [],
-    exclusivePairs = [],
-  } = opts;
-
-  return async (rawArgs: Record<string, unknown>): Promise<ToolResponse> => {
+/**
+ * Creates a session-aware tool that automatically merges session defaults with explicit parameters.
+ * Explicit parameters always take precedence over session defaults.
+ *
+ * @param schema - Zod schema for validation (should include all validation rules via .refine())
+ * @param logicFunction - Tool logic function
+ * @param getExecutor - Function to get command executor
+ * @param exclusivePairs - Optional array of mutually exclusive parameter pairs (e.g., [['projectPath', 'workspacePath']])
+ *                         When an explicit parameter is provided, its counterpart is removed from session defaults
+ */
+export function createSessionAwareTool<TParams>(
+  schema: z.ZodType<TParams>,
+  logicFunction: (params: TParams, executor: CommandExecutor) => Promise<ToolResponse>,
+  getExecutor: () => CommandExecutor,
+  exclusivePairs?: Array<[string, string]>,
+): (args: Record<string, unknown>) => Promise<ToolResponse> {
+  return async (args: Record<string, unknown>): Promise<ToolResponse> => {
     try {
-      // Sanitize args: treat null/undefined as "not provided" so they don't override session defaults
-      const sanitizedArgs: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(rawArgs)) {
-        if (v !== null && v !== undefined) sanitizedArgs[k] = v;
-      }
-
-      // Factory-level mutual exclusivity check: if user provides multiple explicit values
-      // within an exclusive group, reject early even if tool schema doesn't enforce XOR.
-      for (const pair of exclusivePairs) {
-        const provided = pair.filter((k) => Object.prototype.hasOwnProperty.call(sanitizedArgs, k));
-        if (provided.length >= 2) {
-          return createErrorResponse(
-            'Parameter validation failed',
-            `Invalid parameters:\nMutually exclusive parameters provided: ${provided.join(
-              ', ',
-            )}. Provide only one.`,
-          );
+      // Filter out null/undefined from args to avoid overriding session defaults
+      const cleanedArgs: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(args)) {
+        if (value !== null && value !== undefined) {
+          cleanedArgs[key] = value;
         }
       }
 
-      // Start with session defaults merged with explicit args (args override session)
-      const merged: Record<string, unknown> = { ...sessionStore.getAll(), ...sanitizedArgs };
+      // Get session defaults as mutable record for pruning
+      const sessionDefaults: Record<string, unknown> = { ...sessionStore.getAll() };
 
-      // Apply exclusive pair pruning: only when caller provided a concrete (non-null/undefined) value
-      // for any key in the pair. When activated, drop other keys in the pair coming from session defaults.
-      for (const pair of exclusivePairs) {
-        const userProvidedConcrete = pair.some((k) =>
-          Object.prototype.hasOwnProperty.call(sanitizedArgs, k),
-        );
-        if (!userProvidedConcrete) continue;
-
-        for (const k of pair) {
-          if (!Object.prototype.hasOwnProperty.call(sanitizedArgs, k) && k in merged) {
-            delete merged[k];
+      // Prune conflicting session defaults when explicit args provided
+      // This ensures "explicit overrides session" for XOR fields
+      if (exclusivePairs) {
+        for (const [field1, field2] of exclusivePairs) {
+          if (cleanedArgs[field1] !== undefined && sessionDefaults[field2] !== undefined) {
+            delete sessionDefaults[field2];
+          }
+          if (cleanedArgs[field2] !== undefined && sessionDefaults[field1] !== undefined) {
+            delete sessionDefaults[field1];
           }
         }
       }
 
-      for (const req of requirements) {
-        if ('allOf' in req) {
-          const missing = missingFromMerged(req.allOf, merged);
-          if (missing.length > 0) {
-            return createErrorResponse(
-              'Missing required session defaults',
-              `${req.message ?? `Required: ${req.allOf.join(', ')}`}\n` +
-                `Set with: session-set-defaults { ${missing
-                  .map((k) => `"${k}": "..."`)
-                  .join(', ')} }`,
-            );
-          }
-        } else if ('oneOf' in req) {
-          const satisfied = req.oneOf.some((k) => merged[k] != null);
-          if (!satisfied) {
-            const options = req.oneOf.join(', ');
-            const setHints = req.oneOf
-              .map((k) => `session-set-defaults { "${k}": "..." }`)
-              .join(' OR ');
-            return createErrorResponse(
-              'Missing required session defaults',
-              `${req.message ?? `Provide one of: ${options}`}\nSet with: ${setHints}`,
-            );
-          }
-        }
-      }
+      // Merge: explicit args override session defaults
+      const merged = { ...sessionDefaults, ...cleanedArgs };
 
-      const validated = internalSchema.parse(merged);
+      // Let Zod handle all validation (including XOR constraints)
+      const validated = schema.parse(merged);
+
       return await logicFunction(validated, getExecutor());
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errorMessages = error.errors.map((e) => {
-          const path = e.path.length > 0 ? `${e.path.join('.')}` : 'root';
-          return `${path}: ${e.message}`;
-        });
-
-        return createErrorResponse(
-          'Parameter validation failed',
-          `Invalid parameters:\n${errorMessages.join('\n')}\nTip: set session defaults via session-set-defaults`,
-        );
+        return createSessionAwareError(error);
       }
-      throw error;
+      // Don't re-throw - convert all errors to ToolResponse
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return createErrorResponse('Unexpected error occurred', errorMessage);
     }
   };
 }

@@ -109,3 +109,4 @@ bundled/
 /key.pem
 .mcpli
 .factory
+.worktrees

@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { log } from './logger.ts';
 
 export type SessionDefaults = {
@@ -16,6 +17,57 @@ class SessionStore {
   private defaults: SessionDefaults = {};
 
   setDefaults(partial: Partial<SessionDefaults>): void {
+    // Validate file paths exist before storing (skip empty strings as they're valid placeholders)
+    if (
+      partial.projectPath &&
+      partial.projectPath.trim() !== '' &&
+      !existsSync(partial.projectPath)
+    ) {
+      throw new Error(
+        `Invalid projectPath: ${partial.projectPath} does not exist. ` +
+          `Provide a valid path to an existing .xcodeproj file.`,
+      );
+    }
+
+    if (
+      partial.workspacePath &&
+      partial.workspacePath.trim() !== '' &&
+      !existsSync(partial.workspacePath)
+    ) {
+      throw new Error(
+        `Invalid workspacePath: ${partial.workspacePath} does not exist. ` +
+          `Provide a valid path to an existing .xcworkspace file.`,
+      );
+    }
+
+    // Validate mutual exclusivity if both provided in same call (skip empty strings)
+    if (
+      partial.projectPath &&
+      partial.projectPath.trim() !== '' &&
+      partial.workspacePath &&
+      partial.workspacePath.trim() !== ''
+    ) {
+      throw new Error(
+        'Cannot set both projectPath and workspacePath in session defaults. ' +
+          'They are mutually exclusive. Set only one.',
+      );
+    }
+
+    // Validate new value doesn't conflict with existing session state (skip empty strings)
+    if (partial.projectPath && partial.projectPath.trim() !== '' && this.defaults.workspacePath) {
+      throw new Error(
+        'Session already has workspacePath set. Clear it first with: ' +
+          'session-clear-defaults({ keys: ["workspacePath"] })',
+      );
+    }
+
+    if (partial.workspacePath && partial.workspacePath.trim() !== '' && this.defaults.projectPath) {
+      throw new Error(
+        'Session already has projectPath set. Clear it first with: ' +
+          'session-clear-defaults({ keys: ["projectPath"] })',
+      );
+    }
+
     this.defaults = { ...this.defaults, ...partial };
     log('info', `[Session] Defaults updated: ${Object.keys(partial).join(', ')}`);
   }

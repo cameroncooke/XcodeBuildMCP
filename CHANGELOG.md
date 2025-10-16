@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+### Added
+- **build_device tool**: Added optional `platform` parameter to support building for iOS, visionOS, watchOS, and tvOS devices. Previously hardcoded to iOS only, this enhancement enables proper building for Apple Vision Pro and other platforms. Example: `build_device({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme', platform: 'visionOS' })`
+
+## [1.14.1] - 2025-10-12
+### Fixed
+- **test_sim tool**: Added helpful error message when users try to use `platform: "macOS"` with test_sim, directing them to use the test_macos tool instead. This prevents confusing enum validation errors and improves user experience.
+
 ## [1.14.0] - 2025-09-22
 - Add video capture tool for simulators
 
