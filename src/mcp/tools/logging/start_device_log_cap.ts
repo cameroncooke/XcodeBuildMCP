@@ -40,6 +40,195 @@ export interface DeviceLogSession {
 
 export const activeDeviceLogSessions = new Map<string, DeviceLogSession>();
 
+const EARLY_FAILURE_WINDOW_MS = 5000;
+const INITIAL_OUTPUT_LIMIT = 8_192;
+const DEFAULT_JSON_RESULT_WAIT_MS = 8000;
+
+const FAILURE_PATTERNS = [
+  /The application failed to launch/i,
+  /Provide a valid bundle identifier/i,
+  /The requested application .* is not installed/i,
+  /NSOSStatusErrorDomain/i,
+  /NSLocalizedFailureReason/i,
+  /ERROR:/i,
+];
+
+type JsonOutcome = {
+  errorMessage?: string;
+  pid?: number;
+};
+
+type DevicectlLaunchJson = {
+  result?: {
+    process?: {
+      processIdentifier?: unknown;
+    };
+  };
+  error?: {
+    code?: unknown;
+    domain?: unknown;
+    localizedDescription?: unknown;
+    userInfo?: Record<string, unknown> | undefined;
+  };
+};
+
+function getJsonResultWaitMs(): number {
+  const raw = process.env.XBMCP_LAUNCH_JSON_WAIT_MS;
+  if (raw === undefined) {
+    return DEFAULT_JSON_RESULT_WAIT_MS;
+  }
+
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return DEFAULT_JSON_RESULT_WAIT_MS;
+  }
+
+  return parsed;
+}
+
+function safeParseJson(text: string): DevicectlLaunchJson | null {
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+    return parsed as DevicectlLaunchJson;
+  } catch {
+    return null;
+  }
+}
+
+function extractJsonOutcome(json: DevicectlLaunchJson | null): JsonOutcome | null {
+  if (!json) {
+    return null;
+  }
+
+  const resultProcess = json.result?.process;
+  const pidValue = resultProcess?.processIdentifier;
+  if (typeof pidValue === 'number' && Number.isFinite(pidValue)) {
+    return { pid: pidValue };
+  }
+
+  const error = json.error;
+  if (!error) {
+    return null;
+  }
+
+  const parts: string[] = [];
+
+  if (typeof error.localizedDescription === 'string' && error.localizedDescription.length > 0) {
+    parts.push(error.localizedDescription);
+  }
+
+  const userInfo = error.userInfo ?? {};
+  const recovery = userInfo?.NSLocalizedRecoverySuggestion;
+  const failureReason = userInfo?.NSLocalizedFailureReason;
+  const bundleIdentifier = userInfo?.BundleIdentifier;
+
+  if (typeof failureReason === 'string' && failureReason.length > 0) {
+    parts.push(failureReason);
+  }
+
+  if (typeof recovery === 'string' && recovery.length > 0) {
+    parts.push(recovery);
+  }
+
+  if (typeof bundleIdentifier === 'string' && bundleIdentifier.length > 0) {
+    parts.push(`BundleIdentifier = ${bundleIdentifier}`);
+  }
+
+  const domain = error.domain;
+  const code = error.code;
+  const domainPart = typeof domain === 'string' && domain.length > 0 ? domain : undefined;
+  const codePart = typeof code === 'number' && Number.isFinite(code) ? code : undefined;
+
+  if (domainPart || codePart !== undefined) {
+    parts.push(`(${domainPart ?? 'UnknownDomain'} code ${codePart ?? 'unknown'})`);
+  }
+
+  if (parts.length === 0) {
+    return { errorMessage: 'Launch failed' };
+  }
+
+  return { errorMessage: parts.join('\n') };
+}
+
+async function removeFileIfExists(
+  targetPath: string,
+  fileExecutor?: FileSystemExecutor,
+): Promise<void> {
+  try {
+    if (fileExecutor) {
+      if (fileExecutor.existsSync(targetPath)) {
+        await fileExecutor.rm(targetPath, { force: true });
+      }
+      return;
+    }
+
+    if (fs.existsSync(targetPath)) {
+      await fs.promises.rm(targetPath, { force: true });
+    }
+  } catch {
+    // Best-effort cleanup only
+  }
+}
+
+async function pollJsonOutcome(
+  jsonPath: string,
+  fileExecutor: FileSystemExecutor | undefined,
+  timeoutMs: number,
+): Promise<JsonOutcome | null> {
+  const start = Date.now();
+
+  const readOnce = async (): Promise<JsonOutcome | null> => {
+    try {
+      const exists = fileExecutor?.existsSync(jsonPath) ?? fs.existsSync(jsonPath);
+
+      if (!exists) {
+        return null;
+      }
+
+      const content = fileExecutor
+        ? await fileExecutor.readFile(jsonPath, 'utf8')
+        : await fs.promises.readFile(jsonPath, 'utf8');
+
+      const outcome = extractJsonOutcome(safeParseJson(content));
+      if (outcome) {
+        await removeFileIfExists(jsonPath, fileExecutor);
+        return outcome;
+      }
+    } catch {
+      // File may still be written; try again later
+    }
+
+    return null;
+  };
+
+  const immediate = await readOnce();
+  if (immediate) {
+    return immediate;
+  }
+
+  if (timeoutMs <= 0) {
+    return null;
+  }
+
+  let delay = Math.min(100, Math.max(10, Math.floor(timeoutMs / 4) || 10));
+
+  while (Date.now() - start < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    const result = await readOnce();
+    if (result) {
+      return result;
+    }
+    delay = Math.min(400, delay + 50);
+  }
+
+  return null;
+}
+
+type WriteStreamWithClosed = fs.WriteStream & { closed?: boolean };
+
 /**
  * Start a log capture session for an iOS device by launching the app with console output.
  * Uses the devicectl command to launch the app and capture console logs.
@@ -59,17 +248,19 @@ export async function startDeviceLogCapture(
   const { deviceUuid, bundleId } = params;
   const logSessionId = uuidv4();
   const logFileName = `${DEVICE_LOG_FILE_PREFIX}${logSessionId}.log`;
-  const logFilePath = path.join(os.tmpdir(), logFileName);
+  const tempDir = fileSystemExecutor ? fileSystemExecutor.tmpdir() : os.tmpdir();
+  const logFilePath = path.join(tempDir, logFileName);
+  const launchJsonPath = path.join(tempDir, `devicectl-launch-${logSessionId}.json`);
 
   let logStream: fs.WriteStream | undefined;
 
   try {
     // Use injected file system executor or default
     if (fileSystemExecutor) {
-      await fileSystemExecutor.mkdir(fileSystemExecutor.tmpdir(), { recursive: true });
+      await fileSystemExecutor.mkdir(tempDir, { recursive: true });
       await fileSystemExecutor.writeFile(logFilePath, '');
     } else {
-      await fs.promises.mkdir(os.tmpdir(), { recursive: true });
+      await fs.promises.mkdir(tempDir, { recursive: true });
       await fs.promises.writeFile(logFilePath, '');
     }
 
@@ -91,6 +282,8 @@ export async function startDeviceLogCapture(
         '--terminate-existing',
         '--device',
         deviceUuid,
+        '--json-output',
+        launchJsonPath,
         bundleId,
       ],
       'Device Log Capture',
@@ -130,6 +323,16 @@ export async function startDeviceLogCapture(
       hasEnded: false,
     };
 
+    let bufferedOutput = '';
+    const appendBufferedOutput = (text: string): void => {
+      bufferedOutput += text;
+      if (bufferedOutput.length > INITIAL_OUTPUT_LIMIT) {
+        bufferedOutput = bufferedOutput.slice(bufferedOutput.length - INITIAL_OUTPUT_LIMIT);
+      }
+    };
+
+    let triggerImmediateFailure: ((message: string) => void) | undefined;
+
     const handleOutput = (chunk: unknown): void => {
       if (!logStream || logStream.destroyed) return;
       const text =
@@ -139,6 +342,11 @@ export async function startDeviceLogCapture(
             ? chunk.toString('utf8')
             : String(chunk ?? '');
       if (text.length > 0) {
+        appendBufferedOutput(text);
+        const extracted = extractFailureMessage(bufferedOutput);
+        if (extracted) {
+          triggerImmediateFailure?.(extracted);
+        }
         logStream.write(text);
       }
     };
@@ -153,6 +361,77 @@ export async function startDeviceLogCapture(
       childProcess.stderr?.off?.('data', handleOutput);
     };
 
+    const earlyFailure = await detectEarlyLaunchFailure(
+      childProcess,
+      EARLY_FAILURE_WINDOW_MS,
+      () => bufferedOutput,
+      (handler) => {
+        triggerImmediateFailure = handler;
+      },
+    );
+
+    if (earlyFailure) {
+      cleanupStreams();
+      session.hasEnded = true;
+
+      const failureMessage =
+        earlyFailure.errorMessage && earlyFailure.errorMessage.length > 0
+          ? earlyFailure.errorMessage
+          : `Device log capture process exited immediately (exit code: ${
+              earlyFailure.exitCode ?? 'unknown'
+            })`;
+
+      log('error', `Device log capture failed to start: ${failureMessage}`);
+      if (logStream && !logStream.destroyed) {
+        try {
+          logStream.write(`\n--- Device log capture failed to start ---\n${failureMessage}\n`);
+        } catch {
+          // best-effort logging
+        }
+        logStream.end();
+      }
+
+      await removeFileIfExists(launchJsonPath, fileSystemExecutor);
+
+      childProcess.kill?.('SIGTERM');
+      return { sessionId: '', error: failureMessage };
+    }
+
+    const jsonOutcome = await pollJsonOutcome(
+      launchJsonPath,
+      fileSystemExecutor,
+      getJsonResultWaitMs(),
+    );
+
+    if (jsonOutcome?.errorMessage) {
+      cleanupStreams();
+      session.hasEnded = true;
+
+      const failureMessage = jsonOutcome.errorMessage;
+
+      log('error', `Device log capture failed to start (JSON): ${failureMessage}`);
+
+      if (logStream && !logStream.destroyed) {
+        try {
+          logStream.write(`\n--- Device log capture failed to start ---\n${failureMessage}\n`);
+        } catch {
+          // ignore secondary logging failures
+        }
+        logStream.end();
+      }
+
+      childProcess.kill?.('SIGTERM');
+      return { sessionId: '', error: failureMessage };
+    }
+
+    if (jsonOutcome?.pid && logStream && !logStream.destroyed) {
+      try {
+        logStream.write(`Process ID: ${jsonOutcome.pid}\n`);
+      } catch {
+        // best-effort logging only
+      }
+    }
+
     childProcess.once?.('error', (err) => {
       log(
         'error',
@@ -165,10 +444,11 @@ export async function startDeviceLogCapture(
     childProcess.once?.('close', (code) => {
       cleanupStreams();
       session.hasEnded = true;
-      if (logStream && !logStream.destroyed && !logStream.closed) {
+      if (logStream && !logStream.destroyed && !(logStream as WriteStreamWithClosed).closed) {
         logStream.write(`\n--- Device log capture ended (exit code: ${code ?? 'unknown'}) ---\n`);
         logStream.end();
       }
+      void removeFileIfExists(launchJsonPath, fileSystemExecutor);
     });
 
     // For testing purposes, we'll simulate process management
@@ -180,7 +460,7 @@ export async function startDeviceLogCapture(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     log('error', `Failed to start device log capture: ${message}`);
-    if (logStream && !logStream.destroyed && !logStream.closed) {
+    if (logStream && !logStream.destroyed && !(logStream as WriteStreamWithClosed).closed) {
       try {
         logStream.write(`\n--- Device log capture failed: ${message} ---\n`);
       } catch {
@@ -188,8 +468,121 @@ export async function startDeviceLogCapture(
       }
       logStream.end();
     }
+    await removeFileIfExists(launchJsonPath, fileSystemExecutor);
     return { sessionId: '', error: message };
   }
+}
+
+type EarlyFailureResult = {
+  exitCode: number | null;
+  errorMessage?: string;
+};
+
+function detectEarlyLaunchFailure(
+  process: ChildProcess,
+  timeoutMs: number,
+  getBufferedOutput?: () => string,
+  registerImmediateFailure?: (handler: (message: string) => void) => void,
+): Promise<EarlyFailureResult | null> {
+  if (process.exitCode != null) {
+    if (process.exitCode === 0) {
+      const failureFromOutput = extractFailureMessage(getBufferedOutput?.());
+      return Promise.resolve(
+        failureFromOutput ? { exitCode: process.exitCode, errorMessage: failureFromOutput } : null,
+      );
+    }
+    const failureFromOutput = extractFailureMessage(getBufferedOutput?.());
+    return Promise.resolve({ exitCode: process.exitCode, errorMessage: failureFromOutput });
+  }
+
+  return new Promise<EarlyFailureResult | null>((resolve) => {
+    let settled = false;
+
+    const finalize = (result: EarlyFailureResult | null): void => {
+      if (settled) return;
+      settled = true;
+      process.removeListener('close', onClose);
+      process.removeListener('error', onError);
+      clearTimeout(timer);
+      resolve(result);
+    };
+
+    registerImmediateFailure?.((message) => {
+      finalize({ exitCode: process.exitCode ?? null, errorMessage: message });
+    });
+
+    const onClose = (code: number | null): void => {
+      const failureFromOutput = extractFailureMessage(getBufferedOutput?.());
+      if (code === 0 && failureFromOutput) {
+        finalize({ exitCode: code ?? null, errorMessage: failureFromOutput });
+        return;
+      }
+      if (code === 0) {
+        finalize(null);
+      } else {
+        finalize({ exitCode: code ?? null, errorMessage: failureFromOutput });
+      }
+    };
+
+    const onError = (error: Error): void => {
+      finalize({ exitCode: null, errorMessage: error.message });
+    };
+
+    const timer = setTimeout(() => {
+      const failureFromOutput = extractFailureMessage(getBufferedOutput?.());
+      if (failureFromOutput) {
+        process.kill?.('SIGTERM');
+        finalize({ exitCode: process.exitCode ?? null, errorMessage: failureFromOutput });
+        return;
+      }
+      finalize(null);
+    }, timeoutMs);
+
+    process.once('close', onClose);
+    process.once('error', onError);
+  });
+}
+
+function extractFailureMessage(output?: string): string | undefined {
+  if (!output) {
+    return undefined;
+  }
+  const normalized = output.replace(/\r/g, '');
+  const lines = normalized
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const shouldInclude = (line?: string): boolean => {
+    if (!line) return false;
+    return (
+      line.startsWith('NS') ||
+      line.startsWith('BundleIdentifier') ||
+      line.startsWith('Provide ') ||
+      line.startsWith('The application') ||
+      line.startsWith('ERROR:')
+    );
+  };
+
+  for (const pattern of FAILURE_PATTERNS) {
+    const matchIndex = lines.findIndex((line) => pattern.test(line));
+    if (matchIndex === -1) {
+      continue;
+    }
+
+    const snippet: string[] = [lines[matchIndex]];
+    const nextLine = lines[matchIndex + 1];
+    const thirdLine = lines[matchIndex + 2];
+    if (shouldInclude(nextLine)) snippet.push(nextLine);
+    if (shouldInclude(thirdLine)) snippet.push(thirdLine);
+    const message = snippet.join('\n').trim();
+    if (message.length > 0) {
+      return message;
+    }
+    return lines[matchIndex];
+  }
+
+  return undefined;
 }
 
 /**
