@@ -2,7 +2,9 @@
  * Tests for start_device_log_cap plugin
  * Following CLAUDE.md testing standards with pure dependency injection
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { EventEmitter } from 'events';
+import type { ChildProcess } from 'child_process';
 import { z } from 'zod';
 import {
   createMockExecutor,
@@ -30,9 +32,20 @@ describe('start_device_log_cap plugin', () => {
   mkdirCalls = [];
   writeFileCalls = [];
 
+  const originalJsonWaitEnv = process.env.XBMCP_LAUNCH_JSON_WAIT_MS;
+
   beforeEach(() => {
     sessionStore.clear();
     activeDeviceLogSessions.clear();
+    process.env.XBMCP_LAUNCH_JSON_WAIT_MS = '25';
+  });
+
+  afterEach(() => {
+    if (originalJsonWaitEnv === undefined) {
+      delete process.env.XBMCP_LAUNCH_JSON_WAIT_MS;
+    } else {
+      process.env.XBMCP_LAUNCH_JSON_WAIT_MS = originalJsonWaitEnv;
+    }
   });
 
   describe('Plugin Structure', () => {
@@ -134,6 +147,262 @@ describe('start_device_log_cap plugin', () => {
 
       expect(result.content[0].text).toContain('Next Steps:');
       expect(result.content[0].text).toContain('Use stop_device_log_cap');
+    });
+
+    it('should surface early launch failures when process exits immediately', async () => {
+      const failingProcess = new EventEmitter() as unknown as ChildProcess & {
+        exitCode: number | null;
+        killed: boolean;
+        kill(signal?: string): boolean;
+        stdout: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
+        stderr: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
+      };
+
+      const stubOutput = new EventEmitter() as NodeJS.ReadableStream & {
+        setEncoding?: (encoding: string) => void;
+      };
+      stubOutput.setEncoding = () => {};
+      const stubError = new EventEmitter() as NodeJS.ReadableStream & {
+        setEncoding?: (encoding: string) => void;
+      };
+      stubError.setEncoding = () => {};
+
+      failingProcess.stdout = stubOutput;
+      failingProcess.stderr = stubError;
+      failingProcess.exitCode = null;
+      failingProcess.killed = false;
+      failingProcess.kill = () => {
+        failingProcess.killed = true;
+        failingProcess.exitCode = 0;
+        failingProcess.emit('close', 0, null);
+        return true;
+      };
+
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        process: failingProcess,
+      });
+
+      let createdLogPath = '';
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        mkdir: async () => {},
+        writeFile: async (path: string, content: string) => {
+          createdLogPath = path;
+          writeFileCalls.push({ path, content });
+        },
+      });
+
+      const resultPromise = start_device_log_capLogic(
+        {
+          deviceId: '00008110-001A2C3D4E5F',
+          bundleId: 'com.invalid.App',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+      );
+
+      setTimeout(() => {
+        stubError.emit(
+          'data',
+          'ERROR: The application failed to launch. (com.apple.dt.CoreDeviceError error 10002)\nNSLocalizedRecoverySuggestion = Provide a valid bundle identifier.\n',
+        );
+        failingProcess.exitCode = 70;
+        failingProcess.emit('close', 70, null);
+      }, 10);
+
+      const result = await resultPromise;
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Provide a valid bundle identifier');
+      expect(activeDeviceLogSessions.size).toBe(0);
+      expect(createdLogPath).not.toBe('');
+    });
+
+    it('should surface JSON-reported failures when launch cannot start', async () => {
+      const jsonFailure = {
+        error: {
+          domain: 'com.apple.dt.CoreDeviceError',
+          code: 10002,
+          localizedDescription: 'The application failed to launch.',
+          userInfo: {
+            NSLocalizedRecoverySuggestion: 'Provide a valid bundle identifier.',
+            NSLocalizedFailureReason: 'The requested application com.invalid.App is not installed.',
+            BundleIdentifier: 'com.invalid.App',
+          },
+        },
+      };
+
+      const failingProcess = new EventEmitter() as unknown as ChildProcess & {
+        exitCode: number | null;
+        killed: boolean;
+        kill(signal?: string): boolean;
+        stdout: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
+        stderr: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
+      };
+
+      const stubOutput = new EventEmitter() as NodeJS.ReadableStream & {
+        setEncoding?: (encoding: string) => void;
+      };
+      stubOutput.setEncoding = () => {};
+      const stubError = new EventEmitter() as NodeJS.ReadableStream & {
+        setEncoding?: (encoding: string) => void;
+      };
+      stubError.setEncoding = () => {};
+
+      failingProcess.stdout = stubOutput;
+      failingProcess.stderr = stubError;
+      failingProcess.exitCode = null;
+      failingProcess.killed = false;
+      failingProcess.kill = () => {
+        failingProcess.killed = true;
+        return true;
+      };
+
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        process: failingProcess,
+      });
+
+      let jsonPathSeen = '';
+      let removedJsonPath = '';
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        mkdir: async () => {},
+        writeFile: async () => {},
+        existsSync: (filePath: string): boolean => {
+          if (filePath.includes('devicectl-launch-')) {
+            jsonPathSeen = filePath;
+            return true;
+          }
+          return false;
+        },
+        readFile: async (filePath: string): Promise<string> => {
+          if (filePath.includes('devicectl-launch-')) {
+            jsonPathSeen = filePath;
+            return JSON.stringify(jsonFailure);
+          }
+          return '';
+        },
+        rm: async (filePath: string) => {
+          if (filePath.includes('devicectl-launch-')) {
+            removedJsonPath = filePath;
+          }
+        },
+      });
+
+      setTimeout(() => {
+        failingProcess.exitCode = 0;
+        failingProcess.emit('close', 0, null);
+      }, 5);
+
+      const result = await start_device_log_capLogic(
+        {
+          deviceId: '00008110-001A2C3D4E5F',
+          bundleId: 'com.invalid.App',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Provide a valid bundle identifier');
+      expect(jsonPathSeen).not.toBe('');
+      expect(removedJsonPath).toBe(jsonPathSeen);
+      expect(activeDeviceLogSessions.size).toBe(0);
+      expect(failingProcess.killed).toBe(true);
+    });
+
+    it('should treat JSON success payload as confirmation of launch', async () => {
+      const jsonSuccess = {
+        result: {
+          process: {
+            processIdentifier: 4321,
+          },
+        },
+      };
+
+      const runningProcess = new EventEmitter() as unknown as ChildProcess & {
+        exitCode: number | null;
+        killed: boolean;
+        kill(signal?: string): boolean;
+        stdout: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
+        stderr: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
+      };
+
+      const stubOutput = new EventEmitter() as NodeJS.ReadableStream & {
+        setEncoding?: (encoding: string) => void;
+      };
+      stubOutput.setEncoding = () => {};
+      const stubError = new EventEmitter() as NodeJS.ReadableStream & {
+        setEncoding?: (encoding: string) => void;
+      };
+      stubError.setEncoding = () => {};
+
+      runningProcess.stdout = stubOutput;
+      runningProcess.stderr = stubError;
+      runningProcess.exitCode = null;
+      runningProcess.killed = false;
+      runningProcess.kill = () => {
+        runningProcess.killed = true;
+        runningProcess.emit('close', 0, null);
+        return true;
+      };
+
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: '',
+        process: runningProcess,
+      });
+
+      let jsonPathSeen = '';
+      let removedJsonPath = '';
+      let jsonRemoved = false;
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        mkdir: async () => {},
+        writeFile: async () => {},
+        existsSync: (filePath: string): boolean => {
+          if (filePath.includes('devicectl-launch-')) {
+            jsonPathSeen = filePath;
+            return !jsonRemoved;
+          }
+          return false;
+        },
+        readFile: async (filePath: string): Promise<string> => {
+          if (filePath.includes('devicectl-launch-')) {
+            jsonPathSeen = filePath;
+            return JSON.stringify(jsonSuccess);
+          }
+          return '';
+        },
+        rm: async (filePath: string) => {
+          if (filePath.includes('devicectl-launch-')) {
+            jsonRemoved = true;
+            removedJsonPath = filePath;
+          }
+        },
+      });
+
+      setTimeout(() => {
+        runningProcess.emit('close', 0, null);
+      }, 5);
+
+      const result = await start_device_log_capLogic(
+        {
+          deviceId: '00008110-001A2C3D4E5F',
+          bundleId: 'com.example.MyApp',
+        },
+        mockExecutor,
+        mockFileSystemExecutor,
+      );
+
+      expect(result.content[0].text).toContain('Device log capture started successfully');
+      expect(result.isError ?? false).toBe(false);
+      expect(jsonPathSeen).not.toBe('');
+      expect(removedJsonPath).toBe(jsonPathSeen);
+      expect(activeDeviceLogSessions.size).toBe(1);
     });
 
     it('should handle directory creation failure', async () => {
