@@ -4,11 +4,8 @@ import { log } from '../../../utils/logging/index.ts';
 import { startLogCapture } from '../../../utils/log-capture/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
-/**
- * Log capture function type for dependency injection
- */
 export type LogCaptureFunction = (
   params: {
     simulatorUuid: string;
@@ -18,34 +15,30 @@ export type LogCaptureFunction = (
   executor: CommandExecutor,
 ) => Promise<{ sessionId: string; logFilePath: string; processes: unknown[]; error?: string }>;
 
-// Define schema as ZodObject
-const launchAppLogsSimSchema = z.object({
-  simulatorUuid: z
-    .string()
-    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+const launchAppLogsSimSchemaObject = z.object({
+  simulatorId: z.string().describe('UUID of the simulator to target'),
   bundleId: z
     .string()
     .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
   args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
 });
 
-// Use z.infer for type safety
-type LaunchAppLogsSimParams = z.infer<typeof launchAppLogsSimSchema>;
+type LaunchAppLogsSimParams = z.infer<typeof launchAppLogsSimSchemaObject>;
 
-/**
- * Business logic for launching app with logs in simulator
- */
+const publicSchemaObject = launchAppLogsSimSchemaObject.omit({
+  simulatorId: true,
+} as const);
+
 export async function launch_app_logs_simLogic(
   params: LaunchAppLogsSimParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
   logCaptureFunction: LogCaptureFunction = startLogCapture,
 ): Promise<ToolResponse> {
-  log('info', `Starting app launch with logs for simulator ${params.simulatorUuid}`);
+  log('info', `Starting app launch with logs for simulator ${params.simulatorId}`);
 
-  // Start log capture session
   const { sessionId, error } = await logCaptureFunction(
     {
-      simulatorUuid: params.simulatorUuid,
+      simulatorUuid: params.simulatorId,
       bundleId: params.bundleId,
       captureConsole: true,
     },
@@ -61,7 +54,7 @@ export async function launch_app_logs_simLogic(
   return {
     content: [
       createTextContent(
-        `App launched successfully in simulator ${params.simulatorUuid} with log capture enabled.\n\nLog capture session ID: ${sessionId}\n\nNext Steps:\n1. Interact with your app in the simulator.\n2. Use 'stop_and_get_simulator_log({ logSessionId: "${sessionId}" })' to stop capture and retrieve logs.`,
+        `App launched successfully in simulator ${params.simulatorId} with log capture enabled.\n\nLog capture session ID: ${sessionId}\n\nNext Steps:\n1. Interact with your app in the simulator.\n2. Use 'stop_and_get_simulator_log({ logSessionId: "${sessionId}" })' to stop capture and retrieve logs.`,
       ),
     ],
     isError: false,
@@ -71,10 +64,11 @@ export async function launch_app_logs_simLogic(
 export default {
   name: 'launch_app_logs_sim',
   description: 'Launches an app in an iOS simulator and captures its logs.',
-  schema: launchAppLogsSimSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    launchAppLogsSimSchema,
-    launch_app_logs_simLogic,
-    getDefaultCommandExecutor,
-  ),
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<LaunchAppLogsSimParams>({
+    internalSchema: launchAppLogsSimSchemaObject,
+    logicFunction: launch_app_logs_simLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };

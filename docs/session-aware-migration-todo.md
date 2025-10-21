@@ -33,12 +33,12 @@ Reference: `docs/session_management_plan.md`
 - [x] `src/mcp/tools/simulator/get_sim_app_path.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `simulatorId`, `simulatorName`, `configuration`, `useLatestOS`, `arch`.
 
 ## Simulator Runtime Actions
-- [ ] `src/mcp/tools/simulator/boot_sim.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/simulator/install_app_sim.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/simulator/launch_app_sim.ts` — session defaults: `simulatorId`, `simulatorName` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/simulator/launch_app_logs_sim.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/simulator/stop_app_sim.ts` — session defaults: `simulatorId`, `simulatorName` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/simulator/record_sim_video.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/simulator/boot_sim.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/simulator/install_app_sim.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/simulator/launch_app_sim.ts` — session defaults: `simulatorId`, `simulatorName` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/simulator/launch_app_logs_sim.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/simulator/stop_app_sim.ts` — session defaults: `simulatorId`, `simulatorName` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/simulator/record_sim_video.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
 
 ## Simulator Management
 - [ ] `src/mcp/tools/simulator-management/erase_sims.ts` — session defaults: `simulatorId` (covers `simulatorUdid`).

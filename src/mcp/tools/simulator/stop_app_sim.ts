@@ -4,62 +4,44 @@ import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
-// Unified schema: XOR between simulatorUuid and simulatorName
-const baseOptions = {
-  simulatorUuid: z
+const baseSchemaObject = z.object({
+  simulatorId: z
     .string()
     .optional()
     .describe(
-      'UUID of the simulator (obtained from list_simulators). Provide EITHER this OR simulatorName, not both',
+      'UUID of the simulator to use (obtained from list_sims). Provide EITHER this OR simulatorName, not both',
     ),
   simulatorName: z
     .string()
     .optional()
     .describe(
-      "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorUuid, not both",
+      "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
     ),
   bundleId: z.string().describe("Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"),
-};
+});
 
-const baseSchemaObject = z.object(baseOptions);
+const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
 
-const stopAppSimSchema = baseSchemaObject
-  .transform(nullifyEmptyStrings)
-  .refine(
-    (val) =>
-      (val as StopAppSimParams).simulatorUuid !== undefined ||
-      (val as StopAppSimParams).simulatorName !== undefined,
-    {
-      message: 'Either simulatorUuid or simulatorName is required.',
-    },
-  )
-  .refine(
-    (val) =>
-      !(
-        (val as StopAppSimParams).simulatorUuid !== undefined &&
-        (val as StopAppSimParams).simulatorName !== undefined
-      ),
-    {
-      message: 'simulatorUuid and simulatorName are mutually exclusive. Provide only one.',
-    },
-  );
+const stopAppSimSchema = baseSchema
+  .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
+    message: 'Either simulatorId or simulatorName is required.',
+  })
+  .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
+    message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
+  });
 
-export type StopAppSimParams = {
-  simulatorUuid?: string;
-  simulatorName?: string;
-  bundleId: string;
-};
+export type StopAppSimParams = z.infer<typeof stopAppSimSchema>;
 
 export async function stop_app_simLogic(
   params: StopAppSimParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  let simulatorUuid = params.simulatorUuid;
-  let simulatorDisplayName = simulatorUuid ?? '';
+  let simulatorId = params.simulatorId;
+  let simulatorDisplayName = simulatorId ?? '';
 
-  // If simulatorName is provided, look it up
-  if (params.simulatorName && !simulatorUuid) {
+  if (params.simulatorName && !simulatorId) {
     log('info', `Looking up simulator by name: ${params.simulatorName}`);
 
     const simulatorListResult = await executor(
@@ -78,15 +60,14 @@ export async function stop_app_simLogic(
         isError: true,
       };
     }
+
     const simulatorsData = JSON.parse(simulatorListResult.output) as {
-      devices: Record<string, unknown[]>;
+      devices: Record<string, Array<{ udid: string; name: string }>>;
     };
 
     let foundSimulator: { udid: string; name: string } | null = null;
-
-    // Find the target simulator by name
     for (const runtime in simulatorsData.devices) {
-      const devices = simulatorsData.devices[runtime] as Array<{ udid: string; name: string }>;
+      const devices = simulatorsData.devices[runtime];
       const simulator = devices.find((device) => device.name === params.simulatorName);
       if (simulator) {
         foundSimulator = simulator;
@@ -106,26 +87,26 @@ export async function stop_app_simLogic(
       };
     }
 
-    simulatorUuid = foundSimulator.udid;
+    simulatorId = foundSimulator.udid;
     simulatorDisplayName = `"${params.simulatorName}" (${foundSimulator.udid})`;
   }
 
-  if (!simulatorUuid) {
+  if (!simulatorId) {
     return {
       content: [
         {
           type: 'text',
-          text: 'No simulator UUID or name provided',
+          text: 'No simulator identifier provided',
         },
       ],
       isError: true,
     };
   }
 
-  log('info', `Stopping app ${params.bundleId} in simulator ${simulatorUuid}`);
+  log('info', `Stopping app ${params.bundleId} in simulator ${simulatorId}`);
 
   try {
-    const command = ['xcrun', 'simctl', 'terminate', simulatorUuid, params.bundleId];
+    const command = ['xcrun', 'simctl', 'terminate', simulatorId, params.bundleId];
     const result = await executor(command, 'Stop App in Simulator', true, undefined);
 
     if (!result.success) {
@@ -144,7 +125,9 @@ export async function stop_app_simLogic(
       content: [
         {
           type: 'text',
-          text: `✅ App ${params.bundleId} stopped successfully in simulator ${simulatorDisplayName || simulatorUuid}`,
+          text: `✅ App ${params.bundleId} stopped successfully in simulator ${
+            simulatorDisplayName || simulatorId
+          }`,
         },
       ],
     };
@@ -163,47 +146,22 @@ export async function stop_app_simLogic(
   }
 }
 
+const publicSchemaObject = baseSchemaObject.omit({
+  simulatorId: true,
+  simulatorName: true,
+} as const);
+
 export default {
   name: 'stop_app_sim',
-  description:
-    'Stops an app running in an iOS simulator by UUID or name. IMPORTANT: Provide either simulatorUuid OR simulatorName, plus bundleId. Example: stop_app_sim({ simulatorUuid: "UUID", bundleId: "com.example.MyApp" }) or stop_app_sim({ simulatorName: "iPhone 16", bundleId: "com.example.MyApp" })',
-  schema: baseSchemaObject.shape, // MCP SDK compatibility
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    try {
-      // Runtime validation with XOR constraints
-      const validatedParams = stopAppSimSchema.parse(args);
-      return await stop_app_simLogic(
-        validatedParams as StopAppSimParams,
-        getDefaultCommandExecutor(),
-      );
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        // Format validation errors in a user-friendly way
-        const errorMessages = error.errors.map((e) => {
-          return `${e.path.join('.')}: ${e.message}`;
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Parameter validation failed:\n${errorMessages.join('\n')}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      log('error', `Error in stop_app_sim handler: ${errorMessage}`);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Stop app operation failed: ${errorMessage}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-  },
+  description: 'Stops an app running in an iOS simulator.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<StopAppSimParams>({
+    internalSchema: stopAppSimSchema as unknown as z.ZodType<StopAppSimParams>,
+    logicFunction: stop_app_simLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+    ],
+    exclusivePairs: [['simulatorId', 'simulatorName']],
+  }),
 };

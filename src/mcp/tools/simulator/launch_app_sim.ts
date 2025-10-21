@@ -4,66 +4,47 @@ import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
-// Unified schema: XOR between simulatorUuid and simulatorName
-const baseOptions = {
-  simulatorUuid: z
+const baseSchemaObject = z.object({
+  simulatorId: z
     .string()
     .optional()
     .describe(
-      'UUID of the simulator to use (obtained from list_simulators). Provide EITHER this OR simulatorName, not both',
+      'UUID of the simulator to use (obtained from list_sims). Provide EITHER this OR simulatorName, not both',
     ),
   simulatorName: z
     .string()
     .optional()
     .describe(
-      "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorUuid, not both",
+      "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
     ),
   bundleId: z
     .string()
     .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
   args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
-};
+});
 
-const baseSchemaObject = z.object(baseOptions);
+const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
 
-const launchAppSimSchema = baseSchemaObject
-  .transform(nullifyEmptyStrings)
-  .refine(
-    (val) =>
-      (val as LaunchAppSimParams).simulatorUuid !== undefined ||
-      (val as LaunchAppSimParams).simulatorName !== undefined,
-    {
-      message: 'Either simulatorUuid or simulatorName is required.',
-    },
-  )
-  .refine(
-    (val) =>
-      !(
-        (val as LaunchAppSimParams).simulatorUuid !== undefined &&
-        (val as LaunchAppSimParams).simulatorName !== undefined
-      ),
-    {
-      message: 'simulatorUuid and simulatorName are mutually exclusive. Provide only one.',
-    },
-  );
+const launchAppSimSchema = baseSchema
+  .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
+    message: 'Either simulatorId or simulatorName is required.',
+  })
+  .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
+    message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
+  });
 
-export type LaunchAppSimParams = {
-  simulatorUuid?: string;
-  simulatorName?: string;
-  bundleId: string;
-  args?: string[];
-};
+export type LaunchAppSimParams = z.infer<typeof launchAppSimSchema>;
 
 export async function launch_app_simLogic(
   params: LaunchAppSimParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  let simulatorUuid = params.simulatorUuid;
-  let simulatorDisplayName = simulatorUuid ?? '';
+  let simulatorId = params.simulatorId;
+  let simulatorDisplayName = simulatorId ?? '';
 
-  // If simulatorName is provided, look it up
-  if (params.simulatorName && !simulatorUuid) {
+  if (params.simulatorName && !simulatorId) {
     log('info', `Looking up simulator by name: ${params.simulatorName}`);
 
     const simulatorListResult = await executor(
@@ -82,15 +63,14 @@ export async function launch_app_simLogic(
         isError: true,
       };
     }
+
     const simulatorsData = JSON.parse(simulatorListResult.output) as {
-      devices: Record<string, unknown[]>;
+      devices: Record<string, Array<{ udid: string; name: string }>>;
     };
 
     let foundSimulator: { udid: string; name: string } | null = null;
-
-    // Find the target simulator by name
     for (const runtime in simulatorsData.devices) {
-      const devices = simulatorsData.devices[runtime] as Array<{ udid: string; name: string }>;
+      const devices = simulatorsData.devices[runtime];
       const simulator = devices.find((device) => device.name === params.simulatorName);
       if (simulator) {
         foundSimulator = simulator;
@@ -110,31 +90,30 @@ export async function launch_app_simLogic(
       };
     }
 
-    simulatorUuid = foundSimulator.udid;
+    simulatorId = foundSimulator.udid;
     simulatorDisplayName = `"${params.simulatorName}" (${foundSimulator.udid})`;
   }
 
-  if (!simulatorUuid) {
+  if (!simulatorId) {
     return {
       content: [
         {
           type: 'text',
-          text: 'No simulator UUID or name provided',
+          text: 'No simulator identifier provided',
         },
       ],
       isError: true,
     };
   }
 
-  log('info', `Starting xcrun simctl launch request for simulator ${simulatorUuid}`);
+  log('info', `Starting xcrun simctl launch request for simulator ${simulatorId}`);
 
-  // Check if the app is installed in the simulator
   try {
     const getAppContainerCmd = [
       'xcrun',
       'simctl',
       'get_app_container',
-      simulatorUuid,
+      simulatorId,
       params.bundleId,
       'app',
     ];
@@ -149,7 +128,7 @@ export async function launch_app_simLogic(
         content: [
           {
             type: 'text',
-            text: `App is not installed on the simulator. Please use install_app_in_simulator before launching.\n\nWorkflow: build → install → launch.`,
+            text: `App is not installed on the simulator. Please use install_app_sim before launching.\n\nWorkflow: build → install → launch.`,
           },
         ],
         isError: true,
@@ -160,7 +139,7 @@ export async function launch_app_simLogic(
       content: [
         {
           type: 'text',
-          text: `App is not installed on the simulator (check failed). Please use install_app_in_simulator before launching.\n\nWorkflow: build → install → launch.`,
+          text: `App is not installed on the simulator (check failed). Please use install_app_sim before launching.\n\nWorkflow: build → install → launch.`,
         },
       ],
       isError: true,
@@ -168,8 +147,7 @@ export async function launch_app_simLogic(
   }
 
   try {
-    const command = ['xcrun', 'simctl', 'launch', simulatorUuid, params.bundleId];
-
+    const command = ['xcrun', 'simctl', 'launch', simulatorId, params.bundleId];
     if (params.args && params.args.length > 0) {
       command.push(...params.args);
     }
@@ -187,15 +165,18 @@ export async function launch_app_simLogic(
       };
     }
 
-    // Use the same parameter style that the user provided for consistency
-    const userParamName = params.simulatorUuid ? 'simulatorUuid' : 'simulatorName';
-    const userParamValue = params.simulatorUuid ?? params.simulatorName;
+    const userParamName = params.simulatorId
+      ? 'simulatorId'
+      : params.simulatorName
+        ? 'simulatorName'
+        : 'simulatorId';
+    const userParamValue = params.simulatorId ?? params.simulatorName ?? simulatorId;
 
     return {
       content: [
         {
           type: 'text',
-          text: `✅ App launched successfully in simulator ${simulatorDisplayName ?? simulatorUuid}.
+          text: `✅ App launched successfully in simulator ${simulatorDisplayName || simulatorId}.
 
 Next Steps:
 1. To see simulator: open_sim()
@@ -219,47 +200,22 @@ Next Steps:
   }
 }
 
+const publicSchemaObject = baseSchemaObject.omit({
+  simulatorId: true,
+  simulatorName: true,
+} as const);
+
 export default {
   name: 'launch_app_sim',
-  description:
-    "Launches an app in an iOS simulator by UUID or name. If simulator window isn't visible, use open_sim() first. IMPORTANT: Provide either simulatorUuid OR simulatorName, plus bundleId. Note: You must install the app in the simulator before launching. The typical workflow is: build → install → launch. Example: launch_app_sim({ simulatorUuid: 'YOUR_UUID_HERE', bundleId: 'com.example.MyApp' }) or launch_app_sim({ simulatorName: 'iPhone 16', bundleId: 'com.example.MyApp' })",
-  schema: baseSchemaObject.shape, // MCP SDK compatibility
-  handler: async (args: Record<string, unknown>): Promise<ToolResponse> => {
-    try {
-      // Runtime validation with XOR constraints
-      const validatedParams = launchAppSimSchema.parse(args);
-      return await launch_app_simLogic(
-        validatedParams as LaunchAppSimParams,
-        getDefaultCommandExecutor(),
-      );
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        // Format validation errors in a user-friendly way
-        const errorMessages = error.errors.map((e) => {
-          return `${e.path.join('.')}: ${e.message}`;
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `Parameter validation failed:\n${errorMessages.join('\n')}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      log('error', `Error in launch_app_sim handler: ${errorMessage}`);
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Launch app operation failed: ${errorMessage}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-  },
+  description: 'Launches an app in an iOS simulator.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<LaunchAppSimParams>({
+    internalSchema: launchAppSimSchema as unknown as z.ZodType<LaunchAppSimParams>,
+    logicFunction: launch_app_simLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+    ],
+    exclusivePairs: [['simulatorId', 'simulatorName']],
+  }),
 };

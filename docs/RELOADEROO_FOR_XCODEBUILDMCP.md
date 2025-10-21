@@ -60,7 +60,7 @@ npx reloaderoo@latest --help
 
 - **`boot_sim`**: Boots a simulator.
   ```bash
-  npx reloaderoo@latest inspect call-tool boot_sim --params '{"simulatorUuid": "SIMULATOR_UUID"}' -- node build/index.js
+  npx reloaderoo@latest inspect call-tool boot_sim --params '{"simulatorId": "SIMULATOR_UUID"}' -- node build/index.js
   ```
 - **`build_run_sim`**: Builds and runs an app on a simulator.
   ```bash
@@ -76,11 +76,11 @@ npx reloaderoo@latest --help
   ```
 - **`install_app_sim`**: Installs an app on a simulator.
   ```bash
-  npx reloaderoo@latest inspect call-tool install_app_sim --params '{"simulatorUuid": "SIMULATOR_UUID", "appPath": "/path/to/MyApp.app"}' -- node build/index.js
+  npx reloaderoo@latest inspect call-tool install_app_sim --params '{"simulatorId": "SIMULATOR_UUID", "appPath": "/path/to/MyApp.app"}' -- node build/index.js
   ```
 - **`launch_app_logs_sim`**: Launches an app on a simulator with log capture.
   ```bash
-  npx reloaderoo@latest inspect call-tool launch_app_logs_sim --params '{"simulatorUuid": "SIMULATOR_UUID", "bundleId": "com.example.MyApp"}' -- node build/index.js
+  npx reloaderoo@latest inspect call-tool launch_app_logs_sim --params '{"simulatorId": "SIMULATOR_UUID", "bundleId": "com.example.MyApp"}' -- node build/index.js
   ```
 - **`launch_app_sim`**: Launches an app on a simulator.
   ```bash

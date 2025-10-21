@@ -1,7 +1,6 @@
 /**
- * Tests for launch_app_logs_sim plugin
- * Following CLAUDE.md testing standards with literal validation
- * Using dependency injection for deterministic testing
+ * Tests for launch_app_logs_sim plugin (session-aware version)
+ * Follows CLAUDE.md guidance with literal validation and DI.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -11,76 +10,63 @@ import launchAppLogsSim, {
   LogCaptureFunction,
 } from '../launch_app_logs_sim.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('launch_app_logs_sim tool', () => {
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(launchAppLogsSim.name).toBe('launch_app_logs_sim');
-    });
+  beforeEach(() => {
+    sessionStore.clear();
+  });
 
-    it('should have correct description', () => {
+  describe('Export Field Validation (Literal)', () => {
+    it('should expose correct metadata', () => {
+      expect(launchAppLogsSim.name).toBe('launch_app_logs_sim');
       expect(launchAppLogsSim.description).toBe(
         'Launches an app in an iOS simulator and captures its logs.',
       );
     });
 
-    it('should have handler function', () => {
-      expect(typeof launchAppLogsSim.handler).toBe('function');
-    });
-
-    it('should have correct schema with required fields', () => {
+    it('should expose only non-session fields in public schema', () => {
       const schema = z.object(launchAppLogsSim.schema);
 
-      // Valid inputs
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'abc123',
-          bundleId: 'com.example.app',
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
+      expect(schema.safeParse({ bundleId: 'com.example.app', args: ['--debug'] }).success).toBe(
+        true,
+      );
+      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({ bundleId: 42 }).success).toBe(false);
 
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'abc123',
-          bundleId: 'com.example.app',
-          args: ['--debug', '--verbose'],
-        }).success,
-      ).toBe(true);
-
-      // Invalid inputs
-      expect(
-        schema.safeParse({
-          simulatorUuid: 123,
-          bundleId: 'com.example.app',
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'abc123',
-          bundleId: 123,
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          bundleId: 'com.example.app',
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'abc123',
-        }).success,
-      ).toBe(false);
+      expect(Object.keys(launchAppLogsSim.schema).sort()).toEqual(['args', 'bundleId'].sort());
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
+  describe('Handler Requirements', () => {
+    it('should require simulatorId when not provided', async () => {
+      const result = await launchAppLogsSim.handler({ bundleId: 'com.example.testapp' });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('simulatorId is required');
+      expect(result.content[0].text).toContain('session-set-defaults');
+    });
+
+    it('should validate bundleId when simulatorId default exists', async () => {
+      sessionStore.setDefaults({ simulatorId: 'SIM-UUID' });
+
+      const result = await launchAppLogsSim.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('bundleId: Required');
+      expect(result.content[0].text).toContain(
+        'Tip: set session defaults via session-set-defaults',
+      );
+    });
+  });
+
+  describe('Logic Behavior (Literal Returns)', () => {
     it('should handle successful app launch with log capture', async () => {
-      // Create pure mock function without vitest mocking
-      let capturedParams: any = null;
-      const logCaptureStub: LogCaptureFunction = async (params: any, executor: any) => {
+      let capturedParams: unknown = null;
+      const logCaptureStub: LogCaptureFunction = async (params) => {
         capturedParams = params;
         return {
           sessionId: 'test-session-123',
@@ -94,7 +80,7 @@ describe('launch_app_logs_sim tool', () => {
 
       const result = await launch_app_logs_simLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           bundleId: 'com.example.testapp',
         },
         mockExecutor,
@@ -118,10 +104,9 @@ describe('launch_app_logs_sim tool', () => {
       });
     });
 
-    it('should handle app launch with additional arguments', async () => {
-      // Create pure mock function for this test case
-      let capturedParams: any = null;
-      const logCaptureStub: LogCaptureFunction = async (params: any, executor: any) => {
+    it('should ignore args for log capture setup', async () => {
+      let capturedParams: unknown = null;
+      const logCaptureStub: LogCaptureFunction = async (params) => {
         capturedParams = params;
         return {
           sessionId: 'test-session-456',
@@ -133,11 +118,11 @@ describe('launch_app_logs_sim tool', () => {
 
       const mockExecutor = createMockExecutor({ success: true, output: '' });
 
-      const result = await launch_app_logs_simLogic(
+      await launch_app_logs_simLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           bundleId: 'com.example.testapp',
-          args: ['--debug', '--verbose'],
+          args: ['--debug'],
         },
         mockExecutor,
         logCaptureStub,
@@ -150,21 +135,19 @@ describe('launch_app_logs_sim tool', () => {
       });
     });
 
-    it('should handle log capture failure', async () => {
-      const logCaptureStub: LogCaptureFunction = async (params: any, executor: any) => {
-        return {
-          sessionId: '',
-          logFilePath: '',
-          processes: [],
-          error: 'Failed to start log capture',
-        };
-      };
+    it('should surface log capture failure', async () => {
+      const logCaptureStub: LogCaptureFunction = async () => ({
+        sessionId: '',
+        logFilePath: '',
+        processes: [],
+        error: 'Failed to start log capture',
+      });
 
       const mockExecutor = createMockExecutor({ success: true, output: '' });
 
       const result = await launch_app_logs_simLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           bundleId: 'com.example.testapp',
         },
         mockExecutor,
@@ -179,102 +162,6 @@ describe('launch_app_logs_sim tool', () => {
           },
         ],
         isError: true,
-      });
-    });
-
-    it('should handle validation failure for simulatorUuid via handler', async () => {
-      const result = await launchAppLogsSim.handler({
-        simulatorUuid: undefined,
-        bundleId: 'com.example.testapp',
-      });
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle validation failure for bundleId via handler', async () => {
-      const result = await launchAppLogsSim.handler({
-        simulatorUuid: 'test-uuid-123',
-        bundleId: undefined,
-      });
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nbundleId: Required',
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should pass correct parameters to startLogCapture', async () => {
-      let capturedParams: any = null;
-      const logCaptureStub: LogCaptureFunction = async (params: any, executor: any) => {
-        capturedParams = params;
-        return {
-          sessionId: 'test-session-789',
-          logFilePath: '/tmp/xcodemcp_sim_log_test-session-789.log',
-          processes: [],
-          error: undefined,
-        };
-      };
-
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
-
-      await launch_app_logs_simLogic(
-        {
-          simulatorUuid: 'uuid-456',
-          bundleId: 'com.test.myapp',
-        },
-        mockExecutor,
-        logCaptureStub,
-      );
-
-      expect(capturedParams).toEqual({
-        simulatorUuid: 'uuid-456',
-        bundleId: 'com.test.myapp',
-        captureConsole: true,
-      });
-    });
-
-    it('should include session ID and next steps in success message', async () => {
-      const logCaptureStub: LogCaptureFunction = async (params: any, executor: any) => {
-        return {
-          sessionId: 'session-abc-def',
-          logFilePath: '/tmp/xcodemcp_sim_log_session-abc-def.log',
-          processes: [],
-          error: undefined,
-        };
-      };
-
-      const mockExecutor = createMockExecutor({ success: true, output: '' });
-
-      const result = await launch_app_logs_simLogic(
-        {
-          simulatorUuid: 'test-uuid-789',
-          bundleId: 'com.example.testapp',
-        },
-        mockExecutor,
-        logCaptureStub,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: `App launched successfully in simulator test-uuid-789 with log capture enabled.\n\nLog capture session ID: session-abc-def\n\nNext Steps:\n1. Interact with your app in the simulator.\n2. Use 'stop_and_get_simulator_log({ logSessionId: "session-abc-def" })' to stop capture and retrieve logs.`,
-          },
-        ],
-        isError: false,
       });
     });
   });

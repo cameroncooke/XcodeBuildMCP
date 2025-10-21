@@ -1,57 +1,54 @@
 /**
- * Tests for boot_sim plugin
- * Following CLAUDE.md testing standards with literal validation
- * Using dependency injection for deterministic testing
+ * Tests for boot_sim plugin (session-aware version)
+ * Follows CLAUDE.md guidance: dependency injection, no vi-mocks, literal validation.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
-import {
-  createMockExecutor,
-  createMockFileSystemExecutor,
-  createNoopExecutor,
-} from '../../../../test-utils/mock-executors.ts';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 import bootSim, { boot_simLogic } from '../boot_sim.ts';
 
 describe('boot_sim tool', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(bootSim.name).toBe('boot_sim');
     });
 
-    it('should have correct description', () => {
-      expect(bootSim.description).toBe(
-        "Boots an iOS simulator. After booting, use open_sim() to make the simulator visible. IMPORTANT: You MUST provide the simulatorUuid parameter. Example: boot_sim({ simulatorUuid: 'YOUR_UUID_HERE' })",
-      );
+    it('should have concise description', () => {
+      expect(bootSim.description).toBe('Boots an iOS simulator.');
     });
 
-    it('should have handler function', () => {
-      expect(typeof bootSim.handler).toBe('function');
-    });
-
-    it('should have correct schema with simulatorUuid string field', () => {
+    it('should expose empty public schema', () => {
       const schema = z.object(bootSim.schema);
-
-      // Valid inputs
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid-123' }).success).toBe(true);
-      expect(schema.safeParse({ simulatorUuid: 'ABC123-DEF456' }).success).toBe(true);
-
-      // Invalid inputs
-      expect(schema.safeParse({ simulatorUuid: 123 }).success).toBe(false);
-      expect(schema.safeParse({ simulatorUuid: null }).success).toBe(false);
-      expect(schema.safeParse({ simulatorUuid: undefined }).success).toBe(false);
-      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({}).success).toBe(true);
+      expect(Object.keys(bootSim.schema)).toHaveLength(0);
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
+  describe('Handler Requirements', () => {
+    it('should require simulatorId when not provided', async () => {
+      const result = await bootSim.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('simulatorId is required');
+      expect(result.content[0].text).toContain('session-set-defaults');
+    });
+  });
+
+  describe('Logic Behavior (Literal Results)', () => {
     it('should handle successful boot', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
         output: 'Simulator booted successfully',
       });
 
-      const result = await boot_simLogic({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
+      const result = await boot_simLogic({ simulatorId: 'test-uuid-123' }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -61,24 +58,10 @@ describe('boot_sim tool', () => {
 
 Next steps:
 1. Open the Simulator app (makes it visible): open_sim()
-2. Install an app: install_app_sim({ simulatorUuid: "test-uuid-123", appPath: "PATH_TO_YOUR_APP" })
-3. Launch an app: launch_app_sim({ simulatorUuid: "test-uuid-123", bundleId: "YOUR_APP_BUNDLE_ID" })`,
+2. Install an app: install_app_sim({ simulatorId: "test-uuid-123", appPath: "PATH_TO_YOUR_APP" })
+3. Launch an app: launch_app_sim({ simulatorId: "test-uuid-123", bundleId: "YOUR_APP_BUNDLE_ID" })`,
           },
         ],
-      });
-    });
-
-    it('should handle validation failure via handler', async () => {
-      const result = await bootSim.handler({ simulatorUuid: undefined });
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
-          },
-        ],
-        isError: true,
       });
     });
 
@@ -88,7 +71,7 @@ Next steps:
         error: 'Simulator not found',
       });
 
-      const result = await boot_simLogic({ simulatorUuid: 'invalid-uuid' }, mockExecutor);
+      const result = await boot_simLogic({ simulatorId: 'invalid-uuid' }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -105,7 +88,7 @@ Next steps:
         throw new Error('Connection failed');
       };
 
-      const result = await boot_simLogic({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
+      const result = await boot_simLogic({ simulatorId: 'test-uuid-123' }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -122,7 +105,7 @@ Next steps:
         throw 'String error';
       };
 
-      const result = await boot_simLogic({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
+      const result = await boot_simLogic({ simulatorId: 'test-uuid-123' }, mockExecutor);
 
       expect(result).toEqual({
         content: [
@@ -135,7 +118,12 @@ Next steps:
     });
 
     it('should verify command generation with mock executor', async () => {
-      const calls: any[] = [];
+      const calls: Array<{
+        command: string[];
+        description: string;
+        allowStderr: boolean;
+        timeout?: number;
+      }> = [];
       const mockExecutor = async (
         command: string[],
         description: string,
@@ -151,7 +139,7 @@ Next steps:
         };
       };
 
-      await boot_simLogic({ simulatorUuid: 'test-uuid-123' }, mockExecutor);
+      await boot_simLogic({ simulatorId: 'test-uuid-123' }, mockExecutor);
 
       expect(calls).toHaveLength(1);
       expect(calls[0]).toEqual({

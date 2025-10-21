@@ -1,12 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { z } from 'zod';
 
 // Import the tool and logic
 import tool, { record_sim_videoLogic } from '../record_sim_video.ts';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 
 const DUMMY_EXECUTOR: any = (async () => ({ success: true })) as any; // CommandExecutor stub
-const VALID_UUID = '00000000-0000-0000-0000-000000000000';
+const VALID_SIM_ID = '00000000-0000-0000-0000-000000000000';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -15,7 +14,7 @@ afterEach(() => {
 describe('record_sim_video tool - validation', () => {
   it('errors when start and stop are both true (mutually exclusive)', async () => {
     const res = await tool.handler({
-      simulatorUuid: VALID_UUID,
+      simulatorId: VALID_SIM_ID,
       start: true,
       stop: true,
     } as any);
@@ -27,7 +26,7 @@ describe('record_sim_video tool - validation', () => {
 
   it('errors when stop=true but outputFile is missing', async () => {
     const res = await tool.handler({
-      simulatorUuid: VALID_UUID,
+      simulatorId: VALID_SIM_ID,
       stop: true,
     } as any);
 
@@ -63,7 +62,7 @@ describe('record_sim_video logic - start behavior', () => {
 
     const res = await record_sim_videoLogic(
       {
-        simulatorUuid: VALID_UUID,
+        simulatorId: VALID_SIM_ID,
         start: true,
         // fps omitted to hit default 30
         outputFile: '/tmp/ignored.mp4', // should be ignored with a note
@@ -114,7 +113,7 @@ describe('record_sim_video logic - end-to-end stop with rename', () => {
     // Start (not strictly required for stop path, but included to mimic flow)
     const startRes = await record_sim_videoLogic(
       {
-        simulatorUuid: VALID_UUID,
+        simulatorId: VALID_SIM_ID,
         start: true,
       } as any,
       DUMMY_EXECUTOR,
@@ -128,7 +127,7 @@ describe('record_sim_video logic - end-to-end stop with rename', () => {
     const outputFile = '/var/videos/final.mp4';
     const stopRes = await record_sim_videoLogic(
       {
-        simulatorUuid: VALID_UUID,
+        simulatorId: VALID_SIM_ID,
         stop: true,
         outputFile,
       } as any,
@@ -173,7 +172,7 @@ describe('record_sim_video logic - version gate', () => {
 
     const res = await record_sim_videoLogic(
       {
-        simulatorUuid: VALID_UUID,
+        simulatorId: VALID_SIM_ID,
         start: true,
       } as any,
       DUMMY_EXECUTOR,
