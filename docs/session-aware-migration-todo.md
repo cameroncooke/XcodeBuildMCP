@@ -23,10 +23,10 @@ Reference: `docs/session_management_plan.md`
 - [ ] `src/mcp/tools/logging/start_device_log_cap.ts` — session defaults: `deviceId`.
 
 ## macOS Workflows
-- [ ] `src/mcp/tools/macos/build_macos.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`, `arch`.
-- [ ] `src/mcp/tools/macos/build_run_macos.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`, `arch`.
-- [ ] `src/mcp/tools/macos/test_macos.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`.
-- [ ] `src/mcp/tools/macos/get_mac_app_path.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`, `arch`.
+- [x] `src/mcp/tools/macos/build_macos.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`, `arch`.
+- [x] `src/mcp/tools/macos/build_run_macos.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`, `arch`.
+- [x] `src/mcp/tools/macos/test_macos.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`.
+- [x] `src/mcp/tools/macos/get_mac_app_path.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`, `arch`.
 
 ## Simulator Build/Test/Path
 - [x] `src/mcp/tools/simulator/test_sim.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `simulatorId`, `simulatorName`, `configuration`, `useLatestOS`.

@@ -3,21 +3,24 @@
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
-
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { createMockExecutor, type CommandExecutor } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 import getMacAppPath, { get_mac_app_pathLogic } from '../get_mac_app_path.ts';
 
 describe('get_mac_app_path plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(getMacAppPath.name).toBe('get_mac_app_path');
     });
 
     it('should have correct description', () => {
-      expect(getMacAppPath.description).toBe(
-        "Gets the app bundle path for a macOS application using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_mac_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
-      );
+      expect(getMacAppPath.description).toBe('Retrieves the built macOS app bundle path.');
     });
 
     it('should have handler function', () => {
@@ -25,28 +28,51 @@ describe('get_mac_app_path plugin', () => {
     });
 
     it('should validate schema correctly', () => {
-      // Test workspace path
-      expect(
-        getMacAppPath.schema.workspacePath.safeParse('/path/to/MyProject.xcworkspace').success,
-      ).toBe(true);
-      // Test project path
-      expect(
-        getMacAppPath.schema.projectPath.safeParse('/path/to/MyProject.xcodeproj').success,
-      ).toBe(true);
-      expect(getMacAppPath.schema.scheme.safeParse('MyScheme').success).toBe(true);
+      const schema = z.object(getMacAppPath.schema);
 
-      // Test optional fields
-      expect(getMacAppPath.schema.configuration.safeParse('Debug').success).toBe(true);
-      expect(getMacAppPath.schema.arch.safeParse('arm64').success).toBe(true);
-      expect(getMacAppPath.schema.arch.safeParse('x86_64').success).toBe(true);
-      expect(getMacAppPath.schema.derivedDataPath.safeParse('/path/to/derived').success).toBe(true);
-      expect(getMacAppPath.schema.extraArgs.safeParse(['--verbose']).success).toBe(true);
+      expect(schema.safeParse({}).success).toBe(true);
+      expect(
+        schema.safeParse({
+          derivedDataPath: '/path/to/derived',
+          extraArgs: ['--verbose'],
+        }).success,
+      ).toBe(true);
 
-      // Test invalid inputs
-      expect(getMacAppPath.schema.workspacePath.safeParse(null).success).toBe(false);
-      expect(getMacAppPath.schema.projectPath.safeParse(null).success).toBe(false);
-      expect(getMacAppPath.schema.scheme.safeParse(null).success).toBe(false);
-      expect(getMacAppPath.schema.arch.safeParse('invalidArch').success).toBe(false);
+      expect(schema.safeParse({ derivedDataPath: 7 }).success).toBe(false);
+      expect(schema.safeParse({ extraArgs: ['--bad', 1] }).success).toBe(false);
+
+      const schemaKeys = Object.keys(getMacAppPath.schema).sort();
+      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs'].sort());
+    });
+  });
+
+  describe('Handler Requirements', () => {
+    it('should require scheme before running', async () => {
+      const result = await getMacAppPath.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('scheme is required');
+    });
+
+    it('should require project or workspace when scheme default exists', async () => {
+      sessionStore.setDefaults({ scheme: 'MyScheme' });
+
+      const result = await getMacAppPath.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Provide a project or workspace');
+    });
+
+    it('should reject when both projectPath and workspacePath provided explicitly', async () => {
+      sessionStore.setDefaults({ scheme: 'MyScheme' });
+
+      const result = await getMacAppPath.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        workspacePath: '/path/to/workspace.xcworkspace',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
     });
   });
 
@@ -57,7 +83,7 @@ describe('get_mac_app_path plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
@@ -68,7 +94,7 @@ describe('get_mac_app_path plugin', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('mutually exclusive');
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
     });
   });
 
@@ -331,15 +357,9 @@ describe('get_mac_app_path plugin', () => {
         workspacePath: '/path/to/MyProject.xcworkspace',
       });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nscheme: Required',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('scheme is required');
+      expect(result.content[0].text).toContain('session-set-defaults');
     });
 
     it('should return exact successful app path response with workspace', async () => {

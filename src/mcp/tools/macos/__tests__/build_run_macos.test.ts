@@ -1,114 +1,75 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 import tool, { buildRunMacOSLogic } from '../build_run_macos.ts';
 
 describe('build_run_macos', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should export the correct name', () => {
       expect(tool.name).toBe('build_run_macos');
     });
 
     it('should export the correct description', () => {
-      expect(tool.description).toBe(
-        "Builds and runs a macOS app from a project or workspace in one step. Provide exactly one of projectPath or workspacePath. Example: build_run_macos({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-      );
+      expect(tool.description).toBe('Builds and runs a macOS app.');
     });
 
     it('should export a handler function', () => {
       expect(typeof tool.handler).toBe('function');
     });
 
-    it('should validate schema with valid project inputs', () => {
-      const validInput = {
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyApp',
-        configuration: 'Debug',
-        derivedDataPath: '/path/to/derived',
-        arch: 'arm64',
-        extraArgs: ['--verbose'],
-        preferXcodebuild: true,
-      };
+    it('should expose only non-session fields in schema', () => {
       const schema = z.object(tool.schema);
-      expect(schema.safeParse(validInput).success).toBe(true);
+
+      expect(schema.safeParse({}).success).toBe(true);
+      expect(
+        schema.safeParse({
+          derivedDataPath: '/tmp/derived',
+          extraArgs: ['--verbose'],
+          preferXcodebuild: true,
+        }).success,
+      ).toBe(true);
+
+      expect(schema.safeParse({ derivedDataPath: 1 }).success).toBe(false);
+      expect(schema.safeParse({ extraArgs: ['--ok', 2] }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
+
+      const schemaKeys = Object.keys(tool.schema).sort();
+      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs', 'preferXcodebuild'].sort());
+    });
+  });
+
+  describe('Handler Requirements', () => {
+    it('should require scheme before executing', async () => {
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('scheme is required');
     });
 
-    it('should validate schema with valid workspace inputs', () => {
-      const validInput = {
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyApp',
-        configuration: 'Debug',
-        derivedDataPath: '/path/to/derived',
-        arch: 'arm64',
-        extraArgs: ['--verbose'],
-        preferXcodebuild: true,
-      };
-      const schema = z.object(tool.schema);
-      expect(schema.safeParse(validInput).success).toBe(true);
+    it('should require project or workspace once scheme is set', async () => {
+      sessionStore.setDefaults({ scheme: 'MyApp' });
+
+      const result = await tool.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
-    it('should validate schema with minimal valid project inputs', () => {
-      const validInput = {
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyApp',
-      };
-      const schema = z.object(tool.schema);
-      expect(schema.safeParse(validInput).success).toBe(true);
-    });
+    it('should fail when both project and workspace provided explicitly', async () => {
+      sessionStore.setDefaults({ scheme: 'MyApp' });
 
-    it('should validate schema with minimal valid workspace inputs', () => {
-      const validInput = {
-        workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyApp',
-      };
-      const schema = z.object(tool.schema);
-      expect(schema.safeParse(validInput).success).toBe(true);
-    });
-
-    it('should reject inputs with both projectPath and workspacePath', () => {
-      const invalidInput = {
+      const result = await tool.handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
-        scheme: 'MyApp',
-      };
-      const schema = z.object(tool.schema);
-      expect(schema.safeParse(invalidInput).success).toBe(true); // Base schema passes, but runtime validation should fail
-    });
+      });
 
-    it('should reject inputs with neither projectPath nor workspacePath', () => {
-      const invalidInput = {
-        scheme: 'MyApp',
-      };
-      const schema = z.object(tool.schema);
-      expect(schema.safeParse(invalidInput).success).toBe(true); // Base schema passes, but runtime validation should fail
-    });
-
-    it('should reject invalid projectPath', () => {
-      const invalidInput = {
-        projectPath: 123,
-        scheme: 'MyApp',
-      };
-      const schema = z.object(tool.schema);
-      expect(schema.safeParse(invalidInput).success).toBe(false);
-    });
-
-    it('should reject invalid scheme', () => {
-      const invalidInput = {
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 123,
-      };
-      const schema = z.object(tool.schema);
-      expect(schema.safeParse(invalidInput).success).toBe(false);
-    });
-
-    it('should reject invalid arch', () => {
-      const invalidInput = {
-        projectPath: '/path/to/project.xcodeproj',
-        scheme: 'MyApp',
-        arch: 'invalid',
-      };
-      const schema = z.object(tool.schema);
-      expect(schema.safeParse(invalidInput).success).toBe(false);
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
     });
   });
 

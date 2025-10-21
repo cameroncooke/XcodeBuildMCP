@@ -3,21 +3,24 @@
  * Following CLAUDE.md testing standards with literal validation
  * Using dependency injection for deterministic testing
  */
-
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 import testMacos, { testMacosLogic } from '../test_macos.ts';
 
 describe('test_macos plugin (unified)', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(testMacos.name).toBe('test_macos');
     });
 
     it('should have correct description', () => {
-      expect(testMacos.description).toBe(
-        'Runs tests for a macOS project or workspace using xcodebuild test and parses xcresult output. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires scheme. Example: test_macos({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme" })',
-      );
+      expect(testMacos.description).toBe('Runs tests for a macOS target.');
     });
 
     it('should have handler function', () => {
@@ -25,72 +28,72 @@ describe('test_macos plugin (unified)', () => {
     });
 
     it('should validate schema correctly', () => {
-      // Test workspace path
+      const schema = z.object(testMacos.schema);
+
+      expect(schema.safeParse({}).success).toBe(true);
       expect(
-        testMacos.schema.workspacePath.safeParse('/path/to/MyProject.xcworkspace').success,
+        schema.safeParse({
+          derivedDataPath: '/path/to/derived-data',
+          extraArgs: ['--arg1', '--arg2'],
+          preferXcodebuild: true,
+          testRunnerEnv: { FOO: 'BAR' },
+        }).success,
       ).toBe(true);
 
-      // Test project path
-      expect(testMacos.schema.projectPath.safeParse('/path/to/MyProject.xcodeproj').success).toBe(
-        true,
+      expect(schema.safeParse({ derivedDataPath: 123 }).success).toBe(false);
+      expect(schema.safeParse({ extraArgs: ['--ok', 1] }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
+      expect(schema.safeParse({ testRunnerEnv: { FOO: 123 } }).success).toBe(false);
+
+      const schemaKeys = Object.keys(testMacos.schema).sort();
+      expect(schemaKeys).toEqual(
+        ['derivedDataPath', 'extraArgs', 'preferXcodebuild', 'testRunnerEnv'].sort(),
       );
+    });
+  });
 
-      // Test required scheme
-      expect(testMacos.schema.scheme.safeParse('MyScheme').success).toBe(true);
+  describe('Handler Requirements', () => {
+    it('should require scheme before running', async () => {
+      const result = await testMacos.handler({});
 
-      // Test optional fields
-      expect(testMacos.schema.configuration.safeParse('Debug').success).toBe(true);
-      expect(testMacos.schema.derivedDataPath.safeParse('/path/to/derived-data').success).toBe(
-        true,
-      );
-      expect(testMacos.schema.extraArgs.safeParse(['--arg1', '--arg2']).success).toBe(true);
-      expect(testMacos.schema.preferXcodebuild.safeParse(true).success).toBe(true);
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('scheme is required');
+    });
 
-      // Test invalid inputs
-      expect(testMacos.schema.workspacePath.safeParse(null).success).toBe(false);
-      expect(testMacos.schema.projectPath.safeParse(null).success).toBe(false);
-      expect(testMacos.schema.scheme.safeParse(null).success).toBe(false);
-      expect(testMacos.schema.extraArgs.safeParse('not-array').success).toBe(false);
-      expect(testMacos.schema.preferXcodebuild.safeParse('not-boolean').success).toBe(false);
+    it('should require project or workspace when scheme default exists', async () => {
+      sessionStore.setDefaults({ scheme: 'MyScheme' });
+
+      const result = await testMacos.handler({});
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Provide a project or workspace');
+    });
+
+    it('should reject when both projectPath and workspacePath provided explicitly', async () => {
+      sessionStore.setDefaults({ scheme: 'MyScheme' });
+
+      const result = await testMacos.handler({
+        projectPath: '/path/to/project.xcodeproj',
+        workspacePath: '/path/to/workspace.xcworkspace',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
     });
   });
 
   describe('XOR Parameter Validation', () => {
     it('should validate that either projectPath or workspacePath is provided', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'Test Suite All Tests passed',
-      });
-
-      const mockFileSystemExecutor = {
-        mkdtemp: async () => '/tmp/test-123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
-
       // Should return error response when neither is provided
       const result = await testMacos.handler({
         scheme: 'MyScheme',
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Either projectPath or workspacePath is required');
+      expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
     it('should validate that both projectPath and workspacePath cannot be provided', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: 'Test Suite All Tests passed',
-      });
-
-      const mockFileSystemExecutor = {
-        mkdtemp: async () => '/tmp/test-123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
-
       // Should return error response when both are provided
       const result = await testMacos.handler({
         projectPath: '/path/to/project.xcodeproj',
@@ -99,9 +102,7 @@ describe('test_macos plugin (unified)', () => {
       });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain(
-        'projectPath and workspacePath are mutually exclusive',
-      );
+      expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
     });
 
     it('should allow only projectPath', async () => {
