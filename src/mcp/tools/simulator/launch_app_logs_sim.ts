@@ -11,6 +11,7 @@ export type LogCaptureFunction = (
     simulatorUuid: string;
     bundleId: string;
     captureConsole?: boolean;
+    args?: string[];
   },
   executor: CommandExecutor,
 ) => Promise<{ sessionId: string; logFilePath: string; processes: unknown[]; error?: string }>;
@@ -36,14 +37,14 @@ export async function launch_app_logs_simLogic(
 ): Promise<ToolResponse> {
   log('info', `Starting app launch with logs for simulator ${params.simulatorId}`);
 
-  const { sessionId, error } = await logCaptureFunction(
-    {
-      simulatorUuid: params.simulatorId,
-      bundleId: params.bundleId,
-      captureConsole: true,
-    },
-    executor,
-  );
+  const captureParams = {
+    simulatorUuid: params.simulatorId,
+    bundleId: params.bundleId,
+    captureConsole: true,
+    ...(params.args && params.args.length > 0 ? { args: params.args } : {}),
+  } as const;
+
+  const { sessionId, error } = await logCaptureFunction(captureParams, executor);
   if (error) {
     return {
       content: [createTextContent(`App was launched but log capture failed: ${error}`)],
