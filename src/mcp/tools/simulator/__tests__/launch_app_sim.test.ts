@@ -113,8 +113,8 @@ describe('launch_app_sim tool', () => {
 
 Next Steps:
 1. To see simulator: open_sim()
-2. Log capture: start_sim_log_cap({ simulatorId: "test-uuid-123", bundleId: "com.example.testapp" })
-   With console: start_sim_log_cap({ simulatorId: "test-uuid-123", bundleId: "com.example.testapp", captureConsole: true })
+2. Log capture: start_sim_log_cap({ simulatorUuid: "test-uuid-123", bundleId: "com.example.testapp" })
+   With console: start_sim_log_cap({ simulatorUuid: "test-uuid-123", bundleId: "com.example.testapp", captureConsole: true })
 3. Stop logs: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
           },
         ],
