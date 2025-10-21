@@ -32,13 +32,14 @@ export async function startLogCapture(
     simulatorUuid: string;
     bundleId: string;
     captureConsole?: boolean;
+    args?: string[];
   },
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<{ sessionId: string; logFilePath: string; processes: ChildProcess[]; error?: string }> {
   // Clean up old logs before starting a new session
   await cleanOldLogs();
 
-  const { simulatorUuid, bundleId, captureConsole = false } = params;
+  const { simulatorUuid, bundleId, captureConsole = false, args = [] } = params;
   const logSessionId = uuidv4();
   const logFileName = `${LOG_FILE_PREFIX}${logSessionId}.log`;
   const logFilePath = path.join(os.tmpdir(), logFileName);
@@ -51,16 +52,21 @@ export async function startLogCapture(
     logStream.write('\n--- Log capture for bundle ID: ' + bundleId + ' ---\n');
 
     if (captureConsole) {
+      const launchCommand = [
+        'xcrun',
+        'simctl',
+        'launch',
+        '--console-pty',
+        '--terminate-running-process',
+        simulatorUuid,
+        bundleId,
+      ];
+      if (args.length > 0) {
+        launchCommand.push(...args);
+      }
+
       const stdoutLogResult = await executor(
-        [
-          'xcrun',
-          'simctl',
-          'launch',
-          '--console-pty',
-          '--terminate-running-process',
-          simulatorUuid,
-          bundleId,
-        ],
+        launchCommand,
         'Console Log Capture',
         true, // useShell
         undefined, // env

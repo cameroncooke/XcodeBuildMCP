@@ -132,6 +132,7 @@ describe('launch_app_logs_sim tool', () => {
         simulatorUuid: 'test-uuid-123',
         bundleId: 'com.example.testapp',
         captureConsole: true,
+        args: ['--debug'],
       });
     });
 
