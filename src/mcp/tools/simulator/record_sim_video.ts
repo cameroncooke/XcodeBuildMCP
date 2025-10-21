@@ -15,12 +15,12 @@ import {
   startSimulatorVideoCapture,
   stopSimulatorVideoCapture,
 } from '../../../utils/video-capture/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { dirname } from 'path';
 
 // Base schema object (used for MCP schema exposure)
 const recordSimVideoSchemaObject = z.object({
-  simulatorUuid: z
+  simulatorId: z
     .string()
     .uuid('Invalid Simulator UUID format')
     .describe('UUID of the simulator to record'),
@@ -92,7 +92,7 @@ export async function record_sim_videoLogic(
   if (params.start) {
     const fpsUsed = Number.isFinite(params.fps as number) ? Number(params.fps) : 30;
     const startRes = await video.startSimulatorVideoCapture(
-      { simulatorUuid: params.simulatorUuid, fps: fpsUsed },
+      { simulatorUuid: params.simulatorId, fps: fpsUsed },
       executor,
     );
 
@@ -115,13 +115,13 @@ export async function record_sim_videoLogic(
 
     const nextSteps = `Next Steps:
 Stop and save the recording:
-record_sim_video({ simulatorUuid: "${params.simulatorUuid}", stop: true, outputFile: "/path/to/output.mp4" })`;
+record_sim_video({ simulatorId: "${params.simulatorId}", stop: true, outputFile: "/path/to/output.mp4" })`;
 
     return {
       content: [
         {
           type: 'text',
-          text: `🎥 Video recording started for simulator ${params.simulatorUuid} at ${fpsUsed} fps.\nSession: ${startRes.sessionId}`,
+          text: `🎥 Video recording started for simulator ${params.simulatorId} at ${fpsUsed} fps.\nSession: ${startRes.sessionId}`,
         },
         ...(notes.length > 0
           ? [
@@ -142,7 +142,7 @@ record_sim_video({ simulatorUuid: "${params.simulatorUuid}", stop: true, outputF
 
   // params.stop must be true here per schema
   const stopRes = await video.stopSimulatorVideoCapture(
-    { simulatorUuid: params.simulatorUuid },
+    { simulatorUuid: params.simulatorId },
     executor,
   );
 
@@ -194,7 +194,7 @@ record_sim_video({ simulatorUuid: "${params.simulatorUuid}", stop: true, outputF
     content: [
       {
         type: 'text',
-        text: `✅ Video recording stopped for simulator ${params.simulatorUuid}.`,
+        text: `✅ Video recording stopped for simulator ${params.simulatorId}.`,
       },
       ...(outputs.length > 0
         ? [
@@ -218,10 +218,18 @@ record_sim_video({ simulatorUuid: "${params.simulatorUuid}", stop: true, outputF
   };
 }
 
+const publicSchemaObject = recordSimVideoSchemaObject.omit({
+  simulatorId: true,
+} as const);
+
 export default {
   name: 'record_sim_video',
-  description:
-    'Starts or stops video capture for an iOS simulator using AXe. Provide exactly one of start=true or stop=true. On stop, outputFile is required. fps defaults to 30.',
-  schema: recordSimVideoSchemaObject.shape,
-  handler: createTypedTool(recordSimVideoSchema, record_sim_videoLogic, getDefaultCommandExecutor),
+  description: 'Starts or stops video capture for an iOS simulator.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<RecordSimVideoParams>({
+    internalSchema: recordSimVideoSchema as unknown as z.ZodType<RecordSimVideoParams>,
+    logicFunction: record_sim_videoLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };

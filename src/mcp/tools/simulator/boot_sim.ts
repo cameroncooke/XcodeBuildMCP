@@ -3,26 +3,27 @@ import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
-// Define schema as ZodObject
-const bootSimSchema = z.object({
-  simulatorUuid: z
-    .string()
-    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+const bootSimSchemaObject = z.object({
+  simulatorId: z.string().describe('UUID of the simulator to boot'),
 });
 
 // Use z.infer for type safety
-type BootSimParams = z.infer<typeof bootSimSchema>;
+type BootSimParams = z.infer<typeof bootSimSchemaObject>;
+
+const publicSchemaObject = bootSimSchemaObject.omit({
+  simulatorId: true,
+} as const);
 
 export async function boot_simLogic(
   params: BootSimParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  log('info', `Starting xcrun simctl boot request for simulator ${params.simulatorUuid}`);
+  log('info', `Starting xcrun simctl boot request for simulator ${params.simulatorId}`);
 
   try {
-    const command = ['xcrun', 'simctl', 'boot', params.simulatorUuid];
+    const command = ['xcrun', 'simctl', 'boot', params.simulatorId];
     const result = await executor(command, 'Boot Simulator', true);
 
     if (!result.success) {
@@ -44,8 +45,8 @@ export async function boot_simLogic(
 
 Next steps:
 1. Open the Simulator app (makes it visible): open_sim()
-2. Install an app: install_app_sim({ simulatorUuid: "${params.simulatorUuid}", appPath: "PATH_TO_YOUR_APP" })
-3. Launch an app: launch_app_sim({ simulatorUuid: "${params.simulatorUuid}", bundleId: "YOUR_APP_BUNDLE_ID" })`,
+2. Install an app: install_app_sim({ simulatorId: "${params.simulatorId}", appPath: "PATH_TO_YOUR_APP" })
+3. Launch an app: launch_app_sim({ simulatorId: "${params.simulatorId}", bundleId: "YOUR_APP_BUNDLE_ID" })`,
         },
       ],
     };
@@ -65,8 +66,12 @@ Next steps:
 
 export default {
   name: 'boot_sim',
-  description:
-    "Boots an iOS simulator. After booting, use open_sim() to make the simulator visible. IMPORTANT: You MUST provide the simulatorUuid parameter. Example: boot_sim({ simulatorUuid: 'YOUR_UUID_HERE' })",
-  schema: bootSimSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(bootSimSchema, boot_simLogic, getDefaultCommandExecutor),
+  description: 'Boots an iOS simulator.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<BootSimParams>({
+    internalSchema: bootSimSchemaObject,
+    logicFunction: boot_simLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };
