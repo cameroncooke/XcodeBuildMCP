@@ -10,7 +10,7 @@ import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, sharing common options
@@ -32,6 +32,14 @@ const baseSchemaObject = z.object({
 });
 
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
+
+const publicSchemaObject = baseSchemaObject.omit({
+  projectPath: true,
+  workspacePath: true,
+  scheme: true,
+  configuration: true,
+  arch: true,
+} as const);
 
 const getMacosAppPathSchema = baseSchema
   .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
@@ -179,12 +187,16 @@ export async function get_mac_app_pathLogic(
 
 export default {
   name: 'get_mac_app_path',
-  description:
-    "Gets the app bundle path for a macOS application using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_mac_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })",
-  schema: baseSchemaObject.shape, // MCP SDK compatibility
-  handler: createTypedTool<GetMacosAppPathParams>(
-    getMacosAppPathSchema as z.ZodType<GetMacosAppPathParams>,
-    get_mac_app_pathLogic,
-    getDefaultCommandExecutor,
-  ),
+  description: 'Retrieves the built macOS app bundle path.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<GetMacosAppPathParams>({
+    internalSchema: getMacosAppPathSchema as unknown as z.ZodType<GetMacosAppPathParams>,
+    logicFunction: get_mac_app_pathLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { allOf: ['scheme'], message: 'scheme is required' },
+      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+    ],
+    exclusivePairs: [['projectPath', 'workspacePath']],
+  }),
 };

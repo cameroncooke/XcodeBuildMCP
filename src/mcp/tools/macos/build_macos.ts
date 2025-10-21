@@ -11,7 +11,7 @@ import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Types for dependency injection
@@ -46,6 +46,14 @@ const baseSchemaObject = z.object({
 });
 
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
+
+const publicSchemaObject = baseSchemaObject.omit({
+  projectPath: true,
+  workspacePath: true,
+  scheme: true,
+  configuration: true,
+  arch: true,
+} as const);
 
 const buildMacOSSchema = baseSchema
   .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
@@ -89,12 +97,16 @@ export async function buildMacOSLogic(
 
 export default {
   name: 'build_macos',
-  description:
-    "Builds a macOS app using xcodebuild from a project or workspace. Provide exactly one of projectPath or workspacePath. Example: build_macos({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })",
-  schema: baseSchemaObject.shape, // MCP SDK compatibility
-  handler: createTypedTool<BuildMacOSParams>(
-    buildMacOSSchema as z.ZodType<BuildMacOSParams>,
-    buildMacOSLogic,
-    getDefaultCommandExecutor,
-  ),
+  description: 'Builds a macOS app.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<BuildMacOSParams>({
+    internalSchema: buildMacOSSchema as unknown as z.ZodType<BuildMacOSParams>,
+    logicFunction: buildMacOSLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { allOf: ['scheme'], message: 'scheme is required' },
+      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+    ],
+    exclusivePairs: [['projectPath', 'workspacePath']],
+  }),
 };

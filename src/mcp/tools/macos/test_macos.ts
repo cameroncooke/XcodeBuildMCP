@@ -21,7 +21,7 @@ import {
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
 } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
@@ -48,6 +48,13 @@ const baseSchemaObject = z.object({
 });
 
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
+
+const publicSchemaObject = baseSchemaObject.omit({
+  projectPath: true,
+  workspacePath: true,
+  scheme: true,
+  configuration: true,
+} as const);
 
 const testMacosSchema = baseSchema
   .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
@@ -318,14 +325,17 @@ export async function testMacosLogic(
 
 export default {
   name: 'test_macos',
-  description:
-    'Runs tests for a macOS project or workspace using xcodebuild test and parses xcresult output. Provide exactly one of projectPath or workspacePath. IMPORTANT: Requires scheme. Example: test_macos({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyScheme" })',
-  schema: baseSchemaObject.shape, // MCP SDK compatibility
-  handler: createTypedTool<TestMacosParams>(
-    testMacosSchema as z.ZodType<TestMacosParams>,
-    (params: TestMacosParams) => {
-      return testMacosLogic(params, getDefaultCommandExecutor(), getDefaultFileSystemExecutor());
-    },
-    getDefaultCommandExecutor,
-  ),
+  description: 'Runs tests for a macOS target.',
+  schema: publicSchemaObject.shape,
+  handler: createSessionAwareTool<TestMacosParams>({
+    internalSchema: testMacosSchema as unknown as z.ZodType<TestMacosParams>,
+    logicFunction: (params, executor) =>
+      testMacosLogic(params, executor, getDefaultFileSystemExecutor()),
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [
+      { allOf: ['scheme'], message: 'scheme is required' },
+      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+    ],
+    exclusivePairs: [['projectPath', 'workspacePath']],
+  }),
 };
