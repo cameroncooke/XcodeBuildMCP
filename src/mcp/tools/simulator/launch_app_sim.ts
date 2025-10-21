@@ -165,12 +165,8 @@ export async function launch_app_simLogic(
       };
     }
 
-    const userParamName = params.simulatorId
-      ? 'simulatorId'
-      : params.simulatorName
-        ? 'simulatorName'
-        : 'simulatorId';
-    const userParamValue = params.simulatorId ?? params.simulatorName ?? simulatorId;
+    const userParamName = params.simulatorName ? 'simulatorName' : 'simulatorUuid';
+    const userParamValue = params.simulatorName ?? simulatorId;
 
     return {
       content: [
