@@ -8,12 +8,13 @@ import { z } from 'zod';
 import { startLogCapture } from '../../../utils/log-capture/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
 import { ToolResponse, createTextContent } from '../../../types/common.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const startSimLogCapSchema = z.object({
-  simulatorUuid: z
+  simulatorId: z
     .string()
+    .uuid()
     .describe('UUID of the simulator to capture logs from (obtained from list_simulators).'),
   bundleId: z.string().describe('Bundle identifier of the app to capture logs for.'),
   captureConsole: z
@@ -30,11 +31,15 @@ export async function start_sim_log_capLogic(
   _executor: CommandExecutor = getDefaultCommandExecutor(),
   logCaptureFunction: typeof startLogCapture = startLogCapture,
 ): Promise<ToolResponse> {
-  const paramsWithDefaults = {
-    ...params,
-    captureConsole: params.captureConsole ?? false,
-  };
-  const { sessionId, error } = await logCaptureFunction(paramsWithDefaults, _executor);
+  const captureConsole = params.captureConsole ?? false;
+  const { sessionId, error } = await logCaptureFunction(
+    {
+      simulatorUuid: params.simulatorId,
+      bundleId: params.bundleId,
+      captureConsole,
+    },
+    _executor,
+  );
   if (error) {
     return {
       content: [createTextContent(`Error starting log capture: ${error}`)],
@@ -44,16 +49,23 @@ export async function start_sim_log_capLogic(
   return {
     content: [
       createTextContent(
-        `Log capture started successfully. Session ID: ${sessionId}.\n\n${paramsWithDefaults.captureConsole ? 'Note: Your app was relaunched to capture console output.' : 'Note: Only structured logs are being captured.'}\n\nNext Steps:\n1.  Interact with your simulator and app.\n2.  Use 'stop_sim_log_cap' with session ID '${sessionId}' to stop capture and retrieve logs.`,
+        `Log capture started successfully. Session ID: ${sessionId}.\n\n${captureConsole ? 'Note: Your app was relaunched to capture console output.' : 'Note: Only structured logs are being captured.'}\n\nNext Steps:\n1.  Interact with your simulator and app.\n2.  Use 'stop_sim_log_cap' with session ID '${sessionId}' to stop capture and retrieve logs.`,
       ),
     ],
   };
 }
 
+const publicSchemaObject = startSimLogCapSchema.omit({ simulatorId: true } as const).strict();
+
 export default {
   name: 'start_sim_log_cap',
   description:
     'Starts capturing logs from a specified simulator. Returns a session ID. By default, captures only structured logs.',
-  schema: startSimLogCapSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(startSimLogCapSchema, start_sim_log_capLogic, getDefaultCommandExecutor),
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<StartSimLogCapParams>({
+    internalSchema: startSimLogCapSchema as unknown as z.ZodType<StartSimLogCapParams>,
+    logicFunction: start_sim_log_capLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };

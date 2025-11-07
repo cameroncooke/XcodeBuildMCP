@@ -2,12 +2,13 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const simStatusbarSchema = z.object({
-  simulatorUuid: z
+  simulatorId: z
     .string()
+    .uuid()
     .describe('UUID of the simulator to use (obtained from list_simulators)'),
   dataNetwork: z
     .enum([
@@ -38,7 +39,7 @@ export async function sim_statusbarLogic(
 ): Promise<ToolResponse> {
   log(
     'info',
-    `Setting simulator ${params.simulatorUuid} status bar data network to ${params.dataNetwork}`,
+    `Setting simulator ${params.simulatorId} status bar data network to ${params.dataNetwork}`,
   );
 
   try {
@@ -46,40 +47,40 @@ export async function sim_statusbarLogic(
     let successMessage: string;
 
     if (params.dataNetwork === 'clear') {
-      command = ['xcrun', 'simctl', 'status_bar', params.simulatorUuid, 'clear'];
-      successMessage = `Successfully cleared status bar overrides for simulator ${params.simulatorUuid}`;
+      command = ['xcrun', 'simctl', 'status_bar', params.simulatorId, 'clear'];
+      successMessage = `Successfully cleared status bar overrides for simulator ${params.simulatorId}`;
     } else {
       command = [
         'xcrun',
         'simctl',
         'status_bar',
-        params.simulatorUuid,
+        params.simulatorId,
         'override',
         '--dataNetwork',
         params.dataNetwork,
       ];
-      successMessage = `Successfully set simulator ${params.simulatorUuid} status bar data network to ${params.dataNetwork}`;
+      successMessage = `Successfully set simulator ${params.simulatorId} status bar data network to ${params.dataNetwork}`;
     }
 
     const result = await executor(command, 'Set Status Bar', true, undefined);
 
     if (!result.success) {
       const failureMessage = `Failed to set status bar: ${result.error}`;
-      log('error', `${failureMessage} (simulator: ${params.simulatorUuid})`);
+      log('error', `${failureMessage} (simulator: ${params.simulatorId})`);
       return {
         content: [{ type: 'text', text: failureMessage }],
         isError: true,
       };
     }
 
-    log('info', `${successMessage} (simulator: ${params.simulatorUuid})`);
+    log('info', `${successMessage} (simulator: ${params.simulatorId})`);
     return {
       content: [{ type: 'text', text: successMessage }],
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const failureMessage = `Failed to set status bar: ${errorMessage}`;
-    log('error', `Error setting status bar for simulator ${params.simulatorUuid}: ${errorMessage}`);
+    log('error', `Error setting status bar for simulator ${params.simulatorId}: ${errorMessage}`);
     return {
       content: [{ type: 'text', text: failureMessage }],
       isError: true,
@@ -87,10 +88,17 @@ export async function sim_statusbarLogic(
   }
 }
 
+const publicSchemaObject = simStatusbarSchema.omit({ simulatorId: true } as const).strict();
+
 export default {
   name: 'sim_statusbar',
   description:
     'Sets the data network indicator in the iOS simulator status bar. Use "clear" to reset all overrides, or specify a network type (hide, wifi, 3g, 4g, lte, lte-a, lte+, 5g, 5g+, 5g-uwb, 5g-uc).',
-  schema: simStatusbarSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(simStatusbarSchema, sim_statusbarLogic, getDefaultCommandExecutor),
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<SimStatusbarParams>({
+    internalSchema: simStatusbarSchema as unknown as z.ZodType<SimStatusbarParams>,
+    logicFunction: sim_statusbarLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };

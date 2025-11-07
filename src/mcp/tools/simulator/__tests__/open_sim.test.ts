@@ -62,15 +62,15 @@ describe('open_sim tool', () => {
           {
             type: 'text',
             text: `Next Steps:
-1. Boot a simulator if needed: boot_sim({ simulatorUuid: 'UUID_FROM_LIST_SIMULATORS' })
+1. Boot a simulator if needed: boot_sim({ simulatorId: 'UUID_FROM_LIST_SIMULATORS' })
 2. Launch your app and interact with it
 3. Log capture options:
    - Option 1: Capture structured logs only (app continues running):
-     start_sim_log_cap({ simulatorUuid: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' })
+     start_sim_log_cap({ simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' })
    - Option 2: Capture both console and structured logs (app will restart):
-     start_sim_log_cap({ simulatorUuid: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID', captureConsole: true })
+     start_sim_log_cap({ simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID', captureConsole: true })
    - Option 3: Launch app with logs in one step:
-     launch_app_logs_sim({ simulatorUuid: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' })`,
+     launch_app_logs_sim({ simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' })`,
           },
         ],
       });

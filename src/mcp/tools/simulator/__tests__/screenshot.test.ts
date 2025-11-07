@@ -37,13 +37,13 @@ describe('screenshot plugin', () => {
 
       expect(
         schema.safeParse({
-          simulatorUuid: '550e8400-e29b-41d4-a716-446655440000',
+          simulatorId: '550e8400-e29b-41d4-a716-446655440000',
         }).success,
       ).toBe(true);
 
       expect(
         schema.safeParse({
-          simulatorUuid: 123,
+          simulatorId: 123,
         }).success,
       ).toBe(false);
 
@@ -81,7 +81,7 @@ describe('screenshot plugin', () => {
 
       await screenshotLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
         },
         capturingExecutor,
         mockFileSystemExecutor,
@@ -148,7 +148,7 @@ describe('screenshot plugin', () => {
 
       await screenshotLogic(
         {
-          simulatorUuid: 'another-uuid',
+          simulatorId: 'another-uuid',
         },
         capturingExecutor,
         mockFileSystemExecutor,
@@ -206,7 +206,7 @@ describe('screenshot plugin', () => {
 
       await screenshotLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
         },
         capturingExecutor,
         mockFileSystemExecutor,
@@ -261,7 +261,7 @@ describe('screenshot plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -281,7 +281,7 @@ describe('screenshot plugin', () => {
       });
     });
 
-    it('should handle missing simulatorUuid via handler', async () => {
+    it('should handle missing simulatorId via handler', async () => {
       // Test Zod validation by calling the handler with invalid params
       const result = await screenshotPlugin.handler({});
 
@@ -289,7 +289,7 @@ describe('screenshot plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Required',
           },
         ],
         isError: true,
@@ -314,7 +314,7 @@ describe('screenshot plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -357,7 +357,7 @@ describe('screenshot plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -405,7 +405,7 @@ describe('screenshot plugin', () => {
 
       await screenshotLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
         },
         capturingExecutor,
         mockFileSystemExecutor,
@@ -458,7 +458,7 @@ describe('screenshot plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -491,7 +491,7 @@ describe('screenshot plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -524,7 +524,7 @@ describe('screenshot plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -567,7 +567,7 @@ describe('screenshot plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
         },
         mockExecutor,
         mockFileSystemExecutor,

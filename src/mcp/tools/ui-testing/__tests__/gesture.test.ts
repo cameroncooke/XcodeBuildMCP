@@ -2,7 +2,7 @@
  * Tests for gesture tool plugin
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import {
   createMockExecutor,
@@ -27,37 +27,12 @@ describe('Gesture Plugin', () => {
       expect(typeof gesturePlugin.handler).toBe('function');
     });
 
-    it('should validate schema fields with safeParse', () => {
+    it('should expose public schema without simulatorId field', () => {
       const schema = z.object(gesturePlugin.schema);
 
-      // Valid case
+      expect(schema.safeParse({ preset: 'scroll-up' }).success).toBe(true);
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          preset: 'scroll-up',
-        }).success,
-      ).toBe(true);
-
-      // Invalid simulatorUuid
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'invalid-uuid',
-          preset: 'scroll-up',
-        }).success,
-      ).toBe(false);
-
-      // Invalid preset
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          preset: 'invalid-preset',
-        }).success,
-      ).toBe(false);
-
-      // Valid optional parameters
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
           screenWidth: 375,
           screenHeight: 667,
@@ -67,23 +42,16 @@ describe('Gesture Plugin', () => {
           postDelay: 0.2,
         }).success,
       ).toBe(true);
+      expect(schema.safeParse({ preset: 'invalid-preset' }).success).toBe(false);
+      expect(schema.safeParse({ preset: 'scroll-up', screenWidth: 0 }).success).toBe(false);
+      expect(schema.safeParse({ preset: 'scroll-up', duration: -1 }).success).toBe(false);
 
-      // Invalid optional parameters
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          preset: 'scroll-up',
-          screenWidth: 0,
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          preset: 'scroll-up',
-          duration: -1,
-        }).success,
-      ).toBe(false);
+      const withSimId = schema.safeParse({
+        simulatorId: '12345678-1234-1234-1234-123456789012',
+        preset: 'scroll-up',
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });
   });
 
@@ -107,7 +75,7 @@ describe('Gesture Plugin', () => {
 
       await gestureLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
         },
         trackingExecutor,
@@ -142,7 +110,7 @@ describe('Gesture Plugin', () => {
 
       await gestureLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           preset: 'swipe-from-left-edge',
           screenWidth: 375,
           screenHeight: 667,
@@ -183,7 +151,7 @@ describe('Gesture Plugin', () => {
 
       await gestureLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-down',
           screenWidth: 414,
           screenHeight: 896,
@@ -236,7 +204,7 @@ describe('Gesture Plugin', () => {
 
       await gestureLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           preset: 'swipe-from-bottom-edge',
         },
         trackingExecutor,
@@ -273,7 +241,7 @@ describe('Gesture Plugin', () => {
 
       const result = await gestureLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
         },
         mockExecutor,
@@ -301,7 +269,7 @@ describe('Gesture Plugin', () => {
 
       const result = await gestureLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           preset: 'swipe-from-left-edge',
           screenWidth: 375,
           screenHeight: 667,
@@ -337,7 +305,7 @@ describe('Gesture Plugin', () => {
 
       const result = await gestureLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
         },
         createNoopExecutor(),
@@ -370,7 +338,7 @@ describe('Gesture Plugin', () => {
 
       const result = await gestureLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
         },
         mockExecutor,
@@ -398,7 +366,7 @@ describe('Gesture Plugin', () => {
 
       const result = await gestureLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
         },
         mockExecutor,
@@ -421,7 +389,7 @@ describe('Gesture Plugin', () => {
 
       const result = await gestureLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
         },
         mockExecutor,
@@ -444,7 +412,7 @@ describe('Gesture Plugin', () => {
 
       const result = await gestureLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           preset: 'scroll-up',
         },
         mockExecutor,

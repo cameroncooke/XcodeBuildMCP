@@ -22,11 +22,11 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const gestureSchema = z.object({
-  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
   preset: z
     .enum([
       'scroll-up',
@@ -100,7 +100,7 @@ export async function gestureLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'gesture';
-  const { simulatorUuid, preset, screenWidth, screenHeight, duration, delta, preDelay, postDelay } =
+  const { simulatorId, preset, screenWidth, screenHeight, duration, delta, preDelay, postDelay } =
     params;
   const commandArgs = ['gesture', preset];
 
@@ -123,11 +123,11 @@ export async function gestureLogic(
     commandArgs.push('--post-delay', String(postDelay));
   }
 
-  log('info', `${LOG_PREFIX}/${toolName}: Starting gesture '${preset}' on ${simulatorUuid}`);
+  log('info', `${LOG_PREFIX}/${toolName}: Starting gesture '${preset}' on ${simulatorId}`);
 
   try {
-    await executeAxeCommand(commandArgs, simulatorUuid, 'gesture', executor, axeHelpers);
-    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+    await executeAxeCommand(commandArgs, simulatorId, 'gesture', executor, axeHelpers);
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
     return createTextResponse(`Gesture '${preset}' executed successfully.`);
   } catch (error) {
     log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
@@ -150,28 +150,30 @@ export async function gestureLogic(
   }
 }
 
+const publicSchemaObject = gestureSchema.omit({ simulatorId: true } as const).strict();
+
 export default {
   name: 'gesture',
   description:
     'Perform gesture on iOS simulator using preset gestures: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge',
-  schema: gestureSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    gestureSchema,
-    (params: GestureParams, executor: CommandExecutor) => {
-      return gestureLogic(params, executor, {
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<GestureParams>({
+    internalSchema: gestureSchema as unknown as z.ZodType<GestureParams>,
+    logicFunction: (params: GestureParams, executor: CommandExecutor) =>
+      gestureLogic(params, executor, {
         getAxePath,
         getBundledAxeEnvironment,
         createAxeNotAvailableResponse,
-      });
-    },
-    getDefaultCommandExecutor,
-  ),
+      }),
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(
   commandArgs: string[],
-  simulatorUuid: string,
+  simulatorId: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
   axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
@@ -183,7 +185,7 @@ async function executeAxeCommand(
   }
 
   // Add --udid parameter to all commands
-  const fullArgs = [...commandArgs, '--udid', simulatorUuid];
+  const fullArgs = [...commandArgs, '--udid', simulatorId];
 
   // Construct the full command array with the axe binary as the first element
   const fullCommand = [axeBinary, ...fullArgs];
@@ -199,7 +201,7 @@ async function executeAxeCommand(
         `axe command '${commandName}' failed.`,
         commandName,
         result.error ?? result.output,
-        simulatorUuid,
+        simulatorId,
       );
     }
 

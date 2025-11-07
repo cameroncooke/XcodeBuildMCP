@@ -23,67 +23,23 @@ describe('Key Sequence Plugin', () => {
       expect(typeof keySequencePlugin.handler).toBe('function');
     });
 
-    it('should validate schema fields with safeParse', () => {
+    it('should expose public schema without simulatorId field', () => {
       const schema = z.object(keySequencePlugin.schema);
 
-      // Valid case
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCodes: [40, 42, 44],
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({ keyCodes: [40, 42, 44] }).success).toBe(true);
+      expect(schema.safeParse({ keyCodes: [40], delay: 0.1 }).success).toBe(true);
+      expect(schema.safeParse({ keyCodes: [] }).success).toBe(false);
+      expect(schema.safeParse({ keyCodes: [-1] }).success).toBe(false);
+      expect(schema.safeParse({ keyCodes: [256] }).success).toBe(false);
+      expect(schema.safeParse({ keyCodes: [40], delay: -0.1 }).success).toBe(false);
 
-      // Invalid simulatorUuid
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'invalid-uuid',
-          keyCodes: [40],
-        }).success,
-      ).toBe(false);
+      const withSimId = schema.safeParse({
+        simulatorId: '12345678-1234-1234-1234-123456789012',
+        keyCodes: [40],
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as any)).toBe(false);
 
-      // Invalid keyCodes - empty array
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCodes: [],
-        }).success,
-      ).toBe(false);
-
-      // Invalid keyCodes - out of range
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCodes: [-1],
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCodes: [256],
-        }).success,
-      ).toBe(false);
-
-      // Invalid delay - negative
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCodes: [40],
-          delay: -0.1,
-        }).success,
-      ).toBe(false);
-
-      // Valid with optional delay
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCodes: [40],
-          delay: 0.1,
-        }).success,
-      ).toBe(true);
-
-      // Missing required fields
       expect(schema.safeParse({}).success).toBe(false);
     });
   });
@@ -117,7 +73,7 @@ describe('Key Sequence Plugin', () => {
 
       await key_sequenceLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40, 42, 44],
         },
         trackingExecutor,
@@ -162,7 +118,7 @@ describe('Key Sequence Plugin', () => {
 
       await key_sequenceLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCodes: [58, 59, 60],
           delay: 0.5,
         },
@@ -210,7 +166,7 @@ describe('Key Sequence Plugin', () => {
 
       await key_sequenceLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCodes: [255],
         },
         trackingExecutor,
@@ -255,7 +211,7 @@ describe('Key Sequence Plugin', () => {
 
       await key_sequenceLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCodes: [0, 1, 2, 3, 4],
           delay: 1.0,
         },
@@ -277,6 +233,14 @@ describe('Key Sequence Plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
+    it('should surface session default requirement when simulatorId is missing', async () => {
+      const result = await keySequencePlugin.handler({ keyCodes: [40] });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('simulatorId is required');
+    });
+
     it('should return success for valid key sequence execution', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
@@ -300,7 +264,7 @@ describe('Key Sequence Plugin', () => {
 
       const result = await key_sequenceLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40, 42, 44],
           delay: 0.1,
         },
@@ -337,7 +301,7 @@ describe('Key Sequence Plugin', () => {
 
       const result = await key_sequenceLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
         },
         mockExecutor,
@@ -367,7 +331,7 @@ describe('Key Sequence Plugin', () => {
 
       const result = await key_sequenceLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
         },
         createNoopExecutor(),
@@ -408,7 +372,7 @@ describe('Key Sequence Plugin', () => {
 
       const result = await key_sequenceLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
         },
         mockExecutor,
@@ -447,7 +411,7 @@ describe('Key Sequence Plugin', () => {
 
       const result = await key_sequenceLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
         },
         mockExecutor,
@@ -481,7 +445,7 @@ describe('Key Sequence Plugin', () => {
 
       const result = await key_sequenceLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
         },
         mockExecutor,
@@ -515,7 +479,7 @@ describe('Key Sequence Plugin', () => {
 
       const result = await key_sequenceLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCodes: [40],
         },
         mockExecutor,

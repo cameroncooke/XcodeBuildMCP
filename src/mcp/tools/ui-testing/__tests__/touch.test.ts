@@ -30,7 +30,7 @@ describe('Touch Plugin', () => {
       // Valid case with down
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -40,17 +40,17 @@ describe('Touch Plugin', () => {
       // Valid case with up
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           up: true,
         }).success,
       ).toBe(true);
 
-      // Invalid simulatorUuid
+      // Invalid simulatorId
       expect(
         schema.safeParse({
-          simulatorUuid: 'invalid-uuid',
+          simulatorId: 'invalid-uuid',
           x: 100,
           y: 200,
           down: true,
@@ -60,7 +60,7 @@ describe('Touch Plugin', () => {
       // Invalid x (not integer)
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100.5,
           y: 200,
           down: true,
@@ -70,7 +70,7 @@ describe('Touch Plugin', () => {
       // Invalid y (not integer)
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200.5,
           down: true,
@@ -80,7 +80,7 @@ describe('Touch Plugin', () => {
       // Valid with delay
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -91,7 +91,7 @@ describe('Touch Plugin', () => {
       // Invalid delay (negative)
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -130,7 +130,7 @@ describe('Touch Plugin', () => {
 
       await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -180,7 +180,7 @@ describe('Touch Plugin', () => {
 
       await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 150,
           y: 250,
           up: true,
@@ -230,7 +230,7 @@ describe('Touch Plugin', () => {
 
       await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 300,
           y: 400,
           down: true,
@@ -282,7 +282,7 @@ describe('Touch Plugin', () => {
 
       await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 50,
           y: 75,
           down: true,
@@ -328,7 +328,7 @@ describe('Touch Plugin', () => {
 
       await touchLogic(
         {
-          simulatorUuid: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
+          simulatorId: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
           x: 0,
           y: 0,
           up: true,
@@ -373,7 +373,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -411,7 +411,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -449,7 +449,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           up: true,
@@ -474,7 +474,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
         },
@@ -510,7 +510,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -553,7 +553,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           up: true,
@@ -596,7 +596,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -636,7 +636,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -679,7 +679,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -720,7 +720,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -763,7 +763,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
@@ -806,7 +806,7 @@ describe('Touch Plugin', () => {
 
       const result = await touchLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,

@@ -36,6 +36,16 @@ describe('launch_app_sim tool', () => {
       expect(schema.safeParse({ args: ['--debug'] }).success).toBe(false);
 
       expect(Object.keys(launchAppSim.schema).sort()).toEqual(['args', 'bundleId'].sort());
+
+      const withSimDefaults = schema.safeParse({
+        simulatorId: 'sim-default',
+        simulatorName: 'iPhone 16',
+        bundleId: 'com.example.testapp',
+      });
+      expect(withSimDefaults.success).toBe(true);
+      const parsed = withSimDefaults.data as Record<string, unknown>;
+      expect(parsed.simulatorId).toBeUndefined();
+      expect(parsed.simulatorName).toBeUndefined();
     });
   });
 
@@ -109,13 +119,7 @@ describe('launch_app_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: `✅ App launched successfully in simulator test-uuid-123.
-
-Next Steps:
-1. To see simulator: open_sim()
-2. Log capture: start_sim_log_cap({ simulatorUuid: "test-uuid-123", bundleId: "com.example.testapp" })
-   With console: start_sim_log_cap({ simulatorUuid: "test-uuid-123", bundleId: "com.example.testapp", captureConsole: true })
-3. Stop logs: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
+            text: `✅ App launched successfully in simulator test-uuid-123.\n\nNext Steps:\n1. To see simulator: open_sim()\n2. Log capture: start_sim_log_cap({ simulatorId: "test-uuid-123", bundleId: "com.example.testapp" })\n   With console: start_sim_log_cap({ simulatorId: "test-uuid-123", bundleId: "com.example.testapp", captureConsole: true })\n3. Stop logs: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
           },
         ],
       });
@@ -126,8 +130,8 @@ Next Steps:
       const commands: string[][] = [];
 
       const sequencedExecutor = async (command: string[]) => {
-        commands.push(command);
         callCount++;
+        commands.push(command);
         if (callCount === 1) {
           return {
             success: true,
@@ -153,23 +157,62 @@ Next Steps:
         sequencedExecutor,
       );
 
-      expect(commands[1]).toEqual([
-        'xcrun',
-        'simctl',
-        'launch',
-        'test-uuid-123',
-        'com.example.testapp',
-        '--debug',
-        '--verbose',
+      expect(commands).toEqual([
+        ['xcrun', 'simctl', 'get_app_container', 'test-uuid-123', 'com.example.testapp', 'app'],
+        [
+          'xcrun',
+          'simctl',
+          'launch',
+          'test-uuid-123',
+          'com.example.testapp',
+          '--debug',
+          '--verbose',
+        ],
       ]);
     });
 
-    it('should surface app-not-installed error', async () => {
-      const mockExecutor = createMockExecutor({
-        success: false,
-        output: '',
-        error: 'App not found',
+    it('should surface error when simulatorId missing after lookup', async () => {
+      const result = await launch_app_simLogic(
+        {
+          simulatorId: undefined,
+          bundleId: 'com.example.testapp',
+        } as any,
+        async () => ({
+          success: true,
+          output: '',
+          error: '',
+          process: {} as any,
+        }),
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'No simulator identifier provided',
+          },
+        ],
+        isError: true,
       });
+    });
+
+    it('should detect missing app container on install check', async () => {
+      const mockExecutor = async (command: string[]) => {
+        if (command.includes('get_app_container')) {
+          return {
+            success: false,
+            output: '',
+            error: 'App container not found',
+            process: {} as any,
+          };
+        }
+        return {
+          success: true,
+          output: '',
+          error: '',
+          process: {} as any,
+        };
+      };
 
       const result = await launch_app_simLogic(
         {
@@ -183,16 +226,48 @@ Next Steps:
         content: [
           {
             type: 'text',
-            text: 'App is not installed on the simulator. Please use install_app_sim before launching.\n\nWorkflow: build → install → launch.',
+            text: `App is not installed on the simulator. Please use install_app_sim before launching.\n\nWorkflow: build → install → launch.`,
           },
         ],
         isError: true,
       });
     });
 
-    it('should return launch failure message when simctl launch fails', async () => {
+    it('should return error when install check throws', async () => {
+      const mockExecutor = async (command: string[]) => {
+        if (command.includes('get_app_container')) {
+          throw new Error('Simctl command failed');
+        }
+        return {
+          success: true,
+          output: '',
+          error: '',
+          process: {} as any,
+        };
+      };
+
+      const result = await launch_app_simLogic(
+        {
+          simulatorId: 'test-uuid-123',
+          bundleId: 'com.example.testapp',
+        },
+        mockExecutor,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: `App is not installed on the simulator (check failed). Please use install_app_sim before launching.\n\nWorkflow: build → install → launch.`,
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it('should handle launch failure', async () => {
       let callCount = 0;
-      const sequencedExecutor = async (command: string[]) => {
+      const mockExecutor = async (command: string[]) => {
         callCount++;
         if (callCount === 1) {
           return {
@@ -215,7 +290,7 @@ Next Steps:
           simulatorId: 'test-uuid-123',
           bundleId: 'com.example.testapp',
         },
-        sequencedExecutor,
+        mockExecutor,
       );
 
       expect(result).toEqual({
@@ -279,13 +354,7 @@ Next Steps:
         content: [
           {
             type: 'text',
-            text: `✅ App launched successfully in simulator "iPhone 16" (resolved-uuid).
-
-Next Steps:
-1. To see simulator: open_sim()
-2. Log capture: start_sim_log_cap({ simulatorName: "iPhone 16", bundleId: "com.example.testapp" })
-   With console: start_sim_log_cap({ simulatorName: "iPhone 16", bundleId: "com.example.testapp", captureConsole: true })
-3. Stop logs: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
+            text: `✅ App launched successfully in simulator "iPhone 16" (resolved-uuid).\n\nNext Steps:\n1. To see simulator: open_sim()\n2. Log capture: start_sim_log_cap({ simulatorName: "iPhone 16", bundleId: "com.example.testapp" })\n   With console: start_sim_log_cap({ simulatorName: "iPhone 16", bundleId: "com.example.testapp", captureConsole: true })\n3. Stop logs: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
           },
         ],
       });

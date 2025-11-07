@@ -34,31 +34,31 @@ describe('Screenshot Plugin', () => {
       // Valid case
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         }).success,
       ).toBe(true);
 
-      // Invalid simulatorUuid
+      // Invalid simulatorId
       expect(
         schema.safeParse({
-          simulatorUuid: 'invalid-uuid',
+          simulatorId: 'invalid-uuid',
         }).success,
       ).toBe(false);
 
-      // Missing simulatorUuid
+      // Missing simulatorId
       expect(schema.safeParse({}).success).toBe(false);
     });
   });
 
   describe('Plugin Handler Validation', () => {
-    it('should return Zod validation error for missing simulatorUuid', async () => {
+    it('should return Zod validation error for missing simulatorId', async () => {
       const result = await screenshotPlugin.handler({});
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Required',
           },
         ],
         isError: true,
@@ -67,14 +67,14 @@ describe('Screenshot Plugin', () => {
 
     it('should return Zod validation error for invalid UUID format', async () => {
       const result = await screenshotPlugin.handler({
-        simulatorUuid: 'invalid-uuid',
+        simulatorId: 'invalid-uuid',
       });
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Invalid Simulator UUID format',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Invalid Simulator UUID format',
           },
         ],
         isError: true,
@@ -102,7 +102,7 @@ describe('Screenshot Plugin', () => {
 
       await screenshotLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         trackingExecutor,
         mockFileSystemExecutor,
@@ -140,7 +140,7 @@ describe('Screenshot Plugin', () => {
 
       await screenshotLogic(
         {
-          simulatorUuid: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
+          simulatorId: 'ABCDEF12-3456-7890-ABCD-ABCDEFABCDEF',
         },
         trackingExecutor,
         mockFileSystemExecutor,
@@ -177,7 +177,7 @@ describe('Screenshot Plugin', () => {
 
       await screenshotLogic(
         {
-          simulatorUuid: '98765432-1098-7654-3210-987654321098',
+          simulatorId: '98765432-1098-7654-3210-987654321098',
         },
         trackingExecutor,
         mockFileSystemExecutor,
@@ -217,7 +217,7 @@ describe('Screenshot Plugin', () => {
 
       await screenshotLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         trackingExecutor,
         mockFileSystemExecutor,
@@ -244,7 +244,7 @@ describe('Screenshot Plugin', () => {
       // This test documents that screenshotLogic assumes valid parameters.
       const result = await screenshotLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         createMockExecutor({
           success: true,
@@ -275,7 +275,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -302,7 +302,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -334,7 +334,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -368,7 +368,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -394,7 +394,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -415,7 +415,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -434,7 +434,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
         createMockFileSystemExecutor(),

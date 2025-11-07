@@ -25,59 +25,16 @@ describe('sim_statusbar tool', () => {
       expect(typeof simStatusbar.handler).toBe('function');
     });
 
-    it('should have correct schema with simulatorUuid string field and dataNetwork enum field', () => {
+    it('should expose public schema without simulatorId field', () => {
       const schema = z.object(simStatusbar.schema);
 
-      // Valid inputs
-      expect(
-        schema.safeParse({ simulatorUuid: 'test-uuid-123', dataNetwork: 'wifi' }).success,
-      ).toBe(true);
-      expect(schema.safeParse({ simulatorUuid: 'ABC123-DEF456', dataNetwork: '3g' }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: '4g' }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: 'lte' }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: 'lte-a' }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: 'lte+' }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: '5g' }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: '5g+' }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: '5g-uwb' }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: '5g-uc' }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: 'hide' }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: 'clear' }).success).toBe(
-        true,
-      );
+      expect(schema.safeParse({ dataNetwork: 'wifi' }).success).toBe(true);
+      expect(schema.safeParse({ dataNetwork: 'clear' }).success).toBe(true);
+      expect(schema.safeParse({ dataNetwork: 'invalid' }).success).toBe(false);
 
-      // Invalid inputs
-      expect(schema.safeParse({ simulatorUuid: 123, dataNetwork: 'wifi' }).success).toBe(false);
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: 'invalid' }).success).toBe(
-        false,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', dataNetwork: 123 }).success).toBe(
-        false,
-      );
-      expect(schema.safeParse({ simulatorUuid: null, dataNetwork: 'wifi' }).success).toBe(false);
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid' }).success).toBe(false);
-      expect(schema.safeParse({ dataNetwork: 'wifi' }).success).toBe(false);
-      expect(schema.safeParse({}).success).toBe(false);
+      const withSimId = schema.safeParse({ simulatorId: 'test-uuid', dataNetwork: 'wifi' });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });
   });
 
@@ -90,7 +47,7 @@ describe('sim_statusbar tool', () => {
 
       const result = await sim_statusbarLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           dataNetwork: 'wifi',
         },
         mockExecutor,
@@ -116,7 +73,7 @@ describe('sim_statusbar tool', () => {
 
       const result = await sim_statusbarLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           dataNetwork: 'wifi',
         },
         mockExecutor,
@@ -136,7 +93,7 @@ describe('sim_statusbar tool', () => {
 
       const result = await sim_statusbarLogic(
         {
-          simulatorUuid: 'invalid-uuid',
+          simulatorId: 'invalid-uuid',
           dataNetwork: '3g',
         },
         mockExecutor,
@@ -160,7 +117,7 @@ describe('sim_statusbar tool', () => {
 
       const result = await sim_statusbarLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           dataNetwork: '4g',
         },
         mockExecutor,
@@ -184,7 +141,7 @@ describe('sim_statusbar tool', () => {
 
       const result = await sim_statusbarLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           dataNetwork: 'lte',
         },
         mockExecutor,
@@ -226,7 +183,7 @@ describe('sim_statusbar tool', () => {
 
       await sim_statusbarLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           dataNetwork: 'wifi',
         },
         mockExecutor,
@@ -274,7 +231,7 @@ describe('sim_statusbar tool', () => {
 
       await sim_statusbarLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           dataNetwork: 'clear',
         },
         mockExecutor,
@@ -297,7 +254,7 @@ describe('sim_statusbar tool', () => {
 
       const result = await sim_statusbarLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           dataNetwork: 'clear',
         },
         mockExecutor,

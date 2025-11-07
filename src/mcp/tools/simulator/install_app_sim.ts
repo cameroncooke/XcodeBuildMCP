@@ -7,15 +7,19 @@ import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 const installAppSimSchemaObject = z.object({
-  simulatorId: z.string().describe('UUID of the simulator to target'),
-  appPath: z.string().describe('Path to the .app bundle to install'),
+  simulatorId: z.string().describe('UUID of the simulator to use (obtained from list_sims)'),
+  appPath: z
+    .string()
+    .describe('Path to the .app bundle to install (full path to the .app directory)'),
 });
 
 type InstallAppSimParams = z.infer<typeof installAppSimSchemaObject>;
 
-const publicSchemaObject = installAppSimSchemaObject.omit({
-  simulatorId: true,
-} as const);
+const publicSchemaObject = installAppSimSchemaObject
+  .omit({
+    simulatorId: true,
+  } as const)
+  .strict();
 
 export async function install_app_simLogic(
   params: InstallAppSimParams,

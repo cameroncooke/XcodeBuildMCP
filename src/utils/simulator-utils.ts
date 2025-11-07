@@ -25,13 +25,15 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
  * @returns Object with uuid, optional warning, or error
  */
 export async function determineSimulatorUuid(
-  params: { simulatorUuid?: string; simulatorName?: string },
+  params: { simulatorUuid?: string; simulatorId?: string; simulatorName?: string },
   executor: CommandExecutor,
 ): Promise<{ uuid?: string; warning?: string; error?: ToolResponse }> {
+  const directUuid = params.simulatorUuid ?? params.simulatorId;
+
   // If UUID is provided directly, use it
-  if (params.simulatorUuid) {
-    log('info', `Using provided simulator UUID: ${params.simulatorUuid}`);
-    return { uuid: params.simulatorUuid };
+  if (directUuid) {
+    log('info', `Using provided simulator UUID: ${directUuid}`);
+    return { uuid: directUuid };
   }
 
   // If name is provided, check if it's actually a UUID

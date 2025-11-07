@@ -19,7 +19,7 @@ const LOG_PREFIX = '[Screenshot]';
 
 // Define schema as ZodObject
 const screenshotSchema = z.object({
-  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
 });
 
 // Use z.infer for type safety
@@ -32,7 +32,7 @@ export async function screenshotLogic(
   pathUtils: { tmpdir: () => string; join: (...paths: string[]) => string } = { ...path, tmpdir },
   uuidUtils: { v4: () => string } = { v4: uuidv4 },
 ): Promise<ToolResponse> {
-  const { simulatorUuid } = params;
+  const { simulatorId } = params;
   const tempDir = pathUtils.tmpdir();
   const screenshotFilename = `screenshot_${uuidUtils.v4()}.png`;
   const screenshotPath = pathUtils.join(tempDir, screenshotFilename);
@@ -43,15 +43,12 @@ export async function screenshotLogic(
     'xcrun',
     'simctl',
     'io',
-    simulatorUuid,
+    simulatorId,
     'screenshot',
     screenshotPath,
   ];
 
-  log(
-    'info',
-    `${LOG_PREFIX}/screenshot: Starting capture to ${screenshotPath} on ${simulatorUuid}`,
-  );
+  log('info', `${LOG_PREFIX}/screenshot: Starting capture to ${screenshotPath} on ${simulatorId}`);
 
   try {
     // Execute the screenshot command
@@ -61,7 +58,7 @@ export async function screenshotLogic(
       throw new SystemError(`Failed to capture screenshot: ${result.error ?? result.output}`);
     }
 
-    log('info', `${LOG_PREFIX}/screenshot: Success for ${simulatorUuid}`);
+    log('info', `${LOG_PREFIX}/screenshot: Success for ${simulatorId}`);
 
     try {
       // Optimize the image for LLM consumption: resize to max 800px width and convert to JPEG

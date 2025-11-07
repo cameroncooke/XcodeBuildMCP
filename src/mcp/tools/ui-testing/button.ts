@@ -10,11 +10,11 @@ import {
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
 import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const buttonSchema = z.object({
-  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
   buttonType: z.enum(['apple-pay', 'home', 'lock', 'side-button', 'siri']),
   duration: z.number().min(0, 'Duration must be non-negative').optional(),
 });
@@ -40,17 +40,17 @@ export async function buttonLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'button';
-  const { simulatorUuid, buttonType, duration } = params;
+  const { simulatorId, buttonType, duration } = params;
   const commandArgs = ['button', buttonType];
   if (duration !== undefined) {
     commandArgs.push('--duration', String(duration));
   }
 
-  log('info', `${LOG_PREFIX}/${toolName}: Starting ${buttonType} button press on ${simulatorUuid}`);
+  log('info', `${LOG_PREFIX}/${toolName}: Starting ${buttonType} button press on ${simulatorId}`);
 
   try {
-    await executeAxeCommand(commandArgs, simulatorUuid, 'button', executor, axeHelpers);
-    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+    await executeAxeCommand(commandArgs, simulatorId, 'button', executor, axeHelpers);
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
     return createTextResponse(`Hardware button '${buttonType}' pressed successfully.`);
   } catch (error) {
     log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
@@ -73,28 +73,30 @@ export async function buttonLogic(
   }
 }
 
+const publicSchemaObject = buttonSchema.omit({ simulatorId: true } as const).strict();
+
 export default {
   name: 'button',
   description:
     'Press hardware button on iOS simulator. Supported buttons: apple-pay, home, lock, side-button, siri',
-  schema: buttonSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    buttonSchema,
-    (params: ButtonParams, executor: CommandExecutor) => {
-      return buttonLogic(params, executor, {
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<ButtonParams>({
+    internalSchema: buttonSchema as unknown as z.ZodType<ButtonParams>,
+    logicFunction: (params: ButtonParams, executor: CommandExecutor) =>
+      buttonLogic(params, executor, {
         getAxePath,
         getBundledAxeEnvironment,
         createAxeNotAvailableResponse,
-      });
-    },
-    getDefaultCommandExecutor,
-  ),
+      }),
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(
   commandArgs: string[],
-  simulatorUuid: string,
+  simulatorId: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
   axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
@@ -106,7 +108,7 @@ async function executeAxeCommand(
   }
 
   // Add --udid parameter to all commands
-  const fullArgs = [...commandArgs, '--udid', simulatorUuid];
+  const fullArgs = [...commandArgs, '--udid', simulatorId];
 
   // Construct the full command array with the axe binary as the first element
   const fullCommand = [axeBinary, ...fullArgs];
@@ -122,7 +124,7 @@ async function executeAxeCommand(
         `axe command '${commandName}' failed.`,
         commandName,
         result.error ?? result.output,
-        simulatorUuid,
+        simulatorId,
       );
     }
 

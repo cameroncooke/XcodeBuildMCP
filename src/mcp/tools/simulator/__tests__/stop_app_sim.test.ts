@@ -22,6 +22,16 @@ describe('stop_app_sim tool', () => {
       expect(schema.safeParse({}).success).toBe(false);
       expect(schema.safeParse({ bundleId: 42 }).success).toBe(false);
       expect(Object.keys(plugin.schema)).toEqual(['bundleId']);
+
+      const withSessionDefaults = schema.safeParse({
+        simulatorId: 'SIM-UUID',
+        simulatorName: 'iPhone 16',
+        bundleId: 'com.example.app',
+      });
+      expect(withSessionDefaults.success).toBe(true);
+      const parsed = withSessionDefaults.data as Record<string, unknown>;
+      expect(parsed.simulatorId).toBeUndefined();
+      expect(parsed.simulatorName).toBeUndefined();
     });
   });
 
@@ -128,26 +138,25 @@ describe('stop_app_sim tool', () => {
       });
     });
 
-    it('should handle simulator lookup failure', async () => {
-      const listExecutor = createMockExecutor({
-        success: true,
-        output: JSON.stringify({ devices: {} }),
-        error: '',
-      });
-
+    it('should surface error when simulator name is missing', async () => {
       const result = await stop_app_simLogic(
         {
-          simulatorName: 'Unknown Simulator',
+          simulatorName: 'Missing Simulator',
           bundleId: 'com.example.App',
         },
-        listExecutor,
+        async () => ({
+          success: true,
+          output: JSON.stringify({ devices: {} }),
+          error: '',
+          process: {} as any,
+        }),
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'Simulator named "Unknown Simulator" not found. Use list_sims to see available simulators.',
+            text: 'Simulator named "Missing Simulator" not found. Use list_sims to see available simulators.',
           },
         ],
         isError: true,

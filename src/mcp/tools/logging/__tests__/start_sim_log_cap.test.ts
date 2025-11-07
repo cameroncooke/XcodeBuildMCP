@@ -1,7 +1,7 @@
 /**
  * Tests for start_sim_log_cap plugin
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import plugin, { start_sim_log_capLogic } from '../start_sim_log_cap.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
@@ -33,51 +33,30 @@ describe('start_sim_log_cap plugin', () => {
 
     it('should validate schema with valid parameters', () => {
       const schema = z.object(plugin.schema);
-      expect(
-        schema.safeParse({ simulatorUuid: 'test-uuid', bundleId: 'com.example.app' }).success,
-      ).toBe(true);
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'test-uuid',
-          bundleId: 'com.example.app',
-          captureConsole: true,
-        }).success,
-      ).toBe(true);
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'test-uuid',
-          bundleId: 'com.example.app',
-          captureConsole: false,
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
+      expect(schema.safeParse({ bundleId: 'com.example.app', captureConsole: true }).success).toBe(
+        true,
+      );
+      expect(schema.safeParse({ bundleId: 'com.example.app', captureConsole: false }).success).toBe(
+        true,
+      );
     });
 
     it('should reject invalid schema parameters', () => {
       const schema = z.object(plugin.schema);
-      expect(schema.safeParse({ simulatorUuid: null, bundleId: 'com.example.app' }).success).toBe(
+      expect(schema.safeParse({ bundleId: null }).success).toBe(false);
+      expect(schema.safeParse({ captureConsole: true }).success).toBe(false);
+      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({ bundleId: 'com.example.app', captureConsole: 'yes' }).success).toBe(
         false,
       );
-      expect(
-        schema.safeParse({ simulatorUuid: undefined, bundleId: 'com.example.app' }).success,
-      ).toBe(false);
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', bundleId: null }).success).toBe(false);
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', bundleId: undefined }).success).toBe(
+      expect(schema.safeParse({ bundleId: 'com.example.app', captureConsole: 123 }).success).toBe(
         false,
       );
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'test-uuid',
-          bundleId: 'com.example.app',
-          captureConsole: 'yes',
-        }).success,
-      ).toBe(false);
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'test-uuid',
-          bundleId: 'com.example.app',
-          captureConsole: 123,
-        }).success,
-      ).toBe(false);
+
+      const withSimId = schema.safeParse({ simulatorId: 'test-uuid', bundleId: 'com.example.app' });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });
   });
 
@@ -98,7 +77,7 @@ describe('start_sim_log_cap plugin', () => {
 
       const result = await start_sim_log_capLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
           bundleId: 'com.example.app',
         },
         mockExecutor,
@@ -122,7 +101,7 @@ describe('start_sim_log_cap plugin', () => {
 
       const result = await start_sim_log_capLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
           bundleId: 'com.example.app',
         },
         mockExecutor,
@@ -148,7 +127,7 @@ describe('start_sim_log_cap plugin', () => {
 
       const result = await start_sim_log_capLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
           bundleId: 'com.example.app',
           captureConsole: true,
         },
@@ -208,7 +187,7 @@ describe('start_sim_log_cap plugin', () => {
 
       await start_sim_log_capLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
           bundleId: 'com.example.app',
           captureConsole: true,
         },
@@ -277,7 +256,7 @@ describe('start_sim_log_cap plugin', () => {
 
       await start_sim_log_capLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
           bundleId: 'com.example.app',
           captureConsole: false,
         },

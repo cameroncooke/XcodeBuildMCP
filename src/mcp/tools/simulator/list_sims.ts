@@ -184,7 +184,7 @@ export async function list_simsLogic(
     }
 
     responseText += 'Next Steps:\n';
-    responseText += "1. Boot a simulator: boot_sim({ simulatorUuid: 'UUID_FROM_ABOVE' })\n";
+    responseText += "1. Boot a simulator: boot_sim({ simulatorId: 'UUID_FROM_ABOVE' })\n";
     responseText += '2. Open the simulator UI: open_sim({})\n';
     responseText +=
       "3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })\n";
