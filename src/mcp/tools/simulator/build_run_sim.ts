@@ -237,7 +237,7 @@ export async function build_run_simLogic(
     // --- Find/Boot Simulator Step ---
     // Use our helper to determine the simulator UUID
     const uuidResult = await determineSimulatorUuid(
-      { simulatorUuid: params.simulatorId, simulatorName: params.simulatorName },
+      { simulatorId: params.simulatorId, simulatorName: params.simulatorName },
       executor,
     );
 
@@ -249,9 +249,9 @@ export async function build_run_simLogic(
       log('warning', uuidResult.warning);
     }
 
-    const simulatorUuid = uuidResult.uuid;
+    const simulatorId = uuidResult.uuid;
 
-    if (!simulatorUuid) {
+    if (!simulatorId) {
       return createTextResponse(
         'Build succeeded, but no simulator specified and failed to find a suitable one.',
         true,
@@ -260,7 +260,7 @@ export async function build_run_simLogic(
 
     // Check simulator state and boot if needed
     try {
-      log('info', `Checking simulator state for UUID: ${simulatorUuid}`);
+      log('info', `Checking simulator state for UUID: ${simulatorId}`);
       const simulatorListResult = await executor(
         ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
         'List Simulators',
@@ -288,7 +288,7 @@ export async function build_run_simLogic(
               typeof device.udid === 'string' &&
               typeof device.name === 'string' &&
               typeof device.state === 'string' &&
-              device.udid === simulatorUuid
+              device.udid === simulatorId
             ) {
               targetSimulator = {
                 udid: device.udid,
@@ -304,7 +304,7 @@ export async function build_run_simLogic(
 
       if (!targetSimulator) {
         return createTextResponse(
-          `Build succeeded, but could not find simulator with UUID: ${simulatorUuid}`,
+          `Build succeeded, but could not find simulator with UUID: ${simulatorId}`,
           true,
         );
       }
@@ -313,14 +313,14 @@ export async function build_run_simLogic(
       if (targetSimulator.state !== 'Booted') {
         log('info', `Booting simulator ${targetSimulator.name}...`);
         const bootResult = await executor(
-          ['xcrun', 'simctl', 'boot', simulatorUuid],
+          ['xcrun', 'simctl', 'boot', simulatorId],
           'Boot Simulator',
         );
         if (!bootResult.success) {
           throw new Error(bootResult.error ?? 'Failed to boot simulator');
         }
       } else {
-        log('info', `Simulator ${simulatorUuid} is already booted`);
+        log('info', `Simulator ${simulatorId} is already booted`);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -346,9 +346,9 @@ export async function build_run_simLogic(
 
     // --- Install App Step ---
     try {
-      log('info', `Installing app at path: ${appBundlePath} to simulator: ${simulatorUuid}`);
+      log('info', `Installing app at path: ${appBundlePath} to simulator: ${simulatorId}`);
       const installResult = await executor(
-        ['xcrun', 'simctl', 'install', simulatorUuid, appBundlePath],
+        ['xcrun', 'simctl', 'install', simulatorId, appBundlePath],
         'Install App',
       );
       if (!installResult.success) {
@@ -435,9 +435,9 @@ export async function build_run_simLogic(
 
     // --- Launch App Step ---
     try {
-      log('info', `Launching app with bundle ID: ${bundleId} on simulator: ${simulatorUuid}`);
+      log('info', `Launching app with bundle ID: ${bundleId} on simulator: ${simulatorId}`);
       const launchResult = await executor(
-        ['xcrun', 'simctl', 'launch', simulatorUuid, bundleId],
+        ['xcrun', 'simctl', 'launch', simulatorId, bundleId],
         'Launch App',
       );
       if (!launchResult.success) {
@@ -472,11 +472,11 @@ If you don't see the simulator window, it may be hidden behind other windows. Th
 
 Next Steps:
 - Option 1: Capture structured logs only (app continues running):
-  start_simulator_log_capture({ simulatorUuid: '${simulatorUuid}', bundleId: '${bundleId}' })
+  start_simulator_log_capture({ simulatorId: '${simulatorId}', bundleId: '${bundleId}' })
 - Option 2: Capture both console and structured logs (app will restart):
-  start_simulator_log_capture({ simulatorUuid: '${simulatorUuid}', bundleId: '${bundleId}', captureConsole: true })
+  start_simulator_log_capture({ simulatorId: '${simulatorId}', bundleId: '${bundleId}', captureConsole: true })
 - Option 3: Launch app with logs in one step (for a fresh start):
-  launch_app_with_logs_in_simulator({ simulatorUuid: '${simulatorUuid}', bundleId: '${bundleId}' })
+  launch_app_with_logs_in_simulator({ simulatorId: '${simulatorId}', bundleId: '${bundleId}' })
 
 When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
         },

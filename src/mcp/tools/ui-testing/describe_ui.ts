@@ -10,11 +10,11 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const describeUiSchema = z.object({
-  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
 });
 
 // Use z.infer for type safety
@@ -31,10 +31,10 @@ const LOG_PREFIX = '[AXe]';
 // Session tracking for describe_ui warnings (shared across UI tools)
 const describeUITimestamps = new Map();
 
-function recordDescribeUICall(simulatorUuid: string): void {
-  describeUITimestamps.set(simulatorUuid, {
+function recordDescribeUICall(simulatorId: string): void {
+  describeUITimestamps.set(simulatorId, {
     timestamp: Date.now(),
-    simulatorUuid,
+    simulatorId,
   });
 }
 
@@ -51,24 +51,24 @@ export async function describe_uiLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'describe_ui';
-  const { simulatorUuid } = params;
+  const { simulatorId } = params;
   const commandArgs = ['describe-ui'];
 
-  log('info', `${LOG_PREFIX}/${toolName}: Starting for ${simulatorUuid}`);
+  log('info', `${LOG_PREFIX}/${toolName}: Starting for ${simulatorId}`);
 
   try {
     const responseText = await executeAxeCommand(
       commandArgs,
-      simulatorUuid,
+      simulatorId,
       'describe-ui',
       executor,
       axeHelpers,
     );
 
     // Record the describe_ui call for warning system
-    recordDescribeUICall(simulatorUuid);
+    recordDescribeUICall(simulatorId);
 
-    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
     return {
       content: [
         {
@@ -106,28 +106,30 @@ export async function describe_uiLogic(
   }
 }
 
+const publicSchemaObject = describeUiSchema.omit({ simulatorId: true } as const).strict();
+
 export default {
   name: 'describe_ui',
   description:
     'Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation.',
-  schema: describeUiSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    describeUiSchema,
-    (params: DescribeUiParams, executor: CommandExecutor) => {
-      return describe_uiLogic(params, executor, {
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<DescribeUiParams>({
+    internalSchema: describeUiSchema as unknown as z.ZodType<DescribeUiParams>,
+    logicFunction: (params: DescribeUiParams, executor: CommandExecutor) =>
+      describe_uiLogic(params, executor, {
         getAxePath,
         getBundledAxeEnvironment,
         createAxeNotAvailableResponse,
-      });
-    },
-    getDefaultCommandExecutor,
-  ),
+      }),
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(
   commandArgs: string[],
-  simulatorUuid: string,
+  simulatorId: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
   axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
@@ -139,7 +141,7 @@ async function executeAxeCommand(
   }
 
   // Add --udid parameter to all commands
-  const fullArgs = [...commandArgs, '--udid', simulatorUuid];
+  const fullArgs = [...commandArgs, '--udid', simulatorId];
 
   // Construct the full command array with the axe binary as the first element
   const fullCommand = [axeBinary, ...fullArgs];
@@ -155,7 +157,7 @@ async function executeAxeCommand(
         `axe command '${commandName}' failed.`,
         commandName,
         result.error ?? result.output,
-        simulatorUuid,
+        simulatorId,
       );
     }
 

@@ -6,15 +6,16 @@ import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 const bootSimSchemaObject = z.object({
-  simulatorId: z.string().describe('UUID of the simulator to boot'),
+  simulatorId: z.string().describe('UUID of the simulator to use (obtained from list_sims)'),
 });
 
-// Use z.infer for type safety
 type BootSimParams = z.infer<typeof bootSimSchemaObject>;
 
-const publicSchemaObject = bootSimSchemaObject.omit({
-  simulatorId: true,
-} as const);
+const publicSchemaObject = bootSimSchemaObject
+  .omit({
+    simulatorId: true,
+  } as const)
+  .strict();
 
 export async function boot_simLogic(
   params: BootSimParams,

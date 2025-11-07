@@ -27,66 +27,23 @@ describe('Key Press Plugin', () => {
       expect(typeof keyPressPlugin.handler).toBe('function');
     });
 
-    it('should validate schema fields with safeParse', () => {
+    it('should expose public schema without simulatorId field', () => {
       const schema = z.object(keyPressPlugin.schema);
 
-      // Valid case
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCode: 40,
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({ keyCode: 40 }).success).toBe(true);
+      expect(schema.safeParse({ keyCode: 40, duration: 1.5 }).success).toBe(true);
+      expect(schema.safeParse({ keyCode: 'invalid' }).success).toBe(false);
+      expect(schema.safeParse({ keyCode: -1 }).success).toBe(false);
+      expect(schema.safeParse({ keyCode: 256 }).success).toBe(false);
 
-      // Invalid simulatorUuid
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'invalid-uuid',
-          keyCode: 40,
-        }).success,
-      ).toBe(false);
+      const withSimId = schema.safeParse({
+        simulatorId: '12345678-1234-1234-1234-123456789012',
+        keyCode: 40,
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as any)).toBe(false);
 
-      // Invalid keyCode (string)
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCode: 'invalid',
-        }).success,
-      ).toBe(false);
-
-      // Invalid keyCode (below range)
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCode: -1,
-        }).success,
-      ).toBe(false);
-
-      // Invalid keyCode (above range)
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCode: 256,
-        }).success,
-      ).toBe(false);
-
-      // Valid with duration
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCode: 40,
-          duration: 1.5,
-        }).success,
-      ).toBe(true);
-
-      // Invalid duration (negative)
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          keyCode: 40,
-          duration: -1,
-        }).success,
-      ).toBe(false);
+      expect(schema.safeParse({}).success).toBe(false);
     });
   });
 
@@ -119,7 +76,7 @@ describe('Key Press Plugin', () => {
 
       await key_pressLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
         },
         trackingExecutor,
@@ -163,7 +120,7 @@ describe('Key Press Plugin', () => {
 
       await key_pressLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCode: 42,
           duration: 1.5,
         },
@@ -210,7 +167,7 @@ describe('Key Press Plugin', () => {
 
       await key_pressLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCode: 255,
         },
         trackingExecutor,
@@ -254,7 +211,7 @@ describe('Key Press Plugin', () => {
 
       await key_pressLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCode: 44,
         },
         trackingExecutor,
@@ -298,7 +255,7 @@ describe('Key Press Plugin', () => {
 
       const result = await key_pressLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
         },
         mockExecutor,
@@ -334,7 +291,7 @@ describe('Key Press Plugin', () => {
 
       const result = await key_pressLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCode: 42,
           duration: 1.5,
         },
@@ -365,7 +322,7 @@ describe('Key Press Plugin', () => {
 
       const result = await key_pressLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
         },
         createNoopExecutor(),
@@ -409,7 +366,7 @@ describe('Key Press Plugin', () => {
 
       const result = await key_pressLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
         },
         mockExecutor,
@@ -448,7 +405,7 @@ describe('Key Press Plugin', () => {
 
       const result = await key_pressLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
         },
         mockExecutor,
@@ -482,7 +439,7 @@ describe('Key Press Plugin', () => {
 
       const result = await key_pressLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
         },
         mockExecutor,
@@ -516,7 +473,7 @@ describe('Key Press Plugin', () => {
 
       const result = await key_pressLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           keyCode: 40,
         },
         mockExecutor,

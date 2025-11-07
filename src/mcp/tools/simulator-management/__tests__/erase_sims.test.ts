@@ -3,15 +3,14 @@ import { z } from 'zod';
 import eraseSims, { erase_simsLogic } from '../erase_sims.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 
-describe('erase_sims tool (UDID or ALL only)', () => {
+describe('erase_sims tool (single simulator)', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(eraseSims.name).toBe('erase_sims');
     });
 
     it('should have correct description', () => {
-      expect(eraseSims.description).toContain('Provide exactly one of: simulatorUdid or all=true');
-      expect(eraseSims.description).toContain('shutdownFirst');
+      expect(eraseSims.description).toBe('Erases a simulator by UDID.');
     });
 
     it('should have handler function', () => {
@@ -20,19 +19,15 @@ describe('erase_sims tool (UDID or ALL only)', () => {
 
     it('should validate schema fields (shape only)', () => {
       const schema = z.object(eraseSims.schema);
-      // Valid
-      expect(
-        schema.safeParse({ simulatorUdid: '123e4567-e89b-12d3-a456-426614174000' }).success,
-      ).toBe(true);
-      expect(schema.safeParse({ all: true }).success).toBe(true);
-      // Shape-level schema does not enforce selection rules; handler validation covers that.
+      expect(schema.safeParse({ shutdownFirst: true }).success).toBe(true);
+      expect(schema.safeParse({}).success).toBe(true);
     });
   });
 
   describe('Single mode', () => {
     it('erases a simulator successfully', async () => {
       const mock = createMockExecutor({ success: true, output: 'OK' });
-      const res = await erase_simsLogic({ simulatorUdid: 'UD1' }, mock);
+      const res = await erase_simsLogic({ simulatorId: 'UD1' }, mock);
       expect(res).toEqual({
         content: [{ type: 'text', text: 'Successfully erased simulator UD1' }],
       });
@@ -40,7 +35,7 @@ describe('erase_sims tool (UDID or ALL only)', () => {
 
     it('returns failure when erase fails', async () => {
       const mock = createMockExecutor({ success: false, error: 'Booted device' });
-      const res = await erase_simsLogic({ simulatorUdid: 'UD1' }, mock);
+      const res = await erase_simsLogic({ simulatorId: 'UD1' }, mock);
       expect(res).toEqual({
         content: [{ type: 'text', text: 'Failed to erase simulator: Booted device' }],
       });
@@ -50,7 +45,7 @@ describe('erase_sims tool (UDID or ALL only)', () => {
       const bootedError =
         'An error was encountered processing the command (domain=com.apple.CoreSimulator.SimError, code=405):\nUnable to erase contents and settings in current state: Booted\n';
       const mock = createMockExecutor({ success: false, error: bootedError });
-      const res = await erase_simsLogic({ simulatorUdid: 'UD1' }, mock);
+      const res = await erase_simsLogic({ simulatorId: 'UD1' }, mock);
       expect((res.content?.[1] as any).text).toContain('Tool hint');
       expect((res.content?.[1] as any).text).toContain('shutdownFirst: true');
     });
@@ -61,7 +56,7 @@ describe('erase_sims tool (UDID or ALL only)', () => {
         calls.push(cmd);
         return { success: true, output: 'OK', error: '', process: { pid: 1 } as any };
       };
-      const res = await erase_simsLogic({ simulatorUdid: 'UD1', shutdownFirst: true }, exec as any);
+      const res = await erase_simsLogic({ simulatorId: 'UD1', shutdownFirst: true }, exec as any);
       expect(calls).toEqual([
         ['xcrun', 'simctl', 'shutdown', 'UD1'],
         ['xcrun', 'simctl', 'erase', 'UD1'],
@@ -69,48 +64,6 @@ describe('erase_sims tool (UDID or ALL only)', () => {
       expect(res).toEqual({
         content: [{ type: 'text', text: 'Successfully erased simulator UD1' }],
       });
-    });
-  });
-
-  describe('All mode', () => {
-    it('erases all simulators successfully', async () => {
-      const exec = createMockExecutor({ success: true, output: 'OK' });
-      const res = await erase_simsLogic({ all: true }, exec);
-      expect(res).toEqual({
-        content: [{ type: 'text', text: 'Successfully erased all simulators' }],
-      });
-    });
-
-    it('returns failure when erase all fails', async () => {
-      const exec = createMockExecutor({ success: false, error: 'Denied' });
-      const res = await erase_simsLogic({ all: true }, exec);
-      expect(res).toEqual({
-        content: [{ type: 'text', text: 'Failed to erase all simulators: Denied' }],
-      });
-    });
-
-    it('performs shutdown all when shutdownFirst=true', async () => {
-      const calls: any[] = [];
-      const exec = async (cmd: string[]) => {
-        calls.push(cmd);
-        return { success: true, output: 'OK', error: '', process: { pid: 1 } as any };
-      };
-      const res = await erase_simsLogic({ all: true, shutdownFirst: true }, exec as any);
-      expect(calls).toEqual([
-        ['xcrun', 'simctl', 'shutdown', 'all'],
-        ['xcrun', 'simctl', 'erase', 'all'],
-      ]);
-      expect(res).toEqual({
-        content: [{ type: 'text', text: 'Successfully erased all simulators' }],
-      });
-    });
-
-    it('adds tool hint on booted error without shutdownFirst (all mode)', async () => {
-      const bootedError = 'Unable to erase contents and settings in current state: Booted';
-      const exec = createMockExecutor({ success: false, error: bootedError });
-      const res = await erase_simsLogic({ all: true }, exec);
-      expect((res.content?.[1] as any).text).toContain('Tool hint');
-      expect((res.content?.[1] as any).text).toContain('shutdownFirst: true');
     });
   });
 });

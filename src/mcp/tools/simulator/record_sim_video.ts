@@ -218,9 +218,7 @@ record_sim_video({ simulatorId: "${params.simulatorId}", stop: true, outputFile:
   };
 }
 
-const publicSchemaObject = recordSimVideoSchemaObject.omit({
-  simulatorId: true,
-} as const);
+const publicSchemaObject = recordSimVideoSchemaObject.omit({ simulatorId: true } as const).strict();
 
 export default {
   name: 'record_sim_video',

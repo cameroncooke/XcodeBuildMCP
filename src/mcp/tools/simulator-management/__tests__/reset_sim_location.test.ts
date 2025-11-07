@@ -19,22 +19,14 @@ describe('reset_sim_location plugin', () => {
       expect(typeof resetSimLocationPlugin.handler).toBe('function');
     });
 
-    it('should have correct schema validation', () => {
+    it('should hide simulatorId from public schema', () => {
       const schema = z.object(resetSimLocationPlugin.schema);
 
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'abc123',
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({}).success).toBe(true);
 
-      expect(
-        schema.safeParse({
-          simulatorUuid: 123,
-        }).success,
-      ).toBe(false);
-
-      expect(schema.safeParse({}).success).toBe(false);
+      const withSimId = schema.safeParse({ simulatorId: 'abc123' });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });
   });
 
@@ -47,7 +39,7 @@ describe('reset_sim_location plugin', () => {
 
       const result = await reset_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
         },
         mockExecutor,
       );
@@ -70,7 +62,7 @@ describe('reset_sim_location plugin', () => {
 
       const result = await reset_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
         },
         mockExecutor,
       );
@@ -90,7 +82,7 @@ describe('reset_sim_location plugin', () => {
 
       const result = await reset_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
         },
         mockExecutor,
       );
@@ -123,7 +115,7 @@ describe('reset_sim_location plugin', () => {
 
       await reset_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
         },
         capturingExecutor,
       );

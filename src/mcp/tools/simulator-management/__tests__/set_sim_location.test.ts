@@ -25,53 +25,20 @@ describe('set_sim_location tool', () => {
       expect(typeof setSimLocation.handler).toBe('function');
     });
 
-    it('should have correct schema with simulatorUuid string field and latitude/longitude number fields', () => {
+    it('should expose public schema without simulatorId field', () => {
       const schema = z.object(setSimLocation.schema);
 
-      // Valid inputs
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'test-uuid-123',
-          latitude: 37.7749,
-          longitude: -122.4194,
-        }).success,
-      ).toBe(true);
-      expect(
-        schema.safeParse({ simulatorUuid: 'ABC123-DEF456', latitude: 0, longitude: 0 }).success,
-      ).toBe(true);
-      expect(
-        schema.safeParse({ simulatorUuid: 'test-uuid', latitude: 90, longitude: 180 }).success,
-      ).toBe(true);
-      expect(
-        schema.safeParse({ simulatorUuid: 'test-uuid', latitude: -90, longitude: -180 }).success,
-      ).toBe(true);
-      expect(
-        schema.safeParse({ simulatorUuid: 'test-uuid', latitude: 45.5, longitude: -73.6 }).success,
-      ).toBe(true);
-
-      // Invalid inputs
-      expect(
-        schema.safeParse({ simulatorUuid: 123, latitude: 37.7749, longitude: -122.4194 }).success,
-      ).toBe(false);
-      expect(
-        schema.safeParse({ simulatorUuid: 'test-uuid', latitude: 'invalid', longitude: -122.4194 })
-          .success,
-      ).toBe(false);
-      expect(
-        schema.safeParse({ simulatorUuid: 'test-uuid', latitude: 37.7749, longitude: 'invalid' })
-          .success,
-      ).toBe(false);
-      expect(
-        schema.safeParse({ simulatorUuid: null, latitude: 37.7749, longitude: -122.4194 }).success,
-      ).toBe(false);
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', longitude: -122.4194 }).success).toBe(
-        false,
-      );
-      expect(schema.safeParse({ simulatorUuid: 'test-uuid', latitude: 37.7749 }).success).toBe(
-        false,
-      );
-      expect(schema.safeParse({ latitude: 37.7749, longitude: -122.4194 }).success).toBe(false);
-      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({ latitude: 37.7749, longitude: -122.4194 }).success).toBe(true);
+      expect(schema.safeParse({ latitude: 0, longitude: 0 }).success).toBe(true);
+      expect(schema.safeParse({ latitude: 37.7749 }).success).toBe(false);
+      expect(schema.safeParse({ longitude: -122.4194 }).success).toBe(false);
+      const withSimId = schema.safeParse({
+        simulatorId: 'test-uuid-123',
+        latitude: 37.7749,
+        longitude: -122.4194,
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });
   });
 
@@ -91,7 +58,7 @@ describe('set_sim_location tool', () => {
 
       await set_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           latitude: 37.7749,
           longitude: -122.4194,
         },
@@ -123,7 +90,7 @@ describe('set_sim_location tool', () => {
 
       await set_sim_locationLogic(
         {
-          simulatorUuid: 'different-uuid',
+          simulatorId: 'different-uuid',
           latitude: 45.5,
           longitude: -73.6,
         },
@@ -155,7 +122,7 @@ describe('set_sim_location tool', () => {
 
       await set_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid',
+          simulatorId: 'test-uuid',
           latitude: -90,
           longitude: -180,
         },
@@ -183,7 +150,7 @@ describe('set_sim_location tool', () => {
 
       const result = await set_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           latitude: 37.7749,
           longitude: -122.4194,
         },
@@ -203,7 +170,7 @@ describe('set_sim_location tool', () => {
     it('should handle latitude validation failure', async () => {
       const result = await set_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           latitude: 95,
           longitude: -122.4194,
         },
@@ -223,7 +190,7 @@ describe('set_sim_location tool', () => {
     it('should handle longitude validation failure', async () => {
       const result = await set_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           latitude: 37.7749,
           longitude: -185,
         },
@@ -249,7 +216,7 @@ describe('set_sim_location tool', () => {
 
       const result = await set_sim_locationLogic(
         {
-          simulatorUuid: 'invalid-uuid',
+          simulatorId: 'invalid-uuid',
           latitude: 37.7749,
           longitude: -122.4194,
         },
@@ -271,7 +238,7 @@ describe('set_sim_location tool', () => {
 
       const result = await set_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           latitude: 37.7749,
           longitude: -122.4194,
         },
@@ -293,7 +260,7 @@ describe('set_sim_location tool', () => {
 
       const result = await set_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           latitude: 37.7749,
           longitude: -122.4194,
         },
@@ -319,7 +286,7 @@ describe('set_sim_location tool', () => {
 
       const result = await set_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           latitude: 90,
           longitude: 180,
         },
@@ -345,7 +312,7 @@ describe('set_sim_location tool', () => {
 
       const result = await set_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           latitude: -90,
           longitude: -180,
         },
@@ -371,7 +338,7 @@ describe('set_sim_location tool', () => {
 
       const result = await set_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           latitude: 0,
           longitude: 0,
         },
@@ -403,7 +370,7 @@ describe('set_sim_location tool', () => {
 
       await set_sim_locationLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           latitude: 37.7749,
           longitude: -122.4194,
         },

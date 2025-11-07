@@ -247,9 +247,9 @@ export async function get_sim_app_pathLogic(
     } else if (isSimulatorPlatform) {
       nextStepsText = `Next Steps:
 1. Get bundle ID: get_app_bundle_id({ appPath: "${appPath}" })
-2. Boot simulator: boot_sim({ simulatorUuid: "SIMULATOR_UUID" })
-3. Install app: install_app_sim({ simulatorUuid: "SIMULATOR_UUID", appPath: "${appPath}" })
-4. Launch app: launch_app_sim({ simulatorUuid: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`;
+2. Boot simulator: boot_sim({ simulatorId: "SIMULATOR_UUID" })
+3. Install app: install_app_sim({ simulatorId: "SIMULATOR_UUID", appPath: "${appPath}" })
+4. Launch app: launch_app_sim({ simulatorId: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`;
     } else if (
       [
         XcodePlatform.iOS,

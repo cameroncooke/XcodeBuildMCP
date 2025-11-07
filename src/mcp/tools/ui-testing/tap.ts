@@ -20,7 +20,7 @@ export interface AxeHelpers {
 
 // Define schema as ZodObject
 const tapSchema = z.object({
-  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
   x: z.number().int('X coordinate must be an integer'),
   y: z.number().int('Y coordinate must be an integer'),
   preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
@@ -36,8 +36,8 @@ const LOG_PREFIX = '[AXe]';
 const describeUITimestamps = new Map<string, { timestamp: number }>();
 const DESCRIBE_UI_WARNING_TIMEOUT = 60000; // 60 seconds
 
-function getCoordinateWarning(simulatorUuid: string): string | null {
-  const session = describeUITimestamps.get(simulatorUuid);
+function getCoordinateWarning(simulatorId: string): string | null {
+  const session = describeUITimestamps.get(simulatorId);
   if (!session) {
     return 'Warning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.';
   }
@@ -61,7 +61,7 @@ export async function tapLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'tap';
-  const { simulatorUuid, x, y, preDelay, postDelay } = params;
+  const { simulatorId, x, y, preDelay, postDelay } = params;
   const commandArgs = ['tap', '-x', String(x), '-y', String(y)];
   if (preDelay !== undefined) {
     commandArgs.push('--pre-delay', String(preDelay));
@@ -70,13 +70,13 @@ export async function tapLogic(
     commandArgs.push('--post-delay', String(postDelay));
   }
 
-  log('info', `${LOG_PREFIX}/${toolName}: Starting for (${x}, ${y}) on ${simulatorUuid}`);
+  log('info', `${LOG_PREFIX}/${toolName}: Starting for (${x}, ${y}) on ${simulatorId}`);
 
   try {
-    await executeAxeCommand(commandArgs, simulatorUuid, 'tap', executor, axeHelpers);
-    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+    await executeAxeCommand(commandArgs, simulatorId, 'tap', executor, axeHelpers);
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
 
-    const warning = getCoordinateWarning(simulatorUuid);
+    const warning = getCoordinateWarning(simulatorId);
     const message = `Tap at (${x}, ${y}) simulated successfully.`;
 
     if (warning) {
@@ -126,7 +126,7 @@ export default {
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(
   commandArgs: string[],
-  simulatorUuid: string,
+  simulatorId: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
   axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
@@ -138,7 +138,7 @@ async function executeAxeCommand(
   }
 
   // Add --udid parameter to all commands
-  const fullArgs = [...commandArgs, '--udid', simulatorUuid];
+  const fullArgs = [...commandArgs, '--udid', simulatorId];
 
   // Construct the full command array with the axe binary as the first element
   const fullCommand = [axeBinary, ...fullArgs];
@@ -154,7 +154,7 @@ async function executeAxeCommand(
         `axe command '${commandName}' failed.`,
         commandName,
         result.error ?? result.output,
-        simulatorUuid,
+        simulatorId,
       );
     }
 

@@ -41,14 +41,14 @@ Reference: `docs/session_management_plan.md`
 - [x] `src/mcp/tools/simulator/record_sim_video.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
 
 ## Simulator Management
-- [ ] `src/mcp/tools/simulator-management/erase_sims.ts` — session defaults: `simulatorId` (covers `simulatorUdid`).
-- [ ] `src/mcp/tools/simulator-management/set_sim_location.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/simulator-management/reset_sim_location.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/simulator-management/set_sim_appearance.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/simulator-management/sim_statusbar.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/simulator-management/erase_sims.ts` — session defaults: `simulatorId` (covers `simulatorUdid`).
+- [x] `src/mcp/tools/simulator-management/set_sim_location.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/simulator-management/reset_sim_location.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/simulator-management/set_sim_appearance.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/simulator-management/sim_statusbar.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
 
 ## Simulator Logging
-- [ ] `src/mcp/tools/logging/start_sim_log_cap.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/logging/start_sim_log_cap.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
 
 ## AXe UI Testing Tools
 - [ ] `src/mcp/tools/ui-testing/button.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).

@@ -20,7 +20,7 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const swipeSchema = z.object({
-  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
   x1: z.number().int('Start X coordinate'),
   y1: z.number().int('Start Y coordinate'),
   x2: z.number().int('End X coordinate'),
@@ -56,7 +56,7 @@ export async function swipeLogic(
 ): Promise<ToolResponse> {
   const toolName = 'swipe';
 
-  const { simulatorUuid, x1, y1, x2, y2, duration, delta, preDelay, postDelay } = params;
+  const { simulatorId, x1, y1, x2, y2, duration, delta, preDelay, postDelay } = params;
   const commandArgs = [
     'swipe',
     '--start-x',
@@ -84,14 +84,14 @@ export async function swipeLogic(
   const optionsText = duration ? ` duration=${duration}s` : '';
   log(
     'info',
-    `${LOG_PREFIX}/${toolName}: Starting swipe (${x1},${y1})->(${x2},${y2})${optionsText} on ${simulatorUuid}`,
+    `${LOG_PREFIX}/${toolName}: Starting swipe (${x1},${y1})->(${x2},${y2})${optionsText} on ${simulatorId}`,
   );
 
   try {
-    await executeAxeCommand(commandArgs, simulatorUuid, 'swipe', executor, axeHelpers);
-    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+    await executeAxeCommand(commandArgs, simulatorId, 'swipe', executor, axeHelpers);
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
 
-    const warning = getCoordinateWarning(simulatorUuid);
+    const warning = getCoordinateWarning(simulatorId);
     const message = `Swipe from (${x1}, ${y1}) to (${x2}, ${y2})${optionsText} simulated successfully.`;
 
     if (warning) {
@@ -138,14 +138,14 @@ export default {
 // Session tracking for describe_ui warnings
 interface DescribeUISession {
   timestamp: number;
-  simulatorUuid: string;
+  simulatorId: string;
 }
 
 const describeUITimestamps = new Map<string, DescribeUISession>();
 const DESCRIBE_UI_WARNING_TIMEOUT = 60000; // 60 seconds
 
-function getCoordinateWarning(simulatorUuid: string): string | null {
-  const session = describeUITimestamps.get(simulatorUuid);
+function getCoordinateWarning(simulatorId: string): string | null {
+  const session = describeUITimestamps.get(simulatorId);
   if (!session) {
     return 'Warning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.';
   }
@@ -162,7 +162,7 @@ function getCoordinateWarning(simulatorUuid: string): string | null {
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(
   commandArgs: string[],
-  simulatorUuid: string,
+  simulatorId: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
   axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
@@ -174,7 +174,7 @@ async function executeAxeCommand(
   }
 
   // Add --udid parameter to all commands
-  const fullArgs = [...commandArgs, '--udid', simulatorUuid];
+  const fullArgs = [...commandArgs, '--udid', simulatorId];
 
   // Construct the full command array with the axe binary as the first element
   const fullCommand = [axeBinary, ...fullArgs];
@@ -190,7 +190,7 @@ async function executeAxeCommand(
         `axe command '${commandName}' failed.`,
         commandName,
         result.error ?? result.output,
-        simulatorUuid,
+        simulatorId,
       );
     }
 

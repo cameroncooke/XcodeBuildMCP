@@ -2,7 +2,7 @@
  * Tests for describe_ui tool plugin
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import describeUIPlugin, { describe_uiLogic } from '../describe_ui.ts';
@@ -27,43 +27,30 @@ describe('Describe UI Plugin', () => {
       expect(typeof describeUIPlugin.handler).toBe('function');
     });
 
-    it('should validate schema fields with safeParse', () => {
+    it('should expose public schema without simulatorId field', () => {
       const schema = z.object(describeUIPlugin.schema);
 
-      // Valid case
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({}).success).toBe(true);
 
-      // Invalid simulatorUuid
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'invalid-uuid',
-        }).success,
-      ).toBe(false);
-
-      // Missing simulatorUuid
-      expect(schema.safeParse({}).success).toBe(false);
+      const withSimId = schema.safeParse({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should handle missing simulatorUuid via schema validation', async () => {
-      // Test the actual handler (not just the logic function)
-      // This demonstrates that Zod validation catches missing parameters
+    it('should surface session default requirement when simulatorId is missing', async () => {
       const result = await describeUIPlugin.handler({});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('simulatorUuid: Required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('simulatorId is required');
     });
 
-    it('should handle invalid simulatorUuid format via schema validation', async () => {
+    it('should handle invalid simulatorId format via schema validation', async () => {
       // Test the actual handler with invalid UUID format
       const result = await describeUIPlugin.handler({
-        simulatorUuid: 'invalid-uuid-format',
+        simulatorId: 'invalid-uuid-format',
       });
 
       expect(result.isError).toBe(true);
@@ -97,7 +84,7 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         trackingExecutor,
         mockAxeHelpers,
@@ -145,7 +132,7 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         createNoopExecutor(),
         mockAxeHelpers,
@@ -178,7 +165,7 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
         mockAxeHelpers,
@@ -206,7 +193,7 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
         mockAxeHelpers,
@@ -236,7 +223,7 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
         mockAxeHelpers,
@@ -266,7 +253,7 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
         },
         mockExecutor,
         mockAxeHelpers,

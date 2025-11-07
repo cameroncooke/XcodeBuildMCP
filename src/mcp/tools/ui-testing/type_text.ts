@@ -23,7 +23,7 @@ const LOG_PREFIX = '[AXe]';
 
 // Define schema as ZodObject
 const typeTextSchema = z.object({
-  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
   text: z.string().min(1, 'Text cannot be empty'),
 });
 
@@ -43,17 +43,17 @@ export async function type_textLogic(
   const toolName = 'type_text';
 
   // Params are already validated by the factory, use directly
-  const { simulatorUuid, text } = params;
+  const { simulatorId, text } = params;
   const commandArgs = ['type', text];
 
   log(
     'info',
-    `${LOG_PREFIX}/${toolName}: Starting type "${text.substring(0, 20)}..." on ${simulatorUuid}`,
+    `${LOG_PREFIX}/${toolName}: Starting type "${text.substring(0, 20)}..." on ${simulatorId}`,
   );
 
   try {
-    await executeAxeCommand(commandArgs, simulatorUuid, 'type', executor, axeHelpers);
-    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+    await executeAxeCommand(commandArgs, simulatorId, 'type', executor, axeHelpers);
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
     return createTextResponse('Text typing simulated successfully.');
   } catch (error) {
     log(
@@ -90,7 +90,7 @@ export default {
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(
   commandArgs: string[],
-  simulatorUuid: string,
+  simulatorId: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
   axeHelpers?: AxeHelpers,
@@ -105,7 +105,7 @@ async function executeAxeCommand(
   }
 
   // Add --udid parameter to all commands
-  const fullArgs = [...commandArgs, '--udid', simulatorUuid];
+  const fullArgs = [...commandArgs, '--udid', simulatorId];
 
   // Construct the full command array with the axe binary as the first element
   const fullCommand = [axeBinary, ...fullArgs];
@@ -121,7 +121,7 @@ async function executeAxeCommand(
         `axe command '${commandName}' failed.`,
         commandName,
         result.error ?? result.output,
-        simulatorUuid,
+        simulatorId,
       );
     }
 

@@ -64,16 +64,16 @@ describe('Tap Plugin', () => {
       // Valid case
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
         }).success,
       ).toBe(true);
 
-      // Invalid simulatorUuid
+      // Invalid simulatorId
       expect(
         schema.safeParse({
-          simulatorUuid: 'invalid-uuid',
+          simulatorId: 'invalid-uuid',
           x: 100,
           y: 200,
         }).success,
@@ -82,7 +82,7 @@ describe('Tap Plugin', () => {
       // Invalid x coordinate - non-integer
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 3.14,
           y: 200,
         }).success,
@@ -91,7 +91,7 @@ describe('Tap Plugin', () => {
       // Invalid y coordinate - non-integer
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 3.14,
         }).success,
@@ -100,7 +100,7 @@ describe('Tap Plugin', () => {
       // Invalid preDelay - negative
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           preDelay: -1,
@@ -110,7 +110,7 @@ describe('Tap Plugin', () => {
       // Invalid postDelay - negative
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           postDelay: -1,
@@ -120,7 +120,7 @@ describe('Tap Plugin', () => {
       // Valid with optional delays
       expect(
         schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           preDelay: 0.5,
@@ -165,7 +165,7 @@ describe('Tap Plugin', () => {
 
       await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
         },
@@ -211,7 +211,7 @@ describe('Tap Plugin', () => {
 
       await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 150,
           y: 300,
           preDelay: 0.5,
@@ -260,7 +260,7 @@ describe('Tap Plugin', () => {
 
       await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 250,
           y: 400,
           postDelay: 1.0,
@@ -309,7 +309,7 @@ describe('Tap Plugin', () => {
 
       await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 350,
           y: 500,
           preDelay: 0.3,
@@ -353,7 +353,7 @@ describe('Tap Plugin', () => {
 
       const result = await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
         },
@@ -382,7 +382,7 @@ describe('Tap Plugin', () => {
 
       const result = await tapLogic(
         {
-          simulatorUuid: '87654321-4321-4321-4321-210987654321',
+          simulatorId: '87654321-4321-4321-4321-210987654321',
           x: 150,
           y: 300,
         },
@@ -411,7 +411,7 @@ describe('Tap Plugin', () => {
 
       const result = await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 250,
           y: 400,
           preDelay: 0.5,
@@ -442,7 +442,7 @@ describe('Tap Plugin', () => {
 
       const result = await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 0,
           y: 0,
         },
@@ -471,7 +471,7 @@ describe('Tap Plugin', () => {
 
       const result = await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 1920,
           y: 1080,
         },
@@ -492,7 +492,7 @@ describe('Tap Plugin', () => {
   });
 
   describe('Plugin Handler Validation', () => {
-    it('should return Zod validation error for missing simulatorUuid', async () => {
+    it('should return Zod validation error for missing simulatorId', async () => {
       const result = await tapPlugin.handler({
         x: 100,
         y: 200,
@@ -502,7 +502,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Required',
           },
         ],
         isError: true,
@@ -511,7 +511,7 @@ describe('Tap Plugin', () => {
 
     it('should return Zod validation error for missing x coordinate', async () => {
       const result = await tapPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-1234-1234-123456789012',
         y: 200,
       });
 
@@ -528,7 +528,7 @@ describe('Tap Plugin', () => {
 
     it('should return Zod validation error for missing y coordinate', async () => {
       const result = await tapPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-1234-1234-123456789012',
         x: 100,
       });
 
@@ -545,7 +545,7 @@ describe('Tap Plugin', () => {
 
     it('should return Zod validation error for invalid UUID format', async () => {
       const result = await tapPlugin.handler({
-        simulatorUuid: 'invalid-uuid',
+        simulatorId: 'invalid-uuid',
         x: 100,
         y: 200,
       });
@@ -554,7 +554,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Invalid Simulator UUID format',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Invalid Simulator UUID format',
           },
         ],
         isError: true,
@@ -563,7 +563,7 @@ describe('Tap Plugin', () => {
 
     it('should return Zod validation error for non-integer x coordinate', async () => {
       const result = await tapPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-1234-1234-123456789012',
         x: 3.14,
         y: 200,
       });
@@ -581,7 +581,7 @@ describe('Tap Plugin', () => {
 
     it('should return Zod validation error for non-integer y coordinate', async () => {
       const result = await tapPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 3.14,
       });
@@ -599,7 +599,7 @@ describe('Tap Plugin', () => {
 
     it('should return Zod validation error for negative preDelay', async () => {
       const result = await tapPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 200,
         preDelay: -1,
@@ -618,7 +618,7 @@ describe('Tap Plugin', () => {
 
     it('should return Zod validation error for negative postDelay', async () => {
       const result = await tapPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 200,
         postDelay: -1,
@@ -648,7 +648,7 @@ describe('Tap Plugin', () => {
 
       const result = await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           preDelay: 0.5,
@@ -680,7 +680,7 @@ describe('Tap Plugin', () => {
 
       const result = await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
         },
@@ -710,7 +710,7 @@ describe('Tap Plugin', () => {
 
       const result = await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
         },
@@ -738,7 +738,7 @@ describe('Tap Plugin', () => {
 
       const result = await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
         },
@@ -766,7 +766,7 @@ describe('Tap Plugin', () => {
 
       const result = await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
         },
@@ -794,7 +794,7 @@ describe('Tap Plugin', () => {
 
       const result = await tapLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
         },

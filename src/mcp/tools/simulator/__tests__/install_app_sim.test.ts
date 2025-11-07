@@ -30,6 +30,13 @@ describe('install_app_sim tool', () => {
       expect(schema.safeParse({}).success).toBe(false);
 
       expect(Object.keys(installAppSim.schema)).toEqual(['appPath']);
+
+      const withSimId = schema.safeParse({
+        simulatorId: 'test-uuid-123',
+        appPath: '/path/app.app',
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
     });
   });
 
@@ -167,11 +174,69 @@ describe('install_app_sim tool', () => {
       });
     });
 
-    it('should handle successful install', async () => {
-      let callCount = 0;
-      const mockExecutor = () => {
-        callCount++;
-        if (callCount === 1) {
+    it('should handle bundle id extraction failure gracefully', async () => {
+      const bundleIdCalls: unknown[] = [];
+      const mockExecutor = (...args: unknown[]) => {
+        bundleIdCalls.push(args);
+        if (
+          Array.isArray(args[0]) &&
+          (args[0] as string[])[0] === 'xcrun' &&
+          (args[0] as string[])[1] === 'simctl'
+        ) {
+          return Promise.resolve({
+            success: true,
+            output: 'App installed',
+            error: undefined,
+            process: { pid: 12345 },
+          });
+        }
+        return Promise.resolve({
+          success: false,
+          output: '',
+          error: 'Failed to read bundle ID',
+          process: { pid: 12345 },
+        });
+      };
+
+      const mockFileSystem = createMockFileSystemExecutor({
+        existsSync: () => true,
+      });
+
+      const result = await install_app_simLogic(
+        {
+          simulatorId: 'test-uuid-123',
+          appPath: '/path/to/app.app',
+        },
+        mockExecutor,
+        mockFileSystem,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'App installed successfully in simulator test-uuid-123',
+          },
+          {
+            type: 'text',
+            text: `Next Steps:
+1. Open the Simulator app: open_sim({})
+2. Launch the app: launch_app_sim({ simulatorId: "test-uuid-123", bundleId: "YOUR_APP_BUNDLE_ID" })`,
+          },
+        ],
+      });
+      expect(bundleIdCalls).toHaveLength(2);
+    });
+
+    it('should include bundle id when extraction succeeds', async () => {
+      const bundleIdCalls: unknown[] = [];
+      const mockExecutor = (...args: unknown[]) => {
+        bundleIdCalls.push(args);
+        if (
+          Array.isArray(args[0]) &&
+          (args[0] as string[])[0] === 'xcrun' &&
+          (args[0] as string[])[1] === 'simctl'
+        ) {
           return Promise.resolve({
             success: true,
             output: 'App installed',
@@ -214,6 +279,7 @@ describe('install_app_sim tool', () => {
           },
         ],
       });
+      expect(bundleIdCalls).toHaveLength(2);
     });
 
     it('should handle command failure', async () => {

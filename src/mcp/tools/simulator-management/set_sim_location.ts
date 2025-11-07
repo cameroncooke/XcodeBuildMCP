@@ -2,12 +2,13 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const setSimulatorLocationSchema = z.object({
-  simulatorUuid: z
+  simulatorId: z
     .string()
+    .uuid()
     .describe('UUID of the simulator to use (obtained from list_simulators)'),
   latitude: z.number().describe('The latitude for the custom location.'),
   longitude: z.number().describe('The longitude for the custom location.'),
@@ -42,7 +43,7 @@ async function executeSimctlCommandAndRespond(
       const fullFailureMessage = `${failureMessagePrefix}: ${result.error}`;
       log(
         'error',
-        `${fullFailureMessage} (operation: ${operationLogContext}, simulator: ${params.simulatorUuid})`,
+        `${fullFailureMessage} (operation: ${operationLogContext}, simulator: ${params.simulatorId})`,
       );
       return {
         content: [{ type: 'text', text: fullFailureMessage }],
@@ -51,7 +52,7 @@ async function executeSimctlCommandAndRespond(
 
     log(
       'info',
-      `${successMessage} (operation: ${operationLogContext}, simulator: ${params.simulatorUuid})`,
+      `${successMessage} (operation: ${operationLogContext}, simulator: ${params.simulatorId})`,
     );
     return {
       content: [{ type: 'text', text: successMessage }],
@@ -61,7 +62,7 @@ async function executeSimctlCommandAndRespond(
     const fullFailureMessage = `${failureMessagePrefix}: ${errorMessage}`;
     log(
       'error',
-      `Error during ${operationLogContext} for simulator ${params.simulatorUuid}: ${errorMessage}`,
+      `Error during ${operationLogContext} for simulator ${params.simulatorId}: ${errorMessage}`,
     );
     return {
       content: [{ type: 'text', text: fullFailureMessage }],
@@ -99,14 +100,14 @@ export async function set_sim_locationLogic(
 
   log(
     'info',
-    `Setting simulator ${params.simulatorUuid} location to ${params.latitude},${params.longitude}`,
+    `Setting simulator ${params.simulatorId} location to ${params.latitude},${params.longitude}`,
   );
 
   return executeSimctlCommandAndRespond(
     params,
-    ['location', params.simulatorUuid, 'set', `${params.latitude},${params.longitude}`],
+    ['location', params.simulatorId, 'set', `${params.latitude},${params.longitude}`],
     'Set Simulator Location',
-    `Successfully set simulator ${params.simulatorUuid} location to ${params.latitude},${params.longitude}`,
+    `Successfully set simulator ${params.simulatorId} location to ${params.latitude},${params.longitude}`,
     'Failed to set simulator location',
     'set simulator location',
     executor,
@@ -114,13 +115,16 @@ export async function set_sim_locationLogic(
   );
 }
 
+const publicSchemaObject = setSimulatorLocationSchema.omit({ simulatorId: true } as const).strict();
+
 export default {
   name: 'set_sim_location',
   description: 'Sets a custom GPS location for the simulator.',
-  schema: setSimulatorLocationSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    setSimulatorLocationSchema,
-    set_sim_locationLogic,
-    getDefaultCommandExecutor,
-  ),
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<SetSimulatorLocationParams>({
+    internalSchema: setSimulatorLocationSchema as unknown as z.ZodType<SetSimulatorLocationParams>,
+    logicFunction: set_sim_locationLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };

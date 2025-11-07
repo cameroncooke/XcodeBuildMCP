@@ -165,20 +165,14 @@ export async function launch_app_simLogic(
       };
     }
 
-    const userParamName = params.simulatorName ? 'simulatorName' : 'simulatorUuid';
-    const userParamValue = params.simulatorName ?? simulatorId;
+    const userParamName = params.simulatorId ? 'simulatorId' : 'simulatorName';
+    const userParamValue = params.simulatorId ?? params.simulatorName ?? simulatorId;
 
     return {
       content: [
         {
           type: 'text',
-          text: `✅ App launched successfully in simulator ${simulatorDisplayName || simulatorId}.
-
-Next Steps:
-1. To see simulator: open_sim()
-2. Log capture: start_sim_log_cap({ ${userParamName}: "${userParamValue}", bundleId: "${params.bundleId}" })
-   With console: start_sim_log_cap({ ${userParamName}: "${userParamValue}", bundleId: "${params.bundleId}", captureConsole: true })
-3. Stop logs: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
+          text: `✅ App launched successfully in simulator ${simulatorDisplayName || simulatorId}.\n\nNext Steps:\n1. To see simulator: open_sim()\n2. Log capture: start_sim_log_cap({ ${userParamName}: "${userParamValue}", bundleId: "${params.bundleId}" })\n   With console: start_sim_log_cap({ ${userParamName}: "${userParamValue}", bundleId: "${params.bundleId}", captureConsole: true })\n3. Stop logs: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
         },
       ],
     };
@@ -196,10 +190,12 @@ Next Steps:
   }
 }
 
-const publicSchemaObject = baseSchemaObject.omit({
-  simulatorId: true,
-  simulatorName: true,
-} as const);
+const publicSchemaObject = baseSchemaObject
+  .omit({
+    simulatorId: true,
+    simulatorName: true,
+  } as const)
+  .strict();
 
 export default {
   name: 'launch_app_sim',
@@ -209,6 +205,7 @@ export default {
     internalSchema: launchAppSimSchema as unknown as z.ZodType<LaunchAppSimParams>,
     logicFunction: launch_app_simLogic,
     getExecutor: getDefaultCommandExecutor,
+    sessionKeys: ['simulatorId', 'simulatorName'],
     requirements: [
       { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
     ],

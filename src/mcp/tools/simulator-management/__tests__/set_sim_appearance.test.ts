@@ -19,36 +19,16 @@ describe('set_sim_appearance plugin', () => {
       expect(typeof setSimAppearancePlugin.handler).toBe('function');
     });
 
-    it('should have correct schema validation', () => {
+    it('should expose public schema without simulatorId field', () => {
       const schema = z.object(setSimAppearancePlugin.schema);
 
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'abc123',
-          mode: 'dark',
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({ mode: 'dark' }).success).toBe(true);
+      expect(schema.safeParse({ mode: 'light' }).success).toBe(true);
+      expect(schema.safeParse({ mode: 'invalid' }).success).toBe(false);
 
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'abc123',
-          mode: 'light',
-        }).success,
-      ).toBe(true);
-
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'abc123',
-          mode: 'invalid',
-        }).success,
-      ).toBe(false);
-
-      expect(
-        schema.safeParse({
-          simulatorUuid: 123,
-          mode: 'dark',
-        }).success,
-      ).toBe(false);
+      const withSimId = schema.safeParse({ simulatorId: 'abc123', mode: 'dark' });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });
   });
 
@@ -62,7 +42,7 @@ describe('set_sim_appearance plugin', () => {
 
       const result = await set_sim_appearanceLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           mode: 'dark',
         },
         mockExecutor,
@@ -86,7 +66,7 @@ describe('set_sim_appearance plugin', () => {
 
       const result = await set_sim_appearanceLogic(
         {
-          simulatorUuid: 'invalid-uuid',
+          simulatorId: 'invalid-uuid',
           mode: 'light',
         },
         mockExecutor,
@@ -102,25 +82,13 @@ describe('set_sim_appearance plugin', () => {
       });
     });
 
-    it('should handle missing simulatorUuid via Zod validation', async () => {
-      const mockExecutor = createMockExecutor({
-        success: true,
-        output: '',
-        error: '',
-      });
-
-      // Test the handler directly to trigger Zod validation
+    it('should surface session default requirement when simulatorId is missing', async () => {
       const result = await setSimAppearancePlugin.handler({ mode: 'dark' });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorUuid: Required',
-          },
-        ],
-        isError: true,
-      });
+      const message = result.content?.[0]?.text ?? '';
+      expect(message).toContain('Error: Missing required session defaults');
+      expect(message).toContain('simulatorId is required');
+      expect(result.isError).toBe(true);
     });
 
     it('should handle exception during execution', async () => {
@@ -128,7 +96,7 @@ describe('set_sim_appearance plugin', () => {
 
       const result = await set_sim_appearanceLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           mode: 'dark',
         },
         mockExecutor,
@@ -158,7 +126,7 @@ describe('set_sim_appearance plugin', () => {
 
       await set_sim_appearanceLogic(
         {
-          simulatorUuid: 'test-uuid-123',
+          simulatorId: 'test-uuid-123',
           mode: 'dark',
         },
         mockExecutor,

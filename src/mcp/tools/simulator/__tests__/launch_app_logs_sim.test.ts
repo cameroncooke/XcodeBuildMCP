@@ -36,6 +36,13 @@ describe('launch_app_logs_sim tool', () => {
       expect(schema.safeParse({ bundleId: 42 }).success).toBe(false);
 
       expect(Object.keys(launchAppLogsSim.schema).sort()).toEqual(['args', 'bundleId'].sort());
+
+      const withSimId = schema.safeParse({
+        simulatorId: 'abc123',
+        bundleId: 'com.example.app',
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
     });
   });
 
@@ -104,7 +111,7 @@ describe('launch_app_logs_sim tool', () => {
       });
     });
 
-    it('should ignore args for log capture setup', async () => {
+    it('should include passthrough args in log capture setup', async () => {
       let capturedParams: unknown = null;
       const logCaptureStub: LogCaptureFunction = async (params) => {
         capturedParams = params;

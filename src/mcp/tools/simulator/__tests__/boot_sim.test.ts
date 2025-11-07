@@ -27,6 +27,10 @@ describe('boot_sim tool', () => {
       const schema = z.object(bootSim.schema);
       expect(schema.safeParse({}).success).toBe(true);
       expect(Object.keys(bootSim.schema)).toHaveLength(0);
+
+      const withSimId = schema.safeParse({ simulatorId: 'abc' });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
     });
   });
 
@@ -35,9 +39,10 @@ describe('boot_sim tool', () => {
       const result = await bootSim.handler({});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Missing required session defaults');
-      expect(result.content[0].text).toContain('simulatorId is required');
-      expect(result.content[0].text).toContain('session-set-defaults');
+      const message = result.content[0].text;
+      expect(message).toContain('Missing required session defaults');
+      expect(message).toContain('simulatorId is required');
+      expect(message).toContain('session-set-defaults');
     });
   });
 
@@ -54,12 +59,7 @@ describe('boot_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: `✅ Simulator booted successfully. To make it visible, use: open_sim()
-
-Next steps:
-1. Open the Simulator app (makes it visible): open_sim()
-2. Install an app: install_app_sim({ simulatorId: "test-uuid-123", appPath: "PATH_TO_YOUR_APP" })
-3. Launch an app: launch_app_sim({ simulatorId: "test-uuid-123", bundleId: "YOUR_APP_BUNDLE_ID" })`,
+            text: `✅ Simulator booted successfully. To make it visible, use: open_sim()\n\nNext steps:\n1. Open the Simulator app (makes it visible): open_sim()\n2. Install an app: install_app_sim({ simulatorId: "test-uuid-123", appPath: "PATH_TO_YOUR_APP" })\n3. Launch an app: launch_app_sim({ simulatorId: "test-uuid-123", bundleId: "YOUR_APP_BUNDLE_ID" })`,
           },
         ],
       });

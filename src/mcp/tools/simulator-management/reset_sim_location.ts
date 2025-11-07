@@ -2,12 +2,13 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const resetSimulatorLocationSchema = z.object({
-  simulatorUuid: z
+  simulatorId: z
     .string()
+    .uuid()
     .describe('UUID of the simulator to use (obtained from list_simulators)'),
 });
 
@@ -40,7 +41,7 @@ async function executeSimctlCommandAndRespond(
       const fullFailureMessage = `${failureMessagePrefix}: ${result.error}`;
       log(
         'error',
-        `${fullFailureMessage} (operation: ${operationLogContext}, simulator: ${params.simulatorUuid})`,
+        `${fullFailureMessage} (operation: ${operationLogContext}, simulator: ${params.simulatorId})`,
       );
       return {
         content: [{ type: 'text', text: fullFailureMessage }],
@@ -49,7 +50,7 @@ async function executeSimctlCommandAndRespond(
 
     log(
       'info',
-      `${successMessage} (operation: ${operationLogContext}, simulator: ${params.simulatorUuid})`,
+      `${successMessage} (operation: ${operationLogContext}, simulator: ${params.simulatorId})`,
     );
     return {
       content: [{ type: 'text', text: successMessage }],
@@ -59,7 +60,7 @@ async function executeSimctlCommandAndRespond(
     const fullFailureMessage = `${failureMessagePrefix}: ${errorMessage}`;
     log(
       'error',
-      `Error during ${operationLogContext} for simulator ${params.simulatorUuid}: ${errorMessage}`,
+      `Error during ${operationLogContext} for simulator ${params.simulatorId}: ${errorMessage}`,
     );
     return {
       content: [{ type: 'text', text: fullFailureMessage }],
@@ -71,26 +72,32 @@ export async function reset_sim_locationLogic(
   params: ResetSimulatorLocationParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  log('info', `Resetting simulator ${params.simulatorUuid} location`);
+  log('info', `Resetting simulator ${params.simulatorId} location`);
 
   return executeSimctlCommandAndRespond(
     params,
-    ['location', params.simulatorUuid, 'clear'],
+    ['location', params.simulatorId, 'clear'],
     'Reset Simulator Location',
-    `Successfully reset simulator ${params.simulatorUuid} location.`,
+    `Successfully reset simulator ${params.simulatorId} location.`,
     'Failed to reset simulator location',
     'reset simulator location',
     executor,
   );
 }
 
+const publicSchemaObject = resetSimulatorLocationSchema
+  .omit({ simulatorId: true } as const)
+  .strict();
+
 export default {
   name: 'reset_sim_location',
   description: "Resets the simulator's location to default.",
-  schema: resetSimulatorLocationSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    resetSimulatorLocationSchema,
-    reset_sim_locationLogic,
-    getDefaultCommandExecutor,
-  ),
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<ResetSimulatorLocationParams>({
+    internalSchema:
+      resetSimulatorLocationSchema as unknown as z.ZodType<ResetSimulatorLocationParams>,
+    logicFunction: reset_sim_locationLogic,
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };

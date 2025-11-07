@@ -125,9 +125,7 @@ export async function stop_app_simLogic(
       content: [
         {
           type: 'text',
-          text: `✅ App ${params.bundleId} stopped successfully in simulator ${
-            simulatorDisplayName || simulatorId
-          }`,
+          text: `✅ App ${params.bundleId} stopped successfully in simulator ${simulatorDisplayName || simulatorId}`,
         },
       ],
     };
@@ -146,10 +144,12 @@ export async function stop_app_simLogic(
   }
 }
 
-const publicSchemaObject = baseSchemaObject.omit({
-  simulatorId: true,
-  simulatorName: true,
-} as const);
+const publicSchemaObject = baseSchemaObject
+  .omit({
+    simulatorId: true,
+    simulatorName: true,
+  } as const)
+  .strict();
 
 export default {
   name: 'stop_app_sim',
@@ -159,6 +159,7 @@ export default {
     internalSchema: stopAppSimSchema as unknown as z.ZodType<StopAppSimParams>,
     logicFunction: stop_app_simLogic,
     getExecutor: getDefaultCommandExecutor,
+    sessionKeys: ['simulatorId', 'simulatorName'],
     requirements: [
       { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
     ],

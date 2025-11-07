@@ -26,7 +26,7 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const longPressSchema = z.object({
-  simulatorUuid: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
   x: z.number().int('X coordinate for the long press'),
   y: z.number().int('Y coordinate for the long press'),
   duration: z.number().positive('Duration of the long press in milliseconds'),
@@ -53,7 +53,7 @@ export async function long_pressLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'long_press';
-  const { simulatorUuid, x, y, duration } = params;
+  const { simulatorId, x, y, duration } = params;
   // AXe uses touch command with --down, --up, and --delay for long press
   const delayInSeconds = Number(duration) / 1000; // Convert ms to seconds
   const commandArgs = [
@@ -70,14 +70,14 @@ export async function long_pressLogic(
 
   log(
     'info',
-    `${LOG_PREFIX}/${toolName}: Starting for (${x}, ${y}), ${duration}ms on ${simulatorUuid}`,
+    `${LOG_PREFIX}/${toolName}: Starting for (${x}, ${y}), ${duration}ms on ${simulatorId}`,
   );
 
   try {
-    await executeAxeCommand(commandArgs, simulatorUuid, 'touch', executor, axeHelpers);
-    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorUuid}`);
+    await executeAxeCommand(commandArgs, simulatorId, 'touch', executor, axeHelpers);
+    log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
 
-    const warning = getCoordinateWarning(simulatorUuid);
+    const warning = getCoordinateWarning(simulatorId);
     const message = `Long press at (${x}, ${y}) for ${duration}ms simulated successfully.`;
 
     if (warning) {
@@ -127,14 +127,14 @@ export default {
 // Session tracking for describe_ui warnings
 interface DescribeUISession {
   timestamp: number;
-  simulatorUuid: string;
+  simulatorId: string;
 }
 
 const describeUITimestamps = new Map<string, DescribeUISession>();
 const DESCRIBE_UI_WARNING_TIMEOUT = 60000; // 60 seconds
 
-function getCoordinateWarning(simulatorUuid: string): string | null {
-  const session = describeUITimestamps.get(simulatorUuid);
+function getCoordinateWarning(simulatorId: string): string | null {
+  const session = describeUITimestamps.get(simulatorId);
   if (!session) {
     return 'Warning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.';
   }
@@ -151,7 +151,7 @@ function getCoordinateWarning(simulatorUuid: string): string | null {
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(
   commandArgs: string[],
-  simulatorUuid: string,
+  simulatorId: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
   axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
@@ -163,7 +163,7 @@ async function executeAxeCommand(
   }
 
   // Add --udid parameter to all commands
-  const fullArgs = [...commandArgs, '--udid', simulatorUuid];
+  const fullArgs = [...commandArgs, '--udid', simulatorId];
 
   // Construct the full command array with the axe binary as the first element
   const fullCommand = [axeBinary, ...fullArgs];
@@ -179,7 +179,7 @@ async function executeAxeCommand(
         `axe command '${commandName}' failed.`,
         commandName,
         result.error ?? result.output,
-        simulatorUuid,
+        simulatorId,
       );
     }
 

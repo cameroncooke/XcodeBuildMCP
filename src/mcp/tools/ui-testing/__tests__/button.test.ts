@@ -2,7 +2,7 @@
  * Tests for button tool plugin
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import buttonPlugin, { buttonLogic } from '../button.ts';
@@ -23,61 +23,22 @@ describe('Button Plugin', () => {
       expect(typeof buttonPlugin.handler).toBe('function');
     });
 
-    it('should validate schema fields with safeParse', () => {
+    it('should expose public schema without simulatorId field', () => {
       const schema = z.object(buttonPlugin.schema);
 
-      // Valid case
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          buttonType: 'home',
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({ buttonType: 'home' }).success).toBe(true);
+      expect(schema.safeParse({ buttonType: 'home', duration: 2.5 }).success).toBe(true);
+      expect(schema.safeParse({ buttonType: 'invalid-button' }).success).toBe(false);
+      expect(schema.safeParse({ buttonType: 'home', duration: -1 }).success).toBe(false);
 
-      // Invalid simulatorUuid
-      expect(
-        schema.safeParse({
-          simulatorUuid: 'invalid-uuid',
-          buttonType: 'home',
-        }).success,
-      ).toBe(false);
-
-      // Invalid buttonType
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          buttonType: 'invalid-button',
-        }).success,
-      ).toBe(false);
-
-      // Valid with duration
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          buttonType: 'home',
-          duration: 2.5,
-        }).success,
-      ).toBe(true);
-
-      // Invalid duration (negative)
-      expect(
-        schema.safeParse({
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
-          buttonType: 'home',
-          duration: -1,
-        }).success,
-      ).toBe(false);
-
-      // Test all valid button types
-      const validButtons = ['apple-pay', 'home', 'lock', 'side-button', 'siri'];
-      validButtons.forEach((buttonType) => {
-        expect(
-          schema.safeParse({
-            simulatorUuid: '12345678-1234-1234-1234-123456789012',
-            buttonType,
-          }).success,
-        ).toBe(true);
+      const withSimId = schema.safeParse({
+        simulatorId: '12345678-1234-1234-1234-123456789012',
+        buttonType: 'home',
       });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as any)).toBe(false);
+
+      expect(schema.safeParse({}).success).toBe(false);
     });
   });
 
@@ -105,7 +66,7 @@ describe('Button Plugin', () => {
 
       await buttonLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
         },
         trackingExecutor,
@@ -144,7 +105,7 @@ describe('Button Plugin', () => {
 
       await buttonLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           buttonType: 'side-button',
           duration: 2.5,
         },
@@ -186,7 +147,7 @@ describe('Button Plugin', () => {
 
       await buttonLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           buttonType: 'apple-pay',
         },
         trackingExecutor,
@@ -221,7 +182,7 @@ describe('Button Plugin', () => {
 
       await buttonLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           buttonType: 'siri',
         },
         trackingExecutor,
@@ -239,17 +200,17 @@ describe('Button Plugin', () => {
   });
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
-    it('should return error for missing simulatorUuid', async () => {
+    it('should surface session default requirement when simulatorId is missing', async () => {
       const result = await buttonPlugin.handler({ buttonType: 'home' });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('simulatorUuid: Required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('simulatorId is required');
     });
 
     it('should return error for missing buttonType', async () => {
       const result = await buttonPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-1234-1234-123456789012',
       });
 
       expect(result.isError).toBe(true);
@@ -257,9 +218,9 @@ describe('Button Plugin', () => {
       expect(result.content[0].text).toContain('buttonType: Required');
     });
 
-    it('should return error for invalid simulatorUuid format', async () => {
+    it('should return error for invalid simulatorId format', async () => {
       const result = await buttonPlugin.handler({
-        simulatorUuid: 'invalid-uuid-format',
+        simulatorId: 'invalid-uuid-format',
         buttonType: 'home',
       });
 
@@ -270,7 +231,7 @@ describe('Button Plugin', () => {
 
     it('should return error for invalid buttonType', async () => {
       const result = await buttonPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-1234-1234-123456789012',
         buttonType: 'invalid-button',
       });
 
@@ -280,7 +241,7 @@ describe('Button Plugin', () => {
 
     it('should return error for negative duration', async () => {
       const result = await buttonPlugin.handler({
-        simulatorUuid: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-1234-1234-123456789012',
         buttonType: 'home',
         duration: -1,
       });
@@ -309,7 +270,7 @@ describe('Button Plugin', () => {
 
       const result = await buttonLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
         },
         mockExecutor,
@@ -341,7 +302,7 @@ describe('Button Plugin', () => {
 
       const result = await buttonLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           buttonType: 'side-button',
           duration: 2.5,
         },
@@ -372,7 +333,7 @@ describe('Button Plugin', () => {
 
       const result = await buttonLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
         },
         createNoopExecutor(),
@@ -409,7 +370,7 @@ describe('Button Plugin', () => {
 
       const result = await buttonLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
         },
         mockExecutor,
@@ -443,7 +404,7 @@ describe('Button Plugin', () => {
 
       const result = await buttonLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
         },
         mockExecutor,
@@ -472,7 +433,7 @@ describe('Button Plugin', () => {
 
       const result = await buttonLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
         },
         mockExecutor,
@@ -501,7 +462,7 @@ describe('Button Plugin', () => {
 
       const result = await buttonLogic(
         {
-          simulatorUuid: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-1234-1234-123456789012',
           buttonType: 'home',
         },
         mockExecutor,

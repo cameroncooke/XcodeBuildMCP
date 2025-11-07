@@ -17,7 +17,7 @@ export type LogCaptureFunction = (
 ) => Promise<{ sessionId: string; logFilePath: string; processes: unknown[]; error?: string }>;
 
 const launchAppLogsSimSchemaObject = z.object({
-  simulatorId: z.string().describe('UUID of the simulator to target'),
+  simulatorId: z.string().describe('UUID of the simulator to use (obtained from list_sims)'),
   bundleId: z
     .string()
     .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
@@ -26,9 +26,11 @@ const launchAppLogsSimSchemaObject = z.object({
 
 type LaunchAppLogsSimParams = z.infer<typeof launchAppLogsSimSchemaObject>;
 
-const publicSchemaObject = launchAppLogsSimSchemaObject.omit({
-  simulatorId: true,
-} as const);
+const publicSchemaObject = launchAppLogsSimSchemaObject
+  .omit({
+    simulatorId: true,
+  } as const)
+  .strict();
 
 export async function launch_app_logs_simLogic(
   params: LaunchAppLogsSimParams,
