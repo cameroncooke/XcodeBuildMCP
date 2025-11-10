@@ -2,13 +2,14 @@
  * Tests for type_text plugin
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 import typeTextPlugin, { type_textLogic } from '../type_text.ts';
 
 // Mock axe helpers for dependency injection
@@ -36,6 +37,10 @@ function createRejectingExecutor(error: any) {
 }
 
 describe('Type Text Plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(typeTextPlugin.name).toBe('type_text');
@@ -54,40 +59,56 @@ describe('Type Text Plugin', () => {
     it('should validate schema fields with safeParse', () => {
       const schema = z.object(typeTextPlugin.schema);
 
-      // Valid case
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           text: 'Hello World',
         }).success,
       ).toBe(true);
 
-      // Invalid simulatorId
       expect(
         schema.safeParse({
-          simulatorId: 'invalid-uuid',
-          text: 'Hello World',
-        }).success,
-      ).toBe(false);
-
-      // Invalid text - empty string
-      expect(
-        schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           text: '',
         }).success,
       ).toBe(false);
 
-      // Invalid text - non-string
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           text: 123,
         }).success,
       ).toBe(false);
 
-      // Missing required fields
       expect(schema.safeParse({}).success).toBe(false);
+
+      const withSimId = schema.safeParse({
+        simulatorId: '12345678-1234-1234-1234-123456789012',
+        text: 'Hello World',
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
+    });
+  });
+
+  describe('Handler Requirements', () => {
+    it('should require simulatorId session default', async () => {
+      const result = await typeTextPlugin.handler({ text: 'Hello' });
+
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Missing required session defaults');
+      expect(message).toContain('simulatorId is required');
+      expect(message).toContain('session-set-defaults');
+    });
+
+    it('should surface validation errors when defaults exist', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+
+      const result = await typeTextPlugin.handler({});
+
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('text: Required');
+      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
   });
 

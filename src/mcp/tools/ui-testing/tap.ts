@@ -10,7 +10,7 @@ import {
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
 import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 export interface AxeHelpers {
   getAxePath: () => string | null;
@@ -29,6 +29,8 @@ const tapSchema = z.object({
 
 // Use z.infer for type safety
 type TapParams = z.infer<typeof tapSchema>;
+
+const publicSchemaObject = tapSchema.omit({ simulatorId: true } as const).strict();
 
 const LOG_PREFIX = '[AXe]';
 
@@ -109,18 +111,18 @@ export default {
   name: 'tap',
   description:
     "Tap at specific coordinates. Use describe_ui to get precise element coordinates (don't guess from screenshots). Supports optional timing delays.",
-  schema: tapSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    tapSchema,
-    (params: TapParams, executor: CommandExecutor) => {
-      return tapLogic(params, executor, {
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<TapParams>({
+    internalSchema: tapSchema as unknown as z.ZodType<TapParams>,
+    logicFunction: (params: TapParams, executor: CommandExecutor) =>
+      tapLogic(params, executor, {
         getAxePath,
         getBundledAxeEnvironment,
         createAxeNotAvailableResponse,
-      });
-    },
-    getDefaultCommandExecutor,
-  ),
+      }),
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)

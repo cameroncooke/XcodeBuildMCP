@@ -13,7 +13,7 @@ import {
   getDefaultFileSystemExecutor,
   getDefaultCommandExecutor,
 } from '../../../utils/execution/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 const LOG_PREFIX = '[Screenshot]';
 
@@ -24,6 +24,8 @@ const screenshotSchema = z.object({
 
 // Use z.infer for type safety
 type ScreenshotParams = z.infer<typeof screenshotSchema>;
+
+const publicSchemaObject = screenshotSchema.omit({ simulatorId: true } as const).strict();
 
 export async function screenshotLogic(
   params: ScreenshotParams,
@@ -141,12 +143,13 @@ export default {
   name: 'screenshot',
   description:
     "Captures screenshot for visual verification. For UI coordinates, use describe_ui instead (don't determine coordinates from screenshots).",
-  schema: screenshotSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    screenshotSchema,
-    (params: ScreenshotParams, executor: CommandExecutor) => {
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<ScreenshotParams>({
+    internalSchema: screenshotSchema as unknown as z.ZodType<ScreenshotParams>,
+    logicFunction: (params: ScreenshotParams, executor: CommandExecutor) => {
       return screenshotLogic(params, executor);
     },
-    getDefaultCommandExecutor,
-  ),
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };

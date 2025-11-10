@@ -12,10 +12,13 @@ import {
   createCommandMatchingMockExecutor,
 } from '../../../../test-utils/mock-executors.ts';
 import { SystemError } from '../../../../utils/responses/index.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 import screenshotPlugin, { screenshotLogic } from '../../ui-testing/screenshot.ts';
 
 describe('screenshot plugin', () => {
-  // No mocks to clear since we use pure dependency injection
+  beforeEach(() => {
+    sessionStore.clear();
+  });
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name field', () => {
@@ -35,19 +38,13 @@ describe('screenshot plugin', () => {
     it('should have correct schema validation', () => {
       const schema = z.object(screenshotPlugin.schema);
 
-      expect(
-        schema.safeParse({
-          simulatorId: '550e8400-e29b-41d4-a716-446655440000',
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({}).success).toBe(true);
 
-      expect(
-        schema.safeParse({
-          simulatorId: 123,
-        }).success,
-      ).toBe(false);
-
-      expect(schema.safeParse({}).success).toBe(false);
+      const withSimId = schema.safeParse({
+        simulatorId: '550e8400-e29b-41d4-a716-446655440000',
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
     });
   });
 
@@ -282,18 +279,13 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle missing simulatorId via handler', async () => {
-      // Test Zod validation by calling the handler with invalid params
       const result = await screenshotPlugin.handler({});
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Required',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Missing required session defaults');
+      expect(message).toContain('simulatorId is required');
+      expect(message).toContain('session-set-defaults');
     });
 
     it('should handle command failure', async () => {

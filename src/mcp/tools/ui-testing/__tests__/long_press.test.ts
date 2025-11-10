@@ -2,13 +2,16 @@
  * Tests for long_press tool plugin
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 import longPressPlugin, { long_pressLogic } from '../long_press.ts';
 
 describe('Long Press Plugin', () => {
-  // Setup for each test - no vitest mocks to clear
+  beforeEach(() => {
+    sessionStore.clear();
+  });
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
@@ -28,65 +31,78 @@ describe('Long Press Plugin', () => {
     it('should validate schema fields with safeParse', () => {
       const schema = z.object(longPressPlugin.schema);
 
-      // Valid case
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           duration: 1500,
         }).success,
       ).toBe(true);
 
-      // Invalid simulatorId
       expect(
         schema.safeParse({
-          simulatorId: 'invalid-uuid',
-          x: 100,
-          y: 200,
-          duration: 1500,
-        }).success,
-      ).toBe(false);
-
-      // Invalid x (not integer)
-      expect(
-        schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100.5,
           y: 200,
           duration: 1500,
         }).success,
       ).toBe(false);
 
-      // Invalid y (not integer)
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200.5,
           duration: 1500,
         }).success,
       ).toBe(false);
 
-      // Invalid duration (not positive)
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           duration: 0,
         }).success,
       ).toBe(false);
 
-      // Invalid duration (negative)
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           duration: -100,
         }).success,
       ).toBe(false);
+
+      const withSimId = schema.safeParse({
+        simulatorId: '12345678-1234-1234-1234-123456789012',
+        x: 100,
+        y: 200,
+        duration: 1500,
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
+    });
+  });
+
+  describe('Handler Requirements', () => {
+    it('should require simulatorId session default', async () => {
+      const result = await longPressPlugin.handler({ x: 100, y: 200, duration: 1500 });
+
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Missing required session defaults');
+      expect(message).toContain('simulatorId is required');
+      expect(message).toContain('session-set-defaults');
+    });
+
+    it('should surface validation errors once simulator default exists', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+
+      const result = await longPressPlugin.handler({ x: 100, y: 200, duration: 0 });
+
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('duration: Duration of the long press in milliseconds');
+      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
   });
 

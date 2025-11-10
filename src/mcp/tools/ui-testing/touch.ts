@@ -17,7 +17,7 @@ import {
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const touchSchema = z.object({
@@ -31,6 +31,8 @@ const touchSchema = z.object({
 
 // Use z.infer for type safety
 type TouchParams = z.infer<typeof touchSchema>;
+
+const publicSchemaObject = touchSchema.omit({ simulatorId: true } as const).strict();
 
 interface AxeHelpers {
   getAxePath: () => string | null;
@@ -111,8 +113,13 @@ export default {
   name: 'touch',
   description:
     "Perform touch down/up events at specific coordinates. Use describe_ui for precise coordinates (don't guess from screenshots).",
-  schema: touchSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(touchSchema, touchLogic, getDefaultCommandExecutor),
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<TouchParams>({
+    internalSchema: touchSchema as unknown as z.ZodType<TouchParams>,
+    logicFunction: (params: TouchParams, executor: CommandExecutor) => touchLogic(params, executor),
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };
 
 // Session tracking for describe_ui warnings

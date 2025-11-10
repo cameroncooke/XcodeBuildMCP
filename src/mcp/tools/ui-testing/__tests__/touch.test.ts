@@ -6,9 +6,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 import touchPlugin, { touchLogic } from '../touch.ts';
 
 describe('Touch Plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(touchPlugin.name).toBe('touch');
@@ -27,77 +32,86 @@ describe('Touch Plugin', () => {
     it('should validate schema fields with safeParse', () => {
       const schema = z.object(touchPlugin.schema);
 
-      // Valid case with down
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
         }).success,
       ).toBe(true);
 
-      // Valid case with up
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           up: true,
         }).success,
       ).toBe(true);
 
-      // Invalid simulatorId
       expect(
         schema.safeParse({
-          simulatorId: 'invalid-uuid',
-          x: 100,
-          y: 200,
-          down: true,
-        }).success,
-      ).toBe(false);
-
-      // Invalid x (not integer)
-      expect(
-        schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100.5,
           y: 200,
           down: true,
         }).success,
       ).toBe(false);
 
-      // Invalid y (not integer)
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200.5,
           down: true,
         }).success,
       ).toBe(false);
 
-      // Valid with delay
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
-          x: 100,
-          y: 200,
-          down: true,
-          delay: 1.5,
-        }).success,
-      ).toBe(true);
-
-      // Invalid delay (negative)
-      expect(
-        schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           down: true,
           delay: -1,
         }).success,
       ).toBe(false);
+
+      const withSimId = schema.safeParse({
+        simulatorId: '12345678-1234-1234-1234-123456789012',
+        x: 100,
+        y: 200,
+        down: true,
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
+    });
+  });
+
+  describe('Handler Requirements', () => {
+    it('should require simulatorId session default', async () => {
+      const result = await touchPlugin.handler({
+        x: 100,
+        y: 200,
+        down: true,
+      });
+
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Missing required session defaults');
+      expect(message).toContain('simulatorId is required');
+      expect(message).toContain('session-set-defaults');
+    });
+
+    it('should surface parameter validation errors when defaults exist', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+
+      const result = await touchPlugin.handler({
+        y: 200,
+        down: true,
+      });
+
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('x: Required');
+      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
   });
 

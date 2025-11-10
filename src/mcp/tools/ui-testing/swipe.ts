@@ -16,7 +16,7 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const swipeSchema = z.object({
@@ -33,6 +33,8 @@ const swipeSchema = z.object({
 
 // Use z.infer for type safety
 type SwipeParams = z.infer<typeof swipeSchema>;
+
+const publicSchemaObject = swipeSchema.omit({ simulatorId: true } as const).strict();
 
 export interface AxeHelpers {
   getAxePath: () => string | null;
@@ -121,18 +123,18 @@ export default {
   name: 'swipe',
   description:
     "Swipe from one point to another. Use describe_ui for precise coordinates (don't guess from screenshots). Supports configurable timing.",
-  schema: swipeSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    swipeSchema,
-    (params: SwipeParams, executor: CommandExecutor) => {
-      return swipeLogic(params, executor, {
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<SwipeParams>({
+    internalSchema: swipeSchema as unknown as z.ZodType<SwipeParams>,
+    logicFunction: (params: SwipeParams, executor: CommandExecutor) =>
+      swipeLogic(params, executor, {
         getAxePath,
         getBundledAxeEnvironment,
         createAxeNotAvailableResponse,
-      });
-    },
-    getDefaultCommandExecutor,
-  ),
+      }),
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };
 
 // Session tracking for describe_ui warnings

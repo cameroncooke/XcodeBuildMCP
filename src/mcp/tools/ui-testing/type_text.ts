@@ -17,7 +17,7 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 const LOG_PREFIX = '[AXe]';
 
@@ -29,6 +29,8 @@ const typeTextSchema = z.object({
 
 // Use z.infer for type safety
 type TypeTextParams = z.infer<typeof typeTextSchema>;
+
+const publicSchemaObject = typeTextSchema.omit({ simulatorId: true } as const).strict();
 
 interface AxeHelpers {
   getAxePath: () => string | null;
@@ -83,8 +85,14 @@ export default {
   name: 'type_text',
   description:
     'Type text (supports US keyboard characters). Use describe_ui to find text field, tap to focus, then type.',
-  schema: typeTextSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(typeTextSchema, type_textLogic, getDefaultCommandExecutor), // Safe factory
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<TypeTextParams>({
+    internalSchema: typeTextSchema as unknown as z.ZodType<TypeTextParams>,
+    logicFunction: (params: TypeTextParams, executor: CommandExecutor) =>
+      type_textLogic(params, executor),
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }), // Safe factory
 };
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)

@@ -10,9 +10,14 @@ import {
   createNoopExecutor,
 } from '../../../../test-utils/mock-executors.ts';
 import { SystemError } from '../../../../utils/responses/index.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 import screenshotPlugin, { screenshotLogic } from '../screenshot.ts';
 
 describe('Screenshot Plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(screenshotPlugin.name).toBe('screenshot');
@@ -31,54 +36,38 @@ describe('Screenshot Plugin', () => {
     it('should validate schema fields with safeParse', () => {
       const schema = z.object(screenshotPlugin.schema);
 
-      // Valid case
-      expect(
-        schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
-        }).success,
-      ).toBe(true);
+      // Public schema is empty; ensure extra fields are stripped
+      expect(schema.safeParse({}).success).toBe(true);
 
-      // Invalid simulatorId
-      expect(
-        schema.safeParse({
-          simulatorId: 'invalid-uuid',
-        }).success,
-      ).toBe(false);
-
-      // Missing simulatorId
-      expect(schema.safeParse({}).success).toBe(false);
+      const withSimId = schema.safeParse({
+        simulatorId: '12345678-1234-1234-1234-123456789012',
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
     });
   });
 
   describe('Plugin Handler Validation', () => {
-    it('should return Zod validation error for missing simulatorId', async () => {
+    it('should require simulatorId session default when not provided', async () => {
       const result = await screenshotPlugin.handler({});
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Required',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Missing required session defaults');
+      expect(message).toContain('simulatorId is required');
+      expect(message).toContain('session-set-defaults');
     });
 
-    it('should return Zod validation error for invalid UUID format', async () => {
+    it('should validate inline simulatorId overrides', async () => {
       const result = await screenshotPlugin.handler({
         simulatorId: 'invalid-uuid',
       });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Invalid Simulator UUID format',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('simulatorId: Invalid Simulator UUID format');
+      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
   });
 

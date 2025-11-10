@@ -2,10 +2,11 @@
  * Tests for swipe tool plugin
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import { SystemError, DependencyError } from '../../../../utils/responses/index.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 // Import the plugin module to test
 import swipePlugin, { AxeHelpers, swipeLogic, SwipeParams } from '../swipe.ts';
@@ -45,6 +46,9 @@ function createMockAxeHelpersWithNullPath(): AxeHelpers {
 }
 
 describe('Swipe Plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(swipePlugin.name).toBe('swipe');
@@ -63,10 +67,8 @@ describe('Swipe Plugin', () => {
     it('should validate schema fields with safeParse', () => {
       const schema = z.object(swipePlugin.schema);
 
-      // Valid case
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x1: 100,
           y1: 200,
           x2: 300,
@@ -74,21 +76,8 @@ describe('Swipe Plugin', () => {
         }).success,
       ).toBe(true);
 
-      // Invalid simulatorId
       expect(
         schema.safeParse({
-          simulatorId: 'invalid-uuid',
-          x1: 100,
-          y1: 200,
-          x2: 300,
-          y2: 400,
-        }).success,
-      ).toBe(false);
-
-      // Invalid x1 (not integer)
-      expect(
-        schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x1: 100.5,
           y1: 200,
           x2: 300,
@@ -96,10 +85,18 @@ describe('Swipe Plugin', () => {
         }).success,
       ).toBe(false);
 
-      // Valid with optional parameters
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          x1: 100,
+          y1: 200,
+          x2: 300,
+          y2: 400,
+          duration: -1,
+        }).success,
+      ).toBe(false);
+
+      expect(
+        schema.safeParse({
           x1: 100,
           y1: 200,
           x2: 300,
@@ -111,17 +108,15 @@ describe('Swipe Plugin', () => {
         }).success,
       ).toBe(true);
 
-      // Invalid duration (negative)
-      expect(
-        schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
-          x1: 100,
-          y1: 200,
-          x2: 300,
-          y2: 400,
-          duration: -1,
-        }).success,
-      ).toBe(false);
+      const withSimId = schema.safeParse({
+        simulatorId: '12345678-1234-1234-1234-123456789012',
+        x1: 100,
+        y1: 200,
+        x2: 300,
+        y2: 400,
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
     });
   });
 
@@ -326,13 +321,15 @@ describe('Swipe Plugin', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('simulatorId');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('simulatorId is required');
+      expect(result.content[0].text).toContain('session-set-defaults');
     });
 
-    it('should return error for missing x1 via handler', async () => {
+    it('should return validation error for missing x1 once simulator default exists', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+
       const result = await swipePlugin.handler({
-        simulatorId: '12345678-1234-1234-1234-123456789012',
         y1: 200,
         x2: 300,
         y2: 400,
@@ -341,7 +338,10 @@ describe('Swipe Plugin', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('x1');
+      expect(result.content[0].text).toContain('x1: Required');
+      expect(result.content[0].text).toContain(
+        'Tip: set session defaults via session-set-defaults',
+      );
     });
 
     it('should return success for valid swipe execution', async () => {

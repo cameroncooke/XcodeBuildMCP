@@ -22,7 +22,7 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe/index.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const longPressSchema = z.object({
@@ -34,6 +34,8 @@ const longPressSchema = z.object({
 
 // Use z.infer for type safety
 type LongPressParams = z.infer<typeof longPressSchema>;
+
+const publicSchemaObject = longPressSchema.omit({ simulatorId: true } as const).strict();
 
 export interface AxeHelpers {
   getAxePath: () => string | null;
@@ -110,18 +112,18 @@ export default {
   name: 'long_press',
   description:
     "Long press at specific coordinates for given duration (ms). Use describe_ui for precise coordinates (don't guess from screenshots).",
-  schema: longPressSchema.shape, // MCP SDK compatibility
-  handler: createTypedTool(
-    longPressSchema,
-    (params: LongPressParams, executor: CommandExecutor) => {
-      return long_pressLogic(params, executor, {
+  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  handler: createSessionAwareTool<LongPressParams>({
+    internalSchema: longPressSchema as unknown as z.ZodType<LongPressParams>,
+    logicFunction: (params: LongPressParams, executor: CommandExecutor) =>
+      long_pressLogic(params, executor, {
         getAxePath,
         getBundledAxeEnvironment,
         createAxeNotAvailableResponse,
-      });
-    },
-    getDefaultCommandExecutor,
-  ),
+      }),
+    getExecutor: getDefaultCommandExecutor,
+    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  }),
 };
 
 // Session tracking for describe_ui warnings

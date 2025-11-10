@@ -5,6 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 
 import tapPlugin, { AxeHelpers, tapLogic } from '../tap.ts';
 
@@ -43,6 +44,10 @@ function createMockAxeHelpersWithNullPath(): AxeHelpers {
 }
 
 describe('Tap Plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(tapPlugin.name).toBe('tap');
@@ -61,74 +66,55 @@ describe('Tap Plugin', () => {
     it('should validate schema fields with safeParse', () => {
       const schema = z.object(tapPlugin.schema);
 
-      // Valid case
+      expect(schema.safeParse({ x: 100, y: 200 }).success).toBe(true);
+
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
+          preDelay: 0.5,
+          postDelay: 1,
         }).success,
       ).toBe(true);
 
-      // Invalid simulatorId
       expect(
         schema.safeParse({
-          simulatorId: 'invalid-uuid',
-          x: 100,
-          y: 200,
-        }).success,
-      ).toBe(false);
-
-      // Invalid x coordinate - non-integer
-      expect(
-        schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 3.14,
           y: 200,
         }).success,
       ).toBe(false);
 
-      // Invalid y coordinate - non-integer
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 3.14,
         }).success,
       ).toBe(false);
 
-      // Invalid preDelay - negative
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           preDelay: -1,
         }).success,
       ).toBe(false);
 
-      // Invalid postDelay - negative
       expect(
         schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
           x: 100,
           y: 200,
           postDelay: -1,
         }).success,
       ).toBe(false);
 
-      // Valid with optional delays
-      expect(
-        schema.safeParse({
-          simulatorId: '12345678-1234-1234-1234-123456789012',
-          x: 100,
-          y: 200,
-          preDelay: 0.5,
-          postDelay: 1.0,
-        }).success,
-      ).toBe(true);
+      const withSimId = schema.safeParse({
+        simulatorId: '12345678-1234-1234-1234-123456789012',
+        x: 100,
+        y: 200,
+      });
+      expect(withSimId.success).toBe(true);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
 
-      // Missing required fields
       expect(schema.safeParse({}).success).toBe(false);
     });
   });
@@ -492,147 +478,107 @@ describe('Tap Plugin', () => {
   });
 
   describe('Plugin Handler Validation', () => {
-    it('should return Zod validation error for missing simulatorId', async () => {
+    it('should require simulatorId session default when not provided', async () => {
       const result = await tapPlugin.handler({
         x: 100,
         y: 200,
       });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Required',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Missing required session defaults');
+      expect(message).toContain('simulatorId is required');
+      expect(message).toContain('session-set-defaults');
     });
 
-    it('should return Zod validation error for missing x coordinate', async () => {
+    it('should return validation error for missing x coordinate', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+
       const result = await tapPlugin.handler({
-        simulatorId: '12345678-1234-1234-1234-123456789012',
         y: 200,
       });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nx: Required',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('x: Required');
+      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
 
-    it('should return Zod validation error for missing y coordinate', async () => {
+    it('should return validation error for missing y coordinate', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+
       const result = await tapPlugin.handler({
-        simulatorId: '12345678-1234-1234-1234-123456789012',
         x: 100,
       });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\ny: Required',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('y: Required');
+      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
 
-    it('should return Zod validation error for invalid UUID format', async () => {
-      const result = await tapPlugin.handler({
-        simulatorId: 'invalid-uuid',
-        x: 100,
-        y: 200,
-      });
+    it('should return validation error for non-integer x coordinate', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nsimulatorId: Invalid Simulator UUID format',
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return Zod validation error for non-integer x coordinate', async () => {
       const result = await tapPlugin.handler({
-        simulatorId: '12345678-1234-1234-1234-123456789012',
         x: 3.14,
         y: 200,
       });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nx: X coordinate must be an integer',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('x: X coordinate must be an integer');
+      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
 
-    it('should return Zod validation error for non-integer y coordinate', async () => {
+    it('should return validation error for non-integer y coordinate', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+
       const result = await tapPlugin.handler({
-        simulatorId: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 3.14,
       });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\ny: Y coordinate must be an integer',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('y: Y coordinate must be an integer');
+      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
 
-    it('should return Zod validation error for negative preDelay', async () => {
+    it('should return validation error for negative preDelay', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+
       const result = await tapPlugin.handler({
-        simulatorId: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 200,
         preDelay: -1,
       });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\npreDelay: Pre-delay must be non-negative',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('preDelay: Pre-delay must be non-negative');
+      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
 
-    it('should return Zod validation error for negative postDelay', async () => {
+    it('should return validation error for negative postDelay', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+
       const result = await tapPlugin.handler({
-        simulatorId: '12345678-1234-1234-1234-123456789012',
         x: 100,
         y: 200,
         postDelay: -1,
       });
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\npostDelay: Post-delay must be non-negative',
-          },
-        ],
-        isError: true,
-      });
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('postDelay: Post-delay must be non-negative');
+      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
   });
 

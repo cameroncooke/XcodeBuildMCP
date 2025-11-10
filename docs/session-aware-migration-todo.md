@@ -51,14 +51,14 @@ Reference: `docs/session_management_plan.md`
 - [x] `src/mcp/tools/logging/start_sim_log_cap.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
 
 ## AXe UI Testing Tools
-- [ ] `src/mcp/tools/ui-testing/button.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/ui-testing/describe_ui.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/ui-testing/gesture.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/ui-testing/key_press.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/ui-testing/key_sequence.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/ui-testing/long_press.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/ui-testing/screenshot.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/ui-testing/swipe.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/ui-testing/tap.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/ui-testing/touch.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [ ] `src/mcp/tools/ui-testing/type_text.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/button.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/describe_ui.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/gesture.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/key_press.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/key_sequence.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/long_press.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/screenshot.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/swipe.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/tap.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/touch.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/type_text.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).

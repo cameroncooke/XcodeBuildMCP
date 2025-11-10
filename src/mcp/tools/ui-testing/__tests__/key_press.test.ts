@@ -2,16 +2,21 @@
  * Tests for key_press tool plugin
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
 } from '../../../../test-utils/mock-executors.ts';
+import { sessionStore } from '../../../../utils/session-store.ts';
 import keyPressPlugin, { key_pressLogic } from '../key_press.ts';
 
 describe('Key Press Plugin', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(keyPressPlugin.name).toBe('key_press');
@@ -44,6 +49,30 @@ describe('Key Press Plugin', () => {
       expect('simulatorId' in (withSimId.data as any)).toBe(false);
 
       expect(schema.safeParse({}).success).toBe(false);
+    });
+  });
+
+  describe('Handler Requirements', () => {
+    it('should require simulatorId session default when not provided', async () => {
+      const result = await keyPressPlugin.handler({ keyCode: 40 });
+
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Missing required session defaults');
+      expect(message).toContain('simulatorId is required');
+      expect(message).toContain('session-set-defaults');
+    });
+
+    it('should surface validation errors once simulator default exists', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+
+      const result = await keyPressPlugin.handler({});
+
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('keyCode: Required');
+      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
   });
 
