@@ -1,6 +1,6 @@
 # XcodeBuildMCP Tools Reference
 
-XcodeBuildMCP provides 61 tools organized into 12 workflow groups for comprehensive Apple development workflows.
+XcodeBuildMCP provides 64 tools organized into 13 workflow groups for comprehensive Apple development workflows.
 
 ## Workflow Groups
 
@@ -11,52 +11,52 @@ XcodeBuildMCP provides 61 tools organized into 12 workflow groups for comprehens
 ### iOS Device Development (`device`)
 **Purpose**: Complete iOS development workflow for both .xcodeproj and .xcworkspace files targeting physical devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Build, test, deploy, and debug apps on real hardware. (7 tools)
 
-- `build_device` - Builds an app from a project or workspace for a physical Apple device. Provide exactly one of projectPath or workspacePath. Example: build_device({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })
-- `get_device_app_path` - Gets the app bundle path for a physical device application (iOS, watchOS, tvOS, visionOS) using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_device_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })
-- `install_app_device` - Installs an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and appPath.
-- `launch_app_device` - Launches an app on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and bundleId.
+- `build_device` - Builds an app for a connected device.
+- `get_device_app_path` - Retrieves the built app path for a connected device.
+- `install_app_device` - Installs an app on a connected device.
+- `launch_app_device` - Launches an app on a connected device.
 - `list_devices` - Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.
-- `stop_app_device` - Stops an app running on a physical Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro). Requires deviceId and processId.
-- `test_device` - Runs tests for an Apple project or workspace on a physical device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) using xcodebuild test and parses xcresult output. Provide exactly one of projectPath or workspacePath.
+- `stop_app_device` - Stops a running app on a connected device.
+- `test_device` - Runs tests on a physical Apple device.
 ### iOS Simulator Development (`simulator`)
 **Purpose**: Complete iOS development workflow for both .xcodeproj and .xcworkspace files targeting simulators. Build, test, deploy, and interact with iOS apps on simulators. (12 tools)
 
-- `boot_sim` - Boots an iOS simulator. After booting, use open_sim() to make the simulator visible.
-- `build_run_sim` - Builds and runs an app from a project or workspace on a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName.
-- `build_sim` - Builds an app from a project or workspace for a specific simulator by UUID or name. Provide exactly one of projectPath or workspacePath, and exactly one of simulatorId or simulatorName.
-- `get_sim_app_path` - Gets the app bundle path for a simulator by UUID or name using either a project or workspace file.
+- `boot_sim` - Boots an iOS simulator.
+- `build_run_sim` - Builds and runs an app on an iOS simulator.
+- `build_sim` - Builds an app for an iOS simulator.
+- `get_sim_app_path` - Retrieves the built app path for an iOS simulator.
 - `install_app_sim` - Installs an app in an iOS simulator.
 - `launch_app_logs_sim` - Launches an app in an iOS simulator and captures its logs.
-- `launch_app_sim` - Launches an app in an iOS simulator by UUID or name. If simulator window isn't visible, use open_sim() first. or launch_app_sim({ simulatorName: 'iPhone 16', bundleId: 'com.example.MyApp' })
+- `launch_app_sim` - Launches an app in an iOS simulator.
 - `list_sims` - Lists available iOS simulators with their UUIDs.
 - `open_sim` - Opens the iOS Simulator app.
-- `record_sim_video` - Starts or stops video capture for an iOS simulator using AXe. Provide exactly one of start=true or stop=true. On stop, outputFile is required. fps defaults to 30.
-- `stop_app_sim` - Stops an app running in an iOS simulator by UUID or name. or stop_app_sim({ simulatorName: "iPhone 16", bundleId: "com.example.MyApp" })
-- `test_sim` - Runs tests on a simulator by UUID or name using xcodebuild test and parses xcresult output. Works with both Xcode projects (.xcodeproj) and workspaces (.xcworkspace).
+- `record_sim_video` - Starts or stops video capture for an iOS simulator.
+- `stop_app_sim` - Stops an app running in an iOS simulator.
+- `test_sim` - Runs tests on an iOS simulator.
 ### Log Capture & Management (`logging`)
 **Purpose**: Log capture and management tools for iOS simulators and physical devices. Start, stop, and analyze application and system logs during development and testing. (4 tools)
 
-- `start_device_log_cap` - Starts capturing logs from a specified Apple device (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) by launching the app with console output. Returns a session ID.
+- `start_device_log_cap` - Starts log capture on a connected device.
 - `start_sim_log_cap` - Starts capturing logs from a specified simulator. Returns a session ID. By default, captures only structured logs.
 - `stop_device_log_cap` - Stops an active Apple device log capture session and returns the captured logs.
 - `stop_sim_log_cap` - Stops an active simulator log capture session and returns the captured logs.
 ### macOS Development (`macos`)
 **Purpose**: Complete macOS development workflow for both .xcodeproj and .xcworkspace files. Build, test, deploy, and manage macOS applications. (6 tools)
 
-- `build_macos` - Builds a macOS app using xcodebuild from a project or workspace. Provide exactly one of projectPath or workspacePath. Example: build_macos({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })
-- `build_run_macos` - Builds and runs a macOS app from a project or workspace in one step. Provide exactly one of projectPath or workspacePath. Example: build_run_macos({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })
-- `get_mac_app_path` - Gets the app bundle path for a macOS application using either a project or workspace. Provide exactly one of projectPath or workspacePath. Example: get_mac_app_path({ projectPath: '/path/to/project.xcodeproj', scheme: 'MyScheme' })
+- `build_macos` - Builds a macOS app.
+- `build_run_macos` - Builds and runs a macOS app.
+- `get_mac_app_path` - Retrieves the built macOS app bundle path.
 - `launch_mac_app` - Launches a macOS application. Note: In some environments, this tool may be prefixed as mcp0_launch_macos_app.
 - `stop_mac_app` - Stops a running macOS application. Can stop by app name or process ID.
-- `test_macos` - Runs tests for a macOS project or workspace using xcodebuild test and parses xcresult output. Provide exactly one of projectPath or workspacePath.
+- `test_macos` - Runs tests for a macOS target.
 ### Project Discovery (`project-discovery`)
 **Purpose**: Discover and examine Xcode projects, workspaces, and Swift packages. Analyze project structure, schemes, build settings, and bundle information. (5 tools)
 
 - `discover_projs` - Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.
 - `get_app_bundle_id` - Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, iPadOS, watchOS, tvOS, visionOS).
 - `get_mac_bundle_id` - Extracts the bundle identifier from a macOS app bundle (.app). Note: In some environments, this tool may be prefixed as mcp0_get_macos_bundle_id.
-- `list_schemes` - Lists available schemes for either a project or a workspace. Provide exactly one of projectPath or workspacePath. Example: list_schemes({ projectPath: '/path/to/MyProject.xcodeproj' })
-- `show_build_settings` - Shows build settings from either a project or workspace using xcodebuild. Provide exactly one of projectPath or workspacePath, plus scheme. Example: show_build_settings({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' })
+- `list_schemes` - Lists schemes for a project or workspace.
+- `show_build_settings` - Shows xcodebuild build settings.
 ### Project Scaffolding (`project-scaffolding`)
 **Purpose**: Tools for creating new iOS and macOS projects from templates. Bootstrap new applications with best practices, standard configurations, and modern project structures. (2 tools)
 
@@ -65,11 +65,17 @@ XcodeBuildMCP provides 61 tools organized into 12 workflow groups for comprehens
 ### Project Utilities (`utilities`)
 **Purpose**: Essential project maintenance utilities for cleaning and managing existing projects. Provides clean operations for both .xcodeproj and .xcworkspace files. (1 tools)
 
-- `clean` - Cleans build products for either a project or a workspace using xcodebuild. Provide exactly one of projectPath or workspacePath. Platform defaults to iOS if not specified. Example: clean({ projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme', platform: 'iOS' })
+- `clean` - Cleans build products with xcodebuild.
+### session-management (`session-management`)
+**Purpose**: Manage session defaults for projectPath/workspacePath, scheme, configuration, simulatorName/simulatorId, deviceId, useLatestOS and arch. These defaults are required by many tools and must be set before attempting to call tools that would depend on these values. (3 tools)
+
+- `session_clear_defaults` - Clear selected or all session defaults.
+- `session_set_defaults` - Set the session defaults needed by many tools. Most tools require one or more session defaults to be set before they can be used. Agents should set the relevant defaults at the beginning of a session.
+- `session_show_defaults` - Show current session defaults.
 ### Simulator Management (`simulator-management`)
 **Purpose**: Tools for managing simulators from booting, opening simulators, listing simulators, stopping simulators, erasing simulator content and settings, and setting simulator environment options like location, network, statusbar and appearance. (5 tools)
 
-- `erase_sims` - Erases simulator content and settings for a specific simulator. Requires simulatorUdid. Optional: shutdownFirst to shut down before erasing.
+- `erase_sims` - Erases a simulator by UDID.
 - `reset_sim_location` - Resets the simulator's location to default.
 - `set_sim_appearance` - Sets the appearance mode (dark/light) of an iOS simulator.
 - `set_sim_location` - Sets a custom GPS location for the simulator.
@@ -104,9 +110,9 @@ XcodeBuildMCP provides 61 tools organized into 12 workflow groups for comprehens
 
 ## Summary Statistics
 
-- **Total Tools**: 61 canonical tools + 22 re-exports = 83 total
-- **Workflow Groups**: 12
+- **Total Tools**: 64 canonical tools + 22 re-exports = 86 total
+- **Workflow Groups**: 13
 
 ---
 
-*This documentation is automatically generated by `scripts/update-tools-docs.ts` using static analysis. Last updated: 2025-09-22*
+*This documentation is automatically generated by `scripts/update-tools-docs.ts` using static analysis. Last updated: 2025-11-20*
