@@ -90,11 +90,9 @@ export function createSessionAwareTool<TParams>(opts: {
   internalSchema: z.ZodType<TParams>;
   logicFunction: (params: TParams, executor: CommandExecutor) => Promise<ToolResponse>;
   getExecutor: () => CommandExecutor;
-  // Optional extras to improve UX and ergonomics
-  sessionKeys?: (keyof SessionDefaults)[];
   requirements?: SessionRequirement[]; // preflight, friendlier than raw zod errors
 }) {
-  const { internalSchema, logicFunction, getExecutor, sessionKeys = [], requirements = [] } = opts;
+  const { internalSchema, logicFunction, getExecutor, requirements = [] } = opts;
 
   return async (rawArgs: Record<string, unknown>): Promise<ToolResponse> => {
     try {
@@ -191,7 +189,6 @@ export default {
     internalSchema: buildSimulatorSchema,
     logicFunction: build_simLogic,
     getExecutor: getDefaultCommandExecutor,
-    sessionKeys: sessionManaged,
     requirements: [
       { allOf: ['scheme'], message: 'scheme is required' },
       { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },

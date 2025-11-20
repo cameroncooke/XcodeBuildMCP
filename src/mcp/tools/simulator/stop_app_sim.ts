@@ -159,7 +159,6 @@ export default {
     internalSchema: stopAppSimSchema as unknown as z.ZodType<StopAppSimParams>,
     logicFunction: stop_app_simLogic,
     getExecutor: getDefaultCommandExecutor,
-    sessionKeys: ['simulatorId', 'simulatorName'],
     requirements: [
       { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
     ],

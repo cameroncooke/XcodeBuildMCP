@@ -75,7 +75,6 @@ export function createSessionAwareTool<TParams>(opts: {
   internalSchema: z.ZodType<TParams>;
   logicFunction: (params: TParams, executor: CommandExecutor) => Promise<ToolResponse>;
   getExecutor: () => CommandExecutor;
-  sessionKeys?: (keyof SessionDefaults)[];
   requirements?: SessionRequirement[];
   exclusivePairs?: (keyof SessionDefaults)[][]; // when args provide one side, drop conflicting session-default side(s)
 }) {

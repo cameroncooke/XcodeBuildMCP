@@ -205,7 +205,6 @@ export default {
     internalSchema: launchAppSimSchema as unknown as z.ZodType<LaunchAppSimParams>,
     logicFunction: launch_app_simLogic,
     getExecutor: getDefaultCommandExecutor,
-    sessionKeys: ['simulatorId', 'simulatorName'],
     requirements: [
       { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
     ],
