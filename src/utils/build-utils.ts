@@ -232,6 +232,9 @@ export async function executeXcodeBuildCommand(
     // Grep warnings and errors from stdout (build output)
     const warningOrErrorLines = grepWarningsAndErrors(result.output);
     warningOrErrorLines.forEach(({ type, content }) => {
+      if (type === 'warning' && params.suppressWarnings) {
+        return;
+      }
       buildMessages.push({
         type: 'text',
         text: type === 'warning' ? `⚠️ Warning: ${content}` : `❌ Error: ${content}`,

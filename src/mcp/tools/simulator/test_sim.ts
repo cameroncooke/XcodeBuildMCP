@@ -64,6 +64,10 @@ const baseSchemaObject = z.object({
     .describe(
       'Environment variables to pass to the test runner (TEST_RUNNER_ prefix added automatically)',
     ),
+  suppressWarnings: z
+    .boolean()
+    .optional()
+    .describe('If true, suppresses warning messages from build output to reduce context usage'),
 });
 
 // Apply preprocessor to handle empty strings
@@ -113,6 +117,7 @@ export async function test_simLogic(
       preferXcodebuild: params.preferXcodebuild ?? false,
       platform: XcodePlatform.iOSSimulator,
       testRunnerEnv: params.testRunnerEnv,
+      suppressWarnings: params.suppressWarnings,
     },
     executor,
   );
