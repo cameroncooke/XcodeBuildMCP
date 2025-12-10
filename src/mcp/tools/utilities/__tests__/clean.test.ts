@@ -28,7 +28,7 @@ describe('clean (unified) tool', () => {
 
     const schemaKeys = Object.keys(tool.schema).sort();
     expect(schemaKeys).toEqual(
-      ['derivedDataPath', 'extraArgs', 'platform', 'preferXcodebuild'].sort(),
+      ['derivedDataPath', 'extraArgs', 'platform', 'preferXcodebuild', 'suppressWarnings'].sort(),
     );
   });
 

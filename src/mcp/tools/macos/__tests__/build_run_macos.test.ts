@@ -39,7 +39,7 @@ describe('build_run_macos', () => {
       expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
 
       const schemaKeys = Object.keys(tool.schema).sort();
-      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs', 'preferXcodebuild'].sort());
+      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs', 'preferXcodebuild', 'suppressWarnings'].sort());
     });
   });
 
