@@ -94,6 +94,7 @@ export interface SharedBuildParams {
   configuration: string;
   derivedDataPath?: string;
   extraArgs?: string[];
+  suppressWarnings?: boolean;
 }
 
 /**
