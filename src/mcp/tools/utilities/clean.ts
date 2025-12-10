@@ -124,6 +124,7 @@ export async function cleanLogic(
     configuration: params.configuration ?? 'Debug',
     derivedDataPath: params.derivedDataPath,
     extraArgs: params.extraArgs,
+    suppressWarnings: params.suppressWarnings,
   };
 
   // For clean operations, simulator platforms should be mapped to their device equivalents

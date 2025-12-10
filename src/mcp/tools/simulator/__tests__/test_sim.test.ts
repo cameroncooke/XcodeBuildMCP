@@ -46,7 +46,13 @@ describe('test_sim tool', () => {
 
       const schemaKeys = Object.keys(testSim.schema).sort();
       expect(schemaKeys).toEqual(
-        ['derivedDataPath', 'extraArgs', 'preferXcodebuild', 'suppressWarnings', 'testRunnerEnv'].sort(),
+        [
+          'derivedDataPath',
+          'extraArgs',
+          'preferXcodebuild',
+          'suppressWarnings',
+          'testRunnerEnv',
+        ].sort(),
       );
     });
   });

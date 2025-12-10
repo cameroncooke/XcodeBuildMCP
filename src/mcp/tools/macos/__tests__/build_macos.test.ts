@@ -46,7 +46,9 @@ describe('build_macos plugin', () => {
       expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
 
       const schemaKeys = Object.keys(buildMacOS.schema).sort();
-      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs', 'preferXcodebuild', 'suppressWarnings'].sort());
+      expect(schemaKeys).toEqual(
+        ['derivedDataPath', 'extraArgs', 'preferXcodebuild', 'suppressWarnings'].sort(),
+      );
     });
   });
 
