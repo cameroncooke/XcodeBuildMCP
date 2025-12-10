@@ -52,6 +52,7 @@ describe('test_device plugin', () => {
         'extraArgs',
         'platform',
         'preferXcodebuild',
+        'suppressWarnings',
         'testRunnerEnv',
       ]);
     });

@@ -44,6 +44,10 @@ const baseSchemaObject = z.object({
     .describe(
       'Environment variables to pass to the test runner (TEST_RUNNER_ prefix added automatically)',
     ),
+  suppressWarnings: z
+    .boolean()
+    .optional()
+    .describe('If true, suppresses warning messages from build output to reduce context usage'),
 });
 
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
@@ -210,6 +214,7 @@ export async function testDeviceLogic(
         configuration: params.configuration ?? 'Debug',
         derivedDataPath: params.derivedDataPath,
         extraArgs,
+        suppressWarnings: params.suppressWarnings,
       },
       {
         platform: (params.platform as XcodePlatform) || XcodePlatform.iOS,
