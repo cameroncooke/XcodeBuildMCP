@@ -159,6 +159,7 @@ export async function handleTestLogic(
     preferXcodebuild?: boolean;
     platform: XcodePlatform;
     testRunnerEnv?: Record<string, string>;
+    suppressWarnings?: boolean;
   },
   executor?: CommandExecutor,
 ): Promise<ToolResponse> {
