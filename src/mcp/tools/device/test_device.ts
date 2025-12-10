@@ -225,6 +225,7 @@ export async function testDeviceLogic(
         configuration: params.configuration ?? 'Debug',
         derivedDataPath: params.derivedDataPath,
         extraArgs,
+        suppressWarnings: params.suppressWarnings,
       },
       {
         platform: (params.platform as XcodePlatform) || XcodePlatform.iOS,

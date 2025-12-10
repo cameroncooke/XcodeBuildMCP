@@ -268,6 +268,7 @@ export async function testMacosLogic(
         configuration: params.configuration ?? 'Debug',
         derivedDataPath: params.derivedDataPath,
         extraArgs,
+        suppressWarnings: params.suppressWarnings,
       },
       {
         platform: XcodePlatform.macOS,
