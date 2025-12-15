@@ -18,7 +18,6 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
   - [MCP Resources](#mcp-resources)
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [Configure your MCP client](#configure-your-mcp-client)
     - [One click install](#one-click-install)
     - [General installation](#general-installation)
     - [Specific client installation instructions](#specific-client-installation-instructions)
@@ -33,6 +32,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
   - [Usage Example](#usage-example)
   - [Client Compatibility](#client-compatibility)
   - [Selective Workflow Loading (Static Mode)](#selective-workflow-loading-static-mode)
+- [Session-aware opt-out](#session-aware-opt-out)
 - [Code Signing for Device Deployment](#code-signing-for-device-deployment)
 - [Troubleshooting](#troubleshooting)
   - [Doctor Tool](#doctor-tool)
@@ -290,6 +290,24 @@ For clients that don't support MCP Sampling but still want to reduce context win
 
 > [!NOTE]
 > The `XCODEBUILDMCP_ENABLED_WORKFLOWS` setting only works in Static Mode. If `XCODEBUILDMCP_DYNAMIC_TOOLS=true` is set, the selective workflow setting will be ignored.
+
+## Session-aware opt-out
+
+By default, XcodeBuildMCP uses a session-aware mode: the LLM (or client) sets shared defaults once (simulator, device, project/workspace, scheme, etc.), and all tools reuse them—similar to choosing a scheme and simulator in Xcode’s UI so you don’t repeat them on every action. This cuts context bloat not just in each call payload, but also in the tool schemas themselves (those parameters don’t have to be described on every tool).
+
+If you prefer the older, explicit style where each tool requires its own parameters, set `XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS=true`. This restores the legacy schemas with per-call parameters while still honoring any session defaults you choose to set.
+
+Example MCP client configuration:
+```json
+"XcodeBuildMCP": {
+  ...
+  "env": {
+    "XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS": "true"
+  }
+}
+```
+
+Leave this unset for the streamlined session-aware experience; enable it to force explicit parameters on each tool call.
 
 ## Code Signing for Device Deployment
 
