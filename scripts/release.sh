@@ -105,18 +105,31 @@ compare_versions() {
   local version1=$1
   local version2=$2
 
-  # Remove prerelease parts for comparison
-  local v1_stable=$(echo "$version1" | sed -E 's/(-.*)?$//')
-  local v2_stable=$(echo "$version2" | sed -E 's/(-.*)?$//')
+  local v1_base=${version1%%-*}
+  local v2_base=${version2%%-*}
+  local v1_pre=""
+  local v2_pre=""
 
-  if [[ "$v1_stable" == "$v2_stable" ]]; then
-    echo 0
-    return
+  [[ "$version1" == *-* ]] && v1_pre=${version1#*-}
+  [[ "$version2" == *-* ]] && v2_pre=${version2#*-}
+
+  # When base versions match, a stable release outranks any prerelease
+  if [[ "$v1_base" == "$v2_base" ]]; then
+    if [[ -z "$v1_pre" && -n "$v2_pre" ]]; then
+      echo 1
+      return
+    elif [[ -n "$v1_pre" && -z "$v2_pre" ]]; then
+      echo -1
+      return
+    elif [[ "$version1" == "$version2" ]]; then
+      echo 0
+      return
+    fi
   fi
 
-  # Use sort -V to compare versions
-  local sorted=$(printf "%s\n%s" "$v1_stable" "$v2_stable" | sort -V)
-  if [[ "$(echo "$sorted" | head -1)" == "$v1_stable" ]]; then
+  # Fallback to version sort for differing bases or two prereleases
+  local sorted=$(printf "%s\n%s" "$version1" "$version2" | sort -V)
+  if [[ "$(echo "$sorted" | head -1)" == "$version1" ]]; then
     echo -1
   else
     echo 1
