@@ -18,6 +18,7 @@ permissions:
 jobs:
   release:
     runs-on: macos-latest
+    environment: production
 
     steps:
       - name: Checkout code
