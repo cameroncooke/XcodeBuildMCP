@@ -51,7 +51,7 @@ export async function sessionSetDefaultsLogic(params: Params): Promise<ToolRespo
 export default {
   name: 'session-set-defaults',
   description:
-    'Set the session defaults needed by many tools. Most tools require one or more session defaults to be set before they can be used. Agents should set the relevant defaults at the beginning of a session.',
+    'Set the session defaults needed by many tools. Most tools require one or more session defaults to be set before they can be used. Agents should set all relevant defaults up front in a single call (e.g., project/workspace, scheme, simulator or device ID, useLatestOS) to avoid iterative prompts; only set the keys your workflow needs.',
   schema: baseSchema.shape,
   handler: createTypedTool(schemaObj, sessionSetDefaultsLogic, getDefaultCommandExecutor),
 };
