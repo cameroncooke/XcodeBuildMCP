@@ -10,7 +10,10 @@ import { z } from 'zod';
 import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
@@ -503,7 +506,10 @@ const publicSchemaObject = baseSchemaObject.omit({
 export default {
   name: 'build_run_sim',
   description: 'Builds and runs an app on an iOS simulator.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }),
   handler: createSessionAwareTool<BuildRunSimulatorParams>({
     internalSchema: buildRunSimulatorSchema as unknown as z.ZodType<BuildRunSimulatorParams>,
     logicFunction: build_run_simLogic,

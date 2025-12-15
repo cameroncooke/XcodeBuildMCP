@@ -4,7 +4,10 @@ import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 const baseSchemaObject = z.object({
   simulatorId: z
@@ -154,7 +157,10 @@ const publicSchemaObject = baseSchemaObject
 export default {
   name: 'stop_app_sim',
   description: 'Stops an app running in an iOS simulator.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }),
   handler: createSessionAwareTool<StopAppSimParams>({
     internalSchema: stopAppSimSchema as unknown as z.ZodType<StopAppSimParams>,
     logicFunction: stop_app_simLogic,

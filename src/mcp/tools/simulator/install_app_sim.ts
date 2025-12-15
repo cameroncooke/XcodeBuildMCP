@@ -4,7 +4,10 @@ import { log } from '../../../utils/logging/index.ts';
 import { validateFileExists } from '../../../utils/validation/index.ts';
 import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 const installAppSimSchemaObject = z.object({
   simulatorId: z.string().describe('UUID of the simulator to use (obtained from list_sims)'),
@@ -96,7 +99,10 @@ export async function install_app_simLogic(
 export default {
   name: 'install_app_sim',
   description: 'Installs an app in an iOS simulator.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: installAppSimSchemaObject,
+  }),
   handler: createSessionAwareTool<InstallAppSimParams>({
     internalSchema: installAppSimSchemaObject,
     logicFunction: install_app_simLogic,

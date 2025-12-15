@@ -10,7 +10,10 @@ import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -31,6 +34,8 @@ const launchAppDeviceSchema = z.object({
     .string()
     .describe('Bundle identifier of the app to launch (e.g., "com.example.MyApp")'),
 });
+
+const publicSchemaObject = launchAppDeviceSchema.omit({ deviceId: true } as const);
 
 // Use z.infer for type safety
 type LaunchAppDeviceParams = z.infer<typeof launchAppDeviceSchema>;
@@ -142,7 +147,10 @@ export async function launch_app_deviceLogic(
 export default {
   name: 'launch_app_device',
   description: 'Launches an app on a connected device.',
-  schema: launchAppDeviceSchema.omit({ deviceId: true } as const).shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: launchAppDeviceSchema,
+  }),
   handler: createSessionAwareTool<LaunchAppDeviceParams>({
     internalSchema: launchAppDeviceSchema as unknown as z.ZodType<LaunchAppDeviceParams>,
     logicFunction: launch_app_deviceLogic,

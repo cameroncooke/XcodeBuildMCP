@@ -22,7 +22,10 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const longPressSchema = z.object({
@@ -112,7 +115,10 @@ export default {
   name: 'long_press',
   description:
     "Long press at specific coordinates for given duration (ms). Use describe_ui for precise coordinates (don't guess from screenshots).",
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: longPressSchema,
+  }),
   handler: createSessionAwareTool<LongPressParams>({
     internalSchema: longPressSchema as unknown as z.ZodType<LongPressParams>,
     logicFunction: (params: LongPressParams, executor: CommandExecutor) =>

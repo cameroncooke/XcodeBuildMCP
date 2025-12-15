@@ -21,7 +21,10 @@ import {
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
 } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
@@ -326,7 +329,10 @@ export async function testMacosLogic(
 export default {
   name: 'test_macos',
   description: 'Runs tests for a macOS target.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }),
   handler: createSessionAwareTool<TestMacosParams>({
     internalSchema: testMacosSchema as unknown as z.ZodType<TestMacosParams>,
     logicFunction: (params, executor) =>

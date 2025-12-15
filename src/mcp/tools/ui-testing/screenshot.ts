@@ -13,7 +13,10 @@ import {
   getDefaultFileSystemExecutor,
   getDefaultCommandExecutor,
 } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 const LOG_PREFIX = '[Screenshot]';
 
@@ -143,7 +146,10 @@ export default {
   name: 'screenshot',
   description:
     "Captures screenshot for visual verification. For UI coordinates, use describe_ui instead (don't determine coordinates from screenshots).",
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: screenshotSchema,
+  }),
   handler: createSessionAwareTool<ScreenshotParams>({
     internalSchema: screenshotSchema as unknown as z.ZodType<ScreenshotParams>,
     logicFunction: (params: ScreenshotParams, executor: CommandExecutor) => {

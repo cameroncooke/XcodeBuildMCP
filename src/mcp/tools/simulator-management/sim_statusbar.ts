@@ -2,7 +2,10 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const simStatusbarSchema = z.object({
@@ -94,7 +97,10 @@ export default {
   name: 'sim_statusbar',
   description:
     'Sets the data network indicator in the iOS simulator status bar. Use "clear" to reset all overrides, or specify a network type (hide, wifi, 3g, 4g, lte, lte-a, lte+, 5g, 5g+, 5g-uwb, 5g-uc).',
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: simStatusbarSchema,
+  }), // MCP SDK compatibility
   handler: createSessionAwareTool<SimStatusbarParams>({
     internalSchema: simStatusbarSchema as unknown as z.ZodType<SimStatusbarParams>,
     logicFunction: sim_statusbarLogic,

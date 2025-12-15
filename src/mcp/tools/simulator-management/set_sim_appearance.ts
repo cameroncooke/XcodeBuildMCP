@@ -2,7 +2,10 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const setSimAppearanceSchema = z.object({
@@ -92,7 +95,10 @@ const publicSchemaObject = setSimAppearanceSchema.omit({ simulatorId: true } as 
 export default {
   name: 'set_sim_appearance',
   description: 'Sets the appearance mode (dark/light) of an iOS simulator.',
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: setSimAppearanceSchema,
+  }),
   handler: createSessionAwareTool<SetSimAppearanceParams>({
     internalSchema: setSimAppearanceSchema as unknown as z.ZodType<SetSimAppearanceParams>,
     logicFunction: set_sim_appearanceLogic,

@@ -17,7 +17,10 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 const LOG_PREFIX = '[AXe]';
 
@@ -85,7 +88,10 @@ export default {
   name: 'type_text',
   description:
     'Type text (supports US keyboard characters). Use describe_ui to find text field, tap to focus, then type.',
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: typeTextSchema,
+  }),
   handler: createSessionAwareTool<TypeTextParams>({
     internalSchema: typeTextSchema as unknown as z.ZodType<TypeTextParams>,
     logicFunction: (params: TypeTextParams, executor: CommandExecutor) =>

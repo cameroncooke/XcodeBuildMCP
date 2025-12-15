@@ -2,7 +2,10 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const resetSimulatorLocationSchema = z.object({
@@ -92,7 +95,10 @@ const publicSchemaObject = resetSimulatorLocationSchema
 export default {
   name: 'reset_sim_location',
   description: "Resets the simulator's location to default.",
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: resetSimulatorLocationSchema,
+  }),
   handler: createSessionAwareTool<ResetSimulatorLocationParams>({
     internalSchema:
       resetSimulatorLocationSchema as unknown as z.ZodType<ResetSimulatorLocationParams>,

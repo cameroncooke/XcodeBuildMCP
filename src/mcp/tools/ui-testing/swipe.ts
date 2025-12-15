@@ -16,7 +16,10 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const swipeSchema = z.object({
@@ -123,7 +126,10 @@ export default {
   name: 'swipe',
   description:
     "Swipe from one point to another. Use describe_ui for precise coordinates (don't guess from screenshots). Supports configurable timing.",
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: swipeSchema,
+  }),
   handler: createSessionAwareTool<SwipeParams>({
     internalSchema: swipeSchema as unknown as z.ZodType<SwipeParams>,
     logicFunction: (params: SwipeParams, executor: CommandExecutor) =>

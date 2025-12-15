@@ -10,7 +10,10 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const describeUiSchema = z.object({
@@ -112,7 +115,10 @@ export default {
   name: 'describe_ui',
   description:
     'Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation.',
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: describeUiSchema,
+  }),
   handler: createSessionAwareTool<DescribeUiParams>({
     internalSchema: describeUiSchema as unknown as z.ZodType<DescribeUiParams>,
     logicFunction: (params: DescribeUiParams, executor: CommandExecutor) =>

@@ -11,7 +11,10 @@ import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, sharing common options
@@ -42,6 +45,13 @@ const getDeviceAppPathSchema = baseSchema
 
 // Use z.infer for type safety
 type GetDeviceAppPathParams = z.infer<typeof getDeviceAppPathSchema>;
+
+const publicSchemaObject = baseSchemaObject.omit({
+  projectPath: true,
+  workspacePath: true,
+  scheme: true,
+  configuration: true,
+} as const);
 
 export async function get_device_app_pathLogic(
   params: GetDeviceAppPathParams,
@@ -147,12 +157,10 @@ export async function get_device_app_pathLogic(
 export default {
   name: 'get_device_app_path',
   description: 'Retrieves the built app path for a connected device.',
-  schema: baseSchemaObject.omit({
-    projectPath: true,
-    workspacePath: true,
-    scheme: true,
-    configuration: true,
-  } as const).shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }),
   handler: createSessionAwareTool<GetDeviceAppPathParams>({
     internalSchema: getDeviceAppPathSchema as unknown as z.ZodType<GetDeviceAppPathParams>,
     logicFunction: get_device_app_pathLogic,

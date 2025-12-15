@@ -3,7 +3,10 @@ import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 const bootSimSchemaObject = z.object({
   simulatorId: z.string().describe('UUID of the simulator to use (obtained from list_sims)'),
@@ -68,7 +71,10 @@ Next steps:
 export default {
   name: 'boot_sim',
   description: 'Boots an iOS simulator.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: bootSimSchemaObject,
+  }),
   handler: createSessionAwareTool<BootSimParams>({
     internalSchema: bootSimSchemaObject,
     logicFunction: boot_simLogic,
