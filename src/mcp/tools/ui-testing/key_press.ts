@@ -15,7 +15,10 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const keyPressSchema = z.object({
@@ -84,7 +87,10 @@ export default {
   name: 'key_press',
   description:
     'Press a single key by keycode on the simulator. Common keycodes: 40=Return, 42=Backspace, 43=Tab, 44=Space, 58-67=F1-F10.',
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: keyPressSchema,
+  }),
   handler: createSessionAwareTool<KeyPressParams>({
     internalSchema: keyPressSchema as unknown as z.ZodType<KeyPressParams>,
     logicFunction: (params: KeyPressParams, executor: CommandExecutor) =>

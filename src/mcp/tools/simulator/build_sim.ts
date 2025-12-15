@@ -12,7 +12,10 @@ import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
@@ -150,7 +153,10 @@ const publicSchemaObject = baseSchemaObject.omit({
 export default {
   name: 'build_sim',
   description: 'Builds an app for an iOS simulator.',
-  schema: publicSchemaObject.shape, // MCP SDK compatibility (public inputs only)
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }), // MCP SDK compatibility (public inputs only)
   handler: createSessionAwareTool<BuildSimulatorParams>({
     internalSchema: buildSimulatorSchema as unknown as z.ZodType<BuildSimulatorParams>,
     logicFunction: build_simLogic,

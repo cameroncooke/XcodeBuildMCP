@@ -4,7 +4,10 @@ import { log } from '../../../utils/logging/index.ts';
 import { startLogCapture } from '../../../utils/log-capture/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 export type LogCaptureFunction = (
   params: {
@@ -67,7 +70,10 @@ export async function launch_app_logs_simLogic(
 export default {
   name: 'launch_app_logs_sim',
   description: 'Launches an app in an iOS simulator and captures its logs.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: launchAppLogsSimSchemaObject,
+  }),
   handler: createSessionAwareTool<LaunchAppLogsSimParams>({
     internalSchema: launchAppLogsSimSchemaObject,
     logicFunction: launch_app_logs_simLogic,

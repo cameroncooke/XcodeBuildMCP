@@ -76,7 +76,7 @@ function formatRequirementError(opts: {
   message: string;
   setHint?: string;
   optOutEnabled: boolean;
-}) {
+}): { title: string; body: string } {
   const title = opts.optOutEnabled
     ? 'Missing required parameters'
     : 'Missing required session defaults';

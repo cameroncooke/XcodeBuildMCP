@@ -11,7 +11,10 @@ import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Types for dependency injection
@@ -98,7 +101,10 @@ export async function buildMacOSLogic(
 export default {
   name: 'build_macos',
   description: 'Builds a macOS app.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }),
   handler: createSessionAwareTool<BuildMacOSParams>({
     internalSchema: buildMacOSSchema as unknown as z.ZodType<BuildMacOSParams>,
     logicFunction: buildMacOSLogic,

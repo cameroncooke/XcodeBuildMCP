@@ -10,7 +10,10 @@ import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
@@ -35,6 +38,13 @@ const buildDeviceSchema = baseSchema
   });
 
 export type BuildDeviceParams = z.infer<typeof buildDeviceSchema>;
+
+const publicSchemaObject = baseSchemaObject.omit({
+  projectPath: true,
+  workspacePath: true,
+  scheme: true,
+  configuration: true,
+} as const);
 
 /**
  * Business logic for building device project or workspace.
@@ -64,12 +74,10 @@ export async function buildDeviceLogic(
 export default {
   name: 'build_device',
   description: 'Builds an app for a connected device.',
-  schema: baseSchemaObject.omit({
-    projectPath: true,
-    workspacePath: true,
-    scheme: true,
-    configuration: true,
-  } as const).shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }),
   handler: createSessionAwareTool<BuildDeviceParams>({
     internalSchema: buildDeviceSchema as unknown as z.ZodType<BuildDeviceParams>,
     logicFunction: buildDeviceLogic,

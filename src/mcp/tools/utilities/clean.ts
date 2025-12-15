@@ -6,7 +6,10 @@
  */
 
 import { z } from 'zod';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
@@ -156,7 +159,10 @@ const publicSchemaObject = baseSchemaObject.omit({
 export default {
   name: 'clean',
   description: 'Cleans build products with xcodebuild.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }),
   handler: createSessionAwareTool<CleanParams>({
     internalSchema: cleanSchema as unknown as z.ZodType<CleanParams>,
     logicFunction: cleanLogic,

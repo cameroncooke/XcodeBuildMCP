@@ -2,7 +2,10 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const setSimulatorLocationSchema = z.object({
@@ -120,7 +123,10 @@ const publicSchemaObject = setSimulatorLocationSchema.omit({ simulatorId: true }
 export default {
   name: 'set_sim_location',
   description: 'Sets a custom GPS location for the simulator.',
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: setSimulatorLocationSchema,
+  }),
   handler: createSessionAwareTool<SetSimulatorLocationParams>({
     internalSchema: setSimulatorLocationSchema as unknown as z.ZodType<SetSimulatorLocationParams>,
     logicFunction: set_sim_locationLogic,

@@ -17,7 +17,10 @@ import {
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const touchSchema = z.object({
@@ -113,7 +116,10 @@ export default {
   name: 'touch',
   description:
     "Perform touch down/up events at specific coordinates. Use describe_ui for precise coordinates (don't guess from screenshots).",
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: touchSchema,
+  }),
   handler: createSessionAwareTool<TouchParams>({
     internalSchema: touchSchema as unknown as z.ZodType<TouchParams>,
     logicFunction: (params: TouchParams, executor: CommandExecutor) => touchLogic(params, executor),

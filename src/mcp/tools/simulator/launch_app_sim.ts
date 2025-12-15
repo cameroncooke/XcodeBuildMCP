@@ -4,7 +4,10 @@ import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 const baseSchemaObject = z.object({
   simulatorId: z
@@ -200,7 +203,10 @@ const publicSchemaObject = baseSchemaObject
 export default {
   name: 'launch_app_sim',
   description: 'Launches an app in an iOS simulator.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }),
   handler: createSessionAwareTool<LaunchAppSimParams>({
     internalSchema: launchAppSimSchema as unknown as z.ZodType<LaunchAppSimParams>,
     logicFunction: launch_app_simLogic,

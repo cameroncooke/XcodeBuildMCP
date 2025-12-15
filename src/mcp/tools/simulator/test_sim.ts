@@ -14,7 +14,10 @@ import { ToolResponse } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define base schema object with all fields
 const baseSchemaObject = z.object({
@@ -128,7 +131,10 @@ const publicSchemaObject = baseSchemaObject.omit({
 export default {
   name: 'test_sim',
   description: 'Runs tests on an iOS simulator.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }),
   handler: createSessionAwareTool<TestSimulatorParams>({
     internalSchema: testSimulatorSchema as unknown as z.ZodType<TestSimulatorParams>,
     logicFunction: test_simLogic,

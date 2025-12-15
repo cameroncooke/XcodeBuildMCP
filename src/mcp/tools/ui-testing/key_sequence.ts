@@ -21,7 +21,10 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const keySequenceSchema = z.object({
@@ -92,7 +95,10 @@ const publicSchemaObject = keySequenceSchema.omit({ simulatorId: true } as const
 export default {
   name: 'key_sequence',
   description: 'Press key sequence using HID keycodes on iOS simulator with configurable delay',
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: keySequenceSchema,
+  }),
   handler: createSessionAwareTool<KeySequenceParams>({
     internalSchema: keySequenceSchema as unknown as z.ZodType<KeySequenceParams>,
     logicFunction: (params: KeySequenceParams, executor: CommandExecutor) =>

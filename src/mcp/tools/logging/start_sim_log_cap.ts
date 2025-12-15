@@ -8,7 +8,10 @@ import { z } from 'zod';
 import { startLogCapture } from '../../../utils/log-capture/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
 import { ToolResponse, createTextContent } from '../../../types/common.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const startSimLogCapSchema = z.object({
@@ -61,7 +64,10 @@ export default {
   name: 'start_sim_log_cap',
   description:
     'Starts capturing logs from a specified simulator. Returns a session ID. By default, captures only structured logs.',
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: startSimLogCapSchema,
+  }),
   handler: createSessionAwareTool<StartSimLogCapParams>({
     internalSchema: startSimLogCapSchema as unknown as z.ZodType<StartSimLogCapParams>,
     logicFunction: start_sim_log_capLogic,

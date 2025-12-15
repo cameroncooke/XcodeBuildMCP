@@ -12,7 +12,10 @@ import { createTextResponse } from '../../../utils/responses/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 const XcodePlatform = {
@@ -303,7 +306,10 @@ const publicSchemaObject = baseGetSimulatorAppPathSchema.omit({
 export default {
   name: 'get_sim_app_path',
   description: 'Retrieves the built app path for an iOS simulator.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseGetSimulatorAppPathSchema,
+  }),
   handler: createSessionAwareTool<GetSimulatorAppPathParams>({
     internalSchema: getSimulatorAppPathSchema as unknown as z.ZodType<GetSimulatorAppPathParams>,
     logicFunction: get_sim_app_pathLogic,

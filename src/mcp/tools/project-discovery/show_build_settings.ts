@@ -11,7 +11,10 @@ import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
@@ -111,7 +114,10 @@ const publicSchemaObject = baseSchemaObject.omit({
 export default {
   name: 'show_build_settings',
   description: 'Shows xcodebuild build settings.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }),
   handler: createSessionAwareTool<ShowBuildSettingsParams>({
     internalSchema: showBuildSettingsSchema as unknown as z.ZodType<ShowBuildSettingsParams>,
     logicFunction: showBuildSettingsLogic,

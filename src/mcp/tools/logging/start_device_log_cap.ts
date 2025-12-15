@@ -14,7 +14,10 @@ import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 /**
  * Log file retention policy for device logs:
@@ -632,6 +635,8 @@ const startDeviceLogCapSchema = z.object({
   bundleId: z.string().describe('Bundle identifier of the app to launch and capture logs for.'),
 });
 
+const publicSchemaObject = startDeviceLogCapSchema.omit({ deviceId: true } as const);
+
 // Use z.infer for type safety
 type StartDeviceLogCapParams = z.infer<typeof startDeviceLogCapSchema>;
 
@@ -679,7 +684,10 @@ export async function start_device_log_capLogic(
 export default {
   name: 'start_device_log_cap',
   description: 'Starts log capture on a connected device.',
-  schema: startDeviceLogCapSchema.omit({ deviceId: true } as const).shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: startDeviceLogCapSchema,
+  }),
   handler: createSessionAwareTool<StartDeviceLogCapParams>({
     internalSchema: startDeviceLogCapSchema as unknown as z.ZodType<StartDeviceLogCapParams>,
     logicFunction: start_device_log_capLogic,

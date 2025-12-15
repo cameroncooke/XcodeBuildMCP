@@ -22,7 +22,10 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const gestureSchema = z.object({
@@ -156,7 +159,10 @@ export default {
   name: 'gesture',
   description:
     'Perform gesture on iOS simulator using preset gestures: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge',
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: gestureSchema,
+  }),
   handler: createSessionAwareTool<GestureParams>({
     internalSchema: gestureSchema as unknown as z.ZodType<GestureParams>,
     logicFunction: (params: GestureParams, executor: CommandExecutor) =>

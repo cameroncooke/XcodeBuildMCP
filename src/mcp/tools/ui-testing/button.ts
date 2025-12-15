@@ -10,7 +10,10 @@ import {
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
 import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const buttonSchema = z.object({
@@ -79,7 +82,10 @@ export default {
   name: 'button',
   description:
     'Press hardware button on iOS simulator. Supported buttons: apple-pay, home, lock, side-button, siri',
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: buttonSchema,
+  }),
   handler: createSessionAwareTool<ButtonParams>({
     internalSchema: buttonSchema as unknown as z.ZodType<ButtonParams>,
     logicFunction: (params: ButtonParams, executor: CommandExecutor) =>

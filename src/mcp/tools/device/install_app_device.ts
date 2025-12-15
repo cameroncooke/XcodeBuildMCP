@@ -10,7 +10,10 @@ import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const installAppDeviceSchema = z.object({
@@ -22,6 +25,8 @@ const installAppDeviceSchema = z.object({
     .string()
     .describe('Path to the .app bundle to install (full path to the .app directory)'),
 });
+
+const publicSchemaObject = installAppDeviceSchema.omit({ deviceId: true } as const);
 
 // Use z.infer for type safety
 type InstallAppDeviceParams = z.infer<typeof installAppDeviceSchema>;
@@ -83,7 +88,10 @@ export async function install_app_deviceLogic(
 export default {
   name: 'install_app_device',
   description: 'Installs an app on a connected device.',
-  schema: installAppDeviceSchema.omit({ deviceId: true } as const).shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: installAppDeviceSchema,
+  }),
   handler: createSessionAwareTool<InstallAppDeviceParams>({
     internalSchema: installAppDeviceSchema as unknown as z.ZodType<InstallAppDeviceParams>,
     logicFunction: install_app_deviceLogic,

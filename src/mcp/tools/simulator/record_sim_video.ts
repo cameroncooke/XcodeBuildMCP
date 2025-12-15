@@ -15,7 +15,10 @@ import {
   startSimulatorVideoCapture,
   stopSimulatorVideoCapture,
 } from '../../../utils/video-capture/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import { dirname } from 'path';
 
 // Base schema object (used for MCP schema exposure)
@@ -223,7 +226,10 @@ const publicSchemaObject = recordSimVideoSchemaObject.omit({ simulatorId: true }
 export default {
   name: 'record_sim_video',
   description: 'Starts or stops video capture for an iOS simulator.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: recordSimVideoSchemaObject,
+  }),
   handler: createSessionAwareTool<RecordSimVideoParams>({
     internalSchema: recordSimVideoSchema as unknown as z.ZodType<RecordSimVideoParams>,
     logicFunction: record_sim_videoLogic,

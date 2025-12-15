@@ -21,7 +21,10 @@ import {
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
 } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
@@ -57,6 +60,14 @@ const testDeviceSchema = baseSchema
   });
 
 export type TestDeviceParams = z.infer<typeof testDeviceSchema>;
+
+const publicSchemaObject = baseSchemaObject.omit({
+  projectPath: true,
+  workspacePath: true,
+  scheme: true,
+  deviceId: true,
+  configuration: true,
+} as const);
 
 /**
  * Type definition for test summary structure from xcresulttool
@@ -276,13 +287,10 @@ export async function testDeviceLogic(
 export default {
   name: 'test_device',
   description: 'Runs tests on a physical Apple device.',
-  schema: baseSchemaObject.omit({
-    projectPath: true,
-    workspacePath: true,
-    scheme: true,
-    deviceId: true,
-    configuration: true,
-  } as const).shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }),
   handler: createSessionAwareTool<TestDeviceParams>({
     internalSchema: testDeviceSchema as unknown as z.ZodType<TestDeviceParams>,
     logicFunction: (params: TestDeviceParams, executor: CommandExecutor) =>

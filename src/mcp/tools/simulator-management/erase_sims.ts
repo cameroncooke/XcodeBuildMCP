@@ -2,7 +2,10 @@ import { z } from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 const eraseSimsBaseSchema = z
   .object({
@@ -83,7 +86,10 @@ const publicSchemaObject = eraseSimsSchema.omit({ simulatorId: true } as const).
 export default {
   name: 'erase_sims',
   description: 'Erases a simulator by UDID.',
-  schema: publicSchemaObject.shape,
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: eraseSimsSchema,
+  }),
   handler: createSessionAwareTool<EraseSimsParams>({
     internalSchema: eraseSimsSchema as unknown as z.ZodType<EraseSimsParams>,
     logicFunction: erase_simsLogic,

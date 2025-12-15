@@ -10,7 +10,10 @@ import {
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
 import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
-import { createSessionAwareTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 export interface AxeHelpers {
   getAxePath: () => string | null;
@@ -86,8 +89,9 @@ export async function tapLogic(
     }
 
     return createTextResponse(message);
-  } catch (error) {
-    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${errorMessage}`);
     if (error instanceof DependencyError) {
       return axeHelpers.createAxeNotAvailableResponse();
     } else if (error instanceof AxeError) {
@@ -111,7 +115,10 @@ export default {
   name: 'tap',
   description:
     "Tap at specific coordinates. Use describe_ui to get precise element coordinates (don't guess from screenshots). Supports optional timing delays.",
-  schema: publicSchemaObject.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: tapSchema,
+  }),
   handler: createSessionAwareTool<TapParams>({
     internalSchema: tapSchema as unknown as z.ZodType<TapParams>,
     logicFunction: (params: TapParams, executor: CommandExecutor) =>
@@ -169,7 +176,7 @@ async function executeAxeCommand(
     }
 
     // Function now returns void - the calling code creates its own response
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof Error) {
       if (error instanceof AxeError) {
         throw error;
