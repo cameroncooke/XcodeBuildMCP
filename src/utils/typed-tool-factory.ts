@@ -14,6 +14,7 @@ import { ToolResponse } from '../types/common.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { createErrorResponse } from './responses/index.ts';
 import { sessionStore, type SessionDefaults } from './session-store.ts';
+import { isSessionDefaultsSchemaOptOutEnabled } from './environment.ts';
 
 /**
  * Creates a type-safe tool handler that validates parameters at runtime
@@ -69,6 +70,27 @@ function missingFromMerged(
   merged: Record<string, unknown>,
 ): string[] {
   return keys.filter((k) => merged[k] == null);
+}
+
+function formatRequirementError(opts: {
+  message: string;
+  setHint?: string;
+  optOutEnabled: boolean;
+}) {
+  const title = opts.optOutEnabled
+    ? 'Missing required parameters'
+    : 'Missing required session defaults';
+  const body = opts.optOutEnabled
+    ? opts.message
+    : [opts.message, opts.setHint].filter(Boolean).join('\n');
+  return { title, body };
+}
+
+export function getSessionAwareToolSchemaShape<
+  TSession extends z.ZodRawShape,
+  TLegacy extends z.ZodRawShape,
+>(opts: { sessionAware: z.ZodObject<TSession>; legacy: z.ZodObject<TLegacy> }): z.ZodRawShape {
+  return isSessionDefaultsSchemaOptOutEnabled() ? opts.legacy.shape : opts.sessionAware.shape;
 }
 
 export function createSessionAwareTool<TParams>(opts: {
@@ -132,13 +154,15 @@ export function createSessionAwareTool<TParams>(opts: {
         if ('allOf' in req) {
           const missing = missingFromMerged(req.allOf, merged);
           if (missing.length > 0) {
-            return createErrorResponse(
-              'Missing required session defaults',
-              `${req.message ?? `Required: ${req.allOf.join(', ')}`}\n` +
-                `Set with: session-set-defaults { ${missing
-                  .map((k) => `"${k}": "..."`)
-                  .join(', ')} }`,
-            );
+            const setHint = `Set with: session-set-defaults { ${missing
+              .map((k) => `"${k}": "..."`)
+              .join(', ')} }`;
+            const { title, body } = formatRequirementError({
+              message: req.message ?? `Required: ${req.allOf.join(', ')}`,
+              setHint,
+              optOutEnabled: isSessionDefaultsSchemaOptOutEnabled(),
+            });
+            return createErrorResponse(title, body);
           }
         } else if ('oneOf' in req) {
           const satisfied = req.oneOf.some((k) => merged[k] != null);
@@ -147,10 +171,12 @@ export function createSessionAwareTool<TParams>(opts: {
             const setHints = req.oneOf
               .map((k) => `session-set-defaults { "${k}": "..." }`)
               .join(' OR ');
-            return createErrorResponse(
-              'Missing required session defaults',
-              `${req.message ?? `Provide one of: ${options}`}\nSet with: ${setHints}`,
-            );
+            const { title, body } = formatRequirementError({
+              message: req.message ?? `Provide one of: ${options}`,
+              setHint: `Set with: ${setHints}`,
+              optOutEnabled: isSessionDefaultsSchemaOptOutEnabled(),
+            });
+            return createErrorResponse(title, body);
           }
         }
       }
@@ -164,10 +190,12 @@ export function createSessionAwareTool<TParams>(opts: {
           return `${path}: ${e.message}`;
         });
 
-        return createErrorResponse(
-          'Parameter validation failed',
-          `Invalid parameters:\n${errorMessages.join('\n')}\nTip: set session defaults via session-set-defaults`,
-        );
+        const tip = isSessionDefaultsSchemaOptOutEnabled()
+          ? ''
+          : '\nTip: set session defaults via session-set-defaults';
+        const details = `Invalid parameters:\n${errorMessages.join('\n')}${tip}`;
+
+        return createErrorResponse('Parameter validation failed', details);
       }
       throw error;
     }
