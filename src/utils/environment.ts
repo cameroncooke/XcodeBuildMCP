@@ -68,6 +68,18 @@ export function getDefaultEnvironmentDetector(): EnvironmentDetector {
 }
 
 /**
+ * Global opt-out for session defaults in MCP tool schemas.
+ * When enabled, tools re-expose all parameters instead of hiding session-managed fields.
+ */
+export function isSessionDefaultsSchemaOptOutEnabled(): boolean {
+  const raw = process.env.XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS;
+  if (!raw) return false;
+
+  const normalized = raw.trim().toLowerCase();
+  return ['1', 'true', 'yes', 'on'].includes(normalized);
+}
+
+/**
  * Normalizes a set of user-provided environment variables by ensuring they are
  * prefixed with TEST_RUNNER_. Variables already prefixed are preserved.
  *

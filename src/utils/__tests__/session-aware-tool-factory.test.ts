@@ -98,6 +98,26 @@ describe('createSessionAwareTool', () => {
     expect(result.content[0].text).toContain('Provide a project or workspace');
   });
 
+  it('uses opt-out messaging when session defaults schema is disabled', async () => {
+    const original = process.env.XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS;
+    process.env.XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS = 'true';
+
+    try {
+      const result = await handler({ projectPath: '/p.xcodeproj', simulatorId: 'SIM-1' });
+      expect(result.isError).toBe(true);
+      const text = result.content[0].text;
+      expect(text).toContain('Missing required parameters');
+      expect(text).toContain('scheme is required');
+      expect(text).not.toContain('session defaults');
+    } finally {
+      if (original === undefined) {
+        delete process.env.XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS;
+      } else {
+        process.env.XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS = original;
+      }
+    }
+  });
+
   it('should surface Zod validation errors with tip when invalid', async () => {
     const badHandler = createSessionAwareTool<any>({
       internalSchema,
