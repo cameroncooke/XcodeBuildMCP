@@ -18,7 +18,7 @@ permissions:
 jobs:
   release:
     runs-on: macos-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,6 +30,10 @@ jobs:
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
+
+      # Ensure npm 11.5.1 or later is installed
+      - name: Update npm
+        run: npm install -g npm@latest
 
       - name: Clear npm cache and install dependencies
         run: |
@@ -98,8 +102,6 @@ jobs:
           fi
           echo "📦 Publishing to NPM with tag: $NPM_TAG"
           npm publish --access public --tag "$NPM_TAG"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release (production releases only)
         if: github.event_name == 'push'
@@ -109,27 +111,18 @@ jobs:
           name: Release v${{ steps.get_version.outputs.VERSION }}
           body: |
             ## Release v${{ steps.get_version.outputs.VERSION }}
-            
-            ### Features
-            - Bundled AXe binary and frameworks for zero-setup UI automation
-            - No manual installation required - works out of the box
-            
+
             ### Installation
             ```bash
             npm install -g xcodebuildmcp@${{ steps.get_version.outputs.VERSION }}
             ```
-            
+
             Or use with npx:
             ```bash
             npx xcodebuildmcp@${{ steps.get_version.outputs.VERSION }}
             ```
-            
+
             📦 **NPM Package**: https://www.npmjs.com/package/xcodebuildmcp/v/${{ steps.get_version.outputs.VERSION }}
-            
-            ### What's Included
-            - Latest AXe binary from [cameroncooke/axe](https://github.com/cameroncooke/axe)
-            - All required frameworks (FBControlCore, FBDeviceControl, FBSimulatorControl, XCTestBootstrap)
-            - Full XcodeBuildMCP functionality with UI automation support
           files: |
             xcodebuildmcp-${{ steps.get_version.outputs.VERSION }}.tgz
           draft: false
