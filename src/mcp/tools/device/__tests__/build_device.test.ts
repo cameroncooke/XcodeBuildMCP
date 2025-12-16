@@ -37,12 +37,7 @@ describe('build_device plugin', () => {
       expect(schema.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(false);
 
       const schemaKeys = Object.keys(buildDevice.schema).sort();
-      expect(schemaKeys).toEqual([
-        'derivedDataPath',
-        'extraArgs',
-        'preferXcodebuild',
-        'suppressWarnings',
-      ]);
+      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs', 'preferXcodebuild']);
     });
   });
 

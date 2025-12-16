@@ -47,13 +47,7 @@ describe('test_macos plugin (unified)', () => {
 
       const schemaKeys = Object.keys(testMacos.schema).sort();
       expect(schemaKeys).toEqual(
-        [
-          'derivedDataPath',
-          'extraArgs',
-          'preferXcodebuild',
-          'suppressWarnings',
-          'testRunnerEnv',
-        ].sort(),
+        ['derivedDataPath', 'extraArgs', 'preferXcodebuild', 'testRunnerEnv'].sort(),
       );
     });
   });

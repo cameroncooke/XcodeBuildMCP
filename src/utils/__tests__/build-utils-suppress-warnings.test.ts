@@ -1,9 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { executeXcodeBuildCommand } from '../build-utils.ts';
 import { XcodePlatform } from '../../types/common.ts';
+import { sessionStore } from '../session-store.ts';
 
 describe('executeXcodeBuildCommand - suppressWarnings', () => {
+  beforeEach(() => {
+    sessionStore.clear();
+  });
+
   it('should include warnings when suppressWarnings is false', async () => {
+    sessionStore.setDefaults({ suppressWarnings: false });
+
     const mockExecutor = vi.fn().mockResolvedValue({
       success: true,
       output: 'warning: Some warning\nerror: Some error',
@@ -16,7 +23,6 @@ describe('executeXcodeBuildCommand - suppressWarnings', () => {
         projectPath: '/test/project.xcodeproj',
         scheme: 'TestScheme',
         configuration: 'Debug',
-        suppressWarnings: false,
       },
       {
         platform: XcodePlatform.macOS,
@@ -36,6 +42,8 @@ describe('executeXcodeBuildCommand - suppressWarnings', () => {
   });
 
   it('should suppress warnings when suppressWarnings is true', async () => {
+    sessionStore.setDefaults({ suppressWarnings: true });
+
     const mockExecutor = vi.fn().mockResolvedValue({
       success: true,
       output: 'warning: Some warning\nerror: Some error',
@@ -48,7 +56,6 @@ describe('executeXcodeBuildCommand - suppressWarnings', () => {
         projectPath: '/test/project.xcodeproj',
         scheme: 'TestScheme',
         configuration: 'Debug',
-        suppressWarnings: true,
       },
       {
         platform: XcodePlatform.macOS,

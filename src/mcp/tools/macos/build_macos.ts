@@ -46,10 +46,6 @@ const baseSchemaObject = z.object({
     .boolean()
     .optional()
     .describe('If true, prefers xcodebuild over the experimental incremental build system'),
-  suppressWarnings: z
-    .boolean()
-    .optional()
-    .describe('If true, suppresses warning messages from build output to reduce context usage'),
 });
 
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);

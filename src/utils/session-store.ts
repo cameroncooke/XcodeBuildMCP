@@ -10,6 +10,7 @@ export type SessionDefaults = {
   deviceId?: string;
   useLatestOS?: boolean;
   arch?: 'arm64' | 'x86_64';
+  suppressWarnings?: boolean;
 };
 
 class SessionStore {

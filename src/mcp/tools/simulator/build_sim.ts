@@ -49,10 +49,6 @@ const baseOptions = {
     .describe(
       'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
     ),
-  suppressWarnings: z
-    .boolean()
-    .optional()
-    .describe('If true, suppresses warning messages from build output to reduce context usage'),
 };
 
 const baseSchemaObject = z.object({

@@ -25,10 +25,6 @@ const baseSchemaObject = z.object({
   derivedDataPath: z.string().optional().describe('Path to derived data directory'),
   extraArgs: z.array(z.string()).optional().describe('Additional arguments to pass to xcodebuild'),
   preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
-  suppressWarnings: z
-    .boolean()
-    .optional()
-    .describe('If true, suppresses warning messages from build output to reduce context usage'),
 });
 
 const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);

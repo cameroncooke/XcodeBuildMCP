@@ -51,10 +51,6 @@ const baseOptions = {
     .describe(
       'Optional: Platform to clean for (defaults to iOS). Choose from macOS, iOS, iOS Simulator, watchOS, watchOS Simulator, tvOS, tvOS Simulator, visionOS, visionOS Simulator',
     ),
-  suppressWarnings: z
-    .boolean()
-    .optional()
-    .describe('If true, suppresses warning messages from build output to reduce context usage'),
 };
 
 const baseSchemaObject = z.object({
@@ -127,7 +123,6 @@ export async function cleanLogic(
     configuration: params.configuration ?? 'Debug',
     derivedDataPath: params.derivedDataPath,
     extraArgs: params.extraArgs,
-    suppressWarnings: params.suppressWarnings,
   };
 
   // For clean operations, simulator platforms should be mapped to their device equivalents

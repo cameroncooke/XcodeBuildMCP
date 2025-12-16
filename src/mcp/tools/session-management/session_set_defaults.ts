@@ -14,6 +14,10 @@ const baseSchema = z.object({
   deviceId: z.string().optional(),
   useLatestOS: z.boolean().optional(),
   arch: z.enum(['arm64', 'x86_64']).optional(),
+  suppressWarnings: z
+    .boolean()
+    .optional()
+    .describe('When true, warning messages are filtered from build output to conserve context'),
 });
 
 const schemaObj = baseSchema
