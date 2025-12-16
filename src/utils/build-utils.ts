@@ -30,6 +30,7 @@ import {
   doesMakefileExist,
   doesMakeLogFileExist,
 } from './xcodemake.ts';
+import { sessionStore } from './session-store.ts';
 import path from 'path';
 
 /**
@@ -231,8 +232,9 @@ export async function executeXcodeBuildCommand(
 
     // Grep warnings and errors from stdout (build output)
     const warningOrErrorLines = grepWarningsAndErrors(result.output);
+    const suppressWarnings = sessionStore.get('suppressWarnings');
     warningOrErrorLines.forEach(({ type, content }) => {
-      if (type === 'warning' && params.suppressWarnings) {
+      if (type === 'warning' && suppressWarnings) {
         return;
       }
       buildMessages.push({
