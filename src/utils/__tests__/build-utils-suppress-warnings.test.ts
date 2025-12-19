@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { executeXcodeBuildCommand } from '../build-utils.ts';
 import { XcodePlatform } from '../../types/common.ts';
 import { sessionStore } from '../session-store.ts';
+import { createMockExecutor } from '../../test-utils/mock-executors.ts';
 
 describe('executeXcodeBuildCommand - suppressWarnings', () => {
   beforeEach(() => {
@@ -11,7 +12,7 @@ describe('executeXcodeBuildCommand - suppressWarnings', () => {
   it('should include warnings when suppressWarnings is false', async () => {
     sessionStore.setDefaults({ suppressWarnings: false });
 
-    const mockExecutor = vi.fn().mockResolvedValue({
+    const mockExecutor = createMockExecutor({
       success: true,
       output: 'warning: Some warning\nerror: Some error',
       error: '',
@@ -44,7 +45,7 @@ describe('executeXcodeBuildCommand - suppressWarnings', () => {
   it('should suppress warnings when suppressWarnings is true', async () => {
     sessionStore.setDefaults({ suppressWarnings: true });
 
-    const mockExecutor = vi.fn().mockResolvedValue({
+    const mockExecutor = createMockExecutor({
       success: true,
       output: 'warning: Some warning\nerror: Some error',
       error: '',
