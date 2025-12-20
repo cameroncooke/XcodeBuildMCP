@@ -248,19 +248,42 @@ fi
 run() {
   if $DRY_RUN; then
     echo "[dry-run] $*"
+    return 0
+  fi
+
+  "$@"
+}
+
+# Portable in-place sed (BSD/macOS vs GNU/Linux)
+# - macOS/BSD sed requires: sed -i '' -E 's/.../.../' file
+# - GNU sed requires:       sed -i -E 's/.../.../' file
+sed_inplace() {
+  local expr="$1"
+  local file="$2"
+
+  if sed --version >/dev/null 2>&1; then
+    # GNU sed
+    sed -i -E "$expr" "$file"
   else
-    eval "$@"
+    # BSD/macOS sed
+    sed -i '' -E "$expr" "$file"
   fi
 }
 
 # Ensure we're in the project root (parent of scripts directory)
 cd "$(dirname "$0")/.."
 
-# Check if working directory is clean
-if ! git diff-index --quiet HEAD --; then
-  echo "❌ Error: Working directory is not clean."
-  echo "Please commit or stash your changes before creating a release."
-  exit 1
+# Check if working directory is clean (only enforced for real runs)
+if ! $DRY_RUN; then
+  if ! git diff-index --quiet HEAD --; then
+    echo "❌ Error: Working directory is not clean."
+    echo "Please commit or stash your changes before creating a release."
+    exit 1
+  fi
+else
+  if ! git diff-index --quiet HEAD --; then
+    echo "⚠️  Dry-run: working directory is not clean (continuing)."
+  fi
 fi
 
 # Check if package.json already has this version (from previous attempt)
@@ -276,23 +299,25 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
   # Version update
   echo ""
   echo "🔧 Setting version to $VERSION..."
-  run "npm version \"$VERSION\" --no-git-tag-version"
+  run npm version "$VERSION" --no-git-tag-version
 
   # README update
   echo ""
   echo "📝 Updating version in README.md..."
   # Update version references in code examples using extended regex for precise semver matching
-  run "sed -i '' -E 's/@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/@'"$VERSION"'/g' README.md"
+  README_AT_SEMVER_REGEX='@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?'
+  run sed_inplace "s/${README_AT_SEMVER_REGEX}/@${VERSION}/g" README.md
 
   # Update URL-encoded version references in shield links
   echo "📝 Updating version in README.md shield links..."
-  run "sed -i '' -E 's/npm%3Axcodebuildmcp%40[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?/npm%3Axcodebuildmcp%40'"$VERSION"'/g' README.md"
+  README_URLENCODED_NPM_AT_SEMVER_REGEX='npm%3Axcodebuildmcp%40[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?'
+  run sed_inplace "s/${README_URLENCODED_NPM_AT_SEMVER_REGEX}/npm%3Axcodebuildmcp%40${VERSION}/g" README.md
 
   # server.json update
   echo ""
   if [[ -f server.json ]]; then
     echo "📝 Updating server.json version to $VERSION..."
-    run "node -e \"const fs=require('fs');const f='server.json';const j=JSON.parse(fs.readFileSync(f,'utf8'));j.version='$VERSION';if(Array.isArray(j.packages)){j.packages=j.packages.map(p=>({...p,version:'$VERSION'}));}fs.writeFileSync(f,JSON.stringify(j,null,2)+'\n');\""
+    run node -e "const fs=require('fs');const f='server.json';const j=JSON.parse(fs.readFileSync(f,'utf8'));j.version='${VERSION}';if(Array.isArray(j.packages)){j.packages=j.packages.map(p=>({...p,version:'${VERSION}'}));}fs.writeFileSync(f,JSON.stringify(j,null,2)+'\n');"
   else
     echo "⚠️  server.json not found; skipping update"
   fi
@@ -301,11 +326,11 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
   echo ""
   echo "📦 Committing version changes..."
   if [[ -f server.json ]]; then
-    run "git add package.json README.md server.json"
+    run git add package.json README.md server.json
   else
-    run "git add package.json README.md"
+    run git add package.json README.md
   fi
-  run "git commit -m \"Release v$VERSION\""
+  run git commit -m "Release v$VERSION"
 else
   echo "⏭️  Skipping version update (already done)"
   # Ensure server.json still matches the desired version (in case of a partial previous run)
@@ -313,20 +338,27 @@ else
     CURRENT_SERVER_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('server.json','utf8')).version||'')")
     if [[ "$CURRENT_SERVER_VERSION" != "$VERSION" ]]; then
       echo "📝 Aligning server.json to $VERSION..."
-      run "node -e \"const fs=require('fs');const f='server.json';const j=JSON.parse(fs.readFileSync(f,'utf8'));j.version='$VERSION';if(Array.isArray(j.packages)){j.packages=j.packages.map(p=>({...p,version:'$VERSION'}));}fs.writeFileSync(f,JSON.stringify(j,null,2)+'\\n');\""
-      run "git add server.json"
-      run "git commit -m \"Align server.json for v$VERSION\""
+      run node -e "const fs=require('fs');const f='server.json';const j=JSON.parse(fs.readFileSync(f,'utf8'));j.version='${VERSION}';if(Array.isArray(j.packages)){j.packages=j.packages.map(p=>({...p,version:'${VERSION}'}));}fs.writeFileSync(f,JSON.stringify(j,null,2)+'\n');"
+      run git add server.json
+      run git commit -m "Align server.json for v$VERSION"
     fi
   fi
 fi
 
 # Create or recreate tag at current HEAD
 echo "🏷️  Creating tag v$VERSION..."
-run "git tag -f \"v$VERSION\""
+run git tag -f "v$VERSION"
 
 echo ""
 echo "🚀 Pushing to origin..."
-run "git push origin $BRANCH --tags"
+run git push origin "$BRANCH" --tags
+
+# In dry-run, stop here (don't monitor workflows, and don't claim a release happened).
+if $DRY_RUN; then
+  echo ""
+  echo "ℹ️  Dry-run: skipping GitHub Actions workflow monitoring."
+  exit 0
+fi
 
 # Monitor the workflow and handle failures
 echo ""
