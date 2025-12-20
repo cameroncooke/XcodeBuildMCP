@@ -326,9 +326,9 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
   echo ""
   echo "📦 Committing version changes..."
   if [[ -f server.json ]]; then
-    run git add package.json README.md server.json
+    run git add package.json package-lock.json README.md server.json
   else
-    run git add package.json README.md
+    run git add package.json package-lock.json README.md
   fi
   run git commit -m "Release v$VERSION"
 else
