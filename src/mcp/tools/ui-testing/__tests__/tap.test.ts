@@ -55,7 +55,7 @@ describe('Tap Plugin', () => {
 
     it('should have correct description', () => {
       expect(tapPlugin.description).toBe(
-        "Tap at specific coordinates. Use describe_ui to get precise element coordinates (don't guess from screenshots). Supports optional timing delays.",
+        "Tap at specific coordinates or target elements by accessibility id or label. Use describe_ui to get precise element coordinates prior to using x/y parameters (don't guess from screenshots). Supports optional timing delays.",
       );
     });
 
@@ -67,6 +67,16 @@ describe('Tap Plugin', () => {
       const schema = z.object(tapPlugin.schema);
 
       expect(schema.safeParse({ x: 100, y: 200 }).success).toBe(true);
+
+      expect(schema.safeParse({ id: 'loginButton' }).success).toBe(true);
+
+      expect(schema.safeParse({ label: 'Log in' }).success).toBe(true);
+
+      expect(schema.safeParse({ x: 100, y: 200, id: 'loginButton' }).success).toBe(true);
+
+      expect(schema.safeParse({ x: 100, y: 200, id: 'loginButton', label: 'Log in' }).success).toBe(
+        true,
+      );
 
       expect(
         schema.safeParse({
@@ -114,8 +124,6 @@ describe('Tap Plugin', () => {
       });
       expect(withSimId.success).toBe(true);
       expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
-
-      expect(schema.safeParse({}).success).toBe(false);
     });
   });
 
@@ -168,6 +176,139 @@ describe('Tap Plugin', () => {
           '100',
           '-y',
           '200',
+          '--udid',
+          '12345678-1234-1234-1234-123456789012',
+        ],
+        logPrefix: '[AXe]: tap',
+        useShell: false,
+        env: { SOME_ENV: 'value' },
+      });
+    });
+
+    it('should generate correct axe command with element id target', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Tap completed',
+      });
+
+      const wrappedExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        return mockExecutor(command, logPrefix, useShell, env);
+      };
+
+      const mockAxeHelpers = createMockAxeHelpers();
+
+      await tapLogic(
+        {
+          simulatorId: '12345678-1234-1234-1234-123456789012',
+          id: 'loginButton',
+        },
+        wrappedExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0]).toEqual({
+        command: [
+          '/mocked/axe/path',
+          'tap',
+          '--id',
+          'loginButton',
+          '--udid',
+          '12345678-1234-1234-1234-123456789012',
+        ],
+        logPrefix: '[AXe]: tap',
+        useShell: false,
+        env: { SOME_ENV: 'value' },
+      });
+    });
+
+    it('should generate correct axe command with element label target', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Tap completed',
+      });
+
+      const wrappedExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        return mockExecutor(command, logPrefix, useShell, env);
+      };
+
+      const mockAxeHelpers = createMockAxeHelpers();
+
+      await tapLogic(
+        {
+          simulatorId: '12345678-1234-1234-1234-123456789012',
+          label: 'Log in',
+        },
+        wrappedExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0]).toEqual({
+        command: [
+          '/mocked/axe/path',
+          'tap',
+          '--label',
+          'Log in',
+          '--udid',
+          '12345678-1234-1234-1234-123456789012',
+        ],
+        logPrefix: '[AXe]: tap',
+        useShell: false,
+        env: { SOME_ENV: 'value' },
+      });
+    });
+
+    it('should prefer coordinates over id/label when both are provided', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Tap completed',
+      });
+
+      const wrappedExecutor = async (
+        command: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        env?: Record<string, string>,
+      ) => {
+        callHistory.push({ command, logPrefix, useShell, env });
+        return mockExecutor(command, logPrefix, useShell, env);
+      };
+
+      const mockAxeHelpers = createMockAxeHelpers();
+
+      await tapLogic(
+        {
+          simulatorId: '12345678-1234-1234-1234-123456789012',
+          x: 120,
+          y: 240,
+          id: 'loginButton',
+        },
+        wrappedExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0]).toEqual({
+        command: [
+          '/mocked/axe/path',
+          'tap',
+          '-x',
+          '120',
+          '-y',
+          '240',
           '--udid',
           '12345678-1234-1234-1234-123456789012',
         ],
@@ -475,6 +616,62 @@ describe('Tap Plugin', () => {
         isError: false,
       });
     });
+
+    it('should return successful response for element id target', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Tap completed',
+      });
+
+      const mockAxeHelpers = createMockAxeHelpers();
+
+      const result = await tapLogic(
+        {
+          simulatorId: '12345678-1234-1234-1234-123456789012',
+          id: 'loginButton',
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Tap on element id "loginButton" simulated successfully.',
+          },
+        ],
+        isError: false,
+      });
+    });
+
+    it('should return successful response for element label target', async () => {
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Tap completed',
+      });
+
+      const mockAxeHelpers = createMockAxeHelpers();
+
+      const result = await tapLogic(
+        {
+          simulatorId: '12345678-1234-1234-1234-123456789012',
+          label: 'Log in',
+        },
+        mockExecutor,
+        mockAxeHelpers,
+      );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: 'text',
+            text: 'Tap on element label "Log in" simulated successfully.',
+          },
+        ],
+        isError: false,
+      });
+    });
   });
 
   describe('Plugin Handler Validation', () => {
@@ -501,8 +698,7 @@ describe('Tap Plugin', () => {
       expect(result.isError).toBe(true);
       const message = result.content[0].text;
       expect(message).toContain('Parameter validation failed');
-      expect(message).toContain('x: Required');
-      expect(message).toContain('Tip: set session defaults via session-set-defaults');
+      expect(message).toContain('x: X coordinate is required when y is provided.');
     });
 
     it('should return validation error for missing y coordinate', async () => {
@@ -515,8 +711,21 @@ describe('Tap Plugin', () => {
       expect(result.isError).toBe(true);
       const message = result.content[0].text;
       expect(message).toContain('Parameter validation failed');
-      expect(message).toContain('y: Required');
-      expect(message).toContain('Tip: set session defaults via session-set-defaults');
+      expect(message).toContain('y: Y coordinate is required when x is provided.');
+    });
+
+    it('should return validation error when both id and label are provided without coordinates', async () => {
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+
+      const result = await tapPlugin.handler({
+        id: 'loginButton',
+        label: 'Log in',
+      });
+
+      expect(result.isError).toBe(true);
+      const message = result.content[0].text;
+      expect(message).toContain('Parameter validation failed');
+      expect(message).toContain('id: Provide either id or label, not both.');
     });
 
     it('should return validation error for non-integer x coordinate', async () => {
@@ -531,7 +740,6 @@ describe('Tap Plugin', () => {
       const message = result.content[0].text;
       expect(message).toContain('Parameter validation failed');
       expect(message).toContain('x: X coordinate must be an integer');
-      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
 
     it('should return validation error for non-integer y coordinate', async () => {
@@ -546,7 +754,6 @@ describe('Tap Plugin', () => {
       const message = result.content[0].text;
       expect(message).toContain('Parameter validation failed');
       expect(message).toContain('y: Y coordinate must be an integer');
-      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
 
     it('should return validation error for negative preDelay', async () => {
@@ -562,7 +769,6 @@ describe('Tap Plugin', () => {
       const message = result.content[0].text;
       expect(message).toContain('Parameter validation failed');
       expect(message).toContain('preDelay: Pre-delay must be non-negative');
-      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
 
     it('should return validation error for negative postDelay', async () => {
@@ -578,7 +784,6 @@ describe('Tap Plugin', () => {
       const message = result.content[0].text;
       expect(message).toContain('Parameter validation failed');
       expect(message).toContain('postDelay: Post-delay must be non-negative');
-      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
   });
 

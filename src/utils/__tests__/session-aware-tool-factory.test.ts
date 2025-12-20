@@ -118,7 +118,7 @@ describe('createSessionAwareTool', () => {
     }
   });
 
-  it('should surface Zod validation errors with tip when invalid', async () => {
+  it('should surface Zod validation errors when invalid', async () => {
     const badHandler = createSessionAwareTool<any>({
       internalSchema,
       logicFunction: logic,
@@ -127,7 +127,6 @@ describe('createSessionAwareTool', () => {
     const result = await badHandler({ scheme: 123 });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('Parameter validation failed');
-    expect(result.content[0].text).toContain('Tip: set session defaults');
   });
 
   it('exclusivePairs should NOT prune session defaults when user provides null (treat as not provided)', async () => {

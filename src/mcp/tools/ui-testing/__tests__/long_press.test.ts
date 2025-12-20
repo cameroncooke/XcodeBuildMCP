@@ -102,7 +102,6 @@ describe('Long Press Plugin', () => {
       const message = result.content[0].text;
       expect(message).toContain('Parameter validation failed');
       expect(message).toContain('duration: Duration of the long press in milliseconds');
-      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
   });
 

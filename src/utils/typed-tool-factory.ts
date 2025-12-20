@@ -190,10 +190,7 @@ export function createSessionAwareTool<TParams>(opts: {
           return `${path}: ${e.message}`;
         });
 
-        const tip = isSessionDefaultsSchemaOptOutEnabled()
-          ? ''
-          : '\nTip: set session defaults via session-set-defaults';
-        const details = `Invalid parameters:\n${errorMessages.join('\n')}${tip}`;
+        const details = `Invalid parameters:\n${errorMessages.join('\n')}`;
 
         return createErrorResponse('Parameter validation failed', details);
       }

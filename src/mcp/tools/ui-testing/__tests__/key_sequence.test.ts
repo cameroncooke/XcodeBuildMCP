@@ -69,7 +69,6 @@ describe('Key Sequence Plugin', () => {
       const message = result.content[0].text;
       expect(message).toContain('Parameter validation failed');
       expect(message).toContain('keyCodes: At least one key code required');
-      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
   });
 
