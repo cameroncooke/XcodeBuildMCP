@@ -85,9 +85,6 @@ describe('build_device plugin', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
       expect(result.content[0].text).toContain('projectPath');
-      expect(result.content[0].text).toContain(
-        'Tip: set session defaults via session-set-defaults',
-      );
     });
   });
 

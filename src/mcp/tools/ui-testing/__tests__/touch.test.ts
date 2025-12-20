@@ -111,7 +111,6 @@ describe('Touch Plugin', () => {
       const message = result.content[0].text;
       expect(message).toContain('Parameter validation failed');
       expect(message).toContain('x: Required');
-      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
   });
 

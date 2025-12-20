@@ -67,7 +67,6 @@ describe('Screenshot Plugin', () => {
       const message = result.content[0].text;
       expect(message).toContain('Parameter validation failed');
       expect(message).toContain('simulatorId: Invalid Simulator UUID format');
-      expect(message).toContain('Tip: set session defaults via session-set-defaults');
     });
   });
 

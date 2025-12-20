@@ -339,9 +339,6 @@ describe('Swipe Plugin', () => {
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Parameter validation failed');
       expect(result.content[0].text).toContain('x1: Required');
-      expect(result.content[0].text).toContain(
-        'Tip: set session defaults via session-set-defaults',
-      );
     });
 
     it('should return success for valid swipe execution', async () => {

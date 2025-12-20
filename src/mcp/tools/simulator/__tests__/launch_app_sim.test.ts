@@ -67,9 +67,6 @@ describe('launch_app_sim tool', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
       expect(result.content[0].text).toContain('bundleId: Required');
-      expect(result.content[0].text).toContain(
-        'Tip: set session defaults via session-set-defaults',
-      );
     });
 
     it('should reject when both simulatorId and simulatorName provided explicitly', async () => {

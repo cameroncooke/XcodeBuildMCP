@@ -22,18 +22,60 @@ export interface AxeHelpers {
 }
 
 // Define schema as ZodObject
-const tapSchema = z.object({
+const baseTapSchema = z.object({
   simulatorId: z.string().uuid('Invalid Simulator UUID format'),
-  x: z.number().int('X coordinate must be an integer'),
-  y: z.number().int('Y coordinate must be an integer'),
+  x: z.number().int('X coordinate must be an integer').optional(),
+  y: z.number().int('Y coordinate must be an integer').optional(),
+  id: z.string().min(1, 'Id must be non-empty').optional(),
+  label: z.string().min(1, 'Label must be non-empty').optional(),
   preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
   postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
+});
+
+const tapSchema = baseTapSchema.superRefine((values, ctx) => {
+  const hasX = values.x !== undefined;
+  const hasY = values.y !== undefined;
+  const hasId = values.id !== undefined;
+  const hasLabel = values.label !== undefined;
+
+  if (!hasX && !hasY && hasId && hasLabel) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['id'],
+      message: 'Provide either id or label, not both.',
+    });
+  }
+
+  if (hasX !== hasY) {
+    if (!hasX) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['x'],
+        message: 'X coordinate is required when y is provided.',
+      });
+    }
+    if (!hasY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['y'],
+        message: 'Y coordinate is required when x is provided.',
+      });
+    }
+  }
+
+  if (!hasX && !hasY && !hasId && !hasLabel) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['x'],
+      message: 'Provide x/y coordinates or an element id/label.',
+    });
+  }
 });
 
 // Use z.infer for type safety
 type TapParams = z.infer<typeof tapSchema>;
 
-const publicSchemaObject = tapSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = baseTapSchema.omit({ simulatorId: true } as const).strict();
 
 const LOG_PREFIX = '[AXe]';
 
@@ -66,8 +108,33 @@ export async function tapLogic(
   },
 ): Promise<ToolResponse> {
   const toolName = 'tap';
-  const { simulatorId, x, y, preDelay, postDelay } = params;
-  const commandArgs = ['tap', '-x', String(x), '-y', String(y)];
+  const { simulatorId, x, y, id, label, preDelay, postDelay } = params;
+
+  let targetDescription = '';
+  let actionDescription = '';
+  let usesCoordinates = false;
+  const commandArgs = ['tap'];
+
+  if (x !== undefined && y !== undefined) {
+    usesCoordinates = true;
+    targetDescription = `(${x}, ${y})`;
+    actionDescription = `Tap at ${targetDescription}`;
+    commandArgs.push('-x', String(x), '-y', String(y));
+  } else if (id !== undefined) {
+    targetDescription = `element id "${id}"`;
+    actionDescription = `Tap on ${targetDescription}`;
+    commandArgs.push('--id', id);
+  } else if (label !== undefined) {
+    targetDescription = `element label "${label}"`;
+    actionDescription = `Tap on ${targetDescription}`;
+    commandArgs.push('--label', label);
+  } else {
+    return createErrorResponse(
+      'Parameter validation failed',
+      'Invalid parameters:\nroot: Missing tap target',
+    );
+  }
+
   if (preDelay !== undefined) {
     commandArgs.push('--pre-delay', String(preDelay));
   }
@@ -75,14 +142,14 @@ export async function tapLogic(
     commandArgs.push('--post-delay', String(postDelay));
   }
 
-  log('info', `${LOG_PREFIX}/${toolName}: Starting for (${x}, ${y}) on ${simulatorId}`);
+  log('info', `${LOG_PREFIX}/${toolName}: Starting for ${targetDescription} on ${simulatorId}`);
 
   try {
     await executeAxeCommand(commandArgs, simulatorId, 'tap', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
 
-    const warning = getCoordinateWarning(simulatorId);
-    const message = `Tap at (${x}, ${y}) simulated successfully.`;
+    const warning = usesCoordinates ? getCoordinateWarning(simulatorId) : null;
+    const message = `${actionDescription} simulated successfully.`;
 
     if (warning) {
       return createTextResponse(`${message}\n\n${warning}`);
@@ -96,7 +163,7 @@ export async function tapLogic(
       return axeHelpers.createAxeNotAvailableResponse();
     } else if (error instanceof AxeError) {
       return createErrorResponse(
-        `Failed to simulate tap at (${x}, ${y}): ${error.message}`,
+        `Failed to simulate ${actionDescription.toLowerCase()}: ${error.message}`,
         error.axeOutput,
       );
     } else if (error instanceof SystemError) {
@@ -114,10 +181,10 @@ export async function tapLogic(
 export default {
   name: 'tap',
   description:
-    "Tap at specific coordinates. Use describe_ui to get precise element coordinates (don't guess from screenshots). Supports optional timing delays.",
+    "Tap at specific coordinates or target elements by accessibility id or label. Use describe_ui to get precise element coordinates prior to using x/y parameters (don't guess from screenshots). Supports optional timing delays.",
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
-    legacy: tapSchema,
+    legacy: baseTapSchema,
   }),
   handler: createSessionAwareTool<TapParams>({
     internalSchema: tapSchema as unknown as z.ZodType<TapParams>,
