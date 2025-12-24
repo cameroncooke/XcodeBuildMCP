@@ -163,6 +163,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: gestureSchema,
   }),
+  annotations: {
+    title: 'Gesture',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<GestureParams>({
     internalSchema: gestureSchema as unknown as z.ZodType<GestureParams>,
     logicFunction: (params: GestureParams, executor: CommandExecutor) =>

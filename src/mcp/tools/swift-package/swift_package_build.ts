@@ -77,6 +77,10 @@ export default {
   name: 'swift_package_build',
   description: 'Builds a Swift Package with swift build',
   schema: swiftPackageBuildSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Swift Package Build',
+    destructiveHint: true,
+  },
   handler: createTypedTool(
     swiftPackageBuildSchema,
     swift_package_buildLogic,

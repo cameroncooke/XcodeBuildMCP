@@ -150,6 +150,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: screenshotSchema,
   }),
+  annotations: {
+    title: 'Screenshot',
+    readOnlyHint: true,
+  },
   handler: createSessionAwareTool<ScreenshotParams>({
     internalSchema: screenshotSchema as unknown as z.ZodType<ScreenshotParams>,
     logicFunction: (params: ScreenshotParams, executor: CommandExecutor) => {

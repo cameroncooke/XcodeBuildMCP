@@ -157,6 +157,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }), // MCP SDK compatibility (public inputs only)
+  annotations: {
+    title: 'Build Simulator',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<BuildSimulatorParams>({
     internalSchema: buildSimulatorSchema as unknown as z.ZodType<BuildSimulatorParams>,
     logicFunction: build_simLogic,

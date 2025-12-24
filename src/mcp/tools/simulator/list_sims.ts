@@ -217,5 +217,9 @@ export default {
   name: 'list_sims',
   description: 'Lists available iOS simulators with their UUIDs. ',
   schema: listSimsSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'List Simulators',
+    readOnlyHint: true,
+  },
   handler: createTypedTool(listSimsSchema, list_simsLogic, getDefaultCommandExecutor),
 };

@@ -79,6 +79,10 @@ export default {
   name: 'swift_package_list',
   description: 'Lists currently running Swift Package processes',
   schema: swiftPackageListSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Swift Package List',
+    readOnlyHint: true,
+  },
   handler: createTypedTool(
     swiftPackageListSchema,
     (params: SwiftPackageListParams) => {

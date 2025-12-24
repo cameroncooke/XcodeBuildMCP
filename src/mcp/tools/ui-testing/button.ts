@@ -86,6 +86,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: buttonSchema,
   }),
+  annotations: {
+    title: 'Hardware Button',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<ButtonParams>({
     internalSchema: buttonSchema as unknown as z.ZodType<ButtonParams>,
     logicFunction: (params: ButtonParams, executor: CommandExecutor) =>

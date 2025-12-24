@@ -79,5 +79,9 @@ export default {
   description:
     "Launches a macOS application. IMPORTANT: You MUST provide the appPath parameter. Example: launch_mac_app({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_launch_macos_app.",
   schema: launchMacAppSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Launch macOS App',
+    destructiveHint: true,
+  },
   handler: createTypedTool(launchMacAppSchema, launch_mac_appLogic, getDefaultCommandExecutor),
 };

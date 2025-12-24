@@ -130,6 +130,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: swipeSchema,
   }),
+  annotations: {
+    title: 'Swipe',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<SwipeParams>({
     internalSchema: swipeSchema as unknown as z.ZodType<SwipeParams>,
     logicFunction: (params: SwipeParams, executor: CommandExecutor) =>

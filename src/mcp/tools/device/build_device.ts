@@ -78,6 +78,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Build Device',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<BuildDeviceParams>({
     internalSchema: buildDeviceSchema as unknown as z.ZodType<BuildDeviceParams>,
     logicFunction: buildDeviceLogic,

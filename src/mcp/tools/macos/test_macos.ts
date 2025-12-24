@@ -333,6 +333,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Test macOS',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<TestMacosParams>({
     internalSchema: testMacosSchema as unknown as z.ZodType<TestMacosParams>,
     logicFunction: (params, executor) =>

@@ -161,6 +161,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Stop App Simulator',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<StopAppSimParams>({
     internalSchema: stopAppSimSchema as unknown as z.ZodType<StopAppSimParams>,
     logicFunction: stop_app_simLogic,

@@ -82,5 +82,9 @@ export default {
   name: 'stop_mac_app',
   description: 'Stops a running macOS application. Can stop by app name or process ID.',
   schema: stopMacAppSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Stop macOS App',
+    destructiveHint: true,
+  },
   handler: createTypedTool(stopMacAppSchema, stop_mac_appLogic, getDefaultCommandExecutor),
 };

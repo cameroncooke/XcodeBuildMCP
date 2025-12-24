@@ -291,6 +291,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Test Device',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<TestDeviceParams>({
     internalSchema: testDeviceSchema as unknown as z.ZodType<TestDeviceParams>,
     logicFunction: (params: TestDeviceParams, executor: CommandExecutor) =>

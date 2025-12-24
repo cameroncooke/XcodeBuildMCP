@@ -230,6 +230,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: recordSimVideoSchemaObject,
   }),
+  annotations: {
+    title: 'Record Simulator Video',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<RecordSimVideoParams>({
     internalSchema: recordSimVideoSchema as unknown as z.ZodType<RecordSimVideoParams>,
     logicFunction: record_sim_videoLogic,

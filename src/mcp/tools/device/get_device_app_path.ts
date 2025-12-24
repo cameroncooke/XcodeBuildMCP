@@ -161,6 +161,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Get Device App Path',
+    readOnlyHint: true,
+  },
   handler: createSessionAwareTool<GetDeviceAppPathParams>({
     internalSchema: getDeviceAppPathSchema as unknown as z.ZodType<GetDeviceAppPathParams>,
     logicFunction: get_device_app_pathLogic,

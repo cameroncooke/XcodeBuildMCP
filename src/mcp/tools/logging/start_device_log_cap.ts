@@ -688,6 +688,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: startDeviceLogCapSchema,
   }),
+  annotations: {
+    title: 'Start Device Log Capture',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<StartDeviceLogCapParams>({
     internalSchema: startDeviceLogCapSchema as unknown as z.ZodType<StartDeviceLogCapParams>,
     logicFunction: start_device_log_capLogic,

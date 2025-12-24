@@ -99,6 +99,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: resetSimulatorLocationSchema,
   }),
+  annotations: {
+    title: 'Reset Simulator Location',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<ResetSimulatorLocationParams>({
     internalSchema:
       resetSimulatorLocationSchema as unknown as z.ZodType<ResetSimulatorLocationParams>,

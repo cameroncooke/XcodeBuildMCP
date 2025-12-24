@@ -135,6 +135,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Test Simulator',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<TestSimulatorParams>({
     internalSchema: testSimulatorSchema as unknown as z.ZodType<TestSimulatorParams>,
     logicFunction: test_simLogic,

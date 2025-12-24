@@ -91,6 +91,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: keyPressSchema,
   }),
+  annotations: {
+    title: 'Key Press',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<KeyPressParams>({
     internalSchema: keyPressSchema as unknown as z.ZodType<KeyPressParams>,
     logicFunction: (params: KeyPressParams, executor: CommandExecutor) =>

@@ -94,6 +94,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: stopAppDeviceSchema,
   }),
+  annotations: {
+    title: 'Stop App Device',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<StopAppDeviceParams>({
     internalSchema: stopAppDeviceSchema as unknown as z.ZodType<StopAppDeviceParams>,
     logicFunction: stop_app_deviceLogic,

@@ -52,6 +52,10 @@ export default {
   name: 'swift_package_clean',
   description: 'Cleans Swift Package build artifacts and derived data',
   schema: swiftPackageCleanSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Swift Package Clean',
+    destructiveHint: true,
+  },
   handler: createTypedTool(
     swiftPackageCleanSchema,
     swift_package_cleanLogic,

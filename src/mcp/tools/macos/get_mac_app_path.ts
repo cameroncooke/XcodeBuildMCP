@@ -195,6 +195,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Get macOS App Path',
+    readOnlyHint: true,
+  },
   handler: createSessionAwareTool<GetMacosAppPathParams>({
     internalSchema: getMacosAppPathSchema as unknown as z.ZodType<GetMacosAppPathParams>,
     logicFunction: get_mac_app_pathLogic,

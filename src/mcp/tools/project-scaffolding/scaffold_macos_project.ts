@@ -407,6 +407,10 @@ export default {
   description:
     'Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.',
   schema: ScaffoldmacOSProjectSchema.shape,
+  annotations: {
+    title: 'Scaffold macOS Project',
+    destructiveHint: true,
+  },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     // Validate the arguments against the schema before processing
     const validatedArgs = ScaffoldmacOSProjectSchema.parse(args);

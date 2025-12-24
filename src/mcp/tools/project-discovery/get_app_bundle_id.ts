@@ -128,6 +128,10 @@ export default {
   description:
     "Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, iPadOS, watchOS, tvOS, visionOS). IMPORTANT: You MUST provide the appPath parameter. Example: get_app_bundle_id({ appPath: '/path/to/your/app.app' })",
   schema: getAppBundleIdSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Get App Bundle ID',
+    readOnlyHint: true,
+  },
   handler: createTypedTool(
     getAppBundleIdSchema,
     (params: GetAppBundleIdParams) =>

@@ -120,6 +120,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: touchSchema,
   }),
+  annotations: {
+    title: 'Touch',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<TouchParams>({
     internalSchema: touchSchema as unknown as z.ZodType<TouchParams>,
     logicFunction: (params: TouchParams, executor: CommandExecutor) => touchLogic(params, executor),

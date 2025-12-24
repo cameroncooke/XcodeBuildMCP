@@ -71,5 +71,9 @@ export default {
   name: 'open_sim',
   description: 'Opens the iOS Simulator app.',
   schema: openSimSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Open Simulator',
+    destructiveHint: true,
+  },
   handler: createTypedTool(openSimSchema, open_simLogic, getDefaultCommandExecutor),
 };

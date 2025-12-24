@@ -127,6 +127,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: setSimulatorLocationSchema,
   }),
+  annotations: {
+    title: 'Set Simulator Location',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<SetSimulatorLocationParams>({
     internalSchema: setSimulatorLocationSchema as unknown as z.ZodType<SetSimulatorLocationParams>,
     logicFunction: set_sim_locationLogic,

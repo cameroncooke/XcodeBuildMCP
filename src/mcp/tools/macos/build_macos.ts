@@ -105,6 +105,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Build macOS',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<BuildMacOSParams>({
     internalSchema: buildMacOSSchema as unknown as z.ZodType<BuildMacOSParams>,
     logicFunction: buildMacOSLogic,

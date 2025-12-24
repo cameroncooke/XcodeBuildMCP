@@ -74,6 +74,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: launchAppLogsSimSchemaObject,
   }),
+  annotations: {
+    title: 'Launch App Logs Simulator',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<LaunchAppLogsSimParams>({
     internalSchema: launchAppLogsSimSchemaObject,
     logicFunction: launch_app_logs_simLogic,

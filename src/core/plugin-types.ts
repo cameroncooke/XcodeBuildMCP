@@ -1,10 +1,12 @@
 import { z } from 'zod';
+import { ToolAnnotations } from '@camsoft/mcp-sdk/types.js';
 import { ToolResponse } from '../types/common.ts';
 
 export interface PluginMeta {
   readonly name: string; // Verb used by MCP
   readonly schema: Record<string, z.ZodTypeAny>; // Zod validation schema (object schema)
   readonly description?: string; // One-liner shown in help
+  readonly annotations?: ToolAnnotations; // MCP tool annotations for LLM behavior hints
   handler(params: Record<string, unknown>): Promise<ToolResponse>;
 }
 

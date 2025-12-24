@@ -223,6 +223,10 @@ export default {
   name: 'swift_package_run',
   description: 'Runs an executable target from a Swift Package with swift run',
   schema: swiftPackageRunSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Swift Package Run',
+    destructiveHint: true,
+  },
   handler: createTypedTool(
     swiftPackageRunSchema,
     swift_package_runLogic,
