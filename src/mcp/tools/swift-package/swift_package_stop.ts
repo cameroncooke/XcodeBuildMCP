@@ -105,6 +105,10 @@ export default {
   name: 'swift_package_stop',
   description: 'Stops a running Swift Package executable started with swift_package_run',
   schema: swiftPackageStopSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Swift Package Stop',
+    destructiveHint: true,
+  },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     // Validate parameters using Zod
     const parseResult = swiftPackageStopSchema.safeParse(args);

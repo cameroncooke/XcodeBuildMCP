@@ -163,6 +163,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Clean',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<CleanParams>({
     internalSchema: cleanSchema as unknown as z.ZodType<CleanParams>,
     logicFunction: cleanLogic,

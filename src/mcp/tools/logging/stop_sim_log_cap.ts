@@ -44,5 +44,9 @@ export default {
   name: 'stop_sim_log_cap',
   description: 'Stops an active simulator log capture session and returns the captured logs.',
   schema: stopSimLogCapSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Stop Simulator Log Capture',
+    destructiveHint: true,
+  },
   handler: createTypedTool(stopSimLogCapSchema, stop_sim_log_capLogic, getDefaultCommandExecutor),
 };

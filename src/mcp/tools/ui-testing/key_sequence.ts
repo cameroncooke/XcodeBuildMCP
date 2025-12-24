@@ -99,6 +99,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: keySequenceSchema,
   }),
+  annotations: {
+    title: 'Key Sequence',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<KeySequenceParams>({
     internalSchema: keySequenceSchema as unknown as z.ZodType<KeySequenceParams>,
     logicFunction: (params: KeySequenceParams, executor: CommandExecutor) =>

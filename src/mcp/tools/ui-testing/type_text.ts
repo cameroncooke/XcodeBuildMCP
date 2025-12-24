@@ -92,6 +92,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: typeTextSchema,
   }),
+  annotations: {
+    title: 'Type Text',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<TypeTextParams>({
     internalSchema: typeTextSchema as unknown as z.ZodType<TypeTextParams>,
     logicFunction: (params: TypeTextParams, executor: CommandExecutor) =>

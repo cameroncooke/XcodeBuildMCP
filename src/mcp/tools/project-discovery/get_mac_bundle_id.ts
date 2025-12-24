@@ -125,6 +125,10 @@ export default {
   description:
     "Extracts the bundle identifier from a macOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_mac_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_macos_bundle_id.",
   schema: getMacBundleIdSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Get Mac Bundle ID',
+    readOnlyHint: true,
+  },
   handler: createTypedTool(
     getMacBundleIdSchema,
     (params: GetMacBundleIdParams) =>

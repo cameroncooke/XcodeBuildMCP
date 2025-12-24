@@ -119,6 +119,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: longPressSchema,
   }),
+  annotations: {
+    title: 'Long Press',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<LongPressParams>({
     internalSchema: longPressSchema as unknown as z.ZodType<LongPressParams>,
     logicFunction: (params: LongPressParams, executor: CommandExecutor) =>

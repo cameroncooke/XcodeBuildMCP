@@ -103,6 +103,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: installAppSimSchemaObject,
   }),
+  annotations: {
+    title: 'Install App Simulator',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<InstallAppSimParams>({
     internalSchema: installAppSimSchemaObject,
     logicFunction: install_app_simLogic,

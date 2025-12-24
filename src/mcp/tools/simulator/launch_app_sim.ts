@@ -207,6 +207,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Launch App Simulator',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<LaunchAppSimParams>({
     internalSchema: launchAppSimSchema as unknown as z.ZodType<LaunchAppSimParams>,
     logicFunction: launch_app_simLogic,

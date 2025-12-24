@@ -312,6 +312,10 @@ export default {
   name: 'stop_device_log_cap',
   description: 'Stops an active Apple device log capture session and returns the captured logs.',
   schema: stopDeviceLogCapSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Stop Device Log Capture',
+    destructiveHint: true,
+  },
   handler: createTypedTool(
     stopDeviceLogCapSchema,
     (params: StopDeviceLogCapParams) => {

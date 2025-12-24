@@ -99,6 +99,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: setSimAppearanceSchema,
   }),
+  annotations: {
+    title: 'Set Simulator Appearance',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<SetSimAppearanceParams>({
     internalSchema: setSimAppearanceSchema as unknown as z.ZodType<SetSimAppearanceParams>,
     logicFunction: set_sim_appearanceLogic,

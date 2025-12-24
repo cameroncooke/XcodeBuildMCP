@@ -90,6 +90,10 @@ export default {
   name: 'swift_package_test',
   description: 'Runs tests for a Swift Package with swift test',
   schema: swiftPackageTestSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Swift Package Test',
+    destructiveHint: true,
+  },
   handler: createTypedTool(
     swiftPackageTestSchema,
     swift_package_testLogic,

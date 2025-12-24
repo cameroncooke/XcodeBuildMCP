@@ -124,6 +124,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'List Schemes',
+    readOnlyHint: true,
+  },
   handler: createSessionAwareTool<ListSchemesParams>({
     internalSchema: listSchemesSchema as unknown as z.ZodType<ListSchemesParams>,
     logicFunction: listSchemesLogic,

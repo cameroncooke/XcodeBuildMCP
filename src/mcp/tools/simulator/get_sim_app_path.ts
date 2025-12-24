@@ -310,6 +310,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseGetSimulatorAppPathSchema,
   }),
+  annotations: {
+    title: 'Get Simulator App Path',
+    readOnlyHint: true,
+  },
   handler: createSessionAwareTool<GetSimulatorAppPathParams>({
     internalSchema: getSimulatorAppPathSchema as unknown as z.ZodType<GetSimulatorAppPathParams>,
     logicFunction: get_sim_app_pathLogic,

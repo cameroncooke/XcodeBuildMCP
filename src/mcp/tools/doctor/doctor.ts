@@ -273,6 +273,10 @@ export default {
   description:
     'Provides comprehensive information about the MCP server environment, available dependencies, and configuration status.',
   schema: doctorSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Doctor',
+    readOnlyHint: true,
+  },
   handler: createTypedTool(doctorSchema, doctorMcpHandler, getDefaultCommandExecutor),
 };
 

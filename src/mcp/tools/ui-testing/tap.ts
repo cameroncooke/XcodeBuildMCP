@@ -186,6 +186,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseTapSchema,
   }),
+  annotations: {
+    title: 'Tap',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<TapParams>({
     internalSchema: tapSchema as unknown as z.ZodType<TapParams>,
     logicFunction: (params: TapParams, executor: CommandExecutor) =>

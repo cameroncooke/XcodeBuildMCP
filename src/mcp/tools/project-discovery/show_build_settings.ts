@@ -118,6 +118,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Show Build Settings',
+    readOnlyHint: true,
+  },
   handler: createSessionAwareTool<ShowBuildSettingsParams>({
     internalSchema: showBuildSettingsSchema as unknown as z.ZodType<ShowBuildSettingsParams>,
     logicFunction: showBuildSettingsLogic,

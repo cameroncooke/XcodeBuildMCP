@@ -68,6 +68,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: startSimLogCapSchema,
   }),
+  annotations: {
+    title: 'Start Simulator Log Capture',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<StartSimLogCapParams>({
     internalSchema: startSimLogCapSchema as unknown as z.ZodType<StartSimLogCapParams>,
     logicFunction: start_sim_log_capLogic,

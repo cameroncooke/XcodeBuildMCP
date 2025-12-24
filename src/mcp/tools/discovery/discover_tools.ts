@@ -384,6 +384,10 @@ export default {
   description:
     'Analyzes a natural language task description and enables the most relevant development workflow. Prioritizes project/workspace workflows (simulator/device/macOS) and also supports task-based workflows (simulator-management, logging) and Swift packages.',
   schema: discoverToolsSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Discover Tools',
+    readOnlyHint: true,
+  },
   handler: createTypedTool(
     discoverToolsSchema,
     (params: DiscoverToolsParams, executor) => {

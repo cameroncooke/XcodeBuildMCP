@@ -75,6 +75,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: bootSimSchemaObject,
   }),
+  annotations: {
+    title: 'Boot Simulator',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<BootSimParams>({
     internalSchema: bootSimSchemaObject,
     logicFunction: boot_simLogic,

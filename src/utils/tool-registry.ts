@@ -128,6 +128,7 @@ export async function registerDiscoveryTools(server: McpServer): Promise<void> {
         config: {
           description: plugin.description ?? '',
           inputSchema: plugin.schema,
+          annotations: plugin.annotations,
         },
         // Adapt callback to match SDK's expected signature
         callback: (args: unknown): Promise<ToolResponse> =>
@@ -165,6 +166,7 @@ export async function registerSelectedWorkflows(
           config: {
             description: tool.description ?? '',
             inputSchema: tool.schema,
+            annotations: tool.annotations,
           },
           callback: (args: unknown): Promise<ToolResponse> =>
             tool.handler(args as Record<string, unknown>),
@@ -201,6 +203,7 @@ export async function registerAllToolsStatic(server: McpServer): Promise<void> {
       config: {
         description: plugin.description ?? '',
         inputSchema: plugin.schema,
+        annotations: plugin.annotations,
       },
       // Adapt callback to match SDK's expected signature
       callback: (args: unknown): Promise<ToolResponse> =>

@@ -90,6 +90,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: eraseSimsSchema,
   }),
+  annotations: {
+    title: 'Erase Simulators',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<EraseSimsParams>({
     internalSchema: eraseSimsSchema as unknown as z.ZodType<EraseSimsParams>,
     logicFunction: erase_simsLogic,

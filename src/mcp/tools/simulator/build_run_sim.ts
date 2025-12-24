@@ -510,6 +510,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
   }),
+  annotations: {
+    title: 'Build Run Simulator',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<BuildRunSimulatorParams>({
     internalSchema: buildRunSimulatorSchema as unknown as z.ZodType<BuildRunSimulatorParams>,
     logicFunction: build_run_simLogic,

@@ -151,6 +151,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: launchAppDeviceSchema,
   }),
+  annotations: {
+    title: 'Launch App Device',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<LaunchAppDeviceParams>({
     internalSchema: launchAppDeviceSchema as unknown as z.ZodType<LaunchAppDeviceParams>,
     logicFunction: launch_app_deviceLogic,

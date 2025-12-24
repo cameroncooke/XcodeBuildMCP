@@ -101,6 +101,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: simStatusbarSchema,
   }), // MCP SDK compatibility
+  annotations: {
+    title: 'Simulator Statusbar',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<SimStatusbarParams>({
     internalSchema: simStatusbarSchema as unknown as z.ZodType<SimStatusbarParams>,
     logicFunction: sim_statusbarLogic,

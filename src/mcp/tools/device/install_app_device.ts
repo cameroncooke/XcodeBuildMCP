@@ -92,6 +92,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: installAppDeviceSchema,
   }),
+  annotations: {
+    title: 'Install App Device',
+    destructiveHint: true,
+  },
   handler: createSessionAwareTool<InstallAppDeviceParams>({
     internalSchema: installAppDeviceSchema as unknown as z.ZodType<InstallAppDeviceParams>,
     logicFunction: install_app_deviceLogic,

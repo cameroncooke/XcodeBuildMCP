@@ -119,6 +119,10 @@ export default {
     sessionAware: publicSchemaObject,
     legacy: describeUiSchema,
   }),
+  annotations: {
+    title: 'Describe UI',
+    readOnlyHint: true,
+  },
   handler: createSessionAwareTool<DescribeUiParams>({
     internalSchema: describeUiSchema as unknown as z.ZodType<DescribeUiParams>,
     logicFunction: (params: DescribeUiParams, executor: CommandExecutor) =>

@@ -33,5 +33,9 @@ export default {
   name: 'session-clear-defaults',
   description: 'Clear selected or all session defaults.',
   schema: schemaObj.shape,
+  annotations: {
+    title: 'Clear Session Defaults',
+    destructiveHint: true,
+  },
   handler: createTypedTool(schemaObj, sessionClearDefaultsLogic, getDefaultCommandExecutor),
 };

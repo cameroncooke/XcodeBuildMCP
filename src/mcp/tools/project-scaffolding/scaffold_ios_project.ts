@@ -501,6 +501,10 @@ export default {
   description:
     'Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.',
   schema: ScaffoldiOSProjectSchema.shape,
+  annotations: {
+    title: 'Scaffold iOS Project',
+    destructiveHint: true,
+  },
   async handler(args: Record<string, unknown>): Promise<ToolResponse> {
     const params = ScaffoldiOSProjectSchema.parse(args);
     return scaffold_ios_projectLogic(

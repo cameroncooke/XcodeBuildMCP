@@ -274,6 +274,10 @@ export default {
   description:
     'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
   schema: discoverProjsSchema.shape, // MCP SDK compatibility
+  annotations: {
+    title: 'Discover Projects',
+    readOnlyHint: true,
+  },
   handler: createTypedTool(
     discoverProjsSchema,
     (params: DiscoverProjsParams) => {
