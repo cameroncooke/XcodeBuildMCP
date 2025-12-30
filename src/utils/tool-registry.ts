@@ -146,6 +146,9 @@ export async function registerDiscoveryTools(server: McpServer): Promise<void> {
   log('info', `✅ Registered ${registeredCount} discovery tools in dynamic mode.`);
 }
 
+// Workflow that must always be included as other tools depend on it
+const REQUIRED_WORKFLOW = 'session-management';
+
 /**
  * Register selected workflows based on environment variable
  */
@@ -157,8 +160,15 @@ export async function registerSelectedWorkflows(
   const workflowGroups = await loadWorkflowGroups();
   const selectedTools = [];
 
-  for (const workflowName of workflowNames) {
-    const workflow = workflowGroups.get(workflowName.trim());
+  // Ensure session-management is always included as it's required by other tools
+  const normalizedNames = workflowNames.map((name) => name.trim());
+  if (!normalizedNames.includes(REQUIRED_WORKFLOW)) {
+    normalizedNames.unshift(REQUIRED_WORKFLOW);
+    log('info', `📌 Auto-including required workflow: ${REQUIRED_WORKFLOW}`);
+  }
+
+  for (const workflowName of normalizedNames) {
+    const workflow = workflowGroups.get(workflowName);
     if (workflow) {
       for (const tool of workflow.tools) {
         selectedTools.push({
@@ -181,7 +191,7 @@ export async function registerSelectedWorkflows(
 
   log(
     'info',
-    `✅ Registered ${selectedTools.length} tools from workflows: ${workflowNames.join(', ')}`,
+    `✅ Registered ${selectedTools.length} tools from workflows: ${normalizedNames.join(', ')}`,
   );
 }
 
