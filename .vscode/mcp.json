@@ -28,6 +28,6 @@
         "XCODEBUILDMCP_IOS_TEMPLATE_PATH": "/Volumes/Developer/XcodeBuildMCP-iOS-Template",
         "XCODEBUILDMCP_MACOS_TEMPLATE_PATH": "/Volumes/Developer/XcodeBuildMCP-macOS-Template"
       }
-    },
+    }
   }
 }
