@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import type { ToolResponse } from '../../../types/common.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import {
@@ -24,8 +24,7 @@ import { dirname } from 'path';
 // Base schema object (used for MCP schema exposure)
 const recordSimVideoSchemaObject = z.object({
   simulatorId: z
-    .string()
-    .uuid('Invalid Simulator UUID format')
+    .uuid({ error: 'Invalid Simulator UUID format' })
     .describe('UUID of the simulator to record'),
   start: z.boolean().optional().describe('Start recording if true'),
   stop: z.boolean().optional().describe('Stop recording if true'),
@@ -45,13 +44,12 @@ const recordSimVideoSchema = recordSimVideoSchemaObject
       return s + t === 1;
     },
     {
-      message:
-        'Provide exactly one of start=true or stop=true; these options are mutually exclusive',
+      error: 'Provide exactly one of start=true or stop=true; these options are mutually exclusive',
       path: ['start'],
     },
   )
   .refine((v) => (v.stop ? typeof v.outputFile === 'string' && v.outputFile.length > 0 : true), {
-    message: 'outputFile is required when stop=true',
+    error: 'outputFile is required when stop=true',
     path: ['outputFile'],
   });
 
@@ -221,7 +219,9 @@ record_sim_video({ simulatorId: "${params.simulatorId}", stop: true, outputFile:
   };
 }
 
-const publicSchemaObject = recordSimVideoSchemaObject.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(
+  recordSimVideoSchemaObject.omit({ simulatorId: true } as const).shape,
+);
 
 export default {
   name: 'record_sim_video',
@@ -235,7 +235,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<RecordSimVideoParams>({
-    internalSchema: recordSimVideoSchema as unknown as z.ZodType<RecordSimVideoParams>,
+    internalSchema: recordSimVideoSchema as unknown as z.ZodType<RecordSimVideoParams, unknown>,
     logicFunction: record_sim_videoLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],

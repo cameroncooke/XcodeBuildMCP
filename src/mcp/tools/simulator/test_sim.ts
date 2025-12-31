@@ -6,7 +6,7 @@
  * Accepts mutually exclusive `simulatorId` or `simulatorName`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { handleTestLogic } from '../../../utils/test/index.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { XcodePlatform } from '../../../types/common.ts';
@@ -66,23 +66,23 @@ const baseSchemaObject = z.object({
     ),
 });
 
-// Apply preprocessor to handle empty strings
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
 // Apply XOR validation: exactly one of projectPath OR workspacePath, and exactly one of simulatorId OR simulatorName required
-const testSimulatorSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  })
-  .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
-    message: 'Either simulatorId or simulatorName is required.',
-  })
-  .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
-    message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
-  });
+const testSimulatorSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      error: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      error: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    })
+    .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
+      error: 'Either simulatorId or simulatorName is required.',
+    })
+    .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
+      error: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
+    }),
+);
 
 // Use z.infer for type safety
 type TestSimulatorParams = z.infer<typeof testSimulatorSchema>;
@@ -140,7 +140,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<TestSimulatorParams>({
-    internalSchema: testSimulatorSchema as unknown as z.ZodType<TestSimulatorParams>,
+    internalSchema: testSimulatorSchema as unknown as z.ZodType<TestSimulatorParams, unknown>,
     logicFunction: test_simLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

@@ -6,7 +6,7 @@
  * Accepts mutually exclusive `simulatorId` or `simulatorName`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
@@ -120,16 +120,16 @@ const getSimulatorAppPathSchema = z.preprocess(
   nullifyEmptyStrings,
   baseGetSimulatorAppPathSchema
     .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-      message: 'Either projectPath or workspacePath is required.',
+      error: 'Either projectPath or workspacePath is required.',
     })
     .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-      message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+      error: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
     })
     .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
-      message: 'Either simulatorId or simulatorName is required.',
+      error: 'Either simulatorId or simulatorName is required.',
     })
     .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
-      message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
+      error: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
     }),
 );
 

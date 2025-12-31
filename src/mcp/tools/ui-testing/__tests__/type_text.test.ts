@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
@@ -80,7 +80,7 @@ describe('Type Text Plugin', () => {
       expect(schema.safeParse({}).success).toBe(false);
 
       const withSimId = schema.safeParse({
-        simulatorId: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-4234-8234-123456789012',
         text: 'Hello World',
       });
       expect(withSimId.success).toBe(true);
@@ -100,14 +100,14 @@ describe('Type Text Plugin', () => {
     });
 
     it('should surface validation errors when defaults exist', async () => {
-      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
       const result = await typeTextPlugin.handler({});
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;
       expect(message).toContain('Parameter validation failed');
-      expect(message).toContain('text: Required');
+      expect(message).toContain('text: Invalid input: expected string, received undefined');
     });
   });
 
@@ -131,7 +131,7 @@ describe('Type Text Plugin', () => {
 
       await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: 'Hello World',
         },
         trackingExecutor,
@@ -143,7 +143,7 @@ describe('Type Text Plugin', () => {
         'type',
         'Hello World',
         '--udid',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
       ]);
     });
 
@@ -166,7 +166,7 @@ describe('Type Text Plugin', () => {
 
       await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: 'user@example.com',
         },
         trackingExecutor,
@@ -178,7 +178,7 @@ describe('Type Text Plugin', () => {
         'type',
         'user@example.com',
         '--udid',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
       ]);
     });
 
@@ -201,7 +201,7 @@ describe('Type Text Plugin', () => {
 
       await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: 'Password123!@#',
         },
         trackingExecutor,
@@ -213,7 +213,7 @@ describe('Type Text Plugin', () => {
         'type',
         'Password123!@#',
         '--udid',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
       ]);
     });
 
@@ -239,7 +239,7 @@ describe('Type Text Plugin', () => {
 
       await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: longText,
         },
         trackingExecutor,
@@ -251,7 +251,7 @@ describe('Type Text Plugin', () => {
         'type',
         longText,
         '--udid',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
       ]);
     });
 
@@ -299,7 +299,7 @@ describe('Type Text Plugin', () => {
 
       const result = await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: 'Hello World',
         },
         createNoopExecutor(),
@@ -330,7 +330,7 @@ describe('Type Text Plugin', () => {
 
       const result = await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: 'Hello World',
         },
         mockExecutor,
@@ -357,7 +357,7 @@ describe('Type Text Plugin', () => {
 
       const result = await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: 'Hello World',
         },
         mockExecutor,
@@ -377,7 +377,7 @@ describe('Type Text Plugin', () => {
 
       const result = await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: 'Hello World',
         },
         createNoopExecutor(),
@@ -409,7 +409,7 @@ describe('Type Text Plugin', () => {
 
       const result = await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: 'Hello World',
         },
         mockExecutor,
@@ -437,7 +437,7 @@ describe('Type Text Plugin', () => {
 
       const result = await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: 'Hello World',
         },
         mockExecutor,
@@ -467,7 +467,7 @@ describe('Type Text Plugin', () => {
 
       const result = await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: 'Hello World',
         },
         mockExecutor,
@@ -497,7 +497,7 @@ describe('Type Text Plugin', () => {
 
       const result = await type_textLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           text: 'Hello World',
         },
         mockExecutor,

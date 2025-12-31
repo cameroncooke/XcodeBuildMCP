@@ -5,7 +5,7 @@
  * using xcodebuild test and parses xcresult output. Accepts mutually exclusive `projectPath` or `workspacePath`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { join } from 'path';
 import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
@@ -49,15 +49,16 @@ const baseSchemaObject = z.object({
     ),
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
-const testDeviceSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  });
+const testDeviceSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      error: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      error: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    }),
+);
 
 export type TestDeviceParams = z.infer<typeof testDeviceSchema>;
 
@@ -296,7 +297,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<TestDeviceParams>({
-    internalSchema: testDeviceSchema as unknown as z.ZodType<TestDeviceParams>,
+    internalSchema: testDeviceSchema as unknown as z.ZodType<TestDeviceParams, unknown>,
     logicFunction: (params: TestDeviceParams, executor: CommandExecutor) =>
       testDeviceLogic(
         {

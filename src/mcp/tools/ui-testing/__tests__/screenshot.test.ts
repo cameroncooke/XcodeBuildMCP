@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
@@ -40,7 +40,7 @@ describe('Screenshot Plugin', () => {
       expect(schema.safeParse({}).success).toBe(true);
 
       const withSimId = schema.safeParse({
-        simulatorId: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-4234-8234-123456789012',
       });
       expect(withSimId.success).toBe(true);
       expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
@@ -90,7 +90,7 @@ describe('Screenshot Plugin', () => {
 
       await screenshotLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         trackingExecutor,
         mockFileSystemExecutor,
@@ -103,7 +103,7 @@ describe('Screenshot Plugin', () => {
         'xcrun',
         'simctl',
         'io',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
         'screenshot',
         '/tmp/screenshot_test-uuid.png',
       ]);
@@ -205,7 +205,7 @@ describe('Screenshot Plugin', () => {
 
       await screenshotLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         trackingExecutor,
         mockFileSystemExecutor,
@@ -218,7 +218,7 @@ describe('Screenshot Plugin', () => {
         'xcrun',
         'simctl',
         'io',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
         'screenshot',
       ]);
       expect(capturedCommands[0][5]).toMatch(/^\/tmp\/screenshot_[a-f0-9-]+\.png$/);
@@ -232,7 +232,7 @@ describe('Screenshot Plugin', () => {
       // This test documents that screenshotLogic assumes valid parameters.
       const result = await screenshotLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         createMockExecutor({
           success: true,
@@ -263,7 +263,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -290,7 +290,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -322,7 +322,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -356,7 +356,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -382,7 +382,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -403,7 +403,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -422,7 +422,7 @@ describe('Screenshot Plugin', () => {
 
       const result = await screenshotLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         mockExecutor,
         createMockFileSystemExecutor(),

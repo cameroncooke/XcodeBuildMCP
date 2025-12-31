@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import plugin, { get_mac_bundle_idLogic } from '../get_mac_bundle_id.ts';
 import {
   createMockFileSystemExecutor,

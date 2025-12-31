@@ -5,7 +5,7 @@
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
@@ -34,8 +34,6 @@ const baseSchemaObject = z.object({
   ...baseOptions,
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
 const publicSchemaObject = baseSchemaObject.omit({
   projectPath: true,
   workspacePath: true,
@@ -44,13 +42,16 @@ const publicSchemaObject = baseSchemaObject.omit({
   arch: true,
 } as const);
 
-const getMacosAppPathSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  });
+const getMacosAppPathSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      error: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      error: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    }),
+);
 
 // Use z.infer for type safety
 type GetMacosAppPathParams = z.infer<typeof getMacosAppPathSchema>;
@@ -200,7 +201,7 @@ export default {
     readOnlyHint: true,
   },
   handler: createSessionAwareTool<GetMacosAppPathParams>({
-    internalSchema: getMacosAppPathSchema as unknown as z.ZodType<GetMacosAppPathParams>,
+    internalSchema: getMacosAppPathSchema as unknown as z.ZodType<GetMacosAppPathParams, unknown>,
     logicFunction: get_mac_app_pathLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

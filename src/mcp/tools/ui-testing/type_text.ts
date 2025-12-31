@@ -5,7 +5,7 @@
  * Supports standard US keyboard characters.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
@@ -26,14 +26,16 @@ const LOG_PREFIX = '[AXe]';
 
 // Define schema as ZodObject
 const typeTextSchema = z.object({
-  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
-  text: z.string().min(1, 'Text cannot be empty'),
+  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
+  text: z.string().min(1, { error: 'Text cannot be empty' }),
 });
 
 // Use z.infer for type safety
 type TypeTextParams = z.infer<typeof typeTextSchema>;
 
-const publicSchemaObject = typeTextSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(
+  typeTextSchema.omit({ simulatorId: true } as const).shape,
+);
 
 interface AxeHelpers {
   getAxePath: () => string | null;
@@ -97,7 +99,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<TypeTextParams>({
-    internalSchema: typeTextSchema as unknown as z.ZodType<TypeTextParams>,
+    internalSchema: typeTextSchema as unknown as z.ZodType<TypeTextParams, unknown>,
     logicFunction: (params: TypeTextParams, executor: CommandExecutor) =>
       type_textLogic(params, executor),
     getExecutor: getDefaultCommandExecutor,

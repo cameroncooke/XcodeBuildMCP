@@ -5,7 +5,7 @@
  * and workspace (.xcworkspace) files.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import * as path from 'node:path';
 import { log } from '../../../utils/logging/index.ts';
 import { ToolResponse, createTextContent } from '../../../types/common.ts';

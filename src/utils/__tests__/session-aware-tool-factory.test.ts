@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createSessionAwareTool } from '../typed-tool-factory.ts';
 import { sessionStore } from '../session-store.ts';
 import { createMockExecutor } from '../../test-utils/mock-executors.ts';
@@ -18,11 +18,11 @@ describe('createSessionAwareTool', () => {
       simulatorName: z.string().optional(),
     })
     .refine((v) => !!v.projectPath !== !!v.workspacePath, {
-      message: 'projectPath and workspacePath are mutually exclusive',
+      error: 'projectPath and workspacePath are mutually exclusive',
       path: ['projectPath'],
     })
     .refine((v) => !!v.simulatorId !== !!v.simulatorName, {
-      message: 'simulatorId and simulatorName are mutually exclusive',
+      error: 'simulatorId and simulatorName are mutually exclusive',
       path: ['simulatorId'],
     });
 

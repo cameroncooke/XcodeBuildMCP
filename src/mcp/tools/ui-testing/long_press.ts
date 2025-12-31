@@ -5,7 +5,7 @@
  * Use describe_ui for precise coordinates (don't guess from screenshots).
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import {
@@ -29,16 +29,18 @@ import {
 
 // Define schema as ZodObject
 const longPressSchema = z.object({
-  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
-  x: z.number().int('X coordinate for the long press'),
-  y: z.number().int('Y coordinate for the long press'),
-  duration: z.number().positive('Duration of the long press in milliseconds'),
+  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
+  x: z.number().int({ error: 'X coordinate for the long press' }),
+  y: z.number().int({ error: 'Y coordinate for the long press' }),
+  duration: z.number().positive({ error: 'Duration of the long press in milliseconds' }),
 });
 
 // Use z.infer for type safety
 type LongPressParams = z.infer<typeof longPressSchema>;
 
-const publicSchemaObject = longPressSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(
+  longPressSchema.omit({ simulatorId: true } as const).shape,
+);
 
 export interface AxeHelpers {
   getAxePath: () => string | null;
@@ -124,7 +126,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<LongPressParams>({
-    internalSchema: longPressSchema as unknown as z.ZodType<LongPressParams>,
+    internalSchema: longPressSchema as unknown as z.ZodType<LongPressParams, unknown>,
     logicFunction: (params: LongPressParams, executor: CommandExecutor) =>
       long_pressLogic(params, executor, {
         getAxePath,

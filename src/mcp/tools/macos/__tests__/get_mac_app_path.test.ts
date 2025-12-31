@@ -4,7 +4,7 @@
  * Using dependency injection for deterministic testing
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor, type CommandExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import getMacAppPath, { get_mac_app_pathLogic } from '../get_mac_app_path.ts';

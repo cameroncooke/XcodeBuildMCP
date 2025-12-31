@@ -5,7 +5,7 @@
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
@@ -59,19 +59,20 @@ const baseSchemaObject = z.object({
   ...baseOptions,
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
-const cleanSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  })
-  .refine((val) => !(val.workspacePath && !val.scheme), {
-    message: 'scheme is required when workspacePath is provided.',
-    path: ['scheme'],
-  });
+const cleanSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      error: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      error: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    })
+    .refine((val) => !(val.workspacePath && !val.scheme), {
+      error: 'scheme is required when workspacePath is provided.',
+      path: ['scheme'],
+    }),
+);
 
 export type CleanParams = z.infer<typeof cleanSchema>;
 
@@ -168,7 +169,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<CleanParams>({
-    internalSchema: cleanSchema as unknown as z.ZodType<CleanParams>,
+    internalSchema: cleanSchema as unknown as z.ZodType<CleanParams, unknown>,
     logicFunction: cleanLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

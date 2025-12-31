@@ -4,7 +4,7 @@
  * Extracts the bundle identifier from a macOS app bundle (.app).
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
 import {

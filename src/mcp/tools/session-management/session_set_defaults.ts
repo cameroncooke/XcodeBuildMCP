@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { sessionStore, type SessionDefaults } from '../../../utils/session-store.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -22,11 +22,11 @@ const baseSchema = z.object({
 
 const schemaObj = baseSchema
   .refine((v) => !(v.projectPath && v.workspacePath), {
-    message: 'projectPath and workspacePath are mutually exclusive',
+    error: 'projectPath and workspacePath are mutually exclusive',
     path: ['projectPath'],
   })
   .refine((v) => !(v.simulatorId && v.simulatorName), {
-    message: 'simulatorId and simulatorName are mutually exclusive',
+    error: 'simulatorId and simulatorName are mutually exclusive',
     path: ['simulatorId'],
   });
 

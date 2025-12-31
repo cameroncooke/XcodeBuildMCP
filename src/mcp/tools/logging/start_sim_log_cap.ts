@@ -4,7 +4,7 @@
  * Starts capturing logs from a specified simulator.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { startLogCapture } from '../../../utils/log-capture/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
 import { ToolResponse, createTextContent } from '../../../types/common.ts';
@@ -16,7 +16,6 @@ import {
 // Define schema as ZodObject
 const startSimLogCapSchema = z.object({
   simulatorId: z
-    .string()
     .uuid()
     .describe('UUID of the simulator to capture logs from (obtained from list_simulators).'),
   bundleId: z.string().describe('Bundle identifier of the app to capture logs for.'),
@@ -58,7 +57,9 @@ export async function start_sim_log_capLogic(
   };
 }
 
-const publicSchemaObject = startSimLogCapSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(
+  startSimLogCapSchema.omit({ simulatorId: true } as const).shape,
+);
 
 export default {
   name: 'start_sim_log_cap',
@@ -73,7 +74,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<StartSimLogCapParams>({
-    internalSchema: startSimLogCapSchema as unknown as z.ZodType<StartSimLogCapParams>,
+    internalSchema: startSimLogCapSchema as unknown as z.ZodType<StartSimLogCapParams, unknown>,
     logicFunction: start_sim_log_capLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],

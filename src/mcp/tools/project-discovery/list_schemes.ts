@@ -5,7 +5,7 @@
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -23,15 +23,16 @@ const baseSchemaObject = z.object({
   workspacePath: z.string().optional().describe('Path to the .xcworkspace file'),
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
-const listSchemesSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  });
+const listSchemesSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      error: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      error: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    }),
+);
 
 export type ListSchemesParams = z.infer<typeof listSchemesSchema>;
 
@@ -129,7 +130,7 @@ export default {
     readOnlyHint: true,
   },
   handler: createSessionAwareTool<ListSchemesParams>({
-    internalSchema: listSchemesSchema as unknown as z.ZodType<ListSchemesParams>,
+    internalSchema: listSchemesSchema as unknown as z.ZodType<ListSchemesParams, unknown>,
     logicFunction: listSchemesLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

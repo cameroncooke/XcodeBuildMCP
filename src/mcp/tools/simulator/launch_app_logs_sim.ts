@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse, createTextContent } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { startLogCapture } from '../../../utils/log-capture/index.ts';
@@ -29,11 +29,11 @@ const launchAppLogsSimSchemaObject = z.object({
 
 type LaunchAppLogsSimParams = z.infer<typeof launchAppLogsSimSchemaObject>;
 
-const publicSchemaObject = launchAppLogsSimSchemaObject
-  .omit({
+const publicSchemaObject = z.strictObject(
+  launchAppLogsSimSchemaObject.omit({
     simulatorId: true,
-  } as const)
-  .strict();
+  } as const).shape,
+);
 
 export async function launch_app_logs_simLogic(
   params: LaunchAppLogsSimParams,
@@ -79,7 +79,10 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<LaunchAppLogsSimParams>({
-    internalSchema: launchAppLogsSimSchemaObject,
+    internalSchema: launchAppLogsSimSchemaObject as unknown as z.ZodType<
+      LaunchAppLogsSimParams,
+      unknown
+    >,
     logicFunction: launch_app_logs_simLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],

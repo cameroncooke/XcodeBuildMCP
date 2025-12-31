@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -9,10 +9,7 @@ import {
 
 // Define schema as ZodObject
 const setSimulatorLocationSchema = z.object({
-  simulatorId: z
-    .string()
-    .uuid()
-    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+  simulatorId: z.uuid().describe('UUID of the simulator to use (obtained from list_simulators)'),
   latitude: z.number().describe('The latitude for the custom location.'),
   longitude: z.number().describe('The longitude for the custom location.'),
 });
@@ -118,7 +115,9 @@ export async function set_sim_locationLogic(
   );
 }
 
-const publicSchemaObject = setSimulatorLocationSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(
+  setSimulatorLocationSchema.omit({ simulatorId: true } as const).shape,
+);
 
 export default {
   name: 'set_sim_location',
@@ -132,7 +131,10 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<SetSimulatorLocationParams>({
-    internalSchema: setSimulatorLocationSchema as unknown as z.ZodType<SetSimulatorLocationParams>,
+    internalSchema: setSimulatorLocationSchema as unknown as z.ZodType<
+      SetSimulatorLocationParams,
+      unknown
+    >,
     logicFunction: set_sim_locationLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],

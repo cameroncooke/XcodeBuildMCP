@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
@@ -17,9 +17,9 @@ import {
 
 // Define schema as ZodObject
 const buttonSchema = z.object({
-  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
   buttonType: z.enum(['apple-pay', 'home', 'lock', 'side-button', 'siri']),
-  duration: z.number().min(0, 'Duration must be non-negative').optional(),
+  duration: z.number().min(0, { error: 'Duration must be non-negative' }).optional(),
 });
 
 // Use z.infer for type safety
@@ -76,7 +76,7 @@ export async function buttonLogic(
   }
 }
 
-const publicSchemaObject = buttonSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(buttonSchema.omit({ simulatorId: true } as const).shape);
 
 export default {
   name: 'button',
@@ -91,7 +91,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<ButtonParams>({
-    internalSchema: buttonSchema as unknown as z.ZodType<ButtonParams>,
+    internalSchema: buttonSchema as unknown as z.ZodType<ButtonParams, unknown>,
     logicFunction: (params: ButtonParams, executor: CommandExecutor) =>
       buttonLogic(params, executor, {
         getAxePath,

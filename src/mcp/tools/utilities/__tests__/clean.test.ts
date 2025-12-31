@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import tool, { cleanLogic } from '../clean.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
@@ -14,7 +14,7 @@ describe('clean (unified) tool', () => {
     expect(tool.description).toBe('Cleans build products with xcodebuild.');
     expect(typeof tool.handler).toBe('function');
 
-    const schema = z.object(tool.schema).strict();
+    const schema = z.strictObject(tool.schema);
     expect(schema.safeParse({}).success).toBe(true);
     expect(
       schema.safeParse({

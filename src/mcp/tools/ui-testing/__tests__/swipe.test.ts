@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import { SystemError, DependencyError } from '../../../../utils/responses/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
@@ -109,7 +109,7 @@ describe('Swipe Plugin', () => {
       ).toBe(true);
 
       const withSimId = schema.safeParse({
-        simulatorId: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-4234-8234-123456789012',
         x1: 100,
         y1: 200,
         x2: 300,
@@ -137,7 +137,7 @@ describe('Swipe Plugin', () => {
 
       await swipeLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x1: 100,
           y1: 200,
           x2: 300,
@@ -159,7 +159,7 @@ describe('Swipe Plugin', () => {
         '--end-y',
         '400',
         '--udid',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
       ]);
     });
 
@@ -179,7 +179,7 @@ describe('Swipe Plugin', () => {
 
       await swipeLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x1: 50,
           y1: 75,
           x2: 250,
@@ -204,7 +204,7 @@ describe('Swipe Plugin', () => {
         '--duration',
         '1.5',
         '--udid',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
       ]);
     });
 
@@ -224,7 +224,7 @@ describe('Swipe Plugin', () => {
 
       await swipeLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x1: 0,
           y1: 0,
           x2: 500,
@@ -258,7 +258,7 @@ describe('Swipe Plugin', () => {
         '--post-delay',
         '0.3',
         '--udid',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
       ]);
     });
 
@@ -327,7 +327,7 @@ describe('Swipe Plugin', () => {
     });
 
     it('should return validation error for missing x1 once simulator default exists', async () => {
-      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
       const result = await swipePlugin.handler({
         y1: 200,
@@ -338,7 +338,9 @@ describe('Swipe Plugin', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('x1: Required');
+      expect(result.content[0].text).toContain(
+        'x1: Invalid input: expected number, received undefined',
+      );
     });
 
     it('should return success for valid swipe execution', async () => {
@@ -352,7 +354,7 @@ describe('Swipe Plugin', () => {
 
       const result = await swipeLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x1: 100,
           y1: 200,
           x2: 300,
@@ -384,7 +386,7 @@ describe('Swipe Plugin', () => {
 
       const result = await swipeLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x1: 100,
           y1: 200,
           x2: 300,
@@ -417,7 +419,7 @@ describe('Swipe Plugin', () => {
 
       const result = await swipeLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x1: 100,
           y1: 200,
           x2: 300,
@@ -449,7 +451,7 @@ describe('Swipe Plugin', () => {
 
       const result = await swipeLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x1: 100,
           y1: 200,
           x2: 300,
@@ -480,7 +482,7 @@ describe('Swipe Plugin', () => {
 
       const result = await swipeLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x1: 100,
           y1: 200,
           x2: 300,
@@ -508,7 +510,7 @@ describe('Swipe Plugin', () => {
 
       const result = await swipeLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x1: 100,
           y1: 200,
           x2: 300,
@@ -536,7 +538,7 @@ describe('Swipe Plugin', () => {
 
       const result = await swipeLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x1: 100,
           y1: 200,
           x2: 300,

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import swiftPackageRun, { swift_package_runLogic } from '../swift_package_run.ts';
 
@@ -312,7 +312,7 @@ describe('swift_package_run plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\npackagePath: Required',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\npackagePath: Invalid input: expected string, received undefined',
           },
         ],
         isError: true,

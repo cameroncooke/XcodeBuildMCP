@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'events';
 import type { ChildProcess } from 'child_process';
-import { z } from 'zod';
+import * as z from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
@@ -70,7 +70,7 @@ describe('start_device_log_cap plugin', () => {
       expect(Object.keys(plugin.schema)).toEqual(['bundleId']);
 
       // Validate that schema fields are Zod types that can be used for validation
-      const schema = z.object(plugin.schema).strict();
+      const schema = z.strictObject(plugin.schema);
       expect(schema.safeParse({ bundleId: 'com.test.app' }).success).toBe(true);
       expect(schema.safeParse({}).success).toBe(false);
     });

@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import stopSimLogCap, { stop_sim_log_capLogic } from '../stop_sim_log_cap.ts';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 import { activeLogSessions } from '../../../../utils/log_capture.ts';

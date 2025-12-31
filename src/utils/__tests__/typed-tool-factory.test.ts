@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createTypedTool } from '../typed-tool-factory.ts';
 import { createMockExecutor } from '../../test-utils/mock-executors.ts';
 import { ToolResponse } from '../../types/common.ts';

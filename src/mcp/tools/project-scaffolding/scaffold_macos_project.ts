@@ -4,7 +4,7 @@
  * Scaffold a new macOS project from templates.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { join, dirname, basename } from 'path';
 import { log } from '../../../utils/logging/index.ts';
 import { ValidationError } from '../../../utils/responses/index.ts';

@@ -5,7 +5,7 @@
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
@@ -48,8 +48,6 @@ const baseSchemaObject = z.object({
     .describe('If true, prefers xcodebuild over the experimental incremental build system'),
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
 const publicSchemaObject = baseSchemaObject.omit({
   projectPath: true,
   workspacePath: true,
@@ -58,13 +56,16 @@ const publicSchemaObject = baseSchemaObject.omit({
   arch: true,
 } as const);
 
-const buildMacOSSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  });
+const buildMacOSSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      error: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      error: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    }),
+);
 
 export type BuildMacOSParams = z.infer<typeof buildMacOSSchema>;
 
@@ -110,7 +111,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<BuildMacOSParams>({
-    internalSchema: buildMacOSSchema as unknown as z.ZodType<BuildMacOSParams>,
+    internalSchema: buildMacOSSchema as unknown as z.ZodType<BuildMacOSParams, unknown>,
     logicFunction: buildMacOSLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

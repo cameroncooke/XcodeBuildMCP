@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import path from 'node:path';
 import { createErrorResponse } from '../../../utils/responses/index.ts';
 import { log } from '../../../utils/logging/index.ts';

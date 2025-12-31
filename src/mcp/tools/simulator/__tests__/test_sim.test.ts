@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import testSim from '../test_sim.ts';
 
