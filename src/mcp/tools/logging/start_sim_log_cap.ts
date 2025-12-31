@@ -23,6 +23,12 @@ const startSimLogCapSchema = z.object({
     .boolean()
     .optional()
     .describe('Whether to capture console output (requires app relaunch).'),
+  subsystemFilter: z
+    .union([z.enum(['app', 'all', 'swiftui']), z.array(z.string())])
+    .optional()
+    .describe(
+      "Controls which log subsystems to capture. Options: 'app' (default, only app logs), 'all' (capture all system logs), 'swiftui' (app + SwiftUI logs for Self._printChanges()), or an array of custom subsystem strings.",
+    ),
 });
 
 // Use z.infer for type safety
@@ -34,24 +40,49 @@ export async function start_sim_log_capLogic(
   logCaptureFunction: typeof startLogCapture = startLogCapture,
 ): Promise<ToolResponse> {
   const captureConsole = params.captureConsole ?? false;
-  const { sessionId, error } = await logCaptureFunction(
-    {
-      simulatorUuid: params.simulatorId,
-      bundleId: params.bundleId,
-      captureConsole,
-    },
-    _executor,
-  );
+  // Normalize subsystem filter with explicit type handling for the union type
+  let subsystemFilter: SubsystemFilter = 'app';
+  if (params.subsystemFilter !== undefined) {
+    if (Array.isArray(params.subsystemFilter)) {
+      subsystemFilter = params.subsystemFilter;
+    } else if (
+      params.subsystemFilter === 'app' ||
+      params.subsystemFilter === 'all' ||
+      params.subsystemFilter === 'swiftui'
+    ) {
+      subsystemFilter = params.subsystemFilter;
+    }
+  }
+  const logCaptureParams: Parameters<typeof startLogCapture>[0] = {
+    simulatorUuid: params.simulatorId,
+    bundleId: params.bundleId,
+    captureConsole,
+    subsystemFilter,
+  };
+  const { sessionId, error } = await logCaptureFunction(logCaptureParams, _executor);
   if (error) {
     return {
       content: [createTextContent(`Error starting log capture: ${error}`)],
       isError: true,
     };
   }
+
+  // Build subsystem filter description for the response
+  let filterDescription: string;
+  if (subsystemFilter === 'all') {
+    filterDescription = 'Capturing all system logs (no subsystem filtering).';
+  } else if (subsystemFilter === 'swiftui') {
+    filterDescription = 'Capturing app logs + SwiftUI logs (includes Self._printChanges()).';
+  } else if (Array.isArray(subsystemFilter)) {
+    filterDescription = `Capturing logs from subsystems: ${subsystemFilter.join(', ')} (plus app bundle ID).`;
+  } else {
+    filterDescription = 'Only structured logs from the app subsystem are being captured.';
+  }
+
   return {
     content: [
       createTextContent(
-        `Log capture started successfully. Session ID: ${sessionId}.\n\n${captureConsole ? 'Note: Your app was relaunched to capture console output.' : 'Note: Only structured logs are being captured.'}\n\nNext Steps:\n1.  Interact with your simulator and app.\n2.  Use 'stop_sim_log_cap' with session ID '${sessionId}' to stop capture and retrieve logs.`,
+        `Log capture started successfully. Session ID: ${sessionId}.\n\n${captureConsole ? 'Note: Your app was relaunched to capture console output.\n' : ''}${filterDescription}\n\nNext Steps:\n1.  Interact with your simulator and app.\n2.  Use 'stop_sim_log_cap' with session ID '${sessionId}' to stop capture and retrieve logs.`,
       ),
     ],
   };
@@ -64,7 +95,7 @@ const publicSchemaObject = z.strictObject(
 export default {
   name: 'start_sim_log_cap',
   description:
-    'Starts capturing logs from a specified simulator. Returns a session ID. By default, captures only structured logs.',
+    "Starts capturing logs from a specified simulator. Returns a session ID. Use subsystemFilter to control what logs are captured: 'app' (default), 'all' (everything), 'swiftui' (includes Self._printChanges()), or custom subsystems.",
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: startSimLogCapSchema,

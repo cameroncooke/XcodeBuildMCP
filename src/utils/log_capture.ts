@@ -24,6 +24,39 @@ export interface LogSession {
   bundleId: string;
 }
 
+/**
+ * Subsystem filter options for log capture.
+ * - 'app': Only capture logs from the app's bundle ID subsystem (default)
+ * - 'all': Capture all logs (no subsystem filtering)
+ * - 'swiftui': Capture logs from app + SwiftUI subsystem (useful for Self._printChanges())
+ * - string[]: Custom array of subsystems to capture (always includes the app's bundle ID)
+ */
+export type SubsystemFilter = 'app' | 'all' | 'swiftui' | string[];
+
+/**
+ * Build the predicate string for log filtering based on subsystem filter option.
+ */
+function buildLogPredicate(bundleId: string, subsystemFilter: SubsystemFilter): string | null {
+  if (subsystemFilter === 'all') {
+    // No filtering - capture everything from this process
+    return null;
+  }
+
+  if (subsystemFilter === 'app') {
+    return `subsystem == "${bundleId}"`;
+  }
+
+  if (subsystemFilter === 'swiftui') {
+    // Include both app logs and SwiftUI logs (for Self._printChanges())
+    return `subsystem == "${bundleId}" OR subsystem == "com.apple.SwiftUI"`;
+  }
+
+  // Custom array of subsystems - always include the app's bundle ID
+  const subsystems = new Set([bundleId, ...subsystemFilter]);
+  const predicates = Array.from(subsystems).map((s) => `subsystem == "${s}"`);
+  return predicates.join(' OR ');
+}
+
 export const activeLogSessions: Map<string, LogSession> = new Map();
 
 /**
@@ -36,6 +69,7 @@ export async function startLogCapture(
     bundleId: string;
     captureConsole?: boolean;
     args?: string[];
+    subsystemFilter?: SubsystemFilter;
   },
   executor: CommandExecutor = getDefaultCommandExecutor(),
   fileSystem: FileSystemExecutor = getDefaultFileSystemExecutor(),
@@ -43,7 +77,13 @@ export async function startLogCapture(
   // Clean up old logs before starting a new session
   await cleanOldLogs(fileSystem);
 
-  const { simulatorUuid, bundleId, captureConsole = false, args = [] } = params;
+  const {
+    simulatorUuid,
+    bundleId,
+    captureConsole = false,
+    args = [],
+    subsystemFilter = 'app',
+  } = params;
   const logSessionId = uuidv4();
   const logFileName = `${LOG_FILE_PREFIX}${logSessionId}.log`;
   const logFilePath = path.join(fileSystem.tmpdir(), logFileName);
@@ -91,18 +131,25 @@ export async function startLogCapture(
       processes.push(stdoutLogResult.process);
     }
 
+    // Build the log stream command based on subsystem filter
+    const logPredicate = buildLogPredicate(bundleId, subsystemFilter);
+    const osLogCommand = [
+      'xcrun',
+      'simctl',
+      'spawn',
+      simulatorUuid,
+      'log',
+      'stream',
+      '--level=debug',
+    ];
+
+    // Only add predicate if filtering is needed
+    if (logPredicate) {
+      osLogCommand.push('--predicate', logPredicate);
+    }
+
     const osLogResult = await executor(
-      [
-        'xcrun',
-        'simctl',
-        'spawn',
-        simulatorUuid,
-        'log',
-        'stream',
-        '--level=debug',
-        '--predicate',
-        `subsystem == "${bundleId}"`,
-      ],
+      osLogCommand,
       'OS Log Capture',
       true, // useShell
       undefined, // env
