@@ -2,9 +2,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { loadWorkflowGroups } from '../core/plugin-registry.ts';
 import { ToolResponse } from '../types/common.ts';
 import { log } from './logger.ts';
-
-// Workflow that must always be included as other tools depend on it
-const REQUIRED_WORKFLOW = 'session-management';
+import { recordRuntimeRegistration } from './runtime-registry.ts';
+import { resolveSelectedWorkflows } from './workflow-selection.ts';
 
 /**
  * Register workflows (selected list or all when omitted)
@@ -14,21 +13,13 @@ export async function registerWorkflows(
   workflowNames: string[] = [],
 ): Promise<void> {
   const workflowGroups = await loadWorkflowGroups();
+  const selection = resolveSelectedWorkflows(workflowGroups, workflowNames);
   let registeredCount = 0;
   const registeredTools = new Set<string>();
+  const registeredWorkflows = new Set<string>();
 
-  const normalizedNames = workflowNames.map((name) => name.trim().toLowerCase());
-  const selectedNames =
-    normalizedNames.length > 0 ? [...new Set([REQUIRED_WORKFLOW, ...normalizedNames])] : null;
-
-  const workflows = selectedNames
-    ? selectedNames.map((workflowName) => workflowGroups.get(workflowName))
-    : [...workflowGroups.values()];
-
-  for (const workflow of workflows) {
-    if (!workflow) {
-      continue;
-    }
+  for (const workflow of selection.selectedWorkflows) {
+    registeredWorkflows.add(workflow.directoryName);
     for (const tool of workflow.tools) {
       if (registeredTools.has(tool.name)) {
         continue;
@@ -47,10 +38,15 @@ export async function registerWorkflows(
     }
   }
 
-  if (selectedNames) {
+  recordRuntimeRegistration({
+    enabledWorkflows: [...registeredWorkflows],
+    enabledTools: [...registeredTools],
+  });
+
+  if (selection.selectedNames) {
     log(
       'info',
-      `✅ Registered ${registeredCount} tools from workflows: ${selectedNames.join(', ')}`,
+      `✅ Registered ${registeredCount} tools from workflows: ${selection.selectedNames.join(', ')}`,
     );
   } else {
     log('info', `✅ Registered ${registeredCount} tools in static mode.`);

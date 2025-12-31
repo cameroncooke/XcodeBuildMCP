@@ -210,6 +210,7 @@ export async function runDoctor(
     `- Mode: ${runtimeInfo.mode}`,
     `- Enabled Workflows: ${runtimeInfo.enabledWorkflows.length}`,
     `- Registered Tools: ${runtimeInfo.totalRegistered}`,
+    ...(runtimeInfo.mode === 'static' ? [`- Note: ${runtimeInfo.note}`] : []),
     ...(runtimeInfo.enabledWorkflows.length > 0
       ? [`- Workflows: ${runtimeInfo.enabledWorkflows.join(', ')}`]
       : []),

@@ -86,7 +86,7 @@ function createDeps(overrides?: Partial<DoctorDependencies>): DoctorDependencies
     runtime: {
       async getRuntimeToolInfo() {
         return {
-          mode: 'static' as const,
+          mode: 'runtime' as const,
           enabledWorkflows: ['doctor'],
           enabledTools: ['doctor'],
           totalRegistered: 1,
