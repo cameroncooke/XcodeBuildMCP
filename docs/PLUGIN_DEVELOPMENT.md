@@ -16,12 +16,12 @@ This guide provides comprehensive instructions for creating new tools and workfl
 
 ## Overview
 
-XcodeBuildMCP uses a **plugin-based architecture** with **filesystem-based auto-discovery**. Tools are automatically discovered and loaded without manual registration, and can be dynamically enabled using AI-powered workflow selection.
+XcodeBuildMCP uses a **plugin-based architecture** with **filesystem-based auto-discovery**. Tools are automatically discovered and loaded without manual registration, and can be selectively enabled using `XCODEBUILDMCP_ENABLED_WORKFLOWS`.
 
 ### Key Features
 
 - **Auto-Discovery**: Tools are automatically found by scanning `src/mcp/tools/` directory
-- **Dynamic Loading**: AI can select relevant workflow groups based on user tasks
+- **Selective Workflow Loading**: Limit startup tool registration with `XCODEBUILDMCP_ENABLED_WORKFLOWS`
 - **Dependency Injection**: All tools use testable patterns with mock-friendly executors
 - **Workflow Organization**: Tools are grouped into end-to-end development workflows
 
@@ -45,8 +45,7 @@ src/mcp/tools/
 ├── project-discovery/          # Project analysis tools
 ├── utilities/                  # General utilities
 ├── doctor/                     # System health check tools
-├── logging/                    # Log capture tools
-└── discovery/                  # Dynamic tool discovery
+└── logging/                    # Log capture tools
 ```
 
 ### Plugin Tool Types
@@ -221,20 +220,12 @@ Each workflow group requires:
 export const workflow = {
   name: 'iOS Simulator Workspace Development',
   description: 'Complete iOS development workflow for .xcworkspace files including build, test, deploy, and debug capabilities',
-  platforms: ['iOS'],
-  targets: ['simulator'], 
-  projectTypes: ['workspace'],
-  capabilities: ['build', 'test', 'deploy', 'debug', 'ui-automation', 'log-capture'],
 };
 ```
 
 **Required Properties:**
 - `name`: Human-readable workflow name
 - `description`: Clear description of workflow purpose
-- `platforms`: Array of supported platforms
-- `targets`: Array of deployment targets  
-- `projectTypes`: Array of supported project types
-- `capabilities`: Array of workflow capabilities
 
 ### 4. Tool Organization Patterns
 
@@ -456,23 +447,16 @@ for (const plugin of plugins.values()) {
 }
 ```
 
-### Dynamic Mode Integration
+### Selective Workflow Loading
 
-When `XCODEBUILDMCP_DYNAMIC_TOOLS=true`:
+To limit which workflows are registered at startup, set `XCODEBUILDMCP_ENABLED_WORKFLOWS` to a comma-separated list of workflow directory names. The `session-management` workflow is always auto-included since other tools depend on it.
 
-1. Only `discover_tools` is loaded initially
-2. User provides task description to `discover_tools`
-3. AI analyzes task and selects relevant workflow groups
-4. Selected workflows are dynamically enabled via `enableWorkflows()`
-5. Client is notified of new available tools
+Example:
+```bash
+XCODEBUILDMCP_ENABLED_WORKFLOWS=simulator,device,project-discovery
+```
 
-#### Environment Configuration
-
-- **Static Mode** (default): `XCODEBUILDMCP_DYNAMIC_TOOLS=false` or unset
-- **Dynamic Mode**: `XCODEBUILDMCP_DYNAMIC_TOOLS=true`
-- **Debug Mode**: `XCODEBUILDMCP_DEBUG=true`
-
-**Note**: The previous system of enabling individual tools and groups via `XCODEBUILDMCP_TOOL_*` and `XCODEBUILDMCP_GROUP_*` environment variables is no longer supported. The server now operates in either static or dynamic mode.
+`XCODEBUILDMCP_DEBUG=true` can still be used to increase logging verbosity.
 
 ## Testing Guidelines
 
@@ -623,7 +607,7 @@ npm run inspect  # Use MCP Inspector to verify
 2. **Add Workflow Metadata**: Create `index.ts` with workflow export
 3. **Implement Tools**: Add tool files following patterns
 4. **Create Tests**: Add comprehensive test coverage
-5. **Verify Discovery**: Test auto-discovery and dynamic mode
+5. **Verify Discovery**: Test auto-discovery and tool registration
 
 ### Step-by-Step Workflow Creation
 
@@ -636,10 +620,6 @@ cat > src/mcp/tools/my-new-workflow/index.ts << 'EOF'
 export const workflow = {
   name: 'My New Workflow',
   description: 'Description of workflow capabilities',
-  platforms: ['iOS'],
-  targets: ['simulator'],
-  projectTypes: ['workspace'],
-  capabilities: ['build', 'test'],
 };
 EOF
 
@@ -684,23 +664,10 @@ npm run inspect
 3. **Clear Capabilities**: Document what each workflow can accomplish
 4. **Consistent Patterns**: Follow established patterns for maintainability
 
-### Dynamic Mode Considerations
+### Workflow Metadata Considerations
 
 1. **Workflow Completeness**: Each group should be self-sufficient
-2. **Clear Descriptions**: AI uses descriptions to select workflows
-3. **Platform Clarity**: Make supported platforms and targets obvious
-4. **Capability Documentation**: List all workflow capabilities clearly
-
-## Integration with Dynamic Discovery
-
-When creating new tools and workflows, consider:
-
-1. **AI Selection**: How will the AI understand when to select your workflow?
-2. **Description Quality**: Is your workflow description clear for AI analysis?
-3. **Platform Targeting**: Are platform and target requirements obvious?
-4. **Workflow Completeness**: Does the workflow provide end-to-end functionality?
-
-The auto-discovery system makes your tools immediately available, while the dynamic mode allows AI to intelligently select relevant workflows based on user tasks. Following these patterns ensures seamless integration with both systems.
+2. **Clear Descriptions**: Keep the `description` concise and user-focused
 
 ## Updating TOOLS.md Documentation
 

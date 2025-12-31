@@ -10,8 +10,4 @@ export const workflow = {
   name: 'Simulator Management',
   description:
     'Tools for managing simulators from booting, opening simulators, listing simulators, stopping simulators, erasing simulator content and settings, and setting simulator environment options like location, network, statusbar and appearance.',
-  platforms: ['iOS'],
-  targets: ['simulator'],
-  projectTypes: ['project', 'workspace'],
-  capabilities: ['boot', 'open', 'list', 'appearance', 'location', 'network', 'statusbar', 'erase'],
 };

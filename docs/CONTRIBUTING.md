@@ -111,7 +111,6 @@ reloaderoo -- node build/index.js
   "command": "reloaderoo",
   "args": ["--", "node", "/path/to/XcodeBuildMCP/build/index.js"],
   "env": {
-    "XCODEBUILDMCP_DYNAMIC_TOOLS": "true",
     "XCODEBUILDMCP_DEBUG": "true"
   }
 }
@@ -147,28 +146,25 @@ reloaderoo inspect mcp -- node build/index.js
     "node", "/path/to/XcodeBuildMCP/build/index.js"
   ],
   "env": {
-    "XCODEBUILDMCP_DYNAMIC_TOOLS": "true",
     "XCODEBUILDMCP_DEBUG": "true"
   }
 }
 ```
 
-#### Operating Mode Testing
+#### Workflow Selection Testing
 
-Test both static and dynamic modes during development:
+Test full vs. selective workflow registration during development:
 
 ```bash
-# Test static mode (all tools loaded immediately)
-XCODEBUILDMCP_DYNAMIC_TOOLS=false reloaderoo inspect mcp -- node build/index.js
+# Test full tool registration (default)
+reloaderoo inspect mcp -- node build/index.js
 
-# Test dynamic mode (only discover_tools initially available)
-XCODEBUILDMCP_DYNAMIC_TOOLS=true reloaderoo inspect mcp -- node build/index.js
+# Test selective workflow registration
+XCODEBUILDMCP_ENABLED_WORKFLOWS=simulator,device reloaderoo inspect mcp -- node build/index.js
 ```
-
 **Key Differences to Test**:
-- **Static Mode**: 50+ tools available immediately via `list_tools`
-- **Dynamic Mode**: Only 2 tools (`discover_tools` and `discover_projs`) available initially
-- **Dynamic Discovery**: After calling `discover_tools`, additional workflow tools become available
+- **Full Registration**: All tools are available immediately via `list_tools`
+- **Selective Registration**: Only tools from the selected workflows (plus `session-management`) are available
 
 #### Using XcodeBuildMCP doctor tool
 
@@ -264,7 +260,7 @@ The plugin development guide covers:
 - Tool creation with dependency injection patterns
 - Workflow group organization
 - Testing guidelines and patterns
-- Integration with dynamic tool discovery
+- Workflow registration and selection
 
 ### Quick Plugin Development Checklist
 

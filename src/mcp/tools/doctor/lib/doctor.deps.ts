@@ -1,17 +1,17 @@
 import * as os from 'os';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
+import { loadWorkflowGroups } from '../../../../utils/plugin-registry/index.ts';
+import { getRuntimeRegistration } from '../../../../utils/runtime-registry.ts';
 import {
-  loadWorkflowGroups,
-  loadPlugins,
-  getEnabledWorkflows,
-} from '../../../../utils/plugin-registry/index.ts';
+  collectToolNames,
+  resolveSelectedWorkflows,
+} from '../../../../utils/workflow-selection.ts';
 import { areAxeToolsAvailable } from '../../../../utils/axe/index.ts';
 import {
   isXcodemakeEnabled,
   isXcodemakeAvailable,
   doesMakefileExist,
 } from '../../../../utils/xcodemake/index.ts';
-import { getTrackedToolNames } from '../../../../utils/tool-registry.ts';
 
 export interface BinaryChecker {
   checkBinaryAvailability(binary: string): Promise<{ available: boolean; version?: string }>;
@@ -64,7 +64,7 @@ export interface PluginInfoProvider {
 export interface RuntimeInfoProvider {
   getRuntimeToolInfo(): Promise<
     | {
-        mode: 'dynamic';
+        mode: 'runtime';
         enabledWorkflows: string[];
         enabledTools: string[];
         totalRegistered: number;
@@ -74,6 +74,7 @@ export interface RuntimeInfoProvider {
         enabledWorkflows: string[];
         enabledTools: string[];
         totalRegistered: number;
+        note: string;
       }
   >;
 }
@@ -242,29 +243,28 @@ export function createDoctorDependencies(executor: CommandExecutor): DoctorDepen
 
   const runtime: RuntimeInfoProvider = {
     async getRuntimeToolInfo() {
-      const dynamic = process.env.XCODEBUILDMCP_DYNAMIC_TOOLS === 'true';
-
-      if (dynamic) {
-        const enabledWf = getEnabledWorkflows();
-        const enabledTools = getTrackedToolNames();
-        return {
-          mode: 'dynamic',
-          enabledWorkflows: enabledWf,
-          enabledTools,
-          totalRegistered: enabledTools.length,
-        };
+      const runtimeInfo = getRuntimeRegistration();
+      if (runtimeInfo) {
+        return runtimeInfo;
       }
 
-      // Static mode: all tools are registered
       const workflows = await loadWorkflowGroups();
-      const enabledWorkflows = Array.from(workflows.keys());
-      const plugins = await loadPlugins();
-      const enabledTools = Array.from(plugins.keys());
+      const enabledWorkflowEnv = process.env.XCODEBUILDMCP_ENABLED_WORKFLOWS ?? '';
+      const workflowNames = enabledWorkflowEnv
+        .split(',')
+        .map((workflow) => workflow.trim())
+        .filter(Boolean);
+      const selection = resolveSelectedWorkflows(workflows, workflowNames);
+      const enabledWorkflows = selection.selectedWorkflows.map(
+        (workflow) => workflow.directoryName,
+      );
+      const enabledTools = collectToolNames(selection.selectedWorkflows);
       return {
         mode: 'static',
         enabledWorkflows,
         enabledTools,
         totalRegistered: enabledTools.length,
+        note: 'Runtime registry unavailable; showing expected tools from selection rules.',
       };
     },
   };

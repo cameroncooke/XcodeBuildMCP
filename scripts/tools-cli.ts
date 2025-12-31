@@ -85,7 +85,6 @@ interface RuntimeData {
   resources: RuntimeResource[];
   toolCount: number;
   resourceCount: number;
-  dynamicMode: boolean;
   mode: 'runtime';
 }
 
@@ -165,7 +164,7 @@ ${colors.bright}EXAMPLES:${colors.reset}
 
 ${colors.bright}ANALYSIS MODES:${colors.reset}
   ${colors.green}Runtime${colors.reset}  Uses actual server inspection via Reloaderoo
-           - Respects XCODEBUILDMCP_DYNAMIC_TOOLS environment variable
+           - Respects XCODEBUILDMCP_ENABLED_WORKFLOWS environment variable
            - Shows tools actually enabled at runtime
            - Requires built server (npm run build)
            
@@ -369,7 +368,6 @@ async function getRuntimeInfo(): Promise<RuntimeData> {
       resources,
       toolCount,
       resourceCount,
-      dynamicMode: process.env.XCODEBUILDMCP_DYNAMIC_TOOLS === 'true',
       mode: 'runtime',
     };
   } catch (error) {
@@ -393,16 +391,9 @@ function displaySummary(
 
   if (runtimeData) {
     console.log(`${colors.green}🚀 Runtime Analysis:${colors.reset}`);
-    console.log(`   Mode: ${runtimeData.dynamicMode ? 'Dynamic' : 'Static'}`);
     console.log(`   Tools: ${runtimeData.toolCount}`);
     console.log(`   Resources: ${runtimeData.resourceCount}`);
     console.log(`   Total: ${runtimeData.toolCount + runtimeData.resourceCount}`);
-
-    if (runtimeData.dynamicMode) {
-      console.log(
-        `   ${colors.yellow}ℹ️  Dynamic mode: Only enabled workflow tools shown${colors.reset}`,
-      );
-    }
     console.log();
   }
 
@@ -541,7 +532,6 @@ function outputJSON(
       toolCount: runtimeData.toolCount,
       resourceCount: runtimeData.resourceCount,
       totalCount: runtimeData.toolCount + runtimeData.resourceCount,
-      dynamicMode: runtimeData.dynamicMode,
     };
   }
 

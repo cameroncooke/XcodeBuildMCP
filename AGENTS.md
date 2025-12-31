@@ -97,7 +97,7 @@ npx reloaderoo proxy --log-level debug -- node build/index.js
 
 #### Key Benefits
 
-- ✅ **No MCP Client Setup**: Direct CLI access to all 84+ tools
+- ✅ **No MCP Client Setup**: Direct CLI access to all tools
 - ✅ **Raw JSON Output**: Perfect for AI agents and programmatic use
 - ✅ **Hot-Reload Support**: `restart_server` tool for MCP client development
 - ✅ **Claude Code Compatible**: Automatic content block consolidation
@@ -124,17 +124,9 @@ Resources are the secondary way to interact with the server. They are used to pr
 
 For more information see @docs/PLUGIN_DEVELOPMENT.md
 
-### Operating Modes
+### Tool Registration
 
-XcodeBuildMCP has two modes to manage its extensive toolset, controlled by the `XCODEBUILDMCP_DYNAMIC_TOOLS` environment variable.
-
-#### Static Mode (Default)
-- **Environment**: `XCODEBUILDMCP_DYNAMIC_TOOLS=false` or unset.
-- **Behavior**: All tools are loaded at startup. This provides immediate access to the full toolset but uses a larger context window.
-
-#### Dynamic Mode (AI-Powered)
-- **Environment**: `XCODEBUILDMCP_DYNAMIC_TOOLS=true`.
-- **Behavior**: Only the `discover_tools` tool is available initially. You can use this tool by providing a natural language task description. The server then uses an LLM call (via MCP Sampling) to identify the most relevant workflow group and dynamically loads only those tools. This conserves context window space.
+XcodeBuildMCP loads tools at startup. To limit the toolset, set `XCODEBUILDMCP_ENABLED_WORKFLOWS` to a comma-separated list of workflow directory names (for example: `simulator,project-discovery`). The `session-management` workflow is always auto-included since other tools depend on it.
 
 #### Claude Code Compatibility Workaround
 - **Detection**: Automatic detection when running under Claude Code.
@@ -143,7 +135,7 @@ XcodeBuildMCP has two modes to manage its extensive toolset, controlled by the `
 
 ### Core Architecture Layers
 1. **MCP Transport**: stdio protocol communication
-2. **Plugin Discovery**: Automatic tool AND resource registration system  
+2. **Plugin Discovery**: Automatic tool AND resource registration system
 3. **MCP Resources**: URI-based data access (e.g., `xcodebuildmcp://simulators`)
 4. **Tool Implementation**: Self-contained workflow modules
 5. **Shared Utilities**: Command execution, build management, validation
@@ -173,7 +165,7 @@ This project uses **TypeScript file extensions** (`.ts`) for all relative import
 
 - ✅ **Use `.ts` extensions**: `import { tool } from './tool.ts'`
 - ✅ **Use `.ts` for re-exports**: `export { default } from '../shared/tool.ts'`
-- ✅ **External packages use `.js`**: `import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js'`
+- ✅ **External packages use `.js`**: `import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'`
 - ❌ **Never use `.js` for internal files**: `import { tool } from './tool.js'` ← ESLint error
 
 ### Benefits

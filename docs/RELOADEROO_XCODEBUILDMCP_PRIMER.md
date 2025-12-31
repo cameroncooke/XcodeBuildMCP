@@ -41,13 +41,6 @@ Use jq to parse the output to get just the content response:
 
 **Example Tool Calls:**
 
-## Dynamic Tool Discovery
-
-- **`discover_tools`**: Analyzes a task description to enable relevant tools.
-  ```bash
-  npx reloaderoo@latest inspect call-tool discover_tools --params '{"task_description": "I want to build and run my iOS app on a simulator."}' -q -- npx xcodebuildmcp@latest
-  ```
-
 ## iOS Device Development
 
 - **`build_device`**: Builds an app for a physical device.

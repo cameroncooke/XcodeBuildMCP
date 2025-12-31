@@ -1,220 +1,54 @@
-import { McpServer, RegisteredTool } from '@camsoft/mcp-sdk/server/mcp.js';
-import { loadPlugins } from '../core/plugin-registry.ts';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { loadWorkflowGroups } from '../core/plugin-registry.ts';
 import { ToolResponse } from '../types/common.ts';
 import { log } from './logger.ts';
-
-// Global registry to track registered tools for cleanup
-const toolRegistry = new Map<string, RegisteredTool>();
-
-/**
- * Register a tool and track it for potential removal
- */
-export function registerAndTrackTool(
-  server: McpServer,
-  name: string,
-  config: Parameters<McpServer['registerTool']>[1],
-  callback: Parameters<McpServer['registerTool']>[2],
-): RegisteredTool {
-  const registeredTool = server.registerTool(name, config, callback);
-  toolRegistry.set(name, registeredTool);
-  return registeredTool;
-}
+import { recordRuntimeRegistration } from './runtime-registry.ts';
+import { resolveSelectedWorkflows } from './workflow-selection.ts';
 
 /**
- * Register multiple tools and track them for potential removal
+ * Register workflows (selected list or all when omitted)
  */
-export function registerAndTrackTools(
+export async function registerWorkflows(
   server: McpServer,
-  tools: Parameters<McpServer['registerTools']>[0],
-): RegisteredTool[] {
-  const registeredTools = server.registerTools(tools);
+  workflowNames: string[] = [],
+): Promise<void> {
+  const workflowGroups = await loadWorkflowGroups();
+  const selection = resolveSelectedWorkflows(workflowGroups, workflowNames);
+  let registeredCount = 0;
+  const registeredTools = new Set<string>();
+  const registeredWorkflows = new Set<string>();
 
-  // Track each registered tool
-  tools.forEach((tool, index) => {
-    if (registeredTools[index]) {
-      toolRegistry.set(tool.name, registeredTools[index]);
+  for (const workflow of selection.selectedWorkflows) {
+    registeredWorkflows.add(workflow.directoryName);
+    for (const tool of workflow.tools) {
+      if (registeredTools.has(tool.name)) {
+        continue;
+      }
+      server.registerTool(
+        tool.name,
+        {
+          description: tool.description ?? '',
+          inputSchema: tool.schema,
+          annotations: tool.annotations,
+        },
+        (args: unknown): Promise<ToolResponse> => tool.handler(args as Record<string, unknown>),
+      );
+      registeredTools.add(tool.name);
+      registeredCount += 1;
     }
+  }
+
+  recordRuntimeRegistration({
+    enabledWorkflows: [...registeredWorkflows],
+    enabledTools: [...registeredTools],
   });
 
-  return registeredTools;
-}
-
-/**
- * Check if a tool is already registered
- */
-export function isToolRegistered(name: string): boolean {
-  return toolRegistry.has(name);
-}
-
-/**
- * Remove a specific tracked tool by name
- */
-export function removeTrackedTool(name: string): boolean {
-  const tool = toolRegistry.get(name);
-  if (!tool) {
-    return false;
+  if (selection.selectedNames) {
+    log(
+      'info',
+      `✅ Registered ${registeredCount} tools from workflows: ${selection.selectedNames.join(', ')}`,
+    );
+  } else {
+    log('info', `✅ Registered ${registeredCount} tools in static mode.`);
   }
-
-  try {
-    tool.remove();
-    toolRegistry.delete(name);
-    log('debug', `✅ Removed tool: ${name}`);
-    return true;
-  } catch (error) {
-    log('error', `❌ Failed to remove tool ${name}: ${error}`);
-    return false;
-  }
-}
-
-/**
- * Remove multiple tracked tools by names
- */
-export function removeTrackedTools(names: string[]): string[] {
-  const removedTools: string[] = [];
-
-  for (const name of names) {
-    if (removeTrackedTool(name)) {
-      removedTools.push(name);
-    }
-  }
-
-  return removedTools;
-}
-
-/**
- * Remove all currently tracked tools
- */
-export function removeAllTrackedTools(): void {
-  const toolNames = Array.from(toolRegistry.keys());
-
-  if (toolNames.length === 0) {
-    return;
-  }
-
-  log('info', `Removing ${toolNames.length} tracked tools...`);
-
-  const removedTools = removeTrackedTools(toolNames);
-  log('info', `✅ Removed ${removedTools.length} tracked tools`);
-}
-
-/**
- * Get the number of currently tracked tools
- */
-export function getTrackedToolCount(): number {
-  return toolRegistry.size;
-}
-
-/**
- * Get the names of currently tracked tools
- */
-export function getTrackedToolNames(): string[] {
-  return Array.from(toolRegistry.keys());
-}
-
-/**
- * Register only discovery tools (discover_tools, discover_projs) with tracking
- */
-export async function registerDiscoveryTools(server: McpServer): Promise<void> {
-  const plugins = await loadPlugins();
-  let registeredCount = 0;
-
-  // Only register discovery tools initially
-  const discoveryTools = [];
-  for (const plugin of plugins.values()) {
-    // Only load discover_tools and discover_projs initially - other tools will be loaded via workflows
-    if (plugin.name === 'discover_tools' || plugin.name === 'discover_projs') {
-      discoveryTools.push({
-        name: plugin.name,
-        config: {
-          description: plugin.description ?? '',
-          inputSchema: plugin.schema,
-          annotations: plugin.annotations,
-        },
-        // Adapt callback to match SDK's expected signature
-        callback: (args: unknown): Promise<ToolResponse> =>
-          plugin.handler(args as Record<string, unknown>),
-      });
-      registeredCount++;
-    }
-  }
-
-  // Register discovery tools using bulk registration with tracking
-  if (discoveryTools.length > 0) {
-    registerAndTrackTools(server, discoveryTools);
-  }
-
-  log('info', `✅ Registered ${registeredCount} discovery tools in dynamic mode.`);
-}
-
-/**
- * Register selected workflows based on environment variable
- */
-export async function registerSelectedWorkflows(
-  server: McpServer,
-  workflowNames: string[],
-): Promise<void> {
-  const { loadWorkflowGroups } = await import('../core/plugin-registry.js');
-  const workflowGroups = await loadWorkflowGroups();
-  const selectedTools = [];
-
-  for (const workflowName of workflowNames) {
-    const workflow = workflowGroups.get(workflowName.trim());
-    if (workflow) {
-      for (const tool of workflow.tools) {
-        selectedTools.push({
-          name: tool.name,
-          config: {
-            description: tool.description ?? '',
-            inputSchema: tool.schema,
-            annotations: tool.annotations,
-          },
-          callback: (args: unknown): Promise<ToolResponse> =>
-            tool.handler(args as Record<string, unknown>),
-        });
-      }
-    }
-  }
-
-  if (selectedTools.length > 0) {
-    server.registerTools(selectedTools);
-  }
-
-  log(
-    'info',
-    `✅ Registered ${selectedTools.length} tools from workflows: ${workflowNames.join(', ')}`,
-  );
-}
-
-/**
- * Register all tools (static mode) - no tracking needed since these won't be removed
- */
-export async function registerAllToolsStatic(server: McpServer): Promise<void> {
-  const plugins = await loadPlugins();
-  const allTools = [];
-
-  for (const plugin of plugins.values()) {
-    // Exclude discovery tools in static mode - they should only be available in dynamic mode
-    if (plugin.name === 'discover_tools') {
-      continue;
-    }
-
-    allTools.push({
-      name: plugin.name,
-      config: {
-        description: plugin.description ?? '',
-        inputSchema: plugin.schema,
-        annotations: plugin.annotations,
-      },
-      // Adapt callback to match SDK's expected signature
-      callback: (args: unknown): Promise<ToolResponse> =>
-        plugin.handler(args as Record<string, unknown>),
-    });
-  }
-
-  // Register all tools using bulk registration (no tracking since static tools aren't removed)
-  if (allTools.length > 0) {
-    server.registerTools(allTools);
-  }
-
-  log('info', `✅ Registered ${allTools.length} tools in static mode.`);
 }

@@ -18,10 +18,9 @@ import './utils/sentry.ts';
 
 // Import server components
 import { createServer, startServer } from './server/server.ts';
-import { McpServer } from '@camsoft/mcp-sdk/server/mcp.js';
 
 // Import MCP types for logging
-import { SetLevelRequestSchema } from '@camsoft/mcp-sdk/types.js';
+import { SetLevelRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 // Import utilities
 import { log, setLogLevel, type LogLevel } from './utils/logger.ts';
@@ -37,11 +36,7 @@ import process from 'node:process';
 
 // Import resource management
 import { registerResources } from './core/resources.ts';
-import {
-  registerDiscoveryTools,
-  registerAllToolsStatic,
-  registerSelectedWorkflows,
-} from './utils/tool-registry.ts';
+import { registerWorkflows } from './utils/tool-registry.ts';
 
 /**
  * Main function to start the server
@@ -75,29 +70,16 @@ async function main(): Promise<void> {
       return {}; // Empty result as per MCP spec
     });
 
-    // Make server available globally for dynamic tools
-    (globalThis as { mcpServer?: McpServer }).mcpServer = server;
+    // STATIC MODE: Check for selective workflows
+    const enabledWorkflows = process.env.XCODEBUILDMCP_ENABLED_WORKFLOWS;
 
-    // Check if dynamic tools mode is explicitly disabled
-    const isDynamicModeEnabled = process.env.XCODEBUILDMCP_DYNAMIC_TOOLS === 'true';
-
-    if (isDynamicModeEnabled) {
-      // DYNAMIC MODE: Start with discovery tools only
-      log('info', '🚀 Initializing server in dynamic tools mode...');
-      await registerDiscoveryTools(server);
-      log('info', '💡 Use discover_tools to enable additional workflows based on your task.');
+    if (enabledWorkflows) {
+      const workflowNames = enabledWorkflows.split(',');
+      log('info', `🚀 Initializing server with selected workflows: ${workflowNames.join(', ')}`);
+      await registerWorkflows(server, workflowNames);
     } else {
-      // STATIC MODE: Check for selective workflows
-      const enabledWorkflows = process.env.XCODEBUILDMCP_ENABLED_WORKFLOWS;
-
-      if (enabledWorkflows) {
-        const workflowNames = enabledWorkflows.split(',');
-        log('info', `🚀 Initializing server with selected workflows: ${workflowNames.join(', ')}`);
-        await registerSelectedWorkflows(server, workflowNames);
-      } else {
-        log('info', '🚀 Initializing server in static tools mode...');
-        await registerAllToolsStatic(server);
-      }
+      log('info', '🚀 Initializing server with all tools...');
+      await registerWorkflows(server);
     }
 
     await registerResources(server);

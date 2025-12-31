@@ -38,7 +38,10 @@
   },
   "chat.mcp.serverSampling": {
     "XcodeBuildMCP/.vscode/mcp.json: XcodeBuildMCP-Dev": {
-      "allowedDuringChat": true
+      "allowedDuringChat": true,
+      "allowedModels": [
+        "copilot/gpt-5.2"
+      ]
     }
   },
 }
