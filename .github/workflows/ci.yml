@@ -26,7 +26,10 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Build
+    - name: Build (tsup)
+      run: npm run build:tsup
+
+    - name: Build (Smithery)
       run: npm run build
 
     - name: Lint
