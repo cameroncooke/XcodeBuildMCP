@@ -33,18 +33,8 @@
           ]
         },
         {
-          "name": "XCODEBUILDMCP_DYNAMIC_TOOLS",
-          "description": "Enable AI-powered dynamic tool discovery to load only relevant workflows.",
-          "format": "boolean",
-          "default": "false",
-          "choices": [
-            "true",
-            "false"
-          ]
-        },
-        {
           "name": "XCODEBUILDMCP_ENABLED_WORKFLOWS",
-          "description": "Comma-separated list of workflows to load in Static Mode (e.g., 'simulator,device,project-discovery').",
+          "description": "Comma-separated list of workflows to load at startup (e.g., 'simulator,device,project-discovery').",
           "format": "string",
           "default": ""
         },

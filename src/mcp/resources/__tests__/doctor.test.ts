@@ -53,30 +53,16 @@ describe('doctor resource', () => {
     });
 
     it('should include required doctor sections', async () => {
-      // Set dynamic tools environment variable to include discover_tools text
-      const originalValue = process.env.XCODEBUILDMCP_DYNAMIC_TOOLS;
-      process.env.XCODEBUILDMCP_DYNAMIC_TOOLS = 'true';
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'Mock output',
+      });
 
-      try {
-        const mockExecutor = createMockExecutor({
-          success: true,
-          output: 'Mock output',
-        });
+      const result = await doctorResourceLogic(mockExecutor);
 
-        const result = await doctorResourceLogic(mockExecutor);
-
-        expect(result.contents[0].text).toContain('## Troubleshooting Tips');
-        expect(result.contents[0].text).toContain('brew tap cameroncooke/axe');
-        expect(result.contents[0].text).toContain('INCREMENTAL_BUILDS_ENABLED=1');
-        expect(result.contents[0].text).toContain('discover_tools');
-      } finally {
-        // Restore original environment variable
-        if (originalValue === undefined) {
-          delete process.env.XCODEBUILDMCP_DYNAMIC_TOOLS;
-        } else {
-          process.env.XCODEBUILDMCP_DYNAMIC_TOOLS = originalValue;
-        }
-      }
+      expect(result.contents[0].text).toContain('## Troubleshooting Tips');
+      expect(result.contents[0].text).toContain('brew tap cameroncooke/axe');
+      expect(result.contents[0].text).toContain('INCREMENTAL_BUILDS_ENABLED=1');
     });
 
     it('should provide feature status information', async () => {

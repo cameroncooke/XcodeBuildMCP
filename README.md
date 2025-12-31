@@ -26,12 +26,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
       - [Smithery](#smithery)
     - [MCP Compatibility](#mcp-compatibility)
 - [Incremental build support](#incremental-build-support)
-- [Dynamic Tools](#dynamic-tools)
-  - [What is Dynamic Tools?](#what-is-dynamic-tools)
-  - [How to Enable Dynamic Tools](#how-to-enable-dynamic-tools)
-  - [Usage Example](#usage-example)
-  - [Client Compatibility](#client-compatibility)
-  - [Selective Workflow Loading (Static Mode)](#selective-workflow-loading-static-mode)
+- [Workflow Selection](#workflow-selection)
 - [Session-aware opt-out](#session-aware-opt-out)
 - [Code Signing for Device Deployment](#code-signing-for-device-deployment)
 - [Troubleshooting](#troubleshooting)
@@ -215,56 +210,11 @@ Example MCP configuration:
 > [!IMPORTANT]
 > Please note that incremental builds support is currently highly experimental and your mileage may vary. Please report any issues you encounter to the [issue tracker](https://github.com/cameroncooke/XcodeBuildMCP/issues).
 
-## Dynamic Tools
+## Workflow Selection
 
-XcodeBuildMCP supports dynamic tool loading to optimize context window usage in AI assistants. This feature is particularly useful for managing the extensive toolset that XcodeBuildMCP provides.
-
-### What is Dynamic Tools?
-
-By default, XcodeBuildMCP loads all available tools at startup (Static Mode), which provides immediate access to the complete toolset but uses a larger context window. Dynamic Tools mode solves this by:
-
-1. **Starting minimal**: Only essential tools like `discover_tools` and `discover_projs` are available initially
-2. **AI-powered discovery**: When an AI agent identifies XcodeBuildMCP can help with development tasks, it automatically uses the `discover_tools` tool
-3. **Intelligent loading**: The server uses an LLM call to identify the most relevant workflow group and dynamically loads only those tools
-4. **Context efficiency**: Reduces the initial context footprint from the entire list of tools to just 2 discovery tools while maintaining full functionality
-
-### How to Enable Dynamic Tools
-
-To enable dynamic tools, set the `XCODEBUILDMCP_DYNAMIC_TOOLS` environment variable to `true`:
+By default, XcodeBuildMCP loads all tools at startup. If you want a smaller tool surface for a specific workflow, set `XCODEBUILDMCP_ENABLED_WORKFLOWS` to a comma-separated list of workflow directory names. The `session-management` workflow is always auto-included since other tools depend on it.
 
 Example MCP client configuration:
-```json
-"XcodeBuildMCP": {
-  ...
-  "env": {
-    "XCODEBUILDMCP_DYNAMIC_TOOLS": "true"
-  }
-}
-```
-
-### Usage Example
-
-Once enabled, AI agents automatically discover and load relevant tools based on context. For example, when you mention working on an iOS app or the agent detects iOS development tasks in your workspace, it will automatically use the `discover_tools` tool to load the appropriate simulator and project tools needed for your workflow.
-
-### Client Compatibility
-
-Dynamic Tools requires MCP clients that support **MCP Sampling** for the AI-powered tool discovery to function:
-
-| Editor | Dynamic Tools Support |
-|--------|----------------------|
-| **VS Code** | ✅ |
-| **Cursor** | ❌ (No MCP Sampling) |
-| **Windsurf** | ❌ (No MCP Sampling) |
-| **Claude Code** | ❌ (No MCP Sampling) |
-| **Claude Desktop** | ❌ (No MCP Sampling) |
-
-> [!NOTE]
-> For clients that don't support MCP Sampling, XcodeBuildMCP will automatically fall back to Static Mode, loading all tools at startup regardless of the `XCODEBUILDMCP_DYNAMIC_TOOLS` setting.
-
-### Selective Workflow Loading (Static Mode)
-
-For clients that don't support MCP Sampling but still want to reduce context window usage, you can selectively load only specific workflows using the `XCODEBUILDMCP_ENABLED_WORKFLOWS` environment variable:
-
 ```json
 "XcodeBuildMCP": {
   ...
@@ -275,21 +225,17 @@ For clients that don't support MCP Sampling but still want to reduce context win
 ```
 
 **Available Workflows:**
-- `device` (14 tools) - iOS Device Development
-- `simulator` (18 tools) - iOS Simulator Development
-- `simulator-management` (8 tools) - Simulator Management
+- `device` (7 tools) - iOS Device Development
+- `simulator` (12 tools) - iOS Simulator Development
+- `simulator-management` (5 tools) - Simulator Management
 - `swift-package` (6 tools) - Swift Package Manager
 - `project-discovery` (5 tools) - Project Discovery
-- `macos` (11 tools) - macOS Development
+- `macos` (6 tools) - macOS Development
 - `ui-testing` (11 tools) - UI Testing & Automation
 - `logging` (4 tools) - Log Capture & Management
 - `project-scaffolding` (2 tools) - Project Scaffolding
 - `utilities` (1 tool) - Project Utilities
 - `doctor` (1 tool) - System Doctor
-- `discovery` (1 tool) - Dynamic Tool Discovery
-
-> [!NOTE]
-> The `XCODEBUILDMCP_ENABLED_WORKFLOWS` setting only works in Static Mode. If `XCODEBUILDMCP_DYNAMIC_TOOLS=true` is set, the selective workflow setting will be ignored.
 
 ## Session-aware opt-out
 

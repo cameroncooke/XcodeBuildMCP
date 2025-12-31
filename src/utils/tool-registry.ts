@@ -1,230 +1,58 @@
-import { McpServer, RegisteredTool } from '@camsoft/mcp-sdk/server/mcp.js';
-import { loadPlugins } from '../core/plugin-registry.ts';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { loadWorkflowGroups } from '../core/plugin-registry.ts';
 import { ToolResponse } from '../types/common.ts';
 import { log } from './logger.ts';
-
-// Global registry to track registered tools for cleanup
-const toolRegistry = new Map<string, RegisteredTool>();
-
-/**
- * Register a tool and track it for potential removal
- */
-export function registerAndTrackTool(
-  server: McpServer,
-  name: string,
-  config: Parameters<McpServer['registerTool']>[1],
-  callback: Parameters<McpServer['registerTool']>[2],
-): RegisteredTool {
-  const registeredTool = server.registerTool(name, config, callback);
-  toolRegistry.set(name, registeredTool);
-  return registeredTool;
-}
-
-/**
- * Register multiple tools and track them for potential removal
- */
-export function registerAndTrackTools(
-  server: McpServer,
-  tools: Parameters<McpServer['registerTools']>[0],
-): RegisteredTool[] {
-  const registeredTools = server.registerTools(tools);
-
-  // Track each registered tool
-  tools.forEach((tool, index) => {
-    if (registeredTools[index]) {
-      toolRegistry.set(tool.name, registeredTools[index]);
-    }
-  });
-
-  return registeredTools;
-}
-
-/**
- * Check if a tool is already registered
- */
-export function isToolRegistered(name: string): boolean {
-  return toolRegistry.has(name);
-}
-
-/**
- * Remove a specific tracked tool by name
- */
-export function removeTrackedTool(name: string): boolean {
-  const tool = toolRegistry.get(name);
-  if (!tool) {
-    return false;
-  }
-
-  try {
-    tool.remove();
-    toolRegistry.delete(name);
-    log('debug', `✅ Removed tool: ${name}`);
-    return true;
-  } catch (error) {
-    log('error', `❌ Failed to remove tool ${name}: ${error}`);
-    return false;
-  }
-}
-
-/**
- * Remove multiple tracked tools by names
- */
-export function removeTrackedTools(names: string[]): string[] {
-  const removedTools: string[] = [];
-
-  for (const name of names) {
-    if (removeTrackedTool(name)) {
-      removedTools.push(name);
-    }
-  }
-
-  return removedTools;
-}
-
-/**
- * Remove all currently tracked tools
- */
-export function removeAllTrackedTools(): void {
-  const toolNames = Array.from(toolRegistry.keys());
-
-  if (toolNames.length === 0) {
-    return;
-  }
-
-  log('info', `Removing ${toolNames.length} tracked tools...`);
-
-  const removedTools = removeTrackedTools(toolNames);
-  log('info', `✅ Removed ${removedTools.length} tracked tools`);
-}
-
-/**
- * Get the number of currently tracked tools
- */
-export function getTrackedToolCount(): number {
-  return toolRegistry.size;
-}
-
-/**
- * Get the names of currently tracked tools
- */
-export function getTrackedToolNames(): string[] {
-  return Array.from(toolRegistry.keys());
-}
-
-/**
- * Register only discovery tools (discover_tools, discover_projs) with tracking
- */
-export async function registerDiscoveryTools(server: McpServer): Promise<void> {
-  const plugins = await loadPlugins();
-  let registeredCount = 0;
-
-  // Only register discovery tools initially
-  const discoveryTools = [];
-  for (const plugin of plugins.values()) {
-    // Only load discover_tools and discover_projs initially - other tools will be loaded via workflows
-    if (plugin.name === 'discover_tools' || plugin.name === 'discover_projs') {
-      discoveryTools.push({
-        name: plugin.name,
-        config: {
-          description: plugin.description ?? '',
-          inputSchema: plugin.schema,
-          annotations: plugin.annotations,
-        },
-        // Adapt callback to match SDK's expected signature
-        callback: (args: unknown): Promise<ToolResponse> =>
-          plugin.handler(args as Record<string, unknown>),
-      });
-      registeredCount++;
-    }
-  }
-
-  // Register discovery tools using bulk registration with tracking
-  if (discoveryTools.length > 0) {
-    registerAndTrackTools(server, discoveryTools);
-  }
-
-  log('info', `✅ Registered ${registeredCount} discovery tools in dynamic mode.`);
-}
 
 // Workflow that must always be included as other tools depend on it
 const REQUIRED_WORKFLOW = 'session-management';
 
 /**
- * Register selected workflows based on environment variable
+ * Register workflows (selected list or all when omitted)
  */
-export async function registerSelectedWorkflows(
+export async function registerWorkflows(
   server: McpServer,
-  workflowNames: string[],
+  workflowNames: string[] = [],
 ): Promise<void> {
-  const { loadWorkflowGroups } = await import('../core/plugin-registry.js');
   const workflowGroups = await loadWorkflowGroups();
-  const selectedTools = [];
+  let registeredCount = 0;
+  const registeredTools = new Set<string>();
 
-  // Ensure session-management is always included as it's required by other tools
-  const normalizedNames = workflowNames.map((name) => name.trim());
-  if (!normalizedNames.includes(REQUIRED_WORKFLOW)) {
-    normalizedNames.unshift(REQUIRED_WORKFLOW);
-    log('info', `📌 Auto-including required workflow: ${REQUIRED_WORKFLOW}`);
-  }
+  const normalizedNames = workflowNames.map((name) => name.trim().toLowerCase());
+  const selectedNames =
+    normalizedNames.length > 0 ? [...new Set([REQUIRED_WORKFLOW, ...normalizedNames])] : null;
 
-  for (const workflowName of normalizedNames) {
-    const workflow = workflowGroups.get(workflowName);
-    if (workflow) {
-      for (const tool of workflow.tools) {
-        selectedTools.push({
-          name: tool.name,
-          config: {
-            description: tool.description ?? '',
-            inputSchema: tool.schema,
-            annotations: tool.annotations,
-          },
-          callback: (args: unknown): Promise<ToolResponse> =>
-            tool.handler(args as Record<string, unknown>),
-        });
-      }
-    }
-  }
+  const workflows = selectedNames
+    ? selectedNames.map((workflowName) => workflowGroups.get(workflowName))
+    : [...workflowGroups.values()];
 
-  if (selectedTools.length > 0) {
-    server.registerTools(selectedTools);
-  }
-
-  log(
-    'info',
-    `✅ Registered ${selectedTools.length} tools from workflows: ${normalizedNames.join(', ')}`,
-  );
-}
-
-/**
- * Register all tools (static mode) - no tracking needed since these won't be removed
- */
-export async function registerAllToolsStatic(server: McpServer): Promise<void> {
-  const plugins = await loadPlugins();
-  const allTools = [];
-
-  for (const plugin of plugins.values()) {
-    // Exclude discovery tools in static mode - they should only be available in dynamic mode
-    if (plugin.name === 'discover_tools') {
+  for (const workflow of workflows) {
+    if (!workflow) {
       continue;
     }
-
-    allTools.push({
-      name: plugin.name,
-      config: {
-        description: plugin.description ?? '',
-        inputSchema: plugin.schema,
-        annotations: plugin.annotations,
-      },
-      // Adapt callback to match SDK's expected signature
-      callback: (args: unknown): Promise<ToolResponse> =>
-        plugin.handler(args as Record<string, unknown>),
-    });
+    for (const tool of workflow.tools) {
+      if (registeredTools.has(tool.name)) {
+        continue;
+      }
+      server.registerTool(
+        tool.name,
+        {
+          description: tool.description ?? '',
+          inputSchema: tool.schema,
+          annotations: tool.annotations,
+        },
+        (args: unknown): Promise<ToolResponse> => tool.handler(args as Record<string, unknown>),
+      );
+      registeredTools.add(tool.name);
+      registeredCount += 1;
+    }
   }
 
-  // Register all tools using bulk registration (no tracking since static tools aren't removed)
-  if (allTools.length > 0) {
-    server.registerTools(allTools);
+  if (selectedNames) {
+    log(
+      'info',
+      `✅ Registered ${registeredCount} tools from workflows: ${selectedNames.join(', ')}`,
+    );
+  } else {
+    log('info', `✅ Registered ${registeredCount} tools in static mode.`);
   }
-
-  log('info', `✅ Registered ${allTools.length} tools in static mode.`);
 }

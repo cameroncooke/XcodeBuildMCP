@@ -1,17 +1,12 @@
 import * as os from 'os';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
-import {
-  loadWorkflowGroups,
-  loadPlugins,
-  getEnabledWorkflows,
-} from '../../../../utils/plugin-registry/index.ts';
+import { loadWorkflowGroups, loadPlugins } from '../../../../utils/plugin-registry/index.ts';
 import { areAxeToolsAvailable } from '../../../../utils/axe/index.ts';
 import {
   isXcodemakeEnabled,
   isXcodemakeAvailable,
   doesMakefileExist,
 } from '../../../../utils/xcodemake/index.ts';
-import { getTrackedToolNames } from '../../../../utils/tool-registry.ts';
 
 export interface BinaryChecker {
   checkBinaryAvailability(binary: string): Promise<{ available: boolean; version?: string }>;
@@ -62,20 +57,12 @@ export interface PluginInfoProvider {
 }
 
 export interface RuntimeInfoProvider {
-  getRuntimeToolInfo(): Promise<
-    | {
-        mode: 'dynamic';
-        enabledWorkflows: string[];
-        enabledTools: string[];
-        totalRegistered: number;
-      }
-    | {
-        mode: 'static';
-        enabledWorkflows: string[];
-        enabledTools: string[];
-        totalRegistered: number;
-      }
-  >;
+  getRuntimeToolInfo(): Promise<{
+    mode: 'static';
+    enabledWorkflows: string[];
+    enabledTools: string[];
+    totalRegistered: number;
+  }>;
 }
 
 export interface FeatureDetector {
@@ -242,20 +229,6 @@ export function createDoctorDependencies(executor: CommandExecutor): DoctorDepen
 
   const runtime: RuntimeInfoProvider = {
     async getRuntimeToolInfo() {
-      const dynamic = process.env.XCODEBUILDMCP_DYNAMIC_TOOLS === 'true';
-
-      if (dynamic) {
-        const enabledWf = getEnabledWorkflows();
-        const enabledTools = getTrackedToolNames();
-        return {
-          mode: 'dynamic',
-          enabledWorkflows: enabledWf,
-          enabledTools,
-          totalRegistered: enabledTools.length,
-        };
-      }
-
-      // Static mode: all tools are registered
       const workflows = await loadWorkflowGroups();
       const enabledWorkflows = Array.from(workflows.keys());
       const plugins = await loadPlugins();

@@ -242,7 +242,6 @@ async function getWorkflowMetadata(
 function getWorkflowDisplayName(workflowDir: string): string {
   const displayNames: Record<string, string> = {
     device: 'iOS Device Development',
-    discovery: 'Dynamic Tool Discovery',
     doctor: 'System Doctor',
     logging: 'Logging & Monitoring',
     macos: 'macOS Development',
@@ -264,7 +263,6 @@ function getWorkflowDisplayName(workflowDir: string): string {
 function getWorkflowDescription(workflowDir: string): string {
   const descriptions: Record<string, string> = {
     device: 'Physical device development, testing, and deployment',
-    discovery: 'Intelligent workflow enablement based on task descriptions',
     doctor: 'System health checks and environment validation',
     logging: 'Log capture and monitoring across platforms',
     macos: 'Native macOS application development and testing',

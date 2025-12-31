@@ -46,14 +46,13 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
 
 4. **Plugin & Resource Loading (Runtime)**
    - At runtime, `loadPlugins()` and `loadResources()` use the generated loaders from the previous step
-   - In **Static Mode**, all workflow loaders are executed at startup to register all tools
-   - In **Dynamic Mode**, only the `discover_tools` tool is registered initially
-   - The `enableWorkflows` function in `src/core/dynamic-tools.ts` uses generated loaders to dynamically import and register selected workflow tools on demand
+   - All workflow loaders are executed at startup to register tools
+   - If `XCODEBUILDMCP_ENABLED_WORKFLOWS` is set, only those workflows (plus `session-management`) are registered
 
 5. **Tool Registration**
    - Discovered tools automatically registered with server using pre-generated maps
    - No manual registration or configuration required
-   - Environment variables control dynamic tool discovery behavior
+   - Environment variables control workflow selection behavior
 
 5. **Request Handling**
    - MCP client calls tool → server routes to tool handler
@@ -348,24 +347,19 @@ export default {
 
 ## Registration System
 
-XcodeBuildMCP supports two primary operating modes for tool registration, controlled by the `XCODEBUILDMCP_DYNAMIC_TOOLS` environment variable.
+XcodeBuildMCP registers tools at startup using the generated workflow loaders. Tool selection can be narrowed using the `XCODEBUILDMCP_ENABLED_WORKFLOWS` environment variable.
 
-### Static Mode (Default)
+### Full Registration (Default)
 
-- **Environment**: `XCODEBUILDMCP_DYNAMIC_TOOLS` is `false` or not set.
+- **Environment**: `XCODEBUILDMCP_ENABLED_WORKFLOWS` is not set.
 - **Behavior**: All available tools are loaded and registered with the MCP server at startup.
-- **Use Case**: This mode is ideal for environments where the full suite of tools is desired immediately, providing a comprehensive and predictable toolset for the AI assistant.
+- **Use Case**: Use this mode when you want the full suite of tools immediately available.
 
-### Dynamic Mode (AI-Powered Workflow Selection)
+### Selective Workflow Registration
 
-- **Environment**: `XCODEBUILDMCP_DYNAMIC_TOOLS=true`
-- **Behavior**: At startup, only the `discover_tools` tool is registered. This tool is designed to analyze a natural language task description from the user.
-- **Workflow**:
-    1. The client sends a task description (e.g., "I want to build and test my iOS app") to the `discover_tools` tool.
-    2. The tool uses the client's LLM via an MCP sampling request to determine the most relevant workflow group (e.g., `simulator-workspace`).
-    3. The server then dynamically loads and registers all tools from the selected workflow group.
-    4. The client is notified of the newly available tools.
-- **Use Case**: This mode is beneficial for conserving the LLM's context window by only loading a relevant subset of tools, leading to more focused and efficient interactions.
+- **Environment**: `XCODEBUILDMCP_ENABLED_WORKFLOWS=simulator,device,project-discovery` (comma-separated)
+- **Behavior**: Only tools from the selected workflows are registered, plus the required `session-management` workflow.
+- **Use Case**: Use this mode to reduce tool surface area for focused workflows.
 
 ## Tool Naming Conventions & Glossary
 
@@ -518,7 +512,7 @@ The guide covers:
 ### Startup Performance
 
 - **Build-Time Plugin Discovery**: The server avoids expensive and slow file system scans at startup by using pre-generated loader maps. This is the single most significant performance optimization
-- **Code-Splitting**: In Dynamic Mode, tool code is only loaded into memory when its workflow is enabled, reducing the initial memory footprint and parse time
+- **Code-Splitting**: Workflow modules are loaded via dynamic imports when registration occurs, reducing the initial memory footprint and parse time
 - **Focused Facades**: Using targeted imports instead of a large barrel file improves module resolution speed for the Node.js runtime
 - **Lazy Loading**: Tools only initialized when registered
 - **Selective Registration**: Fewer tools = faster startup

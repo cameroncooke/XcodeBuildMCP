@@ -331,10 +331,10 @@ describe('simulator-workspace workflow metadata', () => {
     expect(workflow.name).toBe('iOS Simulator Workspace Development');
   });
   
-  it('should have correct capabilities', () => {
-    expect(workflow.capabilities).toEqual([
-      'build', 'test', 'deploy', 'debug', 'ui-automation', 'log-capture'
-    ]);
+  it('should have correct description', () => {
+    expect(workflow.description).toBe(
+      'Complete iOS development workflow for .xcworkspace files including build, test, deploy, and debug capabilities',
+    );
   });
 });
 ```

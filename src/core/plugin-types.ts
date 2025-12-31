@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ToolAnnotations } from '@camsoft/mcp-sdk/types.js';
+import { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
 import { ToolResponse } from '../types/common.ts';
 
 export interface PluginMeta {
@@ -13,10 +13,6 @@ export interface PluginMeta {
 export interface WorkflowMeta {
   readonly name: string;
   readonly description: string;
-  readonly platforms?: string[];
-  readonly targets?: string[];
-  readonly projectTypes?: string[];
-  readonly capabilities?: string[];
 }
 
 export interface WorkflowGroup {

@@ -437,7 +437,6 @@ Reloaderoo is specifically configured to work with XcodeBuildMCP's:
 
 - **84+ Tools**: All workflow groups accessible via CLI
 - **4 Resources**: Direct access to devices, simulators, environment, swift-packages
-- **Dynamic Tool Discovery**: Compatible with `discover_tools` functionality
 - **Claude Code Detection**: Automatic consolidation of multiple content blocks
 - **Hot-Reload Support**: Seamless development workflow with `restart_server`
 

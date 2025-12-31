@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.16.0] - 2025-12-30
+- Remove dynamic tool discovery (`discover_tools`) and `XCODEBUILDMCP_DYNAMIC_TOOLS`. Use `XCODEBUILDMCP_ENABLED_WORKFLOWS` to limit startup tool registration.
+- Add MCP tool annotations to all tools.
+
 ## [1.14.0] - 2025-09-22
 - Add video capture tool for simulators
 

@@ -227,11 +227,6 @@ export async function runDoctor(
     `- If incremental build support is not available, you can download the tool from https://github.com/cameroncooke/xcodemake. Make sure it's executable and available in your PATH`,
     `- To enable xcodemake, set environment variable: \`export INCREMENTAL_BUILDS_ENABLED=1\``,
     `- For mise integration, follow instructions in the README.md file`,
-    ...(process.env.XCODEBUILDMCP_DYNAMIC_TOOLS === 'true'
-      ? [
-          `- Dynamic mode is enabled. Use 'discover_tools' to enable workflows relevant to your task`,
-        ]
-      : []),
   ].join('\n');
 
   const result: ToolResponse = {
