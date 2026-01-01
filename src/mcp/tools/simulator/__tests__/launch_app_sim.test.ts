@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import launchAppSim, { launch_app_simLogic } from '../launch_app_sim.ts';
@@ -66,7 +66,9 @@ describe('launch_app_sim tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('bundleId: Required');
+      expect(result.content[0].text).toContain(
+        'bundleId: Invalid input: expected string, received undefined',
+      );
     });
 
     it('should reject when both simulatorId and simulatorName provided explicitly', async () => {

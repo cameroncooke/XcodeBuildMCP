@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import getDeviceAppPath, { get_device_app_pathLogic } from '../get_device_app_path.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
@@ -31,7 +31,7 @@ describe('get_device_app_path plugin', () => {
     });
 
     it('should expose only platform in public schema', () => {
-      const schema = z.object(getDeviceAppPath.schema).strict();
+      const schema = z.strictObject(getDeviceAppPath.schema);
       expect(schema.safeParse({}).success).toBe(true);
       expect(schema.safeParse({ platform: 'iOS' }).success).toBe(true);
       expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(false);

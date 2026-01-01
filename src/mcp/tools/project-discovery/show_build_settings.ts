@@ -5,7 +5,7 @@
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -24,15 +24,16 @@ const baseSchemaObject = z.object({
   scheme: z.string().describe('Scheme name to show build settings for (Required)'),
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
-const showBuildSettingsSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  });
+const showBuildSettingsSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      message: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    }),
+);
 
 export type ShowBuildSettingsParams = z.infer<typeof showBuildSettingsSchema>;
 
@@ -123,7 +124,10 @@ export default {
     readOnlyHint: true,
   },
   handler: createSessionAwareTool<ShowBuildSettingsParams>({
-    internalSchema: showBuildSettingsSchema as unknown as z.ZodType<ShowBuildSettingsParams>,
+    internalSchema: showBuildSettingsSchema as unknown as z.ZodType<
+      ShowBuildSettingsParams,
+      unknown
+    >,
     logicFunction: showBuildSettingsLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

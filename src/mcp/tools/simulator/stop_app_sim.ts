@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
@@ -25,15 +25,16 @@ const baseSchemaObject = z.object({
   bundleId: z.string().describe("Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"),
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
-const stopAppSimSchema = baseSchema
-  .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
-    message: 'Either simulatorId or simulatorName is required.',
-  })
-  .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
-    message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
-  });
+const stopAppSimSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
+      message: 'Either simulatorId or simulatorName is required.',
+    })
+    .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
+      message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
+    }),
+);
 
 export type StopAppSimParams = z.infer<typeof stopAppSimSchema>;
 
@@ -147,12 +148,12 @@ export async function stop_app_simLogic(
   }
 }
 
-const publicSchemaObject = baseSchemaObject
-  .omit({
+const publicSchemaObject = z.strictObject(
+  baseSchemaObject.omit({
     simulatorId: true,
     simulatorName: true,
-  } as const)
-  .strict();
+  } as const).shape,
+);
 
 export default {
   name: 'stop_app_sim',
@@ -166,7 +167,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<StopAppSimParams>({
-    internalSchema: stopAppSimSchema as unknown as z.ZodType<StopAppSimParams>,
+    internalSchema: stopAppSimSchema as unknown as z.ZodType<StopAppSimParams, unknown>,
     logicFunction: stop_app_simLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

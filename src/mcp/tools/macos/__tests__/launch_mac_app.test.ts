@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 import launchMacApp, { launch_mac_appLogic } from '../launch_mac_app.ts';
 

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import bootSim, { boot_simLogic } from '../boot_sim.ts';

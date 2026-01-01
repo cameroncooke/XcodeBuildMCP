@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import stopAppDevice, { stop_app_deviceLogic } from '../stop_app_device.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
@@ -29,7 +29,7 @@ describe('stop_app_device plugin', () => {
     });
 
     it('should require processId in public schema', () => {
-      const schema = z.object(stopAppDevice.schema).strict();
+      const schema = z.strictObject(stopAppDevice.schema);
       expect(schema.safeParse({ processId: 12345 }).success).toBe(true);
       expect(schema.safeParse({}).success).toBe(false);
       expect(schema.safeParse({ deviceId: 'test-device-123' }).success).toBe(false);

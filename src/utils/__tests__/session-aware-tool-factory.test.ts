@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createSessionAwareTool } from '../typed-tool-factory.ts';
 import { sessionStore } from '../session-store.ts';
 import { createMockExecutor } from '../../test-utils/mock-executors.ts';

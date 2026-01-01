@@ -5,7 +5,7 @@
  * Requires deviceId and appPath.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
@@ -19,7 +19,7 @@ import {
 const installAppDeviceSchema = z.object({
   deviceId: z
     .string()
-    .min(1, 'Device ID cannot be empty')
+    .min(1, { message: 'Device ID cannot be empty' })
     .describe('UDID of the device (obtained from list_devices)'),
   appPath: z
     .string()
@@ -97,7 +97,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<InstallAppDeviceParams>({
-    internalSchema: installAppDeviceSchema as unknown as z.ZodType<InstallAppDeviceParams>,
+    internalSchema: installAppDeviceSchema as unknown as z.ZodType<InstallAppDeviceParams, unknown>,
     logicFunction: install_app_deviceLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],

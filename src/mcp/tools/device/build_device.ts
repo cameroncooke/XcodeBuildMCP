@@ -5,7 +5,7 @@
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
@@ -27,15 +27,16 @@ const baseSchemaObject = z.object({
   preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
-const buildDeviceSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  });
+const buildDeviceSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      message: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    }),
+);
 
 export type BuildDeviceParams = z.infer<typeof buildDeviceSchema>;
 
@@ -83,7 +84,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<BuildDeviceParams>({
-    internalSchema: buildDeviceSchema as unknown as z.ZodType<BuildDeviceParams>,
+    internalSchema: buildDeviceSchema as unknown as z.ZodType<BuildDeviceParams, unknown>,
     logicFunction: buildDeviceLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

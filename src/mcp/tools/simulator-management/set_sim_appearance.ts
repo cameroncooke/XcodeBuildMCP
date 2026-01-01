@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -9,10 +9,7 @@ import {
 
 // Define schema as ZodObject
 const setSimAppearanceSchema = z.object({
-  simulatorId: z
-    .string()
-    .uuid()
-    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+  simulatorId: z.uuid().describe('UUID of the simulator to use (obtained from list_simulators)'),
   mode: z.enum(['dark', 'light']).describe('The appearance mode to set (either "dark" or "light")'),
 });
 
@@ -90,7 +87,9 @@ export async function set_sim_appearanceLogic(
   );
 }
 
-const publicSchemaObject = setSimAppearanceSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(
+  setSimAppearanceSchema.omit({ simulatorId: true } as const).shape,
+);
 
 export default {
   name: 'set_sim_appearance',
@@ -104,7 +103,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<SetSimAppearanceParams>({
-    internalSchema: setSimAppearanceSchema as unknown as z.ZodType<SetSimAppearanceParams>,
+    internalSchema: setSimAppearanceSchema as unknown as z.ZodType<SetSimAppearanceParams, unknown>,
     logicFunction: set_sim_appearanceLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import {
@@ -22,9 +22,9 @@ import {
 
 // Define schema as ZodObject
 const keyPressSchema = z.object({
-  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
-  keyCode: z.number().int('HID keycode to press (0-255)').min(0).max(255),
-  duration: z.number().min(0, 'Duration must be non-negative').optional(),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
+  keyCode: z.number().int({ message: 'HID keycode to press (0-255)' }).min(0).max(255),
+  duration: z.number().min(0, { message: 'Duration must be non-negative' }).optional(),
 });
 
 // Use z.infer for type safety
@@ -81,7 +81,9 @@ export async function key_pressLogic(
   }
 }
 
-const publicSchemaObject = keyPressSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(
+  keyPressSchema.omit({ simulatorId: true } as const).shape,
+);
 
 export default {
   name: 'key_press',
@@ -96,7 +98,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<KeyPressParams>({
-    internalSchema: keyPressSchema as unknown as z.ZodType<KeyPressParams>,
+    internalSchema: keyPressSchema as unknown as z.ZodType<KeyPressParams, unknown>,
     logicFunction: (params: KeyPressParams, executor: CommandExecutor) =>
       key_pressLogic(params, executor, {
         getAxePath,

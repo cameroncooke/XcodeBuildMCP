@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EventEmitter } from 'events';
-import { z } from 'zod';
+import * as z from 'zod';
 import plugin, { stop_device_log_capLogic } from '../stop_device_log_cap.ts';
 import { activeDeviceLogSessions, type DeviceLogSession } from '../start_device_log_cap.ts';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';

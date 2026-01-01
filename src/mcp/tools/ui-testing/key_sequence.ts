@@ -4,7 +4,7 @@
  * Press key sequence using HID keycodes on iOS simulator with configurable delay.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import {
@@ -28,9 +28,11 @@ import {
 
 // Define schema as ZodObject
 const keySequenceSchema = z.object({
-  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
-  keyCodes: z.array(z.number().int().min(0).max(255)).min(1, 'At least one key code required'),
-  delay: z.number().min(0, 'Delay must be non-negative').optional(),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
+  keyCodes: z
+    .array(z.number().int().min(0).max(255))
+    .min(1, { message: 'At least one key code required' }),
+  delay: z.number().min(0, { message: 'Delay must be non-negative' }).optional(),
 });
 
 // Use z.infer for type safety
@@ -90,7 +92,9 @@ export async function key_sequenceLogic(
   }
 }
 
-const publicSchemaObject = keySequenceSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(
+  keySequenceSchema.omit({ simulatorId: true } as const).shape,
+);
 
 export default {
   name: 'key_sequence',
@@ -104,7 +108,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<KeySequenceParams>({
-    internalSchema: keySequenceSchema as unknown as z.ZodType<KeySequenceParams>,
+    internalSchema: keySequenceSchema as unknown as z.ZodType<KeySequenceParams, unknown>,
     logicFunction: (params: KeySequenceParams, executor: CommandExecutor) =>
       key_sequenceLogic(params, executor, {
         getAxePath,

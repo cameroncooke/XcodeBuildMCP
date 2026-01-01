@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import describeUIPlugin, { describe_uiLogic } from '../describe_ui.ts';
 
@@ -32,7 +32,7 @@ describe('Describe UI Plugin', () => {
 
       expect(schema.safeParse({}).success).toBe(true);
 
-      const withSimId = schema.safeParse({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+      const withSimId = schema.safeParse({ simulatorId: '12345678-1234-4234-8234-123456789012' });
       expect(withSimId.success).toBe(true);
       expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });
@@ -84,14 +84,14 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         trackingExecutor,
         mockAxeHelpers,
       );
 
       expect(executorCalls[0]).toEqual([
-        ['/usr/local/bin/axe', 'describe-ui', '--udid', '12345678-1234-1234-1234-123456789012'],
+        ['/usr/local/bin/axe', 'describe-ui', '--udid', '12345678-1234-4234-8234-123456789012'],
         '[AXe]: describe-ui',
         false,
         {},
@@ -132,7 +132,7 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         createNoopExecutor(),
         mockAxeHelpers,
@@ -165,7 +165,7 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         mockExecutor,
         mockAxeHelpers,
@@ -193,7 +193,7 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         mockExecutor,
         mockAxeHelpers,
@@ -223,7 +223,7 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         mockExecutor,
         mockAxeHelpers,
@@ -253,7 +253,7 @@ describe('Describe UI Plugin', () => {
 
       const result = await describe_uiLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
         },
         mockExecutor,
         mockAxeHelpers,

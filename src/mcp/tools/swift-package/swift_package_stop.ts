@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
 import { getProcess, removeProcess, type ProcessInfo } from './active-processes.ts';
 import { ToolResponse } from '../../../types/common.ts';
@@ -115,7 +115,7 @@ export default {
     if (!parseResult.success) {
       return createErrorResponse(
         'Parameter validation failed',
-        parseResult.error.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
+        parseResult.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
       );
     }
 

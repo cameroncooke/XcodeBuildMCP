@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -9,10 +9,7 @@ import {
 
 // Define schema as ZodObject
 const simStatusbarSchema = z.object({
-  simulatorId: z
-    .string()
-    .uuid()
-    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+  simulatorId: z.uuid().describe('UUID of the simulator to use (obtained from list_simulators)'),
   dataNetwork: z
     .enum([
       'clear',
@@ -91,7 +88,9 @@ export async function sim_statusbarLogic(
   }
 }
 
-const publicSchemaObject = simStatusbarSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(
+  simStatusbarSchema.omit({ simulatorId: true } as const).shape,
+);
 
 export default {
   name: 'sim_statusbar',
@@ -106,7 +105,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<SimStatusbarParams>({
-    internalSchema: simStatusbarSchema as unknown as z.ZodType<SimStatusbarParams>,
+    internalSchema: simStatusbarSchema as unknown as z.ZodType<SimStatusbarParams, unknown>,
     logicFunction: sim_statusbarLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],

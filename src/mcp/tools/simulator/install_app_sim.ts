@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { validateFileExists } from '../../../utils/validation/index.ts';
@@ -18,11 +18,11 @@ const installAppSimSchemaObject = z.object({
 
 type InstallAppSimParams = z.infer<typeof installAppSimSchemaObject>;
 
-const publicSchemaObject = installAppSimSchemaObject
-  .omit({
+const publicSchemaObject = z.strictObject(
+  installAppSimSchemaObject.omit({
     simulatorId: true,
-  } as const)
-  .strict();
+  } as const).shape,
+);
 
 export async function install_app_simLogic(
   params: InstallAppSimParams,
@@ -108,7 +108,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<InstallAppSimParams>({
-    internalSchema: installAppSimSchemaObject,
+    internalSchema: installAppSimSchemaObject as unknown as z.ZodType<InstallAppSimParams, unknown>,
     logicFunction: install_app_simLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],

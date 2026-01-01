@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
@@ -28,15 +28,16 @@ const baseSchemaObject = z.object({
   args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
-const launchAppSimSchema = baseSchema
-  .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
-    message: 'Either simulatorId or simulatorName is required.',
-  })
-  .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
-    message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
-  });
+const launchAppSimSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
+      message: 'Either simulatorId or simulatorName is required.',
+    })
+    .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
+      message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
+    }),
+);
 
 export type LaunchAppSimParams = z.infer<typeof launchAppSimSchema>;
 
@@ -193,12 +194,12 @@ export async function launch_app_simLogic(
   }
 }
 
-const publicSchemaObject = baseSchemaObject
-  .omit({
+const publicSchemaObject = z.strictObject(
+  baseSchemaObject.omit({
     simulatorId: true,
     simulatorName: true,
-  } as const)
-  .strict();
+  } as const).shape,
+);
 
 export default {
   name: 'launch_app_sim',
@@ -212,7 +213,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<LaunchAppSimParams>({
-    internalSchema: launchAppSimSchema as unknown as z.ZodType<LaunchAppSimParams>,
+    internalSchema: launchAppSimSchema as unknown as z.ZodType<LaunchAppSimParams, unknown>,
     logicFunction: launch_app_simLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

@@ -5,7 +5,7 @@
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { join } from 'path';
 import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
@@ -50,8 +50,6 @@ const baseSchemaObject = z.object({
     ),
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
 const publicSchemaObject = baseSchemaObject.omit({
   projectPath: true,
   workspacePath: true,
@@ -59,13 +57,16 @@ const publicSchemaObject = baseSchemaObject.omit({
   configuration: true,
 } as const);
 
-const testMacosSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  });
+const testMacosSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      message: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    }),
+);
 
 export type TestMacosParams = z.infer<typeof testMacosSchema>;
 
@@ -338,7 +339,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<TestMacosParams>({
-    internalSchema: testMacosSchema as unknown as z.ZodType<TestMacosParams>,
+    internalSchema: testMacosSchema as unknown as z.ZodType<TestMacosParams, unknown>,
     logicFunction: (params, executor) =>
       testMacosLogic(params, executor, getDefaultFileSystemExecutor()),
     getExecutor: getDefaultCommandExecutor,

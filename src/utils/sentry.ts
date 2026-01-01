@@ -1,13 +1,13 @@
 /**
  * Sentry instrumentation for XcodeBuildMCP
  *
- * This file initializes Sentry as early as possible in the application lifecycle.
- * It should be imported at the top of the main entry point file.
+ * This file initializes Sentry when explicitly called to avoid side effects
+ * during module import (needed for Smithery's module-based entry).
  */
 
 import * as Sentry from '@sentry/node';
-import { version } from '../version.ts';
 import { execSync } from 'child_process';
+import { version } from '../version.ts';
 
 // Inlined system info functions to avoid circular dependencies
 function getXcodeInfo(): { version: string; path: string; selectedXcode: string; error?: string } {
@@ -81,43 +81,63 @@ function checkBinaryAvailability(binary: string): { available: boolean; version?
   return { available: true, version };
 }
 
-Sentry.init({
-  dsn:
-    process.env.SENTRY_DSN ??
-    'https://798607831167c7b9fe2f2912f5d3c665@o4509258288332800.ingest.de.sentry.io/4509258293837904',
+let initialized = false;
 
-  // Setting this option to true will send default PII data to Sentry
-  // For example, automatic IP address collection on events
-  sendDefaultPii: true,
+function isSentryDisabled(): boolean {
+  return (
+    process.env.SENTRY_DISABLED === 'true' || process.env.XCODEBUILDMCP_SENTRY_DISABLED === 'true'
+  );
+}
 
-  // Set release version to match application version
-  release: `xcodebuildmcp@${version}`,
+function isTestEnv(): boolean {
+  return process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
+}
 
-  // Always report under production environment
-  environment: 'production',
+export function initSentry(): void {
+  if (initialized || isSentryDisabled() || isTestEnv()) {
+    return;
+  }
 
-  // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring
-  // We recommend adjusting this value in production
-  tracesSampleRate: 1.0,
-});
+  initialized = true;
 
-const axeAvailable = checkBinaryAvailability('axe');
-const miseAvailable = checkBinaryAvailability('mise');
-const envVars = getEnvironmentVariables();
-const xcodeInfo = getXcodeInfo();
+  Sentry.init({
+    dsn:
+      process.env.SENTRY_DSN ??
+      'https://798607831167c7b9fe2f2912f5d3c665@o4509258288332800.ingest.de.sentry.io/4509258293837904',
 
-// Add additional context that might be helpful for debugging
-const tags: Record<string, string> = {
-  nodeVersion: process.version,
-  platform: process.platform,
-  arch: process.arch,
-  axeAvailable: axeAvailable.available ? 'true' : 'false',
-  axeVersion: axeAvailable.version ?? 'Unknown',
-  miseAvailable: miseAvailable.available ? 'true' : 'false',
-  miseVersion: miseAvailable.version ?? 'Unknown',
-  ...Object.fromEntries(Object.entries(envVars).map(([k, v]) => [`env_${k}`, v ?? ''])),
-  xcodeVersion: xcodeInfo.version ?? 'Unknown',
-  xcodePath: xcodeInfo.path ?? 'Unknown',
-};
+    // Setting this option to true will send default PII data to Sentry
+    // For example, automatic IP address collection on events
+    sendDefaultPii: true,
 
-Sentry.setTags(tags);
+    // Set release version to match application version
+    release: `xcodebuildmcp@${version}`,
+
+    // Always report under production environment
+    environment: 'production',
+
+    // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring
+    // We recommend adjusting this value in production
+    tracesSampleRate: 1.0,
+  });
+
+  const axeAvailable = checkBinaryAvailability('axe');
+  const miseAvailable = checkBinaryAvailability('mise');
+  const envVars = getEnvironmentVariables();
+  const xcodeInfo = getXcodeInfo();
+
+  // Add additional context that might be helpful for debugging
+  const tags: Record<string, string> = {
+    nodeVersion: process.version,
+    platform: process.platform,
+    arch: process.arch,
+    axeAvailable: axeAvailable.available ? 'true' : 'false',
+    axeVersion: axeAvailable.version ?? 'Unknown',
+    miseAvailable: miseAvailable.available ? 'true' : 'false',
+    miseVersion: miseAvailable.version ?? 'Unknown',
+    ...Object.fromEntries(Object.entries(envVars).map(([k, v]) => [`env_${k}`, v ?? ''])),
+    xcodeVersion: xcodeInfo.version ?? 'Unknown',
+    xcodePath: xcodeInfo.path ?? 'Unknown',
+  };
+
+  Sentry.setTags(tags);
+}

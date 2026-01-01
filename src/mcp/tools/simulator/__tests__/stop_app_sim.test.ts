@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import plugin, { stop_app_simLogic } from '../stop_app_sim.ts';
@@ -52,7 +52,9 @@ describe('stop_app_sim tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('bundleId: Required');
+      expect(result.content[0].text).toContain(
+        'bundleId: Invalid input: expected string, received undefined',
+      );
     });
 
     it('should reject mutually exclusive simulator parameters', async () => {

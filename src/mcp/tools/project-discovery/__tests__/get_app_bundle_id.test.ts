@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import plugin, { get_app_bundle_idLogic } from '../get_app_bundle_id.ts';
 import {
   createMockFileSystemExecutor,
@@ -70,7 +70,7 @@ describe('get_app_bundle_id plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Required',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Invalid input: expected string, received undefined',
           },
         ],
         isError: true,
@@ -273,7 +273,7 @@ describe('get_app_bundle_id plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Expected string, received null',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Invalid input: expected string, received null',
           },
         ],
         isError: true,
@@ -288,7 +288,7 @@ describe('get_app_bundle_id plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Required',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Invalid input: expected string, received undefined',
           },
         ],
         isError: true,
@@ -303,7 +303,7 @@ describe('get_app_bundle_id plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Required',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Invalid input: expected string, received undefined',
           },
         ],
         isError: true,
@@ -318,7 +318,7 @@ describe('get_app_bundle_id plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Expected string, received number',
+            text: 'Error: Parameter validation failed\nDetails: Invalid parameters:\nappPath: Invalid input: expected string, received number',
           },
         ],
         isError: true,

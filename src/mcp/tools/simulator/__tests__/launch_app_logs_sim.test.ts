@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import launchAppLogsSim, {
   launch_app_logs_simLogic,
   LogCaptureFunction,
@@ -63,7 +63,9 @@ describe('launch_app_logs_sim tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('bundleId: Required');
+      expect(result.content[0].text).toContain(
+        'bundleId: Invalid input: expected string, received undefined',
+      );
     });
   });
 

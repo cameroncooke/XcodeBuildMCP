@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import setSimAppearancePlugin, { set_sim_appearanceLogic } from '../set_sim_appearance.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
@@ -57,7 +57,9 @@ describe('install_app_sim tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain('appPath: Required');
+      expect(result.content[0].text).toContain(
+        'appPath: Invalid input: expected string, received undefined',
+      );
     });
   });
 

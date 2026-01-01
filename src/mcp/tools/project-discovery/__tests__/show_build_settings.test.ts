@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import plugin, { showBuildSettingsLogic } from '../show_build_settings.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
@@ -22,7 +22,7 @@ describe('show_build_settings plugin', () => {
     });
 
     it('should expose an empty public schema', () => {
-      const schema = z.object(plugin.schema).strict();
+      const schema = z.strictObject(plugin.schema);
       expect(schema.safeParse({}).success).toBe(true);
       expect(schema.safeParse({ projectPath: '/path.xcodeproj' }).success).toBe(false);
       expect(schema.safeParse({ scheme: 'App' }).success).toBe(false);

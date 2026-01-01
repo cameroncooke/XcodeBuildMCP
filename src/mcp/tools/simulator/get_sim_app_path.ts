@@ -6,7 +6,7 @@
  * Accepts mutually exclusive `simulatorId` or `simulatorName`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';

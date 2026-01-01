@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import eraseSims, { erase_simsLogic } from '../erase_sims.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -9,10 +9,7 @@ import {
 
 // Define schema as ZodObject
 const resetSimulatorLocationSchema = z.object({
-  simulatorId: z
-    .string()
-    .uuid()
-    .describe('UUID of the simulator to use (obtained from list_simulators)'),
+  simulatorId: z.uuid().describe('UUID of the simulator to use (obtained from list_simulators)'),
 });
 
 // Use z.infer for type safety
@@ -88,9 +85,9 @@ export async function reset_sim_locationLogic(
   );
 }
 
-const publicSchemaObject = resetSimulatorLocationSchema
-  .omit({ simulatorId: true } as const)
-  .strict();
+const publicSchemaObject = z.strictObject(
+  resetSimulatorLocationSchema.omit({ simulatorId: true } as const).shape,
+);
 
 export default {
   name: 'reset_sim_location',
@@ -104,8 +101,10 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<ResetSimulatorLocationParams>({
-    internalSchema:
-      resetSimulatorLocationSchema as unknown as z.ZodType<ResetSimulatorLocationParams>,
+    internalSchema: resetSimulatorLocationSchema as unknown as z.ZodType<
+      ResetSimulatorLocationParams,
+      unknown
+    >,
     logicFunction: reset_sim_locationLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],

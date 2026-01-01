@@ -4,7 +4,7 @@
  * Swipe from one coordinate to another on iOS simulator with customizable duration and delta.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
@@ -23,21 +23,21 @@ import {
 
 // Define schema as ZodObject
 const swipeSchema = z.object({
-  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
-  x1: z.number().int('Start X coordinate'),
-  y1: z.number().int('Start Y coordinate'),
-  x2: z.number().int('End X coordinate'),
-  y2: z.number().int('End Y coordinate'),
-  duration: z.number().min(0, 'Duration must be non-negative').optional(),
-  delta: z.number().min(0, 'Delta must be non-negative').optional(),
-  preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
-  postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
+  x1: z.number().int({ message: 'Start X coordinate' }),
+  y1: z.number().int({ message: 'Start Y coordinate' }),
+  x2: z.number().int({ message: 'End X coordinate' }),
+  y2: z.number().int({ message: 'End Y coordinate' }),
+  duration: z.number().min(0, { message: 'Duration must be non-negative' }).optional(),
+  delta: z.number().min(0, { message: 'Delta must be non-negative' }).optional(),
+  preDelay: z.number().min(0, { message: 'Pre-delay must be non-negative' }).optional(),
+  postDelay: z.number().min(0, { message: 'Post-delay must be non-negative' }).optional(),
 });
 
 // Use z.infer for type safety
 type SwipeParams = z.infer<typeof swipeSchema>;
 
-const publicSchemaObject = swipeSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(swipeSchema.omit({ simulatorId: true } as const).shape);
 
 export interface AxeHelpers {
   getAxePath: () => string | null;

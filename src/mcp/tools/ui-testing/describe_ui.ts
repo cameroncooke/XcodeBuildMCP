@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { createErrorResponse } from '../../../utils/responses/index.ts';
@@ -17,7 +17,7 @@ import {
 
 // Define schema as ZodObject
 const describeUiSchema = z.object({
-  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
 });
 
 // Use z.infer for type safety
@@ -109,7 +109,9 @@ export async function describe_uiLogic(
   }
 }
 
-const publicSchemaObject = describeUiSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(
+  describeUiSchema.omit({ simulatorId: true } as const).shape,
+);
 
 export default {
   name: 'describe_ui',
@@ -124,7 +126,7 @@ export default {
     readOnlyHint: true,
   },
   handler: createSessionAwareTool<DescribeUiParams>({
-    internalSchema: describeUiSchema as unknown as z.ZodType<DescribeUiParams>,
+    internalSchema: describeUiSchema as unknown as z.ZodType<DescribeUiParams, unknown>,
     logicFunction: (params: DescribeUiParams, executor: CommandExecutor) =>
       describe_uiLogic(params, executor, {
         getAxePath,

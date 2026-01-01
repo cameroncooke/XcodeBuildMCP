@@ -5,7 +5,7 @@
  * with their UUIDs, names, and connection status. Use this to discover physical devices for testing.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';

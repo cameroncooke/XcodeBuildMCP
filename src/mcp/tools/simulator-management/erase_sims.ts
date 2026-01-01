@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -9,7 +9,7 @@ import {
 
 const eraseSimsBaseSchema = z
   .object({
-    simulatorId: z.string().uuid().describe('UDID of the simulator to erase.'),
+    simulatorId: z.uuid().describe('UDID of the simulator to erase.'),
     shutdownFirst: z
       .boolean()
       .optional()

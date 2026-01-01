@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import swiftPackageStop, {
   createMockProcessManager,
   swift_package_stopLogic,

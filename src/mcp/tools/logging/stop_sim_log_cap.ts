@@ -4,7 +4,7 @@
  * Stops an active simulator log capture session and returns the captured logs.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { stopLogCapture as _stopLogCapture } from '../../../utils/log-capture/index.ts';
 import { ToolResponse, createTextContent } from '../../../types/common.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import longPressPlugin, { long_pressLogic } from '../long_press.ts';
@@ -72,7 +72,7 @@ describe('Long Press Plugin', () => {
       ).toBe(false);
 
       const withSimId = schema.safeParse({
-        simulatorId: '12345678-1234-1234-1234-123456789012',
+        simulatorId: '12345678-1234-4234-8234-123456789012',
         x: 100,
         y: 200,
         duration: 1500,
@@ -94,7 +94,7 @@ describe('Long Press Plugin', () => {
     });
 
     it('should surface validation errors once simulator default exists', async () => {
-      sessionStore.setDefaults({ simulatorId: '12345678-1234-1234-1234-123456789012' });
+      sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
       const result = await longPressPlugin.handler({ x: 100, y: 200, duration: 0 });
 
@@ -129,7 +129,7 @@ describe('Long Press Plugin', () => {
 
       await long_pressLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x: 100,
           y: 200,
           duration: 1500,
@@ -150,7 +150,7 @@ describe('Long Press Plugin', () => {
         '--delay',
         '1.5',
         '--udid',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
       ]);
     });
 
@@ -177,7 +177,7 @@ describe('Long Press Plugin', () => {
 
       await long_pressLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x: 50,
           y: 75,
           duration: 2000,
@@ -198,7 +198,7 @@ describe('Long Press Plugin', () => {
         '--delay',
         '2',
         '--udid',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
       ]);
     });
 
@@ -225,7 +225,7 @@ describe('Long Press Plugin', () => {
 
       await long_pressLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x: 300,
           y: 400,
           duration: 500,
@@ -246,7 +246,7 @@ describe('Long Press Plugin', () => {
         '--delay',
         '0.5',
         '--udid',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
       ]);
     });
 
@@ -273,7 +273,7 @@ describe('Long Press Plugin', () => {
 
       await long_pressLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x: 150,
           y: 250,
           duration: 3000,
@@ -294,7 +294,7 @@ describe('Long Press Plugin', () => {
         '--delay',
         '3',
         '--udid',
-        '12345678-1234-1234-1234-123456789012',
+        '12345678-1234-4234-8234-123456789012',
       ]);
     });
   });
@@ -318,7 +318,7 @@ describe('Long Press Plugin', () => {
 
       const result = await long_pressLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x: 100,
           y: 200,
           duration: 1500,
@@ -362,7 +362,7 @@ describe('Long Press Plugin', () => {
 
       const result = await long_pressLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x: 100,
           y: 200,
           duration: 1500,
@@ -401,7 +401,7 @@ describe('Long Press Plugin', () => {
 
       const result = await long_pressLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x: 100,
           y: 200,
           duration: 1500,
@@ -437,7 +437,7 @@ describe('Long Press Plugin', () => {
 
       const result = await long_pressLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x: 100,
           y: 200,
           duration: 1500,
@@ -475,7 +475,7 @@ describe('Long Press Plugin', () => {
 
       const result = await long_pressLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x: 100,
           y: 200,
           duration: 1500,
@@ -513,7 +513,7 @@ describe('Long Press Plugin', () => {
 
       const result = await long_pressLogic(
         {
-          simulatorId: '12345678-1234-1234-1234-123456789012',
+          simulatorId: '12345678-1234-4234-8234-123456789012',
           x: 100,
           y: 200,
           duration: 1500,

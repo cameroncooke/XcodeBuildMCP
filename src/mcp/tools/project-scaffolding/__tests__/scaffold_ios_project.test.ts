@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import scaffoldIosProject, { scaffold_ios_projectLogic } from '../scaffold_ios_project.ts';
 import {
   createMockExecutor,

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import doctor, { runDoctor, type DoctorDependencies } from '../doctor.ts';
 
 function createDeps(overrides?: Partial<DoctorDependencies>): DoctorDependencies {

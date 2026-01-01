@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as os from 'os';
 import type { ChildProcess } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -693,7 +693,10 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<StartDeviceLogCapParams>({
-    internalSchema: startDeviceLogCapSchema as unknown as z.ZodType<StartDeviceLogCapParams>,
+    internalSchema: startDeviceLogCapSchema as unknown as z.ZodType<
+      StartDeviceLogCapParams,
+      unknown
+    >,
     logicFunction: start_device_log_capLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],

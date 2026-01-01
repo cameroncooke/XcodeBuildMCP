@@ -5,7 +5,7 @@
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
@@ -33,15 +33,16 @@ const baseSchemaObject = z.object({
   ...baseOptions,
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
-const getDeviceAppPathSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  });
+const getDeviceAppPathSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      message: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    }),
+);
 
 // Use z.infer for type safety
 type GetDeviceAppPathParams = z.infer<typeof getDeviceAppPathSchema>;
@@ -166,7 +167,7 @@ export default {
     readOnlyHint: true,
   },
   handler: createSessionAwareTool<GetDeviceAppPathParams>({
-    internalSchema: getDeviceAppPathSchema as unknown as z.ZodType<GetDeviceAppPathParams>,
+    internalSchema: getDeviceAppPathSchema as unknown as z.ZodType<GetDeviceAppPathParams, unknown>,
     logicFunction: get_device_app_pathLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

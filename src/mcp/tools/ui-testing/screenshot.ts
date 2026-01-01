@@ -3,7 +3,7 @@
  */
 import * as path from 'path';
 import { tmpdir } from 'os';
-import { z } from 'zod';
+import * as z from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { ToolResponse, createImageContent } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
@@ -22,13 +22,15 @@ const LOG_PREFIX = '[Screenshot]';
 
 // Define schema as ZodObject
 const screenshotSchema = z.object({
-  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
 });
 
 // Use z.infer for type safety
 type ScreenshotParams = z.infer<typeof screenshotSchema>;
 
-const publicSchemaObject = screenshotSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(
+  screenshotSchema.omit({ simulatorId: true } as const).shape,
+);
 
 export async function screenshotLogic(
   params: ScreenshotParams,
@@ -155,7 +157,7 @@ export default {
     readOnlyHint: true,
   },
   handler: createSessionAwareTool<ScreenshotParams>({
-    internalSchema: screenshotSchema as unknown as z.ZodType<ScreenshotParams>,
+    internalSchema: screenshotSchema as unknown as z.ZodType<ScreenshotParams, unknown>,
     logicFunction: (params: ScreenshotParams, executor: CommandExecutor) => {
       return screenshotLogic(params, executor);
     },

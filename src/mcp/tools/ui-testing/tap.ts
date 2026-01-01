@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
@@ -23,13 +23,13 @@ export interface AxeHelpers {
 
 // Define schema as ZodObject
 const baseTapSchema = z.object({
-  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
-  x: z.number().int('X coordinate must be an integer').optional(),
-  y: z.number().int('Y coordinate must be an integer').optional(),
-  id: z.string().min(1, 'Id must be non-empty').optional(),
-  label: z.string().min(1, 'Label must be non-empty').optional(),
-  preDelay: z.number().min(0, 'Pre-delay must be non-negative').optional(),
-  postDelay: z.number().min(0, 'Post-delay must be non-negative').optional(),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
+  x: z.number().int({ message: 'X coordinate must be an integer' }).optional(),
+  y: z.number().int({ message: 'Y coordinate must be an integer' }).optional(),
+  id: z.string().min(1, { message: 'Id must be non-empty' }).optional(),
+  label: z.string().min(1, { message: 'Label must be non-empty' }).optional(),
+  preDelay: z.number().min(0, { message: 'Pre-delay must be non-negative' }).optional(),
+  postDelay: z.number().min(0, { message: 'Post-delay must be non-negative' }).optional(),
 });
 
 const tapSchema = baseTapSchema.superRefine((values, ctx) => {
@@ -75,7 +75,7 @@ const tapSchema = baseTapSchema.superRefine((values, ctx) => {
 // Use z.infer for type safety
 type TapParams = z.infer<typeof tapSchema>;
 
-const publicSchemaObject = baseTapSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(baseTapSchema.omit({ simulatorId: true } as const).shape);
 
 const LOG_PREFIX = '[AXe]';
 
@@ -191,7 +191,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<TapParams>({
-    internalSchema: tapSchema as unknown as z.ZodType<TapParams>,
+    internalSchema: tapSchema as unknown as z.ZodType<TapParams, unknown>,
     logicFunction: (params: TapParams, executor: CommandExecutor) =>
       tapLogic(params, executor, {
         getAxePath,

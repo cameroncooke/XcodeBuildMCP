@@ -5,7 +5,7 @@
  * Use describe_ui for precise coordinates (don't guess from screenshots).
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
 import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
@@ -24,18 +24,18 @@ import {
 
 // Define schema as ZodObject
 const touchSchema = z.object({
-  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
-  x: z.number().int('X coordinate must be an integer'),
-  y: z.number().int('Y coordinate must be an integer'),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
+  x: z.number().int({ message: 'X coordinate must be an integer' }),
+  y: z.number().int({ message: 'Y coordinate must be an integer' }),
   down: z.boolean().optional(),
   up: z.boolean().optional(),
-  delay: z.number().min(0, 'Delay must be non-negative').optional(),
+  delay: z.number().min(0, { message: 'Delay must be non-negative' }).optional(),
 });
 
 // Use z.infer for type safety
 type TouchParams = z.infer<typeof touchSchema>;
 
-const publicSchemaObject = touchSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(touchSchema.omit({ simulatorId: true } as const).shape);
 
 interface AxeHelpers {
   getAxePath: () => string | null;
@@ -125,7 +125,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<TouchParams>({
-    internalSchema: touchSchema as unknown as z.ZodType<TouchParams>,
+    internalSchema: touchSchema as unknown as z.ZodType<TouchParams, unknown>,
     logicFunction: (params: TouchParams, executor: CommandExecutor) => touchLogic(params, executor),
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],

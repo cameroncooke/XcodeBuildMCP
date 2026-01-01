@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import installAppDevice, { install_app_deviceLogic } from '../install_app_device.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
@@ -40,7 +40,7 @@ describe('install_app_device plugin', () => {
     });
 
     it('should require appPath in public schema', () => {
-      const schema = z.object(installAppDevice.schema).strict();
+      const schema = z.strictObject(installAppDevice.schema);
       expect(schema.safeParse({ appPath: '/path/to/test.app' }).success).toBe(true);
       expect(schema.safeParse({}).success).toBe(false);
       expect(schema.safeParse({ deviceId: 'test-device-123' }).success).toBe(false);

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import path from 'node:path';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';

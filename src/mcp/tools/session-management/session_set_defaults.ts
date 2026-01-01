@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { sessionStore, type SessionDefaults } from '../../../utils/session-store.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';

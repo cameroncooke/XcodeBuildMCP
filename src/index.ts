@@ -13,17 +13,12 @@
  * - Handling server lifecycle events
  */
 
-// Import Sentry instrumentation
-import './utils/sentry.ts';
-
 // Import server components
 import { createServer, startServer } from './server/server.ts';
 
-// Import MCP types for logging
-import { SetLevelRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-
 // Import utilities
-import { log, setLogLevel, type LogLevel } from './utils/logger.ts';
+import { log } from './utils/logger.ts';
+import { initSentry } from './utils/sentry.ts';
 
 // Import version
 import { version } from './version.ts';
@@ -34,15 +29,15 @@ import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.ts';
 // Import process for stdout configuration
 import process from 'node:process';
 
-// Import resource management
-import { registerResources } from './core/resources.ts';
-import { registerWorkflows } from './utils/tool-registry.ts';
+import { bootstrapServer } from './server/bootstrap.ts';
 
 /**
  * Main function to start the server
  */
 async function main(): Promise<void> {
   try {
+    initSentry();
+
     // Check if xcodemake is enabled and available
     if (isXcodemakeEnabled()) {
       log('info', 'xcodemake is enabled, checking if available...');
@@ -62,27 +57,7 @@ async function main(): Promise<void> {
     // Create the server
     const server = createServer();
 
-    // Register logging/setLevel handler
-    server.server.setRequestHandler(SetLevelRequestSchema, async (request) => {
-      const { level } = request.params;
-      setLogLevel(level as LogLevel);
-      log('info', `Client requested log level: ${level}`);
-      return {}; // Empty result as per MCP spec
-    });
-
-    // STATIC MODE: Check for selective workflows
-    const enabledWorkflows = process.env.XCODEBUILDMCP_ENABLED_WORKFLOWS;
-
-    if (enabledWorkflows) {
-      const workflowNames = enabledWorkflows.split(',');
-      log('info', `🚀 Initializing server with selected workflows: ${workflowNames.join(', ')}`);
-      await registerWorkflows(server, workflowNames);
-    } else {
-      log('info', '🚀 Initializing server with all tools...');
-      await registerWorkflows(server);
-    }
-
-    await registerResources(server);
+    await bootstrapServer(server);
 
     // Start the server
     await startServer(server);

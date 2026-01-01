@@ -5,7 +5,7 @@
  * IMPORTANT: You MUST provide the appPath parameter.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { validateFileExists } from '../../../utils/validation/index.ts';
 import { ToolResponse } from '../../../types/common.ts';

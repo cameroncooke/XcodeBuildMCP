@@ -5,7 +5,7 @@
  */
 
 import * as fs from 'fs';
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { activeDeviceLogSessions, type DeviceLogSession } from './start_device_log_cap.ts';
 import { ToolResponse } from '../../../types/common.ts';

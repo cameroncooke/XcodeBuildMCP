@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
@@ -33,7 +33,7 @@ describe('test_device plugin', () => {
     });
 
     it('should expose only session-free fields in public schema', () => {
-      const schema = z.object(testDevice.schema).strict();
+      const schema = z.strictObject(testDevice.schema);
       expect(
         schema.safeParse({
           derivedDataPath: '/path/to/derived-data',

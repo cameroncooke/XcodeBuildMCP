@@ -170,11 +170,20 @@ claude mcp add XcodeBuildMCP npx xcodebuildmcp@latest -e INCREMENTAL_BUILDS_ENAB
 
 ##### Smithery
 
-To install XcodeBuildMCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@cameroncooke/XcodeBuildMCP):
+XcodeBuildMCP runs as a local (stdio) server when installed via [Smithery](https://smithery.ai/server/@cameroncooke/XcodeBuildMCP). You can configure it in the Smithery session UI or via environment variables.
 
 ```bash
+# Claude Desktop / Claude Code
 npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client claude
+
+# Cursor
+npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client cursor
+
+# VS Code
+npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client vscode
 ```
+
+If your client isn't listed, run `npx smithery install --help` to see supported values for `--client`.
 
 > [!IMPORTANT]
 > Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros.

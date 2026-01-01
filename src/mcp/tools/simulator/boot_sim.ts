@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -14,11 +14,11 @@ const bootSimSchemaObject = z.object({
 
 type BootSimParams = z.infer<typeof bootSimSchemaObject>;
 
-const publicSchemaObject = bootSimSchemaObject
-  .omit({
+const publicSchemaObject = z.strictObject(
+  bootSimSchemaObject.omit({
     simulatorId: true,
-  } as const)
-  .strict();
+  } as const).shape,
+);
 
 export async function boot_simLogic(
   params: BootSimParams,
@@ -80,7 +80,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<BootSimParams>({
-    internalSchema: bootSimSchemaObject,
+    internalSchema: bootSimSchemaObject as unknown as z.ZodType<BootSimParams, unknown>,
     logicFunction: boot_simLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],

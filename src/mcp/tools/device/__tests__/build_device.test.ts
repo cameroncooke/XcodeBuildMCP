@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import buildDevice, { buildDeviceLogic } from '../build_device.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
@@ -29,7 +29,7 @@ describe('build_device plugin', () => {
     });
 
     it('should expose only optional build-tuning fields in public schema', () => {
-      const schema = z.object(buildDevice.schema).strict();
+      const schema = z.strictObject(buildDevice.schema);
       expect(schema.safeParse({}).success).toBe(true);
       expect(
         schema.safeParse({ derivedDataPath: '/path/to/derived-data', extraArgs: [] }).success,

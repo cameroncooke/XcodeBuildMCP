@@ -5,7 +5,7 @@
  * swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import {
@@ -29,7 +29,7 @@ import {
 
 // Define schema as ZodObject
 const gestureSchema = z.object({
-  simulatorId: z.string().uuid('Invalid Simulator UUID format'),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
   preset: z
     .enum([
       'scroll-up',
@@ -62,22 +62,22 @@ const gestureSchema = z.object({
     ),
   duration: z
     .number()
-    .min(0, 'Duration must be non-negative')
+    .min(0, { message: 'Duration must be non-negative' })
     .optional()
     .describe('Optional: Duration of the gesture in seconds.'),
   delta: z
     .number()
-    .min(0, 'Delta must be non-negative')
+    .min(0, { message: 'Delta must be non-negative' })
     .optional()
     .describe('Optional: Distance to move in pixels.'),
   preDelay: z
     .number()
-    .min(0, 'Pre-delay must be non-negative')
+    .min(0, { message: 'Pre-delay must be non-negative' })
     .optional()
     .describe('Optional: Delay before starting the gesture in seconds.'),
   postDelay: z
     .number()
-    .min(0, 'Post-delay must be non-negative')
+    .min(0, { message: 'Post-delay must be non-negative' })
     .optional()
     .describe('Optional: Delay after completing the gesture in seconds.'),
 });
@@ -153,7 +153,7 @@ export async function gestureLogic(
   }
 }
 
-const publicSchemaObject = gestureSchema.omit({ simulatorId: true } as const).strict();
+const publicSchemaObject = z.strictObject(gestureSchema.omit({ simulatorId: true } as const).shape);
 
 export default {
   name: 'gesture',
@@ -168,7 +168,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<GestureParams>({
-    internalSchema: gestureSchema as unknown as z.ZodType<GestureParams>,
+    internalSchema: gestureSchema as unknown as z.ZodType<GestureParams, unknown>,
     logicFunction: (params: GestureParams, executor: CommandExecutor) =>
       gestureLogic(params, executor, {
         getAxePath,

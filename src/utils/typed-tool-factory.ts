@@ -9,7 +9,7 @@
  * compatibility with the MCP SDK's tool handler signature requirements.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { ToolResponse } from '../types/common.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { createErrorResponse } from './responses/index.ts';
@@ -29,7 +29,7 @@ import { isSessionDefaultsSchemaOptOutEnabled } from './environment.ts';
  * @returns A handler function compatible with MCP SDK requirements
  */
 export function createTypedTool<TParams>(
-  schema: z.ZodType<TParams>,
+  schema: z.ZodType<TParams, unknown>,
   logicFunction: (params: TParams, executor: CommandExecutor) => Promise<ToolResponse>,
   getExecutor: () => CommandExecutor,
 ) {
@@ -43,16 +43,8 @@ export function createTypedTool<TParams>(
       return await logicFunction(validatedParams, getExecutor());
     } catch (error) {
       if (error instanceof z.ZodError) {
-        // Format validation errors in a user-friendly way
-        const errorMessages = error.errors.map((e) => {
-          const path = e.path.length > 0 ? `${e.path.join('.')}` : 'root';
-          return `${path}: ${e.message}`;
-        });
-
-        return createErrorResponse(
-          'Parameter validation failed',
-          `Invalid parameters:\n${errorMessages.join('\n')}`,
-        );
+        const details = `Invalid parameters:\n${formatZodIssues(error)}`;
+        return createErrorResponse('Parameter validation failed', details);
       }
 
       // Re-throw unexpected errors (they'll be caught by the MCP framework)
@@ -86,15 +78,17 @@ function formatRequirementError(opts: {
   return { title, body };
 }
 
-export function getSessionAwareToolSchemaShape<
-  TSession extends z.ZodRawShape,
-  TLegacy extends z.ZodRawShape,
->(opts: { sessionAware: z.ZodObject<TSession>; legacy: z.ZodObject<TLegacy> }): z.ZodRawShape {
+type ToolSchemaShape = Record<string, z.ZodType>;
+
+export function getSessionAwareToolSchemaShape(opts: {
+  sessionAware: z.ZodObject<ToolSchemaShape>;
+  legacy: z.ZodObject<ToolSchemaShape>;
+}): ToolSchemaShape {
   return isSessionDefaultsSchemaOptOutEnabled() ? opts.legacy.shape : opts.sessionAware.shape;
 }
 
 export function createSessionAwareTool<TParams>(opts: {
-  internalSchema: z.ZodType<TParams>;
+  internalSchema: z.ZodType<TParams, unknown>;
   logicFunction: (params: TParams, executor: CommandExecutor) => Promise<ToolResponse>;
   getExecutor: () => CommandExecutor;
   requirements?: SessionRequirement[];
@@ -185,16 +179,19 @@ export function createSessionAwareTool<TParams>(opts: {
       return await logicFunction(validated, getExecutor());
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errorMessages = error.errors.map((e) => {
-          const path = e.path.length > 0 ? `${e.path.join('.')}` : 'root';
-          return `${path}: ${e.message}`;
-        });
-
-        const details = `Invalid parameters:\n${errorMessages.join('\n')}`;
-
+        const details = `Invalid parameters:\n${formatZodIssues(error)}`;
         return createErrorResponse('Parameter validation failed', details);
       }
       throw error;
     }
   };
+}
+
+function formatZodIssues(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => {
+      const path = issue.path.length > 0 ? issue.path.map(String).join('.') : 'root';
+      return `${path}: ${issue.message}`;
+    })
+    .join('\n');
 }

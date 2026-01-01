@@ -5,7 +5,7 @@
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
@@ -39,8 +39,6 @@ const baseSchemaObject = z.object({
     .describe('If true, prefers xcodebuild over the experimental incremental build system'),
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
 const publicSchemaObject = baseSchemaObject.omit({
   projectPath: true,
   workspacePath: true,
@@ -49,13 +47,16 @@ const publicSchemaObject = baseSchemaObject.omit({
   arch: true,
 } as const);
 
-const buildRunMacOSSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  });
+const buildRunMacOSSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      message: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    }),
+);
 
 export type BuildRunMacOSParams = z.infer<typeof buildRunMacOSSchema>;
 
@@ -228,7 +229,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<BuildRunMacOSParams>({
-    internalSchema: buildRunMacOSSchema as unknown as z.ZodType<BuildRunMacOSParams>,
+    internalSchema: buildRunMacOSSchema as unknown as z.ZodType<BuildRunMacOSParams, unknown>,
     logicFunction: buildRunMacOSLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

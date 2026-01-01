@@ -7,18 +7,23 @@
 
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
 import { createTextResponse } from './validation.ts';
 import { ToolResponse } from '../types/common.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { getDefaultCommandExecutor } from './execution/index.ts';
 
-// Get bundled AXe path - always use the bundled version for consistency
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+function getPackageRoot(): string {
+  const entry = process.argv[1];
+  if (entry) {
+    const entryDir = dirname(entry);
+    return dirname(entryDir);
+  }
+  return process.cwd();
+}
+
 // In the npm package, build/index.js is at the same level as bundled/
 // So we go up one level from build/ to get to the package root
-const bundledAxePath = join(__dirname, '..', 'bundled', 'axe');
+const bundledAxePath = join(getPackageRoot(), 'bundled', 'axe');
 
 /**
  * Get the path to the bundled axe binary

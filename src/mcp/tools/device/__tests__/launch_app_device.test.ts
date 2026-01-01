@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import launchAppDevice, { launch_app_deviceLogic } from '../launch_app_device.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
@@ -32,14 +32,14 @@ describe('launch_app_device plugin (device-shared)', () => {
     });
 
     it('should validate schema with valid inputs', () => {
-      const schema = z.object(launchAppDevice.schema).strict();
+      const schema = z.strictObject(launchAppDevice.schema);
       expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
       expect(schema.safeParse({}).success).toBe(false);
       expect(Object.keys(launchAppDevice.schema)).toEqual(['bundleId']);
     });
 
     it('should validate schema with invalid inputs', () => {
-      const schema = z.object(launchAppDevice.schema).strict();
+      const schema = z.strictObject(launchAppDevice.schema);
       expect(schema.safeParse({ bundleId: null }).success).toBe(false);
       expect(schema.safeParse({ bundleId: 123 }).success).toBe(false);
     });

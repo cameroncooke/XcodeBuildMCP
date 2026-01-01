@@ -6,7 +6,7 @@
  * Accepts mutually exclusive `simulatorId` or `simulatorName`.
  */
 
-import { z } from 'zod';
+import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
@@ -63,21 +63,22 @@ const baseSchemaObject = z.object({
   ...baseOptions,
 });
 
-const baseSchema = z.preprocess(nullifyEmptyStrings, baseSchemaObject);
-
-const buildSimulatorSchema = baseSchema
-  .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-    message: 'Either projectPath or workspacePath is required.',
-  })
-  .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-    message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
-  })
-  .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
-    message: 'Either simulatorId or simulatorName is required.',
-  })
-  .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
-    message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
-  });
+const buildSimulatorSchema = z.preprocess(
+  nullifyEmptyStrings,
+  baseSchemaObject
+    .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
+      message: 'Either projectPath or workspacePath is required.',
+    })
+    .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
+      message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+    })
+    .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
+      message: 'Either simulatorId or simulatorName is required.',
+    })
+    .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
+      message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
+    }),
+);
 
 export type BuildSimulatorParams = z.infer<typeof buildSimulatorSchema>;
 
@@ -162,7 +163,7 @@ export default {
     destructiveHint: true,
   },
   handler: createSessionAwareTool<BuildSimulatorParams>({
-    internalSchema: buildSimulatorSchema as unknown as z.ZodType<BuildSimulatorParams>,
+    internalSchema: buildSimulatorSchema as unknown as z.ZodType<BuildSimulatorParams, unknown>,
     logicFunction: build_simLogic,
     getExecutor: getDefaultCommandExecutor,
     requirements: [

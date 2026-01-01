@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 
 import stopMacApp, { stop_mac_appLogic } from '../stop_mac_app.ts';
 

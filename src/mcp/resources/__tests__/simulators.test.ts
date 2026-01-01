@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 
 import simulatorsResource, { simulatorsResourceLogic } from '../simulators.ts';
 import { createMockExecutor } from '../../../test-utils/mock-executors.ts';

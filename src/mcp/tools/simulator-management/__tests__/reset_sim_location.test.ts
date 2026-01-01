@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import * as z from 'zod';
 import resetSimLocationPlugin, { reset_sim_locationLogic } from '../reset_sim_location.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 

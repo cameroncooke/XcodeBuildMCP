@@ -18,6 +18,7 @@
  */
 
 import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
 // Note: Removed "import * as Sentry from '@sentry/node'" to prevent native module loading at import time
 
 const SENTRY_ENABLED =
@@ -57,7 +58,9 @@ function isTestEnv(): boolean {
 
 type SentryModule = typeof import('@sentry/node');
 
-const require = createRequire(import.meta.url);
+const require = createRequire(
+  typeof __filename === 'string' ? __filename : resolve(process.cwd(), 'package.json'),
+);
 let cachedSentry: SentryModule | null = null;
 
 function loadSentrySync(): SentryModule | null {
