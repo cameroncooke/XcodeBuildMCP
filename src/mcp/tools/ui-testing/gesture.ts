@@ -29,7 +29,7 @@ import {
 
 // Define schema as ZodObject
 const gestureSchema = z.object({
-  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
   preset: z
     .enum([
       'scroll-up',
@@ -62,22 +62,22 @@ const gestureSchema = z.object({
     ),
   duration: z
     .number()
-    .min(0, { error: 'Duration must be non-negative' })
+    .min(0, { message: 'Duration must be non-negative' })
     .optional()
     .describe('Optional: Duration of the gesture in seconds.'),
   delta: z
     .number()
-    .min(0, { error: 'Delta must be non-negative' })
+    .min(0, { message: 'Delta must be non-negative' })
     .optional()
     .describe('Optional: Distance to move in pixels.'),
   preDelay: z
     .number()
-    .min(0, { error: 'Pre-delay must be non-negative' })
+    .min(0, { message: 'Pre-delay must be non-negative' })
     .optional()
     .describe('Optional: Delay before starting the gesture in seconds.'),
   postDelay: z
     .number()
-    .min(0, { error: 'Post-delay must be non-negative' })
+    .min(0, { message: 'Post-delay must be non-negative' })
     .optional()
     .describe('Optional: Delay after completing the gesture in seconds.'),
 });

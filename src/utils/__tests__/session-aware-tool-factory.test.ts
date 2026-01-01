@@ -18,11 +18,11 @@ describe('createSessionAwareTool', () => {
       simulatorName: z.string().optional(),
     })
     .refine((v) => !!v.projectPath !== !!v.workspacePath, {
-      error: 'projectPath and workspacePath are mutually exclusive',
+      message: 'projectPath and workspacePath are mutually exclusive',
       path: ['projectPath'],
     })
     .refine((v) => !!v.simulatorId !== !!v.simulatorName, {
-      error: 'simulatorId and simulatorName are mutually exclusive',
+      message: 'simulatorId and simulatorName are mutually exclusive',
       path: ['simulatorId'],
     });
 

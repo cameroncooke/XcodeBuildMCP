@@ -19,7 +19,7 @@ import {
 const installAppDeviceSchema = z.object({
   deviceId: z
     .string()
-    .min(1, { error: 'Device ID cannot be empty' })
+    .min(1, { message: 'Device ID cannot be empty' })
     .describe('UDID of the device (obtained from list_devices)'),
   appPath: z
     .string()

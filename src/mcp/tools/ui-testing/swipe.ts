@@ -23,15 +23,15 @@ import {
 
 // Define schema as ZodObject
 const swipeSchema = z.object({
-  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
-  x1: z.number().int({ error: 'Start X coordinate' }),
-  y1: z.number().int({ error: 'Start Y coordinate' }),
-  x2: z.number().int({ error: 'End X coordinate' }),
-  y2: z.number().int({ error: 'End Y coordinate' }),
-  duration: z.number().min(0, { error: 'Duration must be non-negative' }).optional(),
-  delta: z.number().min(0, { error: 'Delta must be non-negative' }).optional(),
-  preDelay: z.number().min(0, { error: 'Pre-delay must be non-negative' }).optional(),
-  postDelay: z.number().min(0, { error: 'Post-delay must be non-negative' }).optional(),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
+  x1: z.number().int({ message: 'Start X coordinate' }),
+  y1: z.number().int({ message: 'Start Y coordinate' }),
+  x2: z.number().int({ message: 'End X coordinate' }),
+  y2: z.number().int({ message: 'End Y coordinate' }),
+  duration: z.number().min(0, { message: 'Duration must be non-negative' }).optional(),
+  delta: z.number().min(0, { message: 'Delta must be non-negative' }).optional(),
+  preDelay: z.number().min(0, { message: 'Pre-delay must be non-negative' }).optional(),
+  postDelay: z.number().min(0, { message: 'Post-delay must be non-negative' }).optional(),
 });
 
 // Use z.infer for type safety

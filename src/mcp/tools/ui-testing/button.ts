@@ -17,9 +17,9 @@ import {
 
 // Define schema as ZodObject
 const buttonSchema = z.object({
-  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
   buttonType: z.enum(['apple-pay', 'home', 'lock', 'side-button', 'siri']),
-  duration: z.number().min(0, { error: 'Duration must be non-negative' }).optional(),
+  duration: z.number().min(0, { message: 'Duration must be non-negative' }).optional(),
 });
 
 // Use z.infer for type safety

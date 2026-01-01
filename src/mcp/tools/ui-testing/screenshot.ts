@@ -22,7 +22,7 @@ const LOG_PREFIX = '[Screenshot]';
 
 // Define schema as ZodObject
 const screenshotSchema = z.object({
-  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
 });
 
 // Use z.infer for type safety

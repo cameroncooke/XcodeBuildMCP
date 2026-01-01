@@ -29,10 +29,10 @@ import {
 
 // Define schema as ZodObject
 const longPressSchema = z.object({
-  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
-  x: z.number().int({ error: 'X coordinate for the long press' }),
-  y: z.number().int({ error: 'Y coordinate for the long press' }),
-  duration: z.number().positive({ error: 'Duration of the long press in milliseconds' }),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
+  x: z.number().int({ message: 'X coordinate for the long press' }),
+  y: z.number().int({ message: 'Y coordinate for the long press' }),
+  duration: z.number().positive({ message: 'Duration of the long press in milliseconds' }),
 });
 
 // Use z.infer for type safety

@@ -22,9 +22,9 @@ import {
 
 // Define schema as ZodObject
 const keyPressSchema = z.object({
-  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
-  keyCode: z.number().int({ error: 'HID keycode to press (0-255)' }).min(0).max(255),
-  duration: z.number().min(0, { error: 'Duration must be non-negative' }).optional(),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
+  keyCode: z.number().int({ message: 'HID keycode to press (0-255)' }).min(0).max(255),
+  duration: z.number().min(0, { message: 'Duration must be non-negative' }).optional(),
 });
 
 // Use z.infer for type safety

@@ -24,7 +24,7 @@ import { dirname } from 'path';
 // Base schema object (used for MCP schema exposure)
 const recordSimVideoSchemaObject = z.object({
   simulatorId: z
-    .uuid({ error: 'Invalid Simulator UUID format' })
+    .uuid({ message: 'Invalid Simulator UUID format' })
     .describe('UUID of the simulator to record'),
   start: z.boolean().optional().describe('Start recording if true'),
   stop: z.boolean().optional().describe('Stop recording if true'),
@@ -44,12 +44,13 @@ const recordSimVideoSchema = recordSimVideoSchemaObject
       return s + t === 1;
     },
     {
-      error: 'Provide exactly one of start=true or stop=true; these options are mutually exclusive',
+      message:
+        'Provide exactly one of start=true or stop=true; these options are mutually exclusive',
       path: ['start'],
     },
   )
   .refine((v) => (v.stop ? typeof v.outputFile === 'string' && v.outputFile.length > 0 : true), {
-    error: 'outputFile is required when stop=true',
+    message: 'outputFile is required when stop=true',
     path: ['outputFile'],
   });
 

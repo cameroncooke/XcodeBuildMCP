@@ -26,8 +26,8 @@ const LOG_PREFIX = '[AXe]';
 
 // Define schema as ZodObject
 const typeTextSchema = z.object({
-  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
-  text: z.string().min(1, { error: 'Text cannot be empty' }),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
+  text: z.string().min(1, { message: 'Text cannot be empty' }),
 });
 
 // Use z.infer for type safety

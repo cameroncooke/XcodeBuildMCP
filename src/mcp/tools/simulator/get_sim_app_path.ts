@@ -120,16 +120,16 @@ const getSimulatorAppPathSchema = z.preprocess(
   nullifyEmptyStrings,
   baseGetSimulatorAppPathSchema
     .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-      error: 'Either projectPath or workspacePath is required.',
+      message: 'Either projectPath or workspacePath is required.',
     })
     .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-      error: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+      message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
     })
     .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
-      error: 'Either simulatorId or simulatorName is required.',
+      message: 'Either simulatorId or simulatorName is required.',
     })
     .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
-      error: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
+      message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
     }),
 );
 

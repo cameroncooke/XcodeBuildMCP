@@ -28,11 +28,11 @@ import {
 
 // Define schema as ZodObject
 const keySequenceSchema = z.object({
-  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
   keyCodes: z
     .array(z.number().int().min(0).max(255))
-    .min(1, { error: 'At least one key code required' }),
-  delay: z.number().min(0, { error: 'Delay must be non-negative' }).optional(),
+    .min(1, { message: 'At least one key code required' }),
+  delay: z.number().min(0, { message: 'Delay must be non-negative' }).optional(),
 });
 
 // Use z.infer for type safety

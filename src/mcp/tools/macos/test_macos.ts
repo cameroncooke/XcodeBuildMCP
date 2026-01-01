@@ -61,10 +61,10 @@ const testMacosSchema = z.preprocess(
   nullifyEmptyStrings,
   baseSchemaObject
     .refine((val) => val.projectPath !== undefined || val.workspacePath !== undefined, {
-      error: 'Either projectPath or workspacePath is required.',
+      message: 'Either projectPath or workspacePath is required.',
     })
     .refine((val) => !(val.projectPath !== undefined && val.workspacePath !== undefined), {
-      error: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
+      message: 'projectPath and workspacePath are mutually exclusive. Provide only one.',
     }),
 );
 

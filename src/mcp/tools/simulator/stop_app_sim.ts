@@ -29,10 +29,10 @@ const stopAppSimSchema = z.preprocess(
   nullifyEmptyStrings,
   baseSchemaObject
     .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
-      error: 'Either simulatorId or simulatorName is required.',
+      message: 'Either simulatorId or simulatorName is required.',
     })
     .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
-      error: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
+      message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
     }),
 );
 

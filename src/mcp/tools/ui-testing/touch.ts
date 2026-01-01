@@ -24,12 +24,12 @@ import {
 
 // Define schema as ZodObject
 const touchSchema = z.object({
-  simulatorId: z.uuid({ error: 'Invalid Simulator UUID format' }),
-  x: z.number().int({ error: 'X coordinate must be an integer' }),
-  y: z.number().int({ error: 'Y coordinate must be an integer' }),
+  simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
+  x: z.number().int({ message: 'X coordinate must be an integer' }),
+  y: z.number().int({ message: 'Y coordinate must be an integer' }),
   down: z.boolean().optional(),
   up: z.boolean().optional(),
-  delay: z.number().min(0, { error: 'Delay must be non-negative' }).optional(),
+  delay: z.number().min(0, { message: 'Delay must be non-negative' }).optional(),
 });
 
 // Use z.infer for type safety
