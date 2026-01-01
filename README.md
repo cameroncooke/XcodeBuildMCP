@@ -154,7 +154,13 @@ args = ["-y", "xcodebuildmcp@latest"]
 env = { "INCREMENTAL_BUILDS_ENABLED" = "false", "XCODEBUILDMCP_SENTRY_DISABLED" = "false" }
 ```
 
-For more information see [OpenAI Codex MCP Server Configuration](https://github.com/openai/codex/blob/main/codex-rs/config.md#mcp_servers) documentation.
+If you see tool calls timing out in Codex (for example, `timed out awaiting tools/call after 60s`), increase the Codex tool timeout in your config:
+
+```toml
+tool_timeout_sec = 600
+```
+
+For more information see [OpenAI Codex MCP Server Configuration](https://github.com/openai/codex/blob/main/docs/config.md#connecting-to-mcp-servers) documentation.
 
 ##### Claude Code CLI
 
