@@ -1,8 +1,9 @@
+```markdown
 <img src="banner.png" alt="XcodeBuild MCP" width="600"/>
 
 A Model Context Protocol (MCP) server that provides Xcode-related tools for integration with AI assistants and other MCP clients.
 
-[![CI](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml)
+[![smithery badge](https://smithery.ai/badge/cameroncooke/xcodebuildmcp)](https://smithery.ai/server/cameroncooke/xcodebuildmcp) [![CI](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/xcodebuildmcp.svg)](https://badge.fury.io/js/xcodebuildmcp) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node->=18.x-brightgreen.svg)](https://nodejs.org/) [![Xcode 16](https://img.shields.io/badge/Xcode-16-blue.svg)](https://developer.apple.com/xcode/) [![macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/) [![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io/) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/cameroncooke/XcodeBuildMCP)
 
 ## Table of contents
@@ -248,7 +249,7 @@ Example MCP client configuration:
 
 ## Session-aware opt-out
 
-By default, XcodeBuildMCP uses a session-aware mode: the LLM (or client) sets shared defaults once (simulator, device, project/workspace, scheme, etc.), and all tools reuse them—similar to choosing a scheme and simulator in Xcode’s UI so you don’t repeat them on every action. This cuts context bloat not just in each call payload, but also in the tool schemas themselves (those parameters don’t have to be described on every tool).
+By default, XcodeBuildMCP uses a session-aware mode: the LLM (or client) sets shared defaults once (simulator, device, project/workspace, scheme, etc.), and all tools reuse them—similar to choosing a scheme and simulator in Xcode's UI so you don't repeat them on every action. This cuts context bloat not just in each call payload, but also in the tool schemas themselves (those parameters don't have to be described on every tool).
 
 If you prefer the older, explicit style where each tool requires its own parameters, set `XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS=true`. This restores the legacy schemas with per-call parameters while still honoring any session defaults you choose to set.
 
@@ -347,3 +348,4 @@ See our documentation for development:
 ## Licence
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+```
