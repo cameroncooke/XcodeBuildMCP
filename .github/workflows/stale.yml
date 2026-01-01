@@ -1,0 +1,43 @@
+name: "Stale Issues and PRs"
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark and close stale items
+        uses: actions/stale@v10.1.1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          days-before-issue-stale: 30
+          days-before-issue-close: 7
+          days-before-pr-stale: 21
+          days-before-pr-close: 7
+          stale-issue-label: "stale"
+          stale-pr-label: "stale-pr"
+          exempt-issue-assignees: true
+          exempt-pr-assignees: true
+          exempt-issue-labels: "no-stale,security,pinned"
+          exempt-pr-labels: "no-stale,security,pinned"
+          stale-issue-message: >
+            This issue has been inactive for 30 days. It will be closed in 7 days
+            if no further activity occurs. Add a comment to keep it open, or apply
+            the `no-stale` label.
+          stale-pr-message: >
+            This PR has been inactive for 21 days. It will be closed in 7 days if
+            no further activity occurs. Add a comment to keep it open, or apply
+            the `no-stale` label.
+          close-issue-message: >
+            Closing due to inactivity. If this is still relevant, please reopen
+            or file a new issue with updated context.
+          close-pr-message: >
+            Closing due to inactivity. If this is still relevant, please reopen
+            or open a fresh PR with updated context.
