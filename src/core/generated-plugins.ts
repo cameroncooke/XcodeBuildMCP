@@ -3,6 +3,35 @@
 
 // Generated based on filesystem scan
 export const WORKFLOW_LOADERS = {
+  debugging: async () => {
+    const { workflow } = await import('../mcp/tools/debugging/index.js');
+    const tool_0 = await import('../mcp/tools/debugging/debug_attach_sim.js').then(
+      (m) => m.default,
+    );
+    const tool_1 = await import('../mcp/tools/debugging/debug_breakpoint_add.js').then(
+      (m) => m.default,
+    );
+    const tool_2 = await import('../mcp/tools/debugging/debug_breakpoint_remove.js').then(
+      (m) => m.default,
+    );
+    const tool_3 = await import('../mcp/tools/debugging/debug_detach.js').then((m) => m.default);
+    const tool_4 = await import('../mcp/tools/debugging/debug_lldb_command.js').then(
+      (m) => m.default,
+    );
+    const tool_5 = await import('../mcp/tools/debugging/debug_stack.js').then((m) => m.default);
+    const tool_6 = await import('../mcp/tools/debugging/debug_variables.js').then((m) => m.default);
+
+    return {
+      workflow,
+      debug_attach_sim: tool_0,
+      debug_breakpoint_add: tool_1,
+      debug_breakpoint_remove: tool_2,
+      debug_detach: tool_3,
+      debug_lldb_command: tool_4,
+      debug_stack: tool_5,
+      debug_variables: tool_6,
+    };
+  },
   device: async () => {
     const { workflow } = await import('../mcp/tools/device/index.js');
     const tool_0 = await import('../mcp/tools/device/build_device.js').then((m) => m.default);
@@ -333,6 +362,11 @@ export type WorkflowName = keyof typeof WORKFLOW_LOADERS;
 
 // Optional: Export workflow metadata for quick access
 export const WORKFLOW_METADATA = {
+  debugging: {
+    name: 'Simulator Debugging',
+    description:
+      'Interactive iOS Simulator debugging tools: attach LLDB, manage breakpoints, inspect stack/variables, and run LLDB commands.',
+  },
   device: {
     name: 'iOS Device Development',
     description:

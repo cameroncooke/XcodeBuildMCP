@@ -1,0 +1,46 @@
+import * as z from 'zod';
+import { ToolResponse } from '../../../types/common.ts';
+import { createErrorResponse, createTextResponse } from '../../../utils/responses/index.ts';
+import { createTypedToolWithContext } from '../../../utils/typed-tool-factory.ts';
+import {
+  getDefaultDebuggerToolContext,
+  type DebuggerToolContext,
+} from '../../../utils/debugger/index.ts';
+
+const debugStackSchema = z.object({
+  debugSessionId: z
+    .string()
+    .optional()
+    .describe('Debug session ID to target (defaults to current session)'),
+  threadIndex: z.number().int().nonnegative().optional().describe('Thread index for backtrace'),
+  maxFrames: z.number().int().positive().optional().describe('Maximum frames to return'),
+});
+
+export type DebugStackParams = z.infer<typeof debugStackSchema>;
+
+export async function debug_stackLogic(
+  params: DebugStackParams,
+  ctx: DebuggerToolContext,
+): Promise<ToolResponse> {
+  try {
+    const output = await ctx.debugger.getStack(params.debugSessionId, {
+      threadIndex: params.threadIndex,
+      maxFrames: params.maxFrames,
+    });
+    return createTextResponse(output.trim());
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return createErrorResponse('Failed to get stack', message);
+  }
+}
+
+export default {
+  name: 'debug_stack',
+  description: 'Return a thread backtrace from the active debug session.',
+  schema: debugStackSchema.shape,
+  handler: createTypedToolWithContext<DebugStackParams, DebuggerToolContext>(
+    debugStackSchema,
+    debug_stackLogic,
+    getDefaultDebuggerToolContext,
+  ),
+};

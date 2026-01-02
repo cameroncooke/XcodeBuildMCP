@@ -84,6 +84,7 @@ export async function describe_uiLogic(
           text: `Next Steps:
 - Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)
 - Re-run describe_ui after layout changes
+- If a debugger is attached, ensure the app is running (not stopped on breakpoints)
 - Screenshots are for visual verification only`,
         },
       ],
@@ -116,7 +117,7 @@ const publicSchemaObject = z.strictObject(
 export default {
   name: 'describe_ui',
   description:
-    'Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation.',
+    'Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation. Requires the target process to be running; paused debugger/breakpoints can yield an empty tree.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: describeUiSchema,

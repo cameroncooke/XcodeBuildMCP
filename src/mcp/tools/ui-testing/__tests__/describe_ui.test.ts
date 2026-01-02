@@ -20,7 +20,7 @@ describe('Describe UI Plugin', () => {
 
     it('should have correct description', () => {
       expect(describeUIPlugin.description).toBe(
-        'Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation.',
+        'Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation. Requires the target process to be running; paused debugger/breakpoints can yield an empty tree.',
       );
     });
 
@@ -113,6 +113,7 @@ describe('Describe UI Plugin', () => {
             text: `Next Steps:
 - Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)
 - Re-run describe_ui after layout changes
+- If a debugger is attached, ensure the app is running (not stopped on breakpoints)
 - Screenshots are for visual verification only`,
           },
         ],
