@@ -82,7 +82,10 @@ class LldbCliBackend implements DebuggerBackend {
     });
   }
 
-  async addBreakpoint(spec: BreakpointSpec): Promise<BreakpointInfo> {
+  async addBreakpoint(
+    spec: BreakpointSpec,
+    opts?: { condition?: string },
+  ): Promise<BreakpointInfo> {
     const command =
       spec.kind === 'file-line'
         ? `breakpoint set --file "${spec.file}" --line ${spec.line}`
@@ -95,8 +98,16 @@ class LldbCliBackend implements DebuggerBackend {
       throw new Error(`Unable to parse breakpoint id from output: ${output}`);
     }
 
+    const id = Number(match[1]);
+
+    if (opts?.condition) {
+      const condition = formatConditionForLldb(opts.condition);
+      const modifyOutput = await this.runCommand(`breakpoint modify -c ${condition} ${id}`);
+      assertNoLldbError('breakpoint modify', modifyOutput);
+    }
+
     return {
-      id: Number(match[1]),
+      id,
       spec,
       rawOutput: output,
     };
@@ -211,6 +222,11 @@ function sanitizeOutput(output: string, prompt: string): string {
     return true;
   });
   return filtered.join('\n');
+}
+
+function formatConditionForLldb(condition: string): string {
+  const escaped = condition.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `"${escaped}"`;
 }
 
 export async function createLldbCliBackend(

@@ -220,21 +220,20 @@ Annotated example (simplified):
 processes. Tests should inject a mock `InteractiveSpawner` into `createLldbCliBackend()` or a custom
 `DebuggerManager` backend factory.
 
-## DAP Backend (Stub / Not Implemented)
+## DAP Backend (lldb-dap)
 
-- Implementation: `src/utils/debugger/backends/dap-backend.ts`.
+- Implementation: `src/utils/debugger/backends/dap-backend.ts`, with protocol support in
+  `src/utils/debugger/dap/transport.ts`, `src/utils/debugger/dap/types.ts`, and adapter discovery in
+  `src/utils/debugger/dap/adapter-discovery.ts`.
 - Selected via backend selection (explicit `backend`, `XCODEBUILDMCP_DEBUGGER_BACKEND=dap`).
-- Current status: not implemented. All `DebuggerBackend` methods throw `DAP_ERROR_MESSAGE`,
-  including `dispose()`.
-
-Practical effect:
-
-- Setting `XCODEBUILDMCP_DEBUGGER_BACKEND=dap` causes `debug_attach_sim` to fail during
-  session creation because `backend.attach()` throws.
-- `DebuggerManager.createSession` attempts to call `dispose()` on failure, but the stub `dispose()`
-  also throws (same message). This is expected until a real DAP backend exists.
-
-Use `lldb-cli` (default) for actual debugging.
+- Adapter discovery uses `xcrun --find lldb-dap`; missing adapters raise a clear dependency error.
+- One `lldb-dap` process is spawned per session; DAP framing and request correlation are handled
+  by `DapTransport`.
+- Session handshake: `initialize` → `attach` → `configurationDone`.
+- Breakpoints are stateful: adding/removing re-issues `setBreakpoints` or
+  `setFunctionBreakpoints` with the remaining list. Conditions are passed in the request body.
+- Stack/variables typically require a stopped thread; the backend returns guidance if the process
+  is still running.
 
 ## External Tool Invocation
 
@@ -248,8 +247,8 @@ Use `lldb-cli` (default) for actual debugging.
 ### LLDB
 
 - Attachment uses `xcrun lldb --no-lldbinit` in the interactive backend.
-- Breakpoint conditions are applied by issuing an additional LLDB command:
-  `breakpoint modify -c "<condition>" <id>`.
+- Breakpoint conditions are applied internally by the LLDB CLI backend using
+  `breakpoint modify -c "<condition>" <id>` after creation.
 
 ### xcodebuild (Build/Launch Context)
 
@@ -272,6 +271,6 @@ Use `lldb-cli` (default) for actual debugging.
 - Session defaults: `src/utils/session-store.ts`
 - Debug session manager: `src/utils/debugger/debugger-manager.ts`
 - Backends: `src/utils/debugger/backends/lldb-cli-backend.ts` (default),
-  `src/utils/debugger/backends/dap-backend.ts` (stub)
+  `src/utils/debugger/backends/dap-backend.ts`
 - Interactive execution: `src/utils/execution/interactive-process.ts` (used by LLDB CLI backend)
 - External commands: `xcrun simctl`, `xcrun lldb`, `xcodebuild`

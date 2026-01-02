@@ -36,11 +36,6 @@ const debugBreakpointAddSchema = z.preprocess(
 
 export type DebugBreakpointAddParams = z.infer<typeof debugBreakpointAddSchema>;
 
-function formatCondition(condition: string): string {
-  const escaped = condition.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  return `"${escaped}"`;
-}
-
 export async function debug_breakpoint_addLogic(
   params: DebugBreakpointAddParams,
   ctx: DebuggerToolContext,
@@ -54,12 +49,9 @@ export async function debug_breakpoint_addLogic(
       return createErrorResponse('Invalid breakpoint', 'file and line are required.');
     }
 
-    const result = await ctx.debugger.addBreakpoint(params.debugSessionId, spec);
-
-    if (params.condition) {
-      const conditionCommand = `breakpoint modify -c ${formatCondition(params.condition)} ${result.id}`;
-      await ctx.debugger.runCommand(params.debugSessionId, conditionCommand);
-    }
+    const result = await ctx.debugger.addBreakpoint(params.debugSessionId, spec, {
+      condition: params.condition,
+    });
 
     return createTextResponse(`✅ Breakpoint ${result.id} set.\n\n${result.rawOutput.trim()}`);
   } catch (error) {

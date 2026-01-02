@@ -35,7 +35,11 @@ export class DebuggerManager {
     try {
       await backend.attach({ pid: opts.pid, simulatorId: opts.simulatorId, waitFor: opts.waitFor });
     } catch (error) {
-      await backend.dispose();
+      try {
+        await backend.dispose();
+      } catch {
+        // Best-effort cleanup; keep original attach error.
+      }
       throw error;
     }
 
@@ -97,9 +101,13 @@ export class DebuggerManager {
     this.currentSessionId = null;
   }
 
-  async addBreakpoint(id: string | undefined, spec: BreakpointSpec): Promise<BreakpointInfo> {
+  async addBreakpoint(
+    id: string | undefined,
+    spec: BreakpointSpec,
+    opts?: { condition?: string },
+  ): Promise<BreakpointInfo> {
     const session = this.requireSession(id);
-    const result = await session.backend.addBreakpoint(spec);
+    const result = await session.backend.addBreakpoint(spec, opts);
     this.touch(session.info.id);
     return result;
   }
