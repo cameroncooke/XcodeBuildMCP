@@ -164,6 +164,10 @@ describe('discover_projs plugin', () => {
           { type: 'text', text: 'Discovery finished. Found 1 projects and 1 workspaces.' },
           { type: 'text', text: 'Projects found:\n - /workspace/MyApp.xcodeproj' },
           { type: 'text', text: 'Workspaces found:\n - /workspace/MyWorkspace.xcworkspace' },
+          {
+            type: 'text',
+            text: "Hint: Save a default with session-set-defaults { projectPath: '...' } or { workspacePath: '...' }.",
+          },
         ],
         isError: false,
       });

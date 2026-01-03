@@ -189,7 +189,9 @@ export async function list_simsLogic(
     responseText +=
       "3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })\n";
     responseText +=
-      "4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })";
+      "4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })\n";
+    responseText +=
+      "Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FROM_ABOVE' } (or simulatorName).";
 
     return {
       content: [
