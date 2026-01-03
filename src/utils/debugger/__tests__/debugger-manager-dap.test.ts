@@ -18,6 +18,7 @@ function createBackend(overrides: Partial<DebuggerBackend> = {}): DebuggerBacken
     removeBreakpoint: async () => '',
     getStack: async () => '',
     getVariables: async () => '',
+    getExecutionState: async () => ({ status: 'unknown' }),
     dispose: async () => {},
   };
 

@@ -1,4 +1,4 @@
-import type { BreakpointInfo, BreakpointSpec } from '../types.ts';
+import type { BreakpointInfo, BreakpointSpec, DebugExecutionState } from '../types.ts';
 
 export interface DebuggerBackend {
   readonly kind: 'lldb-cli' | 'dap';
@@ -13,6 +13,7 @@ export interface DebuggerBackend {
 
   getStack(opts?: { threadIndex?: number; maxFrames?: number }): Promise<string>;
   getVariables(opts?: { frameIndex?: number }): Promise<string>;
+  getExecutionState(opts?: { timeoutMs?: number }): Promise<DebugExecutionState>;
 
   dispose(): Promise<void>;
 }

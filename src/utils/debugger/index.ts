@@ -10,9 +10,12 @@ export function getDefaultDebuggerManager(): DebuggerManager {
 export { DebuggerManager } from './debugger-manager.ts';
 export { getDefaultDebuggerToolContext } from './tool-context.ts';
 export { resolveSimulatorAppPid } from './simctl.ts';
+export { guardUiAutomationAgainstStoppedDebugger } from './ui-automation-guard.ts';
 export type {
   BreakpointInfo,
   BreakpointSpec,
+  DebugExecutionState,
+  DebugExecutionStatus,
   DebugSessionInfo,
   DebuggerBackendKind,
 } from './types.ts';

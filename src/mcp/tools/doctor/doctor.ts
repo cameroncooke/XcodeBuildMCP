@@ -90,7 +90,7 @@ export async function runDoctor(
       debugger: {
         dap: {
           available: lldbDapAvailable,
-          selected: selectedDebuggerBackend ?? '(default lldb-cli)',
+          selected: selectedDebuggerBackend ?? '(default dap)',
         },
       },
     },

@@ -18,3 +18,12 @@ export interface BreakpointInfo {
   spec: BreakpointSpec;
   rawOutput: string;
 }
+
+export type DebugExecutionStatus = 'running' | 'stopped' | 'unknown' | 'terminated';
+
+export type DebugExecutionState = {
+  status: DebugExecutionStatus;
+  reason?: string;
+  description?: string;
+  threadId?: number;
+};

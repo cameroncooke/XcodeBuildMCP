@@ -11,6 +11,9 @@ import { createTextResponse, createErrorResponse } from '../../../utils/response
 import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultDebuggerManager } from '../../../utils/debugger/index.ts';
+import type { DebuggerManager } from '../../../utils/debugger/debugger-manager.ts';
+import { guardUiAutomationAgainstStoppedDebugger } from '../../../utils/debugger/ui-automation-guard.ts';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -48,6 +51,7 @@ export async function touchLogic(
   params: TouchParams,
   executor: CommandExecutor,
   axeHelpers?: AxeHelpers,
+  debuggerManager: DebuggerManager = getDefaultDebuggerManager(),
 ): Promise<ToolResponse> {
   const toolName = 'touch';
 
@@ -58,6 +62,13 @@ export async function touchLogic(
   if (!down && !up) {
     return createErrorResponse('At least one of "down" or "up" must be true');
   }
+
+  const guard = await guardUiAutomationAgainstStoppedDebugger({
+    debugger: debuggerManager,
+    simulatorId,
+    toolName,
+  });
+  if (guard.blockedResponse) return guard.blockedResponse;
 
   const commandArgs = ['touch', '-x', String(x), '-y', String(y)];
   if (down) {
@@ -80,11 +91,12 @@ export async function touchLogic(
     await executeAxeCommand(commandArgs, simulatorId, 'touch', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
 
-    const warning = getCoordinateWarning(simulatorId);
+    const coordinateWarning = getCoordinateWarning(simulatorId);
     const message = `Touch event (${actionText}) at (${x}, ${y}) executed successfully.`;
+    const warnings = [guard.warningText, coordinateWarning].filter(Boolean).join('\n\n');
 
-    if (warning) {
-      return createTextResponse(`${message}\n\n${warning}`);
+    if (warnings) {
+      return createTextResponse(`${message}\n\n${warnings}`);
     }
 
     return createTextResponse(message);

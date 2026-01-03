@@ -225,7 +225,7 @@ processes. Tests should inject a mock `InteractiveSpawner` into `createLldbCliBa
 - Implementation: `src/utils/debugger/backends/dap-backend.ts`, with protocol support in
   `src/utils/debugger/dap/transport.ts`, `src/utils/debugger/dap/types.ts`, and adapter discovery in
   `src/utils/debugger/dap/adapter-discovery.ts`.
-- Selected via backend selection (explicit `backend`, `XCODEBUILDMCP_DEBUGGER_BACKEND=dap`).
+- Selected via backend selection (explicit `backend`, `XCODEBUILDMCP_DEBUGGER_BACKEND=dap`, or default when unset).
 - Adapter discovery uses `xcrun --find lldb-dap`; missing adapters raise a clear dependency error.
 - One `lldb-dap` process is spawned per session; DAP framing and request correlation are handled
   by `DapTransport`.

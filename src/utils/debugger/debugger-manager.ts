@@ -5,6 +5,7 @@ import { createLldbCliBackend } from './backends/lldb-cli-backend.ts';
 import type {
   BreakpointInfo,
   BreakpointSpec,
+  DebugExecutionState,
   DebugSessionInfo,
   DebuggerBackendKind,
 } from './types.ts';
@@ -74,6 +75,24 @@ export class DebuggerManager {
     return this.currentSessionId;
   }
 
+  findSessionForSimulator(simulatorId: string): DebugSessionInfo | null {
+    if (!simulatorId) return null;
+    if (this.currentSessionId) {
+      const current = this.sessions.get(this.currentSessionId);
+      if (current?.info.simulatorId === simulatorId) {
+        return current.info;
+      }
+    }
+
+    for (const session of this.sessions.values()) {
+      if (session.info.simulatorId === simulatorId) {
+        return session.info;
+      }
+    }
+
+    return null;
+  }
+
   async detachSession(id?: string): Promise<void> {
     const session = this.requireSession(id);
     try {
@@ -136,6 +155,16 @@ export class DebuggerManager {
     return result;
   }
 
+  async getExecutionState(
+    id: string | undefined,
+    opts?: { timeoutMs?: number },
+  ): Promise<DebugExecutionState> {
+    const session = this.requireSession(id);
+    const result = await session.backend.getExecutionState(opts);
+    this.touch(session.info.id);
+    return result;
+  }
+
   async runCommand(
     id: string | undefined,
     command: string,
@@ -165,7 +194,7 @@ export class DebuggerManager {
 function resolveBackendKind(explicit?: DebuggerBackendKind): DebuggerBackendKind {
   if (explicit) return explicit;
   const envValue = process.env.XCODEBUILDMCP_DEBUGGER_BACKEND;
-  if (!envValue) return 'lldb-cli';
+  if (!envValue) return 'dap';
   const normalized = envValue.trim().toLowerCase();
   if (normalized === 'lldb-cli' || normalized === 'lldb') return 'lldb-cli';
   if (normalized === 'dap') return 'dap';

@@ -1,5 +1,5 @@
 import type { DebuggerBackend } from './DebuggerBackend.ts';
-import type { BreakpointInfo, BreakpointSpec } from '../types.ts';
+import type { BreakpointInfo, BreakpointSpec, DebugExecutionState } from '../types.ts';
 import type { CommandExecutor, InteractiveSpawner } from '../../execution/index.ts';
 import { getDefaultCommandExecutor, getDefaultInteractiveSpawner } from '../../execution/index.ts';
 import { log } from '../../logging/index.ts';
@@ -42,6 +42,7 @@ class DapBackend implements DebuggerBackend {
   private queue: Promise<unknown> = Promise.resolve();
 
   private lastStoppedThreadId: number | null = null;
+  private executionState: DebugExecutionState = { status: 'unknown' };
   private breakpointsById = new Map<number, BreakpointRecord>();
   private fileLineBreakpointsByFile = new Map<string, FileLineBreakpointRecord[]>();
   private functionBreakpoints: FunctionBreakpointRecord[] = [];
@@ -312,6 +313,51 @@ class DapBackend implements DebuggerBackend {
     }
   }
 
+  async getExecutionState(opts?: { timeoutMs?: number }): Promise<DebugExecutionState> {
+    this.ensureAttached();
+
+    if (this.executionState.status !== 'unknown') {
+      return this.executionState;
+    }
+
+    try {
+      const body = await this.request<undefined, ThreadsResponseBody>('threads', undefined, opts);
+      const threads = body.threads ?? [];
+      if (!threads.length) {
+        return { status: 'unknown' };
+      }
+
+      const threadId = threads[0].id;
+      try {
+        await this.request<
+          { threadId: number; startFrame?: number; levels?: number },
+          StackTraceResponseBody
+        >(
+          'stackTrace',
+          { threadId, startFrame: 0, levels: 1 },
+          { timeoutMs: opts?.timeoutMs ?? this.requestTimeoutMs },
+        );
+        const state: DebugExecutionState = { status: 'stopped', threadId };
+        this.executionState = state;
+        return state;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (/running|not stopped/i.test(message)) {
+          const state: DebugExecutionState = { status: 'running', description: message };
+          this.executionState = state;
+          return state;
+        }
+        return { status: 'unknown', description: message };
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/running|not stopped/i.test(message)) {
+        return { status: 'running', description: message };
+      }
+      return { status: 'unknown', description: message };
+    }
+  }
+
   async dispose(): Promise<void> {
     if (this.disposed) return;
     this.disposed = true;
@@ -374,15 +420,34 @@ class DapBackend implements DebuggerBackend {
 
     if (event.event === 'stopped') {
       const body = event.body as StoppedEventBody | undefined;
+      this.executionState = {
+        status: 'stopped',
+        reason: body?.reason,
+        description: body?.description,
+        threadId: body?.threadId,
+      };
       if (body?.threadId) {
         this.lastStoppedThreadId = body.threadId;
       }
+      return;
+    }
+
+    if (event.event === 'continued') {
+      this.executionState = { status: 'running' };
+      this.lastStoppedThreadId = null;
+      return;
+    }
+
+    if (event.event === 'exited' || event.event === 'terminated') {
+      this.executionState = { status: 'terminated' };
+      this.lastStoppedThreadId = null;
     }
   }
 
   private cleanupTransport(): void {
     this.attached = false;
     this.lastStoppedThreadId = null;
+    this.executionState = { status: 'unknown' };
     this.unsubscribeEvents?.();
     this.unsubscribeEvents = null;
 

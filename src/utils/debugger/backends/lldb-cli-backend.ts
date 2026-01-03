@@ -1,7 +1,7 @@
 import type { InteractiveSpawner } from '../../execution/index.ts';
 import { getDefaultInteractiveSpawner } from '../../execution/index.ts';
 import type { DebuggerBackend } from './DebuggerBackend.ts';
-import type { BreakpointInfo, BreakpointSpec } from '../types.ts';
+import type { BreakpointInfo, BreakpointSpec, DebugExecutionState } from '../types.ts';
 
 const DEFAULT_COMMAND_TIMEOUT_MS = 30_000;
 const DEFAULT_STARTUP_TIMEOUT_MS = 10_000;
@@ -137,6 +137,39 @@ class LldbCliBackend implements DebuggerBackend {
     return this.runCommand('frame variable');
   }
 
+  async getExecutionState(opts?: { timeoutMs?: number }): Promise<DebugExecutionState> {
+    try {
+      const output = await this.runCommand('process status', {
+        timeoutMs: opts?.timeoutMs ?? DEFAULT_COMMAND_TIMEOUT_MS,
+      });
+      const normalized = output.toLowerCase();
+
+      if (/no process|exited|terminated/.test(normalized)) {
+        return { status: 'terminated', description: output.trim() };
+      }
+      if (/\bstopped\b/.test(normalized)) {
+        return {
+          status: 'stopped',
+          reason: parseStopReason(output),
+          description: output.trim(),
+        };
+      }
+      if (/\brunning\b/.test(normalized)) {
+        return { status: 'running', description: output.trim() };
+      }
+      if (/error:/.test(normalized)) {
+        return { status: 'unknown', description: output.trim() };
+      }
+
+      return { status: 'unknown', description: output.trim() };
+    } catch (error) {
+      return {
+        status: 'unknown',
+        description: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
   async dispose(): Promise<void> {
     if (this.disposed) return;
     this.disposed = true;
@@ -227,6 +260,12 @@ function sanitizeOutput(output: string, prompt: string): string {
 function formatConditionForLldb(condition: string): string {
   const escaped = condition.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   return `"${escaped}"`;
+}
+
+function parseStopReason(output: string): string | undefined {
+  const match = output.match(/stop reason\s*=\s*(.+)/i);
+  if (!match) return undefined;
+  return match[1]?.trim() || undefined;
 }
 
 export async function createLldbCliBackend(
