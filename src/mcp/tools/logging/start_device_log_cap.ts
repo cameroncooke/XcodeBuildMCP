@@ -19,6 +19,10 @@ import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
+import {
+  activeDeviceLogSessions,
+  type DeviceLogSession,
+} from '../../../utils/log-capture/device-log-sessions.ts';
 import type { WriteStream } from 'fs';
 
 /**
@@ -34,17 +38,6 @@ const DEVICE_LOG_FILE_PREFIX = 'xcodemcp_device_log_';
 // - Devices use 'xcrun devicectl' with console output only (no OSLog streaming)
 // The different command structures and output formats make sharing infrastructure complex.
 // However, both follow similar patterns for session management and log retention.
-export interface DeviceLogSession {
-  process: ChildProcess;
-  logFilePath: string;
-  deviceUuid: string;
-  bundleId: string;
-  logStream?: WriteStream;
-  hasEnded: boolean;
-}
-
-export const activeDeviceLogSessions = new Map<string, DeviceLogSession>();
-
 const EARLY_FAILURE_WINDOW_MS = 5000;
 const INITIAL_OUTPUT_LIMIT = 8_192;
 const DEFAULT_JSON_RESULT_WAIT_MS = 8000;

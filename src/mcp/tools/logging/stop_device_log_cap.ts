@@ -7,7 +7,10 @@
 import * as fs from 'fs';
 import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
-import { activeDeviceLogSessions, type DeviceLogSession } from './start_device_log_cap.ts';
+import {
+  activeDeviceLogSessions,
+  type DeviceLogSession,
+} from '../../../utils/log-capture/device-log-sessions.ts';
 import { ToolResponse } from '../../../types/common.ts';
 import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
 import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';

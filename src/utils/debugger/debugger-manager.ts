@@ -75,6 +75,10 @@ export class DebuggerManager {
     return this.currentSessionId;
   }
 
+  listSessions(): DebugSessionInfo[] {
+    return Array.from(this.sessions.values()).map((session) => ({ ...session.info }));
+  }
+
   findSessionForSimulator(simulatorId: string): DebugSessionInfo | null {
     if (!simulatorId) return null;
     if (this.currentSessionId) {

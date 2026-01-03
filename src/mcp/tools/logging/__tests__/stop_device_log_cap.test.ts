@@ -5,7 +5,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { EventEmitter } from 'events';
 import * as z from 'zod';
 import plugin, { stop_device_log_capLogic } from '../stop_device_log_cap.ts';
-import { activeDeviceLogSessions, type DeviceLogSession } from '../start_device_log_cap.ts';
+import {
+  activeDeviceLogSessions,
+  type DeviceLogSession,
+} from '../../../../utils/log-capture/device-log-sessions.ts';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 
 // Note: Logger is allowed to execute normally (integration testing pattern)

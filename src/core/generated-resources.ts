@@ -10,6 +10,10 @@ export const RESOURCE_LOADERS = {
     const module = await import('../mcp/resources/doctor.js');
     return module.default;
   },
+  'session-status': async () => {
+    const module = await import('../mcp/resources/session-status.js');
+    return module.default;
+  },
   simulators: async () => {
     const module = await import('../mcp/resources/simulators.js');
     return module.default;
