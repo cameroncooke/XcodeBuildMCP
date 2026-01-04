@@ -94,9 +94,11 @@ public final class CalculatorService {
         guard let op = operation ?? lastOperation else { return }
         let operand = (operation != nil) ? currentNumber : lastOperand
 
+        #if DEBUG
         if op == .add && previousNumber == 21 && operand == 21 {
             fatalError("Intentional crash for debugger smoke test")
         }
+        #endif
 
         let result = op.calculate(previousNumber, operand)
 
