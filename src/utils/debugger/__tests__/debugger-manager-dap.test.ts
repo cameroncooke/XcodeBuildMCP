@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import type { BreakpointInfo, BreakpointSpec } from '../types.ts';
 import type { DebuggerBackend } from '../backends/DebuggerBackend.ts';
@@ -26,9 +26,20 @@ function createBackend(overrides: Partial<DebuggerBackend> = {}): DebuggerBacken
 }
 
 describe('DebuggerManager DAP selection', () => {
+  const envKey = 'XCODEBUILDMCP_DEBUGGER_BACKEND';
+  let prevEnv: string | undefined;
+
+  afterEach(() => {
+    if (prevEnv === undefined) {
+      delete process.env[envKey];
+    } else {
+      process.env[envKey] = prevEnv;
+    }
+  });
+
   it('selects dap backend when env is set', async () => {
-    const prevEnv = process.env.XCODEBUILDMCP_DEBUGGER_BACKEND;
-    process.env.XCODEBUILDMCP_DEBUGGER_BACKEND = 'dap';
+    prevEnv = process.env[envKey];
+    process.env[envKey] = 'dap';
 
     let selected: string | null = null;
     const backend = createBackend({ kind: 'dap' });
@@ -42,12 +53,6 @@ describe('DebuggerManager DAP selection', () => {
     await manager.createSession({ simulatorId: 'sim-1', pid: 1000 });
 
     expect(selected).toBe('dap');
-
-    if (prevEnv === undefined) {
-      delete process.env.XCODEBUILDMCP_DEBUGGER_BACKEND;
-    } else {
-      process.env.XCODEBUILDMCP_DEBUGGER_BACKEND = prevEnv;
-    }
   });
 
   it('disposes backend when attach fails without masking error', async () => {

@@ -9,10 +9,6 @@ import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import describeUIPlugin, { describe_uiLogic } from '../describe_ui.ts';
 
 describe('Describe UI Plugin', () => {
-  let mockCalls: any[] = [];
-
-  mockCalls = [];
-
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
       expect(describeUIPlugin.name).toBe('describe_ui');

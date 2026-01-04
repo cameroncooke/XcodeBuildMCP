@@ -35,11 +35,6 @@ describe('start_device_log_cap plugin', () => {
   let mkdirCalls: string[] = [];
   let writeFileCalls: Array<{ path: string; content: string }> = [];
 
-  // Reset state
-  commandCalls = [];
-  mkdirCalls = [];
-  writeFileCalls = [];
-
   const originalJsonWaitEnv = process.env.XBMCP_LAUNCH_JSON_WAIT_MS;
 
   beforeEach(() => {
