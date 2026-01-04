@@ -3,19 +3,19 @@
 
 export const RESOURCE_LOADERS = {
   devices: async () => {
-    const module = await import('../mcp/resources/devices.js');
+    const module = await import('../mcp/resources/devices.ts');
     return module.default;
   },
   doctor: async () => {
-    const module = await import('../mcp/resources/doctor.js');
+    const module = await import('../mcp/resources/doctor.ts');
     return module.default;
   },
   'session-status': async () => {
-    const module = await import('../mcp/resources/session-status.js');
+    const module = await import('../mcp/resources/session-status.ts');
     return module.default;
   },
   simulators: async () => {
-    const module = await import('../mcp/resources/simulators.js');
+    const module = await import('../mcp/resources/simulators.ts');
     return module.default;
   },
 };

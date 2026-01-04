@@ -101,7 +101,7 @@ function generateWorkflowLoader(workflowName: string, toolFiles: string[]): stri
   const toolImports = toolFiles
     .map((file, index) => {
       const toolName = file.replace(/\.(ts|js)$/, '');
-      return `const tool_${index} = await import('../mcp/tools/${workflowName}/${toolName}.js').then(m => m.default)`;
+      return `const tool_${index} = await import('../mcp/tools/${workflowName}/${toolName}.ts').then(m => m.default)`;
     })
     .join(';\n    ');
 
@@ -113,7 +113,7 @@ function generateWorkflowLoader(workflowName: string, toolFiles: string[]): stri
     .join(',\n      ');
 
   return `async () => {
-    const { workflow } = await import('../mcp/tools/${workflowName}/index.js');
+    const { workflow } = await import('../mcp/tools/${workflowName}/index.ts');
     ${toolImports ? toolImports + ';\n    ' : ''}
     return {
       workflow,
@@ -217,7 +217,7 @@ export async function generateResourceLoaders(): Promise<void> {
   for (const fileName of resourceFiles) {
     const resourceName = fileName.replace(/\.(ts|js)$/, '');
     resourceLoaders[resourceName] = `async () => {
-    const module = await import('../mcp/resources/${resourceName}.js');
+    const module = await import('../mcp/resources/${resourceName}.ts');
     return module.default;
   }`;
 
