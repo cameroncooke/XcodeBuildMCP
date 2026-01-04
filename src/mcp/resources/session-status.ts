@@ -37,7 +37,7 @@ export default {
   uri: 'xcodebuildmcp://session-status',
   name: 'session-status',
   description: 'Runtime session state for log capture and debugging',
-  mimeType: 'text/plain',
+  mimeType: 'application/json',
   async handler(): Promise<{ contents: Array<{ text: string }> }> {
     return sessionStatusResourceLogic();
   },

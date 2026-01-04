@@ -29,7 +29,7 @@ describe('session-status resource', () => {
     });
 
     it('should export correct mimeType', () => {
-      expect(sessionStatusResource.mimeType).toBe('text/plain');
+      expect(sessionStatusResource.mimeType).toBe('application/json');
     });
 
     it('should export handler function', () => {

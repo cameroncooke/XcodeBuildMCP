@@ -22,7 +22,7 @@ export async function debug_detachLogic(
 ): Promise<ToolResponse> {
   try {
     const targetId = params.debugSessionId ?? ctx.debugger.getCurrentSessionId();
-    await ctx.debugger.detachSession(params.debugSessionId);
+    await ctx.debugger.detachSession(targetId ?? undefined);
 
     return createTextResponse(`✅ Detached debugger session${targetId ? ` ${targetId}` : ''}.`);
   } catch (error) {

@@ -29,7 +29,7 @@ export async function guardUiAutomationAgainstStoppedDebugger(opts: {
     state = await opts.debugger.getExecutionState(session.id);
   } catch (error) {
     log(
-      'debug',
+      'warn',
       `${LOG_PREFIX} ${opts.toolName}: unable to read execution state for ${session.id}: ${String(error)}`,
     );
     return {};

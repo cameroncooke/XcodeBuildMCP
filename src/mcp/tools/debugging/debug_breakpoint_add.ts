@@ -43,11 +43,7 @@ export async function debug_breakpoint_addLogic(
   try {
     const spec: BreakpointSpec = params.function
       ? { kind: 'function', name: params.function }
-      : { kind: 'file-line', file: params.file ?? '', line: params.line ?? 0 };
-
-    if (spec.kind === 'file-line' && (!spec.file || !spec.line)) {
-      return createErrorResponse('Invalid breakpoint', 'file and line are required.');
-    }
+      : { kind: 'file-line', file: params.file!, line: params.line! };
 
     const result = await ctx.debugger.addBreakpoint(params.debugSessionId, spec, {
       condition: params.condition,

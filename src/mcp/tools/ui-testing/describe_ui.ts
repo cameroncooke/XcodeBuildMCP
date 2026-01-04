@@ -35,7 +35,7 @@ export interface AxeHelpers {
 const LOG_PREFIX = '[AXe]';
 
 // Session tracking for describe_ui warnings (shared across UI tools)
-const describeUITimestamps = new Map();
+const describeUITimestamps = new Map<string, { timestamp: number; simulatorId: string }>();
 
 function recordDescribeUICall(simulatorId: string): void {
   describeUITimestamps.set(simulatorId, {
