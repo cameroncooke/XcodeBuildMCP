@@ -84,25 +84,37 @@ export async function sessionSetDefaultsLogic(params: Params): Promise<ToolRespo
 
   // Clear mutually exclusive counterparts before merging new defaults
   const toClear = new Set<keyof SessionDefaults>();
-  if (Object.prototype.hasOwnProperty.call(nextParams, 'projectPath')) {
+  if (
+    Object.prototype.hasOwnProperty.call(nextParams, 'projectPath') &&
+    nextParams.projectPath !== undefined
+  ) {
     toClear.add('workspacePath');
     if (current.workspacePath !== undefined) {
       notices.push('Cleared workspacePath because projectPath was set.');
     }
   }
-  if (Object.prototype.hasOwnProperty.call(nextParams, 'workspacePath')) {
+  if (
+    Object.prototype.hasOwnProperty.call(nextParams, 'workspacePath') &&
+    nextParams.workspacePath !== undefined
+  ) {
     toClear.add('projectPath');
     if (current.projectPath !== undefined) {
       notices.push('Cleared projectPath because workspacePath was set.');
     }
   }
-  if (Object.prototype.hasOwnProperty.call(nextParams, 'simulatorId')) {
+  if (
+    Object.prototype.hasOwnProperty.call(nextParams, 'simulatorId') &&
+    nextParams.simulatorId !== undefined
+  ) {
     toClear.add('simulatorName');
     if (current.simulatorName !== undefined) {
       notices.push('Cleared simulatorName because simulatorId was set.');
     }
   }
-  if (Object.prototype.hasOwnProperty.call(nextParams, 'simulatorName')) {
+  if (
+    Object.prototype.hasOwnProperty.call(nextParams, 'simulatorName') &&
+    nextParams.simulatorName !== undefined
+  ) {
     toClear.add('simulatorId');
     if (current.simulatorId !== undefined) {
       notices.push('Cleared simulatorId because simulatorName was set.');
