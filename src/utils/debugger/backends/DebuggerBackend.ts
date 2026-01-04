@@ -7,6 +7,7 @@ export interface DebuggerBackend {
   detach(): Promise<void>;
 
   runCommand(command: string, opts?: { timeoutMs?: number }): Promise<string>;
+  resume(opts?: { threadId?: number }): Promise<void>;
 
   addBreakpoint(spec: BreakpointSpec, opts?: { condition?: string }): Promise<BreakpointInfo>;
   removeBreakpoint(id: number): Promise<string>;

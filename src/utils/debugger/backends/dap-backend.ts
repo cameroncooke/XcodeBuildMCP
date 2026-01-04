@@ -152,6 +152,22 @@ class DapBackend implements DebuggerBackend {
     }
   }
 
+  async resume(opts?: { threadId?: number }): Promise<void> {
+    return this.enqueue(async () => {
+      this.ensureAttached();
+
+      let threadId = opts?.threadId;
+      if (!threadId) {
+        const thread = await this.resolveThread();
+        threadId = thread.id;
+      }
+
+      await this.request('continue', { threadId });
+      this.executionState = { status: 'running' };
+      this.lastStoppedThreadId = null;
+    });
+  }
+
   async addBreakpoint(
     spec: BreakpointSpec,
     opts?: { condition?: string },

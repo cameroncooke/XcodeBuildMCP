@@ -10,6 +10,7 @@ function createBackend(overrides: Partial<DebuggerBackend> = {}): DebuggerBacken
     attach: async () => {},
     detach: async () => {},
     runCommand: async () => '',
+    resume: async () => {},
     addBreakpoint: async (spec: BreakpointSpec): Promise<BreakpointInfo> => ({
       id: 1,
       spec,

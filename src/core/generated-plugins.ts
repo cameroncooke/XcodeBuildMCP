@@ -14,22 +14,24 @@ export const WORKFLOW_LOADERS = {
     const tool_2 = await import('../mcp/tools/debugging/debug_breakpoint_remove.ts').then(
       (m) => m.default,
     );
-    const tool_3 = await import('../mcp/tools/debugging/debug_detach.ts').then((m) => m.default);
-    const tool_4 = await import('../mcp/tools/debugging/debug_lldb_command.ts').then(
+    const tool_3 = await import('../mcp/tools/debugging/debug_continue.ts').then((m) => m.default);
+    const tool_4 = await import('../mcp/tools/debugging/debug_detach.ts').then((m) => m.default);
+    const tool_5 = await import('../mcp/tools/debugging/debug_lldb_command.ts').then(
       (m) => m.default,
     );
-    const tool_5 = await import('../mcp/tools/debugging/debug_stack.ts').then((m) => m.default);
-    const tool_6 = await import('../mcp/tools/debugging/debug_variables.ts').then((m) => m.default);
+    const tool_6 = await import('../mcp/tools/debugging/debug_stack.ts').then((m) => m.default);
+    const tool_7 = await import('../mcp/tools/debugging/debug_variables.ts').then((m) => m.default);
 
     return {
       workflow,
       debug_attach_sim: tool_0,
       debug_breakpoint_add: tool_1,
       debug_breakpoint_remove: tool_2,
-      debug_detach: tool_3,
-      debug_lldb_command: tool_4,
-      debug_stack: tool_5,
-      debug_variables: tool_6,
+      debug_continue: tool_3,
+      debug_detach: tool_4,
+      debug_lldb_command: tool_5,
+      debug_stack: tool_6,
+      debug_variables: tool_7,
     };
   },
   device: async () => {

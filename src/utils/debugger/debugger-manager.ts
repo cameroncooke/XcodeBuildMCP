@@ -182,6 +182,12 @@ export class DebuggerManager {
     return result;
   }
 
+  async resumeSession(id?: string, opts?: { threadId?: number }): Promise<void> {
+    const session = this.requireSession(id);
+    await session.backend.resume(opts);
+    this.touch(session.info.id);
+  }
+
   private requireSession(id?: string): { info: DebugSessionInfo; backend: DebuggerBackend } {
     const session = this.getSession(id);
     if (!session) {

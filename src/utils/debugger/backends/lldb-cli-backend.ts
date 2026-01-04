@@ -83,6 +83,16 @@ class LldbCliBackend implements DebuggerBackend {
     });
   }
 
+  async resume(): Promise<void> {
+    return this.enqueue(async () => {
+      if (this.disposed) {
+        throw new Error('LLDB backend disposed');
+      }
+      await this.ready;
+      this.process.write('process continue\n');
+    });
+  }
+
   async addBreakpoint(
     spec: BreakpointSpec,
     opts?: { condition?: string },

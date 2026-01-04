@@ -33,6 +33,11 @@ const baseSchemaObject = z.object({
     .describe("Bundle identifier of the app to attach (e.g., 'com.example.MyApp')"),
   pid: z.number().int().positive().optional().describe('Process ID to attach directly'),
   waitFor: z.boolean().optional().describe('Wait for the process to appear when attaching'),
+  continueOnAttach: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Resume execution automatically after attaching (default: true)'),
   makeCurrent: z
     .boolean()
     .optional()
@@ -109,20 +114,39 @@ export async function debug_attach_simLogic(
       debuggerManager.setCurrentSession(session.id);
     }
 
+    const shouldContinue = params.continueOnAttach ?? true;
+    if (shouldContinue) {
+      try {
+        await debuggerManager.resumeSession(session.id);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        try {
+          await debuggerManager.detachSession(session.id);
+        } catch {
+          // Best-effort cleanup; keep original resume error.
+        }
+        return createErrorResponse('Failed to resume debugger after attach', message);
+      }
+    }
+
     const warningText = simResult.warning ? `⚠️ ${simResult.warning}\n\n` : '';
     const currentText = isCurrent
       ? 'This session is now the current debug session.'
       : 'This session is not set as the current session.';
+    const resumeText = shouldContinue
+      ? 'Execution resumed after attach.'
+      : 'Execution is paused. Use debug_continue to resume before UI automation.';
 
     const backendLabel = session.backend === 'dap' ? 'DAP debugger' : 'LLDB';
 
     return createTextResponse(
       `${warningText}✅ Attached ${backendLabel} to simulator process ${pid} (${simulatorId}).\n\n` +
         `Debug session ID: ${session.id}\n` +
-        `${currentText}\n\n` +
+        `${currentText}\n` +
+        `${resumeText}\n\n` +
         `Next steps:\n` +
         `1. debug_breakpoint_add({ debugSessionId: "${session.id}", file: "...", line: 123 })\n` +
-        `2. debug_lldb_command({ debugSessionId: "${session.id}", command: "continue" })\n` +
+        `2. debug_continue({ debugSessionId: "${session.id}" })\n` +
         `3. debug_stack({ debugSessionId: "${session.id}" })`,
     );
   } catch (error) {

@@ -82,7 +82,7 @@ function buildGuardDetails(params: {
 
   lines.push(
     '',
-    'Resume execution (continue), remove breakpoints, or detach via debug_detach before using UI tools.',
+    'Resume execution via debug_continue, remove breakpoints, or detach via debug_detach before using UI tools.',
   );
 
   return lines.join('\n');
