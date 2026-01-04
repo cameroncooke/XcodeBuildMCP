@@ -190,13 +190,13 @@ Annotated example (simplified):
    - `XCODEBUILDMCP_LLDB> `
 3. Parser behavior:
    - Sentinel marks the end of the command output payload.
-   - Prompt is used to trim the buffer so the next command starts cleanly.
+   - Prompt is used to trim the buffer, so the next command starts cleanly.
 
 ### Output parsing and sanitization
 
 - `handleData()` appends to an internal buffer, and `checkPending()` scans for the sentinel regex
   `/(^|\\r?\\n)__XCODEBUILDMCP_DONE__(\\r?\\n)/`.
-- Output is the buffer up to the sentinel. The remainder is trimmed to the next prompt if present.
+- Output is the buffer up to the sentinel. The remainder is trimmed to the next prompt, if present.
 - `sanitizeOutput()` removes prompt echoes, sentinel lines, the `script print(...)` lines, and empty
   lines, then `runCommand()` returns `trimEnd()` output.
 
@@ -253,7 +253,7 @@ processes. Tests should inject a mock `InteractiveSpawner` into `createLldbCliBa
 ### xcodebuild (Build/Launch Context)
 
 - Debugging assumes a running simulator app.
-- The typical flow is build and launch via simulator tools (for example `build_sim`),
+- The typical flow is to build and launch via simulator tools (for example `build_sim`),
   which uses `executeXcodeBuildCommand` to invoke `xcodebuild` (or `xcodemake` when enabled).
 - After launch, `debug_attach_sim` attaches LLDB to the simulator process.
 

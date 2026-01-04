@@ -1,5 +1,3 @@
-<chatName="DAP backend plan"/>
-
 ## Goal & constraints (grounded in current code)
 
 Implement a real **`lldb-dap` Debug Adapter Protocol backend** that plugs into the existing debugger architecture without changing MCP tool names/schemas. The DAP backend remains **opt-in only** via `XCODEBUILDMCP_DEBUGGER_BACKEND=dap` (current selection logic in `src/utils/debugger/debugger-manager.ts`).
@@ -185,7 +183,7 @@ export class DapTransport {
 - Backend may still serialize higher-level operations if stateful.
 
 **Side effects**
-- Adds a long-lived child process per session.
+- Add a long-lived child process per session.
 - Requires careful memory management in the framing buffer (ensure you slice consumed bytes).
 
 ---
@@ -273,12 +271,12 @@ export async function createDapBackend(opts?: {
   4) `configurationDone` if required by lldb-dap behavior (plan for it even if no-op)
   5) mark attached
 
-- `detach()`:
+- `detach()`
   - send `disconnect` with `terminateDebuggee: false` (do not kill app)
   - dispose transport / kill process
 
-- `dispose()`:
-  - best-effort cleanup; **must not throw** (important because `DebuggerManager.createSession` calls dispose on attach failure)
+- `dispose()`
+  - best-effort cleanup; **must not throw** (important because `DebuggerManager.createSession` calls dispose to clean up on attach failure)
 
 **Method mappings (MCP tools → DebuggerManager → DapBackend)**
 
@@ -439,8 +437,8 @@ private enqueue<T>(work: () => Promise<T>): Promise<T> { ... }
 ```
 
 **Reasoning**
-- Prevent races like:
-  - addBreakpoint + removeBreakpoint in parallel reissuing `setBreakpoints` inconsistently.
+- Prevent races such as:
+  - addBreakpoint + removeBreakpoint in parallel, reissuing `setBreakpoints` inconsistently.
 
 ---
 
@@ -453,7 +451,7 @@ private enqueue<T>(work: () => Promise<T>): Promise<T> { ... }
 ### Where to log
 - `DapTransport`:
   - `log('debug', ...)` for raw events (optionally gated by env)
-  - `log('error', ...)` on process exit while requests pending
+  - `log('error', ...)` on process exit while requests are pending
 - `DapBackend`:
   - minimal `info` logs on attach/detach
   - `debug` logs for request mapping (command names, not full payloads unless opted in)
@@ -514,7 +512,7 @@ New: `src/utils/debugger/__tests__/debugger-manager-dap.test.ts`
 ## Docs updates (grounded in existing docs)
 
 ### 1) Update `docs/DAP_BACKEND_IMPLEMENTATION_PLAN.md`
-Replace/extend the existing outline with:
+Replace/extend the existing outline with the following:
 - finalized module list (`dap/types.ts`, `dap/transport.ts`, discovery helper)
 - breakpoint strategy (stateful re-issue `setBreakpoints`)
 - explicit mapping table per MCP tool
@@ -568,6 +566,6 @@ Add a section “DAP Backend (lldb-dap)”:
 ---
 
 ## Critical “don’t miss” requirements
-- `dispose()` in DAP backend and transport must be **best-effort and never throw**, because `DebuggerManager.createSession()` will call dispose on attach failure.
+- `dispose()` in DAP backend and transport must be **best-effort and never throw** because `DebuggerManager.createSession()` will call dispose on attach failure.
 - Avoid any use of default executors/spawners in tests; ensure `createDapBackend()` accepts injected `executor` + `spawner`.
 - Breakpoint removal requires stateful re-application with `setBreakpoints` / `setFunctionBreakpoints`; plan for breakpoint registries from day one.

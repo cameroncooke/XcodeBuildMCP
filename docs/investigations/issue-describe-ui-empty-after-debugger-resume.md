@@ -1,7 +1,7 @@
 # RCA: describe_ui returns empty tree after debugger resume
 
 ## Summary
-When the app is stopped under LLDB (breakpoints hit), the `describe_ui` tool frequently returns an empty accessibility tree (0x0 frame, no children). This is not caused by a short timing gap after resume. The root cause is that the process is still stopped (or immediately re-stopped) due to active breakpoints, so AX snapshotting cannot retrieve a live hierarchy.
+When the app is stopped under LLDB (breakpoints hit), the `describe_ui` tool frequently returns an empty accessibility tree (0x0 frame, no children). This is not because of a short timing gap after resume. The root cause is that the process is still stopped (or immediately re-stopped) due to active breakpoints, so AX snapshotting cannot retrieve a live hierarchy.
 
 ## Impact
 - UI automation appears "broken" after resuming from breakpoints.
