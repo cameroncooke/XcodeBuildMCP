@@ -21,6 +21,9 @@ export async function resolveLldbDapCommand(opts: {
     log('debug', `${LOG_PREFIX} resolved lldb-dap: ${resolved}`);
     return [resolved];
   } catch (error) {
+    if (error instanceof DependencyError) {
+      throw error;
+    }
     const message = error instanceof Error ? error.message : String(error);
     throw new DependencyError(
       'DAP backend selected but lldb-dap not found. Ensure Xcode is installed and xcrun can locate lldb-dap, or set XCODEBUILDMCP_DEBUGGER_BACKEND=lldb-cli.',

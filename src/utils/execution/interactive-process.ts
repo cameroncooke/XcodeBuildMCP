@@ -57,6 +57,9 @@ function createInteractiveProcess(
   command: string[],
   opts?: SpawnInteractiveOptions,
 ): InteractiveProcess {
+  if (command.length === 0) {
+    throw new Error('Command array must not be empty');
+  }
   const [executable, ...args] = command;
   const childProcess = spawn(executable, args, {
     stdio: ['pipe', 'pipe', 'pipe'],

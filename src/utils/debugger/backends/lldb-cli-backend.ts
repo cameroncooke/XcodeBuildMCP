@@ -1,4 +1,4 @@
-import type { InteractiveSpawner } from '../../execution/index.ts';
+import type { InteractiveProcess, InteractiveSpawner } from '../../execution/index.ts';
 import { getDefaultInteractiveSpawner } from '../../execution/index.ts';
 import type { DebuggerBackend } from './DebuggerBackend.ts';
 import type { BreakpointInfo, BreakpointSpec, DebugExecutionState } from '../types.ts';
@@ -7,13 +7,14 @@ const DEFAULT_COMMAND_TIMEOUT_MS = 30_000;
 const DEFAULT_STARTUP_TIMEOUT_MS = 10_000;
 const LLDB_PROMPT = 'XCODEBUILDMCP_LLDB> ';
 const COMMAND_SENTINEL = '__XCODEBUILDMCP_DONE__';
+const COMMAND_SENTINEL_REGEX = new RegExp(`(^|\\r?\\n)${COMMAND_SENTINEL}(\\r?\\n)`);
 
 class LldbCliBackend implements DebuggerBackend {
   readonly kind = 'lldb-cli' as const;
 
   private readonly spawner: InteractiveSpawner;
   private readonly prompt = LLDB_PROMPT;
-  private readonly process;
+  private readonly process: InteractiveProcess;
   private buffer = '';
   private pending: {
     resolve: (output: string) => void;
@@ -121,11 +122,11 @@ class LldbCliBackend implements DebuggerBackend {
 
   async getStack(opts?: { threadIndex?: number; maxFrames?: number }): Promise<string> {
     let command = 'thread backtrace';
-    if (typeof opts?.threadIndex === 'number') {
-      command += ` -t ${opts.threadIndex}`;
-    }
     if (typeof opts?.maxFrames === 'number') {
-      command += ` -m ${opts.maxFrames}`;
+      command += ` -c ${opts.maxFrames}`;
+    }
+    if (typeof opts?.threadIndex === 'number') {
+      command += ` ${opts.threadIndex}`;
     }
     return this.runCommand(command);
   }
@@ -209,7 +210,7 @@ class LldbCliBackend implements DebuggerBackend {
 
   private checkPending(): void {
     if (!this.pending) return;
-    const sentinelMatch = this.buffer.match(/(^|\r?\n)__XCODEBUILDMCP_DONE__(\r?\n)/);
+    const sentinelMatch = this.buffer.match(COMMAND_SENTINEL_REGEX);
     const sentinelIndex = sentinelMatch?.index;
     const sentinelLength = sentinelMatch?.[0].length;
     if (sentinelIndex == null || sentinelLength == null) return;
@@ -272,6 +273,15 @@ export async function createLldbCliBackend(
   spawner: InteractiveSpawner = getDefaultInteractiveSpawner(),
 ): Promise<DebuggerBackend> {
   const backend = new LldbCliBackend(spawner);
-  await backend.waitUntilReady();
+  try {
+    await backend.waitUntilReady();
+  } catch (error) {
+    try {
+      await backend.dispose();
+    } catch {
+      // Best-effort cleanup; keep original error.
+    }
+    throw error;
+  }
   return backend;
 }

@@ -314,48 +314,50 @@ class DapBackend implements DebuggerBackend {
   }
 
   async getExecutionState(opts?: { timeoutMs?: number }): Promise<DebugExecutionState> {
-    this.ensureAttached();
+    return this.enqueue(async () => {
+      this.ensureAttached();
 
-    if (this.executionState.status !== 'unknown') {
-      return this.executionState;
-    }
-
-    try {
-      const body = await this.request<undefined, ThreadsResponseBody>('threads', undefined, opts);
-      const threads = body.threads ?? [];
-      if (!threads.length) {
-        return { status: 'unknown' };
+      if (this.executionState.status !== 'unknown') {
+        return this.executionState;
       }
 
-      const threadId = threads[0].id;
       try {
-        await this.request<
-          { threadId: number; startFrame?: number; levels?: number },
-          StackTraceResponseBody
-        >(
-          'stackTrace',
-          { threadId, startFrame: 0, levels: 1 },
-          { timeoutMs: opts?.timeoutMs ?? this.requestTimeoutMs },
-        );
-        const state: DebugExecutionState = { status: 'stopped', threadId };
-        this.executionState = state;
-        return state;
+        const body = await this.request<undefined, ThreadsResponseBody>('threads', undefined, opts);
+        const threads = body.threads ?? [];
+        if (!threads.length) {
+          return { status: 'unknown' };
+        }
+
+        const threadId = threads[0].id;
+        try {
+          await this.request<
+            { threadId: number; startFrame?: number; levels?: number },
+            StackTraceResponseBody
+          >(
+            'stackTrace',
+            { threadId, startFrame: 0, levels: 1 },
+            { timeoutMs: opts?.timeoutMs ?? this.requestTimeoutMs },
+          );
+          const state: DebugExecutionState = { status: 'stopped', threadId };
+          this.executionState = state;
+          return state;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (/running|not stopped/i.test(message)) {
+            const state: DebugExecutionState = { status: 'running', description: message };
+            this.executionState = state;
+            return state;
+          }
+          return { status: 'unknown', description: message };
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (/running|not stopped/i.test(message)) {
-          const state: DebugExecutionState = { status: 'running', description: message };
-          this.executionState = state;
-          return state;
+          return { status: 'running', description: message };
         }
         return { status: 'unknown', description: message };
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (/running|not stopped/i.test(message)) {
-        return { status: 'running', description: message };
-      }
-      return { status: 'unknown', description: message };
-    }
+    });
   }
 
   async dispose(): Promise<void> {

@@ -111,15 +111,17 @@ export class DebuggerManager {
   }
 
   async disposeAll(): Promise<void> {
-    for (const session of this.sessions.values()) {
-      try {
-        await session.backend.detach();
-      } catch {
-        // Best-effort cleanup; detach can fail if the process exited.
-      } finally {
-        await session.backend.dispose();
-      }
-    }
+    await Promise.allSettled(
+      Array.from(this.sessions.values()).map(async (session) => {
+        try {
+          await session.backend.detach();
+        } catch {
+          // Best-effort cleanup; detach can fail if the process exited.
+        } finally {
+          await session.backend.dispose();
+        }
+      }),
+    );
     this.sessions.clear();
     this.currentSessionId = null;
   }

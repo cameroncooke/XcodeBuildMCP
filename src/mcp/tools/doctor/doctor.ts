@@ -63,7 +63,7 @@ export async function runDoctor(
   const makefileExists = deps.features.doesMakefileExist('./');
   const lldbDapAvailable = await checkLldbDapAvailability(deps.commandExecutor);
   const selectedDebuggerBackend = process.env.XCODEBUILDMCP_DEBUGGER_BACKEND?.trim();
-  const dapSelected = selectedDebuggerBackend?.toLowerCase() === 'dap';
+  const dapSelected = !selectedDebuggerBackend || selectedDebuggerBackend.toLowerCase() === 'dap';
 
   const doctorInfo = {
     serverVersion: version,

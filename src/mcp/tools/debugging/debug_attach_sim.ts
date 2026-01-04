@@ -114,8 +114,10 @@ export async function debug_attach_simLogic(
       ? 'This session is now the current debug session.'
       : 'This session is not set as the current session.';
 
+    const backendLabel = session.backend === 'dap' ? 'DAP debugger' : 'LLDB';
+
     return createTextResponse(
-      `${warningText}✅ Attached LLDB to simulator process ${pid} (${simulatorId}).\n\n` +
+      `${warningText}✅ Attached ${backendLabel} to simulator process ${pid} (${simulatorId}).\n\n` +
         `Debug session ID: ${session.id}\n` +
         `${currentText}\n\n` +
         `Next steps:\n` +
