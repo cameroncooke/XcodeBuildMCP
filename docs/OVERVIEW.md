@@ -13,6 +13,7 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
 - Swift Package Manager build, test, and run.
 - UI automation, screenshots, and video capture.
 - Log capture and system diagnostics.
+- Debugger attach, breakpoints, stack, variables, and LLDB command execution.
 
 See the full tool catalog in [TOOLS.md](TOOLS.md).
 
