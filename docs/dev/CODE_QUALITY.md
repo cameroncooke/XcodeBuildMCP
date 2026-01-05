@@ -35,7 +35,7 @@ The project uses a comprehensive ESLint setup that covers:
 
 ### ESLint Rules
 
-For detailed ESLint rules and rationale, see [ESLINT_RULES.md](./ESLINT_RULES.md).
+For detailed ESLint rules and rationale, see [ESLINT_TYPE_SAFETY.md](ESLINT_TYPE_SAFETY.md).
 
 ### Running ESLint
 

@@ -277,6 +277,7 @@ Must capture and document these values for dependent tools:
 1. **Build the server**: `npm run build`
 2. **Install jq**: `brew install jq` (required for JSON parsing)
 3. **System Requirements**: macOS with Xcode installed, connected devices/simulators optional
+4. **AXe video capture (optional)**: run `npm run bundle:axe` before using `record_sim_video` in local tests (not required for unit tests)
 
 ## Step-by-Step Testing Process
 

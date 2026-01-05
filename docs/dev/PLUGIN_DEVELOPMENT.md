@@ -673,7 +673,7 @@ npm run inspect
 
 ### Critical Documentation Maintenance
 
-**Every time you add, change, move, edit, or delete a tool, you MUST review and update the `docs/TOOLS.md` file to reflect the current state of the codebase.**
+**Every time you add, change, move, edit, or delete a tool, you MUST review and update the [TOOLS.md](../TOOLS.md) file to reflect the current state of the codebase.**
 
 ### Documentation Update Process
 
@@ -694,7 +694,7 @@ This command:
 
 #### 2. Ignore Shared Groups in Documentation
 
-When updating `docs/TOOLS.md`:
+When updating [TOOLS.md](../TOOLS.md):
 
 - **Ignore `*-shared` directories** (e.g., `simulator-shared`, `device-shared`, `macos-shared`)
 - These are implementation details, not user-facing workflow groups
@@ -746,7 +746,7 @@ Each tool must be listed individually with its actual description from the tool 
 
 #### 6. Validation Checklist
 
-After updating `docs/TOOLS.md`:
+After updating [TOOLS.md](../TOOLS.md):
 
 - [ ] Tool counts match actual filesystem counts (from tree command)
 - [ ] Each tool has its own bullet point (one tool per line)
