@@ -5,8 +5,89 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 [![CI](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/xcodebuildmcp.svg)](https://badge.fury.io/js/xcodebuildmcp) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node->=18.x-brightgreen.svg)](https://nodejs.org/) [![Xcode 16](https://img.shields.io/badge/Xcode-16-blue.svg)](https://developer.apple.com/xcode/) [![macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/) [![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io/) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/cameroncooke/XcodeBuildMCP)
 
+## Easy install
+
+Easiest way to install XcodeBuildMCP is to use Smithery to install it from the registry. Copy and paste one of the following commands into your terminal.
+
+```bash
+npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client client-name
+```
+
+<details>
+  <summary>Cursor</summary>
+  <br />
+
+  ```bash
+  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client cursor
+  ```
+  <br />
+</details>
+
+<details>
+  <summary>Codex CLI</summary>
+  <br />
+
+  ```bash
+  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client codex
+  ```
+  <br />
+</details>
+
+<details>
+  <summary>Claude Code</summary>
+  <br />
+
+  ```bash
+  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client claude-code
+  ```
+  <br />
+</details>
+
+<details>
+  <summary>Claude Desktop</summary>
+  <br />
+
+  ```bash
+  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client claude
+  ```
+  <br />
+</details>
+
+<details>
+  <summary>VS Code</summary>
+  <br />
+
+  ```bash
+  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client vscode
+  ```
+  <br />
+</details>
+
+<details>
+  <summary>Windsurf</summary>
+  <br />
+
+  ```bash
+  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client windsurf
+  ```
+  <br />
+</details>
+
+<br />
+
+For more installation options see: [Smithery XcodeBuildMCP](https://smithery.ai/server/cameroncooke/xcodebuildmcp).
+
+>[!NOTE]
+> XcodeBuildMCP requires Node 18.x or later and Xcode 16.x or later to be installed.
+
+## View the full Readme
+
+<details>
+  <summary>Click to expand the full readme with manual installation instructions, configuration options, feature list and demos.</summary>
+
 ## Table of contents
 
+- [View the full Readme](#view-the-full-readme)
 - [Overview](#overview)
 - [Why?](#why)
 - [Features](#features)
@@ -19,12 +100,10 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 - [Getting started](#getting-started)
   - [Prerequisites](#prerequisites)
     - [One click install](#one-click-install)
-    - [General installation](#general-installation)
+    - [Manual installation](#manual-installation)
     - [Specific client installation instructions](#specific-client-installation-instructions)
       - [OpenAI Codex CLI](#openai-codex-cli)
       - [Claude Code CLI](#claude-code-cli)
-      - [Smithery](#smithery)
-    - [MCP Compatibility](#mcp-compatibility)
 - [Incremental build support](#incremental-build-support)
 - [Workflow Selection](#workflow-selection)
 - [Session-aware opt-out](#session-aware-opt-out)
@@ -119,7 +198,7 @@ Configure your MCP client
 
 #### One click install
 
-For a quick install, you can use the following links:
+If you're using Curor or VS Code you can use one the below quick install links to install XcodeBuildMCP.
 
 [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=XcodeBuildMCP&config=eyJ0eXBlIjoic3RkaW8iLCJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAbGF0ZXN0IiwiZW52Ijp7IklOQ1JFTUVOVEFMX0JVSUxEU19FTkFCTEVEIjoiZmFsc2UiLCJYQ09ERUJVSUxETUNQX1NFTlRSWV9ESVNBQkxFRCI6ImZhbHNlIn19)
 
@@ -127,7 +206,7 @@ For a quick install, you can use the following links:
 
 [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D&quality=insiders)
 
-#### General installation
+#### Manual installation
 
 Most MCP clients (Cursor, VS Code, Windsurf, Claude Desktop etc) have standardised on the following JSON configuration format, just add the the following to your client's JSON configuration's `mcpServers` object:
 
@@ -174,37 +253,8 @@ claude mcp add XcodeBuildMCP npx xcodebuildmcp@latest
 claude mcp add XcodeBuildMCP npx xcodebuildmcp@latest -e INCREMENTAL_BUILDS_ENABLED=false -e XCODEBUILDMCP_SENTRY_DISABLED=false
 ```
 
-##### Smithery
-
-XcodeBuildMCP runs as a local (stdio) server when installed via [Smithery](https://smithery.ai/server/@cameroncooke/XcodeBuildMCP). You can configure it in the Smithery session UI or via environment variables.
-
-```bash
-# Claude Desktop / Claude Code
-npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client claude
-
-# Cursor
-npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client cursor
-
-# VS Code
-npx -y @smithery/cli install @cameroncooke/XcodeBuildMCP --client vscode
-```
-
-If your client isn't listed, run `npx smithery install --help` to see supported values for `--client`.
-
 > [!IMPORTANT]
 > Please note that XcodeBuildMCP will request xcodebuild to skip macro validation. This is to avoid errors when building projects that use Swift Macros.
-
-#### MCP Compatibility
-
-XcodeBuildMCP supports both MCP tools, resources and sampling. At time of writing the following editors have varying levels of MCP feature support:
-
-| Editor | Tools | Resources | Samplng |
-|--------|-------|-----------|---------|
-| **VS Code** | ✅ | ✅ | ✅ |
-| **Cursor** | ✅ | ❌ | ❌ |
-| **Windsurf** | ✅ | ❌ | ❌ |
-| **Claude Code** | ✅ | ✅ | ❌ |
-| **Claude Desktop** | ✅ | ✅ | ❌ |
 
 ## Incremental build support
 
@@ -349,6 +399,8 @@ See our documentation for development:
 - [CODE_QUALITY](docs/CODE_QUALITY.md) - Code quality standards, linting, and architectural rules
 - [TESTING](docs/TESTING.md) - Testing principles and patterns
 - [ARCHITECTURE](docs/ARCHITECTURE.md) - System architecture and design principles
+
+</details>
 
 ## Licence
 
