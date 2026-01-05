@@ -2,6 +2,36 @@
 
 Contributions are welcome! Here's how you can help improve XcodeBuildMCP.
 
+- [Local development setup](#local-development-setup)
+  - [Prerequisites](#prerequisites)
+    - [Optional: Enabling UI Automation](#optional-enabling-ui-automation)
+  - [Installation](#installation)
+  - [Configure your MCP client](#configure-your-mcp-client)
+  - [Developing using VS Code](#developing-using-vs-code)
+  - [Debugging](#debugging)
+    - [MCP Inspector (Basic Debugging)](#mcp-inspector-basic-debugging)
+    - [Reloaderoo (Advanced Debugging) - **RECOMMENDED**](#reloaderoo-advanced-debugging---recommended)
+      - [1. Proxy Mode (Hot-Reloading)](#1-proxy-mode-hot-reloading)
+      - [2. Inspection Mode (Raw MCP Debugging)](#2-inspection-mode-raw-mcp-debugging)
+    - [Workflow Selection Testing](#workflow-selection-testing)
+    - [Using XcodeBuildMCP doctor tool](#using-xcodebuildmcp-doctor-tool)
+    - [Development Workflow with Reloaderoo](#development-workflow-with-reloaderoo)
+- [Architecture and Code Standards](#architecture-and-code-standards)
+  - [Code Quality Requirements](#code-quality-requirements)
+  - [Testing Standards](#testing-standards)
+  - [Pre-Commit Checklist](#pre-commit-checklist)
+- [Making changes](#making-changes)
+- [Plugin Development](#plugin-development)
+  - [Quick Plugin Development Checklist](#quick-plugin-development-checklist)
+  - [Working with Project Templates](#working-with-project-templates)
+    - [Template Repositories](#template-repositories)
+    - [Local Template Development](#local-template-development)
+    - [Template Versioning](#template-versioning)
+    - [Testing Template Changes](#testing-template-changes)
+- [Testing](#testing)
+- [Submitting](#submitting)
+- [Code of Conduct](#code-of-conduct)
+
 ## Local development setup
 
 ### Prerequisites
