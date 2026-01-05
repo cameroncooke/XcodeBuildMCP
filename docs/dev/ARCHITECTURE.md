@@ -262,7 +262,7 @@ This pattern ensures that:
 
 ### MCP Resources System
 
-XcodeBuildMCP provides dual interfaces: traditional MCP tools and efficient MCP resources for supported clients. Resources are located in `src/mcp/resources/` and are automatically discovered **at build time**. The build process generates `src/core/generated-resources.ts`, which contains dynamic loaders for each resource, improving startup performance. For more details on creating resources, see the [Plugin Development Guide](docs/PLUGIN_DEVELOPMENT.md).
+XcodeBuildMCP provides dual interfaces: traditional MCP tools and efficient MCP resources for supported clients. Resources are located in `src/mcp/resources/` and are automatically discovered **at build time**. The build process generates `src/core/generated-resources.ts`, which contains dynamic loaders for each resource, improving startup performance. For more details on creating resources, see the [Plugin Development Guide](PLUGIN_DEVELOPMENT.md).
 
 #### Resource Architecture
 
@@ -411,7 +411,7 @@ Not all parts are required for every tool. For example, `swift_package_build` ha
 
 XcodeBuildMCP uses a strict **Dependency Injection (DI)** pattern for testing, which completely bans the use of traditional mocking libraries like Vitest's `vi.mock` or `vi.fn`. This ensures that tests are robust, maintainable, and verify the actual integration between components.
 
-For detailed guidelines, see the [Testing Guide](docs/TESTING.md).
+For detailed guidelines, see the [Testing Guide](TESTING.md).
 
 ### Test Structure Example
 
@@ -499,7 +499,7 @@ bundled/
 
 ## Extension Guidelines
 
-This project is designed to be extensible. For comprehensive instructions on creating new tools, workflow groups, and resources, please refer to the dedicated [**Plugin Development Guide**](docs/PLUGIN_DEVELOPMENT.md).
+This project is designed to be extensible. For comprehensive instructions on creating new tools, workflow groups, and resources, please refer to the dedicated [**Plugin Development Guide**](PLUGIN_DEVELOPMENT.md).
 
 The guide covers:
 - The auto-discovery system architecture.

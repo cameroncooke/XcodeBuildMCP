@@ -201,9 +201,9 @@ Running the XcodeBuildMCP server with the environmental variable `XCODEBUILDMCP_
 
 Before making changes, please familiarize yourself with:
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Comprehensive architectural overview
-- [CLAUDE.md](CLAUDE.md) - AI assistant guidelines and testing principles
-- [TOOLS.md](TOOLS.md) - Complete tool documentation
-- [TOOL_OPTIONS.md](TOOL_OPTIONS.md) - Tool configuration options
+- [CLAUDE.md](../../CLAUDE.md) - AI assistant guidelines and testing principles
+- [TOOLS.md](../TOOLS.md) - Complete tool documentation
+- [CONFIGURATION.md](../CONFIGURATION.md) - Tool configuration options
 
 ### Code Quality Requirements
 
@@ -215,7 +215,7 @@ Before making changes, please familiarize yourself with:
 
 ### Testing Standards
 
-All contributions must adhere to the testing standards outlined in the [**XcodeBuildMCP Plugin Testing Guidelines (docs/TESTING.md)**](docs/TESTING.md). This is the canonical source of truth for all testing practices.
+All contributions must adhere to the testing standards outlined in the [**XcodeBuildMCP Plugin Testing Guidelines (TESTING.md)**](TESTING.md). This is the canonical source of truth for all testing practices.
 
 **Key Principles (Summary):**
 - **No Vitest Mocking**: All forms of `vi.mock`, `vi.fn`, `vi.spyOn`, etc., are strictly forbidden.
@@ -223,7 +223,7 @@ All contributions must adhere to the testing standards outlined in the [**XcodeB
 - **Test Production Code**: Tests must import and execute the actual tool logic, not mock implementations.
 - **Comprehensive Coverage**: Tests must cover input validation, command generation, and output processing.
 
-Please read [docs/TESTING.md](docs/TESTING.md) in its entirety before writing tests.
+Please read [TESTING.md](TESTING.md) in its entirety before writing tests.
 
 ### Pre-Commit Checklist
 
@@ -253,7 +253,7 @@ npm test
 
 ## Plugin Development
 
-For comprehensive instructions on creating new tools and workflow groups, see our dedicated [Plugin Development Guide](docs/PLUGIN_DEVELOPMENT.md).
+For comprehensive instructions on creating new tools and workflow groups, see our dedicated [Plugin Development Guide](PLUGIN_DEVELOPMENT.md).
 
 The plugin development guide covers:
 - Auto-discovery system architecture
@@ -270,7 +270,7 @@ The plugin development guide covers:
 4. Create comprehensive tests using `createMockExecutor()`
 5. Add workflow metadata if creating new workflow group
 
-See [PLUGIN_DEVELOPMENT.md](docs/PLUGIN_DEVELOPMENT.md) for complete details.
+See [PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md) for complete details.
 
 ### Working with Project Templates
 
@@ -351,4 +351,4 @@ For major changes or new features, please open an issue first to discuss your pr
 
 ## Code of Conduct
 
-Please follow our [Code of Conduct](CODE_OF_CONDUCT.md) and community guidelines.
+Please follow our [Code of Conduct](../../CODE_OF_CONDUCT.md) and community guidelines.

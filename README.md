@@ -77,14 +77,29 @@ npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client client-n
 
 For more installation options see: [Smithery XcodeBuildMCP](https://smithery.ai/server/cameroncooke/xcodebuildmcp).
 
->[!NOTE]
-> XcodeBuildMCP requires Node 18.x or later and Xcode 16.x or later to be installed.
+## Requirements
 
-## View the full Readme
+- macOS 14.5 or later
+- Xcode 16.x or later
+- Node.js 18.x or later
 
-To read the full Readme with manual installation instructions, configuration options, feature list and demos click the link below.
+## Notes
 
-[View the full Readme](README-ext.md)
+- XcodeBuildMCP requests xcodebuild to skip macro validation to avoid errors when building projects that use Swift Macros.
+- Device tools require code signing to be configured in Xcode. See [docs/DEVICE_CODE_SIGNING.md](docs/DEVICE_CODE_SIGNING.md).
+
+## Privacy
+
+XcodeBuildMCP uses Sentry for error telemetry. For more information or to opt out of error telemetry see [docs/PRIVACY.md](docs/PRIVACY.md).
+
+## Documentation
+
+- Getting started: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
+- Configuration and options: [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
+- Tools reference: [docs/TOOLS.md](docs/TOOLS.md)
+- Troubleshooting: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+- Privacy: [docs/PRIVACY.md](docs/PRIVACY.md)
+- Contributing: [docs/dev/CONTRIBUTING.md](docs/dev/CONTRIBUTING.md)
 
 ## Licence
 

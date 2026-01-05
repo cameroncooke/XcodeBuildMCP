@@ -2,7 +2,7 @@
 
 _Audit date: October 6, 2025_
 
-Reference: `docs/session_management_plan.md`
+Reference: [session_management_plan.md](session_management_plan.md)
 
 ## Utilities
 - [x] `src/mcp/tools/utilities/clean.ts` — session defaults: `projectPath`, `workspacePath`, `scheme`, `configuration`.

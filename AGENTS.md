@@ -104,7 +104,7 @@ npx reloaderoo proxy --log-level debug -- node build/index.js
 - ✅ **8 Inspect Commands**: Complete MCP protocol testing capabilities
 - ✅ **Universal Compatibility**: Works on any system via npx
 
-For complete documentation, examples, and troubleshooting, see @docs/RELOADEROO.md
+For complete documentation, examples, and troubleshooting, see @docs/dev/RELOADEROO.md
 
 ## Architecture Overview
 
@@ -116,13 +116,13 @@ XcodeBuildMCP uses the concept of configuration by convention for MCP exposing a
 
 Tools are the core of the MCP server and are the primary way to interact with the server. They are organized into directories by their functionality and are automatically loaded and exposed to MCP clients.
 
-For more information see @docs/PLUGIN_DEVELOPMENT.md
+For more information see @docs/dev/PLUGIN_DEVELOPMENT.md
 
 #### Resources
 
 Resources are the secondary way to interact with the server. They are used to provide data to tools and are organized into directories by their functionality and are automatically loaded and exposed to MCP clients.
 
-For more information see @docs/PLUGIN_DEVELOPMENT.md
+For more information see @docs/dev/PLUGIN_DEVELOPMENT.md
 
 ### Tool Registration
 
@@ -141,7 +141,7 @@ XcodeBuildMCP loads tools at startup. To limit the toolset, set `XCODEBUILDMCP_E
 5. **Shared Utilities**: Command execution, build management, validation
 6. **Types**: Shared interfaces and Zod schemas
 
-For more information see @docs/ARCHITECTURE.md
+For more information see @docs/dev/ARCHITECTURE.md
 
 ## Testing
 
@@ -155,7 +155,7 @@ The project enforces a strict **Dependency Injection (DI)** testing philosophy.
 
 This approach ensures that tests are robust, easy to maintain, and verify the actual integration between components without being tightly coupled to implementation details.
 
-For complete guidelines, refer to @docs/TESTING.md.
+For complete guidelines, refer to @docs/dev/TESTING.md.
 
 ## TypeScript Import Standards
 
@@ -189,7 +189,7 @@ This ensures all new code follows the `.ts` import pattern and maintains compati
 
 Follow standardized development workflow with feature branches, structured pull requests, and linear commit history. **Never push to main directly or force push without permission.**
 
-For complete guidelines, refer to @docs/RELEASE_PROCESS.md
+For complete guidelines, refer to @docs/dev/RELEASE_PROCESS.md
 
 ## Useful external resources
 

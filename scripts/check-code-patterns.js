@@ -17,7 +17,7 @@
  * 4. NO handler signature violations (handlers must have exact MCP SDK signatures)
  * 5. NO handler testing violations (test logic functions, not handlers directly)
  * 
- * For comprehensive code quality documentation, see docs/CODE_QUALITY.md
+ * For comprehensive code quality documentation, see docs/dev/CODE_QUALITY.md
  * 
  * Note: General code quality rules (TypeScript, ESLint) are handled by other tools.
  * This script only enforces XcodeBuildMCP-specific architectural patterns.
