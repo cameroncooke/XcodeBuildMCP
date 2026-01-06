@@ -75,7 +75,7 @@ npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client client-n
 
 <br />
 
-For more installation options see: [Smithery XcodeBuildMCP](https://smithery.ai/server/cameroncooke/xcodebuildmcp).
+For other clients see: [Smithery XcodeBuildMCP](https://smithery.ai/server/cameroncooke/xcodebuildmcp), for other installation options including manual installation see [Getting Started](docs/GETTING_STARTED.md)
 
 ## Requirements
 
