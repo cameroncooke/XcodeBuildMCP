@@ -260,4 +260,89 @@ describe('build-utils Sentry Classification', () => {
       expect(result.content[0].text).toContain('❌ [stderr] Some error without exit code');
     });
   });
+
+  describe('Working Directory (cwd) Handling', () => {
+    it('should pass project directory as cwd for workspace builds', async () => {
+      let capturedOptions: any;
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        exitCode: 0,
+        onExecute: (_command, _logPrefix, _useShell, opts) => {
+          capturedOptions = opts;
+        },
+      });
+
+      await executeXcodeBuildCommand(
+        {
+          scheme: 'TestScheme',
+          configuration: 'Debug',
+          workspacePath: '/path/to/project/MyProject.xcworkspace',
+        },
+        mockPlatformOptions,
+        false,
+        'build',
+        mockExecutor,
+      );
+
+      expect(capturedOptions).toBeDefined();
+      expect(capturedOptions.cwd).toBe('/path/to/project');
+    });
+
+    it('should pass project directory as cwd for project builds', async () => {
+      let capturedOptions: any;
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        exitCode: 0,
+        onExecute: (_command, _logPrefix, _useShell, opts) => {
+          capturedOptions = opts;
+        },
+      });
+
+      await executeXcodeBuildCommand(
+        {
+          scheme: 'TestScheme',
+          configuration: 'Debug',
+          projectPath: '/path/to/project/MyProject.xcodeproj',
+        },
+        mockPlatformOptions,
+        false,
+        'build',
+        mockExecutor,
+      );
+
+      expect(capturedOptions).toBeDefined();
+      expect(capturedOptions.cwd).toBe('/path/to/project');
+    });
+
+    it('should merge cwd with existing execOpts', async () => {
+      let capturedOptions: any;
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        exitCode: 0,
+        onExecute: (_command, _logPrefix, _useShell, opts) => {
+          capturedOptions = opts;
+        },
+      });
+
+      await executeXcodeBuildCommand(
+        {
+          scheme: 'TestScheme',
+          configuration: 'Debug',
+          workspacePath: '/path/to/project/MyProject.xcworkspace',
+        },
+        mockPlatformOptions,
+        false,
+        'build',
+        mockExecutor,
+        { env: { CUSTOM_VAR: 'value' } },
+      );
+
+      expect(capturedOptions).toBeDefined();
+      expect(capturedOptions.cwd).toBe('/path/to/project');
+      expect(capturedOptions.env).toEqual({ CUSTOM_VAR: 'value' });
+    });
+  });
 });

@@ -33,6 +33,13 @@ export function createMockExecutor(
         process?: unknown;
         exitCode?: number;
         shouldThrow?: Error;
+        onExecute?: (
+          command: string[],
+          logPrefix?: string,
+          useShell?: boolean,
+          opts?: { env?: Record<string, string>; cwd?: string },
+          detached?: boolean,
+        ) => void;
       }
     | Error
     | string,
@@ -65,13 +72,20 @@ export function createMockExecutor(
     spawnfile: 'sh',
   } as unknown as ChildProcess;
 
-  return async () => ({
-    success: result.success ?? true,
-    output: result.output ?? '',
-    error: result.error,
-    process: (result.process ?? mockProcess) as ChildProcess,
-    exitCode: result.exitCode ?? (result.success === false ? 1 : 0),
-  });
+  return async (command, logPrefix, useShell, opts, detached) => {
+    // Call onExecute callback if provided
+    if (result.onExecute) {
+      result.onExecute(command, logPrefix, useShell, opts, detached);
+    }
+
+    return {
+      success: result.success ?? true,
+      output: result.output ?? '',
+      error: result.error,
+      process: (result.process ?? mockProcess) as ChildProcess,
+      exitCode: result.exitCode ?? (result.success === false ? 1 : 0),
+    };
+  };
 }
 
 /**

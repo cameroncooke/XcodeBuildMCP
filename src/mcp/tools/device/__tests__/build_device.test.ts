@@ -132,16 +132,16 @@ describe('build_device plugin', () => {
         args: string[];
         logPrefix: string;
         silent: boolean;
-        timeout: number | undefined;
+        opts: { cwd?: string } | undefined;
       }> = [];
 
       const stubExecutor = async (
         args: string[],
         logPrefix: string,
         silent: boolean,
-        timeout?: number,
+        opts?: { cwd?: string },
       ) => {
-        commandCalls.push({ args, logPrefix, silent, timeout });
+        commandCalls.push({ args, logPrefix, silent, opts });
         return {
           success: true,
           output: 'Build succeeded',
@@ -175,7 +175,7 @@ describe('build_device plugin', () => {
         ],
         logPrefix: 'iOS Device Build',
         silent: true,
-        timeout: undefined,
+        opts: { cwd: '/path/to' },
       });
     });
 
@@ -184,16 +184,16 @@ describe('build_device plugin', () => {
         args: string[];
         logPrefix: string;
         silent: boolean;
-        timeout: number | undefined;
+        opts: { cwd?: string } | undefined;
       }> = [];
 
       const stubExecutor = async (
         args: string[],
         logPrefix: string,
         silent: boolean,
-        timeout?: number,
+        opts?: { cwd?: string },
       ) => {
-        commandCalls.push({ args, logPrefix, silent, timeout });
+        commandCalls.push({ args, logPrefix, silent, opts });
         return {
           success: true,
           output: 'Build succeeded',
@@ -227,7 +227,7 @@ describe('build_device plugin', () => {
         ],
         logPrefix: 'iOS Device Build',
         silent: true,
-        timeout: undefined,
+        opts: { cwd: '/path/to' },
       });
     });
 
@@ -293,16 +293,16 @@ describe('build_device plugin', () => {
         args: string[];
         logPrefix: string;
         silent: boolean;
-        timeout: number | undefined;
+        opts: { cwd?: string } | undefined;
       }> = [];
 
       const stubExecutor = async (
         args: string[],
         logPrefix: string,
         silent: boolean,
-        timeout?: number,
+        opts?: { cwd?: string },
       ) => {
-        commandCalls.push({ args, logPrefix, silent, timeout });
+        commandCalls.push({ args, logPrefix, silent, opts });
         return {
           success: true,
           output: 'Build succeeded',
@@ -342,7 +342,7 @@ describe('build_device plugin', () => {
         ],
         logPrefix: 'iOS Device Build',
         silent: true,
-        timeout: undefined,
+        opts: { cwd: '/path/to' },
       });
     });
   });

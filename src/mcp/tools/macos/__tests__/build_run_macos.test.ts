@@ -82,10 +82,10 @@ describe('build_run_macos', () => {
         command: string[],
         description: string,
         logOutput: boolean,
-        timeout?: number,
+        opts?: { cwd?: string },
       ) => {
         callCount++;
-        executorCalls.push({ command, description, logOutput, timeout });
+        executorCalls.push({ command, description, logOutput, opts });
 
         if (callCount === 1) {
           // First call for build
@@ -131,7 +131,7 @@ describe('build_run_macos', () => {
         ],
         description: 'macOS Build',
         logOutput: true,
-        timeout: undefined,
+        opts: { cwd: '/path/to' },
       });
 
       // Verify build settings command was called
@@ -178,10 +178,10 @@ describe('build_run_macos', () => {
         command: string[],
         description: string,
         logOutput: boolean,
-        timeout?: number,
+        opts?: { cwd?: string },
       ) => {
         callCount++;
-        executorCalls.push({ command, description, logOutput, timeout });
+        executorCalls.push({ command, description, logOutput, opts });
 
         if (callCount === 1) {
           // First call for build
@@ -227,7 +227,7 @@ describe('build_run_macos', () => {
         ],
         description: 'macOS Build',
         logOutput: true,
-        timeout: undefined,
+        opts: { cwd: '/path/to' },
       });
 
       // Verify build settings command was called
@@ -445,10 +445,10 @@ describe('build_run_macos', () => {
         command: string[],
         description: string,
         logOutput: boolean,
-        timeout?: number,
+        opts?: { cwd?: string },
       ) => {
         callCount++;
-        executorCalls.push({ command, description, logOutput, timeout });
+        executorCalls.push({ command, description, logOutput, opts });
 
         if (callCount === 1) {
           // First call for build
@@ -493,7 +493,7 @@ describe('build_run_macos', () => {
         ],
         description: 'macOS Build',
         logOutput: true,
-        timeout: undefined,
+        opts: { cwd: '/path/to' },
       });
     });
   });
