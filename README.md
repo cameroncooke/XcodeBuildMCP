@@ -7,7 +7,7 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 
 ## Easy install
 
-Easiest way to install XcodeBuildMCP is to use Smithery to install it from the registry. Copy and paste one of the following commands into your terminal.
+Easiest way to install XcodeBuildMCP is to use [Smithery](https://smithery.ai) to install it from the registry. Copy and paste one of the following commands into your terminal.
 
 ```bash
 npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client client-name
