@@ -48,9 +48,6 @@ jobs:
       - name: Bundle AXe artifacts
         run: npm run bundle:axe
 
-      - name: Build TypeScript (tsup)
-        run: npm run build:tsup
-
       - name: Build Smithery bundle
         run: npm run build
 

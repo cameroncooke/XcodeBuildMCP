@@ -97,7 +97,7 @@ else
     tar -xzf "axe-release.tar.gz"
 
     # Find the extracted directory (might be named differently)
-    EXTRACTED_DIR=$(find . -type d -name "*AXe*" -o -name "*axe*" | head -1)
+    EXTRACTED_DIR=$(find . -type d \( -name "*AXe*" -o -name "*axe*" \) | head -1)
     if [ -z "$EXTRACTED_DIR" ]; then
         # If no AXe directory found, assume files are in current directory
         EXTRACTED_DIR="."
@@ -144,17 +144,23 @@ echo "📦 Copied $FRAMEWORK_COUNT frameworks"
 echo "🔍 Bundled frameworks:"
 ls -la "$BUNDLED_DIR/Frameworks/"
 
-# Verify binary can run with bundled frameworks
-echo "🧪 Testing bundled AXe binary..."
-if DYLD_FRAMEWORK_PATH="$BUNDLED_DIR/Frameworks" "$BUNDLED_DIR/axe" --version > /dev/null 2>&1; then
-    echo "✅ Bundled AXe binary test passed"
-else
-    echo "❌ Bundled AXe binary test failed"
-    exit 1
-fi
+# Verify binary can run with bundled frameworks (macOS only)
+OS_NAME="$(uname -s)"
+if [ "$OS_NAME" = "Darwin" ]; then
+    echo "🧪 Testing bundled AXe binary..."
+    if DYLD_FRAMEWORK_PATH="$BUNDLED_DIR/Frameworks" "$BUNDLED_DIR/axe" --version > /dev/null 2>&1; then
+        echo "✅ Bundled AXe binary test passed"
+    else
+        echo "❌ Bundled AXe binary test failed"
+        exit 1
+    fi
 
-# Get AXe version for logging
-AXE_VERSION=$(DYLD_FRAMEWORK_PATH="$BUNDLED_DIR/Frameworks" "$BUNDLED_DIR/axe" --version 2>/dev/null || echo "unknown")
+    # Get AXe version for logging
+    AXE_VERSION=$(DYLD_FRAMEWORK_PATH="$BUNDLED_DIR/Frameworks" "$BUNDLED_DIR/axe" --version 2>/dev/null || echo "unknown")
+else
+    echo "⚠️  Skipping AXe binary verification on non-macOS (detected $OS_NAME)"
+    AXE_VERSION="unknown (verification skipped)"
+fi
 echo "📋 AXe version: $AXE_VERSION"
 
 # Clean up temp directory if it was used

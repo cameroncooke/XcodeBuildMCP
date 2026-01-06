@@ -26,11 +26,14 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Build (tsup)
-      run: npm run build:tsup
+    - name: Bundle AXe artifacts
+      run: npm run bundle:axe
 
     - name: Build (Smithery)
       run: npm run build
+
+    - name: Verify Smithery bundle
+      run: npm run verify:smithery-bundle
 
     - name: Lint
       run: npm run lint
