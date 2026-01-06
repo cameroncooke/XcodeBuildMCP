@@ -4,9 +4,11 @@
   "mcpName": "com.xcodebuildmcp/XcodeBuildMCP",
   "iOSTemplateVersion": "v1.0.8",
   "macOSTemplateVersion": "v1.0.5",
-  "main": "build/index.js",
   "type": "module",
-  "module": "build/index.js",
+  "exports": {
+    ".": "./build/index.js",
+    "./package.json": "./package.json"
+  },
   "bin": {
     "xcodebuildmcp": "build/index.js",
     "xcodebuildmcp-doctor": "build/doctor-cli.js"
