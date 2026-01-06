@@ -4,4 +4,5 @@ export {
   getBundledAxeEnvironment,
   areAxeToolsAvailable,
   isAxeAtLeastVersion,
+  resolveAxeBinary,
 } from '../axe-helpers.ts';

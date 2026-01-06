@@ -1,16 +1,25 @@
 /**
  * AXe Helper Functions
  *
- * This utility module provides functions to work with the bundled AXe tool.
- * Always uses the bundled version to ensure consistency.
+ * This utility module provides functions to resolve and execute AXe.
+ * Prefers bundled AXe when present, but allows env and PATH fallback.
  */
 
-import { existsSync } from 'fs';
-import { dirname, join } from 'path';
+import { accessSync, constants, existsSync } from 'fs';
+import { dirname, join, resolve, delimiter } from 'path';
 import { createTextResponse } from './validation.ts';
 import { ToolResponse } from '../types/common.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { getDefaultCommandExecutor } from './execution/index.ts';
+
+const AXE_PATH_ENV_VARS = ['XCODEBUILDMCP_AXE_PATH', 'AXE_PATH'] as const;
+
+export type AxeBinarySource = 'env' | 'bundled' | 'path';
+
+export type AxeBinary = {
+  path: string;
+  source: AxeBinarySource;
+};
 
 function getPackageRoot(): string {
   const entry = process.argv[1];
@@ -25,15 +34,82 @@ function getPackageRoot(): string {
 // So we go up one level from build/ to get to the package root
 const bundledAxePath = join(getPackageRoot(), 'bundled', 'axe');
 
-/**
- * Get the path to the bundled axe binary
- */
-export function getAxePath(): string | null {
-  // Always use bundled version for consistency
-  if (existsSync(bundledAxePath)) {
-    return bundledAxePath;
+function isExecutable(path: string): boolean {
+  try {
+    accessSync(path, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function resolveAxePathFromEnv(): string | null {
+  for (const envVar of AXE_PATH_ENV_VARS) {
+    const value = process.env[envVar];
+    if (!value) continue;
+    const resolved = resolve(value);
+    if (isExecutable(resolved)) {
+      return resolved;
+    }
   }
   return null;
+}
+
+function resolveBundledAxePath(): string | null {
+  const entry = process.argv[1];
+  const candidates = new Set<string>();
+  if (entry) {
+    const entryDir = dirname(entry);
+    candidates.add(join(dirname(entryDir), 'bundled', 'axe'));
+    candidates.add(join(entryDir, 'bundled', 'axe'));
+  }
+  candidates.add(bundledAxePath);
+  candidates.add(join(process.cwd(), 'bundled', 'axe'));
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function resolveAxePathFromPath(): string | null {
+  const pathValue = process.env.PATH ?? '';
+  const entries = pathValue.split(delimiter).filter(Boolean);
+  for (const entry of entries) {
+    const candidate = join(entry, 'axe');
+    if (isExecutable(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+export function resolveAxeBinary(): AxeBinary | null {
+  const envPath = resolveAxePathFromEnv();
+  if (envPath) {
+    return { path: envPath, source: 'env' };
+  }
+
+  const bundledPath = resolveBundledAxePath();
+  if (bundledPath) {
+    return { path: bundledPath, source: 'bundled' };
+  }
+
+  const pathBinary = resolveAxePathFromPath();
+  if (pathBinary) {
+    return { path: pathBinary, source: 'path' };
+  }
+
+  return null;
+}
+
+/**
+ * Get the path to the available axe binary
+ */
+export function getAxePath(): string | null {
+  return resolveAxeBinary()?.path ?? null;
 }
 
 /**
@@ -46,7 +122,7 @@ export function getBundledAxeEnvironment(): Record<string, string> {
 }
 
 /**
- * Check if bundled axe tool is available
+ * Check if axe tool is available (bundled, env override, or PATH)
  */
 export function areAxeToolsAvailable(): boolean {
   return getAxePath() !== null;
@@ -54,9 +130,9 @@ export function areAxeToolsAvailable(): boolean {
 
 export function createAxeNotAvailableResponse(): ToolResponse {
   return createTextResponse(
-    'Bundled axe tool not found. UI automation features are not available.\n\n' +
-      'This is likely an installation issue with the npm package.\n' +
-      'Please reinstall xcodebuildmcp or report this issue.',
+    'AXe tool not found. UI automation features are not available.\n\n' +
+      'Install AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\n' +
+      'If you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
     true,
   );
 }

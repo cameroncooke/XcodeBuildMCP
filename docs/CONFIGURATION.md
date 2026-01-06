@@ -51,6 +51,16 @@ Leave this unset for the streamlined session-aware experience; enable it to forc
 
 If you do not wish to send error logs to Sentry, set `XCODEBUILDMCP_SENTRY_DISABLED=true`.
 
+## AXe binary override
+
+UI automation and simulator video capture require the AXe binary. By default, XcodeBuildMCP uses the bundled AXe when available, then falls back to `PATH`. To force a specific binary location, set `XCODEBUILDMCP_AXE_PATH` (preferred). `AXE_PATH` is also recognized for compatibility.
+
+Example:
+
+```
+XCODEBUILDMCP_AXE_PATH=/opt/axe/bin/axe
+```
+
 ## Related docs
 - Session defaults: [SESSION_DEFAULTS.md](SESSION_DEFAULTS.md)
 - Tools reference: [TOOLS.md](TOOLS.md)

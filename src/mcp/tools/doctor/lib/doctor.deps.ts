@@ -6,7 +6,7 @@ import {
   collectToolNames,
   resolveSelectedWorkflows,
 } from '../../../../utils/workflow-selection.ts';
-import { areAxeToolsAvailable } from '../../../../utils/axe/index.ts';
+import { areAxeToolsAvailable, resolveAxeBinary } from '../../../../utils/axe/index.ts';
 import {
   isXcodemakeEnabled,
   isXcodemakeAvailable,
@@ -98,9 +98,26 @@ export interface DoctorDependencies {
 export function createDoctorDependencies(executor: CommandExecutor): DoctorDependencies {
   const binaryChecker: BinaryChecker = {
     async checkBinaryAvailability(binary: string) {
-      // If bundled axe is available, reflect that in dependencies even if not on PATH
-      if (binary === 'axe' && areAxeToolsAvailable()) {
-        return { available: true, version: 'Bundled' };
+      if (binary === 'axe') {
+        const axeBinary = resolveAxeBinary();
+        if (!axeBinary) {
+          return { available: false };
+        }
+
+        let version: string | undefined;
+        try {
+          const res = await executor([axeBinary.path, '--version'], 'Get AXe Version');
+          if (res.success && res.output) {
+            version = res.output.trim();
+          }
+        } catch {
+          // ignore
+        }
+
+        return {
+          available: true,
+          version: version ?? 'Available (version info not available)',
+        };
       }
       try {
         const which = await executor(['which', binary], 'Check Binary Availability');
@@ -113,7 +130,6 @@ export function createDoctorDependencies(executor: CommandExecutor): DoctorDepen
 
       let version: string | undefined;
       const versionCommands: Record<string, string> = {
-        axe: 'axe --version',
         mise: 'mise --version',
       };
 

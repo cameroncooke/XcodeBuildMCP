@@ -32,6 +32,9 @@ jobs:
     - name: Build (Smithery)
       run: npm run build
 
+    - name: Verify Smithery bundle
+      run: npm run verify:smithery-bundle
+
     - name: Lint
       run: npm run lint
 

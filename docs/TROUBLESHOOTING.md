@@ -25,6 +25,12 @@ It reports on:
 
 ## Common issues
 
+### UI automation reports missing AXe
+UI automation (describe/tap/swipe/type) and simulator video capture require the AXe binary. If you see a missing AXe error:
+- Ensure `bundled/` artifacts exist when installing from Smithery or npm.
+- Or set `XCODEBUILDMCP_AXE_PATH` to a known AXe binary path (preferred), or `AXE_PATH`.
+- Re-run the doctor tool to confirm AXe is detected.
+
 ### Tool timeouts
 Some clients have short tool timeouts. If you see timeouts, increase the client timeout (for example, `tool_timeout_sec = 600` in Codex).
 
