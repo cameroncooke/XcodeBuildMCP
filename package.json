@@ -24,7 +24,7 @@
     "format": "prettier --write 'src/**/*.{js,ts}'",
     "format:check": "prettier --check 'src/**/*.{js,ts}'",
     "typecheck": "npx tsc --noEmit",
-    "verify:smithery-bundle": "scripts/verify-smithery-bundle.sh",
+    "verify:smithery-bundle": "bash scripts/verify-smithery-bundle.sh",
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
     "doctor": "node build/doctor-cli.js",
     "tools": "npx tsx scripts/tools-cli.ts",
