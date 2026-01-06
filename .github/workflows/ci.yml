@@ -26,6 +26,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Bundle AXe artifacts
+      run: npm run bundle:axe
+
     - name: Build (tsup)
       run: npm run build:tsup
 
