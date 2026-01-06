@@ -6,13 +6,14 @@
   "macOSTemplateVersion": "v1.0.5",
   "main": "build/index.js",
   "type": "module",
-  "module": "src/smithery.ts",
+  "module": "build/index.js",
   "bin": {
     "xcodebuildmcp": "build/index.js",
     "xcodebuildmcp-doctor": "build/doctor-cli.js"
   },
   "scripts": {
-    "build": "npm run generate:version && npm run generate:loaders && npx smithery build",
+    "build": "npm run build:tsup && npm run build:smithery",
+    "build:smithery": "npx smithery build src/smithery.ts",
     "dev": "npm run generate:version && npm run generate:loaders && npx smithery dev",
     "build:tsup": "npm run generate:version && npm run generate:loaders && tsup",
     "dev:tsup": "npm run build:tsup && tsup --watch",
