@@ -5,6 +5,7 @@
   "iOSTemplateVersion": "v1.0.8",
   "macOSTemplateVersion": "v1.0.5",
   "type": "module",
+  "module": "src/smithery.ts",
   "exports": {
     ".": "./build/index.js",
     "./package.json": "./package.json"
