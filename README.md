@@ -13,6 +13,9 @@ Easiest way to install XcodeBuildMCP is to use Smithery to install it from the r
 npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client client-name
 ```
 
+> [!IMPORTANT]
+> Due to a Smithery limitation the AXe library isn't bundled with Smithery installs, instead to ensure UI-automation tools work please install AXe and ensure it's globally available by issuing `brew install cameroncooke/axe/axe`, see [AXe](https://github.com/cameroncooke/axe) for more details.
+
 <details>
   <summary>Cursor</summary>
   <br />
