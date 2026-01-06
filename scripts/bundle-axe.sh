@@ -97,7 +97,7 @@ else
     tar -xzf "axe-release.tar.gz"
 
     # Find the extracted directory (might be named differently)
-    EXTRACTED_DIR=$(find . -type d -name "*AXe*" -o -name "*axe*" | head -1)
+    EXTRACTED_DIR=$(find . -type d \( -name "*AXe*" -o -name "*axe*" \) | head -1)
     if [ -z "$EXTRACTED_DIR" ]; then
         # If no AXe directory found, assume files are in current directory
         EXTRACTED_DIR="."
