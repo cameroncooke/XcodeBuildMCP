@@ -6,7 +6,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import testSim from '../test_sim.ts';
+import testSim, { test_simLogic } from '../test_sim.ts';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 
 describe('test_sim tool', () => {
   beforeEach(() => {
@@ -95,6 +96,49 @@ describe('test_sim tool', () => {
       expect(result.content[0].text).toContain('Mutually exclusive parameters provided');
       expect(result.content[0].text).toContain('simulatorId');
       expect(result.content[0].text).toContain('simulatorName');
+    });
+  });
+
+  describe('Validation', () => {
+    it('should reject invalid xcodebuild options in extraArgs', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: 'mock output' });
+
+      const result = await test_simLogic(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+          configuration: 'Debug',
+          extraArgs: ['-test-arg', '--snapshot-record'],
+        },
+        mockExecutor,
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('-test-arg');
+      expect(result.content[0].text).toContain('not a recognized xcodebuild argument');
+      expect(result.content[0].text).toContain('testRunnerEnv');
+    });
+
+    it('should accept valid extraArgs', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: 'mock output' });
+
+      const result = await test_simLogic(
+        {
+          projectPath: '/path/to/project.xcodeproj',
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+          configuration: 'Debug',
+          extraArgs: ['-only-testing:MyTests/MyTestClass'],
+        },
+        mockExecutor,
+      );
+
+      // Should not fail due to validation (but might fail for other reasons in mock)
+      // The key is that it doesn't fail with the validation error message
+      if (result.isError) {
+        expect(result.content[0].text).not.toContain('not a recognized xcodebuild argument');
+      }
     });
   });
 });

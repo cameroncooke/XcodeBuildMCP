@@ -18,6 +18,8 @@ import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
+import { validateXcodebuildExtraArgs } from '../../../utils/xcodebuild-validation.ts';
+import { createTextResponse } from '../../../utils/validation.ts';
 
 // Define base schema object with all fields
 const baseSchemaObject = z.object({
@@ -91,6 +93,13 @@ export async function test_simLogic(
   params: TestSimulatorParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
+  // Validate extraArgs for invalid xcodebuild options
+  const validation = validateXcodebuildExtraArgs(params.extraArgs);
+  if (!validation.isValid) {
+    log('error', `Invalid extraArgs: ${validation.error}`);
+    return createTextResponse(validation.error!, true);
+  }
+
   // Log warning if useLatestOS is provided with simulatorId
   if (params.simulatorId && params.useLatestOS !== undefined) {
     log(
