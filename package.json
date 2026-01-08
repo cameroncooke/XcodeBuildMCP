@@ -28,6 +28,8 @@
     "format": "prettier --write 'src/**/*.{js,ts}'",
     "format:check": "prettier --check 'src/**/*.{js,ts}'",
     "typecheck": "npx tsc --noEmit",
+    "typecheck:tests": "npx tsc -p tsconfig.tests.json --noEmit",
+    "typecheck:all": "npm run typecheck && npm run typecheck:tests",
     "verify:smithery-bundle": "bash scripts/verify-smithery-bundle.sh",
     "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
     "doctor": "node build/doctor-cli.js",
