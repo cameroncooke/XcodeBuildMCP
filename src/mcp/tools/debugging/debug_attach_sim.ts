@@ -122,8 +122,10 @@ export async function debug_attach_simLogic(
         const message = error instanceof Error ? error.message : String(error);
         try {
           await debuggerManager.detachSession(session.id);
-        } catch {
-          // Best-effort cleanup; keep original resume error.
+        } catch (detachError) {
+          const detachMessage =
+            detachError instanceof Error ? detachError.message : String(detachError);
+          log('warn', `Failed to detach debugger session after resume failure: ${detachMessage}`);
         }
         return createErrorResponse('Failed to resume debugger after attach', message);
       }
