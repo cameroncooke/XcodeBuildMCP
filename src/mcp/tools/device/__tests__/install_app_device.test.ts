@@ -51,10 +51,10 @@ describe('install_app_device plugin', () => {
 
   describe('Command Generation', () => {
     it('should generate correct devicectl command with basic parameters', async () => {
-      let capturedCommand: unknown[] = [];
+      let capturedCommand: string[] = [];
       let capturedDescription: string = '';
       let capturedUseShell: boolean = false;
-      let capturedEnv: unknown = undefined;
+      let capturedEnv: Record<string, string> | undefined = undefined;
 
       const mockExecutor = createMockExecutor({
         success: true,
@@ -63,16 +63,17 @@ describe('install_app_device plugin', () => {
       });
 
       const trackingExecutor = async (
-        command: unknown[],
-        description: string,
-        useShell: boolean,
-        env: unknown,
+        command: string[],
+        description?: string,
+        useShell?: boolean,
+        opts?: { env?: Record<string, string> },
+        _detached?: boolean,
       ) => {
         capturedCommand = command;
-        capturedDescription = description;
-        capturedUseShell = useShell;
-        capturedEnv = env;
-        return mockExecutor(command, description, useShell, env);
+        capturedDescription = description ?? '';
+        capturedUseShell = !!useShell;
+        capturedEnv = opts?.env;
+        return mockExecutor(command, description, useShell, opts, _detached);
       };
 
       await install_app_deviceLogic(
@@ -99,7 +100,7 @@ describe('install_app_device plugin', () => {
     });
 
     it('should generate correct command with different device ID', async () => {
-      let capturedCommand: unknown[] = [];
+      let capturedCommand: string[] = [];
 
       const mockExecutor = createMockExecutor({
         success: true,
@@ -107,7 +108,7 @@ describe('install_app_device plugin', () => {
         process: { pid: 12345 },
       });
 
-      const trackingExecutor = async (command: unknown[]) => {
+      const trackingExecutor = async (command: string[]) => {
         capturedCommand = command;
         return mockExecutor(command);
       };
@@ -133,7 +134,7 @@ describe('install_app_device plugin', () => {
     });
 
     it('should generate correct command with paths containing spaces', async () => {
-      let capturedCommand: unknown[] = [];
+      let capturedCommand: string[] = [];
 
       const mockExecutor = createMockExecutor({
         success: true,
@@ -141,7 +142,7 @@ describe('install_app_device plugin', () => {
         process: { pid: 12345 },
       });
 
-      const trackingExecutor = async (command: unknown[]) => {
+      const trackingExecutor = async (command: string[]) => {
         capturedCommand = command;
         return mockExecutor(command);
       };

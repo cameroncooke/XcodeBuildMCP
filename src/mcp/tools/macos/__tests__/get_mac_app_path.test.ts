@@ -5,7 +5,11 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor, type CommandExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockExecutor,
+  type CommandExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import getMacAppPath, { get_mac_app_pathLogic } from '../get_mac_app_path.ts';
 
@@ -104,12 +108,11 @@ describe('get_mac_app_path plugin', () => {
       const calls: any[] = [];
       const mockExecutor: CommandExecutor = async (...args) => {
         calls.push(args);
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const args = {
@@ -143,12 +146,11 @@ describe('get_mac_app_path plugin', () => {
       const calls: any[] = [];
       const mockExecutor: CommandExecutor = async (...args) => {
         calls.push(args);
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const args = {
@@ -182,19 +184,18 @@ describe('get_mac_app_path plugin', () => {
       const calls: any[] = [];
       const mockExecutor: CommandExecutor = async (...args) => {
         calls.push(args);
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const args = {
         workspacePath: '/path/to/MyProject.xcworkspace',
         scheme: 'MyScheme',
         configuration: 'Release',
-        arch: 'arm64',
+        arch: 'arm64' as const,
       };
 
       await get_mac_app_pathLogic(args, mockExecutor);
@@ -225,19 +226,18 @@ describe('get_mac_app_path plugin', () => {
       const calls: any[] = [];
       const mockExecutor: CommandExecutor = async (...args) => {
         calls.push(args);
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const args = {
         workspacePath: '/path/to/MyProject.xcworkspace',
         scheme: 'MyScheme',
         configuration: 'Debug',
-        arch: 'x86_64',
+        arch: 'x86_64' as const,
       };
 
       await get_mac_app_pathLogic(args, mockExecutor);
@@ -268,12 +268,11 @@ describe('get_mac_app_path plugin', () => {
       const calls: any[] = [];
       const mockExecutor: CommandExecutor = async (...args) => {
         calls.push(args);
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const args = {
@@ -313,18 +312,17 @@ describe('get_mac_app_path plugin', () => {
       const calls: any[] = [];
       const mockExecutor: CommandExecutor = async (...args) => {
         calls.push(args);
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const args = {
         workspacePath: '/path/to/MyProject.xcworkspace',
         scheme: 'MyScheme',
-        arch: 'arm64',
+        arch: 'arm64' as const,
       };
 
       await get_mac_app_pathLogic(args, mockExecutor);

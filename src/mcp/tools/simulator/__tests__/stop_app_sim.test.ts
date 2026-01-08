@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockExecutor,
+  createMockCommandResponse,
+} from '../../../../test-utils/mock-executors.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import plugin, { stop_app_simLogic } from '../stop_app_sim.ts';
 
@@ -241,24 +245,25 @@ describe('stop_app_sim tool', () => {
     it('should call correct terminate command', async () => {
       const calls: Array<{
         command: string[];
-        description: string;
-        suppressErrorLogging: boolean;
-        timeout?: number;
+        logPrefix?: string;
+        useShell?: boolean;
+        opts?: { env?: Record<string, string>; cwd?: string };
+        detached?: boolean;
       }> = [];
 
-      const trackingExecutor = async (
-        command: string[],
-        description: string,
-        suppressErrorLogging: boolean,
-        timeout?: number,
+      const trackingExecutor: CommandExecutor = async (
+        command,
+        logPrefix,
+        useShell,
+        opts,
+        detached,
       ) => {
-        calls.push({ command, description, suppressErrorLogging, timeout });
-        return {
+        calls.push({ command, logPrefix, useShell, opts, detached });
+        return createMockCommandResponse({
           success: true,
           output: '',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await stop_app_simLogic(
@@ -272,9 +277,10 @@ describe('stop_app_sim tool', () => {
       expect(calls).toEqual([
         {
           command: ['xcrun', 'simctl', 'terminate', 'test-uuid', 'com.example.App'],
-          description: 'Stop App in Simulator',
-          suppressErrorLogging: true,
-          timeout: undefined,
+          logPrefix: 'Stop App in Simulator',
+          useShell: true,
+          opts: undefined,
+          detached: undefined,
         },
       ]);
     });

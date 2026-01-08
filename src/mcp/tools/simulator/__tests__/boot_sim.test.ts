@@ -5,7 +5,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import bootSim, { boot_simLogic } from '../boot_sim.ts';
 
@@ -120,23 +123,24 @@ describe('boot_sim tool', () => {
     it('should verify command generation with mock executor', async () => {
       const calls: Array<{
         command: string[];
-        description: string;
-        allowStderr: boolean;
-        timeout?: number;
+        description?: string;
+        allowStderr?: boolean;
+        opts?: { cwd?: string };
       }> = [];
       const mockExecutor = async (
         command: string[],
-        description: string,
-        allowStderr: boolean,
-        timeout?: number,
+        description?: string,
+        allowStderr?: boolean,
+        opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
-        calls.push({ command, description, allowStderr, timeout });
-        return {
+        calls.push({ command, description, allowStderr, opts });
+        void detached;
+        return createMockCommandResponse({
           success: true,
           output: 'Simulator booted successfully',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await boot_simLogic({ simulatorId: 'test-uuid-123' }, mockExecutor);
@@ -146,7 +150,7 @@ describe('boot_sim tool', () => {
         command: ['xcrun', 'simctl', 'boot', 'test-uuid-123'],
         description: 'Boot Simulator',
         allowStderr: true,
-        timeout: undefined,
+        opts: undefined,
       });
     });
   });

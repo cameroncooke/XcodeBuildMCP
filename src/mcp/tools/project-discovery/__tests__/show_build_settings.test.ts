@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { createMockExecutor, type CommandExecutor } from '../../../../test-utils/mock-executors.ts';
 import plugin, { showBuildSettingsLogic } from '../show_build_settings.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
@@ -76,7 +76,7 @@ describe('show_build_settings plugin', () => {
       });
 
       // Wrap mockExecutor to track calls
-      const wrappedExecutor = (...args: any[]) => {
+      const wrappedExecutor: CommandExecutor = (...args) => {
         calls.push(args);
         return mockExecutor(...args);
       };
@@ -260,7 +260,7 @@ describe('show_build_settings plugin', () => {
       });
 
       // Wrap mockExecutor to track calls
-      const wrappedExecutor = (...args: any[]) => {
+      const wrappedExecutor: CommandExecutor = (...args) => {
         calls.push(args);
         return mockExecutor(...args);
       };

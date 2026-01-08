@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { createMockExecutor, mockProcess } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import touchPlugin, { touchLogic } from '../touch.ts';
 
@@ -123,7 +123,7 @@ describe('Touch Plugin', () => {
           success: true,
           output: 'touch completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -173,7 +173,7 @@ describe('Touch Plugin', () => {
           success: true,
           output: 'touch completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -223,7 +223,7 @@ describe('Touch Plugin', () => {
           success: true,
           output: 'touch completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -275,7 +275,7 @@ describe('Touch Plugin', () => {
           success: true,
           output: 'touch completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -330,7 +330,7 @@ describe('Touch Plugin', () => {
           success: true,
           output: 'touch completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 

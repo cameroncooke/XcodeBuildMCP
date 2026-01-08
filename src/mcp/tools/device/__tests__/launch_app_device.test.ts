@@ -9,7 +9,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 import launchAppDevice, { launch_app_deviceLogic } from '../launch_app_device.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
@@ -67,10 +70,11 @@ describe('launch_app_device plugin (device-shared)', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string> },
+        _detached?: boolean,
       ) => {
-        calls.push({ command, logPrefix, useShell, env });
-        return mockExecutor(command, logPrefix, useShell, env);
+        calls.push({ command, logPrefix, useShell, env: opts?.env });
+        return mockExecutor(command, logPrefix, useShell, opts, _detached);
       };
 
       await launch_app_deviceLogic(
@@ -79,6 +83,7 @@ describe('launch_app_device plugin (device-shared)', () => {
           bundleId: 'com.example.app',
         },
         trackingExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(calls).toHaveLength(1);
@@ -119,6 +124,7 @@ describe('launch_app_device plugin (device-shared)', () => {
           bundleId: 'com.apple.mobilesafari',
         },
         trackingExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(calls[0].command).toEqual([
@@ -150,6 +156,7 @@ describe('launch_app_device plugin (device-shared)', () => {
           bundleId: 'com.example.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -174,6 +181,7 @@ describe('launch_app_device plugin (device-shared)', () => {
           bundleId: 'com.example.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -187,31 +195,17 @@ describe('launch_app_device plugin (device-shared)', () => {
     });
 
     it('should handle successful launch with process ID information', async () => {
-      // Mock fs operations for JSON parsing
-      const fs = await import('fs');
-      const originalReadFile = fs.promises.readFile;
-      const originalUnlink = fs.promises.unlink;
-
-      const mockReadFile = (path: string) => {
-        if (path.includes('launch-')) {
-          return Promise.resolve(
-            JSON.stringify({
-              result: {
-                process: {
-                  processIdentifier: 12345,
-                },
+      const mockFileSystem = createMockFileSystemExecutor({
+        readFile: async () =>
+          JSON.stringify({
+            result: {
+              process: {
+                processIdentifier: 12345,
               },
-            }),
-          );
-        }
-        return originalReadFile(path);
-      };
-
-      const mockUnlink = () => Promise.resolve();
-
-      // Replace fs methods
-      fs.promises.readFile = mockReadFile;
-      fs.promises.unlink = mockUnlink;
+            },
+          }),
+        rm: async () => {},
+      });
 
       const mockExecutor = createMockExecutor({
         success: true,
@@ -224,11 +218,8 @@ describe('launch_app_device plugin (device-shared)', () => {
           bundleId: 'com.example.app',
         },
         mockExecutor,
+        mockFileSystem,
       );
-
-      // Restore fs methods
-      fs.promises.readFile = originalReadFile;
-      fs.promises.unlink = originalUnlink;
 
       expect(result).toEqual({
         content: [
@@ -252,6 +243,7 @@ describe('launch_app_device plugin (device-shared)', () => {
           bundleId: 'com.example.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -278,6 +270,7 @@ describe('launch_app_device plugin (device-shared)', () => {
           bundleId: 'com.nonexistent.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -303,6 +296,7 @@ describe('launch_app_device plugin (device-shared)', () => {
           bundleId: 'com.example.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -325,6 +319,7 @@ describe('launch_app_device plugin (device-shared)', () => {
           bundleId: 'com.example.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({
@@ -347,6 +342,7 @@ describe('launch_app_device plugin (device-shared)', () => {
           bundleId: 'com.example.app',
         },
         mockExecutor,
+        createMockFileSystemExecutor(),
       );
 
       expect(result).toEqual({

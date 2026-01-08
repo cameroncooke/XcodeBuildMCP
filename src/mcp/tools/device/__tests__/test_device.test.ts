@@ -8,6 +8,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import {
+  createMockCommandResponse,
   createMockExecutor,
   createMockFileSystemExecutor,
 } from '../../../../test-utils/mock-executors.ts';
@@ -83,7 +84,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-123',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isFile: () => true }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -100,7 +101,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-456',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isFile: () => true }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -173,7 +174,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-123456',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isFile: () => true }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -219,7 +220,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-123456',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isFile: () => true }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -232,16 +233,22 @@ describe('test_device plugin', () => {
     it('should handle xcresult parsing failures gracefully', async () => {
       // Create a multi-call mock that handles different commands
       let callCount = 0;
-      const mockExecutor = async (args: string[], description: string) => {
+      const mockExecutor = async (
+        _args: string[],
+        _description?: string,
+        _useShell?: boolean,
+        _opts?: { cwd?: string },
+        _detached?: boolean,
+      ) => {
         callCount++;
 
         // First call is for xcodebuild test (successful)
         if (callCount === 1) {
-          return { success: true, output: 'BUILD SUCCEEDED' };
+          return createMockCommandResponse({ success: true, output: 'BUILD SUCCEEDED' });
         }
 
         // Second call is for xcresulttool (fails)
-        return { success: false, error: 'xcresulttool failed' };
+        return createMockCommandResponse({ success: false, error: 'xcresulttool failed' });
       };
 
       const result = await testDeviceLogic(
@@ -297,7 +304,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-123456',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isFile: () => true }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -336,7 +343,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-123456',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isFile: () => true }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -373,7 +380,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-workspace-123',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isFile: () => true }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );

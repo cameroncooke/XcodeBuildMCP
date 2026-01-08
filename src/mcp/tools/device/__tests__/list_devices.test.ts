@@ -8,8 +8,8 @@
 
 import { describe, it, expect } from 'vitest';
 import {
+  createMockCommandResponse,
   createMockExecutor,
-  createMockFileSystemExecutor,
 } from '../../../../test-utils/mock-executors.ts';
 
 // Import the logic function and re-export
@@ -85,10 +85,11 @@ describe('list_devices plugin (device-shared)', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string> },
+        _detached?: boolean,
       ) => {
-        commandCalls.push({ command, logPrefix, useShell, env });
-        return mockExecutor(command, logPrefix, useShell, env);
+        commandCalls.push({ command, logPrefix, useShell, env: opts?.env });
+        return mockExecutor(command, logPrefix, useShell, opts, _detached);
       };
 
       // Create mock path dependencies
@@ -98,10 +99,10 @@ describe('list_devices plugin (device-shared)', () => {
       };
 
       // Create mock filesystem with specific behavior
-      const mockFsDeps = createMockFileSystemExecutor({
-        readFile: async () => JSON.stringify(devicectlJson),
+      const mockFsDeps = {
+        readFile: async (_path: string, _encoding?: string) => JSON.stringify(devicectlJson),
         unlink: async () => {},
-      });
+      };
 
       await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
@@ -134,27 +135,26 @@ describe('list_devices plugin (device-shared)', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string> },
+        _detached?: boolean,
       ) => {
         callCount++;
-        commandCalls.push({ command, logPrefix, useShell, env });
+        commandCalls.push({ command, logPrefix, useShell, env: opts?.env });
 
         if (callCount === 1) {
           // First call fails (devicectl)
-          return {
+          return createMockCommandResponse({
             success: false,
             output: '',
             error: 'devicectl failed',
-            process: { pid: 12345 },
-          };
+          });
         } else {
           // Second call succeeds (xctrace)
-          return {
+          return createMockCommandResponse({
             success: true,
             output: 'iPhone 15 (12345678-1234-1234-1234-123456789012)',
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         }
       };
 
@@ -165,12 +165,12 @@ describe('list_devices plugin (device-shared)', () => {
       };
 
       // Create mock filesystem that throws for readFile
-      const mockFsDeps = createMockFileSystemExecutor({
+      const mockFsDeps = {
         readFile: async () => {
           throw new Error('File not found');
         },
         unlink: async () => {},
-      });
+      };
 
       await list_devicesLogic({}, trackingExecutor, mockPathDeps, mockFsDeps);
 
@@ -220,10 +220,10 @@ describe('list_devices plugin (device-shared)', () => {
       };
 
       // Create mock filesystem with specific behavior
-      const mockFsDeps = createMockFileSystemExecutor({
-        readFile: async () => JSON.stringify(devicectlJson),
+      const mockFsDeps = {
+        readFile: async (_path: string, _encoding?: string) => JSON.stringify(devicectlJson),
         unlink: async () => {},
-      });
+      };
 
       const result = await list_devicesLogic({}, mockExecutor, mockPathDeps, mockFsDeps);
 
@@ -241,28 +241,27 @@ describe('list_devices plugin (device-shared)', () => {
       // Create executor with call count behavior
       let callCount = 0;
       const mockExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
+        _command: string[],
+        _logPrefix?: string,
+        _useShell?: boolean,
+        _opts?: { env?: Record<string, string> },
+        _detached?: boolean,
       ) => {
         callCount++;
         if (callCount === 1) {
           // First call fails (devicectl)
-          return {
+          return createMockCommandResponse({
             success: false,
             output: '',
             error: 'devicectl failed',
-            process: { pid: 12345 },
-          };
+          });
         } else {
           // Second call succeeds (xctrace)
-          return {
+          return createMockCommandResponse({
             success: true,
             output: 'iPhone 15 (12345678-1234-1234-1234-123456789012)',
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         }
       };
 
@@ -273,12 +272,12 @@ describe('list_devices plugin (device-shared)', () => {
       };
 
       // Create mock filesystem that throws for readFile
-      const mockFsDeps = createMockFileSystemExecutor({
+      const mockFsDeps = {
         readFile: async () => {
           throw new Error('File not found');
         },
         unlink: async () => {},
-      });
+      };
 
       const result = await list_devicesLogic({}, mockExecutor, mockPathDeps, mockFsDeps);
 
@@ -302,28 +301,27 @@ describe('list_devices plugin (device-shared)', () => {
       // Create executor with call count behavior
       let callCount = 0;
       const mockExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
+        _command: string[],
+        _logPrefix?: string,
+        _useShell?: boolean,
+        _opts?: { env?: Record<string, string> },
+        _detached?: boolean,
       ) => {
         callCount++;
         if (callCount === 1) {
           // First call succeeds (devicectl)
-          return {
+          return createMockCommandResponse({
             success: true,
             output: '',
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         } else {
           // Second call succeeds (xctrace) with empty output
-          return {
+          return createMockCommandResponse({
             success: true,
             output: '',
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         }
       };
 
@@ -334,10 +332,10 @@ describe('list_devices plugin (device-shared)', () => {
       };
 
       // Create mock filesystem with empty devices response
-      const mockFsDeps = createMockFileSystemExecutor({
-        readFile: async () => JSON.stringify(devicectlJson),
+      const mockFsDeps = {
+        readFile: async (_path: string, _encoding?: string) => JSON.stringify(devicectlJson),
         unlink: async () => {},
-      });
+      };
 
       const result = await list_devicesLogic({}, mockExecutor, mockPathDeps, mockFsDeps);
 

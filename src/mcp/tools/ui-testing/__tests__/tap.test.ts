@@ -132,7 +132,7 @@ describe('Tap Plugin', () => {
       command: string[];
       logPrefix?: string;
       useShell?: boolean;
-      env?: Record<string, string>;
+      opts?: { env?: Record<string, string>; cwd?: string };
     }>;
 
     beforeEach(() => {
@@ -149,10 +149,10 @@ describe('Tap Plugin', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string>; cwd?: string },
       ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return mockExecutor(command, logPrefix, useShell, env);
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return mockExecutor(command, logPrefix, useShell, opts);
       };
 
       const mockAxeHelpers = createMockAxeHelpers();
@@ -181,7 +181,7 @@ describe('Tap Plugin', () => {
         ],
         logPrefix: '[AXe]: tap',
         useShell: false,
-        env: { SOME_ENV: 'value' },
+        opts: { env: { SOME_ENV: 'value' } },
       });
     });
 
@@ -195,10 +195,10 @@ describe('Tap Plugin', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string>; cwd?: string },
       ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return mockExecutor(command, logPrefix, useShell, env);
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return mockExecutor(command, logPrefix, useShell, opts);
       };
 
       const mockAxeHelpers = createMockAxeHelpers();
@@ -224,7 +224,7 @@ describe('Tap Plugin', () => {
         ],
         logPrefix: '[AXe]: tap',
         useShell: false,
-        env: { SOME_ENV: 'value' },
+        opts: { env: { SOME_ENV: 'value' } },
       });
     });
 
@@ -238,10 +238,10 @@ describe('Tap Plugin', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string>; cwd?: string },
       ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return mockExecutor(command, logPrefix, useShell, env);
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return mockExecutor(command, logPrefix, useShell, opts);
       };
 
       const mockAxeHelpers = createMockAxeHelpers();
@@ -267,7 +267,7 @@ describe('Tap Plugin', () => {
         ],
         logPrefix: '[AXe]: tap',
         useShell: false,
-        env: { SOME_ENV: 'value' },
+        opts: { env: { SOME_ENV: 'value' } },
       });
     });
 
@@ -281,10 +281,10 @@ describe('Tap Plugin', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string>; cwd?: string },
       ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return mockExecutor(command, logPrefix, useShell, env);
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return mockExecutor(command, logPrefix, useShell, opts);
       };
 
       const mockAxeHelpers = createMockAxeHelpers();
@@ -314,7 +314,7 @@ describe('Tap Plugin', () => {
         ],
         logPrefix: '[AXe]: tap',
         useShell: false,
-        env: { SOME_ENV: 'value' },
+        opts: { env: { SOME_ENV: 'value' } },
       });
     });
 
@@ -328,10 +328,10 @@ describe('Tap Plugin', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string>; cwd?: string },
       ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return mockExecutor(command, logPrefix, useShell, env);
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return mockExecutor(command, logPrefix, useShell, opts);
       };
 
       const mockAxeHelpers = createMockAxeHelpers();
@@ -363,7 +363,7 @@ describe('Tap Plugin', () => {
         ],
         logPrefix: '[AXe]: tap',
         useShell: false,
-        env: { SOME_ENV: 'value' },
+        opts: { env: { SOME_ENV: 'value' } },
       });
     });
 
@@ -377,10 +377,10 @@ describe('Tap Plugin', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string>; cwd?: string },
       ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return mockExecutor(command, logPrefix, useShell, env);
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return mockExecutor(command, logPrefix, useShell, opts);
       };
 
       const mockAxeHelpers = createMockAxeHelpers();
@@ -412,7 +412,7 @@ describe('Tap Plugin', () => {
         ],
         logPrefix: '[AXe]: tap',
         useShell: false,
-        env: { SOME_ENV: 'value' },
+        opts: { env: { SOME_ENV: 'value' } },
       });
     });
 
@@ -426,10 +426,10 @@ describe('Tap Plugin', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string>; cwd?: string },
       ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return mockExecutor(command, logPrefix, useShell, env);
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return mockExecutor(command, logPrefix, useShell, opts);
       };
 
       const mockAxeHelpers = createMockAxeHelpers();
@@ -464,7 +464,7 @@ describe('Tap Plugin', () => {
         ],
         logPrefix: '[AXe]: tap',
         useShell: false,
-        env: { SOME_ENV: 'value' },
+        opts: { env: { SOME_ENV: 'value' } },
       });
     });
   });

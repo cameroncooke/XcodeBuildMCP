@@ -16,8 +16,26 @@
  */
 
 import { ChildProcess } from 'child_process';
-import { CommandExecutor } from '../utils/CommandExecutor.ts';
+import { EventEmitter } from 'events';
+import type { WriteStream } from 'fs';
+import { CommandExecutor, type CommandResponse } from '../utils/CommandExecutor.ts';
 import { FileSystemExecutor } from '../utils/FileSystemExecutor.ts';
+
+export type { CommandExecutor, FileSystemExecutor };
+
+export const mockProcess = { pid: 12345 } as unknown as ChildProcess;
+
+export function createMockCommandResponse(
+  overrides: Partial<CommandResponse> = {},
+): CommandResponse {
+  return {
+    success: overrides.success ?? true,
+    output: overrides.output ?? '',
+    error: overrides.error,
+    process: overrides.process ?? mockProcess,
+    exitCode: overrides.exitCode ?? (overrides.success === false ? 1 : 0),
+  };
+}
 
 /**
  * Create a mock executor for testing
@@ -179,15 +197,32 @@ export function createCommandMatchingMockExecutor(
 export function createMockFileSystemExecutor(
   overrides?: Partial<FileSystemExecutor>,
 ): FileSystemExecutor {
+  const mockWriteStream = ((): WriteStream => {
+    const emitter = new EventEmitter();
+    const stream = Object.assign(emitter, {
+      destroyed: false,
+      write: () => true,
+      end: () => {
+        stream.destroyed = true;
+        emitter.emit('close');
+      },
+    }) as unknown as WriteStream;
+    return stream;
+  })();
+
   return {
     mkdir: async (): Promise<void> => {},
     readFile: async (): Promise<string> => 'mock file content',
     writeFile: async (): Promise<void> => {},
+    createWriteStream: () => mockWriteStream,
     cp: async (): Promise<void> => {},
     readdir: async (): Promise<unknown[]> => [],
     rm: async (): Promise<void> => {},
     existsSync: (): boolean => false,
-    stat: async (): Promise<{ isDirectory(): boolean }> => ({ isDirectory: (): boolean => true }),
+    stat: async (): Promise<{ isDirectory(): boolean; mtimeMs: number }> => ({
+      isDirectory: (): boolean => true,
+      mtimeMs: Date.now(),
+    }),
     mkdtemp: async (): Promise<string> => '/tmp/mock-temp-123456',
     tmpdir: (): string => '/tmp',
     ...overrides,
@@ -218,6 +253,14 @@ export function createNoopFileSystemExecutor(): FileSystemExecutor {
       );
     },
     writeFile: async (): Promise<void> => {
+      throw new Error(
+        `🚨 NOOP FILESYSTEM EXECUTOR CALLED! 🚨\n` +
+          `This executor should never be called in this test context.\n` +
+          `If you see this error, it means the test is exercising a code path that wasn't expected.\n` +
+          `Either fix the test to avoid this code path, or use createMockFileSystemExecutor() instead.`,
+      );
+    },
+    createWriteStream: (): WriteStream => {
       throw new Error(
         `🚨 NOOP FILESYSTEM EXECUTOR CALLED! 🚨\n` +
           `This executor should never be called in this test context.\n` +
@@ -257,7 +300,7 @@ export function createNoopFileSystemExecutor(): FileSystemExecutor {
           `Either fix the test to avoid this code path, or use createMockFileSystemExecutor() instead.`,
       );
     },
-    stat: async (): Promise<{ isDirectory(): boolean }> => {
+    stat: async (): Promise<{ isDirectory(): boolean; mtimeMs: number }> => {
       throw new Error(
         `🚨 NOOP FILESYSTEM EXECUTOR CALLED! 🚨\n` +
           `This executor should never be called in this test context.\n` +

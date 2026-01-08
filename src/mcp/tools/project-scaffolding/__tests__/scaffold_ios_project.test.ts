@@ -48,7 +48,7 @@ describe('scaffold_ios_project plugin', () => {
       rm: async () => {},
       cp: async () => {},
       writeFile: async () => {},
-      stat: async () => ({ isDirectory: () => true }),
+      stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
     });
 
     // Store original environment for cleanup
@@ -172,6 +172,7 @@ describe('scaffold_ios_project plugin', () => {
       await scaffold_ios_projectLogic(
         {
           projectName: 'TestIOSApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         capturingExecutor,
@@ -219,7 +220,7 @@ describe('scaffold_ios_project plugin', () => {
         rm: async () => {},
         cp: async () => {},
         writeFile: async () => {},
-        stat: async () => ({ isDirectory: () => true }),
+        stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
       });
 
       // Track commands executed
@@ -237,6 +238,7 @@ describe('scaffold_ios_project plugin', () => {
       await scaffold_ios_projectLogic(
         {
           projectName: 'TestIOSApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         capturingExecutor,
@@ -275,6 +277,7 @@ describe('scaffold_ios_project plugin', () => {
       await scaffold_ios_projectLogic(
         {
           projectName: 'TestIOSApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         capturingExecutor,
@@ -327,7 +330,7 @@ describe('scaffold_ios_project plugin', () => {
         rm: async () => {},
         cp: async () => {},
         writeFile: async () => {},
-        stat: async () => ({ isDirectory: () => true }),
+        stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
       });
 
       // Track commands executed - using default executor path
@@ -345,6 +348,7 @@ describe('scaffold_ios_project plugin', () => {
       await scaffold_ios_projectLogic(
         {
           projectName: 'TestIOSApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         capturingExecutor,
@@ -359,6 +363,9 @@ describe('scaffold_ios_project plugin', () => {
 
       expect(curlCommand).toBeDefined();
       expect(unzipCommand).toBeDefined();
+      if (!curlCommand || !unzipCommand) {
+        throw new Error('Expected curl and unzip commands to be captured');
+      }
       expect(curlCommand[0]).toBe('curl');
       expect(unzipCommand[0]).toBe('unzip');
 
@@ -372,6 +379,7 @@ describe('scaffold_ios_project plugin', () => {
       const result = await scaffold_ios_projectLogic(
         {
           projectName: 'TestIOSApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
           bundleIdentifier: 'com.test.iosapp',
         },
@@ -391,8 +399,8 @@ describe('scaffold_ios_project plugin', () => {
                 message: 'Successfully scaffolded iOS project "TestIOSApp" in /tmp/test-projects',
                 nextSteps: [
                   'Important: Before working on the project make sure to read the README.md file in the workspace root directory.',
-                  'Build for simulator: build_sim({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject", simulatorName: "iPhone 16" })',
-                  'Build and run on simulator: build_run_sim({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject", simulatorName: "iPhone 16" })',
+                  'Build for simulator: build_sim({ workspacePath: "/tmp/test-projects/TestIOSApp.xcworkspace", scheme: "TestIOSApp", simulatorName: "iPhone 16" })',
+                  'Build and run on simulator: build_run_sim({ workspacePath: "/tmp/test-projects/TestIOSApp.xcworkspace", scheme: "TestIOSApp", simulatorName: "iPhone 16" })',
                 ],
               },
               null,
@@ -407,12 +415,12 @@ describe('scaffold_ios_project plugin', () => {
       const result = await scaffold_ios_projectLogic(
         {
           projectName: 'TestIOSApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
           bundleIdentifier: 'com.test.iosapp',
           displayName: 'Test iOS App',
           marketingVersion: '2.0',
           currentProjectVersion: '5',
-          customizeNames: true,
           deploymentTarget: '17.0',
           targetedDeviceFamily: ['iphone'],
           supportedOrientations: ['portrait'],
@@ -485,6 +493,7 @@ describe('scaffold_ios_project plugin', () => {
       const result = await scaffold_ios_projectLogic(
         {
           projectName: '123InvalidName',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         mockCommandExecutor,
@@ -524,6 +533,7 @@ describe('scaffold_ios_project plugin', () => {
       const result = await scaffold_ios_projectLogic(
         {
           projectName: 'TestIOSApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         mockCommandExecutor,
@@ -562,6 +572,7 @@ describe('scaffold_ios_project plugin', () => {
       const result = await scaffold_ios_projectLogic(
         {
           projectName: 'TestIOSApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         failingMockCommandExecutor,
@@ -613,7 +624,7 @@ describe('scaffold_ios_project plugin', () => {
         rm: async () => {},
         cp: async () => {},
         writeFile: async () => {},
-        stat: async () => ({ isDirectory: () => true }),
+        stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
       });
 
       // Mock command executor to fail for unzip commands
@@ -626,6 +637,7 @@ describe('scaffold_ios_project plugin', () => {
       const result = await scaffold_ios_projectLogic(
         {
           projectName: 'TestIOSApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         failingMockCommandExecutor,

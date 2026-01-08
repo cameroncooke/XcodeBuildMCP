@@ -4,7 +4,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockExecutor,
+  createNoopExecutor,
+  mockProcess,
+} from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import keySequencePlugin, { key_sequenceLogic } from '../key_sequence.ts';
 
@@ -81,7 +85,7 @@ describe('Key Sequence Plugin', () => {
           success: true,
           output: 'key sequence completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -91,7 +95,7 @@ describe('Key Sequence Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -126,7 +130,7 @@ describe('Key Sequence Plugin', () => {
           success: true,
           output: 'key sequence completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -136,7 +140,7 @@ describe('Key Sequence Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -174,7 +178,7 @@ describe('Key Sequence Plugin', () => {
           success: true,
           output: 'key sequence completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -184,7 +188,7 @@ describe('Key Sequence Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -219,7 +223,7 @@ describe('Key Sequence Plugin', () => {
           success: true,
           output: 'key sequence completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -229,7 +233,7 @@ describe('Key Sequence Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -282,7 +286,7 @@ describe('Key Sequence Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -301,7 +305,9 @@ describe('Key Sequence Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Key sequence [40,42,44] executed successfully.' }],
+        content: [
+          { type: 'text' as const, text: 'Key sequence [40,42,44] executed successfully.' },
+        ],
         isError: false,
       });
     });
@@ -319,7 +325,7 @@ describe('Key Sequence Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -337,7 +343,7 @@ describe('Key Sequence Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Key sequence [40] executed successfully.' }],
+        content: [{ type: 'text' as const, text: 'Key sequence [40] executed successfully.' }],
         isError: false,
       });
     });
@@ -349,7 +355,7 @@ describe('Key Sequence Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -369,7 +375,7 @@ describe('Key Sequence Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -390,7 +396,7 @@ describe('Key Sequence Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -410,7 +416,7 @@ describe('Key Sequence Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: "Error: Failed to execute key sequence: axe command 'key-sequence' failed.\nDetails: Simulator not found",
           },
         ],
@@ -429,7 +435,7 @@ describe('Key Sequence Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -463,7 +469,7 @@ describe('Key Sequence Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -497,7 +503,7 @@ describe('Key Sequence Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -517,7 +523,7 @@ describe('Key Sequence Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Error: System error executing axe: Failed to execute axe command: String error',
           },
         ],

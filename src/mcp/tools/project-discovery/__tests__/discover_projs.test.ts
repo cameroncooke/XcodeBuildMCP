@@ -17,7 +17,7 @@ describe('discover_projs plugin', () => {
 
   // Create mock file system executor
   mockFileSystemExecutor = createMockFileSystemExecutor({
-    stat: async () => ({ isDirectory: () => true }),
+    stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
     readdir: async () => [],
   });
 
@@ -67,7 +67,7 @@ describe('discover_projs plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should handle workspaceRoot parameter correctly when provided', async () => {
-      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true, mtimeMs: 0 });
       mockFileSystemExecutor.readdir = async () => [];
 
       const result = await discover_projsLogic(
@@ -107,7 +107,7 @@ describe('discover_projs plugin', () => {
     });
 
     it('should return error when scan path is not a directory', async () => {
-      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => false });
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => false, mtimeMs: 0 });
 
       const result = await discover_projsLogic(
         {
@@ -125,7 +125,7 @@ describe('discover_projs plugin', () => {
     });
 
     it('should return success with no projects found', async () => {
-      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true, mtimeMs: 0 });
       mockFileSystemExecutor.readdir = async () => [];
 
       const result = await discover_projsLogic(
@@ -144,7 +144,7 @@ describe('discover_projs plugin', () => {
     });
 
     it('should return success with projects found', async () => {
-      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true, mtimeMs: 0 });
       mockFileSystemExecutor.readdir = async () => [
         { name: 'MyApp.xcodeproj', isDirectory: () => true, isSymbolicLink: () => false },
         { name: 'MyWorkspace.xcworkspace', isDirectory: () => true, isSymbolicLink: () => false },
@@ -219,7 +219,7 @@ describe('discover_projs plugin', () => {
     });
 
     it('should handle workspaceRoot parameter correctly', async () => {
-      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true, mtimeMs: 0 });
       mockFileSystemExecutor.readdir = async () => [];
 
       const result = await discover_projsLogic(
@@ -237,7 +237,7 @@ describe('discover_projs plugin', () => {
 
     it('should handle scan path outside workspace root', async () => {
       // Mock path normalization to simulate path outside workspace root
-      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true, mtimeMs: 0 });
       mockFileSystemExecutor.readdir = async () => [];
 
       const result = await discover_projsLogic(
@@ -284,7 +284,7 @@ describe('discover_projs plugin', () => {
     it('should handle max depth reached during recursive scan', async () => {
       let readdirCallCount = 0;
 
-      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true, mtimeMs: 0 });
       mockFileSystemExecutor.readdir = async () => {
         readdirCallCount++;
         if (readdirCallCount <= 3) {
@@ -315,7 +315,7 @@ describe('discover_projs plugin', () => {
     });
 
     it('should handle skipped directory types during scan', async () => {
-      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true, mtimeMs: 0 });
       mockFileSystemExecutor.readdir = async () => [
         { name: 'build', isDirectory: () => true, isSymbolicLink: () => false },
         { name: 'DerivedData', isDirectory: () => true, isSymbolicLink: () => false },
@@ -340,7 +340,7 @@ describe('discover_projs plugin', () => {
     });
 
     it('should handle error during recursive directory reading', async () => {
-      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true });
+      mockFileSystemExecutor.stat = async () => ({ isDirectory: () => true, mtimeMs: 0 });
       mockFileSystemExecutor.readdir = async () => {
         const readError = new Error('Permission denied');
         (readError as any).code = 'EACCES';

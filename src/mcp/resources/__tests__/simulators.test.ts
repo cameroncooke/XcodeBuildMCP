@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 
 import simulatorsResource, { simulatorsResourceLogic } from '../simulators.ts';
-import { createMockExecutor } from '../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockExecutor,
+} from '../../../test-utils/mock-executors.ts';
 
 describe('simulators resource', () => {
   describe('Export Field Validation', () => {
@@ -73,21 +76,19 @@ describe('simulators resource', () => {
       const mockExecutor = async (command: string[]) => {
         // JSON command returns invalid JSON
         if (command.includes('--json')) {
-          return {
+          return createMockCommandResponse({
             success: true,
             output: 'invalid json',
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         }
 
         // Text command returns valid text output
-        return {
+        return createMockCommandResponse({
           success: true,
           output: mockTextOutput,
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await simulatorsResourceLogic(mockExecutor);

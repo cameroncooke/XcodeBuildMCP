@@ -5,9 +5,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import {
+  createMockCommandResponse,
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
+  mockProcess,
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import keyPressPlugin, { key_pressLogic } from '../key_press.ts';
@@ -80,12 +82,12 @@ describe('Key Press Plugin', () => {
       let capturedCommand: string[] = [];
       const trackingExecutor = async (command: string[]) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'key press completed',
           error: undefined,
-          process: { pid: 12345 },
-        };
+          process: mockProcess,
+        });
       };
 
       const mockAxeHelpers = {
@@ -94,7 +96,7 @@ describe('Key Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -124,12 +126,12 @@ describe('Key Press Plugin', () => {
       let capturedCommand: string[] = [];
       const trackingExecutor = async (command: string[]) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'key press completed',
           error: undefined,
-          process: { pid: 12345 },
-        };
+          process: mockProcess,
+        });
       };
 
       const mockAxeHelpers = {
@@ -138,7 +140,7 @@ describe('Key Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -171,12 +173,12 @@ describe('Key Press Plugin', () => {
       let capturedCommand: string[] = [];
       const trackingExecutor = async (command: string[]) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'key press completed',
           error: undefined,
-          process: { pid: 12345 },
-        };
+          process: mockProcess,
+        });
       };
 
       const mockAxeHelpers = {
@@ -185,7 +187,7 @@ describe('Key Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -215,12 +217,12 @@ describe('Key Press Plugin', () => {
       let capturedCommand: string[] = [];
       const trackingExecutor = async (command: string[]) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'key press completed',
           error: undefined,
-          process: { pid: 12345 },
-        };
+          process: mockProcess,
+        });
       };
 
       const mockAxeHelpers = {
@@ -229,7 +231,7 @@ describe('Key Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -273,7 +275,7 @@ describe('Key Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -291,7 +293,7 @@ describe('Key Press Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Key press (code: 40) simulated successfully.' }],
+        content: [{ type: 'text' as const, text: 'Key press (code: 40) simulated successfully.' }],
         isError: false,
       });
     });
@@ -309,7 +311,7 @@ describe('Key Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -328,7 +330,7 @@ describe('Key Press Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Key press (code: 42) simulated successfully.' }],
+        content: [{ type: 'text' as const, text: 'Key press (code: 42) simulated successfully.' }],
         isError: false,
       });
     });
@@ -340,7 +342,7 @@ describe('Key Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -360,7 +362,7 @@ describe('Key Press Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -381,7 +383,7 @@ describe('Key Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -401,7 +403,7 @@ describe('Key Press Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: "Error: Failed to simulate key press (code: 40): axe command 'key' failed.\nDetails: axe command failed",
           },
         ],
@@ -420,7 +422,7 @@ describe('Key Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -454,7 +456,7 @@ describe('Key Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -488,7 +490,7 @@ describe('Key Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -508,7 +510,7 @@ describe('Key Press Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Error: System error executing axe: Failed to execute axe command: String error',
           },
         ],

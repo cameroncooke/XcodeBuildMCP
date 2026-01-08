@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
 import setSimAppearancePlugin, { set_sim_appearanceLogic } from '../set_sim_appearance.ts';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 
 describe('set_sim_appearance plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -116,12 +119,13 @@ describe('set_sim_appearance plugin', () => {
       const commandCalls: any[] = [];
       const mockExecutor = (...args: any[]) => {
         commandCalls.push(args);
-        return Promise.resolve({
-          success: true,
-          output: '',
-          error: '',
-          process: { pid: 12345 },
-        });
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output: '',
+            error: '',
+          }),
+        );
       };
 
       await set_sim_appearanceLogic(

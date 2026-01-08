@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import tool, { cleanLogic } from '../clean.ts';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockExecutor,
+  createMockCommandResponse,
+} from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('clean (unified) tool', () => {
@@ -77,7 +80,7 @@ describe('clean (unified) tool', () => {
     let capturedCommand: string[] = [];
     const mockExecutor = async (command: string[]) => {
       capturedCommand = command;
-      return { success: true, output: 'clean success' };
+      return createMockCommandResponse({ success: true, output: 'clean success' });
     };
 
     const result = await cleanLogic(
@@ -96,7 +99,7 @@ describe('clean (unified) tool', () => {
     let capturedCommand: string[] = [];
     const mockExecutor = async (command: string[]) => {
       capturedCommand = command;
-      return { success: true, output: 'clean success' };
+      return createMockCommandResponse({ success: true, output: 'clean success' });
     };
 
     const result = await cleanLogic(
@@ -119,7 +122,7 @@ describe('clean (unified) tool', () => {
     let capturedCommand: string[] = [];
     const mockExecutor = async (command: string[]) => {
       capturedCommand = command;
-      return { success: true, output: 'clean success' };
+      return createMockCommandResponse({ success: true, output: 'clean success' });
     };
 
     const result = await cleanLogic(

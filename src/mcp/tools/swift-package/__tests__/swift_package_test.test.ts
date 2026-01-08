@@ -9,8 +9,10 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
+  createMockCommandResponse,
 } from '../../../../test-utils/mock-executors.ts';
 import swiftPackageTest, { swift_package_testLogic } from '../swift_package_test.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 
 describe('swift_package_test plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -57,20 +59,19 @@ describe('swift_package_test plugin', () => {
 
   describe('Command Generation Testing', () => {
     it('should build correct command for basic test', async () => {
-      const calls: any[] = [];
-      const mockExecutor = async (
-        args: string[],
-        name: string,
-        hideOutput: boolean,
-        workingDir: string | undefined,
-      ) => {
-        calls.push({ args, name, hideOutput, workingDir });
-        return {
+      const calls: Array<{
+        args: string[];
+        name?: string;
+        hideOutput?: boolean;
+        opts?: { env?: Record<string, string>; cwd?: string };
+      }> = [];
+      const mockExecutor: CommandExecutor = async (args, name, hideOutput, opts) => {
+        calls.push({ args, name, hideOutput, opts });
+        return createMockCommandResponse({
           success: true,
           output: 'Test Passed',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await swift_package_testLogic(
@@ -85,25 +86,24 @@ describe('swift_package_test plugin', () => {
         args: ['swift', 'test', '--package-path', '/test/package'],
         name: 'Swift Package Test',
         hideOutput: true,
-        workingDir: undefined,
+        opts: undefined,
       });
     });
 
     it('should build correct command with all parameters', async () => {
-      const calls: any[] = [];
-      const mockExecutor = async (
-        args: string[],
-        name: string,
-        hideOutput: boolean,
-        workingDir: string | undefined,
-      ) => {
-        calls.push({ args, name, hideOutput, workingDir });
-        return {
+      const calls: Array<{
+        args: string[];
+        name?: string;
+        hideOutput?: boolean;
+        opts?: { env?: Record<string, string>; cwd?: string };
+      }> = [];
+      const mockExecutor: CommandExecutor = async (args, name, hideOutput, opts) => {
+        calls.push({ args, name, hideOutput, opts });
+        return createMockCommandResponse({
           success: true,
           output: 'Tests completed',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await swift_package_testLogic(
@@ -139,7 +139,7 @@ describe('swift_package_test plugin', () => {
         ],
         name: 'Swift Package Test',
         hideOutput: true,
-        workingDir: undefined,
+        opts: undefined,
       });
     });
   });

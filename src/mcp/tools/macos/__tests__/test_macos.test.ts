@@ -5,9 +5,23 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockExecutor,
+  createMockFileSystemExecutor,
+  type FileSystemExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import testMacos, { testMacosLogic } from '../test_macos.ts';
+
+const createTestFileSystemExecutor = (overrides: Partial<FileSystemExecutor> = {}) =>
+  createMockFileSystemExecutor({
+    mkdtemp: async () => '/tmp/test-123',
+    rm: async () => {},
+    tmpdir: () => '/tmp',
+    stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
+    ...overrides,
+  });
 
 describe('test_macos plugin (unified)', () => {
   beforeEach(() => {
@@ -111,12 +125,7 @@ describe('test_macos plugin (unified)', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const mockFileSystemExecutor = {
-        mkdtemp: async () => '/tmp/test-123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
+      const mockFileSystemExecutor = createTestFileSystemExecutor();
 
       const result = await testMacosLogic(
         {
@@ -138,12 +147,7 @@ describe('test_macos plugin (unified)', () => {
         output: 'Test Suite All Tests passed',
       });
 
-      const mockFileSystemExecutor = {
-        mkdtemp: async () => '/tmp/test-123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
+      const mockFileSystemExecutor = createTestFileSystemExecutor();
 
       const result = await testMacosLogic(
         {
@@ -168,12 +172,7 @@ describe('test_macos plugin (unified)', () => {
       });
 
       // Mock file system dependencies
-      const mockFileSystemExecutor = {
-        mkdtemp: async () => '/tmp/test-123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
+      const mockFileSystemExecutor = createTestFileSystemExecutor();
 
       const result = await testMacosLogic(
         {
@@ -197,12 +196,7 @@ describe('test_macos plugin (unified)', () => {
       });
 
       // Mock file system dependencies
-      const mockFileSystemExecutor = {
-        mkdtemp: async () => '/tmp/test-123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
+      const mockFileSystemExecutor = createTestFileSystemExecutor();
 
       const result = await testMacosLogic(
         {
@@ -226,12 +220,7 @@ describe('test_macos plugin (unified)', () => {
       });
 
       // Mock file system dependencies
-      const mockFileSystemExecutor = {
-        mkdtemp: async () => '/tmp/test-123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
+      const mockFileSystemExecutor = createTestFileSystemExecutor();
 
       const result = await testMacosLogic(
         {
@@ -254,12 +243,7 @@ describe('test_macos plugin (unified)', () => {
       });
 
       // Mock file system dependencies
-      const mockFileSystemExecutor = {
-        mkdtemp: async () => '/tmp/test-123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
+      const mockFileSystemExecutor = createTestFileSystemExecutor();
 
       const result = await testMacosLogic(
         {
@@ -286,12 +270,7 @@ describe('test_macos plugin (unified)', () => {
       });
 
       // Mock file system dependencies
-      const mockFileSystemExecutor = {
-        mkdtemp: async () => '/tmp/test-123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
+      const mockFileSystemExecutor = createTestFileSystemExecutor();
 
       const result = await testMacosLogic(
         {
@@ -316,13 +295,15 @@ describe('test_macos plugin (unified)', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string> },
+        detached?: boolean,
       ) => {
-        commandCalls.push({ command, logPrefix, useShell, env });
+        commandCalls.push({ command, logPrefix, useShell, env: opts?.env });
+        void detached;
 
         // Handle xcresulttool command
         if (command.includes('xcresulttool')) {
-          return {
+          return createMockCommandResponse({
             success: true,
             output: JSON.stringify({
               title: 'Test Results',
@@ -334,24 +315,20 @@ describe('test_macos plugin (unified)', () => {
               expectedFailures: 0,
             }),
             error: undefined,
-          };
+          });
         }
 
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'Test Succeeded',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       // Mock file system dependencies using approved utility
-      const mockFileSystemExecutor = {
+      const mockFileSystemExecutor = createTestFileSystemExecutor({
         mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
+      });
 
       const result = await testMacosLogic(
         {
@@ -411,23 +388,27 @@ describe('test_macos plugin (unified)', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string> },
+        detached?: boolean,
       ) => {
         callCount++;
+        void logPrefix;
+        void useShell;
+        void opts;
+        void detached;
 
         // First call is xcodebuild test - fails
         if (callCount === 1) {
-          return {
+          return createMockCommandResponse({
             success: false,
             output: '',
             error: 'error: Test failed',
-            process: { pid: 12345 },
-          };
+          });
         }
 
         // Second call is xcresulttool
         if (command.includes('xcresulttool')) {
-          return {
+          return createMockCommandResponse({
             success: true,
             output: JSON.stringify({
               title: 'Test Results',
@@ -439,19 +420,16 @@ describe('test_macos plugin (unified)', () => {
               expectedFailures: 0,
             }),
             error: undefined,
-          };
+          });
         }
 
-        return { success: true, output: '', error: undefined };
+        return createMockCommandResponse({ success: true, output: '', error: undefined });
       };
 
       // Mock file system dependencies
-      const mockFileSystemExecutor = {
+      const mockFileSystemExecutor = createTestFileSystemExecutor({
         mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
+      });
 
       const result = await testMacosLogic(
         {
@@ -482,13 +460,15 @@ describe('test_macos plugin (unified)', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string> },
+        detached?: boolean,
       ) => {
-        commandCalls.push({ command, logPrefix, useShell, env });
+        commandCalls.push({ command, logPrefix, useShell, env: opts?.env });
+        void detached;
 
         // Handle xcresulttool command
         if (command.includes('xcresulttool')) {
-          return {
+          return createMockCommandResponse({
             success: true,
             output: JSON.stringify({
               title: 'Test Results',
@@ -500,24 +480,20 @@ describe('test_macos plugin (unified)', () => {
               expectedFailures: 0,
             }),
             error: undefined,
-          };
+          });
         }
 
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'Test Succeeded',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       // Mock file system dependencies
-      const mockFileSystemExecutor = {
+      const mockFileSystemExecutor = createTestFileSystemExecutor({
         mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
+      });
 
       const result = await testMacosLogic(
         {
@@ -550,14 +526,11 @@ describe('test_macos plugin (unified)', () => {
       });
 
       // Mock file system dependencies - mkdtemp fails
-      const mockFileSystemExecutor = {
+      const mockFileSystemExecutor = createTestFileSystemExecutor({
         mkdtemp: async () => {
           throw new Error('Network error');
         },
-        rm: async () => {},
-        tmpdir: () => '/tmp',
-        stat: async () => ({ isDirectory: () => true }),
-      };
+      });
 
       const result = await testMacosLogic(
         {

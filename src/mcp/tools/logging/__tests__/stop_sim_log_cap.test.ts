@@ -14,14 +14,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import stopSimLogCap, { stop_sim_log_capLogic } from '../stop_sim_log_cap.ts';
-import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 import { activeLogSessions } from '../../../../utils/log_capture.ts';
+import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 
 describe('stop_sim_log_cap plugin', () => {
-  let mockFileSystem: any;
-
   beforeEach(() => {
-    mockFileSystem = createMockFileSystemExecutor();
     // Clear any active sessions before each test
     activeLogSessions.clear();
   });
@@ -36,10 +33,15 @@ describe('stop_sim_log_cap plugin', () => {
     };
 
     const logFilePath = `/tmp/xcodemcp_sim_log_test_${sessionId}.log`;
-
-    // Create actual file for the test
-    const fs = await import('fs/promises');
-    await fs.writeFile(logFilePath, logContent, 'utf-8');
+    const fileSystem = createMockFileSystemExecutor({
+      existsSync: (path) => path === logFilePath,
+      readFile: async (path, _encoding) => {
+        if (path !== logFilePath) {
+          throw new Error(`ENOENT: no such file or directory, open '${path}'`);
+        }
+        return logContent;
+      },
+    });
 
     activeLogSessions.set(sessionId, {
       processes: [mockProcess as any],
@@ -47,6 +49,8 @@ describe('stop_sim_log_cap plugin', () => {
       simulatorUuid: 'test-simulator-uuid',
       bundleId: 'com.example.TestApp',
     });
+
+    return { fileSystem, logFilePath };
   }
 
   describe('Export Field Validation (Literal)', () => {
@@ -91,13 +95,13 @@ describe('stop_sim_log_cap plugin', () => {
     it('should handle null logSessionId (validation handled by framework)', async () => {
       // With typed tool factory, invalid params won't reach the logic function
       // This test now validates that the logic function works with valid empty strings
-      await createTestLogSession('', 'Log content for empty session');
+      const { fileSystem } = await createTestLogSession('', 'Log content for empty session');
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: '',
         },
-        mockFileSystem,
+        fileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -109,13 +113,13 @@ describe('stop_sim_log_cap plugin', () => {
     it('should handle undefined logSessionId (validation handled by framework)', async () => {
       // With typed tool factory, invalid params won't reach the logic function
       // This test now validates that the logic function works with valid empty strings
-      await createTestLogSession('', 'Log content for empty session');
+      const { fileSystem } = await createTestLogSession('', 'Log content for empty session');
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: '',
         },
-        mockFileSystem,
+        fileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -125,13 +129,13 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle empty string logSessionId', async () => {
-      await createTestLogSession('', 'Log content for empty session');
+      const { fileSystem } = await createTestLogSession('', 'Log content for empty session');
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: '',
         },
-        mockFileSystem,
+        fileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -143,13 +147,16 @@ describe('stop_sim_log_cap plugin', () => {
 
   describe('Function Call Generation', () => {
     it('should call stopLogCapture with correct parameters', async () => {
-      await createTestLogSession('test-session-id', 'Mock log content from file');
+      const { fileSystem } = await createTestLogSession(
+        'test-session-id',
+        'Mock log content from file',
+      );
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        mockFileSystem,
+        fileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -159,13 +166,16 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should call stopLogCapture with different session ID', async () => {
-      await createTestLogSession('different-session-id', 'Different log content');
+      const { fileSystem } = await createTestLogSession(
+        'different-session-id',
+        'Different log content',
+      );
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'different-session-id',
         },
-        mockFileSystem,
+        fileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -177,13 +187,16 @@ describe('stop_sim_log_cap plugin', () => {
 
   describe('Response Processing', () => {
     it('should handle successful log capture stop', async () => {
-      await createTestLogSession('test-session-id', 'Mock log content from file');
+      const { fileSystem } = await createTestLogSession(
+        'test-session-id',
+        'Mock log content from file',
+      );
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        mockFileSystem,
+        fileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -193,13 +206,13 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle empty log content', async () => {
-      await createTestLogSession('test-session-id', '');
+      const { fileSystem } = await createTestLogSession('test-session-id', '');
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        mockFileSystem,
+        fileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -209,13 +222,16 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle multiline log content', async () => {
-      await createTestLogSession('test-session-id', 'Line 1\nLine 2\nLine 3');
+      const { fileSystem } = await createTestLogSession(
+        'test-session-id',
+        'Line 1\nLine 2\nLine 3',
+      );
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        mockFileSystem,
+        fileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -229,7 +245,7 @@ describe('stop_sim_log_cap plugin', () => {
         {
           logSessionId: 'non-existent-session',
         },
-        mockFileSystem,
+        createMockFileSystemExecutor(),
       );
 
       expect(result.isError).toBe(true);
@@ -255,10 +271,10 @@ describe('stop_sim_log_cap plugin', () => {
       });
 
       const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'test-session-id',
-        },
-        mockFileSystem,
+        { logSessionId: 'test-session-id' },
+        createMockFileSystemExecutor({
+          existsSync: () => false,
+        }),
       );
 
       expect(result.isError).toBe(true);
@@ -284,10 +300,13 @@ describe('stop_sim_log_cap plugin', () => {
       });
 
       const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'test-session-id',
-        },
-        mockFileSystem,
+        { logSessionId: 'test-session-id' },
+        createMockFileSystemExecutor({
+          existsSync: () => true,
+          readFile: async () => {
+            throw new Error('Permission denied');
+          },
+        }),
       );
 
       expect(result.isError).toBe(true);
@@ -313,10 +332,13 @@ describe('stop_sim_log_cap plugin', () => {
       });
 
       const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'test-session-id',
-        },
-        mockFileSystem,
+        { logSessionId: 'test-session-id' },
+        createMockFileSystemExecutor({
+          existsSync: () => true,
+          readFile: async () => {
+            throw new Error('Something went wrong');
+          },
+        }),
       );
 
       expect(result.isError).toBe(true);

@@ -9,8 +9,10 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
+  createMockCommandResponse,
 } from '../../../../test-utils/mock-executors.ts';
 import swiftPackageBuild, { swift_package_buildLogic } from '../swift_package_build.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 
 describe('swift_package_build plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -58,14 +60,13 @@ describe('swift_package_build plugin', () => {
 
   describe('Command Generation Testing', () => {
     it('should build correct command for basic build', async () => {
-      const executor = async (args: any, description: any, useShell: any, cwd: any) => {
-        executorCalls.push({ args, description, useShell, cwd });
-        return {
+      const executor: CommandExecutor = async (args, description, useShell, opts) => {
+        executorCalls.push({ args, description, useShell, cwd: opts?.cwd });
+        return createMockCommandResponse({
           success: true,
           output: 'Build succeeded',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await swift_package_buildLogic(
@@ -86,14 +87,13 @@ describe('swift_package_build plugin', () => {
     });
 
     it('should build correct command with release configuration', async () => {
-      const executor = async (args: any, description: any, useShell: any, cwd: any) => {
-        executorCalls.push({ args, description, useShell, cwd });
-        return {
+      const executor: CommandExecutor = async (args, description, useShell, opts) => {
+        executorCalls.push({ args, description, useShell, cwd: opts?.cwd });
+        return createMockCommandResponse({
           success: true,
           output: 'Build succeeded',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await swift_package_buildLogic(
@@ -115,14 +115,13 @@ describe('swift_package_build plugin', () => {
     });
 
     it('should build correct command with all parameters', async () => {
-      const executor = async (args: any, description: any, useShell: any, cwd: any) => {
-        executorCalls.push({ args, description, useShell, cwd });
-        return {
+      const executor: CommandExecutor = async (args, description, useShell, opts) => {
+        executorCalls.push({ args, description, useShell, cwd: opts?.cwd });
+        return createMockCommandResponse({
           success: true,
           output: 'Build succeeded',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await swift_package_buildLogic(

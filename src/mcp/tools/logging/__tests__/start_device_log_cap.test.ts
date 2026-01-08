@@ -4,6 +4,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'events';
+import { Readable } from 'stream';
 import type { ChildProcess } from 'child_process';
 import * as z from 'zod';
 import {
@@ -15,6 +16,15 @@ import plugin, {
   activeDeviceLogSessions,
 } from '../start_device_log_cap.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
+
+type Mutable<T> = {
+  -readonly [K in keyof T]: T[K];
+};
+
+type MockChildProcess = Mutable<ChildProcess> & {
+  stdout: Readable;
+  stderr: Readable;
+};
 
 describe('start_device_log_cap plugin', () => {
   // Mock state tracking
@@ -150,22 +160,14 @@ describe('start_device_log_cap plugin', () => {
     });
 
     it('should surface early launch failures when process exits immediately', async () => {
-      const failingProcess = new EventEmitter() as unknown as ChildProcess & {
-        exitCode: number | null;
-        killed: boolean;
-        kill(signal?: string): boolean;
-        stdout: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-        stderr: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-      };
+      const failingProcess = new EventEmitter() as MockChildProcess;
 
-      const stubOutput = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubOutput.setEncoding = () => {};
-      const stubError = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubError.setEncoding = () => {};
+      const stubOutput = new Readable({
+        read() {},
+      });
+      const stubError = new Readable({
+        read() {},
+      });
 
       failingProcess.stdout = stubOutput;
       failingProcess.stderr = stubError;
@@ -233,22 +235,14 @@ describe('start_device_log_cap plugin', () => {
         },
       };
 
-      const failingProcess = new EventEmitter() as unknown as ChildProcess & {
-        exitCode: number | null;
-        killed: boolean;
-        kill(signal?: string): boolean;
-        stdout: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-        stderr: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-      };
+      const failingProcess = new EventEmitter() as MockChildProcess;
 
-      const stubOutput = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubOutput.setEncoding = () => {};
-      const stubError = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubError.setEncoding = () => {};
+      const stubOutput = new Readable({
+        read() {},
+      });
+      const stubError = new Readable({
+        read() {},
+      });
 
       failingProcess.stdout = stubOutput;
       failingProcess.stderr = stubError;
@@ -323,22 +317,14 @@ describe('start_device_log_cap plugin', () => {
         },
       };
 
-      const runningProcess = new EventEmitter() as unknown as ChildProcess & {
-        exitCode: number | null;
-        killed: boolean;
-        kill(signal?: string): boolean;
-        stdout: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-        stderr: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-      };
+      const runningProcess = new EventEmitter() as MockChildProcess;
 
-      const stubOutput = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubOutput.setEncoding = () => {};
-      const stubError = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubError.setEncoding = () => {};
+      const stubOutput = new Readable({
+        read() {},
+      });
+      const stubError = new Readable({
+        read() {},
+      });
 
       runningProcess.stdout = stubOutput;
       runningProcess.stderr = stubError;

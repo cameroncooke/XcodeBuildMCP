@@ -1,10 +1,13 @@
-import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
 import type { ChildProcess } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
 import { log } from '../utils/logger.ts';
-import { CommandExecutor, getDefaultCommandExecutor } from './command.ts';
+import {
+  CommandExecutor,
+  getDefaultCommandExecutor,
+  getDefaultFileSystemExecutor,
+} from './command.ts';
+import { FileSystemExecutor } from './FileSystemExecutor.ts';
 
 /**
  * Log file retention policy:
@@ -35,19 +38,20 @@ export async function startLogCapture(
     args?: string[];
   },
   executor: CommandExecutor = getDefaultCommandExecutor(),
+  fileSystem: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<{ sessionId: string; logFilePath: string; processes: ChildProcess[]; error?: string }> {
   // Clean up old logs before starting a new session
-  await cleanOldLogs();
+  await cleanOldLogs(fileSystem);
 
   const { simulatorUuid, bundleId, captureConsole = false, args = [] } = params;
   const logSessionId = uuidv4();
   const logFileName = `${LOG_FILE_PREFIX}${logSessionId}.log`;
-  const logFilePath = path.join(os.tmpdir(), logFileName);
+  const logFilePath = path.join(fileSystem.tmpdir(), logFileName);
 
   try {
-    await fs.promises.mkdir(os.tmpdir(), { recursive: true });
-    await fs.promises.writeFile(logFilePath, '');
-    const logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
+    await fileSystem.mkdir(fileSystem.tmpdir(), { recursive: true });
+    await fileSystem.writeFile(logFilePath, '');
+    const logStream = fileSystem.createWriteStream(logFilePath, { flags: 'a' });
     const processes: ChildProcess[] = [];
     logStream.write('\n--- Log capture for bundle ID: ' + bundleId + ' ---\n');
 
@@ -145,6 +149,7 @@ export async function startLogCapture(
  */
 export async function stopLogCapture(
   logSessionId: string,
+  fileSystem: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<{ logContent: string; error?: string }> {
   const session = activeLogSessions.get(logSessionId);
   if (!session) {
@@ -165,8 +170,10 @@ export async function stopLogCapture(
       'info',
       `Log capture session ${logSessionId} stopped. Log file retained at: ${logFilePath}`,
     );
-    await fs.promises.access(logFilePath, fs.constants.R_OK);
-    const fileContent = await fs.promises.readFile(logFilePath, 'utf-8');
+    if (!fileSystem.existsSync(logFilePath)) {
+      throw new Error(`Log file not found: ${logFilePath}`);
+    }
+    const fileContent = await fileSystem.readFile(logFilePath, 'utf-8');
     log('info', `Successfully read log content from ${logFilePath}`);
     return { logContent: fileContent };
   } catch (error) {
@@ -180,11 +187,11 @@ export async function stopLogCapture(
  * Deletes log files older than LOG_RETENTION_DAYS from the temp directory.
  * Runs quietly; errors are logged but do not throw.
  */
-async function cleanOldLogs(): Promise<void> {
-  const tempDir = os.tmpdir();
-  let files: string[];
+async function cleanOldLogs(fileSystem: FileSystemExecutor): Promise<void> {
+  const tempDir = fileSystem.tmpdir();
+  let files: unknown[];
   try {
-    files = await fs.promises.readdir(tempDir);
+    files = await fileSystem.readdir(tempDir);
   } catch (err) {
     log(
       'warn',
@@ -194,15 +201,17 @@ async function cleanOldLogs(): Promise<void> {
   }
   const now = Date.now();
   const retentionMs = LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  const fileNames = files.filter((file): file is string => typeof file === 'string');
+
   await Promise.all(
-    files
+    fileNames
       .filter((f) => f.startsWith(LOG_FILE_PREFIX) && f.endsWith('.log'))
       .map(async (f) => {
         const filePath = path.join(tempDir, f);
         try {
-          const stat = await fs.promises.stat(filePath);
+          const stat = await fileSystem.stat(filePath);
           if (now - stat.mtimeMs > retentionMs) {
-            await fs.promises.unlink(filePath);
+            await fileSystem.rm(filePath, { force: true });
             log('info', `Deleted old log file: ${filePath}`);
           }
         } catch (err) {
