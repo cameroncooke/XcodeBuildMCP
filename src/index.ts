@@ -19,6 +19,7 @@ import { createServer, startServer } from './server/server.ts';
 // Import utilities
 import { log } from './utils/logger.ts';
 import { initSentry } from './utils/sentry.ts';
+import { getDefaultDebuggerManager } from './utils/debugger/index.ts';
 
 // Import version
 import { version } from './version.ts';
@@ -64,11 +65,13 @@ async function main(): Promise<void> {
 
     // Clean up on exit
     process.on('SIGTERM', async () => {
+      await getDefaultDebuggerManager().disposeAll();
       await server.close();
       process.exit(0);
     });
 
     process.on('SIGINT', async () => {
+      await getDefaultDebuggerManager().disposeAll();
       await server.close();
       process.exit(0);
     });

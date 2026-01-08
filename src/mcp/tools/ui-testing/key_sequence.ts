@@ -16,6 +16,9 @@ import {
 } from '../../../utils/responses/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultDebuggerManager } from '../../../utils/debugger/index.ts';
+import type { DebuggerManager } from '../../../utils/debugger/debugger-manager.ts';
+import { guardUiAutomationAgainstStoppedDebugger } from '../../../utils/debugger/ui-automation-guard.ts';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -54,9 +57,18 @@ export async function key_sequenceLogic(
     getBundledAxeEnvironment,
     createAxeNotAvailableResponse,
   },
+  debuggerManager: DebuggerManager = getDefaultDebuggerManager(),
 ): Promise<ToolResponse> {
   const toolName = 'key_sequence';
   const { simulatorId, keyCodes, delay } = params;
+
+  const guard = await guardUiAutomationAgainstStoppedDebugger({
+    debugger: debuggerManager,
+    simulatorId,
+    toolName,
+  });
+  if (guard.blockedResponse) return guard.blockedResponse;
+
   const commandArgs = ['key-sequence', '--keycodes', keyCodes.join(',')];
   if (delay !== undefined) {
     commandArgs.push('--delay', String(delay));
@@ -70,7 +82,11 @@ export async function key_sequenceLogic(
   try {
     await executeAxeCommand(commandArgs, simulatorId, 'key-sequence', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
-    return createTextResponse(`Key sequence [${keyCodes.join(',')}] executed successfully.`);
+    const message = `Key sequence [${keyCodes.join(',')}] executed successfully.`;
+    if (guard.warningText) {
+      return createTextResponse(`${message}\n\n${guard.warningText}`);
+    }
+    return createTextResponse(message);
   } catch (error) {
     log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
     if (error instanceof DependencyError) {

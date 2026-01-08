@@ -16,10 +16,12 @@
  */
 
 import { ChildProcess } from 'child_process';
-import { EventEmitter } from 'events';
 import type { WriteStream } from 'fs';
+import { EventEmitter } from 'node:events';
+import { PassThrough } from 'node:stream';
 import { CommandExecutor, type CommandResponse } from '../utils/CommandExecutor.ts';
 import { FileSystemExecutor } from '../utils/FileSystemExecutor.ts';
+import type { InteractiveProcess, InteractiveSpawner } from '../utils/execution/index.ts';
 
 export type { CommandExecutor, FileSystemExecutor };
 
@@ -187,6 +189,100 @@ export function createCommandMatchingMockExecutor(
       error: result.error,
       process: (result.process ?? mockProcess) as ChildProcess,
       exitCode: result.exitCode ?? (result.success === false ? 1 : 0),
+    };
+  };
+}
+
+export type MockInteractiveSession = {
+  stdout: PassThrough;
+  stderr: PassThrough;
+  stdin: PassThrough;
+  emitExit: (code?: number | null, signal?: NodeJS.Signals | null) => void;
+  emitError: (error: Error) => void;
+};
+
+export type MockInteractiveSpawnerScript = {
+  onSpawn?: (session: MockInteractiveSession) => void;
+  onWrite?: (data: string, session: MockInteractiveSession) => void;
+  onKill?: (signal: NodeJS.Signals | undefined, session: MockInteractiveSession) => void;
+  onDispose?: (session: MockInteractiveSession) => void;
+};
+
+export function createMockInteractiveSpawner(
+  script: MockInteractiveSpawnerScript = {},
+): InteractiveSpawner {
+  return (): InteractiveProcess => {
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    const stdin = new PassThrough();
+    const emitter = new EventEmitter();
+    const mockProcess = emitter as unknown as ChildProcess;
+    const mutableProcess = mockProcess as unknown as {
+      stdout: PassThrough | null;
+      stderr: PassThrough | null;
+      stdin: PassThrough | null;
+      killed: boolean;
+      exitCode: number | null;
+      signalCode: NodeJS.Signals | null;
+      spawnargs: string[];
+      spawnfile: string;
+      pid: number;
+    };
+
+    mutableProcess.stdout = stdout;
+    mutableProcess.stderr = stderr;
+    mutableProcess.stdin = stdin;
+    mutableProcess.killed = false;
+    mutableProcess.exitCode = null;
+    mutableProcess.signalCode = null;
+    mutableProcess.spawnargs = [];
+    mutableProcess.spawnfile = 'mock';
+    mutableProcess.pid = 12345;
+    mockProcess.kill = ((signal?: NodeJS.Signals): boolean => {
+      mutableProcess.killed = true;
+      emitter.emit('exit', 0, signal ?? null);
+      return true;
+    }) as ChildProcess['kill'];
+
+    const session: MockInteractiveSession = {
+      stdout,
+      stderr,
+      stdin,
+      emitExit: (code = 0, signal = null) => {
+        emitter.emit('exit', code, signal);
+      },
+      emitError: (error) => {
+        emitter.emit('error', error);
+      },
+    };
+
+    script.onSpawn?.(session);
+
+    let disposed = false;
+
+    return {
+      process: mockProcess,
+      write(data: string): void {
+        if (disposed) {
+          throw new Error('Mock interactive process disposed');
+        }
+        script.onWrite?.(data, session);
+      },
+      kill(signal?: NodeJS.Signals): void {
+        if (disposed) return;
+        mutableProcess.killed = true;
+        script.onKill?.(signal, session);
+        emitter.emit('exit', 0, signal ?? null);
+      },
+      dispose(): void {
+        if (disposed) return;
+        disposed = true;
+        script.onDispose?.(session);
+        stdout.end();
+        stderr.end();
+        stdin.end();
+        emitter.removeAllListeners();
+      },
     };
   };
 }

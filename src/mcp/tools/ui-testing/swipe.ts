@@ -11,6 +11,9 @@ import { createTextResponse, createErrorResponse } from '../../../utils/response
 import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultDebuggerManager } from '../../../utils/debugger/index.ts';
+import type { DebuggerManager } from '../../../utils/debugger/debugger-manager.ts';
+import { guardUiAutomationAgainstStoppedDebugger } from '../../../utils/debugger/ui-automation-guard.ts';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -58,10 +61,18 @@ export async function swipeLogic(
     getBundledAxeEnvironment,
     createAxeNotAvailableResponse,
   },
+  debuggerManager: DebuggerManager = getDefaultDebuggerManager(),
 ): Promise<ToolResponse> {
   const toolName = 'swipe';
 
   const { simulatorId, x1, y1, x2, y2, duration, delta, preDelay, postDelay } = params;
+  const guard = await guardUiAutomationAgainstStoppedDebugger({
+    debugger: debuggerManager,
+    simulatorId,
+    toolName,
+  });
+  if (guard.blockedResponse) return guard.blockedResponse;
+
   const commandArgs = [
     'swipe',
     '--start-x',
@@ -96,11 +107,12 @@ export async function swipeLogic(
     await executeAxeCommand(commandArgs, simulatorId, 'swipe', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
 
-    const warning = getCoordinateWarning(simulatorId);
+    const coordinateWarning = getCoordinateWarning(simulatorId);
     const message = `Swipe from (${x1}, ${y1}) to (${x2}, ${y2})${optionsText} simulated successfully.`;
+    const warnings = [guard.warningText, coordinateWarning].filter(Boolean).join('\n\n');
 
-    if (warning) {
-      return createTextResponse(`${message}\n\n${warning}`);
+    if (warnings) {
+      return createTextResponse(`${message}\n\n${warnings}`);
     }
 
     return createTextResponse(message);

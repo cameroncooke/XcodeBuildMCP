@@ -4,6 +4,9 @@ import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultDebuggerManager } from '../../../utils/debugger/index.ts';
+import type { DebuggerManager } from '../../../utils/debugger/debugger-manager.ts';
+import { guardUiAutomationAgainstStoppedDebugger } from '../../../utils/debugger/ui-automation-guard.ts';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -106,9 +109,17 @@ export async function tapLogic(
     getBundledAxeEnvironment,
     createAxeNotAvailableResponse,
   },
+  debuggerManager: DebuggerManager = getDefaultDebuggerManager(),
 ): Promise<ToolResponse> {
   const toolName = 'tap';
   const { simulatorId, x, y, id, label, preDelay, postDelay } = params;
+
+  const guard = await guardUiAutomationAgainstStoppedDebugger({
+    debugger: debuggerManager,
+    simulatorId,
+    toolName,
+  });
+  if (guard.blockedResponse) return guard.blockedResponse;
 
   let targetDescription = '';
   let actionDescription = '';
@@ -148,11 +159,12 @@ export async function tapLogic(
     await executeAxeCommand(commandArgs, simulatorId, 'tap', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
 
-    const warning = usesCoordinates ? getCoordinateWarning(simulatorId) : null;
+    const coordinateWarning = usesCoordinates ? getCoordinateWarning(simulatorId) : null;
     const message = `${actionDescription} simulated successfully.`;
+    const warnings = [guard.warningText, coordinateWarning].filter(Boolean).join('\n\n');
 
-    if (warning) {
-      return createTextResponse(`${message}\n\n${warning}`);
+    if (warnings) {
+      return createTextResponse(`${message}\n\n${warnings}`);
     }
 
     return createTextResponse(message);

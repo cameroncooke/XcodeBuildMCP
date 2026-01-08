@@ -1,5 +1,20 @@
 # Changelog
 
+## [Unreleased]
+### Added
+- Add Smithery support for packaging/distribution.
+- Add DAP-based debugger backend and simulator debugging toolset (attach, breakpoints, stack, variables, LLDB command).
+- Add session-status MCP resource with session identifiers.
+- Add UI automation guard that blocks UI tools when the debugger is paused.
+
+### Changed
+- Migrate to Zod v4.
+- Improve session default handling (reconcile mutual exclusivity and ignore explicit undefined clears).
+
+### Fixed
+- Update UI automation guard guidance to point at `debug_continue` when paused.
+- Fix tool loading bugs in static tool registration.
+
 ## [1.16.0] - 2025-12-30
 - Remove dynamic tool discovery (`discover_tools`) and `XCODEBUILDMCP_DYNAMIC_TOOLS`. Use `XCODEBUILDMCP_ENABLED_WORKFLOWS` to limit startup tool registration.
 - Add MCP tool annotations to all tools.

@@ -17,6 +17,9 @@ import {
 } from '../../../utils/responses/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultDebuggerManager } from '../../../utils/debugger/index.ts';
+import type { DebuggerManager } from '../../../utils/debugger/debugger-manager.ts';
+import { guardUiAutomationAgainstStoppedDebugger } from '../../../utils/debugger/ui-automation-guard.ts';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -101,10 +104,17 @@ export async function gestureLogic(
     getBundledAxeEnvironment,
     createAxeNotAvailableResponse,
   },
+  debuggerManager: DebuggerManager = getDefaultDebuggerManager(),
 ): Promise<ToolResponse> {
   const toolName = 'gesture';
   const { simulatorId, preset, screenWidth, screenHeight, duration, delta, preDelay, postDelay } =
     params;
+  const guard = await guardUiAutomationAgainstStoppedDebugger({
+    debugger: debuggerManager,
+    simulatorId,
+    toolName,
+  });
+  if (guard.blockedResponse) return guard.blockedResponse;
   const commandArgs = ['gesture', preset];
 
   if (screenWidth !== undefined) {
@@ -131,7 +141,11 @@ export async function gestureLogic(
   try {
     await executeAxeCommand(commandArgs, simulatorId, 'gesture', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
-    return createTextResponse(`Gesture '${preset}' executed successfully.`);
+    const message = `Gesture '${preset}' executed successfully.`;
+    if (guard.warningText) {
+      return createTextResponse(`${message}\n\n${guard.warningText}`);
+    }
+    return createTextResponse(message);
   } catch (error) {
     log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
     if (error instanceof DependencyError) {

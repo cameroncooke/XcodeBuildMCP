@@ -223,14 +223,14 @@ export async function someToolLogic(
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
   log('info', `Executing some_tool with param: ${params.requiredParam}`);
-  
+
   try {
     const result = await executor(['some', 'command'], 'Some Tool Operation');
-    
+
     if (!result.success) {
       return createErrorResponse('Operation failed', result.error);
     }
-    
+
     return createTextResponse(`✅ Success: ${result.output}`);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -243,7 +243,7 @@ export default {
   name: 'some_tool',
   description: 'Tool description for AI agents. Example: some_tool({ requiredParam: "value" })',
   schema: someToolSchema.shape, // Expose shape for MCP SDK
-  
+
   // 5. Create the handler using the type-safe factory
   handler: createTypedTool(
     someToolSchema,
@@ -259,6 +259,15 @@ This pattern ensures that:
 - The handler is type-safe, preventing unsafe access to parameters
 - Import paths use focused facades for clear dependency management
 ```
+
+### Debugger Subsystem
+
+The debugging workflow relies on a long-lived, interactive LLDB subprocess. A `DebuggerManager` owns the session lifecycle and routes tool calls to a backend implementation. The default backend is the LLDB CLI (`xcrun lldb --no-lldbinit`) and configures a unique prompt sentinel to safely read command results. A stub DAP backend exists for future expansion.
+
+Key elements:
+- **Interactive execution**: Uses a dedicated interactive spawner with `stdin: 'pipe'` so LLDB commands can be streamed across multiple tool calls.
+- **Session manager**: Tracks debug session metadata (session id, simulator id, pid, timestamps) and maintains a “current” session.
+- **Backend abstraction**: `DebuggerBackend` keeps the tool contract stable while allowing future DAP support.
 
 ### MCP Resources System
 
@@ -432,7 +441,7 @@ describe('Tool Name', () => {
 
     // 2. Call the tool's logic function, injecting the mock executor
     const result = await someToolLogic({ requiredParam: 'value' }, mockExecutor);
-    
+
     // 3. Assert the final result
     expect(result).toEqual({
       content: [{ type: 'text', text: 'Expected output' }],

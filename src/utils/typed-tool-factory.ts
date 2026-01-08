@@ -16,31 +16,16 @@ import { createErrorResponse } from './responses/index.ts';
 import { sessionStore, type SessionDefaults } from './session-store.ts';
 import { isSessionDefaultsSchemaOptOutEnabled } from './environment.ts';
 
-/**
- * Creates a type-safe tool handler that validates parameters at runtime
- * before passing them to the typed logic function.
- *
- * This is the ONLY safe way to cross the type boundary from the generic
- * MCP handler signature to our typed domain logic.
- *
- * @param schema - Zod schema for parameter validation
- * @param logicFunction - The typed logic function to execute
- * @param getExecutor - Function to get the command executor (must be provided)
- * @returns A handler function compatible with MCP SDK requirements
- */
-export function createTypedTool<TParams>(
+function createValidatedHandler<TParams, TContext>(
   schema: z.ZodType<TParams, unknown>,
-  logicFunction: (params: TParams, executor: CommandExecutor) => Promise<ToolResponse>,
-  getExecutor: () => CommandExecutor,
-) {
+  logicFunction: (params: TParams, context: TContext) => Promise<ToolResponse>,
+  getContext: () => TContext,
+): (args: Record<string, unknown>) => Promise<ToolResponse> {
   return async (args: Record<string, unknown>): Promise<ToolResponse> => {
     try {
-      // Runtime validation - the ONLY safe way to cross the type boundary
-      // This provides both compile-time and runtime type safety
       const validatedParams = schema.parse(args);
 
-      // Now we have guaranteed type safety - no assertions needed!
-      return await logicFunction(validatedParams, getExecutor());
+      return await logicFunction(validatedParams, getContext());
     } catch (error) {
       if (error instanceof z.ZodError) {
         const details = `Invalid parameters:\n${formatZodIssues(error)}`;
@@ -51,6 +36,31 @@ export function createTypedTool<TParams>(
       throw error;
     }
   };
+}
+
+/**
+ * Creates a type-safe tool handler that validates parameters at runtime
+ * before passing them to the typed logic function.
+ *
+ * @param schema - Zod schema for parameter validation
+ * @param logicFunction - The typed logic function to execute
+ * @param getExecutor - Function to get the command executor (must be provided)
+ * @returns A handler function compatible with MCP SDK requirements
+ */
+export function createTypedTool<TParams>(
+  schema: z.ZodType<TParams, unknown>,
+  logicFunction: (params: TParams, executor: CommandExecutor) => Promise<ToolResponse>,
+  getExecutor: () => CommandExecutor,
+): (args: Record<string, unknown>) => Promise<ToolResponse> {
+  return createValidatedHandler(schema, logicFunction, getExecutor);
+}
+
+export function createTypedToolWithContext<TParams, TContext>(
+  schema: z.ZodType<TParams, unknown>,
+  logicFunction: (params: TParams, context: TContext) => Promise<ToolResponse>,
+  getContext: () => TContext,
+): (args: Record<string, unknown>) => Promise<ToolResponse> {
+  return createValidatedHandler(schema, logicFunction, getContext);
 }
 
 export type SessionRequirement =
@@ -93,11 +103,37 @@ export function createSessionAwareTool<TParams>(opts: {
   getExecutor: () => CommandExecutor;
   requirements?: SessionRequirement[];
   exclusivePairs?: (keyof SessionDefaults)[][]; // when args provide one side, drop conflicting session-default side(s)
-}) {
+}): (rawArgs: Record<string, unknown>) => Promise<ToolResponse> {
+  return createSessionAwareHandler({
+    internalSchema: opts.internalSchema,
+    logicFunction: opts.logicFunction,
+    getContext: opts.getExecutor,
+    requirements: opts.requirements,
+    exclusivePairs: opts.exclusivePairs,
+  });
+}
+
+export function createSessionAwareToolWithContext<TParams, TContext>(opts: {
+  internalSchema: z.ZodType<TParams, unknown>;
+  logicFunction: (params: TParams, context: TContext) => Promise<ToolResponse>;
+  getContext: () => TContext;
+  requirements?: SessionRequirement[];
+  exclusivePairs?: (keyof SessionDefaults)[][];
+}): (rawArgs: Record<string, unknown>) => Promise<ToolResponse> {
+  return createSessionAwareHandler(opts);
+}
+
+function createSessionAwareHandler<TParams, TContext>(opts: {
+  internalSchema: z.ZodType<TParams, unknown>;
+  logicFunction: (params: TParams, context: TContext) => Promise<ToolResponse>;
+  getContext: () => TContext;
+  requirements?: SessionRequirement[];
+  exclusivePairs?: (keyof SessionDefaults)[][];
+}): (rawArgs: Record<string, unknown>) => Promise<ToolResponse> {
   const {
     internalSchema,
     logicFunction,
-    getExecutor,
+    getContext,
     requirements = [],
     exclusivePairs = [],
   } = opts;
@@ -176,7 +212,7 @@ export function createSessionAwareTool<TParams>(opts: {
       }
 
       const validated = internalSchema.parse(merged);
-      return await logicFunction(validated, getExecutor());
+      return await logicFunction(validated, getContext());
     } catch (error) {
       if (error instanceof z.ZodError) {
         const details = `Invalid parameters:\n${formatZodIssues(error)}`;

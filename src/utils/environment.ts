@@ -79,6 +79,18 @@ export function isSessionDefaultsSchemaOptOutEnabled(): boolean {
   return ['1', 'true', 'yes', 'on'].includes(normalized);
 }
 
+export type UiDebuggerGuardMode = 'error' | 'warn' | 'off';
+
+export function getUiDebuggerGuardMode(): UiDebuggerGuardMode {
+  const raw = process.env.XCODEBUILDMCP_UI_DEBUGGER_GUARD_MODE;
+  if (!raw) return 'error';
+
+  const normalized = raw.trim().toLowerCase();
+  if (['off', '0', 'false', 'no'].includes(normalized)) return 'off';
+  if (['warn', 'warning'].includes(normalized)) return 'warn';
+  return 'error';
+}
+
 /**
  * Normalizes a set of user-provided environment variables by ensuring they are
  * prefixed with TEST_RUNNER_. Variables already prefixed are preserved.

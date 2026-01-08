@@ -36,6 +36,8 @@ const listSchemesSchema = z.preprocess(
 
 export type ListSchemesParams = z.infer<typeof listSchemesSchema>;
 
+const createTextBlock = (text: string) => ({ type: 'text', text }) as const;
+
 /**
  * Business logic for listing schemes in a project or workspace.
  * Exported for direct testing and reuse.
@@ -79,6 +81,7 @@ export async function listSchemesLogic(
 
     // Prepare next steps with the first scheme if available
     let nextStepsText = '';
+    let hintText = '';
     if (schemes.length > 0) {
       const firstScheme = schemes[0];
 
@@ -87,23 +90,23 @@ export async function listSchemesLogic(
 1. Build the app: build_macos({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })
    or for iOS: build_sim({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
 2. Show build settings: show_build_settings({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })`;
+
+      hintText =
+        `Hint: Consider saving a default scheme with session-set-defaults ` +
+        `{ scheme: "${firstScheme}" } to avoid repeating it.`;
+    }
+
+    const content = [
+      createTextBlock('✅ Available schemes:'),
+      createTextBlock(schemes.join('\n')),
+      createTextBlock(nextStepsText),
+    ];
+    if (hintText.length > 0) {
+      content.push(createTextBlock(hintText));
     }
 
     return {
-      content: [
-        {
-          type: 'text',
-          text: `✅ Available schemes:`,
-        },
-        {
-          type: 'text',
-          text: schemes.join('\n'),
-        },
-        {
-          type: 'text',
-          text: nextStepsText,
-        },
-      ],
+      content,
       isError: false,
     };
   } catch (error) {

@@ -24,6 +24,15 @@ const doctorSchema = z.object({
 // Use z.infer for type safety
 type DoctorParams = z.infer<typeof doctorSchema>;
 
+async function checkLldbDapAvailability(executor: CommandExecutor): Promise<boolean> {
+  try {
+    const result = await executor(['xcrun', '--find', 'lldb-dap'], 'Check lldb-dap');
+    return result.success && result.output.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Run the doctor tool and return the results
  */
@@ -52,6 +61,9 @@ export async function runDoctor(
   const xcodemakeEnabled = deps.features.isXcodemakeEnabled();
   const xcodemakeAvailable = await deps.features.isXcodemakeAvailable();
   const makefileExists = deps.features.doesMakefileExist('./');
+  const lldbDapAvailable = await checkLldbDapAvailability(deps.commandExecutor);
+  const selectedDebuggerBackend = process.env.XCODEBUILDMCP_DEBUGGER_BACKEND?.trim();
+  const dapSelected = !selectedDebuggerBackend || selectedDebuggerBackend.toLowerCase() === 'dap';
 
   const doctorInfo = {
     serverVersion: version,
@@ -74,6 +86,12 @@ export async function runDoctor(
       mise: {
         running_under_mise: Boolean(process.env.XCODEBUILDMCP_RUNNING_UNDER_MISE),
         available: binaryStatus['mise'].available,
+      },
+      debugger: {
+        dap: {
+          available: lldbDapAvailable,
+          selected: selectedDebuggerBackend ?? '(default dap)',
+        },
       },
     },
     pluginSystem: pluginSystemInfo,
@@ -195,6 +213,15 @@ export async function runDoctor(
     `\n### Mise Integration`,
     `- Running under mise: ${doctorInfo.features.mise.running_under_mise ? '✅ Yes' : '❌ No'}`,
     `- Mise available: ${doctorInfo.features.mise.available ? '✅ Yes' : '❌ No'}`,
+
+    `\n### Debugger Backend (DAP)`,
+    `- lldb-dap available: ${doctorInfo.features.debugger.dap.available ? '✅ Yes' : '❌ No'}`,
+    `- Selected backend: ${doctorInfo.features.debugger.dap.selected}`,
+    ...(dapSelected && !lldbDapAvailable
+      ? [
+          `- Warning: DAP backend selected but lldb-dap not available. Set XCODEBUILDMCP_DEBUGGER_BACKEND=lldb-cli to use the CLI backend.`,
+        ]
+      : []),
 
     `\n### Available Tools`,
     `- Total Plugins: ${'totalPlugins' in doctorInfo.pluginSystem ? doctorInfo.pluginSystem.totalPlugins : 0}`,

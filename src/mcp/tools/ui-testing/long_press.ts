@@ -17,6 +17,9 @@ import {
 } from '../../../utils/responses/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultDebuggerManager } from '../../../utils/debugger/index.ts';
+import type { DebuggerManager } from '../../../utils/debugger/debugger-manager.ts';
+import { guardUiAutomationAgainstStoppedDebugger } from '../../../utils/debugger/ui-automation-guard.ts';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -58,9 +61,18 @@ export async function long_pressLogic(
     getBundledAxeEnvironment,
     createAxeNotAvailableResponse,
   },
+  debuggerManager: DebuggerManager = getDefaultDebuggerManager(),
 ): Promise<ToolResponse> {
   const toolName = 'long_press';
   const { simulatorId, x, y, duration } = params;
+
+  const guard = await guardUiAutomationAgainstStoppedDebugger({
+    debugger: debuggerManager,
+    simulatorId,
+    toolName,
+  });
+  if (guard.blockedResponse) return guard.blockedResponse;
+
   // AXe uses touch command with --down, --up, and --delay for long press
   const delayInSeconds = Number(duration) / 1000; // Convert ms to seconds
   const commandArgs = [
@@ -84,11 +96,12 @@ export async function long_pressLogic(
     await executeAxeCommand(commandArgs, simulatorId, 'touch', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
 
-    const warning = getCoordinateWarning(simulatorId);
+    const coordinateWarning = getCoordinateWarning(simulatorId);
     const message = `Long press at (${x}, ${y}) for ${duration}ms simulated successfully.`;
+    const warnings = [guard.warningText, coordinateWarning].filter(Boolean).join('\n\n');
 
-    if (warning) {
-      return createTextResponse(`${message}\n\n${warning}`);
+    if (warnings) {
+      return createTextResponse(`${message}\n\n${warnings}`);
     }
 
     return createTextResponse(message);

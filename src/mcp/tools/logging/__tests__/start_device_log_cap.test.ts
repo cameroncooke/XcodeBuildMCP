@@ -11,10 +11,8 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import plugin, {
-  start_device_log_capLogic,
-  activeDeviceLogSessions,
-} from '../start_device_log_cap.ts';
+import plugin, { start_device_log_capLogic } from '../start_device_log_cap.ts';
+import { activeDeviceLogSessions } from '../../../../utils/log-capture/device-log-sessions.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
 type Mutable<T> = {
@@ -36,11 +34,6 @@ describe('start_device_log_cap plugin', () => {
   }> = [];
   let mkdirCalls: string[] = [];
   let writeFileCalls: Array<{ path: string; content: string }> = [];
-
-  // Reset state
-  commandCalls = [];
-  mkdirCalls = [];
-  writeFileCalls = [];
 
   const originalJsonWaitEnv = process.env.XBMCP_LAUNCH_JSON_WAIT_MS;
 

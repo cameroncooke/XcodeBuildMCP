@@ -5,6 +5,9 @@ import { createErrorResponse } from '../../../utils/responses/index.ts';
 import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultDebuggerManager } from '../../../utils/debugger/index.ts';
+import type { DebuggerManager } from '../../../utils/debugger/debugger-manager.ts';
+import { guardUiAutomationAgainstStoppedDebugger } from '../../../utils/debugger/ui-automation-guard.ts';
 import {
   createAxeNotAvailableResponse,
   getAxePath,
@@ -32,7 +35,7 @@ export interface AxeHelpers {
 const LOG_PREFIX = '[AXe]';
 
 // Session tracking for describe_ui warnings (shared across UI tools)
-const describeUITimestamps = new Map();
+const describeUITimestamps = new Map<string, { timestamp: number; simulatorId: string }>();
 
 function recordDescribeUICall(simulatorId: string): void {
   describeUITimestamps.set(simulatorId, {
@@ -52,10 +55,18 @@ export async function describe_uiLogic(
     getBundledAxeEnvironment,
     createAxeNotAvailableResponse,
   },
+  debuggerManager: DebuggerManager = getDefaultDebuggerManager(),
 ): Promise<ToolResponse> {
   const toolName = 'describe_ui';
   const { simulatorId } = params;
   const commandArgs = ['describe-ui'];
+
+  const guard = await guardUiAutomationAgainstStoppedDebugger({
+    debugger: debuggerManager,
+    simulatorId,
+    toolName,
+  });
+  if (guard.blockedResponse) return guard.blockedResponse;
 
   log('info', `${LOG_PREFIX}/${toolName}: Starting for ${simulatorId}`);
 
@@ -72,7 +83,7 @@ export async function describe_uiLogic(
     recordDescribeUICall(simulatorId);
 
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
-    return {
+    const response: ToolResponse = {
       content: [
         {
           type: 'text',
@@ -84,10 +95,15 @@ export async function describe_uiLogic(
           text: `Next Steps:
 - Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)
 - Re-run describe_ui after layout changes
+- If a debugger is attached, ensure the app is running (not stopped on breakpoints)
 - Screenshots are for visual verification only`,
         },
       ],
     };
+    if (guard.warningText) {
+      response.content.push({ type: 'text', text: guard.warningText });
+    }
+    return response;
   } catch (error) {
     log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
     if (error instanceof DependencyError) {
@@ -116,7 +132,7 @@ const publicSchemaObject = z.strictObject(
 export default {
   name: 'describe_ui',
   description:
-    'Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation.',
+    'Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation. Requires the target process to be running; paused debugger/breakpoints can yield an empty tree.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: describeUiSchema,

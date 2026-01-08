@@ -263,6 +263,14 @@ export async function discover_projsLogic(
     );
   }
 
+  if (results.projects.length > 0 || results.workspaces.length > 0) {
+    responseContent.push(
+      createTextContent(
+        "Hint: Save a default with session-set-defaults { projectPath: '...' } or { workspacePath: '...' }.",
+      ),
+    );
+  }
+
   return {
     content: responseContent,
     isError: false,

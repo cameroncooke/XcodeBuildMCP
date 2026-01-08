@@ -395,6 +395,8 @@ export async function list_devicesLogic(
       responseText += "2. Run tests: test_device({ scheme: 'SCHEME', deviceId: 'DEVICE_UDID' })\n";
       responseText += "3. Get app path: get_device_app_path({ scheme: 'SCHEME' })\n\n";
       responseText += 'Note: Use the device ID/UDID from above when required by other tools.\n';
+      responseText +=
+        "Hint: Save a default device with session-set-defaults { deviceId: 'DEVICE_UDID' }.\n";
     } else if (uniqueDevices.length > 0) {
       responseText +=
         'Note: No devices are currently available for testing. Make sure devices are:\n';

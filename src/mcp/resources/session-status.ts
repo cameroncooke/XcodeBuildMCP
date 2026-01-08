@@ -1,0 +1,44 @@
+/**
+ * Session Status Resource Plugin
+ *
+ * Provides read-only runtime session state for log capture and debugging.
+ */
+
+import { log } from '../../utils/logging/index.ts';
+import { getSessionRuntimeStatusSnapshot } from '../../utils/session-status.ts';
+
+export async function sessionStatusResourceLogic(): Promise<{ contents: Array<{ text: string }> }> {
+  try {
+    log('info', 'Processing session status resource request');
+    const status = getSessionRuntimeStatusSnapshot();
+
+    return {
+      contents: [
+        {
+          text: JSON.stringify(status, null, 2),
+        },
+      ],
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log('error', `Error in session status resource handler: ${errorMessage}`);
+
+    return {
+      contents: [
+        {
+          text: `Error retrieving session status: ${errorMessage}`,
+        },
+      ],
+    };
+  }
+}
+
+export default {
+  uri: 'xcodebuildmcp://session-status',
+  name: 'session-status',
+  description: 'Runtime session state for log capture and debugging',
+  mimeType: 'application/json',
+  async handler(): Promise<{ contents: Array<{ text: string }> }> {
+    return sessionStatusResourceLogic();
+  },
+};

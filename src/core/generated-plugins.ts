@@ -3,30 +3,61 @@
 
 // Generated based on filesystem scan
 export const WORKFLOW_LOADERS = {
+  debugging: async () => {
+    const { workflow } = await import('../mcp/tools/debugging/index.ts');
+    const tool_0 = await import('../mcp/tools/debugging/debug_attach_sim.ts').then(
+      (m) => m.default,
+    );
+    const tool_1 = await import('../mcp/tools/debugging/debug_breakpoint_add.ts').then(
+      (m) => m.default,
+    );
+    const tool_2 = await import('../mcp/tools/debugging/debug_breakpoint_remove.ts').then(
+      (m) => m.default,
+    );
+    const tool_3 = await import('../mcp/tools/debugging/debug_continue.ts').then((m) => m.default);
+    const tool_4 = await import('../mcp/tools/debugging/debug_detach.ts').then((m) => m.default);
+    const tool_5 = await import('../mcp/tools/debugging/debug_lldb_command.ts').then(
+      (m) => m.default,
+    );
+    const tool_6 = await import('../mcp/tools/debugging/debug_stack.ts').then((m) => m.default);
+    const tool_7 = await import('../mcp/tools/debugging/debug_variables.ts').then((m) => m.default);
+
+    return {
+      workflow,
+      debug_attach_sim: tool_0,
+      debug_breakpoint_add: tool_1,
+      debug_breakpoint_remove: tool_2,
+      debug_continue: tool_3,
+      debug_detach: tool_4,
+      debug_lldb_command: tool_5,
+      debug_stack: tool_6,
+      debug_variables: tool_7,
+    };
+  },
   device: async () => {
-    const { workflow } = await import('../mcp/tools/device/index.js');
-    const tool_0 = await import('../mcp/tools/device/build_device.js').then((m) => m.default);
-    const tool_1 = await import('../mcp/tools/device/clean.js').then((m) => m.default);
-    const tool_2 = await import('../mcp/tools/device/discover_projs.js').then((m) => m.default);
-    const tool_3 = await import('../mcp/tools/device/get_app_bundle_id.js').then((m) => m.default);
-    const tool_4 = await import('../mcp/tools/device/get_device_app_path.js').then(
+    const { workflow } = await import('../mcp/tools/device/index.ts');
+    const tool_0 = await import('../mcp/tools/device/build_device.ts').then((m) => m.default);
+    const tool_1 = await import('../mcp/tools/device/clean.ts').then((m) => m.default);
+    const tool_2 = await import('../mcp/tools/device/discover_projs.ts').then((m) => m.default);
+    const tool_3 = await import('../mcp/tools/device/get_app_bundle_id.ts').then((m) => m.default);
+    const tool_4 = await import('../mcp/tools/device/get_device_app_path.ts').then(
       (m) => m.default,
     );
-    const tool_5 = await import('../mcp/tools/device/install_app_device.js').then((m) => m.default);
-    const tool_6 = await import('../mcp/tools/device/launch_app_device.js').then((m) => m.default);
-    const tool_7 = await import('../mcp/tools/device/list_devices.js').then((m) => m.default);
-    const tool_8 = await import('../mcp/tools/device/list_schemes.js').then((m) => m.default);
-    const tool_9 = await import('../mcp/tools/device/show_build_settings.js').then(
+    const tool_5 = await import('../mcp/tools/device/install_app_device.ts').then((m) => m.default);
+    const tool_6 = await import('../mcp/tools/device/launch_app_device.ts').then((m) => m.default);
+    const tool_7 = await import('../mcp/tools/device/list_devices.ts').then((m) => m.default);
+    const tool_8 = await import('../mcp/tools/device/list_schemes.ts').then((m) => m.default);
+    const tool_9 = await import('../mcp/tools/device/show_build_settings.ts').then(
       (m) => m.default,
     );
-    const tool_10 = await import('../mcp/tools/device/start_device_log_cap.js').then(
+    const tool_10 = await import('../mcp/tools/device/start_device_log_cap.ts').then(
       (m) => m.default,
     );
-    const tool_11 = await import('../mcp/tools/device/stop_app_device.js').then((m) => m.default);
-    const tool_12 = await import('../mcp/tools/device/stop_device_log_cap.js').then(
+    const tool_11 = await import('../mcp/tools/device/stop_app_device.ts').then((m) => m.default);
+    const tool_12 = await import('../mcp/tools/device/stop_device_log_cap.ts').then(
       (m) => m.default,
     );
-    const tool_13 = await import('../mcp/tools/device/test_device.js').then((m) => m.default);
+    const tool_13 = await import('../mcp/tools/device/test_device.ts').then((m) => m.default);
 
     return {
       workflow,
@@ -47,8 +78,8 @@ export const WORKFLOW_LOADERS = {
     };
   },
   doctor: async () => {
-    const { workflow } = await import('../mcp/tools/doctor/index.js');
-    const tool_0 = await import('../mcp/tools/doctor/doctor.js').then((m) => m.default);
+    const { workflow } = await import('../mcp/tools/doctor/index.ts');
+    const tool_0 = await import('../mcp/tools/doctor/doctor.ts').then((m) => m.default);
 
     return {
       workflow,
@@ -56,15 +87,15 @@ export const WORKFLOW_LOADERS = {
     };
   },
   logging: async () => {
-    const { workflow } = await import('../mcp/tools/logging/index.js');
-    const tool_0 = await import('../mcp/tools/logging/start_device_log_cap.js').then(
+    const { workflow } = await import('../mcp/tools/logging/index.ts');
+    const tool_0 = await import('../mcp/tools/logging/start_device_log_cap.ts').then(
       (m) => m.default,
     );
-    const tool_1 = await import('../mcp/tools/logging/start_sim_log_cap.js').then((m) => m.default);
-    const tool_2 = await import('../mcp/tools/logging/stop_device_log_cap.js').then(
+    const tool_1 = await import('../mcp/tools/logging/start_sim_log_cap.ts').then((m) => m.default);
+    const tool_2 = await import('../mcp/tools/logging/stop_device_log_cap.ts').then(
       (m) => m.default,
     );
-    const tool_3 = await import('../mcp/tools/logging/stop_sim_log_cap.js').then((m) => m.default);
+    const tool_3 = await import('../mcp/tools/logging/stop_sim_log_cap.ts').then((m) => m.default);
 
     return {
       workflow,
@@ -75,18 +106,18 @@ export const WORKFLOW_LOADERS = {
     };
   },
   macos: async () => {
-    const { workflow } = await import('../mcp/tools/macos/index.js');
-    const tool_0 = await import('../mcp/tools/macos/build_macos.js').then((m) => m.default);
-    const tool_1 = await import('../mcp/tools/macos/build_run_macos.js').then((m) => m.default);
-    const tool_2 = await import('../mcp/tools/macos/clean.js').then((m) => m.default);
-    const tool_3 = await import('../mcp/tools/macos/discover_projs.js').then((m) => m.default);
-    const tool_4 = await import('../mcp/tools/macos/get_mac_app_path.js').then((m) => m.default);
-    const tool_5 = await import('../mcp/tools/macos/get_mac_bundle_id.js').then((m) => m.default);
-    const tool_6 = await import('../mcp/tools/macos/launch_mac_app.js').then((m) => m.default);
-    const tool_7 = await import('../mcp/tools/macos/list_schemes.js').then((m) => m.default);
-    const tool_8 = await import('../mcp/tools/macos/show_build_settings.js').then((m) => m.default);
-    const tool_9 = await import('../mcp/tools/macos/stop_mac_app.js').then((m) => m.default);
-    const tool_10 = await import('../mcp/tools/macos/test_macos.js').then((m) => m.default);
+    const { workflow } = await import('../mcp/tools/macos/index.ts');
+    const tool_0 = await import('../mcp/tools/macos/build_macos.ts').then((m) => m.default);
+    const tool_1 = await import('../mcp/tools/macos/build_run_macos.ts').then((m) => m.default);
+    const tool_2 = await import('../mcp/tools/macos/clean.ts').then((m) => m.default);
+    const tool_3 = await import('../mcp/tools/macos/discover_projs.ts').then((m) => m.default);
+    const tool_4 = await import('../mcp/tools/macos/get_mac_app_path.ts').then((m) => m.default);
+    const tool_5 = await import('../mcp/tools/macos/get_mac_bundle_id.ts').then((m) => m.default);
+    const tool_6 = await import('../mcp/tools/macos/launch_mac_app.ts').then((m) => m.default);
+    const tool_7 = await import('../mcp/tools/macos/list_schemes.ts').then((m) => m.default);
+    const tool_8 = await import('../mcp/tools/macos/show_build_settings.ts').then((m) => m.default);
+    const tool_9 = await import('../mcp/tools/macos/stop_mac_app.ts').then((m) => m.default);
+    const tool_10 = await import('../mcp/tools/macos/test_macos.ts').then((m) => m.default);
 
     return {
       workflow,
@@ -104,20 +135,20 @@ export const WORKFLOW_LOADERS = {
     };
   },
   'project-discovery': async () => {
-    const { workflow } = await import('../mcp/tools/project-discovery/index.js');
-    const tool_0 = await import('../mcp/tools/project-discovery/discover_projs.js').then(
+    const { workflow } = await import('../mcp/tools/project-discovery/index.ts');
+    const tool_0 = await import('../mcp/tools/project-discovery/discover_projs.ts').then(
       (m) => m.default,
     );
-    const tool_1 = await import('../mcp/tools/project-discovery/get_app_bundle_id.js').then(
+    const tool_1 = await import('../mcp/tools/project-discovery/get_app_bundle_id.ts').then(
       (m) => m.default,
     );
-    const tool_2 = await import('../mcp/tools/project-discovery/get_mac_bundle_id.js').then(
+    const tool_2 = await import('../mcp/tools/project-discovery/get_mac_bundle_id.ts').then(
       (m) => m.default,
     );
-    const tool_3 = await import('../mcp/tools/project-discovery/list_schemes.js').then(
+    const tool_3 = await import('../mcp/tools/project-discovery/list_schemes.ts').then(
       (m) => m.default,
     );
-    const tool_4 = await import('../mcp/tools/project-discovery/show_build_settings.js').then(
+    const tool_4 = await import('../mcp/tools/project-discovery/show_build_settings.ts').then(
       (m) => m.default,
     );
 
@@ -131,11 +162,11 @@ export const WORKFLOW_LOADERS = {
     };
   },
   'project-scaffolding': async () => {
-    const { workflow } = await import('../mcp/tools/project-scaffolding/index.js');
-    const tool_0 = await import('../mcp/tools/project-scaffolding/scaffold_ios_project.js').then(
+    const { workflow } = await import('../mcp/tools/project-scaffolding/index.ts');
+    const tool_0 = await import('../mcp/tools/project-scaffolding/scaffold_ios_project.ts').then(
       (m) => m.default,
     );
-    const tool_1 = await import('../mcp/tools/project-scaffolding/scaffold_macos_project.js').then(
+    const tool_1 = await import('../mcp/tools/project-scaffolding/scaffold_macos_project.ts').then(
       (m) => m.default,
     );
 
@@ -146,14 +177,14 @@ export const WORKFLOW_LOADERS = {
     };
   },
   'session-management': async () => {
-    const { workflow } = await import('../mcp/tools/session-management/index.js');
-    const tool_0 = await import('../mcp/tools/session-management/session_clear_defaults.js').then(
+    const { workflow } = await import('../mcp/tools/session-management/index.ts');
+    const tool_0 = await import('../mcp/tools/session-management/session_clear_defaults.ts').then(
       (m) => m.default,
     );
-    const tool_1 = await import('../mcp/tools/session-management/session_set_defaults.js').then(
+    const tool_1 = await import('../mcp/tools/session-management/session_set_defaults.ts').then(
       (m) => m.default,
     );
-    const tool_2 = await import('../mcp/tools/session-management/session_show_defaults.js').then(
+    const tool_2 = await import('../mcp/tools/session-management/session_show_defaults.ts').then(
       (m) => m.default,
     );
 
@@ -165,36 +196,36 @@ export const WORKFLOW_LOADERS = {
     };
   },
   simulator: async () => {
-    const { workflow } = await import('../mcp/tools/simulator/index.js');
-    const tool_0 = await import('../mcp/tools/simulator/boot_sim.js').then((m) => m.default);
-    const tool_1 = await import('../mcp/tools/simulator/build_run_sim.js').then((m) => m.default);
-    const tool_2 = await import('../mcp/tools/simulator/build_sim.js').then((m) => m.default);
-    const tool_3 = await import('../mcp/tools/simulator/clean.js').then((m) => m.default);
-    const tool_4 = await import('../mcp/tools/simulator/describe_ui.js').then((m) => m.default);
-    const tool_5 = await import('../mcp/tools/simulator/discover_projs.js').then((m) => m.default);
-    const tool_6 = await import('../mcp/tools/simulator/get_app_bundle_id.js').then(
+    const { workflow } = await import('../mcp/tools/simulator/index.ts');
+    const tool_0 = await import('../mcp/tools/simulator/boot_sim.ts').then((m) => m.default);
+    const tool_1 = await import('../mcp/tools/simulator/build_run_sim.ts').then((m) => m.default);
+    const tool_2 = await import('../mcp/tools/simulator/build_sim.ts').then((m) => m.default);
+    const tool_3 = await import('../mcp/tools/simulator/clean.ts').then((m) => m.default);
+    const tool_4 = await import('../mcp/tools/simulator/describe_ui.ts').then((m) => m.default);
+    const tool_5 = await import('../mcp/tools/simulator/discover_projs.ts').then((m) => m.default);
+    const tool_6 = await import('../mcp/tools/simulator/get_app_bundle_id.ts').then(
       (m) => m.default,
     );
-    const tool_7 = await import('../mcp/tools/simulator/get_sim_app_path.js').then(
+    const tool_7 = await import('../mcp/tools/simulator/get_sim_app_path.ts').then(
       (m) => m.default,
     );
-    const tool_8 = await import('../mcp/tools/simulator/install_app_sim.js').then((m) => m.default);
-    const tool_9 = await import('../mcp/tools/simulator/launch_app_logs_sim.js').then(
+    const tool_8 = await import('../mcp/tools/simulator/install_app_sim.ts').then((m) => m.default);
+    const tool_9 = await import('../mcp/tools/simulator/launch_app_logs_sim.ts').then(
       (m) => m.default,
     );
-    const tool_10 = await import('../mcp/tools/simulator/launch_app_sim.js').then((m) => m.default);
-    const tool_11 = await import('../mcp/tools/simulator/list_schemes.js').then((m) => m.default);
-    const tool_12 = await import('../mcp/tools/simulator/list_sims.js').then((m) => m.default);
-    const tool_13 = await import('../mcp/tools/simulator/open_sim.js').then((m) => m.default);
-    const tool_14 = await import('../mcp/tools/simulator/record_sim_video.js').then(
+    const tool_10 = await import('../mcp/tools/simulator/launch_app_sim.ts').then((m) => m.default);
+    const tool_11 = await import('../mcp/tools/simulator/list_schemes.ts').then((m) => m.default);
+    const tool_12 = await import('../mcp/tools/simulator/list_sims.ts').then((m) => m.default);
+    const tool_13 = await import('../mcp/tools/simulator/open_sim.ts').then((m) => m.default);
+    const tool_14 = await import('../mcp/tools/simulator/record_sim_video.ts').then(
       (m) => m.default,
     );
-    const tool_15 = await import('../mcp/tools/simulator/screenshot.js').then((m) => m.default);
-    const tool_16 = await import('../mcp/tools/simulator/show_build_settings.js').then(
+    const tool_15 = await import('../mcp/tools/simulator/screenshot.ts').then((m) => m.default);
+    const tool_16 = await import('../mcp/tools/simulator/show_build_settings.ts').then(
       (m) => m.default,
     );
-    const tool_17 = await import('../mcp/tools/simulator/stop_app_sim.js').then((m) => m.default);
-    const tool_18 = await import('../mcp/tools/simulator/test_sim.js').then((m) => m.default);
+    const tool_17 = await import('../mcp/tools/simulator/stop_app_sim.ts').then((m) => m.default);
+    const tool_18 = await import('../mcp/tools/simulator/test_sim.ts').then((m) => m.default);
 
     return {
       workflow,
@@ -220,29 +251,29 @@ export const WORKFLOW_LOADERS = {
     };
   },
   'simulator-management': async () => {
-    const { workflow } = await import('../mcp/tools/simulator-management/index.js');
-    const tool_0 = await import('../mcp/tools/simulator-management/boot_sim.js').then(
+    const { workflow } = await import('../mcp/tools/simulator-management/index.ts');
+    const tool_0 = await import('../mcp/tools/simulator-management/boot_sim.ts').then(
       (m) => m.default,
     );
-    const tool_1 = await import('../mcp/tools/simulator-management/erase_sims.js').then(
+    const tool_1 = await import('../mcp/tools/simulator-management/erase_sims.ts').then(
       (m) => m.default,
     );
-    const tool_2 = await import('../mcp/tools/simulator-management/list_sims.js').then(
+    const tool_2 = await import('../mcp/tools/simulator-management/list_sims.ts').then(
       (m) => m.default,
     );
-    const tool_3 = await import('../mcp/tools/simulator-management/open_sim.js').then(
+    const tool_3 = await import('../mcp/tools/simulator-management/open_sim.ts').then(
       (m) => m.default,
     );
-    const tool_4 = await import('../mcp/tools/simulator-management/reset_sim_location.js').then(
+    const tool_4 = await import('../mcp/tools/simulator-management/reset_sim_location.ts').then(
       (m) => m.default,
     );
-    const tool_5 = await import('../mcp/tools/simulator-management/set_sim_appearance.js').then(
+    const tool_5 = await import('../mcp/tools/simulator-management/set_sim_appearance.ts').then(
       (m) => m.default,
     );
-    const tool_6 = await import('../mcp/tools/simulator-management/set_sim_location.js').then(
+    const tool_6 = await import('../mcp/tools/simulator-management/set_sim_location.ts').then(
       (m) => m.default,
     );
-    const tool_7 = await import('../mcp/tools/simulator-management/sim_statusbar.js').then(
+    const tool_7 = await import('../mcp/tools/simulator-management/sim_statusbar.ts').then(
       (m) => m.default,
     );
 
@@ -259,23 +290,23 @@ export const WORKFLOW_LOADERS = {
     };
   },
   'swift-package': async () => {
-    const { workflow } = await import('../mcp/tools/swift-package/index.js');
-    const tool_0 = await import('../mcp/tools/swift-package/swift_package_build.js').then(
+    const { workflow } = await import('../mcp/tools/swift-package/index.ts');
+    const tool_0 = await import('../mcp/tools/swift-package/swift_package_build.ts').then(
       (m) => m.default,
     );
-    const tool_1 = await import('../mcp/tools/swift-package/swift_package_clean.js').then(
+    const tool_1 = await import('../mcp/tools/swift-package/swift_package_clean.ts').then(
       (m) => m.default,
     );
-    const tool_2 = await import('../mcp/tools/swift-package/swift_package_list.js').then(
+    const tool_2 = await import('../mcp/tools/swift-package/swift_package_list.ts').then(
       (m) => m.default,
     );
-    const tool_3 = await import('../mcp/tools/swift-package/swift_package_run.js').then(
+    const tool_3 = await import('../mcp/tools/swift-package/swift_package_run.ts').then(
       (m) => m.default,
     );
-    const tool_4 = await import('../mcp/tools/swift-package/swift_package_stop.js').then(
+    const tool_4 = await import('../mcp/tools/swift-package/swift_package_stop.ts').then(
       (m) => m.default,
     );
-    const tool_5 = await import('../mcp/tools/swift-package/swift_package_test.js').then(
+    const tool_5 = await import('../mcp/tools/swift-package/swift_package_test.ts').then(
       (m) => m.default,
     );
 
@@ -290,18 +321,18 @@ export const WORKFLOW_LOADERS = {
     };
   },
   'ui-testing': async () => {
-    const { workflow } = await import('../mcp/tools/ui-testing/index.js');
-    const tool_0 = await import('../mcp/tools/ui-testing/button.js').then((m) => m.default);
-    const tool_1 = await import('../mcp/tools/ui-testing/describe_ui.js').then((m) => m.default);
-    const tool_2 = await import('../mcp/tools/ui-testing/gesture.js').then((m) => m.default);
-    const tool_3 = await import('../mcp/tools/ui-testing/key_press.js').then((m) => m.default);
-    const tool_4 = await import('../mcp/tools/ui-testing/key_sequence.js').then((m) => m.default);
-    const tool_5 = await import('../mcp/tools/ui-testing/long_press.js').then((m) => m.default);
-    const tool_6 = await import('../mcp/tools/ui-testing/screenshot.js').then((m) => m.default);
-    const tool_7 = await import('../mcp/tools/ui-testing/swipe.js').then((m) => m.default);
-    const tool_8 = await import('../mcp/tools/ui-testing/tap.js').then((m) => m.default);
-    const tool_9 = await import('../mcp/tools/ui-testing/touch.js').then((m) => m.default);
-    const tool_10 = await import('../mcp/tools/ui-testing/type_text.js').then((m) => m.default);
+    const { workflow } = await import('../mcp/tools/ui-testing/index.ts');
+    const tool_0 = await import('../mcp/tools/ui-testing/button.ts').then((m) => m.default);
+    const tool_1 = await import('../mcp/tools/ui-testing/describe_ui.ts').then((m) => m.default);
+    const tool_2 = await import('../mcp/tools/ui-testing/gesture.ts').then((m) => m.default);
+    const tool_3 = await import('../mcp/tools/ui-testing/key_press.ts').then((m) => m.default);
+    const tool_4 = await import('../mcp/tools/ui-testing/key_sequence.ts').then((m) => m.default);
+    const tool_5 = await import('../mcp/tools/ui-testing/long_press.ts').then((m) => m.default);
+    const tool_6 = await import('../mcp/tools/ui-testing/screenshot.ts').then((m) => m.default);
+    const tool_7 = await import('../mcp/tools/ui-testing/swipe.ts').then((m) => m.default);
+    const tool_8 = await import('../mcp/tools/ui-testing/tap.ts').then((m) => m.default);
+    const tool_9 = await import('../mcp/tools/ui-testing/touch.ts').then((m) => m.default);
+    const tool_10 = await import('../mcp/tools/ui-testing/type_text.ts').then((m) => m.default);
 
     return {
       workflow,
@@ -319,8 +350,8 @@ export const WORKFLOW_LOADERS = {
     };
   },
   utilities: async () => {
-    const { workflow } = await import('../mcp/tools/utilities/index.js');
-    const tool_0 = await import('../mcp/tools/utilities/clean.js').then((m) => m.default);
+    const { workflow } = await import('../mcp/tools/utilities/index.ts');
+    const tool_0 = await import('../mcp/tools/utilities/clean.ts').then((m) => m.default);
 
     return {
       workflow,
@@ -333,6 +364,11 @@ export type WorkflowName = keyof typeof WORKFLOW_LOADERS;
 
 // Optional: Export workflow metadata for quick access
 export const WORKFLOW_METADATA = {
+  debugging: {
+    name: 'Simulator Debugging',
+    description:
+      'Interactive iOS Simulator debugging tools: attach LLDB, manage breakpoints, inspect stack/variables, and run LLDB commands.',
+  },
   device: {
     name: 'iOS Device Development',
     description:
