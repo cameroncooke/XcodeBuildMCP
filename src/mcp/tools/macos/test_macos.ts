@@ -26,6 +26,7 @@ import {
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
+import { validateXcodebuildExtraArgs } from '../../../utils/xcodebuild-validation.ts';
 
 // Unified schema: XOR between projectPath and workspacePath
 const baseSchemaObject = z.object({
@@ -239,6 +240,13 @@ export async function testMacosLogic(
   executor: CommandExecutor = getDefaultCommandExecutor(),
   fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<ToolResponse> {
+  // Validate extraArgs for invalid xcodebuild options
+  const validation = validateXcodebuildExtraArgs(params.extraArgs);
+  if (!validation.isValid) {
+    log('error', `Invalid extraArgs: ${validation.error}`);
+    return createTextResponse(validation.error!, true);
+  }
+
   log('info', `Starting test run for scheme ${params.scheme} on platform macOS (internal)`);
 
   try {
