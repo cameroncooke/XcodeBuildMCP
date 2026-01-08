@@ -8,7 +8,8 @@ import * as z from 'zod';
 import { stopLogCapture as _stopLogCapture } from '../../../utils/log-capture/index.ts';
 import { ToolResponse, createTextContent } from '../../../types/common.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
-import { getDefaultCommandExecutor } from '../../../utils/command.ts';
+import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from '../../../utils/command.ts';
+import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 
 // Define schema as ZodObject
 const stopSimLogCapSchema = z.object({
@@ -21,8 +22,11 @@ type StopSimLogCapParams = z.infer<typeof stopSimLogCapSchema>;
 /**
  * Business logic for stopping simulator log capture session
  */
-export async function stop_sim_log_capLogic(params: StopSimLogCapParams): Promise<ToolResponse> {
-  const { logContent, error } = await _stopLogCapture(params.logSessionId);
+export async function stop_sim_log_capLogic(
+  params: StopSimLogCapParams,
+  fileSystem: FileSystemExecutor,
+): Promise<ToolResponse> {
+  const { logContent, error } = await _stopLogCapture(params.logSessionId, fileSystem);
   if (error) {
     return {
       content: [
@@ -48,5 +52,9 @@ export default {
     title: 'Stop Simulator Log Capture',
     destructiveHint: true,
   },
-  handler: createTypedTool(stopSimLogCapSchema, stop_sim_log_capLogic, getDefaultCommandExecutor),
+  handler: createTypedTool(
+    stopSimLogCapSchema,
+    (params: StopSimLogCapParams) => stop_sim_log_capLogic(params, getDefaultFileSystemExecutor()),
+    getDefaultCommandExecutor,
+  ),
 };

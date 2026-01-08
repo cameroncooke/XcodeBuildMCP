@@ -8,14 +8,15 @@
 import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
-import type { CommandExecutor } from '../../../utils/execution/index.ts';
-import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
+import {
+  getDefaultCommandExecutor,
+  getDefaultFileSystemExecutor,
+} from '../../../utils/execution/index.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
-import { promises as fs } from 'fs';
-import { tmpdir } from 'os';
 import { join } from 'path';
 
 // Type for the launch JSON response
@@ -43,6 +44,7 @@ type LaunchAppDeviceParams = z.infer<typeof launchAppDeviceSchema>;
 export async function launch_app_deviceLogic(
   params: LaunchAppDeviceParams,
   executor: CommandExecutor,
+  fileSystem: FileSystemExecutor,
 ): Promise<ToolResponse> {
   const { deviceId, bundleId } = params;
 
@@ -50,7 +52,7 @@ export async function launch_app_deviceLogic(
 
   try {
     // Use JSON output to capture process ID
-    const tempJsonPath = join(tmpdir(), `launch-${Date.now()}.json`);
+    const tempJsonPath = join(fileSystem.tmpdir(), `launch-${Date.now()}.json`);
 
     const result = await executor(
       [
@@ -86,7 +88,7 @@ export async function launch_app_deviceLogic(
     // Parse JSON to extract process ID
     let processId: number | undefined;
     try {
-      const jsonContent = await fs.readFile(tempJsonPath, 'utf8');
+      const jsonContent = await fileSystem.readFile(tempJsonPath, 'utf8');
       const parsedData: unknown = JSON.parse(jsonContent);
 
       // Type guard to validate the parsed data structure
@@ -107,7 +109,7 @@ export async function launch_app_deviceLogic(
       }
 
       // Clean up temp file
-      await fs.unlink(tempJsonPath).catch(() => {});
+      await fileSystem.rm(tempJsonPath, { force: true }).catch(() => {});
     } catch (error) {
       log('warn', `Failed to parse launch JSON output: ${error}`);
     }
@@ -157,7 +159,8 @@ export default {
   },
   handler: createSessionAwareTool<LaunchAppDeviceParams>({
     internalSchema: launchAppDeviceSchema as unknown as z.ZodType<LaunchAppDeviceParams>,
-    logicFunction: launch_app_deviceLogic,
+    logicFunction: (params, executor) =>
+      launch_app_deviceLogic(params, executor, getDefaultFileSystemExecutor()),
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],
   }),

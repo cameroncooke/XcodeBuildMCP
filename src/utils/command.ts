@@ -10,7 +10,7 @@
  */
 
 import { spawn } from 'child_process';
-import { existsSync } from 'fs';
+import { createWriteStream, existsSync } from 'fs';
 import { tmpdir as osTmpdir } from 'os';
 import { log } from './logger.ts';
 import { FileSystemExecutor } from './FileSystemExecutor.ts';
@@ -158,6 +158,10 @@ const defaultFileSystemExecutor: FileSystemExecutor = {
     await fs.writeFile(path, content, encoding);
   },
 
+  createWriteStream(path: string, options?: { flags?: string }) {
+    return createWriteStream(path, options);
+  },
+
   async cp(source: string, destination: string, options?: { recursive?: boolean }): Promise<void> {
     const fs = await import('fs/promises');
     await fs.cp(source, destination, options);
@@ -177,7 +181,7 @@ const defaultFileSystemExecutor: FileSystemExecutor = {
     return existsSync(path);
   },
 
-  async stat(path: string): Promise<{ isDirectory(): boolean }> {
+  async stat(path: string): Promise<{ isDirectory(): boolean; mtimeMs: number }> {
     const fs = await import('fs/promises');
     return await fs.stat(path);
   },

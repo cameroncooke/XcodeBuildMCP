@@ -4,20 +4,22 @@
  * Starts capturing logs from a specified Apple device by launching the app with console output.
  */
 
-import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
 import type { ChildProcess } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
 import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
-import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import {
+  getDefaultCommandExecutor,
+  getDefaultFileSystemExecutor,
+} from '../../../utils/execution/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
+import type { WriteStream } from 'fs';
 
 /**
  * Log file retention policy for device logs:
@@ -37,7 +39,7 @@ export interface DeviceLogSession {
   logFilePath: string;
   deviceUuid: string;
   bundleId: string;
-  logStream?: fs.WriteStream;
+  logStream?: WriteStream;
   hasEnded: boolean;
 }
 
@@ -158,18 +160,11 @@ function extractJsonOutcome(json: DevicectlLaunchJson | null): JsonOutcome | nul
 
 async function removeFileIfExists(
   targetPath: string,
-  fileExecutor?: FileSystemExecutor,
+  fileExecutor: FileSystemExecutor,
 ): Promise<void> {
   try {
-    if (fileExecutor) {
-      if (fileExecutor.existsSync(targetPath)) {
-        await fileExecutor.rm(targetPath, { force: true });
-      }
-      return;
-    }
-
-    if (fs.existsSync(targetPath)) {
-      await fs.promises.rm(targetPath, { force: true });
+    if (fileExecutor.existsSync(targetPath)) {
+      await fileExecutor.rm(targetPath, { force: true });
     }
   } catch {
     // Best-effort cleanup only
@@ -178,22 +173,20 @@ async function removeFileIfExists(
 
 async function pollJsonOutcome(
   jsonPath: string,
-  fileExecutor: FileSystemExecutor | undefined,
+  fileExecutor: FileSystemExecutor,
   timeoutMs: number,
 ): Promise<JsonOutcome | null> {
   const start = Date.now();
 
   const readOnce = async (): Promise<JsonOutcome | null> => {
     try {
-      const exists = fileExecutor?.existsSync(jsonPath) ?? fs.existsSync(jsonPath);
+      const exists = fileExecutor.existsSync(jsonPath);
 
       if (!exists) {
         return null;
       }
 
-      const content = fileExecutor
-        ? await fileExecutor.readFile(jsonPath, 'utf8')
-        : await fs.promises.readFile(jsonPath, 'utf8');
+      const content = await fileExecutor.readFile(jsonPath, 'utf8');
 
       const outcome = extractJsonOutcome(safeParseJson(content));
       if (outcome) {
@@ -230,7 +223,7 @@ async function pollJsonOutcome(
   return null;
 }
 
-type WriteStreamWithClosed = fs.WriteStream & { closed?: boolean };
+type WriteStreamWithClosed = WriteStream & { closed?: boolean };
 
 /**
  * Start a log capture session for an iOS device by launching the app with console output.
@@ -243,31 +236,25 @@ export async function startDeviceLogCapture(
     bundleId: string;
   },
   executor: CommandExecutor = getDefaultCommandExecutor(),
-  fileSystemExecutor?: FileSystemExecutor,
+  fileSystemExecutor: FileSystemExecutor = getDefaultFileSystemExecutor(),
 ): Promise<{ sessionId: string; error?: string }> {
   // Clean up old logs before starting a new session
-  await cleanOldDeviceLogs();
+  await cleanOldDeviceLogs(fileSystemExecutor);
 
   const { deviceUuid, bundleId } = params;
   const logSessionId = uuidv4();
   const logFileName = `${DEVICE_LOG_FILE_PREFIX}${logSessionId}.log`;
-  const tempDir = fileSystemExecutor ? fileSystemExecutor.tmpdir() : os.tmpdir();
+  const tempDir = fileSystemExecutor.tmpdir();
   const logFilePath = path.join(tempDir, logFileName);
   const launchJsonPath = path.join(tempDir, `devicectl-launch-${logSessionId}.json`);
 
-  let logStream: fs.WriteStream | undefined;
+  let logStream: WriteStream | undefined;
 
   try {
-    // Use injected file system executor or default
-    if (fileSystemExecutor) {
-      await fileSystemExecutor.mkdir(tempDir, { recursive: true });
-      await fileSystemExecutor.writeFile(logFilePath, '');
-    } else {
-      await fs.promises.mkdir(tempDir, { recursive: true });
-      await fs.promises.writeFile(logFilePath, '');
-    }
+    await fileSystemExecutor.mkdir(tempDir, { recursive: true });
+    await fileSystemExecutor.writeFile(logFilePath, '');
 
-    logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
+    logStream = fileSystemExecutor.createWriteStream(logFilePath, { flags: 'a' });
 
     logStream.write(
       `\n--- Device log capture for bundle ID: ${bundleId} on device: ${deviceUuid} ---\n`,
@@ -594,11 +581,11 @@ function extractFailureMessage(output?: string): string | undefined {
  */
 // Device logs follow the same retention policy as simulator logs but use a different prefix
 // to avoid conflicts. Both clean up logs older than LOG_RETENTION_DAYS automatically.
-async function cleanOldDeviceLogs(): Promise<void> {
-  const tempDir = os.tmpdir();
-  let files;
+async function cleanOldDeviceLogs(fileSystemExecutor: FileSystemExecutor): Promise<void> {
+  const tempDir = fileSystemExecutor.tmpdir();
+  let files: unknown[];
   try {
-    files = await fs.promises.readdir(tempDir);
+    files = await fileSystemExecutor.readdir(tempDir);
   } catch (err) {
     log(
       'warn',
@@ -608,15 +595,17 @@ async function cleanOldDeviceLogs(): Promise<void> {
   }
   const now = Date.now();
   const retentionMs = LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  const fileNames = files.filter((file): file is string => typeof file === 'string');
+
   await Promise.all(
-    files
+    fileNames
       .filter((f) => f.startsWith(DEVICE_LOG_FILE_PREFIX) && f.endsWith('.log'))
       .map(async (f) => {
         const filePath = path.join(tempDir, f);
         try {
-          const stat = await fs.promises.stat(filePath);
+          const stat = await fileSystemExecutor.stat(filePath);
           if (now - stat.mtimeMs > retentionMs) {
-            await fs.promises.unlink(filePath);
+            await fileSystemExecutor.rm(filePath, { force: true });
             log('info', `Deleted old device log file: ${filePath}`);
           }
         } catch (err) {
@@ -650,13 +639,15 @@ export async function start_device_log_capLogic(
 ): Promise<ToolResponse> {
   const { deviceId, bundleId } = params;
 
+  const resolvedFileSystemExecutor = fileSystemExecutor ?? getDefaultFileSystemExecutor();
+
   const { sessionId, error } = await startDeviceLogCapture(
     {
       deviceUuid: deviceId,
       bundleId: bundleId,
     },
     executor,
-    fileSystemExecutor,
+    resolvedFileSystemExecutor,
   );
 
   if (error) {

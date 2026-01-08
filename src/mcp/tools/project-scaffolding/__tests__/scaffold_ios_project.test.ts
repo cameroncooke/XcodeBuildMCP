@@ -48,7 +48,7 @@ describe('scaffold_ios_project plugin', () => {
       rm: async () => {},
       cp: async () => {},
       writeFile: async () => {},
-      stat: async () => ({ isDirectory: () => true }),
+      stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
     });
 
     // Store original environment for cleanup
@@ -220,7 +220,7 @@ describe('scaffold_ios_project plugin', () => {
         rm: async () => {},
         cp: async () => {},
         writeFile: async () => {},
-        stat: async () => ({ isDirectory: () => true }),
+        stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
       });
 
       // Track commands executed
@@ -330,7 +330,7 @@ describe('scaffold_ios_project plugin', () => {
         rm: async () => {},
         cp: async () => {},
         writeFile: async () => {},
-        stat: async () => ({ isDirectory: () => true }),
+        stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
       });
 
       // Track commands executed - using default executor path
@@ -624,7 +624,7 @@ describe('scaffold_ios_project plugin', () => {
         rm: async () => {},
         cp: async () => {},
         writeFile: async () => {},
-        stat: async () => ({ isDirectory: () => true }),
+        stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
       });
 
       // Mock command executor to fail for unzip commands

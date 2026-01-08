@@ -177,6 +177,15 @@ function hasExistsSyncMethod(obj: unknown): obj is { existsSync: typeof fs.exist
 }
 
 /**
+ * Type guard to check if an object has createWriteStream method
+ */
+function hasCreateWriteStreamMethod(
+  obj: unknown,
+): obj is { createWriteStream: typeof fs.createWriteStream } {
+  return typeof obj === 'object' && obj !== null && 'createWriteStream' in obj;
+}
+
+/**
  * Legacy support for backward compatibility
  */
 export async function stopDeviceLogCapture(
@@ -212,6 +221,12 @@ export async function stopDeviceLogCapture(
       } else {
         await fs.promises.writeFile(path, content, encoding);
       }
+    },
+    createWriteStream(path: string, options?: { flags?: string }) {
+      if (hasCreateWriteStreamMethod(fsToUse)) {
+        return fsToUse.createWriteStream(path, options);
+      }
+      return fs.createWriteStream(path, options);
     },
     async cp(
       source: string,
@@ -257,13 +272,13 @@ export async function stopDeviceLogCapture(
         return fs.existsSync(path);
       }
     },
-    async stat(path: string): Promise<{ isDirectory(): boolean }> {
+    async stat(path: string): Promise<{ isDirectory(): boolean; mtimeMs: number }> {
       if (hasPromisesInterface(fsToUse)) {
         const result = await fsToUse.promises.stat(path);
-        return result as { isDirectory(): boolean };
+        return result as { isDirectory(): boolean; mtimeMs: number };
       } else {
         const result = await fs.promises.stat(path);
-        return result as { isDirectory(): boolean };
+        return result as { isDirectory(): boolean; mtimeMs: number };
       }
     },
     async mkdtemp(prefix: string): Promise<string> {

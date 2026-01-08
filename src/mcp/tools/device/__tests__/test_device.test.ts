@@ -84,7 +84,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-123',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isDirectory: () => false }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -101,7 +101,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-456',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isDirectory: () => false }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -174,7 +174,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-123456',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isDirectory: () => false }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -220,7 +220,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-123456',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isDirectory: () => false }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -309,7 +309,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-123456',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isDirectory: () => false }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -348,7 +348,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-123456',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isDirectory: () => false }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );
@@ -385,7 +385,7 @@ describe('test_device plugin', () => {
         createMockFileSystemExecutor({
           mkdtemp: async () => '/tmp/xcodebuild-test-workspace-123',
           tmpdir: () => '/tmp',
-          stat: async () => ({ isDirectory: () => false }),
+          stat: async () => ({ isDirectory: () => false, mtimeMs: 0 }),
           rm: async () => {},
         }),
       );

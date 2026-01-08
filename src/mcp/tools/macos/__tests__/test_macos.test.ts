@@ -19,7 +19,7 @@ const createTestFileSystemExecutor = (overrides: Partial<FileSystemExecutor> = {
     mkdtemp: async () => '/tmp/test-123',
     rm: async () => {},
     tmpdir: () => '/tmp',
-    stat: async () => ({ isDirectory: () => true }),
+    stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
     ...overrides,
   });
 
