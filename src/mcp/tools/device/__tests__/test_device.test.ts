@@ -234,18 +234,13 @@ describe('test_device plugin', () => {
       // Create a multi-call mock that handles different commands
       let callCount = 0;
       const mockExecutor = async (
-        args: string[],
-        description?: string,
-        useShell?: boolean,
-        opts?: { cwd?: string },
-        detached?: boolean,
+        _args: string[],
+        _description?: string,
+        _useShell?: boolean,
+        _opts?: { cwd?: string },
+        _detached?: boolean,
       ) => {
         callCount++;
-        void args;
-        void description;
-        void useShell;
-        void opts;
-        void detached;
 
         // First call is for xcodebuild test (successful)
         if (callCount === 1) {

@@ -17,6 +17,15 @@ import plugin, {
 } from '../start_device_log_cap.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
+type Mutable<T> = {
+  -readonly [K in keyof T]: T[K];
+};
+
+type MockChildProcess = Mutable<ChildProcess> & {
+  stdout: Readable;
+  stderr: Readable;
+};
+
 describe('start_device_log_cap plugin', () => {
   // Mock state tracking
   let commandCalls: Array<{
@@ -151,7 +160,7 @@ describe('start_device_log_cap plugin', () => {
     });
 
     it('should surface early launch failures when process exits immediately', async () => {
-      const failingProcess = new EventEmitter() as unknown as ChildProcess;
+      const failingProcess = new EventEmitter() as MockChildProcess;
 
       const stubOutput = new Readable({
         read() {},
@@ -162,11 +171,11 @@ describe('start_device_log_cap plugin', () => {
 
       failingProcess.stdout = stubOutput;
       failingProcess.stderr = stubError;
-      (failingProcess as any).exitCode = null;
-      (failingProcess as any).killed = false;
+      failingProcess.exitCode = null;
+      failingProcess.killed = false;
       failingProcess.kill = () => {
-        (failingProcess as any).killed = true;
-        (failingProcess as any).exitCode = 0;
+        failingProcess.killed = true;
+        failingProcess.exitCode = 0;
         failingProcess.emit('close', 0, null);
         return true;
       };
@@ -200,7 +209,7 @@ describe('start_device_log_cap plugin', () => {
           'data',
           'ERROR: The application failed to launch. (com.apple.dt.CoreDeviceError error 10002)\nNSLocalizedRecoverySuggestion = Provide a valid bundle identifier.\n',
         );
-        (failingProcess as any).exitCode = 70;
+        failingProcess.exitCode = 70;
         failingProcess.emit('close', 70, null);
       }, 10);
 
@@ -226,7 +235,7 @@ describe('start_device_log_cap plugin', () => {
         },
       };
 
-      const failingProcess = new EventEmitter() as unknown as ChildProcess;
+      const failingProcess = new EventEmitter() as MockChildProcess;
 
       const stubOutput = new Readable({
         read() {},
@@ -237,10 +246,10 @@ describe('start_device_log_cap plugin', () => {
 
       failingProcess.stdout = stubOutput;
       failingProcess.stderr = stubError;
-      (failingProcess as any).exitCode = null;
-      (failingProcess as any).killed = false;
+      failingProcess.exitCode = null;
+      failingProcess.killed = false;
       failingProcess.kill = () => {
-        (failingProcess as any).killed = true;
+        failingProcess.killed = true;
         return true;
       };
 
@@ -278,7 +287,7 @@ describe('start_device_log_cap plugin', () => {
       });
 
       setTimeout(() => {
-        (failingProcess as any).exitCode = 0;
+        failingProcess.exitCode = 0;
         failingProcess.emit('close', 0, null);
       }, 5);
 
@@ -308,7 +317,7 @@ describe('start_device_log_cap plugin', () => {
         },
       };
 
-      const runningProcess = new EventEmitter() as unknown as ChildProcess;
+      const runningProcess = new EventEmitter() as MockChildProcess;
 
       const stubOutput = new Readable({
         read() {},
@@ -319,10 +328,10 @@ describe('start_device_log_cap plugin', () => {
 
       runningProcess.stdout = stubOutput;
       runningProcess.stderr = stubError;
-      (runningProcess as any).exitCode = null;
-      (runningProcess as any).killed = false;
+      runningProcess.exitCode = null;
+      runningProcess.killed = false;
       runningProcess.kill = () => {
-        (runningProcess as any).killed = true;
+        runningProcess.killed = true;
         runningProcess.emit('close', 0, null);
         return true;
       };

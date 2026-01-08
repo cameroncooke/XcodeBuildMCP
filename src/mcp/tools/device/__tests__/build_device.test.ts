@@ -144,10 +144,9 @@ describe('build_device plugin', () => {
         logPrefix?: string,
         silent?: boolean,
         opts?: { cwd?: string },
-        detached?: boolean,
+        _detached?: boolean,
       ) => {
         commandCalls.push({ args, logPrefix, silent, opts });
-        void detached;
         return createMockCommandResponse({
           success: true,
           output: 'Build succeeded',
@@ -197,10 +196,9 @@ describe('build_device plugin', () => {
         logPrefix?: string,
         silent?: boolean,
         opts?: { cwd?: string },
-        detached?: boolean,
+        _detached?: boolean,
       ) => {
         commandCalls.push({ args, logPrefix, silent, opts });
-        void detached;
         return createMockCommandResponse({
           success: true,
           output: 'Build succeeded',
@@ -307,10 +305,9 @@ describe('build_device plugin', () => {
         logPrefix?: string,
         silent?: boolean,
         opts?: { cwd?: string },
-        detached?: boolean,
+        _detached?: boolean,
       ) => {
         commandCalls.push({ args, logPrefix, silent, opts });
-        void detached;
         return createMockCommandResponse({
           success: true,
           output: 'Build succeeded',

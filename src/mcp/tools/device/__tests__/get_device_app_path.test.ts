@@ -102,10 +102,9 @@ describe('get_device_app_path plugin', () => {
         logPrefix?: string,
         useShell?: boolean,
         opts?: { cwd?: string },
-        detached?: boolean,
+        _detached?: boolean,
       ) => {
         calls.push({ args, logPrefix, useShell, opts });
-        void detached;
         return Promise.resolve(
           createMockCommandResponse({
             success: true,
@@ -157,10 +156,9 @@ describe('get_device_app_path plugin', () => {
         logPrefix?: string,
         useShell?: boolean,
         opts?: { cwd?: string },
-        detached?: boolean,
+        _detached?: boolean,
       ) => {
         calls.push({ args, logPrefix, useShell, opts });
-        void detached;
         return Promise.resolve(
           createMockCommandResponse({
             success: true,
@@ -213,10 +211,9 @@ describe('get_device_app_path plugin', () => {
         logPrefix?: string,
         useShell?: boolean,
         opts?: { cwd?: string },
-        detached?: boolean,
+        _detached?: boolean,
       ) => {
         calls.push({ args, logPrefix, useShell, opts });
-        void detached;
         return Promise.resolve(
           createMockCommandResponse({
             success: true,
@@ -347,10 +344,9 @@ describe('get_device_app_path plugin', () => {
         logPrefix?: string,
         useShell?: boolean,
         opts?: { cwd?: string },
-        detached?: boolean,
+        _detached?: boolean,
       ) => {
         calls.push({ args, logPrefix, useShell, opts });
-        void detached;
         return Promise.resolve(
           createMockCommandResponse({
             success: true,
@@ -392,17 +388,12 @@ describe('get_device_app_path plugin', () => {
 
     it('should return exact exception handling response', async () => {
       const mockExecutor = (
-        args: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        opts?: { cwd?: string },
-        detached?: boolean,
+        _args: string[],
+        _logPrefix?: string,
+        _useShell?: boolean,
+        _opts?: { cwd?: string },
+        _detached?: boolean,
       ) => {
-        void args;
-        void logPrefix;
-        void useShell;
-        void opts;
-        void detached;
         return Promise.reject(new Error('Network error'));
       };
 

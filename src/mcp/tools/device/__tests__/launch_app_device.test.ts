@@ -71,11 +71,10 @@ describe('launch_app_device plugin (device-shared)', () => {
         logPrefix?: string,
         useShell?: boolean,
         opts?: { env?: Record<string, string> },
-        detached?: boolean,
+        _detached?: boolean,
       ) => {
         calls.push({ command, logPrefix, useShell, env: opts?.env });
-        void detached;
-        return mockExecutor(command, logPrefix, useShell, opts, detached);
+        return mockExecutor(command, logPrefix, useShell, opts, _detached);
       };
 
       await launch_app_deviceLogic(

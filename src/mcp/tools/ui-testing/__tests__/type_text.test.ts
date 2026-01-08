@@ -27,7 +27,7 @@ function createMockAxeHelpers(
     createAxeNotAvailableResponse: () => ({
       content: [
         {
-          type: 'text' as const,
+          type: 'text',
           text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
         },
       ],
@@ -316,7 +316,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -345,7 +345,7 @@ describe('Type Text Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text' as const, text: 'Text typing simulated successfully.' }],
+        content: [{ type: 'text', text: 'Text typing simulated successfully.' }],
         isError: false,
       });
     });
@@ -372,7 +372,7 @@ describe('Type Text Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text' as const, text: 'Text typing simulated successfully.' }],
+        content: [{ type: 'text', text: 'Text typing simulated successfully.' }],
         isError: false,
       });
     });
@@ -394,7 +394,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -426,7 +426,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: "Error: Failed to simulate text typing: axe command 'type' failed.\nDetails: Text field not found",
           },
         ],
@@ -454,7 +454,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: expect.stringContaining(
               'Error: System error executing axe: Failed to execute axe command: ENOENT: no such file or directory',
             ),
@@ -484,7 +484,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: expect.stringContaining(
               'Error: System error executing axe: Failed to execute axe command: Unexpected error',
             ),
@@ -514,7 +514,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'Error: System error executing axe: Failed to execute axe command: String error',
           },
         ],

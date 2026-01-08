@@ -65,14 +65,13 @@ describe('stop_app_device plugin', () => {
         description?: string,
         useShell?: boolean,
         opts?: { env?: Record<string, string> },
-        detached?: boolean,
+        _detached?: boolean,
       ) => {
         capturedCommand = command;
         capturedDescription = description ?? '';
         capturedUseShell = !!useShell;
         capturedEnv = opts?.env;
-        void detached;
-        return mockExecutor(command, description, useShell, opts, detached);
+        return mockExecutor(command, description, useShell, opts, _detached);
       };
 
       await stop_app_deviceLogic(

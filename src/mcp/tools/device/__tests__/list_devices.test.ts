@@ -86,11 +86,10 @@ describe('list_devices plugin (device-shared)', () => {
         logPrefix?: string,
         useShell?: boolean,
         opts?: { env?: Record<string, string> },
-        detached?: boolean,
+        _detached?: boolean,
       ) => {
         commandCalls.push({ command, logPrefix, useShell, env: opts?.env });
-        void detached;
-        return mockExecutor(command, logPrefix, useShell, opts, detached);
+        return mockExecutor(command, logPrefix, useShell, opts, _detached);
       };
 
       // Create mock path dependencies
@@ -137,11 +136,10 @@ describe('list_devices plugin (device-shared)', () => {
         logPrefix?: string,
         useShell?: boolean,
         opts?: { env?: Record<string, string> },
-        detached?: boolean,
+        _detached?: boolean,
       ) => {
         callCount++;
         commandCalls.push({ command, logPrefix, useShell, env: opts?.env });
-        void detached;
 
         if (callCount === 1) {
           // First call fails (devicectl)
@@ -243,18 +241,13 @@ describe('list_devices plugin (device-shared)', () => {
       // Create executor with call count behavior
       let callCount = 0;
       const mockExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        opts?: { env?: Record<string, string> },
-        detached?: boolean,
+        _command: string[],
+        _logPrefix?: string,
+        _useShell?: boolean,
+        _opts?: { env?: Record<string, string> },
+        _detached?: boolean,
       ) => {
         callCount++;
-        void command;
-        void logPrefix;
-        void useShell;
-        void opts;
-        void detached;
         if (callCount === 1) {
           // First call fails (devicectl)
           return createMockCommandResponse({
@@ -308,18 +301,13 @@ describe('list_devices plugin (device-shared)', () => {
       // Create executor with call count behavior
       let callCount = 0;
       const mockExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        opts?: { env?: Record<string, string> },
-        detached?: boolean,
+        _command: string[],
+        _logPrefix?: string,
+        _useShell?: boolean,
+        _opts?: { env?: Record<string, string> },
+        _detached?: boolean,
       ) => {
         callCount++;
-        void command;
-        void logPrefix;
-        void useShell;
-        void opts;
-        void detached;
         if (callCount === 1) {
           // First call succeeds (devicectl)
           return createMockCommandResponse({

@@ -17,7 +17,7 @@ function createMockAxeHelpers(): AxeHelpers {
     createAxeNotAvailableResponse: () => ({
       content: [
         {
-          type: 'text' as const,
+          type: 'text',
           text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
         },
       ],
@@ -34,7 +34,7 @@ function createMockAxeHelpersWithNullPath(): AxeHelpers {
     createAxeNotAvailableResponse: () => ({
       content: [
         {
-          type: 'text' as const,
+          type: 'text',
           text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
         },
       ],
@@ -491,7 +491,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'Tap at (100, 200) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -520,7 +520,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'Tap at (150, 300) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -551,7 +551,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'Tap at (250, 400) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -580,7 +580,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'Tap at (0, 0) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -609,7 +609,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'Tap at (1920, 1080) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -637,7 +637,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'Tap on element id "loginButton" simulated successfully.',
           },
         ],
@@ -665,7 +665,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'Tap on element label "Log in" simulated successfully.',
           },
         ],
@@ -812,7 +812,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -842,7 +842,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -872,7 +872,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -900,7 +900,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -928,7 +928,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -956,7 +956,7 @@ describe('Tap Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text' as const,
+            type: 'text',
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
