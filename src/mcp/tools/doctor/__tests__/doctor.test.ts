@@ -7,9 +7,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import doctor, { runDoctor, type DoctorDependencies } from '../doctor.ts';
+import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 
 function createDeps(overrides?: Partial<DoctorDependencies>): DoctorDependencies {
   const base: DoctorDependencies = {
+    commandExecutor: createMockExecutor({ output: 'lldb-dap' }),
     binaryChecker: {
       async checkBinaryAvailability(binary: string) {
         // default: all available with generic version
