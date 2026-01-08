@@ -9,7 +9,10 @@
 
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
-import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockFileSystemExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 import launchMacApp, { launch_mac_appLogic } from '../launch_mac_app.ts';
 
 describe('launch_mac_app plugin', () => {
@@ -62,7 +65,7 @@ describe('launch_mac_app plugin', () => {
 
   describe('Input Validation', () => {
     it('should handle non-existent app path', async () => {
-      const mockExecutor = async () => Promise.resolve({ stdout: '', stderr: '' });
+      const mockExecutor = async () => Promise.resolve(createMockCommandResponse());
       const mockFileSystem = createMockFileSystemExecutor({
         existsSync: () => false,
       });
@@ -92,7 +95,7 @@ describe('launch_mac_app plugin', () => {
       const calls: any[] = [];
       const mockExecutor = async (command: string[]) => {
         calls.push({ command });
-        return { stdout: '', stderr: '' };
+        return createMockCommandResponse();
       };
 
       const mockFileSystem = createMockFileSystemExecutor({
@@ -115,7 +118,7 @@ describe('launch_mac_app plugin', () => {
       const calls: any[] = [];
       const mockExecutor = async (command: string[]) => {
         calls.push({ command });
-        return { stdout: '', stderr: '' };
+        return createMockCommandResponse();
       };
 
       const mockFileSystem = createMockFileSystemExecutor({
@@ -145,7 +148,7 @@ describe('launch_mac_app plugin', () => {
       const calls: any[] = [];
       const mockExecutor = async (command: string[]) => {
         calls.push({ command });
-        return { stdout: '', stderr: '' };
+        return createMockCommandResponse();
       };
 
       const mockFileSystem = createMockFileSystemExecutor({
@@ -169,7 +172,7 @@ describe('launch_mac_app plugin', () => {
       const calls: any[] = [];
       const mockExecutor = async (command: string[]) => {
         calls.push({ command });
-        return { stdout: '', stderr: '' };
+        return createMockCommandResponse();
       };
 
       const mockFileSystem = createMockFileSystemExecutor({
@@ -191,7 +194,7 @@ describe('launch_mac_app plugin', () => {
 
   describe('Response Processing', () => {
     it('should return successful launch response', async () => {
-      const mockExecutor = async () => Promise.resolve({ stdout: '', stderr: '' });
+      const mockExecutor = async () => Promise.resolve(createMockCommandResponse());
 
       const mockFileSystem = createMockFileSystemExecutor({
         existsSync: () => true,
@@ -216,7 +219,7 @@ describe('launch_mac_app plugin', () => {
     });
 
     it('should return successful launch response with args', async () => {
-      const mockExecutor = async () => Promise.resolve({ stdout: '', stderr: '' });
+      const mockExecutor = async () => Promise.resolve(createMockCommandResponse());
 
       const mockFileSystem = createMockFileSystemExecutor({
         existsSync: () => true,

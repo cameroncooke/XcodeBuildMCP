@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import describeUIPlugin, { describe_uiLogic } from '../describe_ui.ts';
 
 describe('Describe UI Plugin', () => {
@@ -73,11 +74,15 @@ describe('Describe UI Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text' as const, text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       // Wrap executor to track calls
       const executorCalls: any[] = [];
-      const trackingExecutor = async (...args: any[]) => {
+      const trackingExecutor: CommandExecutor = async (...args) => {
         executorCalls.push(args);
         return mockExecutor(...args);
       };
@@ -94,17 +99,17 @@ describe('Describe UI Plugin', () => {
         ['/usr/local/bin/axe', 'describe-ui', '--udid', '12345678-1234-4234-8234-123456789012'],
         '[AXe]: describe-ui',
         false,
-        {},
+        { env: {} },
       ]);
 
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Accessibility hierarchy retrieved successfully:\n```json\n{"elements": [{"type": "Button", "frame": {"x": 100, "y": 200, "width": 50, "height": 30}}]}\n```',
           },
           {
-            type: 'text',
+            type: 'text' as const,
             text: `Next Steps:
 - Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)
 - Re-run describe_ui after layout changes
@@ -122,7 +127,7 @@ describe('Describe UI Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -141,7 +146,7 @@ describe('Describe UI Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -161,6 +166,10 @@ describe('Describe UI Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text' as const, text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       const result = await describe_uiLogic(
@@ -174,7 +183,7 @@ describe('Describe UI Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: "Error: Failed to get accessibility hierarchy: axe command 'describe-ui' failed.\nDetails: axe command failed",
           },
         ],
@@ -189,6 +198,10 @@ describe('Describe UI Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text' as const, text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       const result = await describe_uiLogic(
@@ -202,7 +215,7 @@ describe('Describe UI Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: expect.stringContaining(
               'Error: System error executing axe: Failed to execute axe command: ENOENT: no such file or directory',
             ),
@@ -219,6 +232,10 @@ describe('Describe UI Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text' as const, text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       const result = await describe_uiLogic(
@@ -232,7 +249,7 @@ describe('Describe UI Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: expect.stringContaining(
               'Error: System error executing axe: Failed to execute axe command: Unexpected error',
             ),
@@ -249,6 +266,10 @@ describe('Describe UI Plugin', () => {
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text' as const, text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       const result = await describe_uiLogic(
@@ -262,7 +283,7 @@ describe('Describe UI Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Error: System error executing axe: Failed to execute axe command: String error',
           },
         ],

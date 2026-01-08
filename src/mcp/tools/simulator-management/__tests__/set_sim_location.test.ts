@@ -6,7 +6,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockExecutor,
+  createNoopExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 import setSimLocation, { set_sim_locationLogic } from '../set_sim_location.ts';
 
 describe('set_sim_location tool', () => {
@@ -48,12 +52,11 @@ describe('set_sim_location tool', () => {
 
       const mockExecutor = async (command: string[]) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'Location set successfully',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await set_sim_locationLogic(
@@ -80,12 +83,11 @@ describe('set_sim_location tool', () => {
 
       const mockExecutor = async (command: string[]) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'Location set successfully',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await set_sim_locationLogic(
@@ -112,12 +114,11 @@ describe('set_sim_location tool', () => {
 
       const mockExecutor = async (command: string[]) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'Location set successfully',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await set_sim_locationLogic(
@@ -360,12 +361,11 @@ describe('set_sim_location tool', () => {
 
       const mockExecutor = async (...args: any[]) => {
         capturedArgs = args;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'Location set successfully',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await set_sim_locationLogic(

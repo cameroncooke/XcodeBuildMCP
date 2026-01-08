@@ -6,7 +6,11 @@
 
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor, type CommandExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockExecutor,
+  type CommandExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 import openSim, { open_simLogic } from '../open_sim.ts';
 
 describe('open_sim tool', () => {
@@ -131,24 +135,25 @@ describe('open_sim tool', () => {
     it('should verify command generation with mock executor', async () => {
       const calls: Array<{
         command: string[];
-        description: string;
-        hideOutput: boolean;
-        workingDirectory: string | undefined;
+        description?: string;
+        hideOutput?: boolean;
+        opts?: { cwd?: string };
       }> = [];
 
       const mockExecutor: CommandExecutor = async (
         command,
         description,
         hideOutput,
-        workingDirectory,
+        opts,
+        detached,
       ) => {
-        calls.push({ command, description, hideOutput, workingDirectory });
-        return {
+        calls.push({ command, description, hideOutput, opts });
+        void detached;
+        return createMockCommandResponse({
           success: true,
           output: '',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await open_simLogic({}, mockExecutor);
@@ -158,7 +163,7 @@ describe('open_sim tool', () => {
         command: ['open', '-a', 'Simulator'],
         description: 'Open Simulator',
         hideOutput: true,
-        workingDirectory: undefined,
+        opts: undefined,
       });
     });
   });

@@ -144,7 +144,12 @@ async function executeAxeCommand(
     // Determine environment variables for bundled AXe
     const axeEnv = axeBinary !== 'axe' ? axeHelpers.getBundledAxeEnvironment() : undefined;
 
-    const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
+    const result = await executor(
+      fullCommand,
+      `${LOG_PREFIX}: ${commandName}`,
+      false,
+      axeEnv ? { env: axeEnv } : undefined,
+    );
 
     if (!result.success) {
       throw new AxeError(

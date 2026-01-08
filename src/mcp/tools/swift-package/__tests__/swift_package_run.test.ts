@@ -6,8 +6,13 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockExecutor,
+  createNoopExecutor,
+  createMockCommandResponse,
+} from '../../../../test-utils/mock-executors.ts';
 import swiftPackageRun, { swift_package_runLogic } from '../swift_package_run.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 
 describe('swift_package_run plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -73,19 +78,15 @@ describe('swift_package_run plugin', () => {
 
   describe('Command Generation Testing', () => {
     it('should build correct command for basic run (foreground mode)', async () => {
-      const mockExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: any,
-      ) => {
-        executorCalls.push({ command, logPrefix, useShell, env });
-        return Promise.resolve({
-          success: true,
-          output: 'Process completed',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+      const mockExecutor: CommandExecutor = (command, logPrefix, useShell, opts) => {
+        executorCalls.push({ command, logPrefix, useShell, opts });
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output: 'Process completed',
+            error: undefined,
+          }),
+        );
       };
 
       await swift_package_runLogic(
@@ -99,24 +100,20 @@ describe('swift_package_run plugin', () => {
         command: ['swift', 'run', '--package-path', '/test/package'],
         logPrefix: 'Swift Package Run',
         useShell: true,
-        env: undefined,
+        opts: undefined,
       });
     });
 
     it('should build correct command with release configuration', async () => {
-      const mockExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: any,
-      ) => {
-        executorCalls.push({ command, logPrefix, useShell, env });
-        return Promise.resolve({
-          success: true,
-          output: 'Process completed',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+      const mockExecutor: CommandExecutor = (command, logPrefix, useShell, opts) => {
+        executorCalls.push({ command, logPrefix, useShell, opts });
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output: 'Process completed',
+            error: undefined,
+          }),
+        );
       };
 
       await swift_package_runLogic(
@@ -131,24 +128,20 @@ describe('swift_package_run plugin', () => {
         command: ['swift', 'run', '--package-path', '/test/package', '-c', 'release'],
         logPrefix: 'Swift Package Run',
         useShell: true,
-        env: undefined,
+        opts: undefined,
       });
     });
 
     it('should build correct command with executable name', async () => {
-      const mockExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: any,
-      ) => {
-        executorCalls.push({ command, logPrefix, useShell, env });
-        return Promise.resolve({
-          success: true,
-          output: 'Process completed',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+      const mockExecutor: CommandExecutor = (command, logPrefix, useShell, opts) => {
+        executorCalls.push({ command, logPrefix, useShell, opts });
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output: 'Process completed',
+            error: undefined,
+          }),
+        );
       };
 
       await swift_package_runLogic(
@@ -163,24 +156,20 @@ describe('swift_package_run plugin', () => {
         command: ['swift', 'run', '--package-path', '/test/package', 'MyApp'],
         logPrefix: 'Swift Package Run',
         useShell: true,
-        env: undefined,
+        opts: undefined,
       });
     });
 
     it('should build correct command with arguments', async () => {
-      const mockExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: any,
-      ) => {
-        executorCalls.push({ command, logPrefix, useShell, env });
-        return Promise.resolve({
-          success: true,
-          output: 'Process completed',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+      const mockExecutor: CommandExecutor = (command, logPrefix, useShell, opts) => {
+        executorCalls.push({ command, logPrefix, useShell, opts });
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output: 'Process completed',
+            error: undefined,
+          }),
+        );
       };
 
       await swift_package_runLogic(
@@ -195,24 +184,20 @@ describe('swift_package_run plugin', () => {
         command: ['swift', 'run', '--package-path', '/test/package', '--', 'arg1', 'arg2'],
         logPrefix: 'Swift Package Run',
         useShell: true,
-        env: undefined,
+        opts: undefined,
       });
     });
 
     it('should build correct command with parseAsLibrary flag', async () => {
-      const mockExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: any,
-      ) => {
-        executorCalls.push({ command, logPrefix, useShell, env });
-        return Promise.resolve({
-          success: true,
-          output: 'Process completed',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+      const mockExecutor: CommandExecutor = (command, logPrefix, useShell, opts) => {
+        executorCalls.push({ command, logPrefix, useShell, opts });
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output: 'Process completed',
+            error: undefined,
+          }),
+        );
       };
 
       await swift_package_runLogic(
@@ -234,24 +219,20 @@ describe('swift_package_run plugin', () => {
         ],
         logPrefix: 'Swift Package Run',
         useShell: true,
-        env: undefined,
+        opts: undefined,
       });
     });
 
     it('should build correct command with all parameters', async () => {
-      const mockExecutor = (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: any,
-      ) => {
-        executorCalls.push({ command, logPrefix, useShell, env });
-        return Promise.resolve({
-          success: true,
-          output: 'Process completed',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+      const mockExecutor: CommandExecutor = (command, logPrefix, useShell, opts) => {
+        executorCalls.push({ command, logPrefix, useShell, opts });
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output: 'Process completed',
+            error: undefined,
+          }),
+        );
       };
 
       await swift_package_runLogic(
@@ -281,7 +262,7 @@ describe('swift_package_run plugin', () => {
         ],
         logPrefix: 'Swift Package Run',
         useShell: true,
-        env: undefined,
+        opts: undefined,
       });
     });
 

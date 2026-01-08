@@ -6,7 +6,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 import plugin, { listSchemesLogic } from '../list_schemes.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
@@ -191,12 +194,14 @@ describe('list_schemes plugin', () => {
       const calls: any[] = [];
       const mockExecutor = async (
         command: string[],
-        action: string,
-        showOutput: boolean,
-        workingDir?: string,
+        action?: string,
+        showOutput?: boolean,
+        opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
-        calls.push([command, action, showOutput, workingDir]);
-        return {
+        calls.push([command, action, showOutput, opts?.cwd]);
+        void detached;
+        return createMockCommandResponse({
           success: true,
           output: `Information about project "MyProject":
     Targets:
@@ -209,8 +214,7 @@ describe('list_schemes plugin', () => {
     Schemes:
         MyProject`,
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await listSchemesLogic({ projectPath: '/path/to/MyProject.xcodeproj' }, mockExecutor);
@@ -304,19 +308,20 @@ describe('list_schemes plugin', () => {
       const calls: any[] = [];
       const mockExecutor = async (
         command: string[],
-        action: string,
-        showOutput: boolean,
-        workingDir?: string,
+        action?: string,
+        showOutput?: boolean,
+        opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
-        calls.push([command, action, showOutput, workingDir]);
-        return {
+        calls.push([command, action, showOutput, opts?.cwd]);
+        void detached;
+        return createMockCommandResponse({
           success: true,
           output: `Information about workspace "MyWorkspace":
     Schemes:
         MyApp`,
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await listSchemesLogic({ workspacePath: '/path/to/MyProject.xcworkspace' }, mockExecutor);

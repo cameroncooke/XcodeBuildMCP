@@ -11,6 +11,7 @@ import {
   createMockFileSystemExecutor,
   createCommandMatchingMockExecutor,
 } from '../../../../test-utils/mock-executors.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { SystemError } from '../../../../utils/responses/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import screenshotPlugin, { screenshotLogic } from '../../ui-testing/screenshot.ts';
@@ -377,7 +378,7 @@ describe('screenshot plugin', () => {
       });
 
       // Wrap to capture both command executions
-      const capturingExecutor = async (...args: any[]) => {
+      const capturingExecutor: CommandExecutor = async (...args) => {
         capturedArgs.push(args);
         return mockExecutor(...args);
       };

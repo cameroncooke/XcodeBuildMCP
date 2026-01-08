@@ -5,7 +5,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockExecutor,
+  createMockCommandResponse,
+} from '../../../../test-utils/mock-executors.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import buildRunSim, { build_run_simLogic } from '../build_run_sim.ts';
 
@@ -58,28 +62,25 @@ describe('build_run_sim tool', () => {
 
     it('should handle simulator not found', async () => {
       let callCount = 0;
-      const mockExecutor = async (command: string[]) => {
+      const mockExecutor: CommandExecutor = async (command) => {
         callCount++;
         if (callCount === 1) {
           // First call: build succeeds
-          return {
+          return createMockCommandResponse({
             success: true,
             output: 'BUILD SUCCEEDED',
-            process: { pid: 12345 },
-          };
+          });
         } else if (callCount === 2) {
           // Second call: showBuildSettings fails to get app path
-          return {
+          return createMockCommandResponse({
             success: false,
             error: 'Could not get build settings',
-            process: { pid: 12345 },
-          };
+          });
         }
-        return {
+        return createMockCommandResponse({
           success: false,
           error: 'Unexpected call',
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await build_run_simLogic(
@@ -125,26 +126,24 @@ describe('build_run_sim tool', () => {
     it('should handle successful build and run', async () => {
       // Create a mock executor that simulates full successful flow
       let callCount = 0;
-      const mockExecutor = async (command: string[], logPrefix?: string) => {
+      const mockExecutor: CommandExecutor = async (command) => {
         callCount++;
 
         if (command.includes('xcodebuild') && command.includes('build')) {
           // First call: build succeeds
-          return {
+          return createMockCommandResponse({
             success: true,
             output: 'BUILD SUCCEEDED',
-            process: { pid: 12345 },
-          };
+          });
         } else if (command.includes('xcodebuild') && command.includes('-showBuildSettings')) {
           // Second call: build settings to get app path
-          return {
+          return createMockCommandResponse({
             success: true,
             output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app\n',
-            process: { pid: 12345 },
-          };
+          });
         } else if (command.includes('simctl') && command.includes('list')) {
           // Find simulator calls
-          return {
+          return createMockCommandResponse({
             success: true,
             output: JSON.stringify({
               devices: {
@@ -158,26 +157,23 @@ describe('build_run_sim tool', () => {
                 ],
               },
             }),
-            process: { pid: 12345 },
-          };
+          });
         } else if (
           command.includes('plutil') ||
           command.includes('PlistBuddy') ||
           command.includes('defaults')
         ) {
           // Bundle ID extraction
-          return {
+          return createMockCommandResponse({
             success: true,
             output: 'com.example.MyApp',
-            process: { pid: 12345 },
-          };
+          });
         } else {
           // All other commands (boot, open, install, launch) succeed
-          return {
+          return createMockCommandResponse({
             success: true,
             output: 'Success',
-            process: { pid: 12345 },
-          };
+          });
         }
       };
 
@@ -242,23 +238,17 @@ describe('build_run_sim tool', () => {
         command: string[];
         logPrefix?: string;
         useShell?: boolean;
-        env?: any;
+        opts?: { env?: Record<string, string>; cwd?: string };
       }> = [];
 
       // Create tracking executor
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return {
+      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return createMockCommandResponse({
           success: false,
           output: '',
           error: 'Test error to stop execution early',
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await build_run_simLogic(
@@ -293,23 +283,18 @@ describe('build_run_sim tool', () => {
         command: string[];
         logPrefix?: string;
         useShell?: boolean;
-        env?: any;
+        opts?: { env?: Record<string, string>; cwd?: string };
       }> = [];
 
       let callCount = 0;
       // Create tracking executor that succeeds on first call (list) and fails on second
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
+      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
+        callHistory.push({ command, logPrefix, useShell, opts });
         callCount++;
 
         if (callCount === 1) {
           // First call: simulator list succeeds
-          return {
+          return createMockCommandResponse({
             success: true,
             output: JSON.stringify({
               devices: {
@@ -323,16 +308,14 @@ describe('build_run_sim tool', () => {
               },
             }),
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         } else {
           // Second call: build command fails to stop execution
-          return {
+          return createMockCommandResponse({
             success: false,
             output: '',
             error: 'Test error to stop execution',
-            process: { pid: 12345 },
-          };
+          });
         }
       };
 
@@ -385,23 +368,18 @@ describe('build_run_sim tool', () => {
         command: string[];
         logPrefix?: string;
         useShell?: boolean;
-        env?: any;
+        opts?: { env?: Record<string, string>; cwd?: string };
       }> = [];
 
       let callCount = 0;
       // Create tracking executor that succeeds on first two calls and fails on third
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
+      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
+        callHistory.push({ command, logPrefix, useShell, opts });
         callCount++;
 
         if (callCount === 1) {
           // First call: simulator list succeeds
-          return {
+          return createMockCommandResponse({
             success: true,
             output: JSON.stringify({
               devices: {
@@ -415,24 +393,21 @@ describe('build_run_sim tool', () => {
               },
             }),
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         } else if (callCount === 2) {
           // Second call: build command succeeds
-          return {
+          return createMockCommandResponse({
             success: true,
             output: 'BUILD SUCCEEDED',
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         } else {
           // Third call: build settings command fails to stop execution
-          return {
+          return createMockCommandResponse({
             success: false,
             output: '',
             error: 'Test error to stop execution',
-            process: { pid: 12345 },
-          };
+          });
         }
       };
 
@@ -487,23 +462,17 @@ describe('build_run_sim tool', () => {
         command: string[];
         logPrefix?: string;
         useShell?: boolean;
-        env?: any;
+        opts?: { env?: Record<string, string>; cwd?: string };
       }> = [];
 
       // Create tracking executor
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return {
+      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return createMockCommandResponse({
           success: false,
           output: '',
           error: 'Test error to stop execution early',
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await build_run_simLogic(

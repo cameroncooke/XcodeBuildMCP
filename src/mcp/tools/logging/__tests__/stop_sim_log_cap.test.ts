@@ -14,14 +14,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import stopSimLogCap, { stop_sim_log_capLogic } from '../stop_sim_log_cap.ts';
-import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 import { activeLogSessions } from '../../../../utils/log_capture.ts';
 
 describe('stop_sim_log_cap plugin', () => {
-  let mockFileSystem: any;
-
   beforeEach(() => {
-    mockFileSystem = createMockFileSystemExecutor();
     // Clear any active sessions before each test
     activeLogSessions.clear();
   });
@@ -93,12 +89,9 @@ describe('stop_sim_log_cap plugin', () => {
       // This test now validates that the logic function works with valid empty strings
       await createTestLogSession('', 'Log content for empty session');
 
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: '',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: '',
+      });
 
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toBe(
@@ -111,12 +104,9 @@ describe('stop_sim_log_cap plugin', () => {
       // This test now validates that the logic function works with valid empty strings
       await createTestLogSession('', 'Log content for empty session');
 
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: '',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: '',
+      });
 
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toBe(
@@ -127,12 +117,9 @@ describe('stop_sim_log_cap plugin', () => {
     it('should handle empty string logSessionId', async () => {
       await createTestLogSession('', 'Log content for empty session');
 
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: '',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: '',
+      });
 
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toBe(
@@ -145,12 +132,9 @@ describe('stop_sim_log_cap plugin', () => {
     it('should call stopLogCapture with correct parameters', async () => {
       await createTestLogSession('test-session-id', 'Mock log content from file');
 
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'test-session-id',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: 'test-session-id',
+      });
 
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toBe(
@@ -161,12 +145,9 @@ describe('stop_sim_log_cap plugin', () => {
     it('should call stopLogCapture with different session ID', async () => {
       await createTestLogSession('different-session-id', 'Different log content');
 
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'different-session-id',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: 'different-session-id',
+      });
 
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toBe(
@@ -179,12 +160,9 @@ describe('stop_sim_log_cap plugin', () => {
     it('should handle successful log capture stop', async () => {
       await createTestLogSession('test-session-id', 'Mock log content from file');
 
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'test-session-id',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: 'test-session-id',
+      });
 
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toBe(
@@ -195,12 +173,9 @@ describe('stop_sim_log_cap plugin', () => {
     it('should handle empty log content', async () => {
       await createTestLogSession('test-session-id', '');
 
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'test-session-id',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: 'test-session-id',
+      });
 
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toBe(
@@ -211,12 +186,9 @@ describe('stop_sim_log_cap plugin', () => {
     it('should handle multiline log content', async () => {
       await createTestLogSession('test-session-id', 'Line 1\nLine 2\nLine 3');
 
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'test-session-id',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: 'test-session-id',
+      });
 
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toBe(
@@ -225,12 +197,9 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle log capture stop errors for non-existent session', async () => {
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'non-existent-session',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: 'non-existent-session',
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toBe(
@@ -254,12 +223,9 @@ describe('stop_sim_log_cap plugin', () => {
         bundleId: 'com.example.TestApp',
       });
 
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'test-session-id',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: 'test-session-id',
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain(
@@ -283,12 +249,9 @@ describe('stop_sim_log_cap plugin', () => {
         bundleId: 'com.example.TestApp',
       });
 
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'test-session-id',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: 'test-session-id',
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain(
@@ -312,12 +275,9 @@ describe('stop_sim_log_cap plugin', () => {
         bundleId: 'com.example.TestApp',
       });
 
-      const result = await stop_sim_log_capLogic(
-        {
-          logSessionId: 'test-session-id',
-        },
-        mockFileSystem,
-      );
+      const result = await stop_sim_log_capLogic({
+        logSessionId: 'test-session-id',
+      });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain(

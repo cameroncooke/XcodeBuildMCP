@@ -8,6 +8,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
+  mockProcess,
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import typeTextPlugin, { type_textLogic } from '../type_text.ts';
@@ -20,12 +21,18 @@ function createMockAxeHelpers(
   } = {},
 ) {
   return {
-    getAxePath: () => {
-      return Object.prototype.hasOwnProperty.call(overrides, 'getAxePathReturn')
-        ? overrides.getAxePathReturn
-        : '/usr/local/bin/axe';
-    },
+    getAxePath: () =>
+      overrides.getAxePathReturn !== undefined ? overrides.getAxePathReturn : '/usr/local/bin/axe',
     getBundledAxeEnvironment: () => overrides.getBundledAxeEnvironmentReturn ?? {},
+    createAxeNotAvailableResponse: () => ({
+      content: [
+        {
+          type: 'text' as const,
+          text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
+        },
+      ],
+      isError: true,
+    }),
   };
 }
 
@@ -120,7 +127,7 @@ describe('Type Text Plugin', () => {
           success: true,
           output: 'Text typed successfully',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -155,7 +162,7 @@ describe('Type Text Plugin', () => {
           success: true,
           output: 'Text typed successfully',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -190,7 +197,7 @@ describe('Type Text Plugin', () => {
           success: true,
           output: 'Text typed successfully',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -225,7 +232,7 @@ describe('Type Text Plugin', () => {
           success: true,
           output: 'Text typed successfully',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -263,7 +270,7 @@ describe('Type Text Plugin', () => {
           success: true,
           output: 'Text typed successfully',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -309,7 +316,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -338,7 +345,7 @@ describe('Type Text Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Text typing simulated successfully.' }],
+        content: [{ type: 'text' as const, text: 'Text typing simulated successfully.' }],
         isError: false,
       });
     });
@@ -365,7 +372,7 @@ describe('Type Text Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Text typing simulated successfully.' }],
+        content: [{ type: 'text' as const, text: 'Text typing simulated successfully.' }],
         isError: false,
       });
     });
@@ -387,7 +394,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -419,7 +426,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: "Error: Failed to simulate text typing: axe command 'type' failed.\nDetails: Text field not found",
           },
         ],
@@ -447,7 +454,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: expect.stringContaining(
               'Error: System error executing axe: Failed to execute axe command: ENOENT: no such file or directory',
             ),
@@ -477,7 +484,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: expect.stringContaining(
               'Error: System error executing axe: Failed to execute axe command: Unexpected error',
             ),
@@ -507,7 +514,7 @@ describe('Type Text Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Error: System error executing axe: Failed to execute axe command: String error',
           },
         ],

@@ -6,7 +6,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockExecutor,
+  createNoopExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 import buildDevice, { buildDeviceLogic } from '../build_device.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
@@ -130,24 +134,25 @@ describe('build_device plugin', () => {
     it('should verify workspace command generation with mock executor', async () => {
       const commandCalls: Array<{
         args: string[];
-        logPrefix: string;
-        silent: boolean;
+        logPrefix?: string;
+        silent?: boolean;
         opts: { cwd?: string } | undefined;
       }> = [];
 
       const stubExecutor = async (
         args: string[],
-        logPrefix: string,
-        silent: boolean,
+        logPrefix?: string,
+        silent?: boolean,
         opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
         commandCalls.push({ args, logPrefix, silent, opts });
-        return {
+        void detached;
+        return createMockCommandResponse({
           success: true,
           output: 'Build succeeded',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await buildDeviceLogic(
@@ -182,24 +187,25 @@ describe('build_device plugin', () => {
     it('should verify command generation with mock executor', async () => {
       const commandCalls: Array<{
         args: string[];
-        logPrefix: string;
-        silent: boolean;
+        logPrefix?: string;
+        silent?: boolean;
         opts: { cwd?: string } | undefined;
       }> = [];
 
       const stubExecutor = async (
         args: string[],
-        logPrefix: string,
-        silent: boolean,
+        logPrefix?: string,
+        silent?: boolean,
         opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
         commandCalls.push({ args, logPrefix, silent, opts });
-        return {
+        void detached;
+        return createMockCommandResponse({
           success: true,
           output: 'Build succeeded',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await buildDeviceLogic(
@@ -291,24 +297,25 @@ describe('build_device plugin', () => {
     it('should include optional parameters in command', async () => {
       const commandCalls: Array<{
         args: string[];
-        logPrefix: string;
-        silent: boolean;
+        logPrefix?: string;
+        silent?: boolean;
         opts: { cwd?: string } | undefined;
       }> = [];
 
       const stubExecutor = async (
         args: string[],
-        logPrefix: string,
-        silent: boolean,
+        logPrefix?: string,
+        silent?: boolean,
         opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
         commandCalls.push({ args, logPrefix, silent, opts });
-        return {
+        void detached;
+        return createMockCommandResponse({
           success: true,
           output: 'Build succeeded',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await buildDeviceLogic(

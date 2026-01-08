@@ -203,7 +203,10 @@ describe('swift_package_list plugin', () => {
       };
 
       // Create mock process map with multiple processes
-      const mockProcessMap = new Map([
+      const mockProcessMap = new Map<
+        number,
+        { executableName?: string; packagePath: string; startedAt: Date }
+      >([
         [12345, mockProcess1],
         [12346, mockProcess2],
       ]);
@@ -231,16 +234,19 @@ describe('swift_package_list plugin', () => {
       });
     });
 
-    it('should handle process with null executableName', async () => {
+    it('should handle process with missing executableName', async () => {
       const startedAt = new Date('2023-01-01T10:00:00.000Z');
       const mockProcess = {
-        executableName: null, // Test null executable name
+        executableName: undefined, // Test missing executable name
         packagePath: '/test/package',
         startedAt: startedAt,
       };
 
       // Create mock process map with one process
-      const mockProcessMap = new Map([[12345, mockProcess]]);
+      const mockProcessMap = new Map<
+        number,
+        { executableName?: string; packagePath: string; startedAt: Date }
+      >([[12345, mockProcess]]);
 
       // Use pure dependency injection with stub functions
       const mockArrayFrom = (mapEntries: any) => Array.from(mapEntries);

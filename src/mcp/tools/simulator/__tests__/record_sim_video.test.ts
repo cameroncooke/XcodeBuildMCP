@@ -53,7 +53,7 @@ describe('record_sim_video logic - start behavior', () => {
       areAxeToolsAvailable: () => true,
       isAxeAtLeastVersion: async () => true,
       createAxeNotAvailableResponse: () => ({
-        content: [{ type: 'text', text: 'AXe not available' }],
+        content: [{ type: 'text' as const, text: 'AXe not available' }],
         isError: true,
       }),
     };
@@ -105,7 +105,7 @@ describe('record_sim_video logic - end-to-end stop with rename', () => {
       areAxeToolsAvailable: () => true,
       isAxeAtLeastVersion: async () => true,
       createAxeNotAvailableResponse: () => ({
-        content: [{ type: 'text', text: 'AXe not available' }],
+        content: [{ type: 'text' as const, text: 'AXe not available' }],
         isError: true,
       }),
     };
@@ -153,7 +153,7 @@ describe('record_sim_video logic - version gate', () => {
       areAxeToolsAvailable: () => true,
       isAxeAtLeastVersion: async () => false,
       createAxeNotAvailableResponse: () => ({
-        content: [{ type: 'text', text: 'AXe not available' }],
+        content: [{ type: 'text' as const, text: 'AXe not available' }],
         isError: true,
       }),
     };

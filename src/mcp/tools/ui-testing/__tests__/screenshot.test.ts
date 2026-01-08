@@ -8,6 +8,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
+  mockProcess,
 } from '../../../../test-utils/mock-executors.ts';
 import { SystemError } from '../../../../utils/responses/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
@@ -79,7 +80,7 @@ describe('Screenshot Plugin', () => {
           success: true,
           output: 'Screenshot saved',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -117,7 +118,7 @@ describe('Screenshot Plugin', () => {
           success: true,
           output: 'Screenshot saved',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -154,7 +155,7 @@ describe('Screenshot Plugin', () => {
           success: true,
           output: 'Screenshot saved',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -194,7 +195,7 @@ describe('Screenshot Plugin', () => {
           success: true,
           output: 'Screenshot saved',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -299,7 +300,7 @@ describe('Screenshot Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Error: System error executing screenshot: Failed to capture screenshot: Simulator not found',
           },
         ],
@@ -331,7 +332,7 @@ describe('Screenshot Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Error: Screenshot captured but failed to process image file: File not found',
           },
         ],
@@ -390,7 +391,10 @@ describe('Screenshot Plugin', () => {
 
       expect(result).toEqual({
         content: [
-          { type: 'text', text: 'Error: System error executing screenshot: System error occurred' },
+          {
+            type: 'text' as const,
+            text: 'Error: System error executing screenshot: System error occurred',
+          },
         ],
         isError: true,
       });
@@ -410,7 +414,9 @@ describe('Screenshot Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Error: An unexpected error occurred: Unexpected error' }],
+        content: [
+          { type: 'text' as const, text: 'Error: An unexpected error occurred: Unexpected error' },
+        ],
         isError: true,
       });
     });
@@ -429,7 +435,9 @@ describe('Screenshot Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Error: An unexpected error occurred: String error' }],
+        content: [
+          { type: 'text' as const, text: 'Error: An unexpected error occurred: String error' },
+        ],
         isError: true,
       });
     });

@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockExecutor,
+  createMockCommandResponse,
+} from '../../../../test-utils/mock-executors.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
 // Import the plugin and logic function
@@ -193,23 +197,17 @@ describe('build_sim tool', () => {
         command: string[];
         logPrefix?: string;
         useShell?: boolean;
-        env?: any;
+        opts?: { env?: Record<string, string>; cwd?: string };
       }> = [];
 
       // Create tracking executor
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return {
+      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return createMockCommandResponse({
           success: false,
           output: '',
           error: 'Test error to stop execution early',
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await build_simLogic(
@@ -244,23 +242,17 @@ describe('build_sim tool', () => {
         command: string[];
         logPrefix?: string;
         useShell?: boolean;
-        env?: any;
+        opts?: { env?: Record<string, string>; cwd?: string };
       }> = [];
 
       // Create tracking executor
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return {
+      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return createMockCommandResponse({
           success: false,
           output: '',
           error: 'Test error to stop execution early',
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await build_simLogic(
@@ -295,23 +287,17 @@ describe('build_sim tool', () => {
         command: string[];
         logPrefix?: string;
         useShell?: boolean;
-        env?: any;
+        opts?: { env?: Record<string, string>; cwd?: string };
       }> = [];
 
       // Create tracking executor
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return {
+      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return createMockCommandResponse({
           success: false,
           output: '',
           error: 'Test error to stop execution early',
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await build_simLogic(
@@ -353,23 +339,17 @@ describe('build_sim tool', () => {
         command: string[];
         logPrefix?: string;
         useShell?: boolean;
-        env?: any;
+        opts?: { env?: Record<string, string>; cwd?: string };
       }> = [];
 
       // Create tracking executor
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return {
+      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return createMockCommandResponse({
           success: false,
           output: '',
           error: 'Test error to stop execution early',
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await build_simLogic(
@@ -404,23 +384,17 @@ describe('build_sim tool', () => {
         command: string[];
         logPrefix?: string;
         useShell?: boolean;
-        env?: any;
+        opts?: { env?: Record<string, string>; cwd?: string };
       }> = [];
 
       // Create tracking executor
-      const trackingExecutor = async (
-        command: string[],
-        logPrefix?: string,
-        useShell?: boolean,
-        env?: Record<string, string>,
-      ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
-        return {
+      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return createMockCommandResponse({
           success: false,
           output: '',
           error: 'Test error to stop execution early',
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await build_simLogic(

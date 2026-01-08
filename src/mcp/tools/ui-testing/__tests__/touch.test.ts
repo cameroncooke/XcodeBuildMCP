@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { createMockExecutor, mockProcess } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import touchPlugin, { touchLogic } from '../touch.ts';
 
@@ -123,7 +123,7 @@ describe('Touch Plugin', () => {
           success: true,
           output: 'touch completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -133,7 +133,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -173,7 +173,7 @@ describe('Touch Plugin', () => {
           success: true,
           output: 'touch completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -183,7 +183,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -223,7 +223,7 @@ describe('Touch Plugin', () => {
           success: true,
           output: 'touch completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -233,7 +233,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -275,7 +275,7 @@ describe('Touch Plugin', () => {
           success: true,
           output: 'touch completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -285,7 +285,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -330,7 +330,7 @@ describe('Touch Plugin', () => {
           success: true,
           output: 'touch completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -376,7 +376,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -398,7 +398,7 @@ describe('Touch Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -414,7 +414,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -436,7 +436,7 @@ describe('Touch Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Touch event (touch down) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -452,7 +452,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -474,7 +474,7 @@ describe('Touch Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Touch event (touch up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -495,7 +495,9 @@ describe('Touch Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Error: At least one of "down" or "up" must be true' }],
+        content: [
+          { type: 'text' as const, text: 'Error: At least one of "down" or "up" must be true' },
+        ],
         isError: true,
       });
     });
@@ -513,7 +515,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -535,7 +537,7 @@ describe('Touch Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Touch event (touch down) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -556,7 +558,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -578,7 +580,7 @@ describe('Touch Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Touch event (touch up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -599,7 +601,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -622,7 +624,7 @@ describe('Touch Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Touch event (touch down+up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -639,7 +641,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -661,7 +663,7 @@ describe('Touch Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -682,7 +684,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -704,7 +706,7 @@ describe('Touch Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: "Error: Failed to execute touch event: axe command 'touch' failed.\nDetails: axe command failed",
           },
         ],
@@ -723,7 +725,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -745,7 +747,7 @@ describe('Touch Plugin', () => {
       expect(result).toMatchObject({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: expect.stringContaining(
               'Error: System error executing axe: Failed to execute axe command: System error occurred',
             ),
@@ -766,7 +768,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -788,7 +790,7 @@ describe('Touch Plugin', () => {
       expect(result).toMatchObject({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: expect.stringContaining(
               'Error: System error executing axe: Failed to execute axe command: Unexpected error',
             ),
@@ -809,7 +811,7 @@ describe('Touch Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -831,7 +833,7 @@ describe('Touch Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Error: System error executing axe: Failed to execute axe command: String error',
           },
         ],

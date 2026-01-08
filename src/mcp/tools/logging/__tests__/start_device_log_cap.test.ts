@@ -4,6 +4,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'events';
+import { Readable } from 'stream';
 import type { ChildProcess } from 'child_process';
 import * as z from 'zod';
 import {
@@ -150,30 +151,22 @@ describe('start_device_log_cap plugin', () => {
     });
 
     it('should surface early launch failures when process exits immediately', async () => {
-      const failingProcess = new EventEmitter() as unknown as ChildProcess & {
-        exitCode: number | null;
-        killed: boolean;
-        kill(signal?: string): boolean;
-        stdout: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-        stderr: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-      };
+      const failingProcess = new EventEmitter() as unknown as ChildProcess;
 
-      const stubOutput = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubOutput.setEncoding = () => {};
-      const stubError = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubError.setEncoding = () => {};
+      const stubOutput = new Readable({
+        read() {},
+      });
+      const stubError = new Readable({
+        read() {},
+      });
 
       failingProcess.stdout = stubOutput;
       failingProcess.stderr = stubError;
-      failingProcess.exitCode = null;
-      failingProcess.killed = false;
+      (failingProcess as any).exitCode = null;
+      (failingProcess as any).killed = false;
       failingProcess.kill = () => {
-        failingProcess.killed = true;
-        failingProcess.exitCode = 0;
+        (failingProcess as any).killed = true;
+        (failingProcess as any).exitCode = 0;
         failingProcess.emit('close', 0, null);
         return true;
       };
@@ -207,7 +200,7 @@ describe('start_device_log_cap plugin', () => {
           'data',
           'ERROR: The application failed to launch. (com.apple.dt.CoreDeviceError error 10002)\nNSLocalizedRecoverySuggestion = Provide a valid bundle identifier.\n',
         );
-        failingProcess.exitCode = 70;
+        (failingProcess as any).exitCode = 70;
         failingProcess.emit('close', 70, null);
       }, 10);
 
@@ -233,29 +226,21 @@ describe('start_device_log_cap plugin', () => {
         },
       };
 
-      const failingProcess = new EventEmitter() as unknown as ChildProcess & {
-        exitCode: number | null;
-        killed: boolean;
-        kill(signal?: string): boolean;
-        stdout: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-        stderr: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-      };
+      const failingProcess = new EventEmitter() as unknown as ChildProcess;
 
-      const stubOutput = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubOutput.setEncoding = () => {};
-      const stubError = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubError.setEncoding = () => {};
+      const stubOutput = new Readable({
+        read() {},
+      });
+      const stubError = new Readable({
+        read() {},
+      });
 
       failingProcess.stdout = stubOutput;
       failingProcess.stderr = stubError;
-      failingProcess.exitCode = null;
-      failingProcess.killed = false;
+      (failingProcess as any).exitCode = null;
+      (failingProcess as any).killed = false;
       failingProcess.kill = () => {
-        failingProcess.killed = true;
+        (failingProcess as any).killed = true;
         return true;
       };
 
@@ -293,7 +278,7 @@ describe('start_device_log_cap plugin', () => {
       });
 
       setTimeout(() => {
-        failingProcess.exitCode = 0;
+        (failingProcess as any).exitCode = 0;
         failingProcess.emit('close', 0, null);
       }, 5);
 
@@ -323,29 +308,21 @@ describe('start_device_log_cap plugin', () => {
         },
       };
 
-      const runningProcess = new EventEmitter() as unknown as ChildProcess & {
-        exitCode: number | null;
-        killed: boolean;
-        kill(signal?: string): boolean;
-        stdout: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-        stderr: NodeJS.ReadableStream & { setEncoding?: (encoding: string) => void };
-      };
+      const runningProcess = new EventEmitter() as unknown as ChildProcess;
 
-      const stubOutput = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubOutput.setEncoding = () => {};
-      const stubError = new EventEmitter() as NodeJS.ReadableStream & {
-        setEncoding?: (encoding: string) => void;
-      };
-      stubError.setEncoding = () => {};
+      const stubOutput = new Readable({
+        read() {},
+      });
+      const stubError = new Readable({
+        read() {},
+      });
 
       runningProcess.stdout = stubOutput;
       runningProcess.stderr = stubError;
-      runningProcess.exitCode = null;
-      runningProcess.killed = false;
+      (runningProcess as any).exitCode = null;
+      (runningProcess as any).killed = false;
       runningProcess.kill = () => {
-        runningProcess.killed = true;
+        (runningProcess as any).killed = true;
         runningProcess.emit('close', 0, null);
         return true;
       };

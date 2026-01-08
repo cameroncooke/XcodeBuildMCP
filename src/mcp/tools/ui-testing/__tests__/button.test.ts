@@ -4,8 +4,13 @@
 
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockExecutor,
+  createNoopExecutor,
+  createMockCommandResponse,
+} from '../../../../test-utils/mock-executors.ts';
 import buttonPlugin, { buttonLogic } from '../button.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 
 describe('Button Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -45,21 +50,20 @@ describe('Button Plugin', () => {
   describe('Command Generation', () => {
     it('should generate correct axe command for basic button press', async () => {
       let capturedCommand: string[] = [];
-      const trackingExecutor = async (command: string[]) => {
+      const trackingExecutor: CommandExecutor = async (command) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'button press completed',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'axe not available' }],
+          content: [{ type: 'text' as const, text: 'axe not available' }],
           isError: true,
         }),
       };
@@ -84,21 +88,20 @@ describe('Button Plugin', () => {
 
     it('should generate correct axe command for button press with duration', async () => {
       let capturedCommand: string[] = [];
-      const trackingExecutor = async (command: string[]) => {
+      const trackingExecutor: CommandExecutor = async (command) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'button press completed',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'axe not available' }],
+          content: [{ type: 'text' as const, text: 'axe not available' }],
           isError: true,
         }),
       };
@@ -126,21 +129,20 @@ describe('Button Plugin', () => {
 
     it('should generate correct axe command for different button types', async () => {
       let capturedCommand: string[] = [];
-      const trackingExecutor = async (command: string[]) => {
+      const trackingExecutor: CommandExecutor = async (command) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'button press completed',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'axe not available' }],
+          content: [{ type: 'text' as const, text: 'axe not available' }],
           isError: true,
         }),
       };
@@ -165,19 +167,22 @@ describe('Button Plugin', () => {
 
     it('should generate correct axe command with bundled axe path', async () => {
       let capturedCommand: string[] = [];
-      const trackingExecutor = async (command: string[]) => {
+      const trackingExecutor: CommandExecutor = async (command) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'button press completed',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const mockAxeHelpers = {
         getAxePath: () => '/path/to/bundled/axe',
         getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
+        createAxeNotAvailableResponse: () => ({
+          content: [{ type: 'text' as const, text: 'axe not available' }],
+          isError: true,
+        }),
       };
 
       await buttonLogic(
@@ -265,7 +270,7 @@ describe('Button Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'axe not available' }],
+          content: [{ type: 'text' as const, text: 'axe not available' }],
           isError: true,
         }),
       };
@@ -280,7 +285,7 @@ describe('Button Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: "Hardware button 'home' pressed successfully." }],
+        content: [{ type: 'text' as const, text: "Hardware button 'home' pressed successfully." }],
         isError: false,
       });
     });
@@ -297,7 +302,7 @@ describe('Button Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'axe not available' }],
+          content: [{ type: 'text' as const, text: 'axe not available' }],
           isError: true,
         }),
       };
@@ -313,7 +318,9 @@ describe('Button Plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: "Hardware button 'side-button' pressed successfully." }],
+        content: [
+          { type: 'text' as const, text: "Hardware button 'side-button' pressed successfully." },
+        ],
         isError: false,
       });
     });
@@ -325,7 +332,7 @@ describe('Button Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -345,7 +352,7 @@ describe('Button Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -365,7 +372,7 @@ describe('Button Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'axe not available' }],
+          content: [{ type: 'text' as const, text: 'axe not available' }],
           isError: true,
         }),
       };
@@ -382,7 +389,7 @@ describe('Button Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: "Error: Failed to press button 'home': axe command 'button' failed.\nDetails: axe command failed",
           },
         ],
@@ -399,7 +406,7 @@ describe('Button Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'axe not available' }],
+          content: [{ type: 'text' as const, text: 'axe not available' }],
           isError: true,
         }),
       };
@@ -428,7 +435,7 @@ describe('Button Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'axe not available' }],
+          content: [{ type: 'text' as const, text: 'axe not available' }],
           isError: true,
         }),
       };
@@ -457,7 +464,7 @@ describe('Button Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'axe not available' }],
+          content: [{ type: 'text' as const, text: 'axe not available' }],
           isError: true,
         }),
       };
@@ -474,7 +481,7 @@ describe('Button Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Error: System error executing axe: Failed to execute axe command: String error',
           },
         ],

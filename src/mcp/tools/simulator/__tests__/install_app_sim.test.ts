@@ -4,8 +4,10 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
+  createMockCommandResponse,
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import installAppSim, { install_app_simLogic } from '../install_app_sim.ts';
 
 describe('install_app_sim tool', () => {
@@ -65,15 +67,15 @@ describe('install_app_sim tool', () => {
 
   describe('Command Generation', () => {
     it('should generate correct simctl install command', async () => {
-      const executorCalls: unknown[] = [];
-      const mockExecutor = (...args: unknown[]) => {
+      const executorCalls: Array<Parameters<CommandExecutor>> = [];
+      const mockExecutor: CommandExecutor = (...args) => {
         executorCalls.push(args);
-        return Promise.resolve({
-          success: true,
-          output: 'App installed',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output: 'App installed',
+          }),
+        );
       };
 
       const mockFileSystem = createMockFileSystemExecutor({
@@ -106,15 +108,15 @@ describe('install_app_sim tool', () => {
     });
 
     it('should generate command with different simulator identifier', async () => {
-      const executorCalls: unknown[] = [];
-      const mockExecutor = (...args: unknown[]) => {
+      const executorCalls: Array<Parameters<CommandExecutor>> = [];
+      const mockExecutor: CommandExecutor = (...args) => {
         executorCalls.push(args);
-        return Promise.resolve({
-          success: true,
-          output: 'App installed',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output: 'App installed',
+          }),
+        );
       };
 
       const mockFileSystem = createMockFileSystemExecutor({
@@ -174,27 +176,29 @@ describe('install_app_sim tool', () => {
     });
 
     it('should handle bundle id extraction failure gracefully', async () => {
-      const bundleIdCalls: unknown[] = [];
-      const mockExecutor = (...args: unknown[]) => {
+      const bundleIdCalls: Array<Parameters<CommandExecutor>> = [];
+      const mockExecutor: CommandExecutor = (...args) => {
         bundleIdCalls.push(args);
         if (
           Array.isArray(args[0]) &&
           (args[0] as string[])[0] === 'xcrun' &&
           (args[0] as string[])[1] === 'simctl'
         ) {
-          return Promise.resolve({
-            success: true,
-            output: 'App installed',
-            error: undefined,
-            process: { pid: 12345 },
-          });
+          return Promise.resolve(
+            createMockCommandResponse({
+              success: true,
+              output: 'App installed',
+              error: undefined,
+            }),
+          );
         }
-        return Promise.resolve({
-          success: false,
-          output: '',
-          error: 'Failed to read bundle ID',
-          process: { pid: 12345 },
-        });
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: false,
+            output: '',
+            error: 'Failed to read bundle ID',
+          }),
+        );
       };
 
       const mockFileSystem = createMockFileSystemExecutor({
@@ -228,27 +232,29 @@ describe('install_app_sim tool', () => {
     });
 
     it('should include bundle id when extraction succeeds', async () => {
-      const bundleIdCalls: unknown[] = [];
-      const mockExecutor = (...args: unknown[]) => {
+      const bundleIdCalls: Array<Parameters<CommandExecutor>> = [];
+      const mockExecutor: CommandExecutor = (...args) => {
         bundleIdCalls.push(args);
         if (
           Array.isArray(args[0]) &&
           (args[0] as string[])[0] === 'xcrun' &&
           (args[0] as string[])[1] === 'simctl'
         ) {
-          return Promise.resolve({
-            success: true,
-            output: 'App installed',
-            error: undefined,
-            process: { pid: 12345 },
-          });
+          return Promise.resolve(
+            createMockCommandResponse({
+              success: true,
+              output: 'App installed',
+              error: undefined,
+            }),
+          );
         }
-        return Promise.resolve({
-          success: true,
-          output: 'com.example.myapp',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output: 'com.example.myapp',
+            error: undefined,
+          }),
+        );
       };
 
       const mockFileSystem = createMockFileSystemExecutor({
@@ -282,13 +288,14 @@ describe('install_app_sim tool', () => {
     });
 
     it('should handle command failure', async () => {
-      const mockExecutor = () =>
-        Promise.resolve({
-          success: false,
-          output: '',
-          error: 'Install failed',
-          process: { pid: 12345 },
-        });
+      const mockExecutor: CommandExecutor = () =>
+        Promise.resolve(
+          createMockCommandResponse({
+            success: false,
+            output: '',
+            error: 'Install failed',
+          }),
+        );
 
       const mockFileSystem = createMockFileSystemExecutor({
         existsSync: () => true,

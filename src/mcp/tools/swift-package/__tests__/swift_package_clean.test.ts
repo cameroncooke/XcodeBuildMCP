@@ -9,8 +9,10 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
+  createMockCommandResponse,
 } from '../../../../test-utils/mock-executors.ts';
 import swiftPackageClean, { swift_package_cleanLogic } from '../swift_package_clean.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 
 describe('swift_package_clean plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -43,24 +45,18 @@ describe('swift_package_clean plugin', () => {
     it('should build correct command for clean', async () => {
       const calls: Array<{
         command: string[];
-        description: string;
-        showOutput: boolean;
-        workingDirectory: string | undefined;
+        description?: string;
+        useShell?: boolean;
+        opts?: { env?: Record<string, string>; cwd?: string };
       }> = [];
 
-      const mockExecutor = async (
-        command: string[],
-        description: string,
-        showOutput: boolean,
-        workingDirectory?: string,
-      ) => {
-        calls.push({ command, description, showOutput, workingDirectory });
-        return {
+      const mockExecutor: CommandExecutor = async (command, description, useShell, opts) => {
+        calls.push({ command, description, useShell, opts });
+        return createMockCommandResponse({
           success: true,
           output: 'Clean succeeded',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await swift_package_cleanLogic(
@@ -74,8 +70,8 @@ describe('swift_package_clean plugin', () => {
       expect(calls[0]).toEqual({
         command: ['swift', 'package', '--package-path', '/test/package', 'clean'],
         description: 'Swift Package Clean',
-        showOutput: true,
-        workingDirectory: undefined,
+        useShell: true,
+        opts: undefined,
       });
     });
   });

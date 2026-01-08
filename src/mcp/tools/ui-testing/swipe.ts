@@ -35,7 +35,7 @@ const swipeSchema = z.object({
 });
 
 // Use z.infer for type safety
-type SwipeParams = z.infer<typeof swipeSchema>;
+export type SwipeParams = z.infer<typeof swipeSchema>;
 
 const publicSchemaObject = z.strictObject(swipeSchema.omit({ simulatorId: true } as const).shape);
 
@@ -195,7 +195,12 @@ async function executeAxeCommand(
     // Determine environment variables for bundled AXe
     const axeEnv = axeBinary !== 'axe' ? axeHelpers.getBundledAxeEnvironment() : undefined;
 
-    const result = await executor(fullCommand, `${LOG_PREFIX}: ${commandName}`, false, axeEnv);
+    const result = await executor(
+      fullCommand,
+      `${LOG_PREFIX}: ${commandName}`,
+      false,
+      axeEnv ? { env: axeEnv } : undefined,
+    );
 
     if (!result.success) {
       throw new AxeError(

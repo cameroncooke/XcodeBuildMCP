@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { createMockExecutor, mockProcess } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import longPressPlugin, { long_pressLogic } from '../long_press.ts';
 
@@ -114,7 +114,7 @@ describe('Long Press Plugin', () => {
           success: true,
           output: 'long press completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -122,7 +122,7 @@ describe('Long Press Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'Mock axe not available' }],
+          content: [{ type: 'text' as const, text: 'Mock axe not available' }],
           isError: true,
         }),
       };
@@ -162,7 +162,7 @@ describe('Long Press Plugin', () => {
           success: true,
           output: 'long press completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -170,7 +170,7 @@ describe('Long Press Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'Mock axe not available' }],
+          content: [{ type: 'text' as const, text: 'Mock axe not available' }],
           isError: true,
         }),
       };
@@ -210,7 +210,7 @@ describe('Long Press Plugin', () => {
           success: true,
           output: 'long press completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -218,7 +218,7 @@ describe('Long Press Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'Mock axe not available' }],
+          content: [{ type: 'text' as const, text: 'Mock axe not available' }],
           isError: true,
         }),
       };
@@ -258,7 +258,7 @@ describe('Long Press Plugin', () => {
           success: true,
           output: 'long press completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -266,7 +266,7 @@ describe('Long Press Plugin', () => {
         getAxePath: () => '/path/to/bundled/axe',
         getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'Mock axe not available' }],
+          content: [{ type: 'text' as const, text: 'Mock axe not available' }],
           isError: true,
         }),
       };
@@ -311,7 +311,7 @@ describe('Long Press Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'Mock axe not available' }],
+          content: [{ type: 'text' as const, text: 'Mock axe not available' }],
           isError: true,
         }),
       };
@@ -330,7 +330,7 @@ describe('Long Press Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Long press at (100, 200) for 1500ms simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -343,7 +343,7 @@ describe('Long Press Plugin', () => {
         success: true,
         output: '',
         error: undefined,
-        process: { pid: 12345 },
+        process: mockProcess,
       });
 
       const mockAxeHelpers = {
@@ -352,7 +352,7 @@ describe('Long Press Plugin', () => {
         createAxeNotAvailableResponse: () => ({
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
             },
           ],
@@ -374,7 +374,7 @@ describe('Long Press Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -387,14 +387,14 @@ describe('Long Press Plugin', () => {
         success: false,
         output: '',
         error: 'axe command failed',
-        process: { pid: 12345 },
+        process: mockProcess,
       });
 
       const mockAxeHelpers = {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'Mock axe not available' }],
+          content: [{ type: 'text' as const, text: 'Mock axe not available' }],
           isError: true,
         }),
       };
@@ -413,7 +413,7 @@ describe('Long Press Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: "Error: Failed to simulate long press at (100, 200): axe command 'touch' failed.\nDetails: axe command failed",
           },
         ],
@@ -430,7 +430,7 @@ describe('Long Press Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'Mock axe not available' }],
+          content: [{ type: 'text' as const, text: 'Mock axe not available' }],
           isError: true,
         }),
       };
@@ -449,7 +449,7 @@ describe('Long Press Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: expect.stringContaining(
               'Error: System error executing axe: Failed to execute axe command: ENOENT: no such file or directory',
             ),
@@ -468,7 +468,7 @@ describe('Long Press Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'Mock axe not available' }],
+          content: [{ type: 'text' as const, text: 'Mock axe not available' }],
           isError: true,
         }),
       };
@@ -487,7 +487,7 @@ describe('Long Press Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: expect.stringContaining(
               'Error: System error executing axe: Failed to execute axe command: Unexpected error',
             ),
@@ -506,7 +506,7 @@ describe('Long Press Plugin', () => {
         getAxePath: () => '/usr/local/bin/axe',
         getBundledAxeEnvironment: () => ({}),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'Mock axe not available' }],
+          content: [{ type: 'text' as const, text: 'Mock axe not available' }],
           isError: true,
         }),
       };
@@ -525,7 +525,7 @@ describe('Long Press Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Error: System error executing axe: Failed to execute axe command: String error',
           },
         ],

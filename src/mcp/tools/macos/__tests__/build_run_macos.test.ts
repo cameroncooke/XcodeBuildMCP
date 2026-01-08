@@ -1,8 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { ChildProcess } from 'child_process';
 import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import tool, { buildRunMacOSLogic } from '../build_run_macos.ts';
+
+const mockProcess = { pid: 12345 } as unknown as ChildProcess;
 
 describe('build_run_macos', () => {
   beforeEach(() => {
@@ -80,12 +83,14 @@ describe('build_run_macos', () => {
       const executorCalls: any[] = [];
       const mockExecutor = (
         command: string[],
-        description: string,
-        logOutput: boolean,
+        description?: string,
+        logOutput?: boolean,
         opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
         callCount++;
         executorCalls.push({ command, description, logOutput, opts });
+        void detached;
 
         if (callCount === 1) {
           // First call for build
@@ -93,6 +98,7 @@ describe('build_run_macos', () => {
             success: true,
             output: 'BUILD SUCCEEDED',
             error: '',
+            process: mockProcess,
           });
         } else if (callCount === 2) {
           // Second call for build settings
@@ -100,9 +106,10 @@ describe('build_run_macos', () => {
             success: true,
             output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
             error: '',
+            process: mockProcess,
           });
         }
-        return Promise.resolve({ success: true, output: '', error: '' });
+        return Promise.resolve({ success: true, output: '', error: '', process: mockProcess });
       };
 
       const args = {
@@ -148,7 +155,7 @@ describe('build_run_macos', () => {
         ],
         description: 'Get Build Settings for Launch',
         logOutput: true,
-        timeout: undefined,
+        opts: undefined,
       });
 
       expect(result).toEqual({
@@ -176,12 +183,14 @@ describe('build_run_macos', () => {
       const executorCalls: any[] = [];
       const mockExecutor = (
         command: string[],
-        description: string,
-        logOutput: boolean,
+        description?: string,
+        logOutput?: boolean,
         opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
         callCount++;
         executorCalls.push({ command, description, logOutput, opts });
+        void detached;
 
         if (callCount === 1) {
           // First call for build
@@ -189,6 +198,7 @@ describe('build_run_macos', () => {
             success: true,
             output: 'BUILD SUCCEEDED',
             error: '',
+            process: mockProcess,
           });
         } else if (callCount === 2) {
           // Second call for build settings
@@ -196,9 +206,10 @@ describe('build_run_macos', () => {
             success: true,
             output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
             error: '',
+            process: mockProcess,
           });
         }
-        return Promise.resolve({ success: true, output: '', error: '' });
+        return Promise.resolve({ success: true, output: '', error: '', process: mockProcess });
       };
 
       const args = {
@@ -244,7 +255,7 @@ describe('build_run_macos', () => {
         ],
         description: 'Get Build Settings for Launch',
         logOutput: true,
-        timeout: undefined,
+        opts: undefined,
       });
 
       expect(result).toEqual({
@@ -296,17 +307,20 @@ describe('build_run_macos', () => {
       let callCount = 0;
       const mockExecutor = (
         command: string[],
-        description: string,
-        logOutput: boolean,
-        timeout?: number,
+        description?: string,
+        logOutput?: boolean,
+        opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
         callCount++;
+        void detached;
         if (callCount === 1) {
           // First call for build succeeds
           return Promise.resolve({
             success: true,
             output: 'BUILD SUCCEEDED',
             error: '',
+            process: mockProcess,
           });
         } else if (callCount === 2) {
           // Second call for build settings fails
@@ -314,9 +328,10 @@ describe('build_run_macos', () => {
             success: false,
             output: '',
             error: 'error: Failed to get settings',
+            process: mockProcess,
           });
         }
-        return Promise.resolve({ success: true, output: '', error: '' });
+        return Promise.resolve({ success: true, output: '', error: '', process: mockProcess });
       };
 
       const args = {
@@ -352,17 +367,20 @@ describe('build_run_macos', () => {
       let callCount = 0;
       const mockExecutor = (
         command: string[],
-        description: string,
-        logOutput: boolean,
-        timeout?: number,
+        description?: string,
+        logOutput?: boolean,
+        opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
         callCount++;
+        void detached;
         if (callCount === 1) {
           // First call for build succeeds
           return Promise.resolve({
             success: true,
             output: 'BUILD SUCCEEDED',
             error: '',
+            process: mockProcess,
           });
         } else if (callCount === 2) {
           // Second call for build settings succeeds
@@ -370,6 +388,7 @@ describe('build_run_macos', () => {
             success: true,
             output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
             error: '',
+            process: mockProcess,
           });
         } else if (callCount === 3) {
           // Third call for open command fails
@@ -377,9 +396,10 @@ describe('build_run_macos', () => {
             success: false,
             output: '',
             error: 'Failed to launch',
+            process: mockProcess,
           });
         }
-        return Promise.resolve({ success: true, output: '', error: '' });
+        return Promise.resolve({ success: true, output: '', error: '', process: mockProcess });
       };
 
       const args = {
@@ -413,10 +433,16 @@ describe('build_run_macos', () => {
     it('should handle spawn error', async () => {
       const mockExecutor = (
         command: string[],
-        description: string,
-        logOutput: boolean,
-        timeout?: number,
+        description?: string,
+        logOutput?: boolean,
+        opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
+        void command;
+        void description;
+        void logOutput;
+        void opts;
+        void detached;
         return Promise.reject(new Error('spawn xcodebuild ENOENT'));
       };
 
@@ -443,12 +469,14 @@ describe('build_run_macos', () => {
       const executorCalls: any[] = [];
       const mockExecutor = (
         command: string[],
-        description: string,
-        logOutput: boolean,
+        description?: string,
+        logOutput?: boolean,
         opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
         callCount++;
         executorCalls.push({ command, description, logOutput, opts });
+        void detached;
 
         if (callCount === 1) {
           // First call for build
@@ -456,6 +484,7 @@ describe('build_run_macos', () => {
             success: true,
             output: 'BUILD SUCCEEDED',
             error: '',
+            process: mockProcess,
           });
         } else if (callCount === 2) {
           // Second call for build settings
@@ -463,9 +492,10 @@ describe('build_run_macos', () => {
             success: true,
             output: 'BUILT_PRODUCTS_DIR = /path/to/build\nFULL_PRODUCT_NAME = MyApp.app',
             error: '',
+            process: mockProcess,
           });
         }
-        return Promise.resolve({ success: true, output: '', error: '' });
+        return Promise.resolve({ success: true, output: '', error: '', process: mockProcess });
       };
 
       const args = {

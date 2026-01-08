@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import {
+  createMockCommandResponse,
   createMockExecutor,
-  createMockFileSystemExecutor,
 } from '../../../../test-utils/mock-executors.ts';
 
 // Import the plugin and logic function
@@ -71,27 +71,27 @@ describe('list_sims tool', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string> },
+        detached?: boolean,
       ) => {
-        callHistory.push({ command, logPrefix, useShell, env });
+        callHistory.push({ command, logPrefix, useShell, env: opts?.env });
+        void detached;
 
         // Return JSON output for JSON command
         if (command.includes('--json')) {
-          return {
+          return createMockCommandResponse({
             success: true,
             output: mockJsonOutput,
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         }
 
         // Return text output for text command
-        return {
+        return createMockCommandResponse({
           success: true,
           output: mockTextOutput,
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await list_simsLogic({ enabled: true }, mockExecutor);
@@ -150,19 +150,17 @@ Next Steps:
 
       const mockExecutor = async (command: string[]) => {
         if (command.includes('--json')) {
-          return {
+          return createMockCommandResponse({
             success: true,
             output: mockJsonOutput,
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         }
-        return {
+        return createMockCommandResponse({
           success: true,
           output: mockTextOutput,
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await list_simsLogic({ enabled: true }, mockExecutor);
@@ -208,19 +206,17 @@ Next Steps:
 
       const mockExecutor = async (command: string[]) => {
         if (command.includes('--json')) {
-          return {
+          return createMockCommandResponse({
             success: true,
             output: mockJsonOutput,
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         }
-        return {
+        return createMockCommandResponse({
           success: true,
           output: mockTextOutput,
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await list_simsLogic({ enabled: true }, mockExecutor);
@@ -276,21 +272,19 @@ Next Steps:
       const mockExecutor = async (command: string[]) => {
         // JSON command returns invalid JSON
         if (command.includes('--json')) {
-          return {
+          return createMockCommandResponse({
             success: true,
             output: 'invalid json',
             error: undefined,
-            process: { pid: 12345 },
-          };
+          });
         }
 
         // Text command returns valid text output
-        return {
+        return createMockCommandResponse({
           success: true,
           output: mockTextOutput,
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       const result = await list_simsLogic({ enabled: true }, mockExecutor);

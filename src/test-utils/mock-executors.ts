@@ -16,8 +16,24 @@
  */
 
 import { ChildProcess } from 'child_process';
-import { CommandExecutor } from '../utils/CommandExecutor.ts';
+import { CommandExecutor, type CommandResponse } from '../utils/CommandExecutor.ts';
 import { FileSystemExecutor } from '../utils/FileSystemExecutor.ts';
+
+export type { CommandExecutor, FileSystemExecutor };
+
+export const mockProcess = { pid: 12345 } as unknown as ChildProcess;
+
+export function createMockCommandResponse(
+  overrides: Partial<CommandResponse> = {},
+): CommandResponse {
+  return {
+    success: overrides.success ?? true,
+    output: overrides.output ?? '',
+    error: overrides.error,
+    process: overrides.process ?? mockProcess,
+    exitCode: overrides.exitCode ?? (overrides.success === false ? 1 : 0),
+  };
+}
 
 /**
  * Create a mock executor for testing

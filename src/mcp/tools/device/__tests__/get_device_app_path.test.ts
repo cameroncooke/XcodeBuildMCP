@@ -6,7 +6,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 import getDeviceAppPath, { get_device_app_pathLogic } from '../get_device_app_path.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
@@ -88,26 +91,29 @@ describe('get_device_app_path plugin', () => {
 
     it('should generate correct xcodebuild command for iOS', async () => {
       const calls: Array<{
-        args: any[];
-        description: string;
-        suppressErrors: boolean;
-        workingDirectory: string | undefined;
+        args: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        opts?: { cwd?: string };
       }> = [];
 
       const mockExecutor = (
-        args: any[],
-        description: string,
-        suppressErrors: boolean,
-        workingDirectory: string | undefined,
+        args: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
-        calls.push({ args, description, suppressErrors, workingDirectory });
-        return Promise.resolve({
-          success: true,
-          output:
-            'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+        calls.push({ args, logPrefix, useShell, opts });
+        void detached;
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output:
+              'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
+            error: undefined,
+          }),
+        );
       };
 
       await get_device_app_pathLogic(
@@ -132,34 +138,37 @@ describe('get_device_app_path plugin', () => {
           '-destination',
           'generic/platform=iOS',
         ],
-        description: 'Get App Path',
-        suppressErrors: true,
-        workingDirectory: undefined,
+        logPrefix: 'Get App Path',
+        useShell: true,
+        opts: undefined,
       });
     });
 
     it('should generate correct xcodebuild command for watchOS', async () => {
       const calls: Array<{
-        args: any[];
-        description: string;
-        suppressErrors: boolean;
-        workingDirectory: string | undefined;
+        args: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        opts?: { cwd?: string };
       }> = [];
 
       const mockExecutor = (
-        args: any[],
-        description: string,
-        suppressErrors: boolean,
-        workingDirectory: string | undefined,
+        args: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
-        calls.push({ args, description, suppressErrors, workingDirectory });
-        return Promise.resolve({
-          success: true,
-          output:
-            'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-watchos\nFULL_PRODUCT_NAME = MyApp.app\n',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+        calls.push({ args, logPrefix, useShell, opts });
+        void detached;
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output:
+              'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-watchos\nFULL_PRODUCT_NAME = MyApp.app\n',
+            error: undefined,
+          }),
+        );
       };
 
       await get_device_app_pathLogic(
@@ -185,34 +194,37 @@ describe('get_device_app_path plugin', () => {
           '-destination',
           'generic/platform=watchOS',
         ],
-        description: 'Get App Path',
-        suppressErrors: true,
-        workingDirectory: undefined,
+        logPrefix: 'Get App Path',
+        useShell: true,
+        opts: undefined,
       });
     });
 
     it('should generate correct xcodebuild command for workspace with iOS', async () => {
       const calls: Array<{
-        args: any[];
-        description: string;
-        suppressErrors: boolean;
-        workingDirectory: string | undefined;
+        args: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        opts?: { cwd?: string };
       }> = [];
 
       const mockExecutor = (
-        args: any[],
-        description: string,
-        suppressErrors: boolean,
-        workingDirectory: string | undefined,
+        args: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
-        calls.push({ args, description, suppressErrors, workingDirectory });
-        return Promise.resolve({
-          success: true,
-          output:
-            'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+        calls.push({ args, logPrefix, useShell, opts });
+        void detached;
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output:
+              'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Debug-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
+            error: undefined,
+          }),
+        );
       };
 
       await get_device_app_pathLogic(
@@ -237,9 +249,9 @@ describe('get_device_app_path plugin', () => {
           '-destination',
           'generic/platform=iOS',
         ],
-        description: 'Get App Path',
-        suppressErrors: true,
-        workingDirectory: undefined,
+        logPrefix: 'Get App Path',
+        useShell: true,
+        opts: undefined,
       });
     });
 
@@ -324,26 +336,29 @@ describe('get_device_app_path plugin', () => {
 
     it('should include optional configuration parameter in command', async () => {
       const calls: Array<{
-        args: any[];
-        description: string;
-        suppressErrors: boolean;
-        workingDirectory: string | undefined;
+        args: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        opts?: { cwd?: string };
       }> = [];
 
       const mockExecutor = (
-        args: any[],
-        description: string,
-        suppressErrors: boolean,
-        workingDirectory: string | undefined,
+        args: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        opts?: { cwd?: string },
+        detached?: boolean,
       ) => {
-        calls.push({ args, description, suppressErrors, workingDirectory });
-        return Promise.resolve({
-          success: true,
-          output:
-            'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Release-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
-          error: undefined,
-          process: { pid: 12345 },
-        });
+        calls.push({ args, logPrefix, useShell, opts });
+        void detached;
+        return Promise.resolve(
+          createMockCommandResponse({
+            success: true,
+            output:
+              'Build settings for scheme "MyScheme"\n\nBUILT_PRODUCTS_DIR = /path/to/build/Release-iphoneos\nFULL_PRODUCT_NAME = MyApp.app\n',
+            error: undefined,
+          }),
+        );
       };
 
       await get_device_app_pathLogic(
@@ -369,14 +384,25 @@ describe('get_device_app_path plugin', () => {
           '-destination',
           'generic/platform=iOS',
         ],
-        description: 'Get App Path',
-        suppressErrors: true,
-        workingDirectory: undefined,
+        logPrefix: 'Get App Path',
+        useShell: true,
+        opts: undefined,
       });
     });
 
     it('should return exact exception handling response', async () => {
-      const mockExecutor = () => {
+      const mockExecutor = (
+        args: string[],
+        logPrefix?: string,
+        useShell?: boolean,
+        opts?: { cwd?: string },
+        detached?: boolean,
+      ) => {
+        void args;
+        void logPrefix;
+        void useShell;
+        void opts;
+        void detached;
         return Promise.reject(new Error('Network error'));
       };
 

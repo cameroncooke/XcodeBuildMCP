@@ -6,7 +6,11 @@
 
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor, type CommandExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockCommandResponse,
+  createMockExecutor,
+  type CommandExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 import simStatusbar, { sim_statusbarLogic } from '../sim_statusbar.ts';
 
 describe('sim_statusbar tool', () => {
@@ -161,24 +165,25 @@ describe('sim_statusbar tool', () => {
     it('should verify command generation with mock executor for override', async () => {
       const calls: Array<{
         command: string[];
-        operationDescription: string;
-        keepAlive: boolean;
-        timeout: number | undefined;
+        operationDescription?: string;
+        keepAlive?: boolean;
+        opts?: { cwd?: string };
       }> = [];
 
       const mockExecutor: CommandExecutor = async (
         command,
         operationDescription,
         keepAlive,
-        timeout,
+        opts,
+        detached,
       ) => {
-        calls.push({ command, operationDescription, keepAlive, timeout });
-        return {
+        calls.push({ command, operationDescription, keepAlive, opts });
+        void detached;
+        return createMockCommandResponse({
           success: true,
           output: 'Status bar set successfully',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await sim_statusbarLogic(
@@ -202,31 +207,32 @@ describe('sim_statusbar tool', () => {
         ],
         operationDescription: 'Set Status Bar',
         keepAlive: true,
-        timeout: undefined,
+        opts: undefined,
       });
     });
 
     it('should verify command generation for clear operation', async () => {
       const calls: Array<{
         command: string[];
-        operationDescription: string;
-        keepAlive: boolean;
-        timeout: number | undefined;
+        operationDescription?: string;
+        keepAlive?: boolean;
+        opts?: { cwd?: string };
       }> = [];
 
       const mockExecutor: CommandExecutor = async (
         command,
         operationDescription,
         keepAlive,
-        timeout,
+        opts,
+        detached,
       ) => {
-        calls.push({ command, operationDescription, keepAlive, timeout });
-        return {
+        calls.push({ command, operationDescription, keepAlive, opts });
+        void detached;
+        return createMockCommandResponse({
           success: true,
           output: 'Status bar cleared successfully',
           error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       await sim_statusbarLogic(
@@ -242,7 +248,7 @@ describe('sim_statusbar tool', () => {
         command: ['xcrun', 'simctl', 'status_bar', 'test-uuid-123', 'clear'],
         operationDescription: 'Set Status Bar',
         keepAlive: true,
-        timeout: undefined,
+        opts: undefined,
       });
     });
 

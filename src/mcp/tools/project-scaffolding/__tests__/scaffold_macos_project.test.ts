@@ -14,6 +14,7 @@ import {
   createMockFileSystemExecutor,
   createNoopExecutor,
   createMockExecutor,
+  createMockCommandResponse,
 } from '../../../../test-utils/mock-executors.ts';
 import plugin, { scaffold_macos_projectLogic } from '../scaffold_macos_project.ts';
 import { TemplateManager } from '../../../../utils/template/index.ts';
@@ -171,12 +172,10 @@ describe('scaffold_macos_project plugin', () => {
       let capturedCommands: string[][] = [];
       const trackingExecutor = async (command: string[]) => {
         capturedCommands.push(command);
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'Command successful',
-          error: undefined,
-          process: { pid: 12345 },
-        };
+        });
       };
 
       // Store original environment variable
@@ -200,6 +199,7 @@ describe('scaffold_macos_project plugin', () => {
       await scaffold_macos_projectLogic(
         {
           projectName: 'TestMacApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         trackingExecutor,
@@ -228,9 +228,9 @@ describe('scaffold_macos_project plugin', () => {
       const result = await scaffold_macos_projectLogic(
         {
           projectName: 'TestMacApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
           bundleIdentifier: 'com.test.macapp',
-          customizeNames: false,
         },
         createNoopExecutor(),
         mockFileSystemExecutor,
@@ -248,8 +248,8 @@ describe('scaffold_macos_project plugin', () => {
                 message: 'Successfully scaffolded macOS project "TestMacApp" in /tmp/test-projects',
                 nextSteps: [
                   'Important: Before working on the project make sure to read the README.md file in the workspace root directory.',
-                  'Build for macOS: build_macos({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject" })',
-                  'Build & Run on macOS: build_run_macos({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject" })',
+                  'Build for macOS: build_macos({ workspacePath: "/tmp/test-projects/TestMacApp.xcworkspace", scheme: "TestMacApp" })',
+                  'Build & Run on macOS: build_run_macos({ workspacePath: "/tmp/test-projects/TestMacApp.xcworkspace", scheme: "TestMacApp" })',
                 ],
               },
               null,
@@ -304,6 +304,7 @@ describe('scaffold_macos_project plugin', () => {
       const result = await scaffold_macos_projectLogic(
         {
           projectName: '123InvalidName',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         createNoopExecutor(),
@@ -336,6 +337,7 @@ describe('scaffold_macos_project plugin', () => {
       const result = await scaffold_macos_projectLogic(
         {
           projectName: 'TestMacApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         createNoopExecutor(),
@@ -366,6 +368,7 @@ describe('scaffold_macos_project plugin', () => {
       const result = await scaffold_macos_projectLogic(
         {
           projectName: 'TestMacApp',
+          customizeNames: true,
           outputPath: '/tmp/test-projects',
         },
         createNoopExecutor(),
@@ -396,8 +399,8 @@ describe('scaffold_macos_project plugin', () => {
       await scaffold_macos_projectLogic(
         {
           projectName: 'TestApp',
-          outputPath: '/tmp/test',
           customizeNames: true,
+          outputPath: '/tmp/test',
         },
         createNoopExecutor(),
         mockFileSystemExecutor,

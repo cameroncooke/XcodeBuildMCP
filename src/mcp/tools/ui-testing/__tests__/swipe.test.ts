@@ -4,7 +4,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockExecutor,
+  createNoopExecutor,
+  mockProcess,
+} from '../../../../test-utils/mock-executors.ts';
 import { SystemError, DependencyError } from '../../../../utils/responses/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
@@ -19,7 +23,7 @@ function createMockAxeHelpers(): AxeHelpers {
     createAxeNotAvailableResponse: () => ({
       content: [
         {
-          type: 'text',
+          type: 'text' as const,
           text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
         },
       ],
@@ -36,7 +40,7 @@ function createMockAxeHelpersWithNullPath(): AxeHelpers {
     createAxeNotAvailableResponse: () => ({
       content: [
         {
-          type: 'text',
+          type: 'text' as const,
           text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
         },
       ],
@@ -129,7 +133,7 @@ describe('Swipe Plugin', () => {
           success: true,
           output: 'swipe completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -171,7 +175,7 @@ describe('Swipe Plugin', () => {
           success: true,
           output: 'swipe completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -216,7 +220,7 @@ describe('Swipe Plugin', () => {
           success: true,
           output: 'swipe completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -270,7 +274,7 @@ describe('Swipe Plugin', () => {
           success: true,
           output: 'swipe completed',
           error: undefined,
-          process: { pid: 12345 },
+          process: mockProcess,
         };
       };
 
@@ -278,7 +282,7 @@ describe('Swipe Plugin', () => {
         getAxePath: () => '/path/to/bundled/axe',
         getBundledAxeEnvironment: () => ({ AXE_PATH: '/some/path' }),
         createAxeNotAvailableResponse: () => ({
-          content: [{ type: 'text', text: 'AXe tools not available' }],
+          content: [{ type: 'text' as const, text: 'AXe tools not available' }],
           isError: true,
         }),
       };
@@ -367,7 +371,7 @@ describe('Swipe Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Swipe from (100, 200) to (300, 400) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -400,7 +404,7 @@ describe('Swipe Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Swipe from (100, 200) to (300, 400) duration=1.5s simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
@@ -432,7 +436,7 @@ describe('Swipe Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nIf you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
           },
         ],
@@ -464,7 +468,7 @@ describe('Swipe Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: "Error: Failed to simulate swipe: axe command 'swipe' failed.\nDetails: axe command failed",
           },
         ],
@@ -551,7 +555,7 @@ describe('Swipe Plugin', () => {
       expect(result).toEqual({
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text: 'Error: System error executing axe: Failed to execute axe command: String error',
           },
         ],

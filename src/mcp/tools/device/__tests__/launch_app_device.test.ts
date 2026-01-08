@@ -67,10 +67,12 @@ describe('launch_app_device plugin (device-shared)', () => {
         command: string[],
         logPrefix?: string,
         useShell?: boolean,
-        env?: Record<string, string>,
+        opts?: { env?: Record<string, string> },
+        detached?: boolean,
       ) => {
-        calls.push({ command, logPrefix, useShell, env });
-        return mockExecutor(command, logPrefix, useShell, env);
+        calls.push({ command, logPrefix, useShell, env: opts?.env });
+        void detached;
+        return mockExecutor(command, logPrefix, useShell, opts, detached);
       };
 
       await launch_app_deviceLogic(
@@ -192,20 +194,26 @@ describe('launch_app_device plugin (device-shared)', () => {
       const originalReadFile = fs.promises.readFile;
       const originalUnlink = fs.promises.unlink;
 
-      const mockReadFile = (path: string) => {
-        if (path.includes('launch-')) {
-          return Promise.resolve(
-            JSON.stringify({
-              result: {
-                process: {
-                  processIdentifier: 12345,
-                },
+      const mockReadFile = (async (path, options) => {
+        const pathString = String(path);
+        if (pathString.includes('launch-')) {
+          const json = JSON.stringify({
+            result: {
+              process: {
+                processIdentifier: 12345,
               },
-            }),
-          );
+            },
+          });
+          if (typeof options === 'string') {
+            return json;
+          }
+          if (options && typeof options === 'object' && 'encoding' in options && options.encoding) {
+            return json;
+          }
+          return Buffer.from(json);
         }
-        return originalReadFile(path);
-      };
+        return originalReadFile(path, options as BufferEncoding);
+      }) as typeof fs.promises.readFile;
 
       const mockUnlink = () => Promise.resolve();
 
