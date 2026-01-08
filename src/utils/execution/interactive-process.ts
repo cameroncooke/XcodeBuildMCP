@@ -73,9 +73,7 @@ function createInteractiveProcess(
 export function getDefaultInteractiveSpawner(): InteractiveSpawner {
   if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
     throw new Error(
-      `🚨 REAL INTERACTIVE SPAWNER DETECTED IN TEST! 🚨\n` +
-        `This test is trying to spawn a real interactive process.\n` +
-        `Fix: Inject a mock InteractiveSpawner in your test setup.`,
+      'Interactive process spawn blocked in tests. Inject a mock InteractiveSpawner.',
     );
   }
 
