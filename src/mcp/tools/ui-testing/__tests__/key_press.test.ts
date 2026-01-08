@@ -5,6 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import {
+  createMockCommandResponse,
   createMockExecutor,
   createMockFileSystemExecutor,
   createNoopExecutor,
@@ -81,12 +82,12 @@ describe('Key Press Plugin', () => {
       let capturedCommand: string[] = [];
       const trackingExecutor = async (command: string[]) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'key press completed',
           error: undefined,
           process: mockProcess,
-        };
+        });
       };
 
       const mockAxeHelpers = {
@@ -125,12 +126,12 @@ describe('Key Press Plugin', () => {
       let capturedCommand: string[] = [];
       const trackingExecutor = async (command: string[]) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'key press completed',
           error: undefined,
           process: mockProcess,
-        };
+        });
       };
 
       const mockAxeHelpers = {
@@ -172,12 +173,12 @@ describe('Key Press Plugin', () => {
       let capturedCommand: string[] = [];
       const trackingExecutor = async (command: string[]) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'key press completed',
           error: undefined,
           process: mockProcess,
-        };
+        });
       };
 
       const mockAxeHelpers = {
@@ -216,12 +217,12 @@ describe('Key Press Plugin', () => {
       let capturedCommand: string[] = [];
       const trackingExecutor = async (command: string[]) => {
         capturedCommand = command;
-        return {
+        return createMockCommandResponse({
           success: true,
           output: 'key press completed',
           error: undefined,
           process: mockProcess,
-        };
+        });
       };
 
       const mockAxeHelpers = {

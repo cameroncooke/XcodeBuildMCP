@@ -33,6 +33,8 @@ describe('session-show-defaults tool', () => {
     it('should return empty defaults when none set', async () => {
       const result = await plugin.handler();
       expect(result.isError).toBe(false);
+      expect(result.content).toHaveLength(1);
+      expect(typeof result.content[0].text).toBe('string');
       const parsed = JSON.parse(result.content[0].text as string);
       expect(parsed).toEqual({});
     });
@@ -41,6 +43,8 @@ describe('session-show-defaults tool', () => {
       sessionStore.setDefaults({ scheme: 'MyScheme', simulatorId: 'SIM-123' });
       const result = await plugin.handler();
       expect(result.isError).toBe(false);
+      expect(result.content).toHaveLength(1);
+      expect(typeof result.content[0].text).toBe('string');
       const parsed = JSON.parse(result.content[0].text as string);
       expect(parsed.scheme).toBe('MyScheme');
       expect(parsed.simulatorId).toBe('SIM-123');

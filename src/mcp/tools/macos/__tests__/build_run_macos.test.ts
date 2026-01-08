@@ -1,11 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { ChildProcess } from 'child_process';
 import * as z from 'zod';
-import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
+import { createMockExecutor, mockProcess } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import tool, { buildRunMacOSLogic } from '../build_run_macos.ts';
-
-const mockProcess = { pid: 12345 } as unknown as ChildProcess;
 
 describe('build_run_macos', () => {
   beforeEach(() => {
