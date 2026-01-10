@@ -17,8 +17,6 @@
  * It's used by virtually all other modules for status reporting and error logging.
  */
 
-import { createRequire } from 'node:module';
-import { resolve } from 'node:path';
 // Note: Removed "import * as Sentry from '@sentry/node'" to prevent native module loading at import time
 
 const SENTRY_ENABLED =
@@ -58,16 +56,17 @@ function isTestEnv(): boolean {
 
 type SentryModule = typeof import('@sentry/node');
 
-const require = createRequire(
-  typeof __filename === 'string' ? __filename : resolve(process.cwd(), 'package.json'),
-);
 let cachedSentry: SentryModule | null = null;
+let sentryLoadAttempted = false;
 
-function loadSentrySync(): SentryModule | null {
+async function loadSentryAsync(): Promise<SentryModule | null> {
   if (!SENTRY_ENABLED || isTestEnv()) return null;
   if (cachedSentry) return cachedSentry;
+  if (sentryLoadAttempted) return null;
+
+  sentryLoadAttempted = true;
   try {
-    cachedSentry = require('@sentry/node') as SentryModule;
+    cachedSentry = await import('@sentry/node');
     return cachedSentry;
   } catch {
     // If @sentry/node is not installed in some environments, fail silently.
@@ -76,13 +75,20 @@ function loadSentrySync(): SentryModule | null {
 }
 
 function withSentry(cb: (s: SentryModule) => void): void {
-  const s = loadSentrySync();
-  if (!s) return;
-  try {
-    cb(s);
-  } catch {
-    // no-op: avoid throwing inside logger
-  }
+  // Fire-and-forget async Sentry loading
+  loadSentryAsync()
+    .then((s) => {
+      if (s) {
+        try {
+          cb(s);
+        } catch {
+          // no-op: avoid throwing inside logger
+        }
+      }
+    })
+    .catch(() => {
+      // no-op: avoid throwing inside logger
+    });
 }
 
 if (!SENTRY_ENABLED) {
