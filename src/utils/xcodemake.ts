@@ -210,8 +210,14 @@ export async function executeXcodemakeCommand(
 
   const xcodemakeCommand = [getXcodemakeCommand(), ...buildArgs];
 
-  // Remove projectDir from arguments
-  const command = xcodemakeCommand.map((arg) => arg.replace(projectDir + '/', ''));
+  // Remove projectDir from arguments if present at the start
+  const prefix = projectDir + '/';
+  const command = xcodemakeCommand.map((arg) => {
+    if (arg.startsWith(prefix)) {
+      return arg.substring(prefix.length);
+    }
+    return arg;
+  });
 
   return getDefaultCommandExecutor()(command, logPrefix);
 }
