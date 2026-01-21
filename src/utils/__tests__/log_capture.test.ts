@@ -104,7 +104,7 @@ describe('startLogCapture', () => {
       'subsystem == "com.example.app"',
     ]);
     expect(callHistory[0].logPrefix).toBe('OS Log Capture');
-    expect(callHistory[0].useShell).toBe(true);
+    expect(callHistory[0].useShell).toBe(false);
     expect(callHistory[0].detached).toBe(true);
   });
 
@@ -198,11 +198,11 @@ describe('startLogCapture', () => {
       'value',
     ]);
     expect(callHistory[0].logPrefix).toBe('Console Log Capture');
-    expect(callHistory[0].useShell).toBe(true);
+    expect(callHistory[0].useShell).toBe(false);
     expect(callHistory[0].detached).toBe(true);
 
     expect(callHistory[1].logPrefix).toBe('OS Log Capture');
-    expect(callHistory[1].useShell).toBe(true);
+    expect(callHistory[1].useShell).toBe(false);
     expect(callHistory[1].detached).toBe(true);
   });
 });

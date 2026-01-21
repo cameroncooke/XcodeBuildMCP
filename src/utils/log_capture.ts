@@ -147,7 +147,7 @@ export async function startLogCapture(
       const stdoutLogResult = await executor(
         launchCommand,
         'Console Log Capture',
-        true, // useShell
+        false, // useShell
         undefined, // env
         true, // detached - don't wait for this streaming process to complete
       );
@@ -187,7 +187,7 @@ export async function startLogCapture(
     const osLogResult = await executor(
       osLogCommand,
       'OS Log Capture',
-      true, // useShell
+      false, // useShell
       undefined, // env
       true, // detached - don't wait for this streaming process to complete
     );
