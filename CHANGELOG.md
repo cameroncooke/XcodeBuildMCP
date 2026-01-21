@@ -15,6 +15,7 @@
 - Update UI automation guard guidance to point at `debug_continue` when paused.
 - Fix tool loading bugs in static tool registration.
 - Fix xcodemake command argument corruption when project directory path appears as substring in non-path arguments.
+- Fixed Swift syntax error in scaffolded projects by replacing Kotlin 'val' keyword with Swift 'let' (Fixes XCODEBUILD-MCP-132X).
 
 ## [1.16.0] - 2025-12-30
 - Remove dynamic tool discovery (`discover_tools`) and `XCODEBUILDMCP_DYNAMIC_TOOLS`. Use `XCODEBUILDMCP_ENABLED_WORKFLOWS` to limit startup tool registration.

@@ -146,6 +146,19 @@ function updateXCConfigFile(
 }
 
 /**
+ * Fix Swift syntax issues (e.g., Kotlin 'val' keyword should be 'let')
+ */
+function fixSwiftSyntax(content: string): string {
+  let result = content;
+
+  // Replace Kotlin 'val' keyword with Swift 'let'
+  // Match 'val' followed by whitespace and an identifier (variable name)
+  result = result.replace(/\bval\s+(\w+)\s*=/g, 'let $1 =');
+
+  return result;
+}
+
+/**
  * Replace placeholders in a string (for non-XCConfig files)
  */
 function replacePlaceholders(
@@ -212,6 +225,7 @@ async function processFile(
   const isTextFile = textExtensions.some((textExt) => ext.endsWith(textExt));
   const isXCConfig = sourcePath.endsWith('.xcconfig');
   const isPackageSwift = sourcePath.endsWith('Package.swift');
+  const isSwiftFile = sourcePath.endsWith('.swift');
 
   if (isTextFile && params.customizeNames) {
     // Read the file content
@@ -231,6 +245,11 @@ async function processFile(
         params.bundleIdentifier ??
         `com.example.${params.projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
       processedContent = replacePlaceholders(content, params.projectName, bundleIdentifier);
+    }
+
+    // Apply Swift syntax fixes if this is a Swift file
+    if (isSwiftFile) {
+      processedContent = fixSwiftSyntax(processedContent);
     }
 
     await fileSystemExecutor.mkdir(dirname(finalDestPath), { recursive: true });

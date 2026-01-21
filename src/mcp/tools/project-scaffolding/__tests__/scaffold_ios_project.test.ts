@@ -666,4 +666,114 @@ describe('scaffold_ios_project plugin', () => {
       process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH = '/mock/template/path';
     });
   });
+
+  describe('Swift Syntax Fixes', () => {
+    it('should fix Kotlin val keyword in Swift test files', async () => {
+      // Track written files
+      let writtenFiles: Record<string, string> = {};
+      const trackingFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: (path) => {
+          return (
+            path.includes('xcodebuild-mcp-template') ||
+            path.includes('XcodeBuildMCP-iOS-Template') ||
+            path.includes('/template') ||
+            path.endsWith('template') ||
+            path.includes('extracted') ||
+            path.includes('/mock/template/path')
+          );
+        },
+        readFile: async (path) => {
+          // Simulate a Swift test file with Kotlin 'val' keyword
+          if (path.includes('.swift')) {
+            return 'val equal = XCTAssertEqual(actual, expected, message, file: file, line: line)';
+          }
+          return 'template content with MyProject placeholder';
+        },
+        readdir: async () => [
+          { name: 'MyProjectTests.swift', isDirectory: () => false, isFile: () => true } as any,
+        ],
+        mkdir: async () => {},
+        rm: async () => {},
+        cp: async () => {},
+        writeFile: async (path, content) => {
+          writtenFiles[path] = content as string;
+        },
+        stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
+      });
+
+      await scaffold_ios_projectLogic(
+        {
+          projectName: 'TestApp',
+          customizeNames: true,
+          outputPath: '/tmp/test-projects',
+        },
+        mockCommandExecutor,
+        trackingFileSystemExecutor,
+      );
+
+      // Verify that the written Swift file has 'let' instead of 'val'
+      const swiftFiles = Object.entries(writtenFiles).filter(([path]) => path.endsWith('.swift'));
+      expect(swiftFiles.length).toBeGreaterThan(0);
+
+      const [, content] = swiftFiles[0];
+      expect(content).toContain('let equal =');
+      expect(content).not.toContain('val equal =');
+    });
+
+    it('should handle multiple val keywords in a file', async () => {
+      // Track written files
+      let writtenFiles: Record<string, string> = {};
+      const trackingFileSystemExecutor = createMockFileSystemExecutor({
+        existsSync: (path) => {
+          return (
+            path.includes('xcodebuild-mcp-template') ||
+            path.includes('XcodeBuildMCP-iOS-Template') ||
+            path.includes('/template') ||
+            path.endsWith('template') ||
+            path.includes('extracted') ||
+            path.includes('/mock/template/path')
+          );
+        },
+        readFile: async (path) => {
+          // Simulate a Swift test file with multiple Kotlin 'val' keywords
+          if (path.includes('.swift')) {
+            return `val foo = 1
+val bar = 2
+val baz = XCTAssertEqual(a, b)`;
+          }
+          return 'template content with MyProject placeholder';
+        },
+        readdir: async () => [
+          { name: 'MyProjectTests.swift', isDirectory: () => false, isFile: () => true } as any,
+        ],
+        mkdir: async () => {},
+        rm: async () => {},
+        cp: async () => {},
+        writeFile: async (path, content) => {
+          writtenFiles[path] = content as string;
+        },
+        stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
+      });
+
+      await scaffold_ios_projectLogic(
+        {
+          projectName: 'TestApp',
+          customizeNames: true,
+          outputPath: '/tmp/test-projects',
+        },
+        mockCommandExecutor,
+        trackingFileSystemExecutor,
+      );
+
+      // Verify that all 'val' keywords are replaced with 'let'
+      const swiftFiles = Object.entries(writtenFiles).filter(([path]) => path.endsWith('.swift'));
+      expect(swiftFiles.length).toBeGreaterThan(0);
+
+      const [, content] = swiftFiles[0];
+      expect(content).toContain('let foo =');
+      expect(content).toContain('let bar =');
+      expect(content).toContain('let baz =');
+      expect(content).not.toContain('val ');
+    });
+  });
 });
