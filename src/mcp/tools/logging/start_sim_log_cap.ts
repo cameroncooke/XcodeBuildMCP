@@ -25,7 +25,7 @@ const startSimLogCapSchema = z.object({
     .describe('Whether to capture console output (requires app relaunch).'),
   subsystemFilter: z
     .union([z.enum(['app', 'all', 'swiftui']), z.array(z.string())])
-    .optional()
+    .default('app')
     .describe(
       "Controls which log subsystems to capture. Options: 'app' (default, only app logs), 'all' (capture all system logs), 'swiftui' (app + SwiftUI logs for Self._printChanges()), or an array of custom subsystem strings.",
     ),
@@ -34,28 +34,30 @@ const startSimLogCapSchema = z.object({
 // Use z.infer for type safety
 type StartSimLogCapParams = z.infer<typeof startSimLogCapSchema>;
 
+function buildSubsystemFilterDescription(subsystemFilter: SubsystemFilter): string {
+  if (subsystemFilter === 'all') {
+    return 'Capturing all system logs (no subsystem filtering).';
+  }
+  if (subsystemFilter === 'swiftui') {
+    return 'Capturing app logs + SwiftUI logs (includes Self._printChanges()).';
+  }
+  if (Array.isArray(subsystemFilter)) {
+    return `Capturing logs from subsystems: ${subsystemFilter.join(', ')} (plus app bundle ID).`;
+  }
+
+  return 'Only structured logs from the app subsystem are being captured.';
+}
+
 export async function start_sim_log_capLogic(
   params: StartSimLogCapParams,
   _executor: CommandExecutor = getDefaultCommandExecutor(),
   logCaptureFunction: typeof startLogCapture = startLogCapture,
 ): Promise<ToolResponse> {
+  const { bundleId, simulatorId, subsystemFilter } = params;
   const captureConsole = params.captureConsole ?? false;
-  // Normalize subsystem filter with explicit type handling for the union type
-  let subsystemFilter: SubsystemFilter = 'app';
-  if (params.subsystemFilter !== undefined) {
-    if (Array.isArray(params.subsystemFilter)) {
-      subsystemFilter = params.subsystemFilter;
-    } else if (
-      params.subsystemFilter === 'app' ||
-      params.subsystemFilter === 'all' ||
-      params.subsystemFilter === 'swiftui'
-    ) {
-      subsystemFilter = params.subsystemFilter;
-    }
-  }
   const logCaptureParams: Parameters<typeof startLogCapture>[0] = {
-    simulatorUuid: params.simulatorId,
-    bundleId: params.bundleId,
+    simulatorUuid: simulatorId,
+    bundleId,
     captureConsole,
     subsystemFilter,
   };
@@ -67,17 +69,7 @@ export async function start_sim_log_capLogic(
     };
   }
 
-  // Build subsystem filter description for the response
-  let filterDescription: string;
-  if (subsystemFilter === 'all') {
-    filterDescription = 'Capturing all system logs (no subsystem filtering).';
-  } else if (subsystemFilter === 'swiftui') {
-    filterDescription = 'Capturing app logs + SwiftUI logs (includes Self._printChanges()).';
-  } else if (Array.isArray(subsystemFilter)) {
-    filterDescription = `Capturing logs from subsystems: ${subsystemFilter.join(', ')} (plus app bundle ID).`;
-  } else {
-    filterDescription = 'Only structured logs from the app subsystem are being captured.';
-  }
+  const filterDescription = buildSubsystemFilterDescription(subsystemFilter);
 
   return {
     content: [
