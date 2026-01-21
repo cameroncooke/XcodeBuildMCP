@@ -91,11 +91,43 @@ export async function startLogCapture(
   const logFileName = `${LOG_FILE_PREFIX}${logSessionId}.log`;
   const logFilePath = path.join(fileSystem.tmpdir(), logFileName);
 
+  let logStream: Writable | null = null;
+  const processes: ChildProcess[] = [];
+  const closeFailedCapture = async (): Promise<void> => {
+    for (const process of processes) {
+      try {
+        if (!process.killed && process.exitCode === null) {
+          process.kill('SIGTERM');
+        }
+      } catch (error) {
+        log(
+          'warn',
+          `Failed to stop log capture process during cleanup: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+
+    if (logStream) {
+      logStream.end();
+      try {
+        await finished(logStream);
+      } catch (error) {
+        log(
+          'warn',
+          `Failed to flush log stream during cleanup: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
+  };
+
   try {
     await fileSystem.mkdir(fileSystem.tmpdir(), { recursive: true });
     await fileSystem.writeFile(logFilePath, '');
     const logStream = fileSystem.createWriteStream(logFilePath, { flags: 'a' });
-    const processes: ChildProcess[] = [];
     logStream.write('\n--- Log capture for bundle ID: ' + bundleId + ' ---\n');
 
     if (captureConsole) {
@@ -121,6 +153,7 @@ export async function startLogCapture(
       );
 
       if (!stdoutLogResult.success) {
+        await closeFailedCapture();
         return {
           sessionId: '',
           logFilePath: '',
@@ -160,6 +193,7 @@ export async function startLogCapture(
     );
 
     if (!osLogResult.success) {
+      await closeFailedCapture();
       return {
         sessionId: '',
         logFilePath: '',
@@ -189,6 +223,7 @@ export async function startLogCapture(
     log('info', `Log capture started with session ID: ${logSessionId}`);
     return { sessionId: logSessionId, logFilePath, processes };
   } catch (error) {
+    await closeFailedCapture();
     const message = error instanceof Error ? error.message : String(error);
     log('error', `Failed to start log capture: ${message}`);
     return { sessionId: '', logFilePath: '', processes: [], error: message };
