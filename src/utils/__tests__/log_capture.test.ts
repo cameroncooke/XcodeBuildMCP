@@ -1,8 +1,5 @@
 import { ChildProcess } from 'child_process';
-import { createWriteStream } from 'fs';
-import * as fs from 'fs/promises';
-import * as os from 'os';
-import * as path from 'path';
+import { Writable } from 'stream';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   activeLogSessions,
@@ -11,6 +8,7 @@ import {
   type SubsystemFilter,
 } from '../log_capture.ts';
 import { CommandExecutor } from '../CommandExecutor.ts';
+import { FileSystemExecutor } from '../FileSystemExecutor.ts';
 
 type CallHistoryEntry = {
   command: string[];
@@ -61,33 +59,85 @@ function expectPredicate(
   }
 }
 
-const createdFiles: string[] = [];
+type InMemoryFileRecord = { content: string; mtimeMs: number };
+
+function createInMemoryFileSystemExecutor(): FileSystemExecutor {
+  const files = new Map<string, InMemoryFileRecord>();
+  const tempDir = '/virtual/tmp';
+
+  return {
+    mkdir: async () => {},
+    readFile: async (path) => {
+      const record = files.get(path);
+      if (!record) {
+        throw new Error(`Missing file: ${path}`);
+      }
+      return record.content;
+    },
+    writeFile: async (path, content) => {
+      files.set(path, { content, mtimeMs: Date.now() });
+    },
+    createWriteStream: (path) => {
+      const chunks: Buffer[] = [];
+
+      const stream = new Writable({
+        write(chunk, _encoding, callback) {
+          chunks.push(Buffer.from(chunk));
+          callback();
+        },
+        final(callback) {
+          const existing = files.get(path)?.content ?? '';
+          files.set(path, {
+            content: existing + Buffer.concat(chunks).toString('utf8'),
+            mtimeMs: Date.now(),
+          });
+          callback();
+        },
+      });
+
+      return stream as unknown as ReturnType<FileSystemExecutor['createWriteStream']>;
+    },
+    cp: async () => {},
+    readdir: async (dir) => {
+      const prefix = `${dir}/`;
+      return Array.from(files.keys())
+        .filter((filePath) => filePath.startsWith(prefix))
+        .map((filePath) => filePath.slice(prefix.length));
+    },
+    stat: async (path) => {
+      const record = files.get(path);
+      if (!record) {
+        throw new Error(`Missing file: ${path}`);
+      }
+      return { isDirectory: (): boolean => false, mtimeMs: record.mtimeMs };
+    },
+    rm: async (path) => {
+      files.delete(path);
+    },
+    existsSync: (path) => files.has(path),
+    mkdtemp: async (prefix) => `${tempDir}/${prefix}mock-temp`,
+    tmpdir: () => tempDir,
+  };
+}
 
 beforeEach(() => {
   activeLogSessions.clear();
 });
 
-afterEach(async () => {
+afterEach(() => {
   activeLogSessions.clear();
-  await Promise.all(
-    createdFiles.splice(0).map(async (filePath) => {
-      try {
-        await fs.unlink(filePath);
-      } catch {
-        // Ignore cleanup errors for temp files
-      }
-    }),
-  );
 });
 
 describe('startLogCapture', () => {
   it('creates log stream command with app subsystem by default', async () => {
     const callHistory: CallHistoryEntry[] = [];
     const executor = createMockExecutorWithCalls(callHistory);
+    const fileSystem = createInMemoryFileSystemExecutor();
 
     const result = await startLogCapture(
       { simulatorUuid: 'sim-uuid', bundleId: 'com.example.app' },
       executor,
+      fileSystem,
     );
 
     expect(result.error).toBeUndefined();
@@ -111,6 +161,7 @@ describe('startLogCapture', () => {
   it('creates log stream command without predicate when filter is all', async () => {
     const callHistory: CallHistoryEntry[] = [];
     const executor = createMockExecutorWithCalls(callHistory);
+    const fileSystem = createInMemoryFileSystemExecutor();
 
     const result = await startLogCapture(
       {
@@ -119,6 +170,7 @@ describe('startLogCapture', () => {
         subsystemFilter: 'all',
       },
       executor,
+      fileSystem,
     );
 
     expect(result.error).toBeUndefined();
@@ -137,6 +189,7 @@ describe('startLogCapture', () => {
   it('creates log stream command with SwiftUI predicate', async () => {
     const callHistory: CallHistoryEntry[] = [];
     const executor = createMockExecutorWithCalls(callHistory);
+    const fileSystem = createInMemoryFileSystemExecutor();
 
     const result = await startLogCapture(
       {
@@ -145,6 +198,7 @@ describe('startLogCapture', () => {
         subsystemFilter: 'swiftui',
       },
       executor,
+      fileSystem,
     );
 
     expect(result.error).toBeUndefined();
@@ -155,6 +209,7 @@ describe('startLogCapture', () => {
   it('creates log stream command with custom subsystem predicate', async () => {
     const callHistory: CallHistoryEntry[] = [];
     const executor = createMockExecutorWithCalls(callHistory);
+    const fileSystem = createInMemoryFileSystemExecutor();
 
     const result = await startLogCapture(
       {
@@ -163,6 +218,7 @@ describe('startLogCapture', () => {
         subsystemFilter: ['com.apple.UIKit', 'com.apple.CoreData'],
       },
       executor,
+      fileSystem,
     );
 
     expect(result.error).toBeUndefined();
@@ -173,6 +229,7 @@ describe('startLogCapture', () => {
   it('creates console capture and log stream commands when captureConsole is true', async () => {
     const callHistory: CallHistoryEntry[] = [];
     const executor = createMockExecutorWithCalls(callHistory);
+    const fileSystem = createInMemoryFileSystemExecutor();
 
     const result = await startLogCapture(
       {
@@ -182,6 +239,7 @@ describe('startLogCapture', () => {
         args: ['--flag', 'value'],
       },
       executor,
+      fileSystem,
     );
 
     expect(result.error).toBeUndefined();
@@ -209,18 +267,18 @@ describe('startLogCapture', () => {
 
 describe('stopLogCapture', () => {
   it('returns error when session is missing', async () => {
-    const result = await stopLogCapture('missing-session');
+    const fileSystem = createInMemoryFileSystemExecutor();
+    const result = await stopLogCapture('missing-session', fileSystem);
 
     expect(result.logContent).toBe('');
     expect(result.error).toBe('Log capture session not found: missing-session');
   });
 
   it('kills active processes and returns log content', async () => {
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'log-capture-test-'));
-    const logFilePath = path.join(tempDir, 'session.log');
-    await fs.writeFile(logFilePath, 'test log content');
-    createdFiles.push(logFilePath);
-    const logStream = createWriteStream(logFilePath, { flags: 'a' });
+    const fileSystem = createInMemoryFileSystemExecutor();
+    const logFilePath = `${fileSystem.tmpdir()}/session.log`;
+    await fileSystem.writeFile(logFilePath, 'test log content');
+    const logStream = fileSystem.createWriteStream(logFilePath, { flags: 'a' });
 
     let killCount = 0;
     const runningProcess = {
@@ -247,7 +305,7 @@ describe('stopLogCapture', () => {
       logStream,
     });
 
-    const result = await stopLogCapture('session-1');
+    const result = await stopLogCapture('session-1', fileSystem);
 
     expect(result.error).toBeUndefined();
     expect(result.logContent).toBe('test log content');

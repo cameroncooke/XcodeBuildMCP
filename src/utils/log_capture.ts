@@ -127,7 +127,7 @@ export async function startLogCapture(
   try {
     await fileSystem.mkdir(fileSystem.tmpdir(), { recursive: true });
     await fileSystem.writeFile(logFilePath, '');
-    const logStream = fileSystem.createWriteStream(logFilePath, { flags: 'a' });
+    logStream = fileSystem.createWriteStream(logFilePath, { flags: 'a' });
     logStream.write('\n--- Log capture for bundle ID: ' + bundleId + ' ---\n');
 
     if (captureConsole) {
