@@ -8,6 +8,7 @@ import * as z from 'zod';
 import { startLogCapture } from '../../../utils/log-capture/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
 import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import type { SubsystemFilter } from '../../../utils/log_capture.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
