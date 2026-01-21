@@ -66,6 +66,9 @@ describe('start_sim_log_cap plugin', () => {
         }).success,
       ).toBe(true);
       // Invalid values
+      expect(schema.safeParse({ bundleId: 'com.example.app', subsystemFilter: [] }).success).toBe(
+        false,
+      );
       expect(
         schema.safeParse({ bundleId: 'com.example.app', subsystemFilter: 'invalid' }).success,
       ).toBe(false);

@@ -24,7 +24,7 @@ const startSimLogCapSchema = z.object({
     .optional()
     .describe('Whether to capture console output (requires app relaunch).'),
   subsystemFilter: z
-    .union([z.enum(['app', 'all', 'swiftui']), z.array(z.string())])
+    .union([z.enum(['app', 'all', 'swiftui']), z.array(z.string()).min(1)])
     .default('app')
     .describe(
       "Controls which log subsystems to capture. Options: 'app' (default, only app logs), 'all' (capture all system logs), 'swiftui' (app + SwiftUI logs for Self._printChanges()), or an array of custom subsystem strings.",
@@ -42,6 +42,9 @@ function buildSubsystemFilterDescription(subsystemFilter: SubsystemFilter): stri
     return 'Capturing app logs + SwiftUI logs (includes Self._printChanges()).';
   }
   if (Array.isArray(subsystemFilter)) {
+    if (subsystemFilter.length === 0) {
+      return 'Only structured logs from the app subsystem are being captured.';
+    }
     return `Capturing logs from subsystems: ${subsystemFilter.join(', ')} (plus app bundle ID).`;
   }
 
