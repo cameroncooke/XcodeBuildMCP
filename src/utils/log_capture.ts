@@ -1,5 +1,7 @@
 import * as path from 'path';
 import type { ChildProcess } from 'child_process';
+import type { Writable } from 'stream';
+import { finished } from 'stream/promises';
 import { v4 as uuidv4 } from 'uuid';
 import { log } from '../utils/logger.ts';
 import {
@@ -22,6 +24,7 @@ export interface LogSession {
   logFilePath: string;
   simulatorUuid: string;
   bundleId: string;
+  logStream: Writable;
 }
 
 /**
@@ -126,8 +129,8 @@ export async function startLogCapture(
         };
       }
 
-      stdoutLogResult.process.stdout?.pipe(logStream);
-      stdoutLogResult.process.stderr?.pipe(logStream);
+      stdoutLogResult.process.stdout?.pipe(logStream, { end: false });
+      stdoutLogResult.process.stderr?.pipe(logStream, { end: false });
       processes.push(stdoutLogResult.process);
     }
 
@@ -165,8 +168,8 @@ export async function startLogCapture(
       };
     }
 
-    osLogResult.process.stdout?.pipe(logStream);
-    osLogResult.process.stderr?.pipe(logStream);
+    osLogResult.process.stdout?.pipe(logStream, { end: false });
+    osLogResult.process.stderr?.pipe(logStream, { end: false });
     processes.push(osLogResult.process);
 
     for (const process of processes) {
@@ -180,6 +183,7 @@ export async function startLogCapture(
       logFilePath,
       simulatorUuid,
       bundleId,
+      logStream,
     });
 
     log('info', `Log capture started with session ID: ${logSessionId}`);
@@ -206,12 +210,14 @@ export async function stopLogCapture(
 
   try {
     log('info', `Attempting to stop log capture session: ${logSessionId}`);
-    const logFilePath = session.logFilePath;
+    const { logFilePath, logStream } = session;
     for (const process of session.processes) {
       if (!process.killed && process.exitCode === null) {
         process.kill('SIGTERM');
       }
     }
+    logStream.end();
+    await finished(logStream);
     activeLogSessions.delete(logSessionId);
     log(
       'info',

@@ -1,4 +1,5 @@
 import { ChildProcess } from 'child_process';
+import { createWriteStream } from 'fs';
 import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
@@ -219,6 +220,7 @@ describe('stopLogCapture', () => {
     const logFilePath = path.join(tempDir, 'session.log');
     await fs.writeFile(logFilePath, 'test log content');
     createdFiles.push(logFilePath);
+    const logStream = createWriteStream(logFilePath, { flags: 'a' });
 
     let killCount = 0;
     const runningProcess = {
@@ -242,6 +244,7 @@ describe('stopLogCapture', () => {
       logFilePath,
       simulatorUuid: 'sim-uuid',
       bundleId: 'com.example.app',
+      logStream,
     });
 
     const result = await stopLogCapture('session-1');
