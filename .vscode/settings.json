@@ -4,7 +4,6 @@
     "javascript",
     "typescript"
   ],
-  "eslint.runtime": "/opt/homebrew/bin/node",
   "eslint.format.enable": true,
   "eslint.nodePath": "${workspaceFolder}/node_modules",
   "eslint.workingDirectories": [
@@ -29,19 +28,15 @@
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "terminal.integrated.shellIntegration.decorationsEnabled": "never",
-  "vitest.nodeExecutable": "/opt/homebrew/bin/node",
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
-  "chat.mcp.serverSampling": {
-    "XcodeBuildMCP/.vscode/mcp.json: XcodeBuildMCP-Dev": {
-      "allowedDuringChat": true,
-      "allowedModels": [
-        "copilot/gpt-5.2"
-      ]
-    }
-  },
+  "vitest.shellType": "child_process",
+  "vitest.nodeExecutable": "/usr/bin/env",
+  "vitest.nodeExecArgs": [
+    "node"
+  ]
 }
