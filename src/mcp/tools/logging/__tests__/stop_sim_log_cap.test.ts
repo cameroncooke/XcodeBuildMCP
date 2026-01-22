@@ -11,47 +11,17 @@
  * Converted to pure dependency injection without vitest mocking.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
 import stopSimLogCap, { stop_sim_log_capLogic } from '../stop_sim_log_cap.ts';
-import { activeLogSessions } from '../../../../utils/log_capture.ts';
-import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+} from '../../../../test-utils/mock-executors.ts';
 
 describe('stop_sim_log_cap plugin', () => {
-  beforeEach(() => {
-    // Clear any active sessions before each test
-    activeLogSessions.clear();
-  });
-
-  // Helper function to create a test log session
-  async function createTestLogSession(sessionId: string, logContent: string = '') {
-    const mockProcess = {
-      pid: 12345,
-      killed: false,
-      exitCode: null,
-      kill: () => {},
-    };
-
-    const logFilePath = `/tmp/xcodemcp_sim_log_test_${sessionId}.log`;
-    const fileSystem = createMockFileSystemExecutor({
-      existsSync: (path) => path === logFilePath,
-      readFile: async (path, _encoding) => {
-        if (path !== logFilePath) {
-          throw new Error(`ENOENT: no such file or directory, open '${path}'`);
-        }
-        return logContent;
-      },
-    });
-
-    activeLogSessions.set(sessionId, {
-      processes: [mockProcess as any],
-      logFilePath: logFilePath,
-      simulatorUuid: 'test-simulator-uuid',
-      bundleId: 'com.example.TestApp',
-    });
-
-    return { fileSystem, logFilePath };
-  }
+  const mockExecutor = createMockExecutor({ success: true, output: '' });
+  const mockFileSystem = createMockFileSystemExecutor();
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct plugin structure', () => {
@@ -95,13 +65,18 @@ describe('stop_sim_log_cap plugin', () => {
     it('should handle null logSessionId (validation handled by framework)', async () => {
       // With typed tool factory, invalid params won't reach the logic function
       // This test now validates that the logic function works with valid empty strings
-      const { fileSystem } = await createTestLogSession('', 'Log content for empty session');
+      const stopLogCaptureStub = async () => ({
+        logContent: 'Log content for empty session',
+        error: undefined,
+      });
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: '',
         },
-        fileSystem,
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -113,13 +88,18 @@ describe('stop_sim_log_cap plugin', () => {
     it('should handle undefined logSessionId (validation handled by framework)', async () => {
       // With typed tool factory, invalid params won't reach the logic function
       // This test now validates that the logic function works with valid empty strings
-      const { fileSystem } = await createTestLogSession('', 'Log content for empty session');
+      const stopLogCaptureStub = async () => ({
+        logContent: 'Log content for empty session',
+        error: undefined,
+      });
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: '',
         },
-        fileSystem,
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -129,13 +109,18 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle empty string logSessionId', async () => {
-      const { fileSystem } = await createTestLogSession('', 'Log content for empty session');
+      const stopLogCaptureStub = async () => ({
+        logContent: 'Log content for empty session',
+        error: undefined,
+      });
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: '',
         },
-        fileSystem,
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -147,18 +132,22 @@ describe('stop_sim_log_cap plugin', () => {
 
   describe('Function Call Generation', () => {
     it('should call stopLogCapture with correct parameters', async () => {
-      const { fileSystem } = await createTestLogSession(
-        'test-session-id',
-        'Mock log content from file',
-      );
+      let capturedSessionId = '';
+      const stopLogCaptureStub = async (logSessionId: string) => {
+        capturedSessionId = logSessionId;
+        return { logContent: 'Mock log content from file', error: undefined };
+      };
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        fileSystem,
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
+      expect(capturedSessionId).toBe('test-session-id');
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toBe(
         'Log capture session test-session-id stopped successfully. Log content follows:\n\nMock log content from file',
@@ -166,18 +155,22 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should call stopLogCapture with different session ID', async () => {
-      const { fileSystem } = await createTestLogSession(
-        'different-session-id',
-        'Different log content',
-      );
+      let capturedSessionId = '';
+      const stopLogCaptureStub = async (logSessionId: string) => {
+        capturedSessionId = logSessionId;
+        return { logContent: 'Different log content', error: undefined };
+      };
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'different-session-id',
         },
-        fileSystem,
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
+      expect(capturedSessionId).toBe('different-session-id');
       expect(result.isError).toBeUndefined();
       expect(result.content[0].text).toBe(
         'Log capture session different-session-id stopped successfully. Log content follows:\n\nDifferent log content',
@@ -187,16 +180,18 @@ describe('stop_sim_log_cap plugin', () => {
 
   describe('Response Processing', () => {
     it('should handle successful log capture stop', async () => {
-      const { fileSystem } = await createTestLogSession(
-        'test-session-id',
-        'Mock log content from file',
-      );
+      const stopLogCaptureStub = async () => ({
+        logContent: 'Mock log content from file',
+        error: undefined,
+      });
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        fileSystem,
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -206,13 +201,18 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle empty log content', async () => {
-      const { fileSystem } = await createTestLogSession('test-session-id', '');
+      const stopLogCaptureStub = async () => ({
+        logContent: '',
+        error: undefined,
+      });
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        fileSystem,
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -222,16 +222,18 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle multiline log content', async () => {
-      const { fileSystem } = await createTestLogSession(
-        'test-session-id',
-        'Line 1\nLine 2\nLine 3',
-      );
+      const stopLogCaptureStub = async () => ({
+        logContent: 'Line 1\nLine 2\nLine 3',
+        error: undefined,
+      });
 
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'test-session-id',
         },
-        fileSystem,
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
       expect(result.isError).toBeUndefined();
@@ -241,11 +243,18 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle log capture stop errors for non-existent session', async () => {
+      const stopLogCaptureStub = async () => ({
+        logContent: '',
+        error: 'Log capture session not found: non-existent-session',
+      });
+
       const result = await stop_sim_log_capLogic(
         {
           logSessionId: 'non-existent-session',
         },
-        createMockFileSystemExecutor(),
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
       expect(result.isError).toBe(true);
@@ -255,26 +264,18 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle file read errors', async () => {
-      // Create session but make file reading fail in the log_capture utility
-      const mockProcess = {
-        pid: 12345,
-        killed: false,
-        exitCode: null,
-        kill: () => {},
-      };
-
-      activeLogSessions.set('test-session-id', {
-        processes: [mockProcess as any],
-        logFilePath: `/tmp/test_file_not_found.log`,
-        simulatorUuid: 'test-simulator-uuid',
-        bundleId: 'com.example.TestApp',
+      const stopLogCaptureStub = async () => ({
+        logContent: '',
+        error: 'ENOENT: no such file or directory',
       });
 
       const result = await stop_sim_log_capLogic(
-        { logSessionId: 'test-session-id' },
-        createMockFileSystemExecutor({
-          existsSync: () => false,
-        }),
+        {
+          logSessionId: 'test-session-id',
+        },
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
       expect(result.isError).toBe(true);
@@ -284,29 +285,18 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle permission errors', async () => {
-      // Create session but make file reading fail in the log_capture utility
-      const mockProcess = {
-        pid: 12345,
-        killed: false,
-        exitCode: null,
-        kill: () => {},
-      };
-
-      activeLogSessions.set('test-session-id', {
-        processes: [mockProcess as any],
-        logFilePath: `/tmp/test_permission_denied.log`,
-        simulatorUuid: 'test-simulator-uuid',
-        bundleId: 'com.example.TestApp',
+      const stopLogCaptureStub = async () => ({
+        logContent: '',
+        error: 'EACCES: permission denied',
       });
 
       const result = await stop_sim_log_capLogic(
-        { logSessionId: 'test-session-id' },
-        createMockFileSystemExecutor({
-          existsSync: () => true,
-          readFile: async () => {
-            throw new Error('Permission denied');
-          },
-        }),
+        {
+          logSessionId: 'test-session-id',
+        },
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
       expect(result.isError).toBe(true);
@@ -316,29 +306,18 @@ describe('stop_sim_log_cap plugin', () => {
     });
 
     it('should handle various error types', async () => {
-      // Create session but make file reading fail in the log_capture utility
-      const mockProcess = {
-        pid: 12345,
-        killed: false,
-        exitCode: null,
-        kill: () => {},
-      };
-
-      activeLogSessions.set('test-session-id', {
-        processes: [mockProcess as any],
-        logFilePath: `/tmp/test_generic_error.log`,
-        simulatorUuid: 'test-simulator-uuid',
-        bundleId: 'com.example.TestApp',
+      const stopLogCaptureStub = async () => ({
+        logContent: '',
+        error: 'Unexpected error',
       });
 
       const result = await stop_sim_log_capLogic(
-        { logSessionId: 'test-session-id' },
-        createMockFileSystemExecutor({
-          existsSync: () => true,
-          readFile: async () => {
-            throw new Error('Something went wrong');
-          },
-        }),
+        {
+          logSessionId: 'test-session-id',
+        },
+        mockExecutor,
+        stopLogCaptureStub,
+        mockFileSystem,
       );
 
       expect(result.isError).toBe(true);

@@ -8,6 +8,7 @@ import * as z from 'zod';
 import { startLogCapture } from '../../../utils/log-capture/index.ts';
 import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
 import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import type { SubsystemFilter } from '../../../utils/log_capture.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
@@ -23,35 +24,61 @@ const startSimLogCapSchema = z.object({
     .boolean()
     .optional()
     .describe('Whether to capture console output (requires app relaunch).'),
+  subsystemFilter: z
+    .union([z.enum(['app', 'all', 'swiftui']), z.array(z.string()).min(1)])
+    .default('app')
+    .describe(
+      "Controls which log subsystems to capture. Options: 'app' (default, only app logs), 'all' (capture all system logs), 'swiftui' (app + SwiftUI logs for Self._printChanges()), or an array of custom subsystem strings.",
+    ),
 });
 
 // Use z.infer for type safety
 type StartSimLogCapParams = z.infer<typeof startSimLogCapSchema>;
+
+function buildSubsystemFilterDescription(subsystemFilter: SubsystemFilter): string {
+  if (subsystemFilter === 'all') {
+    return 'Capturing all system logs (no subsystem filtering).';
+  }
+  if (subsystemFilter === 'swiftui') {
+    return 'Capturing app logs + SwiftUI logs (includes Self._printChanges()).';
+  }
+  if (Array.isArray(subsystemFilter)) {
+    if (subsystemFilter.length === 0) {
+      return 'Only structured logs from the app subsystem are being captured.';
+    }
+    return `Capturing logs from subsystems: ${subsystemFilter.join(', ')} (plus app bundle ID).`;
+  }
+
+  return 'Only structured logs from the app subsystem are being captured.';
+}
 
 export async function start_sim_log_capLogic(
   params: StartSimLogCapParams,
   _executor: CommandExecutor = getDefaultCommandExecutor(),
   logCaptureFunction: typeof startLogCapture = startLogCapture,
 ): Promise<ToolResponse> {
+  const { bundleId, simulatorId, subsystemFilter } = params;
   const captureConsole = params.captureConsole ?? false;
-  const { sessionId, error } = await logCaptureFunction(
-    {
-      simulatorUuid: params.simulatorId,
-      bundleId: params.bundleId,
-      captureConsole,
-    },
-    _executor,
-  );
+  const logCaptureParams: Parameters<typeof startLogCapture>[0] = {
+    simulatorUuid: simulatorId,
+    bundleId,
+    captureConsole,
+    subsystemFilter,
+  };
+  const { sessionId, error } = await logCaptureFunction(logCaptureParams, _executor);
   if (error) {
     return {
       content: [createTextContent(`Error starting log capture: ${error}`)],
       isError: true,
     };
   }
+
+  const filterDescription = buildSubsystemFilterDescription(subsystemFilter);
+
   return {
     content: [
       createTextContent(
-        `Log capture started successfully. Session ID: ${sessionId}.\n\n${captureConsole ? 'Note: Your app was relaunched to capture console output.' : 'Note: Only structured logs are being captured.'}\n\nNext Steps:\n1.  Interact with your simulator and app.\n2.  Use 'stop_sim_log_cap' with session ID '${sessionId}' to stop capture and retrieve logs.`,
+        `Log capture started successfully. Session ID: ${sessionId}.\n\n${captureConsole ? 'Note: Your app was relaunched to capture console output.\n' : ''}${filterDescription}\n\nNext Steps:\n1.  Interact with your simulator and app.\n2.  Use 'stop_sim_log_cap' with session ID '${sessionId}' to stop capture and retrieve logs.`,
       ),
     ],
   };
@@ -64,7 +91,7 @@ const publicSchemaObject = z.strictObject(
 export default {
   name: 'start_sim_log_cap',
   description:
-    'Starts capturing logs from a specified simulator. Returns a session ID. By default, captures only structured logs.',
+    "Starts capturing logs from a specified simulator. Returns a session ID. Use subsystemFilter to control what logs are captured: 'app' (default), 'all' (everything), 'swiftui' (includes Self._printChanges()), or custom subsystems.",
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: startSimLogCapSchema,
