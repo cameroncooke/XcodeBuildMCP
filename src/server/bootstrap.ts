@@ -27,11 +27,13 @@ export async function bootstrapServer(
     return {};
   });
 
+  const defaultEnabledWorkflows = ['simulator'];
+
   const enabledWorkflows = options.enabledWorkflows?.length
     ? options.enabledWorkflows
     : process.env.XCODEBUILDMCP_ENABLED_WORKFLOWS
       ? parseEnabledWorkflows(process.env.XCODEBUILDMCP_ENABLED_WORKFLOWS)
-      : [];
+      : defaultEnabledWorkflows;
 
   if (enabledWorkflows.length > 0) {
     log('info', `🚀 Initializing server with selected workflows: ${enabledWorkflows.join(', ')}`);
