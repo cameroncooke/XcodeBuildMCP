@@ -1,3 +1,4 @@
-# Smithery configuration file: https://smithery.ai/docs/build/project-config
-runtime: "typescript"
-target: "local"
+runtime: typescript
+target: local
+build:
+  prepackCommand: "bash scripts/smithery-prepack.sh"

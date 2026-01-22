@@ -46,7 +46,7 @@ export async function swift_package_runLogic(
 
   const swiftArgs = ['run', '--package-path', resolvedPath];
 
-  if (params.configuration && params.configuration.toLowerCase() === 'release') {
+  if (params.configuration?.toLowerCase() === 'release') {
     swiftArgs.push('-c', 'release');
   } else if (params.configuration && params.configuration.toLowerCase() !== 'debug') {
     return createTextResponse("Invalid configuration. Use 'debug' or 'release'.", true);

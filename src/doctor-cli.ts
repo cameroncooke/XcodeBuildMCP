@@ -24,7 +24,7 @@ async function runDoctor(): Promise<void> {
     // Output the doctor information
     if (result.content && result.content.length > 0) {
       const textContent = result.content.find((item) => item.type === 'text');
-      if (textContent && textContent.type === 'text') {
+      if (textContent?.type === 'text') {
         // eslint-disable-next-line no-console
         console.log(textContent.text);
       } else {

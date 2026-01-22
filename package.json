@@ -15,7 +15,7 @@
     "xcodebuildmcp-doctor": "build/doctor-cli.js"
   },
   "scripts": {
-    "build": "npm run build:tsup && npx smithery build",
+    "build": "npm run build:tsup && npx smithery build --transport stdio",
     "dev": "npm run generate:version && npm run generate:loaders && npx smithery dev",
     "build:tsup": "npm run generate:version && npm run generate:loaders && tsup",
     "dev:tsup": "npm run build:tsup && tsup --watch",

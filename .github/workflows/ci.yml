@@ -26,6 +26,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Use forked Smithery CLI (stdio prepack)
+      run: npm install --no-save --no-package-lock @smithery/cli@github:cameroncooke/cli#stdio-prepack-hook
+
     - name: Bundle AXe artifacts
       run: npm run bundle:axe
 

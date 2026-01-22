@@ -29,7 +29,7 @@ export async function swift_package_buildLogic(
   const resolvedPath = path.resolve(params.packagePath);
   const swiftArgs = ['build', '--package-path', resolvedPath];
 
-  if (params.configuration && params.configuration.toLowerCase() === 'release') {
+  if (params.configuration?.toLowerCase() === 'release') {
     swiftArgs.push('-c', 'release');
   }
 
