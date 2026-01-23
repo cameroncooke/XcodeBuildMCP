@@ -70,12 +70,12 @@ describe('start_device_log_cap plugin', () => {
     it('should have correct schema structure', () => {
       // Schema should be a plain object for MCP protocol compliance
       expect(typeof plugin.schema).toBe('object');
-      expect(Object.keys(plugin.schema)).toEqual(['bundleId']);
+      expect(Object.keys(plugin.schema)).toEqual([]);
 
       // Validate that schema fields are Zod types that can be used for validation
       const schema = z.strictObject(plugin.schema);
-      expect(schema.safeParse({ bundleId: 'com.test.app' }).success).toBe(true);
-      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({ bundleId: 'com.test.app' }).success).toBe(false);
+      expect(schema.safeParse({}).success).toBe(true);
     });
 
     it('should have handler as a function', () => {
@@ -84,11 +84,12 @@ describe('start_device_log_cap plugin', () => {
   });
 
   describe('Handler Requirements', () => {
-    it('should require deviceId when not provided', async () => {
-      const result = await plugin.handler({ bundleId: 'com.example.MyApp' });
+    it('should require deviceId and bundleId when not provided', async () => {
+      const result = await plugin.handler({});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('deviceId is required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide deviceId and bundleId');
     });
   });
 

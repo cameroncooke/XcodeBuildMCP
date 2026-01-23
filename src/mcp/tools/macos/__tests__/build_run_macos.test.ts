@@ -23,23 +23,17 @@ describe('build_run_macos', () => {
     });
 
     it('should expose only non-session fields in schema', () => {
-      const schema = z.object(tool.schema);
+      const schema = z.strictObject(tool.schema);
 
       expect(schema.safeParse({}).success).toBe(true);
-      expect(
-        schema.safeParse({
-          derivedDataPath: '/tmp/derived',
-          extraArgs: ['--verbose'],
-          preferXcodebuild: true,
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({ extraArgs: ['--verbose'] }).success).toBe(true);
 
-      expect(schema.safeParse({ derivedDataPath: 1 }).success).toBe(false);
+      expect(schema.safeParse({ derivedDataPath: '/tmp/derived' }).success).toBe(false);
       expect(schema.safeParse({ extraArgs: ['--ok', 2] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
 
       const schemaKeys = Object.keys(tool.schema).sort();
-      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs', 'preferXcodebuild'].sort());
+      expect(schemaKeys).toEqual(['extraArgs']);
     });
   });
 

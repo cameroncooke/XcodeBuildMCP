@@ -6,18 +6,27 @@ import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { ToolResponse, createTextContent } from '../../../types/common.ts';
 import { addProcess } from './active-processes.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
-const swiftPackageRunSchema = z.object({
+const baseSchemaObject = z.object({
   packagePath: z.string(),
   executableName: z.string().optional(),
   arguments: z.array(z.string()).optional(),
-  configuration: z.enum(['debug', 'release']).optional(),
+  configuration: z.enum(['debug', 'release', 'Debug', 'Release']).optional(),
   timeout: z.number().optional(),
   background: z.boolean().optional(),
   parseAsLibrary: z.boolean().optional(),
 });
+
+const publicSchemaObject = baseSchemaObject.omit({
+  configuration: true,
+} as const);
+
+const swiftPackageRunSchema = baseSchemaObject;
 
 // Use z.infer for type safety
 type SwiftPackageRunParams = z.infer<typeof swiftPackageRunSchema>;
@@ -210,14 +219,17 @@ export async function swift_package_runLogic(
 export default {
   name: 'swift_package_run',
   description: 'swift package target run.',
-  schema: swiftPackageRunSchema.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }), // MCP SDK compatibility
   annotations: {
     title: 'Swift Package Run',
     destructiveHint: true,
   },
-  handler: createTypedTool(
-    swiftPackageRunSchema,
-    swift_package_runLogic,
-    getDefaultCommandExecutor,
-  ),
+  handler: createSessionAwareTool<SwiftPackageRunParams>({
+    internalSchema: swiftPackageRunSchema,
+    logicFunction: swift_package_runLogic,
+    getExecutor: getDefaultCommandExecutor,
+  }),
 };

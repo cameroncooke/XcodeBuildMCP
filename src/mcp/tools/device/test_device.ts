@@ -65,6 +65,9 @@ const publicSchemaObject = baseSchemaObject.omit({
   scheme: true,
   deviceId: true,
   configuration: true,
+  derivedDataPath: true,
+  preferXcodebuild: true,
+  platform: true,
 } as const);
 
 /**

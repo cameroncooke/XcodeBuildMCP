@@ -5,18 +5,27 @@ import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
-const swiftPackageTestSchema = z.object({
+const baseSchemaObject = z.object({
   packagePath: z.string(),
   testProduct: z.string().optional(),
   filter: z.string().optional().describe('regex: pattern'),
-  configuration: z.enum(['debug', 'release']).optional(),
+  configuration: z.enum(['debug', 'release', 'Debug', 'Release']).optional(),
   parallel: z.boolean().optional(),
   showCodecov: z.boolean().optional(),
   parseAsLibrary: z.boolean().optional(),
 });
+
+const publicSchemaObject = baseSchemaObject.omit({
+  configuration: true,
+} as const);
+
+const swiftPackageTestSchema = baseSchemaObject;
 
 // Use z.infer for type safety
 type SwiftPackageTestParams = z.infer<typeof swiftPackageTestSchema>;
@@ -83,14 +92,17 @@ export async function swift_package_testLogic(
 export default {
   name: 'swift_package_test',
   description: 'Run swift package target tests.',
-  schema: swiftPackageTestSchema.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }), // MCP SDK compatibility
   annotations: {
     title: 'Swift Package Test',
     destructiveHint: true,
   },
-  handler: createTypedTool(
-    swiftPackageTestSchema,
-    swift_package_testLogic,
-    getDefaultCommandExecutor,
-  ),
+  handler: createSessionAwareTool<SwiftPackageTestParams>({
+    internalSchema: swiftPackageTestSchema,
+    logicFunction: swift_package_testLogic,
+    getExecutor: getDefaultCommandExecutor,
+  }),
 };

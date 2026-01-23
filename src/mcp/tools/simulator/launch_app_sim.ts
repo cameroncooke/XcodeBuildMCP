@@ -196,6 +196,7 @@ const publicSchemaObject = z.strictObject(
   baseSchemaObject.omit({
     simulatorId: true,
     simulatorName: true,
+    bundleId: true,
   } as const).shape,
 );
 
@@ -216,6 +217,7 @@ export default {
     getExecutor: getDefaultCommandExecutor,
     requirements: [
       { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+      { allOf: ['bundleId'], message: 'bundleId is required' },
     ],
     exclusivePairs: [['simulatorId', 'simulatorName']],
   }),

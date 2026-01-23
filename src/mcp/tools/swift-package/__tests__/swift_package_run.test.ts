@@ -29,42 +29,50 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should validate schema correctly', () => {
-      // Test packagePath (required string)
-      expect(swiftPackageRun.schema.packagePath.safeParse('valid/path').success).toBe(true);
-      expect(swiftPackageRun.schema.packagePath.safeParse(null).success).toBe(false);
+      const schema = z.strictObject(swiftPackageRun.schema);
 
-      // Test executableName (optional string)
-      expect(swiftPackageRun.schema.executableName.safeParse('MyExecutable').success).toBe(true);
-      expect(swiftPackageRun.schema.executableName.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageRun.schema.executableName.safeParse(123).success).toBe(false);
+      expect(schema.safeParse({ packagePath: 'valid/path' }).success).toBe(true);
+      expect(schema.safeParse({ packagePath: null }).success).toBe(false);
 
-      // Test arguments (optional array of strings)
-      expect(swiftPackageRun.schema.arguments.safeParse(['arg1', 'arg2']).success).toBe(true);
-      expect(swiftPackageRun.schema.arguments.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageRun.schema.arguments.safeParse(['arg1', 123]).success).toBe(false);
+      expect(
+        schema.safeParse({
+          packagePath: 'valid/path',
+          executableName: 'MyExecutable',
+          arguments: ['arg1', 'arg2'],
+          timeout: 30,
+          background: true,
+          parseAsLibrary: true,
+        }).success,
+      ).toBe(true);
 
-      // Test configuration (optional enum)
-      expect(swiftPackageRun.schema.configuration.safeParse('debug').success).toBe(true);
-      expect(swiftPackageRun.schema.configuration.safeParse('release').success).toBe(true);
-      expect(swiftPackageRun.schema.configuration.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageRun.schema.configuration.safeParse('invalid').success).toBe(false);
+      expect(schema.safeParse({ packagePath: 'valid/path', executableName: 123 }).success).toBe(
+        false,
+      );
+      expect(
+        schema.safeParse({ packagePath: 'valid/path', arguments: ['arg1', 123] }).success,
+      ).toBe(false);
+      expect(
+        schema.safeParse({ packagePath: 'valid/path', configuration: 'release' }).success,
+      ).toBe(false);
+      expect(schema.safeParse({ packagePath: 'valid/path', timeout: '30' }).success).toBe(false);
+      expect(schema.safeParse({ packagePath: 'valid/path', background: 'true' }).success).toBe(
+        false,
+      );
+      expect(schema.safeParse({ packagePath: 'valid/path', parseAsLibrary: 'true' }).success).toBe(
+        false,
+      );
 
-      // Test timeout (optional number)
-      expect(swiftPackageRun.schema.timeout.safeParse(30).success).toBe(true);
-      expect(swiftPackageRun.schema.timeout.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageRun.schema.timeout.safeParse('30').success).toBe(false);
-
-      // Test background (optional boolean)
-      expect(swiftPackageRun.schema.background.safeParse(true).success).toBe(true);
-      expect(swiftPackageRun.schema.background.safeParse(false).success).toBe(true);
-      expect(swiftPackageRun.schema.background.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageRun.schema.background.safeParse('true').success).toBe(false);
-
-      // Test parseAsLibrary (optional boolean)
-      expect(swiftPackageRun.schema.parseAsLibrary.safeParse(true).success).toBe(true);
-      expect(swiftPackageRun.schema.parseAsLibrary.safeParse(false).success).toBe(true);
-      expect(swiftPackageRun.schema.parseAsLibrary.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageRun.schema.parseAsLibrary.safeParse('true').success).toBe(false);
+      const schemaKeys = Object.keys(swiftPackageRun.schema).sort();
+      expect(schemaKeys).toEqual(
+        [
+          'arguments',
+          'background',
+          'executableName',
+          'packagePath',
+          'parseAsLibrary',
+          'timeout',
+        ].sort(),
+      );
     });
   });
 

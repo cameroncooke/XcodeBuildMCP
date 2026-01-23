@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import * as z from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
@@ -29,26 +30,33 @@ describe('swift_package_build plugin', () => {
     });
 
     it('should validate schema correctly', () => {
-      // Test required fields
-      expect(swiftPackageBuild.schema.packagePath.safeParse('/test/package').success).toBe(true);
-      expect(swiftPackageBuild.schema.packagePath.safeParse('').success).toBe(true);
+      const schema = z.strictObject(swiftPackageBuild.schema);
 
-      // Test optional fields
-      expect(swiftPackageBuild.schema.targetName.safeParse('MyTarget').success).toBe(true);
-      expect(swiftPackageBuild.schema.targetName.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageBuild.schema.configuration.safeParse('debug').success).toBe(true);
-      expect(swiftPackageBuild.schema.configuration.safeParse('release').success).toBe(true);
-      expect(swiftPackageBuild.schema.configuration.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageBuild.schema.architectures.safeParse(['arm64']).success).toBe(true);
-      expect(swiftPackageBuild.schema.architectures.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageBuild.schema.parseAsLibrary.safeParse(true).success).toBe(true);
-      expect(swiftPackageBuild.schema.parseAsLibrary.safeParse(undefined).success).toBe(true);
+      expect(schema.safeParse({ packagePath: '/test/package' }).success).toBe(true);
+      expect(schema.safeParse({ packagePath: '' }).success).toBe(true);
 
-      // Test invalid inputs
-      expect(swiftPackageBuild.schema.packagePath.safeParse(null).success).toBe(false);
-      expect(swiftPackageBuild.schema.configuration.safeParse('invalid').success).toBe(false);
-      expect(swiftPackageBuild.schema.architectures.safeParse('not-array').success).toBe(false);
-      expect(swiftPackageBuild.schema.parseAsLibrary.safeParse('yes').success).toBe(false);
+      expect(
+        schema.safeParse({
+          packagePath: '/test/package',
+          targetName: 'MyTarget',
+          architectures: ['arm64'],
+          parseAsLibrary: true,
+        }).success,
+      ).toBe(true);
+
+      expect(schema.safeParse({ packagePath: null }).success).toBe(false);
+      expect(
+        schema.safeParse({ packagePath: '/test/package', configuration: 'release' }).success,
+      ).toBe(false);
+      expect(
+        schema.safeParse({ packagePath: '/test/package', architectures: 'not-array' }).success,
+      ).toBe(false);
+      expect(
+        schema.safeParse({ packagePath: '/test/package', parseAsLibrary: 'yes' }).success,
+      ).toBe(false);
+
+      const schemaKeys = Object.keys(swiftPackageBuild.schema).sort();
+      expect(schemaKeys).toEqual(['architectures', 'packagePath', 'parseAsLibrary', 'targetName']);
     });
   });
 

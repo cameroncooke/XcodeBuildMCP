@@ -19,18 +19,17 @@ describe('stop_app_sim tool', () => {
       expect(plugin.description).toBe('Stop sim app.');
     });
 
-    it('should expose public schema with only bundleId', () => {
+    it('should expose empty public schema', () => {
       const schema = z.object(plugin.schema);
 
+      expect(schema.safeParse({}).success).toBe(true);
       expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(schema.safeParse({ bundleId: 42 }).success).toBe(false);
-      expect(Object.keys(plugin.schema)).toEqual(['bundleId']);
+      expect(schema.safeParse({ bundleId: 42 }).success).toBe(true);
+      expect(Object.keys(plugin.schema)).toEqual([]);
 
       const withSessionDefaults = schema.safeParse({
         simulatorId: 'SIM-UUID',
         simulatorName: 'iPhone 16',
-        bundleId: 'com.example.app',
       });
       expect(withSessionDefaults.success).toBe(true);
       const parsed = withSessionDefaults.data as Record<string, unknown>;
@@ -49,16 +48,14 @@ describe('stop_app_sim tool', () => {
       expect(result.content[0].text).toContain('session-set-defaults');
     });
 
-    it('should validate bundleId when simulatorId default exists', async () => {
+    it('should require bundleId when simulatorId default exists', async () => {
       sessionStore.setDefaults({ simulatorId: 'SIM-UUID' });
 
       const result = await plugin.handler({});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain(
-        'bundleId: Invalid input: expected string, received undefined',
-      );
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('bundleId is required');
     });
 
     it('should reject mutually exclusive simulator parameters', async () => {

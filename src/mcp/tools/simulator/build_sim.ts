@@ -141,6 +141,8 @@ const publicSchemaObject = baseSchemaObject.omit({
   simulatorId: true,
   simulatorName: true,
   useLatestOS: true,
+  derivedDataPath: true,
+  preferXcodebuild: true,
 } as const);
 
 export default {

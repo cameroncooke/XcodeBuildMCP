@@ -42,27 +42,23 @@ describe('test_macos plugin (unified)', () => {
     });
 
     it('should validate schema correctly', () => {
-      const schema = z.object(testMacos.schema);
+      const schema = z.strictObject(testMacos.schema);
 
       expect(schema.safeParse({}).success).toBe(true);
       expect(
         schema.safeParse({
-          derivedDataPath: '/path/to/derived-data',
           extraArgs: ['--arg1', '--arg2'],
-          preferXcodebuild: true,
           testRunnerEnv: { FOO: 'BAR' },
         }).success,
       ).toBe(true);
 
-      expect(schema.safeParse({ derivedDataPath: 123 }).success).toBe(false);
+      expect(schema.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
       expect(schema.safeParse({ extraArgs: ['--ok', 1] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
       expect(schema.safeParse({ testRunnerEnv: { FOO: 123 } }).success).toBe(false);
 
       const schemaKeys = Object.keys(testMacos.schema).sort();
-      expect(schemaKeys).toEqual(
-        ['derivedDataPath', 'extraArgs', 'preferXcodebuild', 'testRunnerEnv'].sort(),
-      );
+      expect(schemaKeys).toEqual(['extraArgs', 'testRunnerEnv'].sort());
     });
   });
 

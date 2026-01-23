@@ -617,7 +617,10 @@ const startDeviceLogCapSchema = z.object({
   bundleId: z.string(),
 });
 
-const publicSchemaObject = startDeviceLogCapSchema.omit({ deviceId: true } as const);
+const publicSchemaObject = startDeviceLogCapSchema.omit({
+  deviceId: true,
+  bundleId: true,
+} as const);
 
 // Use z.infer for type safety
 type StartDeviceLogCapParams = z.infer<typeof startDeviceLogCapSchema>;
@@ -683,6 +686,6 @@ export default {
     >,
     logicFunction: start_device_log_capLogic,
     getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],
+    requirements: [{ allOf: ['deviceId', 'bundleId'], message: 'Provide deviceId and bundleId' }],
   }),
 };

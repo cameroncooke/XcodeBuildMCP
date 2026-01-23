@@ -5,16 +5,25 @@ import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
-const swiftPackageBuildSchema = z.object({
+const baseSchemaObject = z.object({
   packagePath: z.string(),
   targetName: z.string().optional(),
-  configuration: z.enum(['debug', 'release']).optional(),
+  configuration: z.enum(['debug', 'release', 'Debug', 'Release']).optional(),
   architectures: z.array(z.string()).optional(),
   parseAsLibrary: z.boolean().optional(),
 });
+
+const publicSchemaObject = baseSchemaObject.omit({
+  configuration: true,
+} as const);
+
+const swiftPackageBuildSchema = baseSchemaObject;
 
 // Use z.infer for type safety
 type SwiftPackageBuildParams = z.infer<typeof swiftPackageBuildSchema>;
@@ -73,14 +82,17 @@ export async function swift_package_buildLogic(
 export default {
   name: 'swift_package_build',
   description: 'swift package target build.',
-  schema: swiftPackageBuildSchema.shape, // MCP SDK compatibility
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }), // MCP SDK compatibility
   annotations: {
     title: 'Swift Package Build',
     destructiveHint: true,
   },
-  handler: createTypedTool(
-    swiftPackageBuildSchema,
-    swift_package_buildLogic,
-    getDefaultCommandExecutor,
-  ),
+  handler: createSessionAwareTool<SwiftPackageBuildParams>({
+    internalSchema: swiftPackageBuildSchema,
+    logicFunction: swift_package_buildLogic,
+    getExecutor: getDefaultCommandExecutor,
+  }),
 };

@@ -144,6 +144,8 @@ const publicSchemaObject = baseSchemaObject.omit({
   workspacePath: true,
   scheme: true,
   configuration: true,
+  derivedDataPath: true,
+  preferXcodebuild: true,
 } as const);
 
 export default {

@@ -26,18 +26,15 @@ describe('launch_app_logs_sim tool', () => {
     it('should expose only non-session fields in public schema', () => {
       const schema = z.object(launchAppLogsSim.schema);
 
+      expect(schema.safeParse({}).success).toBe(true);
+      expect(schema.safeParse({ args: ['--debug'] }).success).toBe(true);
       expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
-      expect(schema.safeParse({ bundleId: 'com.example.app', args: ['--debug'] }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(schema.safeParse({ bundleId: 42 }).success).toBe(false);
+      expect(schema.safeParse({ bundleId: 42 }).success).toBe(true);
 
-      expect(Object.keys(launchAppLogsSim.schema).sort()).toEqual(['args', 'bundleId'].sort());
+      expect(Object.keys(launchAppLogsSim.schema).sort()).toEqual(['args']);
 
       const withSimId = schema.safeParse({
         simulatorId: 'abc123',
-        bundleId: 'com.example.app',
       });
       expect(withSimId.success).toBe(true);
       expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
@@ -46,24 +43,22 @@ describe('launch_app_logs_sim tool', () => {
 
   describe('Handler Requirements', () => {
     it('should require simulatorId when not provided', async () => {
-      const result = await launchAppLogsSim.handler({ bundleId: 'com.example.testapp' });
+      const result = await launchAppLogsSim.handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
-      expect(result.content[0].text).toContain('simulatorId is required');
+      expect(result.content[0].text).toContain('Provide simulatorId and bundleId');
       expect(result.content[0].text).toContain('session-set-defaults');
     });
 
-    it('should validate bundleId when simulatorId default exists', async () => {
+    it('should require bundleId when simulatorId default exists', async () => {
       sessionStore.setDefaults({ simulatorId: 'SIM-UUID' });
 
       const result = await launchAppLogsSim.handler({});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain(
-        'bundleId: Invalid input: expected string, received undefined',
-      );
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide simulatorId and bundleId');
     });
   });
 

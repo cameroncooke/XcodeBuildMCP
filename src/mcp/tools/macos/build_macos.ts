@@ -48,6 +48,8 @@ const publicSchemaObject = baseSchemaObject.omit({
   scheme: true,
   configuration: true,
   arch: true,
+  derivedDataPath: true,
+  preferXcodebuild: true,
 } as const);
 
 const buildMacOSSchema = z.preprocess(

@@ -80,7 +80,7 @@ export async function start_sim_log_capLogic(
 }
 
 const publicSchemaObject = z.strictObject(
-  startSimLogCapSchema.omit({ simulatorId: true } as const).shape,
+  startSimLogCapSchema.omit({ simulatorId: true, bundleId: true } as const).shape,
 );
 
 export default {
@@ -98,6 +98,8 @@ export default {
     internalSchema: startSimLogCapSchema as unknown as z.ZodType<StartSimLogCapParams, unknown>,
     logicFunction: start_sim_log_capLogic,
     getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+    requirements: [
+      { allOf: ['simulatorId', 'bundleId'], message: 'Provide simulatorId and bundleId' },
+    ],
   }),
 };

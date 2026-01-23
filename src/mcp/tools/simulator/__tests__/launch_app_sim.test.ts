@@ -16,36 +16,26 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should expose only non-session fields in public schema', () => {
-      const schema = z.object(launchAppSim.schema);
+      const schema = z.strictObject(launchAppSim.schema);
+
+      expect(schema.safeParse({}).success).toBe(true);
 
       expect(
         schema.safeParse({
-          bundleId: 'com.example.testapp',
-        }).success,
-      ).toBe(true);
-
-      expect(
-        schema.safeParse({
-          bundleId: 'com.example.testapp',
           args: ['--debug'],
         }).success,
       ).toBe(true);
 
-      expect(schema.safeParse({}).success).toBe(false);
+      expect(schema.safeParse({ bundleId: 'com.example.testapp' }).success).toBe(false);
       expect(schema.safeParse({ bundleId: 123 }).success).toBe(false);
-      expect(schema.safeParse({ args: ['--debug'] }).success).toBe(false);
 
-      expect(Object.keys(launchAppSim.schema).sort()).toEqual(['args', 'bundleId'].sort());
+      expect(Object.keys(launchAppSim.schema).sort()).toEqual(['args']);
 
       const withSimDefaults = schema.safeParse({
         simulatorId: 'sim-default',
         simulatorName: 'iPhone 16',
-        bundleId: 'com.example.testapp',
       });
-      expect(withSimDefaults.success).toBe(true);
-      const parsed = withSimDefaults.data as Record<string, unknown>;
-      expect(parsed.simulatorId).toBeUndefined();
-      expect(parsed.simulatorName).toBeUndefined();
+      expect(withSimDefaults.success).toBe(false);
     });
   });
 
@@ -59,16 +49,14 @@ describe('launch_app_sim tool', () => {
       expect(result.content[0].text).toContain('session-set-defaults');
     });
 
-    it('should validate bundleId when simulatorId default exists', async () => {
+    it('should require bundleId when simulatorId default exists', async () => {
       sessionStore.setDefaults({ simulatorId: 'SIM-UUID' });
 
       const result = await launchAppSim.handler({});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Parameter validation failed');
-      expect(result.content[0].text).toContain(
-        'bundleId: Invalid input: expected string, received undefined',
-      );
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('bundleId is required');
     });
 
     it('should reject when both simulatorId and simulatorName provided explicitly', async () => {

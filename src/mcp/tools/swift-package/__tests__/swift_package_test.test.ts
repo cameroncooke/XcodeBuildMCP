@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import * as z from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
@@ -29,31 +30,47 @@ describe('swift_package_test plugin', () => {
     });
 
     it('should validate schema correctly', () => {
-      // Test required fields
-      expect(swiftPackageTest.schema.packagePath.safeParse('/test/package').success).toBe(true);
-      expect(swiftPackageTest.schema.packagePath.safeParse('').success).toBe(true);
+      const schema = z.strictObject(swiftPackageTest.schema);
 
-      // Test optional fields
-      expect(swiftPackageTest.schema.testProduct.safeParse('MyTests').success).toBe(true);
-      expect(swiftPackageTest.schema.testProduct.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageTest.schema.filter.safeParse('Test.*').success).toBe(true);
-      expect(swiftPackageTest.schema.filter.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageTest.schema.configuration.safeParse('debug').success).toBe(true);
-      expect(swiftPackageTest.schema.configuration.safeParse('release').success).toBe(true);
-      expect(swiftPackageTest.schema.configuration.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageTest.schema.parallel.safeParse(true).success).toBe(true);
-      expect(swiftPackageTest.schema.parallel.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageTest.schema.showCodecov.safeParse(true).success).toBe(true);
-      expect(swiftPackageTest.schema.showCodecov.safeParse(undefined).success).toBe(true);
-      expect(swiftPackageTest.schema.parseAsLibrary.safeParse(true).success).toBe(true);
-      expect(swiftPackageTest.schema.parseAsLibrary.safeParse(undefined).success).toBe(true);
+      expect(schema.safeParse({ packagePath: '/test/package' }).success).toBe(true);
+      expect(schema.safeParse({ packagePath: '' }).success).toBe(true);
 
-      // Test invalid inputs
-      expect(swiftPackageTest.schema.packagePath.safeParse(null).success).toBe(false);
-      expect(swiftPackageTest.schema.configuration.safeParse('invalid').success).toBe(false);
-      expect(swiftPackageTest.schema.parallel.safeParse('yes').success).toBe(false);
-      expect(swiftPackageTest.schema.showCodecov.safeParse('yes').success).toBe(false);
-      expect(swiftPackageTest.schema.parseAsLibrary.safeParse('yes').success).toBe(false);
+      expect(
+        schema.safeParse({
+          packagePath: '/test/package',
+          testProduct: 'MyTests',
+          filter: 'Test.*',
+          parallel: true,
+          showCodecov: true,
+          parseAsLibrary: true,
+        }).success,
+      ).toBe(true);
+
+      expect(schema.safeParse({ packagePath: null }).success).toBe(false);
+      expect(
+        schema.safeParse({ packagePath: '/test/package', configuration: 'release' }).success,
+      ).toBe(false);
+      expect(schema.safeParse({ packagePath: '/test/package', parallel: 'yes' }).success).toBe(
+        false,
+      );
+      expect(schema.safeParse({ packagePath: '/test/package', showCodecov: 'yes' }).success).toBe(
+        false,
+      );
+      expect(
+        schema.safeParse({ packagePath: '/test/package', parseAsLibrary: 'yes' }).success,
+      ).toBe(false);
+
+      const schemaKeys = Object.keys(swiftPackageTest.schema).sort();
+      expect(schemaKeys).toEqual(
+        [
+          'filter',
+          'packagePath',
+          'parseAsLibrary',
+          'parallel',
+          'showCodecov',
+          'testProduct',
+        ].sort(),
+      );
     });
   });
 

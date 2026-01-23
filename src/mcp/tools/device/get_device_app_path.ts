@@ -49,6 +49,7 @@ const publicSchemaObject = baseSchemaObject.omit({
   workspacePath: true,
   scheme: true,
   configuration: true,
+  platform: true,
 } as const);
 
 export async function get_device_app_pathLogic(

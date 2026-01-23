@@ -32,24 +32,22 @@ describe('build_run_sim tool', () => {
     });
 
     it('should expose only non-session fields in public schema', () => {
-      const schema = z.object(buildRunSim.schema);
+      const schema = z.strictObject(buildRunSim.schema);
 
       expect(schema.safeParse({}).success).toBe(true);
 
       expect(
         schema.safeParse({
-          derivedDataPath: '/path/to/derived',
           extraArgs: ['--verbose'],
-          preferXcodebuild: false,
         }).success,
       ).toBe(true);
 
-      expect(schema.safeParse({ derivedDataPath: 123 }).success).toBe(false);
+      expect(schema.safeParse({ derivedDataPath: '/path/to/derived' }).success).toBe(false);
       expect(schema.safeParse({ extraArgs: [123] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: false }).success).toBe(false);
 
       const schemaKeys = Object.keys(buildRunSim.schema).sort();
-      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs', 'preferXcodebuild'].sort());
+      expect(schemaKeys).toEqual(['extraArgs']);
       expect(schemaKeys).not.toContain('scheme');
       expect(schemaKeys).not.toContain('simulatorName');
       expect(schemaKeys).not.toContain('projectPath');

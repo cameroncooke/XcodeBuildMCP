@@ -30,6 +30,7 @@ type LaunchAppLogsSimParams = z.infer<typeof launchAppLogsSimSchemaObject>;
 const publicSchemaObject = z.strictObject(
   launchAppLogsSimSchemaObject.omit({
     simulatorId: true,
+    bundleId: true,
   } as const).shape,
 );
 
@@ -83,6 +84,8 @@ export default {
     >,
     logicFunction: launch_app_logs_simLogic,
     getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+    requirements: [
+      { allOf: ['simulatorId', 'bundleId'], message: 'Provide simulatorId and bundleId' },
+    ],
   }),
 };

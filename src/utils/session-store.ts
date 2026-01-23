@@ -11,6 +11,10 @@ export type SessionDefaults = {
   useLatestOS?: boolean;
   arch?: 'arm64' | 'x86_64';
   suppressWarnings?: boolean;
+  derivedDataPath?: string;
+  preferXcodebuild?: boolean;
+  platform?: string;
+  bundleId?: string;
 };
 
 class SessionStore {
