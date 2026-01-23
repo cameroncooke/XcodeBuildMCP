@@ -13,9 +13,7 @@ describe('set_sim_appearance plugin', () => {
     });
 
     it('should have correct description field', () => {
-      expect(setSimAppearancePlugin.description).toBe(
-        'Sets the appearance mode (dark/light) of an iOS simulator.',
-      );
+      expect(setSimAppearancePlugin.description).toBe('Set sim appearance.');
     });
 
     it('should have handler function', () => {

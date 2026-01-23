@@ -8,11 +8,8 @@ import {
 } from '../../../utils/debugger/index.ts';
 
 const debugBreakpointRemoveSchema = z.object({
-  debugSessionId: z
-    .string()
-    .optional()
-    .describe('Debug session ID to target (defaults to current session)'),
-  breakpointId: z.number().int().positive().describe('Breakpoint id to remove'),
+  debugSessionId: z.string().optional().describe('default: current session'),
+  breakpointId: z.number().int().positive(),
 });
 
 export type DebugBreakpointRemoveParams = z.infer<typeof debugBreakpointRemoveSchema>;
@@ -32,7 +29,7 @@ export async function debug_breakpoint_removeLogic(
 
 export default {
   name: 'debug_breakpoint_remove',
-  description: 'Remove a breakpoint by id for the active debug session.',
+  description: 'Remove breakpoint.',
   schema: debugBreakpointRemoveSchema.shape,
   handler: createTypedToolWithContext<DebugBreakpointRemoveParams, DebuggerToolContext>(
     debugBreakpointRemoveSchema,

@@ -33,15 +33,9 @@ const baseSchemaObject = z.object({
   workspacePath: z.string().optional().describe('Path to the .xcworkspace file'),
   scheme: z.string().describe('The scheme to use'),
   configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-  derivedDataPath: z
-    .string()
-    .optional()
-    .describe('Path where build products and other derived data will go'),
-  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-  preferXcodebuild: z
-    .boolean()
-    .optional()
-    .describe('If true, prefers xcodebuild over the experimental incremental build system'),
+  derivedDataPath: z.string().optional(),
+  extraArgs: z.array(z.string()).optional(),
+  preferXcodebuild: z.boolean().optional(),
   testRunnerEnv: z
     .record(z.string(), z.string())
     .optional()
@@ -329,7 +323,7 @@ export async function testMacosLogic(
 
 export default {
   name: 'test_macos',
-  description: 'Runs tests for a macOS target.',
+  description: 'Test macOS target.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

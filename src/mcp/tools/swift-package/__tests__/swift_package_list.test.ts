@@ -16,7 +16,7 @@ describe('swift_package_list plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(swiftPackageList.description).toBe('Lists currently running Swift Package processes');
+      expect(swiftPackageList.description).toBe('List SwiftPM processes.');
     });
 
     it('should have handler function', () => {

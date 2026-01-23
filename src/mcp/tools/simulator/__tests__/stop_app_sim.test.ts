@@ -16,7 +16,7 @@ describe('stop_app_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should expose correct metadata', () => {
       expect(plugin.name).toBe('stop_app_sim');
-      expect(plugin.description).toBe('Stops an app running in an iOS simulator.');
+      expect(plugin.description).toBe('Stop sim app.');
     });
 
     it('should expose public schema with only bundleId', () => {

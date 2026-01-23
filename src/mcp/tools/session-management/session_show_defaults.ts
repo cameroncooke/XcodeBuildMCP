@@ -3,7 +3,7 @@ import type { ToolResponse } from '../../../types/common.ts';
 
 export default {
   name: 'session-show-defaults',
-  description: 'Show current session defaults.',
+  description: 'Show session defaults.',
   schema: {},
   annotations: {
     title: 'Show Session Defaults',

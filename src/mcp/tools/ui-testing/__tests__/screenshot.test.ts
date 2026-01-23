@@ -25,9 +25,7 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(screenshotPlugin.description).toBe(
-        "Captures screenshot for visual verification. For UI coordinates, use describe_ui instead (don't determine coordinates from screenshots).",
-      );
+      expect(screenshotPlugin.description).toBe('Capture screenshot.');
     });
 
     it('should have handler function', () => {

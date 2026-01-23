@@ -21,7 +21,7 @@ describe('swift_package_build plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(swiftPackageBuild.description).toBe('Builds a Swift Package with swift build');
+      expect(swiftPackageBuild.description).toBe('swift package target build.');
     });
 
     it('should have handler function', () => {

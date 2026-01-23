@@ -19,7 +19,7 @@ describe('test_sim tool', () => {
     });
 
     it('should have concise description', () => {
-      expect(testSim.description).toBe('Runs tests on an iOS simulator.');
+      expect(testSim.description).toBe('Test on iOS sim.');
     });
 
     it('should have handler function', () => {

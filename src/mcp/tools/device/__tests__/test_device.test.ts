@@ -26,7 +26,7 @@ describe('test_device plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(testDevice.description).toBe('Runs tests on a physical Apple device.');
+      expect(testDevice.description).toBe('Test on device.');
     });
 
     it('should have handler function', () => {

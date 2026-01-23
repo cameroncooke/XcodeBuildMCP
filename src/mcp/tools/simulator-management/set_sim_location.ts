@@ -10,8 +10,8 @@ import {
 // Define schema as ZodObject
 const setSimulatorLocationSchema = z.object({
   simulatorId: z.uuid().describe('UUID of the simulator to use (obtained from list_simulators)'),
-  latitude: z.number().describe('The latitude for the custom location.'),
-  longitude: z.number().describe('The longitude for the custom location.'),
+  latitude: z.number(),
+  longitude: z.number(),
 });
 
 // Use z.infer for type safety
@@ -121,7 +121,7 @@ const publicSchemaObject = z.strictObject(
 
 export default {
   name: 'set_sim_location',
-  description: 'Sets a custom GPS location for the simulator.',
+  description: 'Set sim location.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: setSimulatorLocationSchema,

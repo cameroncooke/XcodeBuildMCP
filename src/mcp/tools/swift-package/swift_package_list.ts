@@ -77,7 +77,7 @@ type SwiftPackageListParams = z.infer<typeof swiftPackageListSchema>;
 
 export default {
   name: 'swift_package_list',
-  description: 'Lists currently running Swift Package processes',
+  description: 'List SwiftPM processes.',
   schema: swiftPackageListSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Swift Package List',

@@ -31,10 +31,22 @@ const swipeSchema = z.object({
   y1: z.number().int({ message: 'Start Y coordinate' }),
   x2: z.number().int({ message: 'End X coordinate' }),
   y2: z.number().int({ message: 'End Y coordinate' }),
-  duration: z.number().min(0, { message: 'Duration must be non-negative' }).optional(),
+  duration: z
+    .number()
+    .min(0, { message: 'Duration must be non-negative' })
+    .optional()
+    .describe('seconds'),
   delta: z.number().min(0, { message: 'Delta must be non-negative' }).optional(),
-  preDelay: z.number().min(0, { message: 'Pre-delay must be non-negative' }).optional(),
-  postDelay: z.number().min(0, { message: 'Post-delay must be non-negative' }).optional(),
+  preDelay: z
+    .number()
+    .min(0, { message: 'Pre-delay must be non-negative' })
+    .optional()
+    .describe('seconds'),
+  postDelay: z
+    .number()
+    .min(0, { message: 'Post-delay must be non-negative' })
+    .optional()
+    .describe('seconds'),
 });
 
 // Use z.infer for type safety
@@ -136,8 +148,7 @@ export async function swipeLogic(
 
 export default {
   name: 'swipe',
-  description:
-    "Swipe from one point to another. Use describe_ui for precise coordinates (don't guess from screenshots). Supports configurable timing.",
+  description: 'Swipe between points.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: swipeSchema,

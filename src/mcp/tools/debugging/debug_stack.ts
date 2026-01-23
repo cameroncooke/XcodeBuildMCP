@@ -8,12 +8,9 @@ import {
 } from '../../../utils/debugger/index.ts';
 
 const debugStackSchema = z.object({
-  debugSessionId: z
-    .string()
-    .optional()
-    .describe('Debug session ID to target (defaults to current session)'),
-  threadIndex: z.number().int().nonnegative().optional().describe('Thread index for backtrace'),
-  maxFrames: z.number().int().positive().optional().describe('Maximum frames to return'),
+  debugSessionId: z.string().optional().describe('default: current session'),
+  threadIndex: z.number().int().nonnegative().optional(),
+  maxFrames: z.number().int().positive().optional(),
 });
 
 export type DebugStackParams = z.infer<typeof debugStackSchema>;
@@ -36,7 +33,7 @@ export async function debug_stackLogic(
 
 export default {
   name: 'debug_stack',
-  description: 'Return a thread backtrace from the active debug session.',
+  description: 'Get backtrace.',
   schema: debugStackSchema.shape,
   handler: createTypedToolWithContext<DebugStackParams, DebuggerToolContext>(
     debugStackSchema,

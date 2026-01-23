@@ -54,9 +54,7 @@ describe('Type Text Plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(typeTextPlugin.description).toBe(
-        'Type text (supports US keyboard characters). Use describe_ui to find text field, tap to focus, then type.',
-      );
+      expect(typeTextPlugin.description).toBe('Type text.');
     });
 
     it('should have handler function', () => {

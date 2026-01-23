@@ -18,7 +18,7 @@ const LOG_PREFIX = '[Doctor]';
 
 // Define schema as ZodObject
 const doctorSchema = z.object({
-  enabled: z.boolean().optional().describe('Optional: dummy parameter to satisfy MCP protocol'),
+  enabled: z.boolean().optional(),
 });
 
 // Use z.infer for type safety
@@ -293,8 +293,7 @@ async function doctorMcpHandler(
 
 export default {
   name: 'doctor',
-  description:
-    'Provides comprehensive information about the MCP server environment, available dependencies, and configuration status.',
+  description: 'MCP environment info.',
   schema: doctorSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Doctor',

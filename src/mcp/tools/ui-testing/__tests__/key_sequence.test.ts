@@ -23,9 +23,7 @@ describe('Key Sequence Plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(keySequencePlugin.description).toBe(
-        'Press key sequence using HID keycodes on iOS simulator with configurable delay',
-      );
+      expect(keySequencePlugin.description).toBe('Press a sequence of keys by their keycodes.');
     });
 
     it('should have handler function', () => {

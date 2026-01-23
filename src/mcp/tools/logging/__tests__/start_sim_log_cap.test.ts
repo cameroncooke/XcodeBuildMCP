@@ -22,9 +22,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        "Starts capturing logs from a specified simulator. Returns a session ID. Use subsystemFilter to control what logs are captured: 'app' (default), 'all' (everything), 'swiftui' (includes Self._printChanges()), or custom subsystems.",
-      );
+      expect(plugin.description).toBe('Start sim log capture.');
     });
 
     it('should have handler as a function', () => {

@@ -45,7 +45,7 @@ const gestureSchema = z.object({
       'swipe-from-bottom-edge',
     ])
     .describe(
-      'The gesture preset to perform. Must be one of: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge.',
+      'scroll-up|scroll-down|scroll-left|scroll-right|swipe-from-left-edge|swipe-from-right-edge|swipe-from-top-edge|swipe-from-bottom-edge',
     ),
   screenWidth: z
     .number()
@@ -53,7 +53,7 @@ const gestureSchema = z.object({
     .min(1)
     .optional()
     .describe(
-      'Optional: Screen width in pixels. Used for gesture calculations. Auto-detected if not provided.',
+      'Screen width in pixels. Used for gesture calculations. Auto-detected if not provided.',
     ),
   screenHeight: z
     .number()
@@ -61,28 +61,28 @@ const gestureSchema = z.object({
     .min(1)
     .optional()
     .describe(
-      'Optional: Screen height in pixels. Used for gesture calculations. Auto-detected if not provided.',
+      'Screen height in pixels. Used for gesture calculations. Auto-detected if not provided.',
     ),
   duration: z
     .number()
     .min(0, { message: 'Duration must be non-negative' })
     .optional()
-    .describe('Optional: Duration of the gesture in seconds.'),
+    .describe('Duration of the gesture in seconds.'),
   delta: z
     .number()
     .min(0, { message: 'Delta must be non-negative' })
     .optional()
-    .describe('Optional: Distance to move in pixels.'),
+    .describe('Distance to move in pixels.'),
   preDelay: z
     .number()
     .min(0, { message: 'Pre-delay must be non-negative' })
     .optional()
-    .describe('Optional: Delay before starting the gesture in seconds.'),
+    .describe('Delay before starting the gesture in seconds.'),
   postDelay: z
     .number()
     .min(0, { message: 'Post-delay must be non-negative' })
     .optional()
-    .describe('Optional: Delay after completing the gesture in seconds.'),
+    .describe('Delay after completing the gesture in seconds.'),
 });
 
 // Use z.infer for type safety
@@ -171,8 +171,7 @@ const publicSchemaObject = z.strictObject(gestureSchema.omit({ simulatorId: true
 
 export default {
   name: 'gesture',
-  description:
-    'Perform gesture on iOS simulator using preset gestures: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge',
+  description: 'Simulator gesture preset.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: gestureSchema,

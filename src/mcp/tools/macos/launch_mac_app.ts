@@ -15,10 +15,8 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const launchMacAppSchema = z.object({
-  appPath: z
-    .string()
-    .describe('Path to the macOS .app bundle to launch (full path to the .app directory)'),
-  args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
+  appPath: z.string(),
+  args: z.array(z.string()).optional(),
 });
 
 // Use z.infer for type safety
@@ -76,8 +74,7 @@ export async function launch_mac_appLogic(
 
 export default {
   name: 'launch_mac_app',
-  description:
-    "Launches a macOS application. IMPORTANT: You MUST provide the appPath parameter. Example: launch_mac_app({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_launch_macos_app.",
+  description: 'Launch macOS app.',
   schema: launchMacAppSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Launch macOS App',

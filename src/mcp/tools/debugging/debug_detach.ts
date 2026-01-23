@@ -8,10 +8,7 @@ import {
 } from '../../../utils/debugger/index.ts';
 
 const debugDetachSchema = z.object({
-  debugSessionId: z
-    .string()
-    .optional()
-    .describe('Debug session ID to detach (defaults to current session)'),
+  debugSessionId: z.string().optional().describe('default: current session'),
 });
 
 export type DebugDetachParams = z.infer<typeof debugDetachSchema>;
@@ -33,7 +30,7 @@ export async function debug_detachLogic(
 
 export default {
   name: 'debug_detach',
-  description: 'Detach the current debugger session or a specific debugSessionId.',
+  description: 'Detach debugger.',
   schema: debugDetachSchema.shape,
   handler: createTypedToolWithContext<DebugDetachParams, DebuggerToolContext>(
     debugDetachSchema,

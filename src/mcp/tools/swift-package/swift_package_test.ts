@@ -9,19 +9,13 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const swiftPackageTestSchema = z.object({
-  packagePath: z.string().describe('Path to the Swift package root (Required)'),
-  testProduct: z.string().optional().describe('Optional specific test product to run'),
-  filter: z.string().optional().describe('Filter tests by name (regex pattern)'),
-  configuration: z
-    .enum(['debug', 'release'])
-    .optional()
-    .describe('Swift package configuration (debug, release)'),
-  parallel: z.boolean().optional().describe('Run tests in parallel (default: true)'),
-  showCodecov: z.boolean().optional().describe('Show code coverage (default: false)'),
-  parseAsLibrary: z
-    .boolean()
-    .optional()
-    .describe('Add -parse-as-library flag for @main support (default: false)'),
+  packagePath: z.string(),
+  testProduct: z.string().optional(),
+  filter: z.string().optional().describe('regex: pattern'),
+  configuration: z.enum(['debug', 'release']).optional(),
+  parallel: z.boolean().optional(),
+  showCodecov: z.boolean().optional(),
+  parseAsLibrary: z.boolean().optional(),
 });
 
 // Use z.infer for type safety
@@ -88,7 +82,7 @@ export async function swift_package_testLogic(
 
 export default {
   name: 'swift_package_test',
-  description: 'Runs tests for a Swift Package with swift test',
+  description: 'Run swift package target tests.',
   schema: swiftPackageTestSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Swift Package Test',

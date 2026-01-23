@@ -19,40 +19,18 @@ import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 
 // Common base schema for both iOS and macOS
 const BaseScaffoldSchema = z.object({
-  projectName: z.string().min(1).describe('Name of the new project'),
-  outputPath: z.string().describe('Path where the project should be created'),
-  bundleIdentifier: z
-    .string()
-    .optional()
-    .describe(
-      'Bundle identifier (e.g., com.example.myapp). If not provided, will use com.example.projectname',
-    ),
-  displayName: z
-    .string()
-    .optional()
-    .describe(
-      'App display name (shown on home screen/dock). If not provided, will use projectName',
-    ),
-  marketingVersion: z
-    .string()
-    .optional()
-    .describe('Marketing version (e.g., 1.0, 2.1.3). If not provided, will use 1.0'),
-  currentProjectVersion: z
-    .string()
-    .optional()
-    .describe('Build number (e.g., 1, 42, 100). If not provided, will use 1'),
-  customizeNames: z
-    .boolean()
-    .default(true)
-    .describe('Whether to customize project names and identifiers. Default is true.'),
+  projectName: z.string().min(1),
+  outputPath: z.string(),
+  bundleIdentifier: z.string().optional(),
+  displayName: z.string().optional(),
+  marketingVersion: z.string().optional(),
+  currentProjectVersion: z.string().optional(),
+  customizeNames: z.boolean().default(true),
 });
 
 // macOS-specific schema
 const ScaffoldmacOSProjectSchema = BaseScaffoldSchema.extend({
-  deploymentTarget: z
-    .string()
-    .optional()
-    .describe('macOS deployment target (e.g., 15.4, 14.0). If not provided, will use 15.4'),
+  deploymentTarget: z.string().optional(),
 });
 
 // Use z.infer for type safety
@@ -404,8 +382,7 @@ export async function scaffold_macos_projectLogic(
 
 export default {
   name: 'scaffold_macos_project',
-  description:
-    'Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.',
+  description: 'Scaffold macOS project.',
   schema: ScaffoldmacOSProjectSchema.shape,
   annotations: {
     title: 'Scaffold macOS Project',

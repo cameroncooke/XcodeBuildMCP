@@ -59,9 +59,7 @@ describe('Swipe Plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(swipePlugin.description).toBe(
-        "Swipe from one point to another. Use describe_ui for precise coordinates (don't guess from screenshots). Supports configurable timing.",
-      );
+      expect(swipePlugin.description).toBe('Swipe between points.');
     });
 
     it('should have handler function', () => {

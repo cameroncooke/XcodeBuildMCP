@@ -64,7 +64,7 @@ describe('start_device_log_cap plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe('Starts log capture on a connected device.');
+      expect(plugin.description).toBe('Start device log capture.');
     });
 
     it('should have correct schema structure', () => {

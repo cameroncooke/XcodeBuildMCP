@@ -19,9 +19,7 @@ describe('Button Plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(buttonPlugin.description).toBe(
-        'Press hardware button on iOS simulator. Supported buttons: apple-pay, home, lock, side-button, siri',
-      );
+      expect(buttonPlugin.description).toBe('Press simulator hardware button.');
     });
 
     it('should have handler function', () => {

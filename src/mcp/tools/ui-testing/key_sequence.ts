@@ -34,7 +34,8 @@ const keySequenceSchema = z.object({
   simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
   keyCodes: z
     .array(z.number().int().min(0).max(255))
-    .min(1, { message: 'At least one key code required' }),
+    .min(1, { message: 'At least one key code required' })
+    .describe('HID keycodes'),
   delay: z.number().min(0, { message: 'Delay must be non-negative' }).optional(),
 });
 
@@ -114,7 +115,7 @@ const publicSchemaObject = z.strictObject(
 
 export default {
   name: 'key_sequence',
-  description: 'Press key sequence using HID keycodes on iOS simulator with configurable delay',
+  description: 'Press a sequence of keys by their keycodes.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: keySequenceSchema,

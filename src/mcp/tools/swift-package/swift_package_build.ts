@@ -9,14 +9,11 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const swiftPackageBuildSchema = z.object({
-  packagePath: z.string().describe('Path to the Swift package root (Required)'),
-  targetName: z.string().optional().describe('Optional target to build'),
-  configuration: z
-    .enum(['debug', 'release'])
-    .optional()
-    .describe('Swift package configuration (debug, release)'),
-  architectures: z.array(z.string()).optional().describe('Target architectures to build for'),
-  parseAsLibrary: z.boolean().optional().describe('Build as library instead of executable'),
+  packagePath: z.string(),
+  targetName: z.string().optional(),
+  configuration: z.enum(['debug', 'release']).optional(),
+  architectures: z.array(z.string()).optional(),
+  parseAsLibrary: z.boolean().optional(),
 });
 
 // Use z.infer for type safety
@@ -75,7 +72,7 @@ export async function swift_package_buildLogic(
 
 export default {
   name: 'swift_package_build',
-  description: 'Builds a Swift Package with swift build',
+  description: 'swift package target build.',
   schema: swiftPackageBuildSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Swift Package Build',

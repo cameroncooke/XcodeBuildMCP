@@ -16,7 +16,7 @@ describe('Describe UI Plugin', () => {
 
     it('should have correct description', () => {
       expect(describeUIPlugin.description).toBe(
-        'Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation. Requires the target process to be running; paused debugger/breakpoints can yield an empty tree.',
+        'Print view hierarchy with precise view coordinates (x, y, width, height) for visible elements.',
       );
     });
 

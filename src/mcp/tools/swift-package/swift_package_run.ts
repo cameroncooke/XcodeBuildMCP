@@ -10,25 +10,13 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const swiftPackageRunSchema = z.object({
-  packagePath: z.string().describe('Path to the Swift package root (Required)'),
-  executableName: z
-    .string()
-    .optional()
-    .describe('Name of executable to run (defaults to package name)'),
-  arguments: z.array(z.string()).optional().describe('Arguments to pass to the executable'),
-  configuration: z
-    .enum(['debug', 'release'])
-    .optional()
-    .describe("Build configuration: 'debug' (default) or 'release'"),
-  timeout: z.number().optional().describe('Timeout in seconds (default: 30, max: 300)'),
-  background: z
-    .boolean()
-    .optional()
-    .describe('Run in background and return immediately (default: false)'),
-  parseAsLibrary: z
-    .boolean()
-    .optional()
-    .describe('Add -parse-as-library flag for @main support (default: false)'),
+  packagePath: z.string(),
+  executableName: z.string().optional(),
+  arguments: z.array(z.string()).optional(),
+  configuration: z.enum(['debug', 'release']).optional(),
+  timeout: z.number().optional(),
+  background: z.boolean().optional(),
+  parseAsLibrary: z.boolean().optional(),
 });
 
 // Use z.infer for type safety
@@ -221,7 +209,7 @@ export async function swift_package_runLogic(
 
 export default {
   name: 'swift_package_run',
-  description: 'Runs an executable target from a Swift Package with swift run',
+  description: 'swift package target run.',
   schema: swiftPackageRunSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Swift Package Run',

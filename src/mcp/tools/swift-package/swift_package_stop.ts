@@ -5,7 +5,7 @@ import { ToolResponse } from '../../../types/common.ts';
 
 // Define schema as ZodObject
 const swiftPackageStopSchema = z.object({
-  pid: z.number().describe('Process ID (PID) of the running executable'),
+  pid: z.number(),
 });
 
 // Use z.infer for type safety
@@ -103,7 +103,7 @@ export async function swift_package_stopLogic(
 
 export default {
   name: 'swift_package_stop',
-  description: 'Stops a running Swift Package executable started with swift_package_run',
+  description: 'Stop SwiftPM run.',
   schema: swiftPackageStopSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Swift Package Stop',

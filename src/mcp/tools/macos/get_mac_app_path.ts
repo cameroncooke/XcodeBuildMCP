@@ -20,8 +20,8 @@ import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 const baseOptions = {
   scheme: z.string().describe('The scheme to use'),
   configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-  derivedDataPath: z.string().optional().describe('Path to derived data directory'),
-  extraArgs: z.array(z.string()).optional().describe('Additional arguments to pass to xcodebuild'),
+  derivedDataPath: z.string().optional(),
+  extraArgs: z.array(z.string()).optional(),
   arch: z
     .enum(['arm64', 'x86_64'])
     .optional()
@@ -191,7 +191,7 @@ export async function get_mac_app_pathLogic(
 
 export default {
   name: 'get_mac_app_path',
-  description: 'Retrieves the built macOS app bundle path.',
+  description: 'Get macOS built app path.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

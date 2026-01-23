@@ -18,52 +18,25 @@ import { ToolResponse } from '../../../types/common.ts';
 
 // Common base schema for both iOS and macOS
 const BaseScaffoldSchema = z.object({
-  projectName: z.string().min(1).describe('Name of the new project'),
-  outputPath: z.string().describe('Path where the project should be created'),
-  bundleIdentifier: z
-    .string()
-    .optional()
-    .describe(
-      'Bundle identifier (e.g., com.example.myapp). If not provided, will use com.example.projectname',
-    ),
-  displayName: z
-    .string()
-    .optional()
-    .describe(
-      'App display name (shown on home screen/dock). If not provided, will use projectName',
-    ),
-  marketingVersion: z
-    .string()
-    .optional()
-    .describe('Marketing version (e.g., 1.0, 2.1.3). If not provided, will use 1.0'),
-  currentProjectVersion: z
-    .string()
-    .optional()
-    .describe('Build number (e.g., 1, 42, 100). If not provided, will use 1'),
-  customizeNames: z
-    .boolean()
-    .default(true)
-    .describe('Whether to customize project names and identifiers. Default is true.'),
+  projectName: z.string().min(1),
+  outputPath: z.string(),
+  bundleIdentifier: z.string().optional(),
+  displayName: z.string().optional(),
+  marketingVersion: z.string().optional(),
+  currentProjectVersion: z.string().optional(),
+  customizeNames: z.boolean().default(true),
 });
 
 // iOS-specific schema
 const ScaffoldiOSProjectSchema = BaseScaffoldSchema.extend({
-  deploymentTarget: z
-    .string()
-    .optional()
-    .describe('iOS deployment target (e.g., 18.4, 17.0). If not provided, will use 18.4'),
-  targetedDeviceFamily: z
-    .array(z.enum(['iphone', 'ipad', 'universal']))
-    .optional()
-    .describe('Targeted device families'),
+  deploymentTarget: z.string().optional(),
+  targetedDeviceFamily: z.array(z.enum(['iphone', 'ipad', 'universal'])).optional(),
   supportedOrientations: z
     .array(z.enum(['portrait', 'landscape-left', 'landscape-right', 'portrait-upside-down']))
-    .optional()
-    .describe('Supported orientations for iPhone'),
+    .optional(),
   supportedOrientationsIpad: z
     .array(z.enum(['portrait', 'landscape-left', 'landscape-right', 'portrait-upside-down']))
-    .optional()
-    .describe('Supported orientations for iPad'),
+    .optional(),
 });
 
 /**
@@ -498,8 +471,7 @@ async function scaffoldProject(
 
 export default {
   name: 'scaffold_ios_project',
-  description:
-    'Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.',
+  description: 'Scaffold iOS project.',
   schema: ScaffoldiOSProjectSchema.shape,
   annotations: {
     title: 'Scaffold iOS Project',

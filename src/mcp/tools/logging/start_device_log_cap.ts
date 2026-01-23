@@ -614,7 +614,7 @@ async function cleanOldDeviceLogs(fileSystemExecutor: FileSystemExecutor): Promi
 // Define schema as ZodObject
 const startDeviceLogCapSchema = z.object({
   deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
-  bundleId: z.string().describe('Bundle identifier of the app to launch and capture logs for.'),
+  bundleId: z.string(),
 });
 
 const publicSchemaObject = startDeviceLogCapSchema.omit({ deviceId: true } as const);
@@ -667,7 +667,7 @@ export async function start_device_log_capLogic(
 
 export default {
   name: 'start_device_log_cap',
-  description: 'Starts log capture on a connected device.',
+  description: 'Start device log capture.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: startDeviceLogCapSchema,

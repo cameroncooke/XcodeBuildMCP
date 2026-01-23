@@ -20,9 +20,7 @@ describe('sim_statusbar tool', () => {
     });
 
     it('should have correct description', () => {
-      expect(simStatusbar.description).toBe(
-        'Sets the data network indicator in the iOS simulator status bar. Use "clear" to reset all overrides, or specify a network type (hide, wifi, 3g, 4g, lte, lte-a, lte+, 5g, 5g+, 5g-uwb, 5g-uc).',
-      );
+      expect(simStatusbar.description).toBe('Set sim status bar network.');
     });
 
     it('should have handler function', () => {

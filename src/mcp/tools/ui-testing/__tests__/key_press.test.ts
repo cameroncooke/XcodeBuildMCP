@@ -25,9 +25,7 @@ describe('Key Press Plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(keyPressPlugin.description).toBe(
-        'Press a single key by keycode on the simulator. Common keycodes: 40=Return, 42=Backspace, 43=Tab, 44=Space, 58-67=F1-F10.',
-      );
+      expect(keyPressPlugin.description).toBe('Press key by keycode.');
     });
 
     it('should have handler function', () => {

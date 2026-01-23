@@ -32,7 +32,11 @@ const touchSchema = z.object({
   y: z.number().int({ message: 'Y coordinate must be an integer' }),
   down: z.boolean().optional(),
   up: z.boolean().optional(),
-  delay: z.number().min(0, { message: 'Delay must be non-negative' }).optional(),
+  delay: z
+    .number()
+    .min(0, { message: 'Delay must be non-negative' })
+    .optional()
+    .describe('seconds'),
 });
 
 // Use z.infer for type safety
@@ -126,8 +130,7 @@ export async function touchLogic(
 
 export default {
   name: 'touch',
-  description:
-    "Perform touch down/up events at specific coordinates. Use describe_ui for precise coordinates (don't guess from screenshots).",
+  description: 'Touch down/up at coords.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: touchSchema,

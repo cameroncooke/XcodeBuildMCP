@@ -103,8 +103,7 @@ export async function type_textLogic(
 
 export default {
   name: 'type_text',
-  description:
-    'Type text (supports US keyboard characters). Use describe_ui to find text field, tap to focus, then type.',
+  description: 'Type text.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: typeTextSchema,

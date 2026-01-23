@@ -21,9 +21,7 @@ describe('swift_package_clean plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(swiftPackageClean.description).toBe(
-        'Cleans Swift Package build artifacts and derived data',
-      );
+      expect(swiftPackageClean.description).toBe('swift package clean.');
     });
 
     it('should have handler function', () => {

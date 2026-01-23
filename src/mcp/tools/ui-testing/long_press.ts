@@ -35,7 +35,10 @@ const longPressSchema = z.object({
   simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
   x: z.number().int({ message: 'X coordinate for the long press' }),
   y: z.number().int({ message: 'Y coordinate for the long press' }),
-  duration: z.number().positive({ message: 'Duration of the long press in milliseconds' }),
+  duration: z
+    .number()
+    .positive({ message: 'Duration of the long press in milliseconds' })
+    .describe('milliseconds'),
 });
 
 // Use z.infer for type safety
@@ -128,8 +131,7 @@ export async function long_pressLogic(
 
 export default {
   name: 'long_press',
-  description:
-    "Long press at specific coordinates for given duration (ms). Use describe_ui for precise coordinates (don't guess from screenshots).",
+  description: 'Long press at coords.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: longPressSchema,

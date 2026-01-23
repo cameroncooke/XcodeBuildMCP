@@ -22,7 +22,7 @@ const baseSchemaObject = z.object({
     .describe(
       "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
     ),
-  bundleId: z.string().describe("Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"),
+  bundleId: z.string(),
 });
 
 const stopAppSimSchema = z.preprocess(
@@ -157,7 +157,7 @@ const publicSchemaObject = z.strictObject(
 
 export default {
   name: 'stop_app_sim',
-  description: 'Stops an app running in an iOS simulator.',
+  description: 'Stop sim app.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

@@ -26,8 +26,17 @@ import {
 // Define schema as ZodObject
 const keyPressSchema = z.object({
   simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
-  keyCode: z.number().int({ message: 'HID keycode to press (0-255)' }).min(0).max(255),
-  duration: z.number().min(0, { message: 'Duration must be non-negative' }).optional(),
+  keyCode: z
+    .number()
+    .int({ message: 'HID keycode to press (0-255)' })
+    .min(0)
+    .max(255)
+    .describe('HID keycode'),
+  duration: z
+    .number()
+    .min(0, { message: 'Duration must be non-negative' })
+    .optional()
+    .describe('seconds'),
 });
 
 // Use z.infer for type safety
@@ -103,8 +112,7 @@ const publicSchemaObject = z.strictObject(
 
 export default {
   name: 'key_press',
-  description:
-    'Press a single key by keycode on the simulator. Common keycodes: 40=Return, 42=Backspace, 43=Tab, 44=Space, 58-67=F1-F10.',
+  description: 'Press key by keycode.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: keyPressSchema,

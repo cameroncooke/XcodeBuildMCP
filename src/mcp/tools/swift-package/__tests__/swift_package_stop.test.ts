@@ -56,9 +56,7 @@ describe('swift_package_stop plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(swiftPackageStop.description).toBe(
-        'Stops a running Swift Package executable started with swift_package_run',
-      );
+      expect(swiftPackageStop.description).toBe('Stop SwiftPM run.');
     });
 
     it('should have handler function', () => {

@@ -20,9 +20,7 @@ describe('launch_app_logs_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should expose correct metadata', () => {
       expect(launchAppLogsSim.name).toBe('launch_app_logs_sim');
-      expect(launchAppLogsSim.description).toBe(
-        'Launches an app in an iOS simulator and captures its logs.',
-      );
+      expect(launchAppLogsSim.description).toBe('Launch sim app with logs.');
     });
 
     it('should expose only non-session fields in public schema', () => {

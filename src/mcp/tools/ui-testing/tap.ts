@@ -31,8 +31,16 @@ const baseTapSchema = z.object({
   y: z.number().int({ message: 'Y coordinate must be an integer' }).optional(),
   id: z.string().min(1, { message: 'Id must be non-empty' }).optional(),
   label: z.string().min(1, { message: 'Label must be non-empty' }).optional(),
-  preDelay: z.number().min(0, { message: 'Pre-delay must be non-negative' }).optional(),
-  postDelay: z.number().min(0, { message: 'Post-delay must be non-negative' }).optional(),
+  preDelay: z
+    .number()
+    .min(0, { message: 'Pre-delay must be non-negative' })
+    .optional()
+    .describe('seconds'),
+  postDelay: z
+    .number()
+    .min(0, { message: 'Post-delay must be non-negative' })
+    .optional()
+    .describe('seconds'),
 });
 
 const tapSchema = baseTapSchema.superRefine((values, ctx) => {
@@ -192,8 +200,7 @@ export async function tapLogic(
 
 export default {
   name: 'tap',
-  description:
-    "Tap at specific coordinates or target elements by accessibility id or label. Use describe_ui to get precise element coordinates prior to using x/y parameters (don't guess from screenshots). Supports optional timing delays.",
+  description: 'Tap coordinate or element.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseTapSchema,

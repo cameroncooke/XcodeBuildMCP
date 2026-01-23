@@ -28,11 +28,7 @@ async function executeSyncCommand(command: string, executor: CommandExecutor): P
 
 // Define schema as ZodObject
 const getMacBundleIdSchema = z.object({
-  appPath: z
-    .string()
-    .describe(
-      'Path to the macOS .app bundle to extract bundle ID from (full path to the .app directory)',
-    ),
+  appPath: z.string().describe('Path to the .app bundle'),
 });
 
 // Use z.infer for type safety
@@ -122,8 +118,7 @@ export async function get_mac_bundle_idLogic(
 
 export default {
   name: 'get_mac_bundle_id',
-  description:
-    "Extracts the bundle identifier from a macOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_mac_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_macos_bundle_id.",
+  description: 'Extract bundle id from macOS .app.',
   schema: getMacBundleIdSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Get Mac Bundle ID',

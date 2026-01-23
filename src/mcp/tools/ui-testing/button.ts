@@ -21,8 +21,14 @@ import {
 // Define schema as ZodObject
 const buttonSchema = z.object({
   simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
-  buttonType: z.enum(['apple-pay', 'home', 'lock', 'side-button', 'siri']),
-  duration: z.number().min(0, { message: 'Duration must be non-negative' }).optional(),
+  buttonType: z
+    .enum(['apple-pay', 'home', 'lock', 'side-button', 'siri'])
+    .describe('apple-pay|home|lock|side-button|siri'),
+  duration: z
+    .number()
+    .min(0, { message: 'Duration must be non-negative' })
+    .optional()
+    .describe('seconds'),
 });
 
 // Use z.infer for type safety
@@ -96,8 +102,7 @@ const publicSchemaObject = z.strictObject(buttonSchema.omit({ simulatorId: true 
 
 export default {
   name: 'button',
-  description:
-    'Press hardware button on iOS simulator. Supported buttons: apple-pay, home, lock, side-button, siri',
+  description: 'Press simulator hardware button.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: buttonSchema,

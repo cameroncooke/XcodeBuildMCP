@@ -92,9 +92,7 @@ const baseGetSimulatorAppPathSchema = z.object({
     .optional()
     .describe('Path to .xcworkspace file. Provide EITHER this OR projectPath, not both'),
   scheme: z.string().describe('The scheme to use (Required)'),
-  platform: z
-    .enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator'])
-    .describe('Target simulator platform (Required)'),
+  platform: z.enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator']),
   simulatorId: z
     .string()
     .optional()
@@ -305,7 +303,7 @@ const publicSchemaObject = baseGetSimulatorAppPathSchema.omit({
 
 export default {
   name: 'get_sim_app_path',
-  description: 'Retrieves the built app path for an iOS simulator.',
+  description: 'Get sim built app path.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseGetSimulatorAppPathSchema,

@@ -123,7 +123,7 @@ const publicSchemaObject = baseSchemaObject.omit({
 
 export default {
   name: 'list_schemes',
-  description: 'Lists schemes for a project or workspace.',
+  description: 'List Xcode schemes.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

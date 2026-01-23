@@ -24,17 +24,9 @@ const baseOptions = {
     .string()
     .optional()
     .describe('Optional: Build configuration to clean (Debug, Release, etc.)'),
-  derivedDataPath: z
-    .string()
-    .optional()
-    .describe('Optional: Path where derived data might be located'),
-  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
-  preferXcodebuild: z
-    .boolean()
-    .optional()
-    .describe(
-      'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-    ),
+  derivedDataPath: z.string().optional(),
+  extraArgs: z.array(z.string()).optional(),
+  preferXcodebuild: z.boolean().optional(),
   platform: z
     .enum([
       'macOS',
@@ -47,10 +39,7 @@ const baseOptions = {
       'visionOS',
       'visionOS Simulator',
     ])
-    .optional()
-    .describe(
-      'Optional: Platform to clean for (defaults to iOS). Choose from macOS, iOS, iOS Simulator, watchOS, watchOS Simulator, tvOS, tvOS Simulator, visionOS, visionOS Simulator',
-    ),
+    .optional(),
 };
 
 const baseSchemaObject = z.object({
@@ -159,7 +148,7 @@ const publicSchemaObject = baseSchemaObject.omit({
 
 export default {
   name: 'clean',
-  description: 'Cleans build products with xcodebuild.',
+  description: 'Clean build products.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

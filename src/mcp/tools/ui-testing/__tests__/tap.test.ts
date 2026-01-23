@@ -54,9 +54,7 @@ describe('Tap Plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(tapPlugin.description).toBe(
-        "Tap at specific coordinates or target elements by accessibility id or label. Use describe_ui to get precise element coordinates prior to using x/y parameters (don't guess from screenshots). Supports optional timing delays.",
-      );
+      expect(tapPlugin.description).toBe('Tap coordinate or element.');
     });
 
     it('should have handler function', () => {

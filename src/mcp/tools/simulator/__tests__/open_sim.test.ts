@@ -20,7 +20,7 @@ describe('open_sim tool', () => {
     });
 
     it('should have correct description field', () => {
-      expect(openSim.description).toBe('Opens the iOS Simulator app.');
+      expect(openSim.description).toBe('Open Simulator app.');
     });
 
     it('should have handler function', () => {

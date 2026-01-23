@@ -14,7 +14,7 @@ describe('clean (unified) tool', () => {
 
   it('exports correct name/description/schema/handler', () => {
     expect(tool.name).toBe('clean');
-    expect(tool.description).toBe('Cleans build products with xcodebuild.');
+    expect(tool.description).toBe('Clean build products.');
     expect(typeof tool.handler).toBe('function');
 
     const schema = z.strictObject(tool.schema);

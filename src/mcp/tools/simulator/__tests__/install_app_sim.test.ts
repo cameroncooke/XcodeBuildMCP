@@ -21,7 +21,7 @@ describe('install_app_sim tool', () => {
     });
 
     it('should have concise description', () => {
-      expect(installAppSim.description).toBe('Installs an app in an iOS simulator.');
+      expect(installAppSim.description).toBe('Install app on sim.');
     });
 
     it('should expose public schema with only appPath', () => {

@@ -114,7 +114,7 @@ const publicSchemaObject = baseSchemaObject.omit({
 
 export default {
   name: 'show_build_settings',
-  description: 'Shows xcodebuild build settings.',
+  description: 'Show build settings.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

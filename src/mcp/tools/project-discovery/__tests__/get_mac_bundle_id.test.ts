@@ -27,9 +27,7 @@ describe('get_mac_bundle_id plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        "Extracts the bundle identifier from a macOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_mac_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_macos_bundle_id.",
-      );
+      expect(plugin.description).toBe('Extract bundle id from macOS .app.');
     });
 
     it('should have handler function', () => {

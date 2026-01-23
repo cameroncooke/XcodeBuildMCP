@@ -25,7 +25,7 @@ describe('build_device plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(buildDevice.description).toBe('Builds an app for a connected device.');
+      expect(buildDevice.description).toBe('Build for device.');
     });
 
     it('should have handler function', () => {

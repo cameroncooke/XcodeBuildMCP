@@ -12,7 +12,7 @@ describe('launch_app_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should expose correct name and description', () => {
       expect(launchAppSim.name).toBe('launch_app_sim');
-      expect(launchAppSim.description).toBe('Launches an app in an iOS simulator.');
+      expect(launchAppSim.description).toBe('Launch app on simulator.');
     });
 
     it('should expose only non-session fields in public schema', () => {

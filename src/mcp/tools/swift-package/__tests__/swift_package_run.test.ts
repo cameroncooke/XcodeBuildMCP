@@ -21,9 +21,7 @@ describe('swift_package_run plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(swiftPackageRun.description).toBe(
-        'Runs an executable target from a Swift Package with swift run',
-      );
+      expect(swiftPackageRun.description).toBe('swift package target run.');
     });
 
     it('should have handler function', () => {

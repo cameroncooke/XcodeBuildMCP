@@ -19,9 +19,7 @@ describe('Long Press Plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(longPressPlugin.description).toBe(
-        "Long press at specific coordinates for given duration (ms). Use describe_ui for precise coordinates (don't guess from screenshots).",
-      );
+      expect(longPressPlugin.description).toBe('Long press at coords.');
     });
 
     it('should have handler function', () => {

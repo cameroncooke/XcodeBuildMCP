@@ -22,7 +22,7 @@ describe('set_sim_location tool', () => {
     });
 
     it('should have correct description', () => {
-      expect(setSimLocation.description).toBe('Sets a custom GPS location for the simulator.');
+      expect(setSimLocation.description).toBe('Set sim location.');
     });
 
     it('should have handler function', () => {

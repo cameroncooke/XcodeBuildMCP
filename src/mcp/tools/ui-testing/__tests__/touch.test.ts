@@ -20,9 +20,7 @@ describe('Touch Plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(touchPlugin.description).toBe(
-        "Perform touch down/up events at specific coordinates. Use describe_ui for precise coordinates (don't guess from screenshots).",
-      );
+      expect(touchPlugin.description).toBe('Touch down/up at coords.');
     });
 
     it('should have handler function', () => {

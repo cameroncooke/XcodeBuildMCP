@@ -134,17 +134,9 @@ async function _findProjectsRecursive(
 
 // Define schema as ZodObject
 const discoverProjsSchema = z.object({
-  workspaceRoot: z.string().describe('The absolute path of the workspace root to scan within.'),
-  scanPath: z
-    .string()
-    .optional()
-    .describe('Optional: Path relative to workspace root to scan. Defaults to workspace root.'),
-  maxDepth: z
-    .number()
-    .int()
-    .nonnegative()
-    .optional()
-    .describe(`Optional: Maximum directory depth to scan. Defaults to ${DEFAULT_MAX_DEPTH}.`),
+  workspaceRoot: z.string(),
+  scanPath: z.string().optional(),
+  maxDepth: z.number().int().nonnegative().optional(),
 });
 
 // Use z.infer for type safety

@@ -7,11 +7,8 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const stopMacAppSchema = z.object({
-  appName: z
-    .string()
-    .optional()
-    .describe('Name of the application to stop (e.g., "Calculator" or "MyApp")'),
-  processId: z.number().optional().describe('Process ID (PID) of the application to stop'),
+  appName: z.string().optional(),
+  processId: z.number().optional(),
 });
 
 // Use z.infer for type safety
@@ -80,7 +77,7 @@ export async function stop_mac_appLogic(
 
 export default {
   name: 'stop_mac_app',
-  description: 'Stops a running macOS application. Can stop by app name or process ID.',
+  description: 'Stop macOS app.',
   schema: stopMacAppSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Stop macOS App',

@@ -21,10 +21,7 @@ import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 const baseOptions = {
   scheme: z.string().describe('The scheme to use'),
   configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-  platform: z
-    .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
-    .optional()
-    .describe('Target platform (defaults to iOS)'),
+  platform: z.enum(['iOS', 'watchOS', 'tvOS', 'visionOS']).optional().describe('default: iOS'),
 };
 
 const baseSchemaObject = z.object({
@@ -157,7 +154,7 @@ export async function get_device_app_pathLogic(
 
 export default {
   name: 'get_device_app_path',
-  description: 'Retrieves the built app path for a connected device.',
+  description: 'Get device built app path.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

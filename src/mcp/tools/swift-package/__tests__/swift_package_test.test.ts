@@ -21,7 +21,7 @@ describe('swift_package_test plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(swiftPackageTest.description).toBe('Runs tests for a Swift Package with swift test');
+      expect(swiftPackageTest.description).toBe('Run swift package target tests.');
     });
 
     it('should have handler function', () => {

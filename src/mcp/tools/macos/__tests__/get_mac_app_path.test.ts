@@ -24,7 +24,7 @@ describe('get_mac_app_path plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(getMacAppPath.description).toBe('Retrieves the built macOS app bundle path.');
+      expect(getMacAppPath.description).toBe('Get macOS built app path.');
     });
 
     it('should have handler function', () => {

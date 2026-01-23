@@ -21,9 +21,7 @@ const installAppDeviceSchema = z.object({
     .string()
     .min(1, { message: 'Device ID cannot be empty' })
     .describe('UDID of the device (obtained from list_devices)'),
-  appPath: z
-    .string()
-    .describe('Path to the .app bundle to install (full path to the .app directory)'),
+  appPath: z.string(),
 });
 
 const publicSchemaObject = installAppDeviceSchema.omit({ deviceId: true } as const);
@@ -87,7 +85,7 @@ export async function install_app_deviceLogic(
 
 export default {
   name: 'install_app_device',
-  description: 'Installs an app on a connected device.',
+  description: 'Install app on device.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: installAppDeviceSchema,

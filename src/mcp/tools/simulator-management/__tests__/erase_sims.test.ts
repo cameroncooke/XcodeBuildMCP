@@ -10,7 +10,7 @@ describe('erase_sims tool (single simulator)', () => {
     });
 
     it('should have correct description', () => {
-      expect(eraseSims.description).toBe('Erases a simulator by UDID.');
+      expect(eraseSims.description).toBe('Erase simulator.');
     });
 
     it('should have handler function', () => {

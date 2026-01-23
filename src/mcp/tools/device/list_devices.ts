@@ -430,8 +430,7 @@ export async function list_devicesLogic(
 
 export default {
   name: 'list_devices',
-  description:
-    'Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.',
+  description: 'List connected devices.',
   schema: listDevicesSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'List Devices',

@@ -9,7 +9,7 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const swiftPackageCleanSchema = z.object({
-  packagePath: z.string().describe('Path to the Swift package root (Required)'),
+  packagePath: z.string(),
 });
 
 // Use z.infer for type safety
@@ -50,7 +50,7 @@ export async function swift_package_cleanLogic(
 
 export default {
   name: 'swift_package_clean',
-  description: 'Cleans Swift Package build artifacts and derived data',
+  description: 'swift package clean.',
   schema: swiftPackageCleanSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Swift Package Clean',

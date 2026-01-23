@@ -22,10 +22,8 @@ const baseSchemaObject = z.object({
     .describe(
       "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
     ),
-  bundleId: z
-    .string()
-    .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
-  args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
+  bundleId: z.string(),
+  args: z.array(z.string()).optional(),
 });
 
 const launchAppSimSchema = z.preprocess(
@@ -203,7 +201,7 @@ const publicSchemaObject = z.strictObject(
 
 export default {
   name: 'launch_app_sim',
-  description: 'Launches an app in an iOS simulator.',
+  description: 'Launch app on simulator.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

@@ -34,7 +34,7 @@ describe('test_macos plugin (unified)', () => {
     });
 
     it('should have correct description', () => {
-      expect(testMacos.description).toBe('Runs tests for a macOS target.');
+      expect(testMacos.description).toBe('Test macOS target.');
     });
 
     it('should have handler function', () => {

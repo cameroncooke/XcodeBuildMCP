@@ -24,9 +24,7 @@ describe('Gesture Plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(gesturePlugin.description).toBe(
-        'Perform gesture on iOS simulator using preset gestures: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge',
-      );
+      expect(gesturePlugin.description).toBe('Simulator gesture preset.');
     });
 
     it('should have handler function', () => {

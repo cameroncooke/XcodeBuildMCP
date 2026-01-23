@@ -37,9 +37,7 @@ describe('get_app_bundle_id plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        "Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, iPadOS, watchOS, tvOS, visionOS). IMPORTANT: You MUST provide the appPath parameter. Example: get_app_bundle_id({ appPath: '/path/to/your/app.app' })",
-      );
+      expect(plugin.description).toBe('Extract bundle id from .app.');
     });
 
     it('should have handler function', () => {

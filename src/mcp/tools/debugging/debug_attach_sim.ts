@@ -27,22 +27,15 @@ const baseSchemaObject = z.object({
     .describe(
       "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
     ),
-  bundleId: z
-    .string()
-    .optional()
-    .describe("Bundle identifier of the app to attach (e.g., 'com.example.MyApp')"),
-  pid: z.number().int().positive().optional().describe('Process ID to attach directly'),
+  bundleId: z.string().optional(),
+  pid: z.number().int().positive().optional(),
   waitFor: z.boolean().optional().describe('Wait for the process to appear when attaching'),
-  continueOnAttach: z
-    .boolean()
-    .optional()
-    .default(true)
-    .describe('Resume execution automatically after attaching (default: true)'),
+  continueOnAttach: z.boolean().optional().default(true).describe('default: true'),
   makeCurrent: z
     .boolean()
     .optional()
     .default(true)
-    .describe('Set this debug session as the current session (default: true)'),
+    .describe('Set debug session as current (default: true)'),
 });
 
 const debugAttachSchema = z.preprocess(
@@ -167,8 +160,7 @@ const publicSchemaObject = z.strictObject(
 
 export default {
   name: 'debug_attach_sim',
-  description:
-    'Attach LLDB to a running iOS simulator app. Provide bundleId or pid, plus simulator defaults.',
+  description: 'Attach LLDB to sim app.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

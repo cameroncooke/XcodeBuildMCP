@@ -31,7 +31,7 @@ export async function sessionClearDefaultsLogic(params: Params): Promise<ToolRes
 
 export default {
   name: 'session-clear-defaults',
-  description: 'Clear selected or all session defaults.',
+  description: 'Clear session defaults.',
   schema: schemaObj.shape,
   annotations: {
     title: 'Clear Session Defaults',

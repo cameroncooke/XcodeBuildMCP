@@ -146,8 +146,7 @@ export async function screenshotLogic(
 
 export default {
   name: 'screenshot',
-  description:
-    "Captures screenshot for visual verification. For UI coordinates, use describe_ui instead (don't determine coordinates from screenshots).",
+  description: 'Capture screenshot.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: screenshotSchema,

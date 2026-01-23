@@ -91,7 +91,7 @@ const publicSchemaObject = z.strictObject(
 
 export default {
   name: 'reset_sim_location',
-  description: "Resets the simulator's location to default.",
+  description: 'Reset sim location.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: resetSimulatorLocationSchema,

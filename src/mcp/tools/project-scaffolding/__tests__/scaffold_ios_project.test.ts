@@ -72,9 +72,7 @@ describe('scaffold_ios_project plugin', () => {
     });
 
     it('should have correct description field', () => {
-      expect(scaffoldIosProject.description).toBe(
-        'Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.',
-      );
+      expect(scaffoldIosProject.description).toBe('Scaffold iOS project.');
     });
 
     it('should have handler as function', () => {

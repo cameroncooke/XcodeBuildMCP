@@ -14,7 +14,7 @@ import type { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 
 // Define schema as ZodObject
 const stopSimLogCapSchema = z.object({
-  logSessionId: z.string().describe('The session ID returned by start_sim_log_cap.'),
+  logSessionId: z.string(),
 });
 
 // Use z.infer for type safety
@@ -54,7 +54,7 @@ export async function stop_sim_log_capLogic(
 
 export default {
   name: 'stop_sim_log_cap',
-  description: 'Stops an active simulator log capture session and returns the captured logs.',
+  description: 'Stop sim log capture.',
   schema: stopSimLogCapSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Stop Simulator Log Capture',
