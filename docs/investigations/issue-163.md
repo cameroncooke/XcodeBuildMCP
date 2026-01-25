@@ -4,7 +4,7 @@
 Smithery installs ship only the compiled entrypoint, while the server hard-requires a bundled `bundled/axe` path derived from `process.argv[1]`. This makes UI automation (and simulator video capture) fail even when system `axe` exists on PATH, and Doctor can report contradictory statuses.
 
 ## Symptoms
-- UI automation tools (`describe_ui`, `tap`, `swipe`, etc.) fail with "Bundled axe tool not found. UI automation features are not available."
+- UI automation tools (`snapshot_ui`, `tap`, `swipe`, etc.) fail with "Bundled axe tool not found. UI automation features are not available."
 - `doctor` reports system axe present, but UI automation unavailable due to missing bundled binary.
 - Smithery cache lacks `bundled/axe` directory; only `index.cjs`, `manifest.json`, `.metadata.json` present.
 
@@ -25,7 +25,7 @@ Smithery installs ship only the compiled entrypoint, while the server hard-requi
 ### 2026-01-06 - UI automation and video capture gating
 **Hypothesis:** UI tools and video capture preflight fail when `getAxePath()` returns null.
 **Findings:** UI tools call `getAxePath()` and throw `DependencyError` if absent; `record_sim_video` preflights `areAxeToolsAvailable()` and `isAxeAtLeastVersion()`; `startSimulatorVideoCapture` returns error if `getAxePath()` is null.
-**Evidence:** `src/mcp/tools/ui-testing/describe_ui.ts:150-164`, `src/mcp/tools/simulator/record_sim_video.ts:80-88`, `src/utils/video_capture.ts:92-99`
+**Evidence:** `src/mcp/tools/ui-testing/snapshot_ui.ts:150-164`, `src/mcp/tools/simulator/record_sim_video.ts:80-88`, `src/utils/video_capture.ts:92-99`
 **Conclusion:** Confirmed. Missing bundled binary blocks all UI automation and simulator video capture.
 
 ### 2026-01-06 - Doctor output inconsistency

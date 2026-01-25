@@ -19,12 +19,12 @@ import {
 } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
-const describeUiSchema = z.object({
+const snapshotUiSchema = z.object({
   simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
 });
 
 // Use z.infer for type safety
-type DescribeUiParams = z.infer<typeof describeUiSchema>;
+type SnapshotUiParams = z.infer<typeof snapshotUiSchema>;
 
 export interface AxeHelpers {
   getAxePath: () => string | null;
@@ -34,21 +34,21 @@ export interface AxeHelpers {
 
 const LOG_PREFIX = '[AXe]';
 
-// Session tracking for describe_ui warnings (shared across UI tools)
-const describeUITimestamps = new Map<string, { timestamp: number; simulatorId: string }>();
+// Session tracking for snapshot_ui warnings (shared across UI tools)
+const snapshotUiTimestamps = new Map<string, { timestamp: number; simulatorId: string }>();
 
-function recordDescribeUICall(simulatorId: string): void {
-  describeUITimestamps.set(simulatorId, {
+function recordSnapshotUICall(simulatorId: string): void {
+  snapshotUiTimestamps.set(simulatorId, {
     timestamp: Date.now(),
     simulatorId,
   });
 }
 
 /**
- * Core business logic for describe_ui functionality
+ * Core business logic for snapshot_ui functionality
  */
-export async function describe_uiLogic(
-  params: DescribeUiParams,
+export async function snapshot_uiLogic(
+  params: SnapshotUiParams,
   executor: CommandExecutor,
   axeHelpers: AxeHelpers = {
     getAxePath,
@@ -57,7 +57,7 @@ export async function describe_uiLogic(
   },
   debuggerManager: DebuggerManager = getDefaultDebuggerManager(),
 ): Promise<ToolResponse> {
-  const toolName = 'describe_ui';
+  const toolName = 'snapshot_ui';
   const { simulatorId } = params;
   const commandArgs = ['describe-ui'];
 
@@ -79,8 +79,8 @@ export async function describe_uiLogic(
       axeHelpers,
     );
 
-    // Record the describe_ui call for warning system
-    recordDescribeUICall(simulatorId);
+    // Record the snapshot_ui call for warning system
+    recordSnapshotUICall(simulatorId);
 
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
     const response: ToolResponse = {
@@ -94,7 +94,7 @@ export async function describe_uiLogic(
           type: 'text',
           text: `Next Steps:
 - Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)
-- Re-run describe_ui after layout changes
+- Re-run snapshot_ui after layout changes
 - If a debugger is attached, ensure the app is running (not stopped on breakpoints)
 - Screenshots are for visual verification only`,
         },
@@ -126,25 +126,25 @@ export async function describe_uiLogic(
 }
 
 const publicSchemaObject = z.strictObject(
-  describeUiSchema.omit({ simulatorId: true } as const).shape,
+  snapshotUiSchema.omit({ simulatorId: true } as const).shape,
 );
 
 export default {
-  name: 'describe_ui',
+  name: 'snapshot_ui',
   description:
     'Print view hierarchy with precise view coordinates (x, y, width, height) for visible elements.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
-    legacy: describeUiSchema,
+    legacy: snapshotUiSchema,
   }),
   annotations: {
-    title: 'Describe UI',
+    title: 'Snapshot UI',
     readOnlyHint: true,
   },
-  handler: createSessionAwareTool<DescribeUiParams>({
-    internalSchema: describeUiSchema as unknown as z.ZodType<DescribeUiParams, unknown>,
-    logicFunction: (params: DescribeUiParams, executor: CommandExecutor) =>
-      describe_uiLogic(params, executor, {
+  handler: createSessionAwareTool<SnapshotUiParams>({
+    internalSchema: snapshotUiSchema as unknown as z.ZodType<SnapshotUiParams, unknown>,
+    logicFunction: (params: SnapshotUiParams, executor: CommandExecutor) =>
+      snapshot_uiLogic(params, executor, {
         getAxePath,
         getBundledAxeEnvironment,
         createAxeNotAvailableResponse,

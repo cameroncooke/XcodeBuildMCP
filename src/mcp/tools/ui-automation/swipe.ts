@@ -170,25 +170,25 @@ export default {
   }),
 };
 
-// Session tracking for describe_ui warnings
+// Session tracking for snapshot_ui warnings
 interface DescribeUISession {
   timestamp: number;
   simulatorId: string;
 }
 
-const describeUITimestamps = new Map<string, DescribeUISession>();
-const DESCRIBE_UI_WARNING_TIMEOUT = 60000; // 60 seconds
+const snapshotUiTimestamps = new Map<string, DescribeUISession>();
+const SNAPSHOT_UI_WARNING_TIMEOUT = 60000; // 60 seconds
 
 function getCoordinateWarning(simulatorId: string): string | null {
-  const session = describeUITimestamps.get(simulatorId);
+  const session = snapshotUiTimestamps.get(simulatorId);
   if (!session) {
-    return 'Warning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.';
+    return 'Warning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.';
   }
 
   const timeSinceDescribe = Date.now() - session.timestamp;
-  if (timeSinceDescribe > DESCRIBE_UI_WARNING_TIMEOUT) {
+  if (timeSinceDescribe > SNAPSHOT_UI_WARNING_TIMEOUT) {
     const secondsAgo = Math.round(timeSinceDescribe / 1000);
-    return `Warning: describe_ui was last called ${secondsAgo} seconds ago. Consider refreshing UI coordinates with describe_ui instead of using potentially stale coordinates.`;
+    return `Warning: snapshot_ui was last called ${secondsAgo} seconds ago. Consider refreshing UI coordinates with snapshot_ui instead of using potentially stale coordinates.`;
   }
 
   return null;

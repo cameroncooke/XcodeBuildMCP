@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { workflow } from '../index.ts';
 
-describe('ui-testing workflow metadata', () => {
+describe('ui-automation workflow metadata', () => {
   describe('Workflow Structure', () => {
     it('should export workflow object with required properties', () => {
       expect(workflow).toHaveProperty('name');
@@ -12,7 +12,7 @@ describe('ui-testing workflow metadata', () => {
     });
 
     it('should have correct workflow name', () => {
-      expect(workflow.name).toBe('UI Testing & Automation');
+      expect(workflow.name).toBe('UI Automation');
     });
 
     it('should have correct description', () => {

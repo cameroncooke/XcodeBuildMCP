@@ -370,7 +370,7 @@ describe('Swipe Plugin', () => {
         content: [
           {
             type: 'text' as const,
-            text: 'Swipe from (100, 200) to (300, 400) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Swipe from (100, 200) to (300, 400) simulated successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,
@@ -403,7 +403,7 @@ describe('Swipe Plugin', () => {
         content: [
           {
             type: 'text' as const,
-            text: 'Swipe from (100, 200) to (300, 400) duration=1.5s simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Swipe from (100, 200) to (300, 400) duration=1.5s simulated successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,

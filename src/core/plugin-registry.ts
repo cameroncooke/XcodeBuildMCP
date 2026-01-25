@@ -84,6 +84,10 @@ async function loadWorkflowTools(workflowModule: Record<string, unknown>): Promi
   return tools;
 }
 
+export function listWorkflowDirectoryNames(): string[] {
+  return Object.keys(WORKFLOW_LOADERS);
+}
+
 /**
  * Get workflow metadata by directory name using generated loaders
  */

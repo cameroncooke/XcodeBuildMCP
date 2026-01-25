@@ -270,7 +270,7 @@
       ]
     },
     {
-      "name": "describe_ui",
+      "name": "snapshot_ui",
       "description": "Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation. Requires the target process to be running; paused debugger/breakpoints can yield an empty tree.",
       "args": []
     },
@@ -522,7 +522,7 @@
     },
     {
       "name": "long_press",
-      "description": "Long press at specific coordinates for given duration (ms). Use describe_ui for precise coordinates (don't guess from screenshots).",
+      "description": "Long press at specific coordinates for given duration (ms). Use snapshot_ui for precise coordinates (don't guess from screenshots).",
       "args": [
         {
           "name": "duration",
@@ -660,7 +660,7 @@
     },
     {
       "name": "screenshot",
-      "description": "Captures screenshot for visual verification. For UI coordinates, use describe_ui instead (don't determine coordinates from screenshots).",
+      "description": "Captures screenshot for visual verification. For UI coordinates, use snapshot_ui instead (don't determine coordinates from screenshots).",
       "args": []
     },
     {
@@ -1108,7 +1108,7 @@
     },
     {
       "name": "touch",
-      "description": "Perform touch down/up events at specific coordinates. Use describe_ui for precise coordinates (don't guess from screenshots).",
+      "description": "Perform touch down/up events at specific coordinates. Use snapshot_ui for precise coordinates (don't guess from screenshots).",
       "args": [
         {
           "name": "delay",
@@ -1134,7 +1134,7 @@
     },
     {
       "name": "type_text",
-      "description": "Type text (supports US keyboard characters). Use describe_ui to find text field, tap to focus, then type.",
+      "description": "Type text (supports US keyboard characters). Use snapshot_ui to find text field, tap to focus, then type.",
       "args": [
         {
           "name": "text",

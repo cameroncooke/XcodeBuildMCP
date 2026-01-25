@@ -435,7 +435,7 @@ describe('Touch Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Touch event (touch down) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Touch event (touch down) at (100, 200) executed successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,
@@ -473,7 +473,7 @@ describe('Touch Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Touch event (touch up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Touch event (touch up) at (100, 200) executed successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,
@@ -534,7 +534,7 @@ describe('Touch Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Touch event (touch down) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Touch event (touch down) at (100, 200) executed successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,
@@ -577,7 +577,7 @@ describe('Touch Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Touch event (touch up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Touch event (touch up) at (100, 200) executed successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,
@@ -621,7 +621,7 @@ describe('Touch Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Touch event (touch down+up) at (100, 200) executed successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Touch event (touch down+up) at (100, 200) executed successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,

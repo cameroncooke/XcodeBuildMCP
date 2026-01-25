@@ -27,7 +27,7 @@ describe('launch_app_device plugin (device-shared)', () => {
     });
 
     it('should have correct description', () => {
-      expect(launchAppDevice.description).toBe('Launches an app on a connected device.');
+      expect(launchAppDevice.description).toBe('Launch app on device.');
     });
 
     it('should have handler function', () => {

@@ -1,11 +1,8 @@
 import * as os from 'os';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { loadWorkflowGroups } from '../../../../utils/plugin-registry/index.ts';
-import { getRuntimeRegistration } from '../../../../utils/runtime-registry.ts';
-import {
-  collectToolNames,
-  resolveSelectedWorkflows,
-} from '../../../../utils/workflow-selection.ts';
+import type { RuntimeToolInfo } from '../../../../utils/tool-registry.ts';
+import { getRuntimeRegistration } from '../../../../utils/tool-registry.ts';
 import { areAxeToolsAvailable, resolveAxeBinary } from '../../../../utils/axe/index.ts';
 import {
   isXcodemakeEnabled,
@@ -62,21 +59,7 @@ export interface PluginInfoProvider {
 }
 
 export interface RuntimeInfoProvider {
-  getRuntimeToolInfo(): Promise<
-    | {
-        mode: 'runtime';
-        enabledWorkflows: string[];
-        enabledTools: string[];
-        totalRegistered: number;
-      }
-    | {
-        mode: 'static';
-        enabledWorkflows: string[];
-        enabledTools: string[];
-        totalRegistered: number;
-        note: string;
-      }
-  >;
+  getRuntimeToolInfo(): Promise<RuntimeToolInfo | null>;
 }
 
 export interface FeatureDetector {
@@ -194,11 +177,11 @@ export function createDoctorDependencies(executor: CommandExecutor): DoctorDepen
         envVars[varName] = process.env[varName];
       }
 
-      Object.keys(process.env).forEach((key) => {
+      for (const key of Object.keys(process.env)) {
         if (key.startsWith('XCODEBUILDMCP_')) {
           envVars[key] = process.env[key];
         }
-      });
+      }
 
       return envVars;
     },
@@ -261,29 +244,7 @@ export function createDoctorDependencies(executor: CommandExecutor): DoctorDepen
 
   const runtime: RuntimeInfoProvider = {
     async getRuntimeToolInfo() {
-      const runtimeInfo = getRuntimeRegistration();
-      if (runtimeInfo) {
-        return runtimeInfo;
-      }
-
-      const workflows = await loadWorkflowGroups();
-      const enabledWorkflowEnv = process.env.XCODEBUILDMCP_ENABLED_WORKFLOWS ?? '';
-      const workflowNames = enabledWorkflowEnv
-        .split(',')
-        .map((workflow) => workflow.trim())
-        .filter(Boolean);
-      const selection = resolveSelectedWorkflows(workflows, workflowNames);
-      const enabledWorkflows = selection.selectedWorkflows.map(
-        (workflow) => workflow.directoryName,
-      );
-      const enabledTools = collectToolNames(selection.selectedWorkflows);
-      return {
-        mode: 'static',
-        enabledWorkflows,
-        enabledTools,
-        totalRegistered: enabledTools.length,
-        note: 'Runtime registry unavailable; showing expected tools from selection rules.',
-      };
+      return getRuntimeRegistration();
     },
   };
 

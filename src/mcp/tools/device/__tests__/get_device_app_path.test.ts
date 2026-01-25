@@ -24,9 +24,7 @@ describe('get_device_app_path plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(getDeviceAppPath.description).toBe(
-        'Retrieves the built app path for a connected device.',
-      );
+      expect(getDeviceAppPath.description).toBe('Get device built app path.');
     });
 
     it('should have handler function', () => {

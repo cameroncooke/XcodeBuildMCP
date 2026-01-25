@@ -1,5 +1,5 @@
 export const workflow = {
-  name: 'UI Testing & Automation',
+  name: 'UI Automation',
   description:
     'UI automation and accessibility testing tools for iOS simulators. Perform gestures, interactions, screenshots, and UI analysis for automated testing workflows.',
 };

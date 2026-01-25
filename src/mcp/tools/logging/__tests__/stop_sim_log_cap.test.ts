@@ -31,9 +31,7 @@ describe('stop_sim_log_cap plugin', () => {
       expect(stopSimLogCap).toHaveProperty('handler');
 
       expect(stopSimLogCap.name).toBe('stop_sim_log_cap');
-      expect(stopSimLogCap.description).toBe(
-        'Stops an active simulator log capture session and returns the captured logs.',
-      );
+      expect(stopSimLogCap.description).toBe('Stop sim log capture.');
       expect(typeof stopSimLogCap.handler).toBe('function');
       expect(typeof stopSimLogCap.schema).toBe('object');
     });

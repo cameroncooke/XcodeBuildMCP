@@ -52,7 +52,7 @@ Reference: [session_management_plan.md](session_management_plan.md)
 
 ## AXe UI Testing Tools
 - [x] `src/mcp/tools/ui-testing/button.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
-- [x] `src/mcp/tools/ui-testing/describe_ui.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
+- [x] `src/mcp/tools/ui-testing/snapshot_ui.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
 - [x] `src/mcp/tools/ui-testing/gesture.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
 - [x] `src/mcp/tools/ui-testing/key_press.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).
 - [x] `src/mcp/tools/ui-testing/key_sequence.ts` — session defaults: `simulatorId` (hydrate `simulatorUuid`).

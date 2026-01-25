@@ -15,7 +15,7 @@ describe('build_run_macos', () => {
     });
 
     it('should export the correct description', () => {
-      expect(tool.description).toBe('Builds and runs a macOS app.');
+      expect(tool.description).toBe('Build and run macOS app.');
     });
 
     it('should export a handler function', () => {

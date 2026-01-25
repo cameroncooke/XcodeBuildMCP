@@ -490,14 +490,14 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Tap at (100, 200) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Tap at (100, 200) simulated successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,
       });
     });
 
-    it('should return successful response with coordinate warning when describe_ui not called', async () => {
+    it('should return successful response with coordinate warning when snapshot_ui not called', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
         output: 'Tap completed',
@@ -519,7 +519,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Tap at (150, 300) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Tap at (150, 300) simulated successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,
@@ -550,7 +550,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Tap at (250, 400) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Tap at (250, 400) simulated successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,
@@ -579,7 +579,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Tap at (0, 0) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Tap at (0, 0) simulated successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,
@@ -608,7 +608,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Tap at (1920, 1080) simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Tap at (1920, 1080) simulated successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,

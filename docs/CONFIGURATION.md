@@ -17,7 +17,7 @@ XcodeBuildMCP is configured through environment variables provided by your MCP c
 
 ## Workflow selection
 
-By default, XcodeBuildMCP loads all tools at startup. If you want a smaller tool surface for a specific workflow, set `XCODEBUILDMCP_ENABLED_WORKFLOWS` to a comma-separated list of workflow directory names. The `session-management` workflow is always auto-included since other tools depend on it.
+By default, XcodeBuildMCP loads all tools at startup. If you want a smaller tool surface for a specific workflow, set `XCODEBUILDMCP_ENABLED_WORKFLOWS` to a comma-separated list of workflow directory names. The `session-management` workflow is always auto-included since other tools depend on it. When `XCODEBUILDMCP_DEBUG=true`, the `doctor` workflow is also auto-included.
 
 **Available workflows:**
 - `device` (14 tools) - iOS Device Development
@@ -28,6 +28,7 @@ By default, XcodeBuildMCP loads all tools at startup. If you want a smaller tool
 - `project-scaffolding` (2 tools) - Project Scaffolding
 - `utilities` (1 tool) - Project Utilities
 - `session-management` (3 tools) - session-management
+- `workflow-discovery` (1 tool) - Workflow Discovery
 - `debugging` (8 tools) - Simulator Debugging
 - `simulator-management` (8 tools) - Simulator Management
 - `swift-package` (6 tools) - Swift Package Manager
@@ -40,6 +41,12 @@ XcodeBuildMCP includes experimental support for incremental builds. This feature
 
 > [!IMPORTANT]
 > Incremental builds are highly experimental and your mileage may vary. Please report issues to the [issue tracker](https://github.com/cameroncooke/XcodeBuildMCP/issues).
+
+## Experimental workflow discovery
+
+Set `XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY=true` to auto-include the `workflow-discovery` workflow at startup.
+
+The workflow discovery tool lets agents and clients enable or disable workflows at runtime. This can reduce upfront context by loading only what is needed as the session evolves. Note: most clients do not yet support the MCP notifications required for an agent harness to re-query the tool list after changes.
 
 ## Session-aware opt-out
 

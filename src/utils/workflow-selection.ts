@@ -1,9 +1,12 @@
 import type { WorkflowGroup } from '../core/plugin-types.ts';
 
-const REQUIRED_WORKFLOW = 'session-management';
-const DEBUG_WORKFLOW = 'doctor';
+export const REQUIRED_WORKFLOW = 'session-management';
+export const WORKFLOW_DISCOVERY_WORKFLOW = 'workflow-discovery';
+export const DEBUG_WORKFLOW = 'doctor';
 
-function normalizeWorkflowNames(workflowNames: string[]): string[] {
+type WorkflowName = string;
+
+function normalizeWorkflowNames(workflowNames: WorkflowName[]): WorkflowName[] {
   return workflowNames.map((name) => name.trim().toLowerCase()).filter(Boolean);
 }
 
@@ -11,28 +14,80 @@ function isWorkflowGroup(value: WorkflowGroup | undefined): value is WorkflowGro
   return Boolean(value);
 }
 
-function isDebugEnabled(): boolean {
+export function isDebugEnabled(): boolean {
   const value = process.env.XCODEBUILDMCP_DEBUG ?? '';
   return value.toLowerCase() === 'true' || value === '1';
 }
 
-export function resolveSelectedWorkflows(
-  workflowGroups: Map<string, WorkflowGroup>,
-  workflowNames: string[] = [],
+export function isWorkflowDiscoveryEnabled(): boolean {
+  const value = process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY ?? '';
+  return value.toLowerCase() === 'true' || value === '1';
+}
+
+/**
+ * Resolve selected workflow names to only include workflows that
+ * match real workflows, ensuring the mandatory workflows are always included.
+ *
+ * @param workflowNames - The list of selected workflow names
+ * @returns The list of workflows to register.
+ */
+export function resolveSelectedWorkflowNames(
+  workflowNames: WorkflowName[] = [],
+  availableWorkflowNames: WorkflowName[] = [],
 ): {
-  selectedWorkflows: WorkflowGroup[];
-  selectedNames: string[] | null;
+  selectedWorkflowNames: WorkflowName[];
+  selectedNames: WorkflowName[] | null;
 } {
   const normalizedNames = normalizeWorkflowNames(workflowNames);
-  const autoSelected = isDebugEnabled() ? [REQUIRED_WORKFLOW, DEBUG_WORKFLOW] : [REQUIRED_WORKFLOW];
+  const baseAutoSelected = [REQUIRED_WORKFLOW];
+
+  if (isWorkflowDiscoveryEnabled()) {
+    baseAutoSelected.push(WORKFLOW_DISCOVERY_WORKFLOW);
+  }
+
+  if (isDebugEnabled()) {
+    baseAutoSelected.push(DEBUG_WORKFLOW);
+  }
+
   const selectedNames =
-    normalizedNames.length > 0 ? [...new Set([...autoSelected, ...normalizedNames])] : null;
+    normalizedNames.length > 0 ? [...new Set([...baseAutoSelected, ...normalizedNames])] : null;
 
-  const selectedWorkflows = selectedNames
-    ? selectedNames.map((workflowName) => workflowGroups.get(workflowName)).filter(isWorkflowGroup)
-    : [...workflowGroups.values()];
+  // Filter selected name to only include workflows that match real workflows
+  const selectedWorkflowNames = selectedNames
+    ? selectedNames.filter((workflowName) => availableWorkflowNames.includes(workflowName))
+    : isWorkflowDiscoveryEnabled()
+      ? [...availableWorkflowNames]
+      : availableWorkflowNames.filter(
+          (workflowName) => workflowName !== WORKFLOW_DISCOVERY_WORKFLOW,
+        );
 
-  return { selectedWorkflows, selectedNames };
+  return { selectedWorkflowNames, selectedNames };
+}
+
+/**
+ * Resolve selected workflow groups to only include workflow groups that
+ * match real workflow groups, ensuring the mandatory workflow groups are always included.
+ *
+ * @param workflowNames - The list of selected workflow names
+ * @param workflowGroups - The map of workflow groups
+ * @returns The list of workflow groups to register.
+ */
+export function resolveSelectedWorkflows(
+  workflowNames: WorkflowName[] = [],
+  workflowGroupsParam?: Map<WorkflowName, WorkflowGroup>,
+): {
+  selectedWorkflows: WorkflowGroup[];
+  selectedNames: WorkflowName[] | null;
+} {
+  const resolvedWorkflowGroups = workflowGroupsParam ?? new Map<WorkflowName, WorkflowGroup>();
+  const availableWorkflowNames = [...resolvedWorkflowGroups.keys()];
+  const selection = resolveSelectedWorkflowNames(workflowNames, availableWorkflowNames);
+
+  const selectedWorkflows = selection.selectedWorkflowNames
+    .map((workflowName) => resolvedWorkflowGroups.get(workflowName))
+    .filter(isWorkflowGroup);
+
+  return { selectedWorkflows, selectedNames: selection.selectedNames };
 }
 
 export function collectToolNames(workflows: WorkflowGroup[]): string[] {

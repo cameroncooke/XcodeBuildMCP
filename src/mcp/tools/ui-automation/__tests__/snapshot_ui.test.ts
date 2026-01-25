@@ -1,31 +1,31 @@
 /**
- * Tests for describe_ui tool plugin
+ * Tests for snapshot_ui tool plugin
  */
 
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
-import describeUIPlugin, { describe_uiLogic } from '../describe_ui.ts';
+import snapshotUIPlugin, { snapshot_uiLogic } from '../snapshot_ui.ts';
 
-describe('Describe UI Plugin', () => {
+describe('Snapshot UI Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
-      expect(describeUIPlugin.name).toBe('describe_ui');
+      expect(snapshotUIPlugin.name).toBe('snapshot_ui');
     });
 
     it('should have correct description', () => {
-      expect(describeUIPlugin.description).toBe(
+      expect(snapshotUIPlugin.description).toBe(
         'Print view hierarchy with precise view coordinates (x, y, width, height) for visible elements.',
       );
     });
 
     it('should have handler function', () => {
-      expect(typeof describeUIPlugin.handler).toBe('function');
+      expect(typeof snapshotUIPlugin.handler).toBe('function');
     });
 
     it('should expose public schema without simulatorId field', () => {
-      const schema = z.object(describeUIPlugin.schema);
+      const schema = z.object(snapshotUIPlugin.schema);
 
       expect(schema.safeParse({}).success).toBe(true);
 
@@ -37,7 +37,7 @@ describe('Describe UI Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should surface session default requirement when simulatorId is missing', async () => {
-      const result = await describeUIPlugin.handler({});
+      const result = await snapshotUIPlugin.handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
@@ -46,7 +46,7 @@ describe('Describe UI Plugin', () => {
 
     it('should handle invalid simulatorId format via schema validation', async () => {
       // Test the actual handler with invalid UUID format
-      const result = await describeUIPlugin.handler({
+      const result = await snapshotUIPlugin.handler({
         simulatorId: 'invalid-uuid-format',
       });
 
@@ -55,7 +55,7 @@ describe('Describe UI Plugin', () => {
       expect(result.content[0].text).toContain('Invalid Simulator UUID format');
     });
 
-    it('should return success for valid describe_ui execution', async () => {
+    it('should return success for valid snapshot_ui execution', async () => {
       const uiHierarchy =
         '{"elements": [{"type": "Button", "frame": {"x": 100, "y": 200, "width": 50, "height": 30}}]}';
 
@@ -83,7 +83,7 @@ describe('Describe UI Plugin', () => {
         return mockExecutor(...args);
       };
 
-      const result = await describe_uiLogic(
+      const result = await snapshot_uiLogic(
         {
           simulatorId: '12345678-1234-4234-8234-123456789012',
         },
@@ -108,7 +108,7 @@ describe('Describe UI Plugin', () => {
             type: 'text' as const,
             text: `Next Steps:
 - Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)
-- Re-run describe_ui after layout changes
+- Re-run snapshot_ui after layout changes
 - If a debugger is attached, ensure the app is running (not stopped on breakpoints)
 - Screenshots are for visual verification only`,
           },
@@ -132,7 +132,7 @@ describe('Describe UI Plugin', () => {
         }),
       };
 
-      const result = await describe_uiLogic(
+      const result = await snapshot_uiLogic(
         {
           simulatorId: '12345678-1234-4234-8234-123456789012',
         },
@@ -169,7 +169,7 @@ describe('Describe UI Plugin', () => {
         }),
       };
 
-      const result = await describe_uiLogic(
+      const result = await snapshot_uiLogic(
         {
           simulatorId: '12345678-1234-4234-8234-123456789012',
         },
@@ -201,7 +201,7 @@ describe('Describe UI Plugin', () => {
         }),
       };
 
-      const result = await describe_uiLogic(
+      const result = await snapshot_uiLogic(
         {
           simulatorId: '12345678-1234-4234-8234-123456789012',
         },
@@ -235,7 +235,7 @@ describe('Describe UI Plugin', () => {
         }),
       };
 
-      const result = await describe_uiLogic(
+      const result = await snapshot_uiLogic(
         {
           simulatorId: '12345678-1234-4234-8234-123456789012',
         },
@@ -269,7 +269,7 @@ describe('Describe UI Plugin', () => {
         }),
       };
 
-      const result = await describe_uiLogic(
+      const result = await snapshot_uiLogic(
         {
           simulatorId: '12345678-1234-4234-8234-123456789012',
         },

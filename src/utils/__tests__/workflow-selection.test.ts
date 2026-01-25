@@ -33,9 +33,11 @@ function makeWorkflowMap(names: string[]): Map<string, WorkflowGroup> {
 
 describe('resolveSelectedWorkflows', () => {
   let originalDebug: string | undefined;
+  let originalWorkflowDiscovery: string | undefined;
 
   beforeEach(() => {
     originalDebug = process.env.XCODEBUILDMCP_DEBUG;
+    originalWorkflowDiscovery = process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY;
   });
 
   afterEach(() => {
@@ -44,17 +46,34 @@ describe('resolveSelectedWorkflows', () => {
     } else {
       process.env.XCODEBUILDMCP_DEBUG = originalDebug;
     }
+    if (typeof originalWorkflowDiscovery === 'undefined') {
+      delete process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY;
+    } else {
+      process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY = originalWorkflowDiscovery;
+    }
   });
 
   it('adds doctor when debug is enabled and selection list is provided', () => {
     process.env.XCODEBUILDMCP_DEBUG = 'true';
-    const workflows = makeWorkflowMap(['session-management', 'doctor', 'simulator']);
+    process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY = 'true';
+    const workflows = makeWorkflowMap([
+      'session-management',
+      'workflow-discovery',
+      'doctor',
+      'simulator',
+    ]);
 
-    const result = resolveSelectedWorkflows(workflows, ['simulator']);
+    const result = resolveSelectedWorkflows(['simulator'], workflows);
 
-    expect(result.selectedNames).toEqual(['session-management', 'doctor', 'simulator']);
+    expect(result.selectedNames).toEqual([
+      'session-management',
+      'workflow-discovery',
+      'doctor',
+      'simulator',
+    ]);
     expect(result.selectedWorkflows.map((workflow) => workflow.directoryName)).toEqual([
       'session-management',
+      'workflow-discovery',
       'doctor',
       'simulator',
     ]);
@@ -62,27 +81,55 @@ describe('resolveSelectedWorkflows', () => {
 
   it('does not add doctor when debug is disabled', () => {
     process.env.XCODEBUILDMCP_DEBUG = 'false';
-    const workflows = makeWorkflowMap(['session-management', 'doctor', 'simulator']);
+    process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY = 'true';
+    const workflows = makeWorkflowMap([
+      'session-management',
+      'workflow-discovery',
+      'doctor',
+      'simulator',
+    ]);
 
-    const result = resolveSelectedWorkflows(workflows, ['simulator']);
+    const result = resolveSelectedWorkflows(['simulator'], workflows);
 
-    expect(result.selectedNames).toEqual(['session-management', 'simulator']);
+    expect(result.selectedNames).toEqual(['session-management', 'workflow-discovery', 'simulator']);
     expect(result.selectedWorkflows.map((workflow) => workflow.directoryName)).toEqual([
       'session-management',
+      'workflow-discovery',
       'simulator',
     ]);
   });
 
   it('returns all workflows when no selection list is provided', () => {
     process.env.XCODEBUILDMCP_DEBUG = 'true';
-    const workflows = makeWorkflowMap(['session-management', 'doctor', 'simulator']);
+    process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY = 'true';
+    const workflows = makeWorkflowMap([
+      'session-management',
+      'workflow-discovery',
+      'doctor',
+      'simulator',
+    ]);
 
-    const result = resolveSelectedWorkflows(workflows, []);
+    const result = resolveSelectedWorkflows([], workflows);
 
     expect(result.selectedNames).toBeNull();
     expect(result.selectedWorkflows.map((workflow) => workflow.directoryName)).toEqual([
       'session-management',
+      'workflow-discovery',
       'doctor',
+      'simulator',
+    ]);
+  });
+
+  it('excludes workflow-discovery when experimental flag is disabled', () => {
+    process.env.XCODEBUILDMCP_DEBUG = 'false';
+    process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY = 'false';
+    const workflows = makeWorkflowMap(['session-management', 'workflow-discovery', 'simulator']);
+
+    const result = resolveSelectedWorkflows([], workflows);
+
+    expect(result.selectedNames).toBeNull();
+    expect(result.selectedWorkflows.map((workflow) => workflow.directoryName)).toEqual([
+      'session-management',
       'simulator',
     ]);
   });

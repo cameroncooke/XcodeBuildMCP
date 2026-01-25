@@ -1,20 +1,14 @@
 /**
- * UI Testing Plugin: Long Press
+ * UI Testing Plugin: Touch
  *
- * Long press at specific coordinates for given duration (ms).
- * Use describe_ui for precise coordinates (don't guess from screenshots).
+ * Perform touch down/up events at specific coordinates.
+ * Use snapshot_ui for precise coordinates (don't guess from screenshots).
  */
 
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
-import {
-  createTextResponse,
-  createErrorResponse,
-  DependencyError,
-  AxeError,
-  SystemError,
-} from '../../../utils/responses/index.ts';
+import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
+import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultDebuggerManager } from '../../../utils/debugger/index.ts';
@@ -24,50 +18,54 @@ import {
   createAxeNotAvailableResponse,
   getAxePath,
   getBundledAxeEnvironment,
-} from '../../../utils/axe/index.ts';
+} from '../../../utils/axe-helpers.ts';
+import { ToolResponse } from '../../../types/common.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
-const longPressSchema = z.object({
+const touchSchema = z.object({
   simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
-  x: z.number().int({ message: 'X coordinate for the long press' }),
-  y: z.number().int({ message: 'Y coordinate for the long press' }),
-  duration: z
+  x: z.number().int({ message: 'X coordinate must be an integer' }),
+  y: z.number().int({ message: 'Y coordinate must be an integer' }),
+  down: z.boolean().optional(),
+  up: z.boolean().optional(),
+  delay: z
     .number()
-    .positive({ message: 'Duration of the long press in milliseconds' })
-    .describe('milliseconds'),
+    .min(0, { message: 'Delay must be non-negative' })
+    .optional()
+    .describe('seconds'),
 });
 
 // Use z.infer for type safety
-type LongPressParams = z.infer<typeof longPressSchema>;
+type TouchParams = z.infer<typeof touchSchema>;
 
-const publicSchemaObject = z.strictObject(
-  longPressSchema.omit({ simulatorId: true } as const).shape,
-);
+const publicSchemaObject = z.strictObject(touchSchema.omit({ simulatorId: true } as const).shape);
 
-export interface AxeHelpers {
+interface AxeHelpers {
   getAxePath: () => string | null;
   getBundledAxeEnvironment: () => Record<string, string>;
-  createAxeNotAvailableResponse: () => ToolResponse;
 }
 
 const LOG_PREFIX = '[AXe]';
 
-export async function long_pressLogic(
-  params: LongPressParams,
+export async function touchLogic(
+  params: TouchParams,
   executor: CommandExecutor,
-  axeHelpers: AxeHelpers = {
-    getAxePath,
-    getBundledAxeEnvironment,
-    createAxeNotAvailableResponse,
-  },
+  axeHelpers?: AxeHelpers,
   debuggerManager: DebuggerManager = getDefaultDebuggerManager(),
 ): Promise<ToolResponse> {
-  const toolName = 'long_press';
-  const { simulatorId, x, y, duration } = params;
+  const toolName = 'touch';
+
+  // Params are already validated by createTypedTool - use directly
+  const { simulatorId, x, y, down, up, delay } = params;
+
+  // Validate that at least one of down or up is specified
+  if (!down && !up) {
+    return createErrorResponse('At least one of "down" or "up" must be true');
+  }
 
   const guard = await guardUiAutomationAgainstStoppedDebugger({
     debugger: debuggerManager,
@@ -76,23 +74,21 @@ export async function long_pressLogic(
   });
   if (guard.blockedResponse) return guard.blockedResponse;
 
-  // AXe uses touch command with --down, --up, and --delay for long press
-  const delayInSeconds = Number(duration) / 1000; // Convert ms to seconds
-  const commandArgs = [
-    'touch',
-    '-x',
-    String(x),
-    '-y',
-    String(y),
-    '--down',
-    '--up',
-    '--delay',
-    String(delayInSeconds),
-  ];
+  const commandArgs = ['touch', '-x', String(x), '-y', String(y)];
+  if (down) {
+    commandArgs.push('--down');
+  }
+  if (up) {
+    commandArgs.push('--up');
+  }
+  if (delay !== undefined) {
+    commandArgs.push('--delay', String(delay));
+  }
 
+  const actionText = down && up ? 'touch down+up' : down ? 'touch down' : 'touch up';
   log(
     'info',
-    `${LOG_PREFIX}/${toolName}: Starting for (${x}, ${y}), ${duration}ms on ${simulatorId}`,
+    `${LOG_PREFIX}/${toolName}: Starting ${actionText} at (${x}, ${y}) on ${simulatorId}`,
   );
 
   try {
@@ -100,7 +96,7 @@ export async function long_pressLogic(
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
 
     const coordinateWarning = getCoordinateWarning(simulatorId);
-    const message = `Long press at (${x}, ${y}) for ${duration}ms simulated successfully.`;
+    const message = `Touch event (${actionText}) at (${x}, ${y}) executed successfully.`;
     const warnings = [guard.warningText, coordinateWarning].filter(Boolean).join('\n\n');
 
     if (warnings) {
@@ -109,12 +105,15 @@ export async function long_pressLogic(
 
     return createTextResponse(message);
   } catch (error) {
-    log('error', `${LOG_PREFIX}/${toolName}: Failed - ${error}`);
+    log(
+      'error',
+      `${LOG_PREFIX}/${toolName}: Failed - ${error instanceof Error ? error.message : String(error)}`,
+    );
     if (error instanceof DependencyError) {
-      return axeHelpers.createAxeNotAvailableResponse();
+      return createAxeNotAvailableResponse();
     } else if (error instanceof AxeError) {
       return createErrorResponse(
-        `Failed to simulate long press at (${x}, ${y}): ${error.message}`,
+        `Failed to execute touch event: ${error.message}`,
         error.axeOutput,
       );
     } else if (error instanceof SystemError) {
@@ -130,48 +129,43 @@ export async function long_pressLogic(
 }
 
 export default {
-  name: 'long_press',
-  description: 'Long press at coords.',
+  name: 'touch',
+  description: 'Touch down/up at coords.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
-    legacy: longPressSchema,
+    legacy: touchSchema,
   }),
   annotations: {
-    title: 'Long Press',
+    title: 'Touch',
     destructiveHint: true,
   },
-  handler: createSessionAwareTool<LongPressParams>({
-    internalSchema: longPressSchema as unknown as z.ZodType<LongPressParams, unknown>,
-    logicFunction: (params: LongPressParams, executor: CommandExecutor) =>
-      long_pressLogic(params, executor, {
-        getAxePath,
-        getBundledAxeEnvironment,
-        createAxeNotAvailableResponse,
-      }),
+  handler: createSessionAwareTool<TouchParams>({
+    internalSchema: touchSchema as unknown as z.ZodType<TouchParams, unknown>,
+    logicFunction: (params: TouchParams, executor: CommandExecutor) => touchLogic(params, executor),
     getExecutor: getDefaultCommandExecutor,
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
   }),
 };
 
-// Session tracking for describe_ui warnings
+// Session tracking for snapshot_ui warnings
 interface DescribeUISession {
   timestamp: number;
   simulatorId: string;
 }
 
-const describeUITimestamps = new Map<string, DescribeUISession>();
-const DESCRIBE_UI_WARNING_TIMEOUT = 60000; // 60 seconds
+const snapshotUiTimestamps = new Map<string, DescribeUISession>();
+const SNAPSHOT_UI_WARNING_TIMEOUT = 60000; // 60 seconds
 
 function getCoordinateWarning(simulatorId: string): string | null {
-  const session = describeUITimestamps.get(simulatorId);
+  const session = snapshotUiTimestamps.get(simulatorId);
   if (!session) {
-    return 'Warning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.';
+    return 'Warning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.';
   }
 
   const timeSinceDescribe = Date.now() - session.timestamp;
-  if (timeSinceDescribe > DESCRIBE_UI_WARNING_TIMEOUT) {
+  if (timeSinceDescribe > SNAPSHOT_UI_WARNING_TIMEOUT) {
     const secondsAgo = Math.round(timeSinceDescribe / 1000);
-    return `Warning: describe_ui was last called ${secondsAgo} seconds ago. Consider refreshing UI coordinates with describe_ui instead of using potentially stale coordinates.`;
+    return `Warning: snapshot_ui was last called ${secondsAgo} seconds ago. Consider refreshing UI coordinates with snapshot_ui instead of using potentially stale coordinates.`;
   }
 
   return null;
@@ -183,10 +177,13 @@ async function executeAxeCommand(
   simulatorId: string,
   commandName: string,
   executor: CommandExecutor = getDefaultCommandExecutor(),
-  axeHelpers: AxeHelpers = { getAxePath, getBundledAxeEnvironment, createAxeNotAvailableResponse },
+  axeHelpers?: AxeHelpers,
 ): Promise<void> {
+  // Use injected helpers or default to imported functions
+  const helpers = axeHelpers ?? { getAxePath, getBundledAxeEnvironment };
+
   // Get the appropriate axe binary path
-  const axeBinary = axeHelpers.getAxePath();
+  const axeBinary = helpers.getAxePath();
   if (!axeBinary) {
     throw new DependencyError('AXe binary not found');
   }
@@ -199,7 +196,7 @@ async function executeAxeCommand(
 
   try {
     // Determine environment variables for bundled AXe
-    const axeEnv = axeBinary !== 'axe' ? axeHelpers.getBundledAxeEnvironment() : undefined;
+    const axeEnv = axeBinary !== 'axe' ? helpers.getBundledAxeEnvironment() : undefined;
 
     const result = await executor(
       fullCommand,

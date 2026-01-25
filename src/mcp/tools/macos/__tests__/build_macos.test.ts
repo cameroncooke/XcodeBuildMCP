@@ -22,7 +22,7 @@ describe('build_macos plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(buildMacOS.description).toBe('Builds a macOS app.');
+      expect(buildMacOS.description).toBe('Build macOS app.');
     });
 
     it('should have handler function', () => {

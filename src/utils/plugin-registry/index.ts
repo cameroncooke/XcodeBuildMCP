@@ -1,1 +1,5 @@
-export { loadWorkflowGroups, loadPlugins } from '../../core/plugin-registry.ts';
+export {
+  loadWorkflowGroups,
+  loadPlugins,
+  listWorkflowDirectoryNames,
+} from '../../core/plugin-registry.ts';

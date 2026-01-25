@@ -329,7 +329,7 @@ describe('Long Press Plugin', () => {
         content: [
           {
             type: 'text' as const,
-            text: 'Long press at (100, 200) for 1500ms simulated successfully.\n\nWarning: describe_ui has not been called yet. Consider using describe_ui for precise coordinates instead of guessing from screenshots.',
+            text: 'Long press at (100, 200) for 1500ms simulated successfully.\n\nWarning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.',
           },
         ],
         isError: false,

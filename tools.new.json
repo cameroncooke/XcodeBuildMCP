@@ -274,7 +274,7 @@
       ]
     },
     {
-      "name": "describe_ui",
+      "name": "snapshot_ui",
       "description": "Print view hierarchy with precise view coordinates (x, y, width, height) for visible elements.",
       "args": []
     },

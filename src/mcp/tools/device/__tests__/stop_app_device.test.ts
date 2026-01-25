@@ -21,7 +21,7 @@ describe('stop_app_device plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(stopAppDevice.description).toBe('Stops a running app on a connected device.');
+      expect(stopAppDevice.description).toBe('Stop device app.');
     });
 
     it('should have handler function', () => {

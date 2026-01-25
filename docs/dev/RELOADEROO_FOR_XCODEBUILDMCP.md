@@ -245,9 +245,9 @@ npx reloaderoo@latest --help
   ```bash
   npx reloaderoo@latest inspect call-tool button --params '{"simulatorUuid": "SIMULATOR_UUID", "buttonType": "home"}' -- node build/index.js
   ```
-- **`describe_ui`**: Gets the UI hierarchy of the current screen.
+- **`snapshot_ui`**: Gets the UI hierarchy of the current screen.
   ```bash
-  npx reloaderoo@latest inspect call-tool describe_ui --params '{"simulatorUuid": "SIMULATOR_UUID"}' -- node build/index.js
+  npx reloaderoo@latest inspect call-tool snapshot_ui --params '{"simulatorUuid": "SIMULATOR_UUID"}' -- node build/index.js
   ```
 - **`gesture`**: Performs a pre-defined gesture.
   ```bash
