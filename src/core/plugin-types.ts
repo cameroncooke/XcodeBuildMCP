@@ -23,6 +23,4 @@ export interface WorkflowGroup {
   readonly directoryName: string;
 }
 
-export type WorkflowName = string;
-
 export const defineTool = (meta: PluginMeta): PluginMeta => meta;
