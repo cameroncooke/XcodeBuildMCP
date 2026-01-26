@@ -12,16 +12,14 @@
 - Migrate to Zod v4.
 - Improve session default handling (reconcile mutual exclusivity and ignore explicit undefined clears).
 - Auto-include workflow-discovery when workflow selection is configured.
-
+- Remove dynamic tool discovery (`discover_tools`) and `XCODEBUILDMCP_DYNAMIC_TOOLS`. Use `XCODEBUILDMCP_ENABLED_WORKFLOWS` to limit startup tool registration.
+- Add MCP tool annotations to all tools.
+  
 ### Fixed
 - Update UI automation guard guidance to point at `debug_continue` when paused.
 - Fix tool loading bugs in static tool registration.
 - Fix xcodemake command argument corruption when project directory path appears as substring in non-path arguments.
 - Fix snapshot_ui warning state being isolated per UI automation tool, causing false warnings.
-
-## [1.16.0] - 2025-12-30
-- Remove dynamic tool discovery (`discover_tools`) and `XCODEBUILDMCP_DYNAMIC_TOOLS`. Use `XCODEBUILDMCP_ENABLED_WORKFLOWS` to limit startup tool registration.
-- Add MCP tool annotations to all tools.
 
 ## [1.14.0] - 2025-09-22
 - Add video capture tool for simulators
