@@ -454,7 +454,7 @@ describe('Screenshot Plugin', () => {
         process: mockProcess,
       });
 
-      const result = await detectLandscapeMode(mockExecutor);
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
 
       expect(result).toBe(true);
     });
@@ -467,7 +467,7 @@ describe('Screenshot Plugin', () => {
         process: mockProcess,
       });
 
-      const result = await detectLandscapeMode(mockExecutor);
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
 
       expect(result).toBe(false);
     });
@@ -480,7 +480,7 @@ describe('Screenshot Plugin', () => {
         process: mockProcess,
       });
 
-      const result = await detectLandscapeMode(mockExecutor);
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
 
       expect(result).toBe(false);
     });
@@ -493,7 +493,7 @@ describe('Screenshot Plugin', () => {
         process: mockProcess,
       });
 
-      const result = await detectLandscapeMode(mockExecutor);
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
 
       expect(result).toBe(false);
     });
@@ -503,7 +503,7 @@ describe('Screenshot Plugin', () => {
         throw new Error('Execution failed');
       };
 
-      const result = await detectLandscapeMode(mockExecutor);
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
 
       expect(result).toBe(false);
     });
@@ -516,9 +516,23 @@ describe('Screenshot Plugin', () => {
         process: mockProcess,
       });
 
-      const result = await detectLandscapeMode(mockExecutor);
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
 
       expect(result).toBe(true);
+    });
+
+    it('should return false when no device name is provided', async () => {
+      const mockExecutor = async () => ({
+        success: true,
+        output: '844,390',
+        error: undefined,
+        process: mockProcess,
+      });
+
+      // When no device name is provided, should skip orientation detection
+      const result = await detectLandscapeMode(mockExecutor);
+
+      expect(result).toBe(false);
     });
   });
 

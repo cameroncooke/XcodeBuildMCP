@@ -48,18 +48,29 @@ describe('screenshot plugin', () => {
   });
 
   describe('Command Generation', () => {
+    // Mock device list JSON for proper device name lookup
+    const mockDeviceListJson = JSON.stringify({
+      devices: {
+        'com.apple.CoreSimulator.SimRuntime.iOS-17-2': [
+          { udid: 'test-uuid', name: 'iPhone 15 Pro', state: 'Booted' },
+          { udid: 'another-uuid', name: 'iPhone 15', state: 'Booted' },
+        ],
+      },
+    });
+
     it('should generate correct simctl and sips commands', async () => {
       const capturedCommands: string[][] = [];
 
-      const mockExecutor = createCommandMatchingMockExecutor({
-        'xcrun simctl': { success: true, output: 'Screenshot saved' },
-        sips: { success: true, output: 'Image optimized' },
-      });
-
-      // Wrap to capture both commands
+      // Wrap to capture commands and return appropriate mock responses
       const capturingExecutor = async (command: string[], ...args: any[]) => {
         capturedCommands.push(command);
-        return mockExecutor(command, ...args);
+        const cmdStr = command.join(' ');
+        // Return device list JSON for list command
+        if (cmdStr.includes('simctl list devices')) {
+          return { success: true, output: mockDeviceListJson, error: undefined };
+        }
+        // Return success for all other commands
+        return { success: true, output: '', error: undefined };
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
@@ -127,15 +138,16 @@ describe('screenshot plugin', () => {
     it('should generate correct path with different uuid', async () => {
       const capturedCommands: string[][] = [];
 
-      const mockExecutor = createCommandMatchingMockExecutor({
-        'xcrun simctl': { success: true, output: 'Screenshot saved' },
-        sips: { success: true, output: 'Image optimized' },
-      });
-
-      // Wrap to capture both commands
+      // Wrap to capture commands and return appropriate mock responses
       const capturingExecutor = async (command: string[], ...args: any[]) => {
         capturedCommands.push(command);
-        return mockExecutor(command, ...args);
+        const cmdStr = command.join(' ');
+        // Return device list JSON for list command
+        if (cmdStr.includes('simctl list devices')) {
+          return { success: true, output: mockDeviceListJson, error: undefined };
+        }
+        // Return success for all other commands
+        return { success: true, output: '', error: undefined };
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
@@ -203,15 +215,16 @@ describe('screenshot plugin', () => {
     it('should use default dependencies when not provided', async () => {
       const capturedCommands: string[][] = [];
 
-      const mockExecutor = createCommandMatchingMockExecutor({
-        'xcrun simctl': { success: true, output: 'Screenshot saved' },
-        sips: { success: true, output: 'Image optimized' },
-      });
-
-      // Wrap to capture both commands
+      // Wrap to capture commands and return appropriate mock responses
       const capturingExecutor = async (command: string[], ...args: any[]) => {
         capturedCommands.push(command);
-        return mockExecutor(command, ...args);
+        const cmdStr = command.join(' ');
+        // Return device list JSON for list command
+        if (cmdStr.includes('simctl list devices')) {
+          return { success: true, output: mockDeviceListJson, error: undefined };
+        }
+        // Return success for all other commands
+        return { success: true, output: '', error: undefined };
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
@@ -397,15 +410,26 @@ describe('screenshot plugin', () => {
     it('should call correct command with direct execution', async () => {
       const capturedArgs: any[][] = [];
 
-      const mockExecutor = createCommandMatchingMockExecutor({
-        'xcrun simctl': { success: true, output: 'Screenshot saved' },
-        sips: { success: true, output: 'Image optimized' },
+      // Mock device list JSON for proper device name lookup
+      const mockDeviceListJson = JSON.stringify({
+        devices: {
+          'com.apple.CoreSimulator.SimRuntime.iOS-17-2': [
+            { udid: 'test-uuid', name: 'iPhone 15 Pro', state: 'Booted' },
+          ],
+        },
       });
 
-      // Wrap to capture both command executions
+      // Capture all command executions and return appropriate mock responses
       const capturingExecutor: CommandExecutor = async (...args) => {
         capturedArgs.push(args);
-        return mockExecutor(...args);
+        const command = args[0] as string[];
+        const cmdStr = command.join(' ');
+        // Return device list JSON for list command
+        if (cmdStr.includes('simctl list devices')) {
+          return { success: true, output: mockDeviceListJson, error: undefined };
+        }
+        // Return success for all other commands
+        return { success: true, output: '', error: undefined };
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({

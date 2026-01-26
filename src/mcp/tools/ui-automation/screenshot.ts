@@ -46,6 +46,8 @@ interface SimctlDeviceList {
 function getWindowDetectionSwiftCode(deviceName: string): string {
   // Escape the device name for use in Swift string
   const escapedDeviceName = deviceName.replace(/"/g, '\\"');
+  // Use hasPrefix + boundary check to avoid matching "iPhone 15" when looking for "iPhone 15 Pro"
+  // Window titles are formatted like "iPhone 15 Pro – iOS 17.2"
   return `
 import Cocoa
 import CoreGraphics
@@ -55,10 +57,13 @@ if let wins = CGWindowListCopyWindowInfo(opts, kCGNullWindowID) as? [[String: An
   for w in wins {
     if let o = w[kCGWindowOwnerName as String] as? String, o == "Simulator",
        let b = w[kCGWindowBounds as String] as? [String: Any],
-       let n = w[kCGWindowName as String] as? String,
-       n.contains(deviceName) {
-      print("\\(b["Width"] as? Int ?? 0),\\(b["Height"] as? Int ?? 0)")
-      break
+       let n = w[kCGWindowName as String] as? String {
+      // Check for exact match: name starts with deviceName followed by separator or end
+      let isMatch = n == deviceName || n.hasPrefix(deviceName + " ")
+      if isMatch {
+        print("\\(b["Width"] as? Int ?? 0),\\(b["Height"] as? Int ?? 0)")
+        break
+      }
     }
   }
 }`.trim();
@@ -107,10 +112,13 @@ export async function detectLandscapeMode(
   deviceName?: string,
 ): Promise<boolean> {
   try {
-    // If no device name, fall back to matching any iPhone/iPad
-    const swiftCode = deviceName
-      ? getWindowDetectionSwiftCode(deviceName)
-      : getWindowDetectionSwiftCode('iPhone');
+    // If no device name available, skip orientation detection to avoid incorrect rotation
+    // This is safer than guessing, as we don't know if it's iPhone or iPad
+    if (!deviceName) {
+      log('warning', `${LOG_PREFIX}: No device name available, skipping orientation detection`);
+      return false;
+    }
+    const swiftCode = getWindowDetectionSwiftCode(deviceName);
     const swiftCommand = ['swift', '-e', swiftCode];
     const result = await executor(swiftCommand, `${LOG_PREFIX}: detect orientation`, false);
 
