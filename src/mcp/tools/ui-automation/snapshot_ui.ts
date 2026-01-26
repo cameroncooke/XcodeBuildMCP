@@ -17,6 +17,7 @@ import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
+import { recordSnapshotUiCall } from './shared/snapshot-ui-state.ts';
 
 // Define schema as ZodObject
 const snapshotUiSchema = z.object({
@@ -33,16 +34,6 @@ export interface AxeHelpers {
 }
 
 const LOG_PREFIX = '[AXe]';
-
-// Session tracking for snapshot_ui warnings (shared across UI tools)
-const snapshotUiTimestamps = new Map<string, { timestamp: number; simulatorId: string }>();
-
-function recordSnapshotUICall(simulatorId: string): void {
-  snapshotUiTimestamps.set(simulatorId, {
-    timestamp: Date.now(),
-    simulatorId,
-  });
-}
 
 /**
  * Core business logic for snapshot_ui functionality
@@ -80,7 +71,7 @@ export async function snapshot_uiLogic(
     );
 
     // Record the snapshot_ui call for warning system
-    recordSnapshotUICall(simulatorId);
+    recordSnapshotUiCall(simulatorId);
 
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
     const response: ToolResponse = {
