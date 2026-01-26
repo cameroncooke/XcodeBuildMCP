@@ -102,6 +102,7 @@ XcodeBuildMCP uses Sentry for error telemetry. For more information or to opt ou
 - Tools reference: [docs/TOOLS.md](docs/TOOLS.md)
 - Troubleshooting: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 - Privacy: [docs/PRIVACY.md](docs/PRIVACY.md)
+- Skills: [docs/SKILLS.md](docs/SKILLS.md)
 - Contributing: [docs/dev/CONTRIBUTING.md](docs/dev/CONTRIBUTING.md)
 
 ## Licence

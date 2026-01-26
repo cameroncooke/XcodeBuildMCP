@@ -17,7 +17,7 @@ XcodeBuildMCP is configured through environment variables provided by your MCP c
 
 ## Workflow selection
 
-By default, XcodeBuildMCP loads all tools at startup. If you want a smaller tool surface for a specific workflow, set `XCODEBUILDMCP_ENABLED_WORKFLOWS` to a comma-separated list of workflow directory names. The `session-management` workflow is always auto-included since other tools depend on it. When `XCODEBUILDMCP_DEBUG=true`, the `doctor` workflow is also auto-included.
+By default, XcodeBuildMCP loads the `simulator` workflow at startup (plus `session-management`). If you want a smaller or different tool surface, set `XCODEBUILDMCP_ENABLED_WORKFLOWS` to a comma-separated list of workflow directory names. The `session-management` workflow is always auto-included since other tools depend on it. When `XCODEBUILDMCP_DEBUG=true`, the `doctor` workflow is also auto-included.
 
 **Available workflows:**
 - `device` (14 tools) - iOS Device Development

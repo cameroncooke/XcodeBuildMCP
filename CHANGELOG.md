@@ -7,6 +7,7 @@
 - Add session-status MCP resource with session identifiers.
 - Add UI automation guard that blocks UI tools when the debugger is paused.
 - Add manage-workflows tool for live workflow selection updates.
+- Add a bundled XcodeBuildMCP skill to improve MCP client tool discovery.
 
 ### Changed
 - Migrate to Zod v4.
