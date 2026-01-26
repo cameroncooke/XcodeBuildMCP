@@ -49,17 +49,24 @@ export function resolveSelectedWorkflowNames(
     baseAutoSelected.push(DEBUG_WORKFLOW);
   }
 
-  const selectedNames =
-    normalizedNames.length > 0 ? [...new Set([...baseAutoSelected, ...normalizedNames])] : null;
+  let selectedNames: WorkflowName[] | null = null;
+  if (normalizedNames.length > 0) {
+    selectedNames = [...new Set([...baseAutoSelected, ...normalizedNames])];
+  }
 
-  // Filter selected name to only include workflows that match real workflows
-  const selectedWorkflowNames = selectedNames
-    ? selectedNames.filter((workflowName) => availableWorkflowNames.includes(workflowName))
-    : isWorkflowDiscoveryEnabled()
-      ? [...availableWorkflowNames]
-      : availableWorkflowNames.filter(
-          (workflowName) => workflowName !== WORKFLOW_DISCOVERY_WORKFLOW,
-        );
+  // Filter selected names to only include workflows that match real workflows.
+  let selectedWorkflowNames: WorkflowName[];
+  if (selectedNames) {
+    selectedWorkflowNames = selectedNames.filter((workflowName) =>
+      availableWorkflowNames.includes(workflowName),
+    );
+  } else if (isWorkflowDiscoveryEnabled()) {
+    selectedWorkflowNames = [...availableWorkflowNames];
+  } else {
+    selectedWorkflowNames = availableWorkflowNames.filter(
+      (workflowName) => workflowName !== WORKFLOW_DISCOVERY_WORKFLOW,
+    );
+  }
 
   return { selectedWorkflowNames, selectedNames };
 }

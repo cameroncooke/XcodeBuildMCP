@@ -41,18 +41,19 @@ export async function applyWorkflowSelection(workflowNames: string[]): Promise<R
   for (const workflow of selection.selectedWorkflows) {
     desiredWorkflows.add(workflow.directoryName);
     for (const tool of workflow.tools) {
-      desiredToolNames.add(tool.name);
-      if (!registryState.tools.has(tool.name)) {
+      const { name, description, schema, annotations, handler } = tool;
+      desiredToolNames.add(name);
+      if (!registryState.tools.has(name)) {
         const registeredTool = server.registerTool(
-          tool.name,
+          name,
           {
-            description: tool.description ?? '',
-            inputSchema: tool.schema,
-            annotations: tool.annotations,
+            description: description ?? '',
+            inputSchema: schema,
+            annotations,
           },
-          (args: unknown): Promise<ToolResponse> => tool.handler(args as Record<string, unknown>),
+          (args: unknown): Promise<ToolResponse> => handler(args as Record<string, unknown>),
         );
-        registryState.tools.set(tool.name, registeredTool);
+        registryState.tools.set(name, registeredTool);
       }
     }
   }

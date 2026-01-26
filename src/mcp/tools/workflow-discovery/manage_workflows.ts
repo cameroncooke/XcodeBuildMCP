@@ -25,10 +25,12 @@ export async function manage_workflowsLogic(
   const requestedSet = new Set(
     workflowNames.map((name) => name.trim().toLowerCase()).filter(Boolean),
   );
-  const nextWorkflows =
-    params.enable === false
-      ? currentWorkflows.filter((name) => !requestedSet.has(name.toLowerCase()))
-      : [...new Set([...currentWorkflows, ...workflowNames])];
+  let nextWorkflows: string[];
+  if (params.enable === false) {
+    nextWorkflows = currentWorkflows.filter((name) => !requestedSet.has(name.toLowerCase()));
+  } else {
+    nextWorkflows = [...new Set([...currentWorkflows, ...workflowNames])];
+  }
   const registryState = await applyWorkflowSelection(nextWorkflows);
 
   return createTextResponse(`Workflows enabled: ${registryState.enabledWorkflows.join(', ')}`);
