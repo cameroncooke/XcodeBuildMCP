@@ -8,11 +8,8 @@ import {
 } from '../../../utils/debugger/index.ts';
 
 const debugVariablesSchema = z.object({
-  debugSessionId: z
-    .string()
-    .optional()
-    .describe('Debug session ID to target (defaults to current session)'),
-  frameIndex: z.number().int().nonnegative().optional().describe('Frame index to inspect'),
+  debugSessionId: z.string().optional().describe('default: current session'),
+  frameIndex: z.number().int().nonnegative().optional(),
 });
 
 export type DebugVariablesParams = z.infer<typeof debugVariablesSchema>;
@@ -34,7 +31,7 @@ export async function debug_variablesLogic(
 
 export default {
   name: 'debug_variables',
-  description: 'Return variables for a selected frame in the active debug session.',
+  description: 'Get frame variables.',
   schema: debugVariablesSchema.shape,
   handler: createTypedToolWithContext<DebugVariablesParams, DebuggerToolContext>(
     debugVariablesSchema,

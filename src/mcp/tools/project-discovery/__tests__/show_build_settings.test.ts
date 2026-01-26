@@ -14,7 +14,7 @@ describe('show_build_settings plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe('Shows xcodebuild build settings.');
+      expect(plugin.description).toBe('Show build settings.');
     });
 
     it('should have handler function', () => {

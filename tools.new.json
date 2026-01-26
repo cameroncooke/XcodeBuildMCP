@@ -1,0 +1,1150 @@
+
+> xcodebuildmcp@1.15.1 tools
+> npx tsx scripts/tools-cli.ts schema --json
+
+{
+  "mode": "schema-audit",
+  "toolCount": 71,
+  "tools": [
+    {
+      "name": "boot_sim",
+      "description": "Boot iOS simulator.",
+      "args": []
+    },
+    {
+      "name": "build_device",
+      "description": "Build for device.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": null
+        },
+        {
+          "name": "extraArgs",
+          "description": null
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "build_macos",
+      "description": "Build macOS app.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": null
+        },
+        {
+          "name": "extraArgs",
+          "description": null
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "build_run_macos",
+      "description": "Build and run macOS app.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": null
+        },
+        {
+          "name": "extraArgs",
+          "description": null
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "build_run_sim",
+      "description": "Build and run iOS sim.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": null
+        },
+        {
+          "name": "extraArgs",
+          "description": null
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "build_sim",
+      "description": "Build for iOS sim.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": null
+        },
+        {
+          "name": "extraArgs",
+          "description": null
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "button",
+      "description": "Press simulator hardware button.",
+      "args": [
+        {
+          "name": "buttonType",
+          "description": "apple-pay|home|lock|side-button|siri"
+        },
+        {
+          "name": "duration",
+          "description": "seconds"
+        }
+      ]
+    },
+    {
+      "name": "clean",
+      "description": "Clean build products.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": null
+        },
+        {
+          "name": "extraArgs",
+          "description": null
+        },
+        {
+          "name": "platform",
+          "description": null
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "debug_attach_sim",
+      "description": "Attach LLDB to sim app.",
+      "args": [
+        {
+          "name": "bundleId",
+          "description": null
+        },
+        {
+          "name": "continueOnAttach",
+          "description": "default: true"
+        },
+        {
+          "name": "makeCurrent",
+          "description": "Set debug session as current (default: true)"
+        },
+        {
+          "name": "pid",
+          "description": null
+        },
+        {
+          "name": "waitFor",
+          "description": "Wait for the process to appear when attaching"
+        }
+      ]
+    },
+    {
+      "name": "debug_breakpoint_add",
+      "description": "Add breakpoint.",
+      "args": [
+        {
+          "name": "condition",
+          "description": "Expression for breakpoint condition"
+        },
+        {
+          "name": "debugSessionId",
+          "description": "default: current session"
+        },
+        {
+          "name": "file",
+          "description": null
+        },
+        {
+          "name": "function",
+          "description": null
+        },
+        {
+          "name": "line",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "debug_breakpoint_remove",
+      "description": "Remove breakpoint.",
+      "args": [
+        {
+          "name": "breakpointId",
+          "description": null
+        },
+        {
+          "name": "debugSessionId",
+          "description": "default: current session"
+        }
+      ]
+    },
+    {
+      "name": "debug_continue",
+      "description": "Continue debug session.",
+      "args": [
+        {
+          "name": "debugSessionId",
+          "description": "default: current session"
+        }
+      ]
+    },
+    {
+      "name": "debug_detach",
+      "description": "Detach debugger.",
+      "args": [
+        {
+          "name": "debugSessionId",
+          "description": "default: current session"
+        }
+      ]
+    },
+    {
+      "name": "debug_lldb_command",
+      "description": "Run LLDB command.",
+      "args": [
+        {
+          "name": "command",
+          "description": null
+        },
+        {
+          "name": "debugSessionId",
+          "description": "default: current session"
+        },
+        {
+          "name": "timeoutMs",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "debug_stack",
+      "description": "Get backtrace.",
+      "args": [
+        {
+          "name": "debugSessionId",
+          "description": "default: current session"
+        },
+        {
+          "name": "maxFrames",
+          "description": null
+        },
+        {
+          "name": "threadIndex",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "debug_variables",
+      "description": "Get frame variables.",
+      "args": [
+        {
+          "name": "debugSessionId",
+          "description": "default: current session"
+        },
+        {
+          "name": "frameIndex",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "snapshot_ui",
+      "description": "Print view hierarchy with precise view coordinates (x, y, width, height) for visible elements.",
+      "args": []
+    },
+    {
+      "name": "discover_projs",
+      "description": "Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.",
+      "args": [
+        {
+          "name": "maxDepth",
+          "description": null
+        },
+        {
+          "name": "scanPath",
+          "description": null
+        },
+        {
+          "name": "workspaceRoot",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "doctor",
+      "description": "MCP environment info.",
+      "args": [
+        {
+          "name": "enabled",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "erase_sims",
+      "description": "Erase simulator.",
+      "args": [
+        {
+          "name": "shutdownFirst",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "gesture",
+      "description": "Simulator gesture preset.",
+      "args": [
+        {
+          "name": "delta",
+          "description": "Distance to move in pixels."
+        },
+        {
+          "name": "duration",
+          "description": "Duration of the gesture in seconds."
+        },
+        {
+          "name": "postDelay",
+          "description": "Delay after completing the gesture in seconds."
+        },
+        {
+          "name": "preDelay",
+          "description": "Delay before starting the gesture in seconds."
+        },
+        {
+          "name": "preset",
+          "description": "scroll-up|scroll-down|scroll-left|scroll-right|swipe-from-left-edge|swipe-from-right-edge|swipe-from-top-edge|swipe-from-bottom-edge"
+        },
+        {
+          "name": "screenHeight",
+          "description": "Screen height in pixels. Used for gesture calculations. Auto-detected if not provided."
+        },
+        {
+          "name": "screenWidth",
+          "description": "Screen width in pixels. Used for gesture calculations. Auto-detected if not provided."
+        }
+      ]
+    },
+    {
+      "name": "get_app_bundle_id",
+      "description": "Extract bundle id from .app.",
+      "args": [
+        {
+          "name": "appPath",
+          "description": "Path to the .app bundle"
+        }
+      ]
+    },
+    {
+      "name": "get_device_app_path",
+      "description": "Get device built app path.",
+      "args": [
+        {
+          "name": "platform",
+          "description": "default: iOS"
+        }
+      ]
+    },
+    {
+      "name": "get_mac_app_path",
+      "description": "Get macOS built app path.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": null
+        },
+        {
+          "name": "extraArgs",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "get_mac_bundle_id",
+      "description": "Extract bundle id from macOS .app.",
+      "args": [
+        {
+          "name": "appPath",
+          "description": "Path to the .app bundle"
+        }
+      ]
+    },
+    {
+      "name": "get_sim_app_path",
+      "description": "Get sim built app path.",
+      "args": [
+        {
+          "name": "platform",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "install_app_device",
+      "description": "Install app on device.",
+      "args": [
+        {
+          "name": "appPath",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "install_app_sim",
+      "description": "Install app on sim.",
+      "args": [
+        {
+          "name": "appPath",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "key_press",
+      "description": "Press key by keycode.",
+      "args": [
+        {
+          "name": "duration",
+          "description": "seconds"
+        },
+        {
+          "name": "keyCode",
+          "description": "HID keycode"
+        }
+      ]
+    },
+    {
+      "name": "key_sequence",
+      "description": "Press a sequence of keys by their keycodes.",
+      "args": [
+        {
+          "name": "delay",
+          "description": null
+        },
+        {
+          "name": "keyCodes",
+          "description": "HID keycodes"
+        }
+      ]
+    },
+    {
+      "name": "launch_app_device",
+      "description": "Launch app on device.",
+      "args": [
+        {
+          "name": "bundleId",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "launch_app_logs_sim",
+      "description": "Launch sim app with logs.",
+      "args": [
+        {
+          "name": "args",
+          "description": null
+        },
+        {
+          "name": "bundleId",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "launch_app_sim",
+      "description": "Launch app on simulator.",
+      "args": [
+        {
+          "name": "args",
+          "description": null
+        },
+        {
+          "name": "bundleId",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "launch_mac_app",
+      "description": "Launch macOS app.",
+      "args": [
+        {
+          "name": "appPath",
+          "description": null
+        },
+        {
+          "name": "args",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "list_devices",
+      "description": "List connected devices.",
+      "args": []
+    },
+    {
+      "name": "list_schemes",
+      "description": "List Xcode schemes.",
+      "args": []
+    },
+    {
+      "name": "list_sims",
+      "description": "List iOS simulators.",
+      "args": [
+        {
+          "name": "enabled",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "long_press",
+      "description": "Long press at coords.",
+      "args": [
+        {
+          "name": "duration",
+          "description": "milliseconds"
+        },
+        {
+          "name": "x",
+          "description": null
+        },
+        {
+          "name": "y",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "open_sim",
+      "description": "Open Simulator app.",
+      "args": []
+    },
+    {
+      "name": "record_sim_video",
+      "description": "Record sim video.",
+      "args": [
+        {
+          "name": "fps",
+          "description": "default: 30"
+        },
+        {
+          "name": "outputFile",
+          "description": "Path to write MP4 file"
+        },
+        {
+          "name": "start",
+          "description": null
+        },
+        {
+          "name": "stop",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "reset_sim_location",
+      "description": "Reset sim location.",
+      "args": []
+    },
+    {
+      "name": "scaffold_ios_project",
+      "description": "Scaffold iOS project.",
+      "args": [
+        {
+          "name": "bundleIdentifier",
+          "description": null
+        },
+        {
+          "name": "currentProjectVersion",
+          "description": null
+        },
+        {
+          "name": "customizeNames",
+          "description": null
+        },
+        {
+          "name": "deploymentTarget",
+          "description": null
+        },
+        {
+          "name": "displayName",
+          "description": null
+        },
+        {
+          "name": "marketingVersion",
+          "description": null
+        },
+        {
+          "name": "outputPath",
+          "description": null
+        },
+        {
+          "name": "projectName",
+          "description": null
+        },
+        {
+          "name": "supportedOrientations",
+          "description": null
+        },
+        {
+          "name": "supportedOrientationsIpad",
+          "description": null
+        },
+        {
+          "name": "targetedDeviceFamily",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "scaffold_macos_project",
+      "description": "Scaffold macOS project.",
+      "args": [
+        {
+          "name": "bundleIdentifier",
+          "description": null
+        },
+        {
+          "name": "currentProjectVersion",
+          "description": null
+        },
+        {
+          "name": "customizeNames",
+          "description": null
+        },
+        {
+          "name": "deploymentTarget",
+          "description": null
+        },
+        {
+          "name": "displayName",
+          "description": null
+        },
+        {
+          "name": "marketingVersion",
+          "description": null
+        },
+        {
+          "name": "outputPath",
+          "description": null
+        },
+        {
+          "name": "projectName",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "screenshot",
+      "description": "Capture screenshot.",
+      "args": []
+    },
+    {
+      "name": "session-clear-defaults",
+      "description": "Clear session defaults.",
+      "args": [
+        {
+          "name": "all",
+          "description": null
+        },
+        {
+          "name": "keys",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "session-set-defaults",
+      "description": "Set the session defaults, should be called at least once to set tool defaults.",
+      "args": [
+        {
+          "name": "arch",
+          "description": null
+        },
+        {
+          "name": "configuration",
+          "description": "e.g. 'Debug' or 'Release'."
+        },
+        {
+          "name": "deviceId",
+          "description": null
+        },
+        {
+          "name": "projectPath",
+          "description": "xcodeproj path (xor workspacePath)"
+        },
+        {
+          "name": "scheme",
+          "description": null
+        },
+        {
+          "name": "simulatorId",
+          "description": null
+        },
+        {
+          "name": "simulatorName",
+          "description": null
+        },
+        {
+          "name": "suppressWarnings",
+          "description": null
+        },
+        {
+          "name": "useLatestOS",
+          "description": null
+        },
+        {
+          "name": "workspacePath",
+          "description": "xcworkspace path (xor projectPath)"
+        }
+      ]
+    },
+    {
+      "name": "session-show-defaults",
+      "description": "Show session defaults.",
+      "args": []
+    },
+    {
+      "name": "set_sim_appearance",
+      "description": "Set sim appearance.",
+      "args": [
+        {
+          "name": "mode",
+          "description": "dark|light"
+        }
+      ]
+    },
+    {
+      "name": "set_sim_location",
+      "description": "Set sim location.",
+      "args": [
+        {
+          "name": "latitude",
+          "description": null
+        },
+        {
+          "name": "longitude",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "show_build_settings",
+      "description": "Show build settings.",
+      "args": []
+    },
+    {
+      "name": "sim_statusbar",
+      "description": "Set sim status bar network.",
+      "args": [
+        {
+          "name": "dataNetwork",
+          "description": "clear|hide|wifi|3g|4g|lte|lte-a|lte+|5g|5g+|5g-uwb|5g-uc"
+        }
+      ]
+    },
+    {
+      "name": "start_device_log_cap",
+      "description": "Start device log capture.",
+      "args": [
+        {
+          "name": "bundleId",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "start_sim_log_cap",
+      "description": "Start sim log capture.",
+      "args": [
+        {
+          "name": "bundleId",
+          "description": null
+        },
+        {
+          "name": "captureConsole",
+          "description": null
+        },
+        {
+          "name": "subsystemFilter",
+          "description": "app|all|swiftui|[subsystem]"
+        }
+      ]
+    },
+    {
+      "name": "stop_app_device",
+      "description": "Stop device app.",
+      "args": [
+        {
+          "name": "processId",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "stop_app_sim",
+      "description": "Stop sim app.",
+      "args": [
+        {
+          "name": "bundleId",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "stop_device_log_cap",
+      "description": "Stop device log capture.",
+      "args": [
+        {
+          "name": "logSessionId",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "stop_mac_app",
+      "description": "Stop macOS app.",
+      "args": [
+        {
+          "name": "appName",
+          "description": null
+        },
+        {
+          "name": "processId",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "stop_sim_log_cap",
+      "description": "Stop sim log capture.",
+      "args": [
+        {
+          "name": "logSessionId",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "swift_package_build",
+      "description": "swift package target build.",
+      "args": [
+        {
+          "name": "architectures",
+          "description": null
+        },
+        {
+          "name": "configuration",
+          "description": null
+        },
+        {
+          "name": "packagePath",
+          "description": null
+        },
+        {
+          "name": "parseAsLibrary",
+          "description": null
+        },
+        {
+          "name": "targetName",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "swift_package_clean",
+      "description": "swift package clean.",
+      "args": [
+        {
+          "name": "packagePath",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "swift_package_list",
+      "description": "List SwiftPM processes.",
+      "args": []
+    },
+    {
+      "name": "swift_package_run",
+      "description": "swift package target run.",
+      "args": [
+        {
+          "name": "arguments",
+          "description": null
+        },
+        {
+          "name": "background",
+          "description": null
+        },
+        {
+          "name": "configuration",
+          "description": null
+        },
+        {
+          "name": "executableName",
+          "description": null
+        },
+        {
+          "name": "packagePath",
+          "description": null
+        },
+        {
+          "name": "parseAsLibrary",
+          "description": null
+        },
+        {
+          "name": "timeout",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "swift_package_stop",
+      "description": "Stop SwiftPM run.",
+      "args": [
+        {
+          "name": "pid",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "swift_package_test",
+      "description": "Run swift package target tests.",
+      "args": [
+        {
+          "name": "configuration",
+          "description": null
+        },
+        {
+          "name": "filter",
+          "description": "regex: pattern"
+        },
+        {
+          "name": "packagePath",
+          "description": null
+        },
+        {
+          "name": "parallel",
+          "description": null
+        },
+        {
+          "name": "parseAsLibrary",
+          "description": null
+        },
+        {
+          "name": "showCodecov",
+          "description": null
+        },
+        {
+          "name": "testProduct",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "swipe",
+      "description": "Swipe between points.",
+      "args": [
+        {
+          "name": "delta",
+          "description": null
+        },
+        {
+          "name": "duration",
+          "description": "seconds"
+        },
+        {
+          "name": "postDelay",
+          "description": "seconds"
+        },
+        {
+          "name": "preDelay",
+          "description": "seconds"
+        },
+        {
+          "name": "x1",
+          "description": null
+        },
+        {
+          "name": "x2",
+          "description": null
+        },
+        {
+          "name": "y1",
+          "description": null
+        },
+        {
+          "name": "y2",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "tap",
+      "description": "Tap coordinate or element.",
+      "args": [
+        {
+          "name": "id",
+          "description": null
+        },
+        {
+          "name": "label",
+          "description": null
+        },
+        {
+          "name": "postDelay",
+          "description": "seconds"
+        },
+        {
+          "name": "preDelay",
+          "description": "seconds"
+        },
+        {
+          "name": "x",
+          "description": null
+        },
+        {
+          "name": "y",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "test_device",
+      "description": "Test on device.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": null
+        },
+        {
+          "name": "extraArgs",
+          "description": null
+        },
+        {
+          "name": "platform",
+          "description": null
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": null
+        },
+        {
+          "name": "testRunnerEnv",
+          "description": "Environment variables to pass to the test runner (TEST_RUNNER_ prefix added automatically)"
+        }
+      ]
+    },
+    {
+      "name": "test_macos",
+      "description": "Test macOS target.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": null
+        },
+        {
+          "name": "extraArgs",
+          "description": null
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": null
+        },
+        {
+          "name": "testRunnerEnv",
+          "description": "Environment variables to pass to the test runner (TEST_RUNNER_ prefix added automatically)"
+        }
+      ]
+    },
+    {
+      "name": "test_sim",
+      "description": "Test on iOS sim.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": null
+        },
+        {
+          "name": "extraArgs",
+          "description": null
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": null
+        },
+        {
+          "name": "testRunnerEnv",
+          "description": "Environment variables to pass to the test runner (TEST_RUNNER_ prefix added automatically)"
+        }
+      ]
+    },
+    {
+      "name": "touch",
+      "description": "Touch down/up at coords.",
+      "args": [
+        {
+          "name": "delay",
+          "description": "seconds"
+        },
+        {
+          "name": "down",
+          "description": null
+        },
+        {
+          "name": "up",
+          "description": null
+        },
+        {
+          "name": "x",
+          "description": null
+        },
+        {
+          "name": "y",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "type_text",
+      "description": "Type text.",
+      "args": [
+        {
+          "name": "text",
+          "description": null
+        }
+      ]
+    }
+  ]
+}

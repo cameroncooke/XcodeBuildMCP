@@ -18,7 +18,7 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const stopDeviceLogCapSchema = z.object({
-  logSessionId: z.string().describe('The session ID returned by start_device_log_cap.'),
+  logSessionId: z.string(),
 });
 
 // Use z.infer for type safety
@@ -328,7 +328,7 @@ export async function stopDeviceLogCapture(
 
 export default {
   name: 'stop_device_log_cap',
-  description: 'Stops an active Apple device log capture session and returns the captured logs.',
+  description: 'Stop device log capture.',
   schema: stopDeviceLogCapSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Stop Device Log Capture',

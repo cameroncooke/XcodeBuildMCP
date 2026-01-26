@@ -26,7 +26,7 @@ describe('test_device plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(testDevice.description).toBe('Runs tests on a physical Apple device.');
+      expect(testDevice.description).toBe('Test on device.');
     });
 
     it('should have handler function', () => {
@@ -37,24 +37,18 @@ describe('test_device plugin', () => {
       const schema = z.strictObject(testDevice.schema);
       expect(
         schema.safeParse({
-          derivedDataPath: '/path/to/derived-data',
           extraArgs: ['--arg1'],
-          preferXcodebuild: true,
-          platform: 'iOS',
           testRunnerEnv: { FOO: 'bar' },
         }).success,
       ).toBe(true);
       expect(schema.safeParse({}).success).toBe(true);
+      expect(schema.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
+      expect(schema.safeParse({ platform: 'iOS' }).success).toBe(false);
       expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(false);
 
       const schemaKeys = Object.keys(testDevice.schema).sort();
-      expect(schemaKeys).toEqual([
-        'derivedDataPath',
-        'extraArgs',
-        'platform',
-        'preferXcodebuild',
-        'testRunnerEnv',
-      ]);
+      expect(schemaKeys).toEqual(['extraArgs', 'testRunnerEnv']);
     });
 
     it('should validate XOR between projectPath and workspacePath', async () => {

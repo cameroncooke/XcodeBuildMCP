@@ -88,10 +88,8 @@ function createDeps(overrides?: Partial<DoctorDependencies>): DoctorDependencies
     runtime: {
       async getRuntimeToolInfo() {
         return {
-          mode: 'runtime' as const,
           enabledWorkflows: ['doctor'],
-          enabledTools: ['doctor'],
-          totalRegistered: 1,
+          registeredToolCount: 1,
         };
       },
     },
@@ -132,9 +130,7 @@ describe('doctor tool', () => {
     });
 
     it('should have correct description', () => {
-      expect(doctor.description).toBe(
-        'Provides comprehensive information about the MCP server environment, available dependencies, and configuration status.',
-      );
+      expect(doctor.description).toBe('MCP environment info.');
     });
 
     it('should have handler function', () => {

@@ -17,12 +17,16 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { log } from '../utils/logger.ts';
 import { version } from '../version.ts';
 import * as Sentry from '@sentry/node';
+import { getServer, setServer } from './server-state.ts';
 
 /**
  * Create and configure the MCP server
  * @returns Configured MCP server instance
  */
 export function createServer(): McpServer {
+  if (getServer()) {
+    throw new Error('MCP server already initialized.');
+  }
   // Create server instance
   const baseServer = new McpServer(
     {
@@ -44,12 +48,13 @@ export function createServer(): McpServer {
   );
 
   // Wrap server with Sentry for MCP instrumentation
-  const server = Sentry.wrapMcpServerWithSentry(baseServer);
+  const wrappedServer = Sentry.wrapMcpServerWithSentry(baseServer);
+  setServer(wrappedServer);
 
   // Log server initialization
   log('info', `Server initialized with Sentry MCP instrumentation (version ${version})`);
 
-  return server;
+  return wrappedServer;
 }
 
 /**

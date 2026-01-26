@@ -22,9 +22,9 @@ const baseSchemaObject = z.object({
   workspacePath: z.string().optional().describe('Path to the .xcworkspace file'),
   scheme: z.string().describe('The scheme to build'),
   configuration: z.string().optional().describe('Build configuration (Debug, Release)'),
-  derivedDataPath: z.string().optional().describe('Path to derived data directory'),
-  extraArgs: z.array(z.string()).optional().describe('Additional arguments to pass to xcodebuild'),
-  preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
+  derivedDataPath: z.string().optional(),
+  extraArgs: z.array(z.string()).optional(),
+  preferXcodebuild: z.boolean().optional(),
 });
 
 const buildDeviceSchema = z.preprocess(
@@ -45,6 +45,8 @@ const publicSchemaObject = baseSchemaObject.omit({
   workspacePath: true,
   scheme: true,
   configuration: true,
+  derivedDataPath: true,
+  preferXcodebuild: true,
 } as const);
 
 /**
@@ -74,7 +76,7 @@ export async function buildDeviceLogic(
 
 export default {
   name: 'build_device',
-  description: 'Builds an app for a connected device.',
+  description: 'Build for device.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

@@ -24,7 +24,7 @@ describe('list_schemes plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe('Lists schemes for a project or workspace.');
+      expect(plugin.description).toBe('List Xcode schemes.');
     });
 
     it('should have handler function', () => {

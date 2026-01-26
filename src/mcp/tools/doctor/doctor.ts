@@ -18,7 +18,7 @@ const LOG_PREFIX = '[Doctor]';
 
 // Define schema as ZodObject
 const doctorSchema = z.object({
-  enabled: z.boolean().optional().describe('Optional: dummy parameter to satisfy MCP protocol'),
+  enabled: z.boolean().optional(),
 });
 
 // Use z.infer for type safety
@@ -58,6 +58,11 @@ export async function runDoctor(
   const axeAvailable = deps.features.areAxeToolsAvailable();
   const pluginSystemInfo = await deps.plugins.getPluginSystemInfo();
   const runtimeInfo = await deps.runtime.getRuntimeToolInfo();
+  const runtimeRegistration = runtimeInfo ?? {
+    enabledWorkflows: [],
+    registeredToolCount: 0,
+  };
+  const runtimeNote = runtimeInfo ? null : 'Runtime registry unavailable.';
   const xcodemakeEnabled = deps.features.isXcodemakeEnabled();
   const xcodemakeAvailable = await deps.features.isXcodemakeAvailable();
   const makefileExists = deps.features.doesMakefileExist('./');
@@ -234,12 +239,11 @@ export async function runDoctor(
       : ['- Plugin directory grouping unavailable in this build']),
 
     `\n### Runtime Tool Registration`,
-    `- Mode: ${runtimeInfo.mode}`,
-    `- Enabled Workflows: ${runtimeInfo.enabledWorkflows.length}`,
-    `- Registered Tools: ${runtimeInfo.totalRegistered}`,
-    ...(runtimeInfo.mode === 'static' ? [`- Note: ${runtimeInfo.note}`] : []),
-    ...(runtimeInfo.enabledWorkflows.length > 0
-      ? [`- Workflows: ${runtimeInfo.enabledWorkflows.join(', ')}`]
+    `- Enabled Workflows: ${runtimeRegistration.enabledWorkflows.length}`,
+    `- Registered Tools: ${runtimeRegistration.registeredToolCount}`,
+    ...(runtimeNote ? [`- Note: ${runtimeNote}`] : []),
+    ...(runtimeRegistration.enabledWorkflows.length > 0
+      ? [`- Workflows: ${runtimeRegistration.enabledWorkflows.join(', ')}`]
       : []),
 
     `\n## Tool Availability Summary`,
@@ -293,8 +297,7 @@ async function doctorMcpHandler(
 
 export default {
   name: 'doctor',
-  description:
-    'Provides comprehensive information about the MCP server environment, available dependencies, and configuration status.',
+  description: 'MCP environment info.',
   schema: doctorSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Doctor',

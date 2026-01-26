@@ -19,7 +19,7 @@ describe('test_sim tool', () => {
     });
 
     it('should have concise description', () => {
-      expect(testSim.description).toBe('Runs tests on an iOS simulator.');
+      expect(testSim.description).toBe('Test on iOS sim.');
     });
 
     it('should have handler function', () => {
@@ -27,27 +27,23 @@ describe('test_sim tool', () => {
     });
 
     it('should expose only non-session fields in public schema', () => {
-      const schema = z.object(testSim.schema);
+      const schema = z.strictObject(testSim.schema);
 
       expect(schema.safeParse({}).success).toBe(true);
       expect(
         schema.safeParse({
-          derivedDataPath: '/tmp/derived',
           extraArgs: ['--quiet'],
-          preferXcodebuild: true,
           testRunnerEnv: { FOO: 'BAR' },
         }).success,
       ).toBe(true);
 
       expect(schema.safeParse({ derivedDataPath: 123 }).success).toBe(false);
       expect(schema.safeParse({ extraArgs: ['--ok', 42] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
       expect(schema.safeParse({ testRunnerEnv: { FOO: 123 } }).success).toBe(false);
 
       const schemaKeys = Object.keys(testSim.schema).sort();
-      expect(schemaKeys).toEqual(
-        ['derivedDataPath', 'extraArgs', 'preferXcodebuild', 'testRunnerEnv'].sort(),
-      );
+      expect(schemaKeys).toEqual(['extraArgs', 'testRunnerEnv'].sort());
     });
   });
 

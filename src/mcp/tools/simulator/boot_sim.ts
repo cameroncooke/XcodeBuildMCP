@@ -70,7 +70,7 @@ Next steps:
 
 export default {
   name: 'boot_sim',
-  description: 'Boots an iOS simulator.',
+  description: 'Boot iOS simulator.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: bootSimSchemaObject,

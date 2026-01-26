@@ -25,7 +25,7 @@ describe('session-clear-defaults tool', () => {
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe('Clear selected or all session defaults.');
+      expect(plugin.description).toBe('Clear session defaults.');
     });
 
     it('should have handler function', () => {

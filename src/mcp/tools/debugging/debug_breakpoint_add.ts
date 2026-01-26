@@ -10,14 +10,11 @@ import {
 } from '../../../utils/debugger/index.ts';
 
 const baseSchemaObject = z.object({
-  debugSessionId: z
-    .string()
-    .optional()
-    .describe('Debug session ID to target (defaults to current session)'),
-  file: z.string().optional().describe('Source file path for breakpoint'),
-  line: z.number().int().positive().optional().describe('Line number for breakpoint'),
-  function: z.string().optional().describe('Function name to break on'),
-  condition: z.string().optional().describe('Optional condition expression for the breakpoint'),
+  debugSessionId: z.string().optional().describe('default: current session'),
+  file: z.string().optional(),
+  line: z.number().int().positive().optional(),
+  function: z.string().optional(),
+  condition: z.string().optional().describe('Expression for breakpoint condition'),
 });
 
 const debugBreakpointAddSchema = z.preprocess(
@@ -58,7 +55,7 @@ export async function debug_breakpoint_addLogic(
 
 export default {
   name: 'debug_breakpoint_add',
-  description: 'Add a breakpoint by file/line or function name for the active debug session.',
+  description: 'Add breakpoint.',
   schema: baseSchemaObject.shape,
   handler: createTypedToolWithContext<DebugBreakpointAddParams, DebuggerToolContext>(
     debugBreakpointAddSchema as unknown as z.ZodType<DebugBreakpointAddParams, unknown>,

@@ -34,13 +34,10 @@ const baseSchemaObject = z.object({
   scheme: z.string().describe('The scheme to test'),
   deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
   configuration: z.string().optional().describe('Build configuration (Debug, Release)'),
-  derivedDataPath: z.string().optional().describe('Path to derived data directory'),
-  extraArgs: z.array(z.string()).optional().describe('Additional arguments to pass to xcodebuild'),
-  preferXcodebuild: z.boolean().optional().describe('Prefer xcodebuild over faster alternatives'),
-  platform: z
-    .enum(['iOS', 'watchOS', 'tvOS', 'visionOS'])
-    .optional()
-    .describe('Target platform (defaults to iOS)'),
+  derivedDataPath: z.string().optional(),
+  extraArgs: z.array(z.string()).optional(),
+  preferXcodebuild: z.boolean().optional(),
+  platform: z.enum(['iOS', 'watchOS', 'tvOS', 'visionOS']).optional(),
   testRunnerEnv: z
     .record(z.string(), z.string())
     .optional()
@@ -68,6 +65,9 @@ const publicSchemaObject = baseSchemaObject.omit({
   scheme: true,
   deviceId: true,
   configuration: true,
+  derivedDataPath: true,
+  preferXcodebuild: true,
+  platform: true,
 } as const);
 
 /**
@@ -287,7 +287,7 @@ export async function testDeviceLogic(
 
 export default {
   name: 'test_device',
-  description: 'Runs tests on a physical Apple device.',
+  description: 'Test on device.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

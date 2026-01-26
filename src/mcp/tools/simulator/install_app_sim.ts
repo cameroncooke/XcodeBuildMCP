@@ -11,9 +11,7 @@ import {
 
 const installAppSimSchemaObject = z.object({
   simulatorId: z.string().describe('UUID of the simulator to use (obtained from list_sims)'),
-  appPath: z
-    .string()
-    .describe('Path to the .app bundle to install (full path to the .app directory)'),
+  appPath: z.string(),
 });
 
 type InstallAppSimParams = z.infer<typeof installAppSimSchemaObject>;
@@ -98,7 +96,7 @@ export async function install_app_simLogic(
 
 export default {
   name: 'install_app_sim',
-  description: 'Installs an app in an iOS simulator.',
+  description: 'Install app on sim.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: installAppSimSchemaObject,

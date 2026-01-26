@@ -1,0 +1,1146 @@
+{
+  "mode": "schema-audit",
+  "toolCount": 71,
+  "tools": [
+    {
+      "name": "boot_sim",
+      "description": "Boots an iOS simulator.",
+      "args": []
+    },
+    {
+      "name": "build_device",
+      "description": "Builds an app for a connected device.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": "Path to derived data directory"
+        },
+        {
+          "name": "extraArgs",
+          "description": "Additional arguments to pass to xcodebuild"
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": "Prefer xcodebuild over faster alternatives"
+        }
+      ]
+    },
+    {
+      "name": "build_macos",
+      "description": "Builds a macOS app.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": "Path where build products and other derived data will go"
+        },
+        {
+          "name": "extraArgs",
+          "description": "Additional xcodebuild arguments"
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": "If true, prefers xcodebuild over the experimental incremental build system"
+        }
+      ]
+    },
+    {
+      "name": "build_run_macos",
+      "description": "Builds and runs a macOS app.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": "Path where build products and other derived data will go"
+        },
+        {
+          "name": "extraArgs",
+          "description": "Additional xcodebuild arguments"
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": "If true, prefers xcodebuild over the experimental incremental build system"
+        }
+      ]
+    },
+    {
+      "name": "build_run_sim",
+      "description": "Builds and runs an app on an iOS simulator.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": "Path where build products and other derived data will go"
+        },
+        {
+          "name": "extraArgs",
+          "description": "Additional xcodebuild arguments"
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+        }
+      ]
+    },
+    {
+      "name": "build_sim",
+      "description": "Builds an app for an iOS simulator.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": "Path where build products and other derived data will go"
+        },
+        {
+          "name": "extraArgs",
+          "description": "Additional xcodebuild arguments"
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+        }
+      ]
+    },
+    {
+      "name": "button",
+      "description": "Press hardware button on iOS simulator. Supported buttons: apple-pay, home, lock, side-button, siri",
+      "args": [
+        {
+          "name": "buttonType",
+          "description": null
+        },
+        {
+          "name": "duration",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "clean",
+      "description": "Cleans build products with xcodebuild.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": "Optional: Path where derived data might be located"
+        },
+        {
+          "name": "extraArgs",
+          "description": "Additional xcodebuild arguments"
+        },
+        {
+          "name": "platform",
+          "description": "Optional: Platform to clean for (defaults to iOS). Choose from macOS, iOS, iOS Simulator, watchOS, watchOS Simulator, tvOS, tvOS Simulator, visionOS, visionOS Simulator"
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+        }
+      ]
+    },
+    {
+      "name": "debug_attach_sim",
+      "description": "Attach LLDB to a running iOS simulator app. Provide bundleId or pid, plus simulator defaults.",
+      "args": [
+        {
+          "name": "bundleId",
+          "description": "Bundle identifier of the app to attach (e.g., 'com.example.MyApp')"
+        },
+        {
+          "name": "continueOnAttach",
+          "description": "Resume execution automatically after attaching (default: true)"
+        },
+        {
+          "name": "makeCurrent",
+          "description": "Set this debug session as the current session (default: true)"
+        },
+        {
+          "name": "pid",
+          "description": "Process ID to attach directly"
+        },
+        {
+          "name": "waitFor",
+          "description": "Wait for the process to appear when attaching"
+        }
+      ]
+    },
+    {
+      "name": "debug_breakpoint_add",
+      "description": "Add a breakpoint by file/line or function name for the active debug session.",
+      "args": [
+        {
+          "name": "condition",
+          "description": "Optional condition expression for the breakpoint"
+        },
+        {
+          "name": "debugSessionId",
+          "description": "Debug session ID to target (defaults to current session)"
+        },
+        {
+          "name": "file",
+          "description": null
+        },
+        {
+          "name": "function",
+          "description": "Function name to break on"
+        },
+        {
+          "name": "line",
+          "description": "Line number for breakpoint"
+        }
+      ]
+    },
+    {
+      "name": "debug_breakpoint_remove",
+      "description": "Remove a breakpoint by id for the active debug session.",
+      "args": [
+        {
+          "name": "breakpointId",
+          "description": "Breakpoint id to remove"
+        },
+        {
+          "name": "debugSessionId",
+          "description": "Debug session ID to target (defaults to current session)"
+        }
+      ]
+    },
+    {
+      "name": "debug_continue",
+      "description": "Resume execution in the active debug session or a specific debugSessionId.",
+      "args": [
+        {
+          "name": "debugSessionId",
+          "description": "Debug session ID to resume (defaults to current session)"
+        }
+      ]
+    },
+    {
+      "name": "debug_detach",
+      "description": "Detach the current debugger session or a specific debugSessionId.",
+      "args": [
+        {
+          "name": "debugSessionId",
+          "description": "Debug session ID to detach (defaults to current session)"
+        }
+      ]
+    },
+    {
+      "name": "debug_lldb_command",
+      "description": "Run an arbitrary LLDB command within the active debug session.",
+      "args": [
+        {
+          "name": "command",
+          "description": null
+        },
+        {
+          "name": "debugSessionId",
+          "description": null
+        },
+        {
+          "name": "timeoutMs",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "debug_stack",
+      "description": "Return a thread backtrace from the active debug session.",
+      "args": [
+        {
+          "name": "debugSessionId",
+          "description": "Debug session ID to target (defaults to current session)"
+        },
+        {
+          "name": "maxFrames",
+          "description": "Maximum frames to return"
+        },
+        {
+          "name": "threadIndex",
+          "description": "Thread index for backtrace"
+        }
+      ]
+    },
+    {
+      "name": "debug_variables",
+      "description": "Return variables for a selected frame in the active debug session.",
+      "args": [
+        {
+          "name": "debugSessionId",
+          "description": "Debug session ID to target (defaults to current session)"
+        },
+        {
+          "name": "frameIndex",
+          "description": "Frame index to inspect"
+        }
+      ]
+    },
+    {
+      "name": "snapshot_ui",
+      "description": "Gets entire view hierarchy with precise frame coordinates (x, y, width, height) for all visible elements. Use this before UI interactions or after layout changes - do NOT guess coordinates from screenshots. Returns JSON tree with frame data for accurate automation. Requires the target process to be running; paused debugger/breakpoints can yield an empty tree.",
+      "args": []
+    },
+    {
+      "name": "discover_projs",
+      "description": "Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.",
+      "args": [
+        {
+          "name": "maxDepth",
+          "description": "Optional: Maximum directory depth to scan. Defaults to ${DEFAULT_MAX_DEPTH}."
+        },
+        {
+          "name": "scanPath",
+          "description": "Optional: Path relative to workspace root to scan. Defaults to workspace root."
+        },
+        {
+          "name": "workspaceRoot",
+          "description": "The absolute path of the workspace root to scan within."
+        }
+      ]
+    },
+    {
+      "name": "doctor",
+      "description": "Provides comprehensive information about the MCP server environment, available dependencies, and configuration status.",
+      "args": [
+        {
+          "name": "enabled",
+          "description": "Optional: dummy parameter to satisfy MCP protocol"
+        }
+      ]
+    },
+    {
+      "name": "erase_sims",
+      "description": "Erases a simulator by UDID.",
+      "args": [
+        {
+          "name": "shutdownFirst",
+          "description": "If true, shuts down the simulator before erasing."
+        }
+      ]
+    },
+    {
+      "name": "gesture",
+      "description": "Perform gesture on iOS simulator using preset gestures: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge",
+      "args": [
+        {
+          "name": "delta",
+          "description": "Optional: Distance to move in pixels."
+        },
+        {
+          "name": "duration",
+          "description": "Optional: Duration of the gesture in seconds."
+        },
+        {
+          "name": "postDelay",
+          "description": "Optional: Delay after completing the gesture in seconds."
+        },
+        {
+          "name": "preDelay",
+          "description": "Optional: Delay before starting the gesture in seconds."
+        },
+        {
+          "name": "preset",
+          "description": "The gesture preset to perform. Must be one of: scroll-up, scroll-down, scroll-left, scroll-right, swipe-from-left-edge, swipe-from-right-edge, swipe-from-top-edge, swipe-from-bottom-edge."
+        },
+        {
+          "name": "screenHeight",
+          "description": "Optional: Screen height in pixels. Used for gesture calculations. Auto-detected if not provided."
+        },
+        {
+          "name": "screenWidth",
+          "description": "Optional: Screen width in pixels. Used for gesture calculations. Auto-detected if not provided."
+        }
+      ]
+    },
+    {
+      "name": "get_app_bundle_id",
+      "description": "Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, iPadOS, watchOS, tvOS, visionOS). IMPORTANT: You MUST provide the appPath parameter. Example: get_app_bundle_id({ appPath: '/path/to/your/app.app' })",
+      "args": [
+        {
+          "name": "appPath",
+          "description": "Path to the .app bundle to extract bundle ID from (full path to the .app directory)"
+        }
+      ]
+    },
+    {
+      "name": "get_device_app_path",
+      "description": "Retrieves the built app path for a connected device.",
+      "args": [
+        {
+          "name": "platform",
+          "description": "Target platform (defaults to iOS)"
+        }
+      ]
+    },
+    {
+      "name": "get_mac_app_path",
+      "description": "Retrieves the built macOS app bundle path.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": "Path to derived data directory"
+        },
+        {
+          "name": "extraArgs",
+          "description": "Additional arguments to pass to xcodebuild"
+        }
+      ]
+    },
+    {
+      "name": "get_mac_bundle_id",
+      "description": "Extracts the bundle identifier from a macOS app bundle (.app). IMPORTANT: You MUST provide the appPath parameter. Example: get_mac_bundle_id({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_get_macos_bundle_id.",
+      "args": [
+        {
+          "name": "appPath",
+          "description": "Path to the macOS .app bundle to extract bundle ID from (full path to the .app directory)"
+        }
+      ]
+    },
+    {
+      "name": "get_sim_app_path",
+      "description": "Retrieves the built app path for an iOS simulator.",
+      "args": [
+        {
+          "name": "platform",
+          "description": "Target simulator platform (Required)"
+        }
+      ]
+    },
+    {
+      "name": "install_app_device",
+      "description": "Installs an app on a connected device.",
+      "args": [
+        {
+          "name": "appPath",
+          "description": "Path to the .app bundle to install (full path to the .app directory)"
+        }
+      ]
+    },
+    {
+      "name": "install_app_sim",
+      "description": "Installs an app in an iOS simulator.",
+      "args": [
+        {
+          "name": "appPath",
+          "description": "Path to the .app bundle to install (full path to the .app directory)"
+        }
+      ]
+    },
+    {
+      "name": "key_press",
+      "description": "Press a single key by keycode on the simulator. Common keycodes: 40=Return, 42=Backspace, 43=Tab, 44=Space, 58-67=F1-F10.",
+      "args": [
+        {
+          "name": "duration",
+          "description": null
+        },
+        {
+          "name": "keyCode",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "key_sequence",
+      "description": "Press key sequence using HID keycodes on iOS simulator with configurable delay",
+      "args": [
+        {
+          "name": "delay",
+          "description": null
+        },
+        {
+          "name": "keyCodes",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "launch_app_device",
+      "description": "Launches an app on a connected device.",
+      "args": [
+        {
+          "name": "bundleId",
+          "description": "Bundle identifier of the app to launch (e.g., \"com.example.MyApp\")"
+        }
+      ]
+    },
+    {
+      "name": "launch_app_logs_sim",
+      "description": "Launches an app in an iOS simulator and captures its logs.",
+      "args": [
+        {
+          "name": "args",
+          "description": "Additional arguments to pass to the app"
+        },
+        {
+          "name": "bundleId",
+          "description": "Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"
+        }
+      ]
+    },
+    {
+      "name": "launch_app_sim",
+      "description": "Launches an app in an iOS simulator.",
+      "args": [
+        {
+          "name": "args",
+          "description": "Additional arguments to pass to the app"
+        },
+        {
+          "name": "bundleId",
+          "description": "Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"
+        }
+      ]
+    },
+    {
+      "name": "launch_mac_app",
+      "description": "Launches a macOS application. IMPORTANT: You MUST provide the appPath parameter. Example: launch_mac_app({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_launch_macos_app.",
+      "args": [
+        {
+          "name": "appPath",
+          "description": "Path to the macOS .app bundle to launch (full path to the .app directory)"
+        },
+        {
+          "name": "args",
+          "description": "Additional arguments to pass to the app"
+        }
+      ]
+    },
+    {
+      "name": "list_devices",
+      "description": "Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.",
+      "args": []
+    },
+    {
+      "name": "list_schemes",
+      "description": "Lists schemes for a project or workspace.",
+      "args": []
+    },
+    {
+      "name": "list_sims",
+      "description": "Lists available iOS simulators with their UUIDs.",
+      "args": [
+        {
+          "name": "enabled",
+          "description": "Optional flag to enable the listing operation."
+        }
+      ]
+    },
+    {
+      "name": "long_press",
+      "description": "Long press at specific coordinates for given duration (ms). Use snapshot_ui for precise coordinates (don't guess from screenshots).",
+      "args": [
+        {
+          "name": "duration",
+          "description": null
+        },
+        {
+          "name": "x",
+          "description": null
+        },
+        {
+          "name": "y",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "open_sim",
+      "description": "Opens the iOS Simulator app.",
+      "args": []
+    },
+    {
+      "name": "record_sim_video",
+      "description": "Starts or stops video capture for an iOS simulator.",
+      "args": [
+        {
+          "name": "fps",
+          "description": "Frames per second (default 30)"
+        },
+        {
+          "name": "outputFile",
+          "description": "Destination MP4 path to move the recorded video to on stop"
+        },
+        {
+          "name": "start",
+          "description": "Start recording if true"
+        },
+        {
+          "name": "stop",
+          "description": "Stop recording if true"
+        }
+      ]
+    },
+    {
+      "name": "reset_sim_location",
+      "description": "Resets the simulator's location to default.",
+      "args": []
+    },
+    {
+      "name": "scaffold_ios_project",
+      "description": "Scaffold a new iOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper iOS configuration.",
+      "args": [
+        {
+          "name": "bundleIdentifier",
+          "description": "Bundle identifier (e.g., com.example.myapp). If not provided, will use com.example.projectname"
+        },
+        {
+          "name": "currentProjectVersion",
+          "description": "Build number (e.g., 1, 42, 100). If not provided, will use 1"
+        },
+        {
+          "name": "customizeNames",
+          "description": "Whether to customize project names and identifiers. Default is true."
+        },
+        {
+          "name": "deploymentTarget",
+          "description": "iOS deployment target (e.g., 18.4, 17.0). If not provided, will use 18.4"
+        },
+        {
+          "name": "displayName",
+          "description": "App display name (shown on home screen/dock). If not provided, will use projectName"
+        },
+        {
+          "name": "marketingVersion",
+          "description": "Marketing version (e.g., 1.0, 2.1.3). If not provided, will use 1.0"
+        },
+        {
+          "name": "outputPath",
+          "description": "Path where the project should be created"
+        },
+        {
+          "name": "projectName",
+          "description": "Name of the new project"
+        },
+        {
+          "name": "supportedOrientations",
+          "description": "Supported orientations for iPhone"
+        },
+        {
+          "name": "supportedOrientationsIpad",
+          "description": "Supported orientations for iPad"
+        },
+        {
+          "name": "targetedDeviceFamily",
+          "description": "Targeted device families"
+        }
+      ]
+    },
+    {
+      "name": "scaffold_macos_project",
+      "description": "Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.",
+      "args": [
+        {
+          "name": "bundleIdentifier",
+          "description": "Bundle identifier (e.g., com.example.myapp). If not provided, will use com.example.projectname"
+        },
+        {
+          "name": "currentProjectVersion",
+          "description": "Build number (e.g., 1, 42, 100). If not provided, will use 1"
+        },
+        {
+          "name": "customizeNames",
+          "description": "Whether to customize project names and identifiers. Default is true."
+        },
+        {
+          "name": "deploymentTarget",
+          "description": "macOS deployment target (e.g., 15.4, 14.0). If not provided, will use 15.4"
+        },
+        {
+          "name": "displayName",
+          "description": "App display name (shown on home screen/dock). If not provided, will use projectName"
+        },
+        {
+          "name": "marketingVersion",
+          "description": "Marketing version (e.g., 1.0, 2.1.3). If not provided, will use 1.0"
+        },
+        {
+          "name": "outputPath",
+          "description": "Path where the project should be created"
+        },
+        {
+          "name": "projectName",
+          "description": "Name of the new project"
+        }
+      ]
+    },
+    {
+      "name": "screenshot",
+      "description": "Captures screenshot for visual verification. For UI coordinates, use snapshot_ui instead (don't determine coordinates from screenshots).",
+      "args": []
+    },
+    {
+      "name": "session-clear-defaults",
+      "description": "Clear selected or all session defaults.",
+      "args": [
+        {
+          "name": "all",
+          "description": null
+        },
+        {
+          "name": "keys",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "session-set-defaults",
+      "description": "Set the session defaults needed by many tools. Most tools require one or more session defaults to be set before they can be used. Agents should set all relevant defaults up front in a single call (e.g., project/workspace, scheme, simulator or device ID, useLatestOS) to avoid iterative prompts; only set the keys your workflow needs.",
+      "args": [
+        {
+          "name": "arch",
+          "description": "Target architecture for macOS builds."
+        },
+        {
+          "name": "configuration",
+          "description": "Build configuration, e.g. Debug or Release."
+        },
+        {
+          "name": "deviceId",
+          "description": "Physical device ID for device workflows."
+        },
+        {
+          "name": "projectPath",
+          "description": "Xcode project (.xcodeproj) path. Mutually exclusive with workspacePath. Required for most build/test tools when workspacePath is not set."
+        },
+        {
+          "name": "scheme",
+          "description": "Xcode scheme. Required by most build/test tools. Use list_schemes to discover available schemes before setting."
+        },
+        {
+          "name": "simulatorId",
+          "description": "Simulator UUID for simulator workflows. Preferred over simulatorName when both are provided."
+        },
+        {
+          "name": "simulatorName",
+          "description": "Simulator device name for simulator workflows. If simulatorId is also provided, simulatorId is preferred and simulatorName is ignored."
+        },
+        {
+          "name": "suppressWarnings",
+          "description": "When true, warning messages are filtered from build output to conserve context"
+        },
+        {
+          "name": "useLatestOS",
+          "description": "When true, prefer the latest available OS for simulatorName lookups."
+        },
+        {
+          "name": "workspacePath",
+          "description": "Xcode workspace (.xcworkspace) path. Mutually exclusive with projectPath. Required for most build/test tools when projectPath is not set."
+        }
+      ]
+    },
+    {
+      "name": "session-show-defaults",
+      "description": "Show current session defaults.",
+      "args": []
+    },
+    {
+      "name": "set_sim_appearance",
+      "description": "Sets the appearance mode (dark/light) of an iOS simulator.",
+      "args": [
+        {
+          "name": "mode",
+          "description": "The appearance mode to set (either \"dark\" or \"light\")"
+        }
+      ]
+    },
+    {
+      "name": "set_sim_location",
+      "description": "Sets a custom GPS location for the simulator.",
+      "args": [
+        {
+          "name": "latitude",
+          "description": "The latitude for the custom location."
+        },
+        {
+          "name": "longitude",
+          "description": "The longitude for the custom location."
+        }
+      ]
+    },
+    {
+      "name": "show_build_settings",
+      "description": "Shows xcodebuild build settings.",
+      "args": []
+    },
+    {
+      "name": "sim_statusbar",
+      "description": "Sets the data network indicator in the iOS simulator status bar. Use \"clear\" to reset all overrides, or specify a network type (hide, wifi, 3g, 4g, lte, lte-a, lte+, 5g, 5g+, 5g-uwb, 5g-uc).",
+      "args": [
+        {
+          "name": "dataNetwork",
+          "description": "Data network type to display in status bar. Use \"clear\" to reset all overrides. Valid values: clear, hide, wifi, 3g, 4g, lte, lte-a, lte+, 5g, 5g+, 5g-uwb, 5g-uc."
+        }
+      ]
+    },
+    {
+      "name": "start_device_log_cap",
+      "description": "Starts log capture on a connected device.",
+      "args": [
+        {
+          "name": "bundleId",
+          "description": "Bundle identifier of the app to launch and capture logs for."
+        }
+      ]
+    },
+    {
+      "name": "start_sim_log_cap",
+      "description": "Starts capturing logs from a specified simulator. Returns a session ID. Use subsystemFilter to control what logs are captured: 'app' (default), 'all' (everything), 'swiftui' (includes Self._printChanges()), or custom subsystems.",
+      "args": [
+        {
+          "name": "bundleId",
+          "description": "Bundle identifier of the app to capture logs for."
+        },
+        {
+          "name": "captureConsole",
+          "description": "Whether to capture console output (requires app relaunch)."
+        },
+        {
+          "name": "subsystemFilter",
+          "description": "Controls which log subsystems to capture. Options: 'app' (default, only app logs), 'all' (capture all system logs), 'swiftui' (app + SwiftUI logs for Self._printChanges()), or an array of custom subsystem strings."
+        }
+      ]
+    },
+    {
+      "name": "stop_app_device",
+      "description": "Stops a running app on a connected device.",
+      "args": [
+        {
+          "name": "processId",
+          "description": "Process ID (PID) of the app to stop"
+        }
+      ]
+    },
+    {
+      "name": "stop_app_sim",
+      "description": "Stops an app running in an iOS simulator.",
+      "args": [
+        {
+          "name": "bundleId",
+          "description": "Bundle identifier of the app to stop (e.g., 'com.example.MyApp')"
+        }
+      ]
+    },
+    {
+      "name": "stop_device_log_cap",
+      "description": "Stops an active Apple device log capture session and returns the captured logs.",
+      "args": [
+        {
+          "name": "logSessionId",
+          "description": "The session ID returned by start_device_log_cap."
+        }
+      ]
+    },
+    {
+      "name": "stop_mac_app",
+      "description": "Stops a running macOS application. Can stop by app name or process ID.",
+      "args": [
+        {
+          "name": "appName",
+          "description": "Name of the application to stop (e.g., \"Calculator\" or \"MyApp\")"
+        },
+        {
+          "name": "processId",
+          "description": "Process ID (PID) of the application to stop"
+        }
+      ]
+    },
+    {
+      "name": "stop_sim_log_cap",
+      "description": "Stops an active simulator log capture session and returns the captured logs.",
+      "args": [
+        {
+          "name": "logSessionId",
+          "description": "The session ID returned by start_sim_log_cap."
+        }
+      ]
+    },
+    {
+      "name": "swift_package_build",
+      "description": "Builds a Swift Package with swift build",
+      "args": [
+        {
+          "name": "architectures",
+          "description": "Target architectures to build for"
+        },
+        {
+          "name": "configuration",
+          "description": "Swift package configuration (debug, release)"
+        },
+        {
+          "name": "packagePath",
+          "description": "Path to the Swift package root (Required)"
+        },
+        {
+          "name": "parseAsLibrary",
+          "description": "Build as library instead of executable"
+        },
+        {
+          "name": "targetName",
+          "description": "Optional target to build"
+        }
+      ]
+    },
+    {
+      "name": "swift_package_clean",
+      "description": "Cleans Swift Package build artifacts and derived data",
+      "args": [
+        {
+          "name": "packagePath",
+          "description": "Path to the Swift package root (Required)"
+        }
+      ]
+    },
+    {
+      "name": "swift_package_list",
+      "description": "Lists currently running Swift Package processes",
+      "args": []
+    },
+    {
+      "name": "swift_package_run",
+      "description": "Runs an executable target from a Swift Package with swift run",
+      "args": [
+        {
+          "name": "arguments",
+          "description": "Arguments to pass to the executable"
+        },
+        {
+          "name": "background",
+          "description": "Run in background and return immediately (default: false)"
+        },
+        {
+          "name": "configuration",
+          "description": "Build configuration: 'debug' (default) or 'release'"
+        },
+        {
+          "name": "executableName",
+          "description": "Name of executable to run (defaults to package name)"
+        },
+        {
+          "name": "packagePath",
+          "description": "Path to the Swift package root (Required)"
+        },
+        {
+          "name": "parseAsLibrary",
+          "description": "Add -parse-as-library flag for @main support (default: false)"
+        },
+        {
+          "name": "timeout",
+          "description": "Timeout in seconds (default: 30, max: 300)"
+        }
+      ]
+    },
+    {
+      "name": "swift_package_stop",
+      "description": "Stops a running Swift Package executable started with swift_package_run",
+      "args": [
+        {
+          "name": "pid",
+          "description": "Process ID (PID) of the running executable"
+        }
+      ]
+    },
+    {
+      "name": "swift_package_test",
+      "description": "Runs tests for a Swift Package with swift test",
+      "args": [
+        {
+          "name": "configuration",
+          "description": "Swift package configuration (debug, release)"
+        },
+        {
+          "name": "filter",
+          "description": "Filter tests by name (regex pattern)"
+        },
+        {
+          "name": "packagePath",
+          "description": "Path to the Swift package root (Required)"
+        },
+        {
+          "name": "parallel",
+          "description": "Run tests in parallel (default: true)"
+        },
+        {
+          "name": "parseAsLibrary",
+          "description": "Add -parse-as-library flag for @main support (default: false)"
+        },
+        {
+          "name": "showCodecov",
+          "description": "Show code coverage (default: false)"
+        },
+        {
+          "name": "testProduct",
+          "description": "Optional specific test product to run"
+        }
+      ]
+    },
+    {
+      "name": "swipe",
+      "description": "Swipe between points.",
+      "args": [
+        {
+          "name": "delta",
+          "description": null
+        },
+        {
+          "name": "duration",
+          "description": null
+        },
+        {
+          "name": "postDelay",
+          "description": null
+        },
+        {
+          "name": "preDelay",
+          "description": null
+        },
+        {
+          "name": "x1",
+          "description": null
+        },
+        {
+          "name": "x2",
+          "description": null
+        },
+        {
+          "name": "y1",
+          "description": null
+        },
+        {
+          "name": "y2",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "tap",
+      "description": "Tap coordinate or element.",
+      "args": [
+        {
+          "name": "id",
+          "description": null
+        },
+        {
+          "name": "label",
+          "description": null
+        },
+        {
+          "name": "postDelay",
+          "description": null
+        },
+        {
+          "name": "preDelay",
+          "description": null
+        },
+        {
+          "name": "x",
+          "description": null
+        },
+        {
+          "name": "y",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "test_device",
+      "description": "Runs tests on a physical Apple device.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": "Path to derived data directory"
+        },
+        {
+          "name": "extraArgs",
+          "description": "Additional arguments to pass to xcodebuild"
+        },
+        {
+          "name": "platform",
+          "description": "Target platform (defaults to iOS)"
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": "Prefer xcodebuild over faster alternatives"
+        },
+        {
+          "name": "testRunnerEnv",
+          "description": "Environment variables to pass to the test runner (TEST_RUNNER_ prefix added automatically)"
+        }
+      ]
+    },
+    {
+      "name": "test_macos",
+      "description": "Runs tests for a macOS target.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": "Path where build products and other derived data will go"
+        },
+        {
+          "name": "extraArgs",
+          "description": "Additional xcodebuild arguments"
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": "If true, prefers xcodebuild over the experimental incremental build system"
+        },
+        {
+          "name": "testRunnerEnv",
+          "description": "Environment variables to pass to the test runner (TEST_RUNNER_ prefix added automatically)"
+        }
+      ]
+    },
+    {
+      "name": "test_sim",
+      "description": "Runs tests on an iOS simulator.",
+      "args": [
+        {
+          "name": "derivedDataPath",
+          "description": "Path where build products and other derived data will go"
+        },
+        {
+          "name": "extraArgs",
+          "description": "Additional xcodebuild arguments"
+        },
+        {
+          "name": "preferXcodebuild",
+          "description": "If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails."
+        },
+        {
+          "name": "testRunnerEnv",
+          "description": "Environment variables to pass to the test runner (TEST_RUNNER_ prefix added automatically)"
+        }
+      ]
+    },
+    {
+      "name": "touch",
+      "description": "Perform touch down/up events at specific coordinates. Use snapshot_ui for precise coordinates (don't guess from screenshots).",
+      "args": [
+        {
+          "name": "delay",
+          "description": null
+        },
+        {
+          "name": "down",
+          "description": null
+        },
+        {
+          "name": "up",
+          "description": null
+        },
+        {
+          "name": "x",
+          "description": null
+        },
+        {
+          "name": "y",
+          "description": null
+        }
+      ]
+    },
+    {
+      "name": "type_text",
+      "description": "Type text (supports US keyboard characters). Use snapshot_ui to find text field, tap to focus, then type.",
+      "args": [
+        {
+          "name": "text",
+          "description": null
+        }
+      ]
+    }
+  ]
+}

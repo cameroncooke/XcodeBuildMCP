@@ -27,7 +27,7 @@ describe('launch_app_device plugin (device-shared)', () => {
     });
 
     it('should have correct description', () => {
-      expect(launchAppDevice.description).toBe('Launches an app on a connected device.');
+      expect(launchAppDevice.description).toBe('Launch app on device.');
     });
 
     it('should have handler function', () => {
@@ -36,9 +36,9 @@ describe('launch_app_device plugin (device-shared)', () => {
 
     it('should validate schema with valid inputs', () => {
       const schema = z.strictObject(launchAppDevice.schema);
-      expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(Object.keys(launchAppDevice.schema)).toEqual(['bundleId']);
+      expect(schema.safeParse({}).success).toBe(true);
+      expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(false);
+      expect(Object.keys(launchAppDevice.schema)).toEqual([]);
     });
 
     it('should validate schema with invalid inputs', () => {
@@ -49,11 +49,12 @@ describe('launch_app_device plugin (device-shared)', () => {
   });
 
   describe('Handler Requirements', () => {
-    it('should require deviceId when not provided', async () => {
-      const result = await launchAppDevice.handler({ bundleId: 'com.example.app' });
+    it('should require deviceId and bundleId when not provided', async () => {
+      const result = await launchAppDevice.handler({});
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('deviceId is required');
+      expect(result.content[0].text).toContain('Missing required session defaults');
+      expect(result.content[0].text).toContain('Provide deviceId and bundleId');
     });
   });
 

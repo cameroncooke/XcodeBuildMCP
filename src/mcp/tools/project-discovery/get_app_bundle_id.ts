@@ -18,11 +18,7 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const getAppBundleIdSchema = z.object({
-  appPath: z
-    .string()
-    .describe(
-      'Path to the .app bundle to extract bundle ID from (full path to the .app directory)',
-    ),
+  appPath: z.string().describe('Path to the .app bundle'),
 });
 
 // Use z.infer for type safety
@@ -125,8 +121,7 @@ export async function get_app_bundle_idLogic(
 
 export default {
   name: 'get_app_bundle_id',
-  description:
-    "Extracts the bundle identifier from an app bundle (.app) for any Apple platform (iOS, iPadOS, watchOS, tvOS, visionOS). IMPORTANT: You MUST provide the appPath parameter. Example: get_app_bundle_id({ appPath: '/path/to/your/app.app' })",
+  description: 'Extract bundle id from .app.',
   schema: getAppBundleIdSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Get App Bundle ID',

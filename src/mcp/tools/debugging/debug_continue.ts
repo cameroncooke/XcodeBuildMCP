@@ -8,10 +8,7 @@ import {
 } from '../../../utils/debugger/index.ts';
 
 const debugContinueSchema = z.object({
-  debugSessionId: z
-    .string()
-    .optional()
-    .describe('Debug session ID to resume (defaults to current session)'),
+  debugSessionId: z.string().optional().describe('default: current session'),
 });
 
 export type DebugContinueParams = z.infer<typeof debugContinueSchema>;
@@ -33,7 +30,7 @@ export async function debug_continueLogic(
 
 export default {
   name: 'debug_continue',
-  description: 'Resume execution in the active debug session or a specific debugSessionId.',
+  description: 'Continue debug session.',
   schema: debugContinueSchema.shape,
   handler: createTypedToolWithContext<DebugContinueParams, DebuggerToolContext>(
     debugContinueSchema,

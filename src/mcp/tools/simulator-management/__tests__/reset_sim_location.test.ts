@@ -10,9 +10,7 @@ describe('reset_sim_location plugin', () => {
     });
 
     it('should have correct description field', () => {
-      expect(resetSimLocationPlugin.description).toBe(
-        "Resets the simulator's location to default.",
-      );
+      expect(resetSimLocationPlugin.description).toBe('Reset sim location.');
     });
 
     it('should have handler function', () => {

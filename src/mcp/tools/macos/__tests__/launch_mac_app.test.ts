@@ -22,9 +22,7 @@ describe('launch_mac_app plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(launchMacApp.description).toBe(
-        "Launches a macOS application. IMPORTANT: You MUST provide the appPath parameter. Example: launch_mac_app({ appPath: '/path/to/your/app.app' }) Note: In some environments, this tool may be prefixed as mcp0_launch_macos_app.",
-      );
+      expect(launchMacApp.description).toBe('Launch macOS app.');
     });
 
     it('should have handler function', () => {

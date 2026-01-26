@@ -32,7 +32,7 @@ describe('install_app_device plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(installAppDevice.description).toBe('Installs an app on a connected device.');
+      expect(installAppDevice.description).toBe('Install app on device.');
     });
 
     it('should have handler function', () => {

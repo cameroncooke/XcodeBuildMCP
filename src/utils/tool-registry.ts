@@ -1,54 +1,92 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { loadWorkflowGroups } from '../core/plugin-registry.ts';
+import { type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { server } from '../server/server-state.ts';
 import { ToolResponse } from '../types/common.ts';
 import { log } from './logger.ts';
-import { recordRuntimeRegistration } from './runtime-registry.ts';
+import { loadWorkflowGroups } from '../core/plugin-registry.ts';
 import { resolveSelectedWorkflows } from './workflow-selection.ts';
+
+export interface RuntimeToolInfo {
+  enabledWorkflows: string[];
+  registeredToolCount: number;
+}
+
+const registryState: {
+  tools: Map<string, RegisteredTool>;
+  enabledWorkflows: Set<string>;
+} = {
+  tools: new Map<string, RegisteredTool>(),
+  enabledWorkflows: new Set<string>(),
+};
+
+export function getRuntimeRegistration(): RuntimeToolInfo | null {
+  if (registryState.tools.size === 0 && registryState.enabledWorkflows.size === 0) {
+    return null;
+  }
+  return {
+    enabledWorkflows: [...registryState.enabledWorkflows],
+    registeredToolCount: registryState.tools.size,
+  };
+}
+
+export async function applyWorkflowSelection(workflowNames: string[]): Promise<RuntimeToolInfo> {
+  if (!server) {
+    throw new Error('Tool registry has not been initialized.');
+  }
+
+  const workflowGroups = await loadWorkflowGroups();
+  const selection = resolveSelectedWorkflows(workflowNames, workflowGroups);
+  const desiredToolNames = new Set<string>();
+  const desiredWorkflows = new Set<string>();
+
+  for (const workflow of selection.selectedWorkflows) {
+    desiredWorkflows.add(workflow.directoryName);
+    for (const tool of workflow.tools) {
+      const { name, description, schema, annotations, handler } = tool;
+      desiredToolNames.add(name);
+      if (!registryState.tools.has(name)) {
+        const registeredTool = server.registerTool(
+          name,
+          {
+            description: description ?? '',
+            inputSchema: schema,
+            annotations,
+          },
+          (args: unknown): Promise<ToolResponse> => handler(args as Record<string, unknown>),
+        );
+        registryState.tools.set(name, registeredTool);
+      }
+    }
+  }
+
+  for (const [toolName, registeredTool] of registryState.tools.entries()) {
+    if (!desiredToolNames.has(toolName)) {
+      registeredTool.remove();
+      registryState.tools.delete(toolName);
+    }
+  }
+
+  registryState.enabledWorkflows = desiredWorkflows;
+
+  const workflowLabel = selection.selectedNames?.join(', ') ?? 'all workflows';
+  log('info', `✅ Registered ${desiredToolNames.size} tools from workflows: ${workflowLabel}`);
+
+  return {
+    enabledWorkflows: [...registryState.enabledWorkflows],
+    registeredToolCount: registryState.tools.size,
+  };
+}
+
+export function getRegisteredWorkflows(): string[] {
+  return [...registryState.enabledWorkflows];
+}
 
 /**
  * Register workflows (selected list or all when omitted)
  */
-export async function registerWorkflows(
-  server: McpServer,
-  workflowNames: string[] = [],
-): Promise<void> {
-  const workflowGroups = await loadWorkflowGroups();
-  const selection = resolveSelectedWorkflows(workflowGroups, workflowNames);
-  let registeredCount = 0;
-  const registeredTools = new Set<string>();
-  const registeredWorkflows = new Set<string>();
+export async function registerWorkflows(workflowNames?: string[]): Promise<void> {
+  await applyWorkflowSelection(workflowNames ?? []);
+}
 
-  for (const workflow of selection.selectedWorkflows) {
-    registeredWorkflows.add(workflow.directoryName);
-    for (const tool of workflow.tools) {
-      if (registeredTools.has(tool.name)) {
-        continue;
-      }
-      server.registerTool(
-        tool.name,
-        {
-          description: tool.description ?? '',
-          inputSchema: tool.schema,
-          annotations: tool.annotations,
-        },
-        (args: unknown): Promise<ToolResponse> => tool.handler(args as Record<string, unknown>),
-      );
-      registeredTools.add(tool.name);
-      registeredCount += 1;
-    }
-  }
-
-  recordRuntimeRegistration({
-    enabledWorkflows: [...registeredWorkflows],
-    enabledTools: [...registeredTools],
-  });
-
-  if (selection.selectedNames) {
-    log(
-      'info',
-      `✅ Registered ${registeredCount} tools from workflows: ${selection.selectedNames.join(', ')}`,
-    );
-  } else {
-    log('info', `✅ Registered ${registeredCount} tools in static mode.`);
-  }
+export async function updateWorkflows(workflowNames?: string[]): Promise<void> {
+  await applyWorkflowSelection(workflowNames ?? []);
 }

@@ -90,9 +90,7 @@ describe('scaffold_macos_project plugin', () => {
     });
 
     it('should have correct description field', () => {
-      expect(plugin.description).toBe(
-        'Scaffold a new macOS project from templates. Creates a modern Xcode project with workspace structure, SPM package for features, and proper macOS configuration.',
-      );
+      expect(plugin.description).toBe('Scaffold macOS project.');
     });
 
     it('should have handler as function', () => {

@@ -14,7 +14,7 @@ describe('session-set-defaults tool', () => {
 
     it('should have correct description', () => {
       expect(plugin.description).toBe(
-        'Set the session defaults needed by many tools. Most tools require one or more session defaults to be set before they can be used. Agents should set all relevant defaults up front in a single call (e.g., project/workspace, scheme, simulator or device ID, useLatestOS) to avoid iterative prompts; only set the keys your workflow needs.',
+        'Set the session defaults, should be called at least once to set tool defaults.',
       );
     });
 

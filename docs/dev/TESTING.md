@@ -753,7 +753,7 @@ fi
    - `test_*` tools - Run test suites
 
 6. **UI Automation Tools** (depend on running apps):
-   - `describe_ui`, `screenshot`, `tap`, etc.
+   - `snapshot_ui`, `screenshot`, `tap`, etc.
 
 ### MANDATORY: Record Key Outputs
 

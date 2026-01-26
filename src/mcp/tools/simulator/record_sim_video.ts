@@ -26,13 +26,10 @@ const recordSimVideoSchemaObject = z.object({
   simulatorId: z
     .uuid({ message: 'Invalid Simulator UUID format' })
     .describe('UUID of the simulator to record'),
-  start: z.boolean().optional().describe('Start recording if true'),
-  stop: z.boolean().optional().describe('Stop recording if true'),
-  fps: z.number().int().min(1).max(120).optional().describe('Frames per second (default 30)'),
-  outputFile: z
-    .string()
-    .optional()
-    .describe('Destination MP4 path to move the recorded video to on stop'),
+  start: z.boolean().optional(),
+  stop: z.boolean().optional(),
+  fps: z.number().int().min(1).max(120).optional().describe('default: 30'),
+  outputFile: z.string().optional().describe('Path to write MP4 file'),
 });
 
 // Schema enforcing mutually exclusive start/stop and requiring outputFile on stop
@@ -226,7 +223,7 @@ const publicSchemaObject = z.strictObject(
 
 export default {
   name: 'record_sim_video',
-  description: 'Starts or stops video capture for an iOS simulator.',
+  description: 'Record sim video.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: recordSimVideoSchemaObject,

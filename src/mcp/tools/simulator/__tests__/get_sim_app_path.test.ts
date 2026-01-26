@@ -22,7 +22,7 @@ describe('get_sim_app_path tool', () => {
     });
 
     it('should have concise description', () => {
-      expect(getSimAppPath.description).toBe('Retrieves the built app path for an iOS simulator.');
+      expect(getSimAppPath.description).toBe('Get sim built app path.');
     });
 
     it('should have handler function', () => {

@@ -18,7 +18,7 @@ import {
 // Define schema as ZodObject
 const stopAppDeviceSchema = z.object({
   deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
-  processId: z.number().describe('Process ID (PID) of the app to stop'),
+  processId: z.number(),
 });
 
 // Use z.infer for type safety
@@ -89,7 +89,7 @@ export async function stop_app_deviceLogic(
 
 export default {
   name: 'stop_app_device',
-  description: 'Stops a running app on a connected device.',
+  description: 'Stop device app.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: stopAppDeviceSchema,

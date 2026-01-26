@@ -201,29 +201,29 @@ export const WORKFLOW_LOADERS = {
     const tool_1 = await import('../mcp/tools/simulator/build_run_sim.ts').then((m) => m.default);
     const tool_2 = await import('../mcp/tools/simulator/build_sim.ts').then((m) => m.default);
     const tool_3 = await import('../mcp/tools/simulator/clean.ts').then((m) => m.default);
-    const tool_4 = await import('../mcp/tools/simulator/describe_ui.ts').then((m) => m.default);
-    const tool_5 = await import('../mcp/tools/simulator/discover_projs.ts').then((m) => m.default);
-    const tool_6 = await import('../mcp/tools/simulator/get_app_bundle_id.ts').then(
+    const tool_4 = await import('../mcp/tools/simulator/discover_projs.ts').then((m) => m.default);
+    const tool_5 = await import('../mcp/tools/simulator/get_app_bundle_id.ts').then(
       (m) => m.default,
     );
-    const tool_7 = await import('../mcp/tools/simulator/get_sim_app_path.ts').then(
+    const tool_6 = await import('../mcp/tools/simulator/get_sim_app_path.ts').then(
       (m) => m.default,
     );
-    const tool_8 = await import('../mcp/tools/simulator/install_app_sim.ts').then((m) => m.default);
-    const tool_9 = await import('../mcp/tools/simulator/launch_app_logs_sim.ts').then(
+    const tool_7 = await import('../mcp/tools/simulator/install_app_sim.ts').then((m) => m.default);
+    const tool_8 = await import('../mcp/tools/simulator/launch_app_logs_sim.ts').then(
       (m) => m.default,
     );
-    const tool_10 = await import('../mcp/tools/simulator/launch_app_sim.ts').then((m) => m.default);
-    const tool_11 = await import('../mcp/tools/simulator/list_schemes.ts').then((m) => m.default);
-    const tool_12 = await import('../mcp/tools/simulator/list_sims.ts').then((m) => m.default);
-    const tool_13 = await import('../mcp/tools/simulator/open_sim.ts').then((m) => m.default);
-    const tool_14 = await import('../mcp/tools/simulator/record_sim_video.ts').then(
+    const tool_9 = await import('../mcp/tools/simulator/launch_app_sim.ts').then((m) => m.default);
+    const tool_10 = await import('../mcp/tools/simulator/list_schemes.ts').then((m) => m.default);
+    const tool_11 = await import('../mcp/tools/simulator/list_sims.ts').then((m) => m.default);
+    const tool_12 = await import('../mcp/tools/simulator/open_sim.ts').then((m) => m.default);
+    const tool_13 = await import('../mcp/tools/simulator/record_sim_video.ts').then(
       (m) => m.default,
     );
-    const tool_15 = await import('../mcp/tools/simulator/screenshot.ts').then((m) => m.default);
-    const tool_16 = await import('../mcp/tools/simulator/show_build_settings.ts').then(
+    const tool_14 = await import('../mcp/tools/simulator/screenshot.ts').then((m) => m.default);
+    const tool_15 = await import('../mcp/tools/simulator/show_build_settings.ts').then(
       (m) => m.default,
     );
+    const tool_16 = await import('../mcp/tools/simulator/snapshot_ui.ts').then((m) => m.default);
     const tool_17 = await import('../mcp/tools/simulator/stop_app_sim.ts').then((m) => m.default);
     const tool_18 = await import('../mcp/tools/simulator/test_sim.ts').then((m) => m.default);
 
@@ -233,19 +233,19 @@ export const WORKFLOW_LOADERS = {
       build_run_sim: tool_1,
       build_sim: tool_2,
       clean: tool_3,
-      describe_ui: tool_4,
-      discover_projs: tool_5,
-      get_app_bundle_id: tool_6,
-      get_sim_app_path: tool_7,
-      install_app_sim: tool_8,
-      launch_app_logs_sim: tool_9,
-      launch_app_sim: tool_10,
-      list_schemes: tool_11,
-      list_sims: tool_12,
-      open_sim: tool_13,
-      record_sim_video: tool_14,
-      screenshot: tool_15,
-      show_build_settings: tool_16,
+      discover_projs: tool_4,
+      get_app_bundle_id: tool_5,
+      get_sim_app_path: tool_6,
+      install_app_sim: tool_7,
+      launch_app_logs_sim: tool_8,
+      launch_app_sim: tool_9,
+      list_schemes: tool_10,
+      list_sims: tool_11,
+      open_sim: tool_12,
+      record_sim_video: tool_13,
+      screenshot: tool_14,
+      show_build_settings: tool_15,
+      snapshot_ui: tool_16,
       stop_app_sim: tool_17,
       test_sim: tool_18,
     };
@@ -320,29 +320,31 @@ export const WORKFLOW_LOADERS = {
       swift_package_test: tool_5,
     };
   },
-  'ui-testing': async () => {
-    const { workflow } = await import('../mcp/tools/ui-testing/index.ts');
-    const tool_0 = await import('../mcp/tools/ui-testing/button.ts').then((m) => m.default);
-    const tool_1 = await import('../mcp/tools/ui-testing/describe_ui.ts').then((m) => m.default);
-    const tool_2 = await import('../mcp/tools/ui-testing/gesture.ts').then((m) => m.default);
-    const tool_3 = await import('../mcp/tools/ui-testing/key_press.ts').then((m) => m.default);
-    const tool_4 = await import('../mcp/tools/ui-testing/key_sequence.ts').then((m) => m.default);
-    const tool_5 = await import('../mcp/tools/ui-testing/long_press.ts').then((m) => m.default);
-    const tool_6 = await import('../mcp/tools/ui-testing/screenshot.ts').then((m) => m.default);
-    const tool_7 = await import('../mcp/tools/ui-testing/swipe.ts').then((m) => m.default);
-    const tool_8 = await import('../mcp/tools/ui-testing/tap.ts').then((m) => m.default);
-    const tool_9 = await import('../mcp/tools/ui-testing/touch.ts').then((m) => m.default);
-    const tool_10 = await import('../mcp/tools/ui-testing/type_text.ts').then((m) => m.default);
+  'ui-automation': async () => {
+    const { workflow } = await import('../mcp/tools/ui-automation/index.ts');
+    const tool_0 = await import('../mcp/tools/ui-automation/button.ts').then((m) => m.default);
+    const tool_1 = await import('../mcp/tools/ui-automation/gesture.ts').then((m) => m.default);
+    const tool_2 = await import('../mcp/tools/ui-automation/key_press.ts').then((m) => m.default);
+    const tool_3 = await import('../mcp/tools/ui-automation/key_sequence.ts').then(
+      (m) => m.default,
+    );
+    const tool_4 = await import('../mcp/tools/ui-automation/long_press.ts').then((m) => m.default);
+    const tool_5 = await import('../mcp/tools/ui-automation/screenshot.ts').then((m) => m.default);
+    const tool_6 = await import('../mcp/tools/ui-automation/snapshot_ui.ts').then((m) => m.default);
+    const tool_7 = await import('../mcp/tools/ui-automation/swipe.ts').then((m) => m.default);
+    const tool_8 = await import('../mcp/tools/ui-automation/tap.ts').then((m) => m.default);
+    const tool_9 = await import('../mcp/tools/ui-automation/touch.ts').then((m) => m.default);
+    const tool_10 = await import('../mcp/tools/ui-automation/type_text.ts').then((m) => m.default);
 
     return {
       workflow,
       button: tool_0,
-      describe_ui: tool_1,
-      gesture: tool_2,
-      key_press: tool_3,
-      key_sequence: tool_4,
-      long_press: tool_5,
-      screenshot: tool_6,
+      gesture: tool_1,
+      key_press: tool_2,
+      key_sequence: tool_3,
+      long_press: tool_4,
+      screenshot: tool_5,
+      snapshot_ui: tool_6,
       swipe: tool_7,
       tap: tool_8,
       touch: tool_9,
@@ -356,6 +358,17 @@ export const WORKFLOW_LOADERS = {
     return {
       workflow,
       clean: tool_0,
+    };
+  },
+  'workflow-discovery': async () => {
+    const { workflow } = await import('../mcp/tools/workflow-discovery/index.ts');
+    const tool_0 = await import('../mcp/tools/workflow-discovery/manage_workflows.ts').then(
+      (m) => m.default,
+    );
+
+    return {
+      workflow,
+      manage_workflows: tool_0,
     };
   },
 };
@@ -419,8 +432,8 @@ export const WORKFLOW_METADATA = {
     description:
       'Swift Package Manager operations for building, testing, running, and managing Swift packages and dependencies. Complete SPM workflow support.',
   },
-  'ui-testing': {
-    name: 'UI Testing & Automation',
+  'ui-automation': {
+    name: 'UI Automation',
     description:
       'UI automation and accessibility testing tools for iOS simulators. Perform gestures, interactions, screenshots, and UI analysis for automated testing workflows.',
   },
@@ -428,5 +441,9 @@ export const WORKFLOW_METADATA = {
     name: 'Project Utilities',
     description:
       'Essential project maintenance utilities for cleaning and managing existing projects. Provides clean operations for both .xcodeproj and .xcworkspace files.',
+  },
+  'workflow-discovery': {
+    name: 'Workflow Discovery',
+    description: 'Manage the workflows that are enabled and disabled.',
   },
 };

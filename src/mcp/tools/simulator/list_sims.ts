@@ -7,7 +7,7 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
 const listSimsSchema = z.object({
-  enabled: z.boolean().optional().describe('Optional flag to enable the listing operation.'),
+  enabled: z.boolean().optional(),
 });
 
 // Use z.infer for type safety
@@ -217,7 +217,7 @@ export async function list_simsLogic(
 
 export default {
   name: 'list_sims',
-  description: 'Lists available iOS simulators with their UUIDs. ',
+  description: 'List iOS simulators.',
   schema: listSimsSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'List Simulators',

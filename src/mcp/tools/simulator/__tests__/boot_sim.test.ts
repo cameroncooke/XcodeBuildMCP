@@ -23,7 +23,7 @@ describe('boot_sim tool', () => {
     });
 
     it('should have concise description', () => {
-      expect(bootSim.description).toBe('Boots an iOS simulator.');
+      expect(bootSim.description).toBe('Boot iOS simulator.');
     });
 
     it('should expose empty public schema', () => {

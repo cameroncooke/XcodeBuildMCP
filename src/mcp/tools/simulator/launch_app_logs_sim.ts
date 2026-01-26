@@ -21,10 +21,8 @@ export type LogCaptureFunction = (
 
 const launchAppLogsSimSchemaObject = z.object({
   simulatorId: z.string().describe('UUID of the simulator to use (obtained from list_sims)'),
-  bundleId: z
-    .string()
-    .describe("Bundle identifier of the app to launch (e.g., 'com.example.MyApp')"),
-  args: z.array(z.string()).optional().describe('Additional arguments to pass to the app'),
+  bundleId: z.string(),
+  args: z.array(z.string()).optional(),
 });
 
 type LaunchAppLogsSimParams = z.infer<typeof launchAppLogsSimSchemaObject>;
@@ -32,6 +30,7 @@ type LaunchAppLogsSimParams = z.infer<typeof launchAppLogsSimSchemaObject>;
 const publicSchemaObject = z.strictObject(
   launchAppLogsSimSchemaObject.omit({
     simulatorId: true,
+    bundleId: true,
   } as const).shape,
 );
 
@@ -69,7 +68,7 @@ export async function launch_app_logs_simLogic(
 
 export default {
   name: 'launch_app_logs_sim',
-  description: 'Launches an app in an iOS simulator and captures its logs.',
+  description: 'Launch sim app with logs.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: launchAppLogsSimSchemaObject,
@@ -85,6 +84,8 @@ export default {
     >,
     logicFunction: launch_app_logs_simLogic,
     getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+    requirements: [
+      { allOf: ['simulatorId', 'bundleId'], message: 'Provide simulatorId and bundleId' },
+    ],
   }),
 };

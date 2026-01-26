@@ -32,9 +32,7 @@ describe('stop_device_log_cap plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        'Stops an active Apple device log capture session and returns the captured logs.',
-      );
+      expect(plugin.description).toBe('Stop device log capture.');
     });
 
     it('should have correct schema structure', () => {

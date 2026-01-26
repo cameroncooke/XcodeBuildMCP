@@ -24,23 +24,21 @@ describe('get_device_app_path plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(getDeviceAppPath.description).toBe(
-        'Retrieves the built app path for a connected device.',
-      );
+      expect(getDeviceAppPath.description).toBe('Get device built app path.');
     });
 
     it('should have handler function', () => {
       expect(typeof getDeviceAppPath.handler).toBe('function');
     });
 
-    it('should expose only platform in public schema', () => {
+    it('should expose empty public schema', () => {
       const schema = z.strictObject(getDeviceAppPath.schema);
       expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ platform: 'iOS' }).success).toBe(true);
+      expect(schema.safeParse({ platform: 'iOS' }).success).toBe(false);
       expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(false);
 
       const schemaKeys = Object.keys(getDeviceAppPath.schema).sort();
-      expect(schemaKeys).toEqual(['platform']);
+      expect(schemaKeys).toEqual([]);
     });
   });
 

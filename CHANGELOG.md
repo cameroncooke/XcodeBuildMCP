@@ -6,10 +6,12 @@
 - Add DAP-based debugger backend and simulator debugging toolset (attach, breakpoints, stack, variables, LLDB command).
 - Add session-status MCP resource with session identifiers.
 - Add UI automation guard that blocks UI tools when the debugger is paused.
+- Add manage-workflows tool for live workflow selection updates.
 
 ### Changed
 - Migrate to Zod v4.
 - Improve session default handling (reconcile mutual exclusivity and ignore explicit undefined clears).
+- Auto-include workflow-discovery when workflow selection is configured.
 
 ### Fixed
 - Update UI automation guard guidance to point at `debug_continue` when paused.

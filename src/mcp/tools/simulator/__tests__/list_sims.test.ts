@@ -24,7 +24,7 @@ describe('list_sims tool', () => {
     });
 
     it('should have correct description', () => {
-      expect(listSims.description).toBe('Lists available iOS simulators with their UUIDs. ');
+      expect(listSims.description).toBe('List iOS simulators.');
     });
 
     it('should have handler function', () => {

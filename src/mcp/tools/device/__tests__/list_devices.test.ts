@@ -26,9 +26,7 @@ describe('list_devices plugin (device-shared)', () => {
     });
 
     it('should have correct description', () => {
-      expect(listDevices.description).toBe(
-        'Lists connected physical Apple devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro) with their UUIDs, names, and connection status. Use this to discover physical devices for testing.',
-      );
+      expect(listDevices.description).toBe('List connected devices.');
     });
 
     it('should have handler function', () => {

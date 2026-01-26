@@ -36,21 +36,13 @@ const baseOptions = {
       "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
     ),
   configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
-  derivedDataPath: z
-    .string()
-    .optional()
-    .describe('Path where build products and other derived data will go'),
-  extraArgs: z.array(z.string()).optional().describe('Additional xcodebuild arguments'),
+  derivedDataPath: z.string().optional(),
+  extraArgs: z.array(z.string()).optional(),
   useLatestOS: z
     .boolean()
     .optional()
     .describe('Whether to use the latest OS version for the named simulator'),
-  preferXcodebuild: z
-    .boolean()
-    .optional()
-    .describe(
-      'If true, prefers xcodebuild over the experimental incremental build system, useful for when incremental build system fails.',
-    ),
+  preferXcodebuild: z.boolean().optional(),
 };
 
 const baseSchemaObject = z.object({
@@ -502,11 +494,13 @@ const publicSchemaObject = baseSchemaObject.omit({
   simulatorId: true,
   simulatorName: true,
   useLatestOS: true,
+  derivedDataPath: true,
+  preferXcodebuild: true,
 } as const);
 
 export default {
   name: 'build_run_sim',
-  description: 'Builds and runs an app on an iOS simulator.',
+  description: 'Build and run iOS sim.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

@@ -21,7 +21,7 @@ describe('build_sim tool', () => {
     });
 
     it('should have correct description', () => {
-      expect(buildSim.description).toBe('Builds an app for an iOS simulator.');
+      expect(buildSim.description).toBe('Build for iOS sim.');
     });
 
     it('should have handler function', () => {
@@ -29,7 +29,7 @@ describe('build_sim tool', () => {
     });
 
     it('should have correct public schema (only non-session fields)', () => {
-      const schema = z.object(buildSim.schema);
+      const schema = z.strictObject(buildSim.schema);
 
       // Public schema should allow empty input
       expect(schema.safeParse({}).success).toBe(true);
@@ -37,16 +37,14 @@ describe('build_sim tool', () => {
       // Valid public inputs
       expect(
         schema.safeParse({
-          derivedDataPath: '/path/to/derived',
           extraArgs: ['--verbose'],
-          preferXcodebuild: false,
         }).success,
       ).toBe(true);
 
-      // Invalid types on public inputs
-      expect(schema.safeParse({ derivedDataPath: 123 }).success).toBe(false);
+      // Invalid types or unknown fields on public inputs
+      expect(schema.safeParse({ derivedDataPath: '/path/to/derived' }).success).toBe(false);
       expect(schema.safeParse({ extraArgs: [123] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: false }).success).toBe(false);
     });
   });
 

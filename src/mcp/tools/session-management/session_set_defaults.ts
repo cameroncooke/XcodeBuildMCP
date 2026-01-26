@@ -5,47 +5,35 @@ import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import type { ToolResponse } from '../../../types/common.ts';
 
 const baseSchema = z.object({
-  projectPath: z
+  projectPath: z.string().optional().describe('xcodeproj path (xor workspacePath)'),
+  workspacePath: z.string().optional().describe('xcworkspace path (xor projectPath)'),
+  scheme: z.string().optional(),
+  configuration: z
     .string()
     .optional()
-    .describe(
-      'Xcode project (.xcodeproj) path. Mutually exclusive with workspacePath. Required for most build/test tools when workspacePath is not set.',
-    ),
-  workspacePath: z
+    .describe("Build configuration for Xcode and SwiftPM tools (e.g. 'Debug' or 'Release')."),
+  simulatorName: z.string().optional(),
+  simulatorId: z.string().optional(),
+  deviceId: z.string().optional(),
+  useLatestOS: z.boolean().optional(),
+  arch: z.enum(['arm64', 'x86_64']).optional(),
+  suppressWarnings: z.boolean().optional(),
+  derivedDataPath: z
     .string()
     .optional()
-    .describe(
-      'Xcode workspace (.xcworkspace) path. Mutually exclusive with projectPath. Required for most build/test tools when projectPath is not set.',
-    ),
-  scheme: z
-    .string()
-    .optional()
-    .describe(
-      'Xcode scheme. Required by most build/test tools. Use list_schemes to discover available schemes before setting.',
-    ),
-  configuration: z.string().optional().describe('Build configuration, e.g. Debug or Release.'),
-  simulatorName: z
-    .string()
-    .optional()
-    .describe(
-      'Simulator device name for simulator workflows. If simulatorId is also provided, simulatorId is preferred and simulatorName is ignored.',
-    ),
-  simulatorId: z
-    .string()
-    .optional()
-    .describe(
-      'Simulator UUID for simulator workflows. Preferred over simulatorName when both are provided.',
-    ),
-  deviceId: z.string().optional().describe('Physical device ID for device workflows.'),
-  useLatestOS: z
+    .describe('Default DerivedData path for Xcode build/test/clean tools.'),
+  preferXcodebuild: z
     .boolean()
     .optional()
-    .describe('When true, prefer the latest available OS for simulatorName lookups.'),
-  arch: z.enum(['arm64', 'x86_64']).optional().describe('Target architecture for macOS builds.'),
-  suppressWarnings: z
-    .boolean()
+    .describe('Prefer xcodebuild over incremental builds for Xcode build/test/clean tools.'),
+  platform: z
+    .string()
     .optional()
-    .describe('When true, warning messages are filtered from build output to conserve context'),
+    .describe('Default device platform for device tools (e.g. iOS, watchOS).'),
+  bundleId: z
+    .string()
+    .optional()
+    .describe('Default bundle ID for launch/stop/log tools when working on a single app.'),
 });
 
 const schemaObj = baseSchema;
@@ -141,8 +129,7 @@ export async function sessionSetDefaultsLogic(params: Params): Promise<ToolRespo
 
 export default {
   name: 'session-set-defaults',
-  description:
-    'Set the session defaults needed by many tools. Most tools require one or more session defaults to be set before they can be used. Agents should set all relevant defaults up front in a single call (e.g., project/workspace, scheme, simulator or device ID, useLatestOS) to avoid iterative prompts; only set the keys your workflow needs.',
+  description: 'Set the session defaults, should be called at least once to set tool defaults.',
   schema: baseSchema.shape,
   annotations: {
     title: 'Set Session Defaults',

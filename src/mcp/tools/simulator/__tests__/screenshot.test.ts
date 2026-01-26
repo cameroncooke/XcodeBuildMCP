@@ -14,7 +14,7 @@ import {
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { SystemError } from '../../../../utils/responses/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import screenshotPlugin, { screenshotLogic } from '../../ui-testing/screenshot.ts';
+import screenshotPlugin, { screenshotLogic } from '../../ui-automation/screenshot.ts';
 
 describe('screenshot plugin', () => {
   beforeEach(() => {
@@ -27,9 +27,7 @@ describe('screenshot plugin', () => {
     });
 
     it('should have correct description field', () => {
-      expect(screenshotPlugin.description).toBe(
-        "Captures screenshot for visual verification. For UI coordinates, use describe_ui instead (don't determine coordinates from screenshots).",
-      );
+      expect(screenshotPlugin.description).toBe('Capture screenshot.');
     });
 
     it('should have handler function', () => {

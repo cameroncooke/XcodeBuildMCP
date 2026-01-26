@@ -22,7 +22,7 @@ describe('build_macos plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(buildMacOS.description).toBe('Builds a macOS app.');
+      expect(buildMacOS.description).toBe('Build macOS app.');
     });
 
     it('should have handler function', () => {
@@ -30,23 +30,17 @@ describe('build_macos plugin', () => {
     });
 
     it('should validate schema correctly', () => {
-      const schema = z.object(buildMacOS.schema);
+      const schema = z.strictObject(buildMacOS.schema);
 
       expect(schema.safeParse({}).success).toBe(true);
-      expect(
-        schema.safeParse({
-          derivedDataPath: '/path/to/derived-data',
-          extraArgs: ['--arg1', '--arg2'],
-          preferXcodebuild: true,
-        }).success,
-      ).toBe(true);
+      expect(schema.safeParse({ extraArgs: ['--arg1', '--arg2'] }).success).toBe(true);
 
-      expect(schema.safeParse({ derivedDataPath: 42 }).success).toBe(false);
+      expect(schema.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
       expect(schema.safeParse({ extraArgs: ['--ok', 1] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: 'yes' }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
 
       const schemaKeys = Object.keys(buildMacOS.schema).sort();
-      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs', 'preferXcodebuild'].sort());
+      expect(schemaKeys).toEqual(['extraArgs']);
     });
   });
 

@@ -69,7 +69,7 @@ export async function open_simLogic(
 
 export default {
   name: 'open_sim',
-  description: 'Opens the iOS Simulator app.',
+  description: 'Open Simulator app.',
   schema: openSimSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Open Simulator',

@@ -449,7 +449,7 @@ for (const plugin of plugins.values()) {
 
 ### Selective Workflow Loading
 
-To limit which workflows are registered at startup, set `XCODEBUILDMCP_ENABLED_WORKFLOWS` to a comma-separated list of workflow directory names. The `session-management` workflow is always auto-included since other tools depend on it.
+To limit which workflows are registered at startup, set `XCODEBUILDMCP_ENABLED_WORKFLOWS` to a comma-separated list of workflow directory names. The `session-management` workflow is always auto-included since other tools depend on it. The `workflow-discovery` workflow is only auto-included when `XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY=true` (or when explicitly listed).
 
 Example:
 ```bash
@@ -713,7 +713,7 @@ Instead of using generic descriptions like "Additional Tools: Simulator manageme
 **✅ Correct:**
 ```markdown
 - `boot_sim`, `install_app_sim`, `launch_app_sim`, `list_sims`, `open_sim`
-- `describe_ui`, `screenshot`, `start_sim_log_cap`, `stop_sim_log_cap`
+- `snapshot_ui`, `screenshot`, `start_sim_log_cap`, `stop_sim_log_cap`
 ```
 
 #### 4. Systematic Documentation Update Steps

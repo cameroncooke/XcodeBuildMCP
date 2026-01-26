@@ -10,10 +10,7 @@ import {
 const eraseSimsBaseSchema = z
   .object({
     simulatorId: z.uuid().describe('UDID of the simulator to erase.'),
-    shutdownFirst: z
-      .boolean()
-      .optional()
-      .describe('If true, shuts down the simulator before erasing.'),
+    shutdownFirst: z.boolean().optional(),
   })
   .passthrough();
 
@@ -85,7 +82,7 @@ const publicSchemaObject = eraseSimsSchema.omit({ simulatorId: true } as const).
 
 export default {
   name: 'erase_sims',
-  description: 'Erases a simulator by UDID.',
+  description: 'Erase simulator.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: eraseSimsSchema,

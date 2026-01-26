@@ -5,24 +5,27 @@ import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
-import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import {
+  createSessionAwareTool,
+  getSessionAwareToolSchemaShape,
+} from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
-const swiftPackageTestSchema = z.object({
-  packagePath: z.string().describe('Path to the Swift package root (Required)'),
-  testProduct: z.string().optional().describe('Optional specific test product to run'),
-  filter: z.string().optional().describe('Filter tests by name (regex pattern)'),
-  configuration: z
-    .enum(['debug', 'release'])
-    .optional()
-    .describe('Swift package configuration (debug, release)'),
-  parallel: z.boolean().optional().describe('Run tests in parallel (default: true)'),
-  showCodecov: z.boolean().optional().describe('Show code coverage (default: false)'),
-  parseAsLibrary: z
-    .boolean()
-    .optional()
-    .describe('Add -parse-as-library flag for @main support (default: false)'),
+const baseSchemaObject = z.object({
+  packagePath: z.string(),
+  testProduct: z.string().optional(),
+  filter: z.string().optional().describe('regex: pattern'),
+  configuration: z.enum(['debug', 'release', 'Debug', 'Release']).optional(),
+  parallel: z.boolean().optional(),
+  showCodecov: z.boolean().optional(),
+  parseAsLibrary: z.boolean().optional(),
 });
+
+const publicSchemaObject = baseSchemaObject.omit({
+  configuration: true,
+} as const);
+
+const swiftPackageTestSchema = baseSchemaObject;
 
 // Use z.infer for type safety
 type SwiftPackageTestParams = z.infer<typeof swiftPackageTestSchema>;
@@ -88,15 +91,18 @@ export async function swift_package_testLogic(
 
 export default {
   name: 'swift_package_test',
-  description: 'Runs tests for a Swift Package with swift test',
-  schema: swiftPackageTestSchema.shape, // MCP SDK compatibility
+  description: 'Run swift package target tests.',
+  schema: getSessionAwareToolSchemaShape({
+    sessionAware: publicSchemaObject,
+    legacy: baseSchemaObject,
+  }), // MCP SDK compatibility
   annotations: {
     title: 'Swift Package Test',
     destructiveHint: true,
   },
-  handler: createTypedTool(
-    swiftPackageTestSchema,
-    swift_package_testLogic,
-    getDefaultCommandExecutor,
-  ),
+  handler: createSessionAwareTool<SwiftPackageTestParams>({
+    internalSchema: swiftPackageTestSchema,
+    logicFunction: swift_package_testLogic,
+    getExecutor: getDefaultCommandExecutor,
+  }),
 };

@@ -17,7 +17,7 @@ describe('session-show-defaults tool', () => {
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe('Show current session defaults.');
+      expect(plugin.description).toBe('Show session defaults.');
     });
 
     it('should have handler function', () => {

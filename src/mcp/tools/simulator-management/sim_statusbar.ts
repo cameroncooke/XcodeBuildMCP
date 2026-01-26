@@ -25,9 +25,7 @@ const simStatusbarSchema = z.object({
       '5g-uwb',
       '5g-uc',
     ])
-    .describe(
-      'Data network type to display in status bar. Use "clear" to reset all overrides. Valid values: clear, hide, wifi, 3g, 4g, lte, lte-a, lte+, 5g, 5g+, 5g-uwb, 5g-uc.',
-    ),
+    .describe('clear|hide|wifi|3g|4g|lte|lte-a|lte+|5g|5g+|5g-uwb|5g-uc'),
 });
 
 // Use z.infer for type safety
@@ -94,8 +92,7 @@ const publicSchemaObject = z.strictObject(
 
 export default {
   name: 'sim_statusbar',
-  description:
-    'Sets the data network indicator in the iOS simulator status bar. Use "clear" to reset all overrides, or specify a network type (hide, wifi, 3g, 4g, lte, lte-a, lte+, 5g, 5g+, 5g-uwb, 5g-uc).',
+  description: 'Set sim status bar network.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: simStatusbarSchema,

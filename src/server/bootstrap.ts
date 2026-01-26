@@ -12,7 +12,7 @@ export interface BootstrapOptions {
 function parseEnabledWorkflows(value: string): string[] {
   return value
     .split(',')
-    .map((name) => name.trim())
+    .map((name) => name.trim().toLowerCase())
     .filter(Boolean);
 }
 
@@ -37,10 +37,10 @@ export async function bootstrapServer(
 
   if (enabledWorkflows.length > 0) {
     log('info', `🚀 Initializing server with selected workflows: ${enabledWorkflows.join(', ')}`);
-    await registerWorkflows(server, enabledWorkflows);
+    await registerWorkflows(enabledWorkflows);
   } else {
     log('info', '🚀 Initializing server with all tools...');
-    await registerWorkflows(server);
+    await registerWorkflows([]);
   }
 
   await registerResources(server);

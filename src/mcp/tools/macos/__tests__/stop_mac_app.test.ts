@@ -20,9 +20,7 @@ describe('stop_mac_app plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(stopMacApp.description).toBe(
-        'Stops a running macOS application. Can stop by app name or process ID.',
-      );
+      expect(stopMacApp.description).toBe('Stop macOS app.');
     });
 
     it('should have handler function', () => {

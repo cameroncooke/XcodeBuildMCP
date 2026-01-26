@@ -47,7 +47,7 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
 4. **Plugin & Resource Loading (Runtime)**
    - At runtime, `loadPlugins()` and `loadResources()` use the generated loaders from the previous step
    - All workflow loaders are executed at startup to register tools
-   - If `XCODEBUILDMCP_ENABLED_WORKFLOWS` is set, only those workflows (plus `session-management`) are registered
+- If `XCODEBUILDMCP_ENABLED_WORKFLOWS` is set, only those workflows (plus `session-management`) are registered; `workflow-discovery` is only auto-included when `XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY=true`
 
 5. **Tool Registration**
    - Discovered tools automatically registered with server using pre-generated maps

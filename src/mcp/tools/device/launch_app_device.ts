@@ -31,12 +31,13 @@ type LaunchDataResponse = {
 // Define schema as ZodObject
 const launchAppDeviceSchema = z.object({
   deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
-  bundleId: z
-    .string()
-    .describe('Bundle identifier of the app to launch (e.g., "com.example.MyApp")'),
+  bundleId: z.string(),
 });
 
-const publicSchemaObject = launchAppDeviceSchema.omit({ deviceId: true } as const);
+const publicSchemaObject = launchAppDeviceSchema.omit({
+  deviceId: true,
+  bundleId: true,
+} as const);
 
 // Use z.infer for type safety
 type LaunchAppDeviceParams = z.infer<typeof launchAppDeviceSchema>;
@@ -148,7 +149,7 @@ export async function launch_app_deviceLogic(
 
 export default {
   name: 'launch_app_device',
-  description: 'Launches an app on a connected device.',
+  description: 'Launch app on device.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: launchAppDeviceSchema,
@@ -162,6 +163,6 @@ export default {
     logicFunction: (params, executor) =>
       launch_app_deviceLogic(params, executor, getDefaultFileSystemExecutor()),
     getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],
+    requirements: [{ allOf: ['deviceId', 'bundleId'], message: 'Provide deviceId and bundleId' }],
   }),
 };

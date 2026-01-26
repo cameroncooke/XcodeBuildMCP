@@ -22,9 +22,7 @@ describe('start_sim_log_cap plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        "Starts capturing logs from a specified simulator. Returns a session ID. Use subsystemFilter to control what logs are captured: 'app' (default), 'all' (everything), 'swiftui' (includes Self._printChanges()), or custom subsystems.",
-      );
+      expect(plugin.description).toBe('Start sim log capture.');
     });
 
     it('should have handler as a function', () => {
@@ -33,63 +31,34 @@ describe('start_sim_log_cap plugin', () => {
 
     it('should validate schema with valid parameters', () => {
       const schema = z.object(plugin.schema);
-      expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
-      expect(schema.safeParse({ bundleId: 'com.example.app', captureConsole: true }).success).toBe(
-        true,
-      );
-      expect(schema.safeParse({ bundleId: 'com.example.app', captureConsole: false }).success).toBe(
-        true,
-      );
+      expect(schema.safeParse({}).success).toBe(true);
+      expect(schema.safeParse({ captureConsole: true }).success).toBe(true);
+      expect(schema.safeParse({ captureConsole: false }).success).toBe(true);
     });
 
     it('should validate schema with subsystemFilter parameter', () => {
       const schema = z.object(plugin.schema);
       // Valid enum values
-      expect(
-        schema.safeParse({ bundleId: 'com.example.app', subsystemFilter: 'app' }).success,
-      ).toBe(true);
-      expect(
-        schema.safeParse({ bundleId: 'com.example.app', subsystemFilter: 'all' }).success,
-      ).toBe(true);
-      expect(
-        schema.safeParse({ bundleId: 'com.example.app', subsystemFilter: 'swiftui' }).success,
-      ).toBe(true);
+      expect(schema.safeParse({ subsystemFilter: 'app' }).success).toBe(true);
+      expect(schema.safeParse({ subsystemFilter: 'all' }).success).toBe(true);
+      expect(schema.safeParse({ subsystemFilter: 'swiftui' }).success).toBe(true);
       // Valid array of subsystems
+      expect(schema.safeParse({ subsystemFilter: ['com.apple.UIKit'] }).success).toBe(true);
       expect(
-        schema.safeParse({ bundleId: 'com.example.app', subsystemFilter: ['com.apple.UIKit'] })
-          .success,
-      ).toBe(true);
-      expect(
-        schema.safeParse({
-          bundleId: 'com.example.app',
-          subsystemFilter: ['com.apple.UIKit', 'com.apple.CoreData'],
-        }).success,
+        schema.safeParse({ subsystemFilter: ['com.apple.UIKit', 'com.apple.CoreData'] }).success,
       ).toBe(true);
       // Invalid values
-      expect(schema.safeParse({ bundleId: 'com.example.app', subsystemFilter: [] }).success).toBe(
-        false,
-      );
-      expect(
-        schema.safeParse({ bundleId: 'com.example.app', subsystemFilter: 'invalid' }).success,
-      ).toBe(false);
-      expect(schema.safeParse({ bundleId: 'com.example.app', subsystemFilter: 123 }).success).toBe(
-        false,
-      );
+      expect(schema.safeParse({ subsystemFilter: [] }).success).toBe(false);
+      expect(schema.safeParse({ subsystemFilter: 'invalid' }).success).toBe(false);
+      expect(schema.safeParse({ subsystemFilter: 123 }).success).toBe(false);
     });
 
     it('should reject invalid schema parameters', () => {
       const schema = z.object(plugin.schema);
-      expect(schema.safeParse({ bundleId: null }).success).toBe(false);
-      expect(schema.safeParse({ captureConsole: true }).success).toBe(false);
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(schema.safeParse({ bundleId: 'com.example.app', captureConsole: 'yes' }).success).toBe(
-        false,
-      );
-      expect(schema.safeParse({ bundleId: 'com.example.app', captureConsole: 123 }).success).toBe(
-        false,
-      );
+      expect(schema.safeParse({ captureConsole: 'yes' }).success).toBe(false);
+      expect(schema.safeParse({ captureConsole: 123 }).success).toBe(false);
 
-      const withSimId = schema.safeParse({ simulatorId: 'test-uuid', bundleId: 'com.example.app' });
+      const withSimId = schema.safeParse({ simulatorId: 'test-uuid' });
       expect(withSimId.success).toBe(true);
       expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });

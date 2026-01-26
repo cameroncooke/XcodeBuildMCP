@@ -14,25 +14,23 @@ describe('clean (unified) tool', () => {
 
   it('exports correct name/description/schema/handler', () => {
     expect(tool.name).toBe('clean');
-    expect(tool.description).toBe('Cleans build products with xcodebuild.');
+    expect(tool.description).toBe('Clean build products.');
     expect(typeof tool.handler).toBe('function');
 
     const schema = z.strictObject(tool.schema);
     expect(schema.safeParse({}).success).toBe(true);
     expect(
       schema.safeParse({
-        derivedDataPath: '/tmp/Derived',
         extraArgs: ['--quiet'],
-        preferXcodebuild: true,
         platform: 'iOS Simulator',
       }).success,
     ).toBe(true);
+    expect(schema.safeParse({ derivedDataPath: '/tmp/Derived' }).success).toBe(false);
+    expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
     expect(schema.safeParse({ configuration: 'Debug' }).success).toBe(false);
 
     const schemaKeys = Object.keys(tool.schema).sort();
-    expect(schemaKeys).toEqual(
-      ['derivedDataPath', 'extraArgs', 'platform', 'preferXcodebuild'].sort(),
-    );
+    expect(schemaKeys).toEqual(['extraArgs', 'platform'].sort());
   });
 
   it('handler validation: error when neither projectPath nor workspacePath provided', async () => {

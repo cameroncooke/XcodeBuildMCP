@@ -40,6 +40,8 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'fs';
 import { getStaticToolAnalysis, type StaticAnalysisResult } from './analysis/tools-analysis.js';
+import { getSchemaAuditTools } from './analysis/tools-schema-audit.js';
+import type { SchemaAuditTool } from './analysis/tools-schema-audit.js';
 
 // Get project paths
 const __filename = fileURLToPath(import.meta.url);
@@ -143,6 +145,7 @@ A unified command-line tool for XcodeBuildMCP tool and resource information.
 ${colors.bright}COMMANDS:${colors.reset}
   count, c        Show tool and workflow counts
   list, l         List all tools and resources  
+  schema, audit   Audit tool schemas (arguments and descriptions)
   static, s       Show static source file analysis
   help, h         Show this help message
 
@@ -158,6 +161,7 @@ ${colors.bright}OPTIONS:${colors.reset}
 ${colors.bright}EXAMPLES:${colors.reset}
   ${colors.cyan}npm run tools${colors.reset}                         # Static summary with workflows (default)
   ${colors.cyan}npm run tools list${colors.reset}                    # List tools
+  ${colors.cyan}npm run tools schema${colors.reset}                  # Audit tool schemas
   ${colors.cyan}npm run tools --runtime${colors.reset}               # Runtime analysis (requires build)
   ${colors.cyan}npm run tools static${colors.reset}                  # Static analysis summary
   ${colors.cyan}npm run tools count --json${colors.reset}            # JSON output
@@ -212,6 +216,36 @@ ${colors.bright}Examples:${colors.reset}
   ${colors.cyan}npx tsx scripts/tools-cli.ts list --tools${colors.reset}            # Runtime tool list
   ${colors.cyan}npx tsx scripts/tools-cli.ts list --resources${colors.reset}        # Runtime resource list
   ${colors.cyan}npx tsx scripts/tools-cli.ts list --static --verbose${colors.reset} # Static detailed list
+`,
+
+  schema: `
+${colors.bright}SCHEMA COMMAND${colors.reset}
+
+Audits tool schemas and prints argument descriptions (when set).
+
+${colors.bright}Usage:${colors.reset} npx tsx scripts/tools-cli.ts schema [options]
+
+${colors.bright}Options:${colors.reset}
+  --json               Output JSON format
+
+${colors.bright}Examples:${colors.reset}
+  ${colors.cyan}npx tsx scripts/tools-cli.ts schema${colors.reset}              # Human-readable schema audit
+  ${colors.cyan}npx tsx scripts/tools-cli.ts schema --json${colors.reset}       # JSON schema audit
+`,
+
+  audit: `
+${colors.bright}SCHEMA COMMAND${colors.reset}
+
+Audits tool schemas and prints argument descriptions (when set).
+
+${colors.bright}Usage:${colors.reset} npx tsx scripts/tools-cli.ts audit [options]
+
+${colors.bright}Options:${colors.reset}
+  --json               Output JSON format
+
+${colors.bright}Examples:${colors.reset}
+  ${colors.cyan}npx tsx scripts/tools-cli.ts audit${colors.reset}               # Human-readable schema audit
+  ${colors.cyan}npx tsx scripts/tools-cli.ts audit --json${colors.reset}        # JSON schema audit
 `,
 
   static: `
@@ -573,6 +607,65 @@ function outputJSON(
   console.log(JSON.stringify(output, null, 2));
 }
 
+function isSchemaAuditCommand(commandName: string): boolean {
+  return commandName === 'schema' || commandName === 'audit';
+}
+
+function displaySchemaAudit(tools: SchemaAuditTool[]): void {
+  if (options.json) {
+    return;
+  }
+
+  console.log(`${colors.bright}Tool Schema Audit:${colors.reset}`);
+  console.log('─'.repeat(60));
+
+  if (tools.length === 0) {
+    console.log('No tools found.');
+    console.log();
+    return;
+  }
+
+  for (const tool of tools) {
+    const toolDescription = tool.description ?? 'No description provided';
+    console.log(`Tool Name: ${tool.name}`);
+    console.log(`Tool Description: ${toolDescription}`);
+    console.log(`Arguments (${tool.args.length}):`);
+
+    if (tool.args.length === 0) {
+      console.log('  (none)');
+    } else {
+      for (const arg of tool.args) {
+        const argDescription = arg.description ?? 'No description provided';
+        console.log(`  Argument Name: ${arg.name}`);
+        console.log(`  Argument Description: ${argDescription}`);
+      }
+    }
+
+    console.log();
+  }
+}
+
+function outputSchemaAuditJSON(tools: SchemaAuditTool[]): void {
+  console.log(
+    JSON.stringify(
+      {
+        mode: 'schema-audit',
+        toolCount: tools.length,
+        tools: tools.map((tool) => ({
+          name: tool.name,
+          description: tool.description,
+          args: tool.args.map((arg) => ({
+            name: arg.name,
+            description: arg.description,
+          })),
+        })),
+      },
+      null,
+      2,
+    ),
+  );
+}
+
 /**
  * Main execution function
  */
@@ -580,16 +673,18 @@ async function main(): Promise<void> {
   try {
     let runtimeData: RuntimeData | null = null;
     let staticData: StaticAnalysisResult | null = null;
+    let schemaAuditTools: SchemaAuditTool[] | null = null;
+    const schemaAuditCommand = isSchemaAuditCommand(command);
 
     // Gather data based on options
-    if (options.runtime) {
+    if (options.runtime && !schemaAuditCommand) {
       if (!options.json) {
         console.log(`${colors.cyan}🔍 Gathering runtime information...${colors.reset}`);
       }
       runtimeData = await getRuntimeInfo();
     }
 
-    if (options.static) {
+    if (options.static && !schemaAuditCommand) {
       if (!options.json) {
         console.log(`${colors.cyan}📁 Performing static analysis...${colors.reset}`);
       }
@@ -597,11 +692,18 @@ async function main(): Promise<void> {
     }
 
     // For default command or workflows option, always gather static data for workflow info
-    if (options.workflows && !staticData) {
+    if (options.workflows && !staticData && !schemaAuditCommand) {
       if (!options.json) {
         console.log(`${colors.cyan}📁 Gathering workflow information...${colors.reset}`);
       }
       staticData = await getStaticToolAnalysis();
+    }
+
+    if (schemaAuditCommand) {
+      if (!options.json) {
+        console.log(`${colors.cyan}Gathering tool schema details...${colors.reset}`);
+      }
+      schemaAuditTools = await getSchemaAuditTools();
     }
 
     if (!options.json) {
@@ -610,7 +712,11 @@ async function main(): Promise<void> {
 
     // Handle JSON output
     if (options.json) {
-      outputJSON(runtimeData, staticData);
+      if (schemaAuditCommand) {
+        outputSchemaAuditJSON(schemaAuditTools ?? []);
+      } else {
+        outputJSON(runtimeData, staticData);
+      }
       return;
     }
 
@@ -650,6 +756,14 @@ async function main(): Promise<void> {
             console.log(`     ${file.relativePath}`);
           });
         }
+        break;
+
+      case 'schema':
+      case 'audit':
+        if (!schemaAuditTools) {
+          schemaAuditTools = await getSchemaAuditTools();
+        }
+        displaySchemaAudit(schemaAuditTools);
         break;
 
       default:

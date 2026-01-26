@@ -19,17 +19,12 @@ const startSimLogCapSchema = z.object({
   simulatorId: z
     .uuid()
     .describe('UUID of the simulator to capture logs from (obtained from list_simulators).'),
-  bundleId: z.string().describe('Bundle identifier of the app to capture logs for.'),
-  captureConsole: z
-    .boolean()
-    .optional()
-    .describe('Whether to capture console output (requires app relaunch).'),
+  bundleId: z.string(),
+  captureConsole: z.boolean().optional(),
   subsystemFilter: z
     .union([z.enum(['app', 'all', 'swiftui']), z.array(z.string()).min(1)])
     .default('app')
-    .describe(
-      "Controls which log subsystems to capture. Options: 'app' (default, only app logs), 'all' (capture all system logs), 'swiftui' (app + SwiftUI logs for Self._printChanges()), or an array of custom subsystem strings.",
-    ),
+    .describe('app|all|swiftui|[subsystem]'),
 });
 
 // Use z.infer for type safety
@@ -85,13 +80,12 @@ export async function start_sim_log_capLogic(
 }
 
 const publicSchemaObject = z.strictObject(
-  startSimLogCapSchema.omit({ simulatorId: true } as const).shape,
+  startSimLogCapSchema.omit({ simulatorId: true, bundleId: true } as const).shape,
 );
 
 export default {
   name: 'start_sim_log_cap',
-  description:
-    "Starts capturing logs from a specified simulator. Returns a session ID. Use subsystemFilter to control what logs are captured: 'app' (default), 'all' (everything), 'swiftui' (includes Self._printChanges()), or custom subsystems.",
+  description: 'Start sim log capture.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: startSimLogCapSchema,
@@ -104,6 +98,8 @@ export default {
     internalSchema: startSimLogCapSchema as unknown as z.ZodType<StartSimLogCapParams, unknown>,
     logicFunction: start_sim_log_capLogic,
     getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+    requirements: [
+      { allOf: ['simulatorId', 'bundleId'], message: 'Provide simulatorId and bundleId' },
+    ],
   }),
 };

@@ -25,7 +25,7 @@ describe('build_device plugin', () => {
     });
 
     it('should have correct description', () => {
-      expect(buildDevice.description).toBe('Builds an app for a connected device.');
+      expect(buildDevice.description).toBe('Build for device.');
     });
 
     it('should have handler function', () => {
@@ -35,13 +35,13 @@ describe('build_device plugin', () => {
     it('should expose only optional build-tuning fields in public schema', () => {
       const schema = z.strictObject(buildDevice.schema);
       expect(schema.safeParse({}).success).toBe(true);
-      expect(
-        schema.safeParse({ derivedDataPath: '/path/to/derived-data', extraArgs: [] }).success,
-      ).toBe(true);
+      expect(schema.safeParse({ extraArgs: [] }).success).toBe(true);
+      expect(schema.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
+      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
       expect(schema.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(false);
 
       const schemaKeys = Object.keys(buildDevice.schema).sort();
-      expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs', 'preferXcodebuild']);
+      expect(schemaKeys).toEqual(['extraArgs']);
     });
   });
 

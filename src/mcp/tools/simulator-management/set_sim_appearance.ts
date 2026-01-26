@@ -10,7 +10,7 @@ import {
 // Define schema as ZodObject
 const setSimAppearanceSchema = z.object({
   simulatorId: z.uuid().describe('UUID of the simulator to use (obtained from list_simulators)'),
-  mode: z.enum(['dark', 'light']).describe('The appearance mode to set (either "dark" or "light")'),
+  mode: z.enum(['dark', 'light']).describe('dark|light'),
 });
 
 // Use z.infer for type safety
@@ -93,7 +93,7 @@ const publicSchemaObject = z.strictObject(
 
 export default {
   name: 'set_sim_appearance',
-  description: 'Sets the appearance mode (dark/light) of an iOS simulator.',
+  description: 'Set sim appearance.',
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: setSimAppearanceSchema,
