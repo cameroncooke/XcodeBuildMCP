@@ -85,8 +85,8 @@ describe('screenshot plugin', () => {
         mockUuidDeps,
       );
 
-      // Should execute both commands in sequence
-      expect(capturedCommands).toHaveLength(2);
+      // Should execute all commands in sequence: screenshot, orientation detection, optimization
+      expect(capturedCommands).toHaveLength(3);
 
       // First command: xcrun simctl screenshot
       expect(capturedCommands[0]).toEqual([
@@ -98,8 +98,12 @@ describe('screenshot plugin', () => {
         '/tmp/screenshot_mock-uuid-123.png',
       ]);
 
-      // Second command: sips optimization
-      expect(capturedCommands[1]).toEqual([
+      // Second command: swift orientation detection
+      expect(capturedCommands[1][0]).toBe('swift');
+      expect(capturedCommands[1][1]).toBe('-e');
+
+      // Third command: sips optimization
+      expect(capturedCommands[2]).toEqual([
         'sips',
         '-Z',
         '800',
@@ -152,8 +156,8 @@ describe('screenshot plugin', () => {
         mockUuidDeps,
       );
 
-      // Should execute both commands in sequence
-      expect(capturedCommands).toHaveLength(2);
+      // Should execute all commands in sequence: screenshot, orientation detection, optimization
+      expect(capturedCommands).toHaveLength(3);
 
       // First command: xcrun simctl screenshot
       expect(capturedCommands[0]).toEqual([
@@ -165,8 +169,12 @@ describe('screenshot plugin', () => {
         '/tmp/screenshot_different-uuid-456.png',
       ]);
 
-      // Second command: sips optimization
-      expect(capturedCommands[1]).toEqual([
+      // Second command: swift orientation detection
+      expect(capturedCommands[1][0]).toBe('swift');
+      expect(capturedCommands[1][1]).toBe('-e');
+
+      // Third command: sips optimization
+      expect(capturedCommands[2]).toEqual([
         'sips',
         '-Z',
         '800',
@@ -208,8 +216,8 @@ describe('screenshot plugin', () => {
         mockFileSystemExecutor,
       );
 
-      // Should execute both commands in sequence
-      expect(capturedCommands).toHaveLength(2);
+      // Should execute all commands in sequence: screenshot, orientation detection, optimization
+      expect(capturedCommands).toHaveLength(3);
 
       // First command should be generated with real os.tmpdir, path.join, and uuidv4
       const firstCommand = capturedCommands[0];
@@ -221,14 +229,18 @@ describe('screenshot plugin', () => {
       expect(firstCommand[4]).toBe('screenshot');
       expect(firstCommand[5]).toMatch(/\/.*\/screenshot_.*\.png/);
 
-      // Second command should be sips optimization
-      const secondCommand = capturedCommands[1];
-      expect(secondCommand[0]).toBe('sips');
-      expect(secondCommand[1]).toBe('-Z');
-      expect(secondCommand[2]).toBe('800');
+      // Second command should be swift orientation detection
+      expect(capturedCommands[1][0]).toBe('swift');
+      expect(capturedCommands[1][1]).toBe('-e');
+
+      // Third command should be sips optimization
+      const thirdCommand = capturedCommands[2];
+      expect(thirdCommand[0]).toBe('sips');
+      expect(thirdCommand[1]).toBe('-Z');
+      expect(thirdCommand[2]).toBe('800');
       // Should have proper PNG input and JPG output paths
-      expect(secondCommand[secondCommand.length - 3]).toMatch(/\/.*\/screenshot_.*\.png/);
-      expect(secondCommand[secondCommand.length - 1]).toMatch(/\/.*\/screenshot_optimized_.*\.jpg/);
+      expect(thirdCommand[thirdCommand.length - 3]).toMatch(/\/.*\/screenshot_.*\.png/);
+      expect(thirdCommand[thirdCommand.length - 1]).toMatch(/\/.*\/screenshot_optimized_.*\.jpg/);
     });
   });
 
@@ -404,8 +416,8 @@ describe('screenshot plugin', () => {
         mockUuidDeps,
       );
 
-      // Should capture both command executions
-      expect(capturedArgs).toHaveLength(2);
+      // Should capture all command executions: screenshot, orientation detection, optimization
+      expect(capturedArgs).toHaveLength(3);
 
       // First call: xcrun simctl screenshot (3 args: command, logPrefix, useShell)
       expect(capturedArgs[0]).toEqual([
@@ -414,8 +426,14 @@ describe('screenshot plugin', () => {
         false,
       ]);
 
-      // Second call: sips optimization (3 args: command, logPrefix, useShell)
-      expect(capturedArgs[1]).toEqual([
+      // Second call: swift orientation detection
+      expect(capturedArgs[1][0][0]).toBe('swift');
+      expect(capturedArgs[1][0][1]).toBe('-e');
+      expect(capturedArgs[1][1]).toBe('[Screenshot]: detect orientation');
+      expect(capturedArgs[1][2]).toBe(false);
+
+      // Third call: sips optimization (3 args: command, logPrefix, useShell)
+      expect(capturedArgs[2]).toEqual([
         [
           'sips',
           '-Z',

@@ -1,5 +1,10 @@
 /**
  * Screenshot tool plugin - Capture screenshots from iOS Simulator
+ *
+ * Note: The simctl screenshot command captures the raw framebuffer in portrait orientation
+ * regardless of the device's actual rotation. When the simulator is in landscape mode,
+ * this results in a rotated image. This plugin detects the simulator window orientation
+ * and applies a +90° rotation to correct landscape screenshots.
  */
 import * as path from 'path';
 import { tmpdir } from 'os';
@@ -19,6 +24,74 @@ import {
 } from '../../../utils/typed-tool-factory.ts';
 
 const LOG_PREFIX = '[Screenshot]';
+
+/**
+ * Swift code to detect simulator window dimensions via CoreGraphics.
+ * Returns "width,height" of the first iPhone/iPad simulator window found.
+ */
+const WINDOW_DETECTION_SWIFT_CODE = `
+import Cocoa
+import CoreGraphics
+let opts = CGWindowListOption(arrayLiteral: .optionOnScreenOnly, .excludeDesktopElements)
+if let wins = CGWindowListCopyWindowInfo(opts, kCGNullWindowID) as? [[String: Any]] {
+  for w in wins {
+    if let o = w[kCGWindowOwnerName as String] as? String, o == "Simulator",
+       let b = w[kCGWindowBounds as String] as? [String: Any],
+       let n = w[kCGWindowName as String] as? String,
+       n.contains("iPhone") || n.contains("iPad") {
+      print("\\(b["Width"] as? Int ?? 0),\\(b["Height"] as? Int ?? 0)")
+      break
+    }
+  }
+}`.trim();
+
+/**
+ * Detects if the simulator window is in landscape orientation.
+ * Returns true if width > height, indicating landscape mode.
+ */
+export async function detectLandscapeMode(executor: CommandExecutor): Promise<boolean> {
+  try {
+    const swiftCommand = ['swift', '-e', WINDOW_DETECTION_SWIFT_CODE];
+    const result = await executor(swiftCommand, `${LOG_PREFIX}: detect orientation`, false);
+
+    if (result.success && result.output) {
+      const match = result.output.trim().match(/(\d+),(\d+)/);
+      if (match) {
+        const width = parseInt(match[1], 10);
+        const height = parseInt(match[2], 10);
+        const isLandscape = width > height;
+        log(
+          'info',
+          `${LOG_PREFIX}: Window dimensions ${width}x${height}, landscape=${isLandscape}`,
+        );
+        return isLandscape;
+      }
+    }
+    log('warning', `${LOG_PREFIX}: Could not detect window orientation, assuming portrait`);
+    return false;
+  } catch (error) {
+    log('warning', `${LOG_PREFIX}: Orientation detection failed: ${error}`);
+    return false;
+  }
+}
+
+/**
+ * Rotates an image by the specified degrees using sips.
+ */
+export async function rotateImage(
+  imagePath: string,
+  degrees: number,
+  executor: CommandExecutor,
+): Promise<boolean> {
+  try {
+    const rotateArgs = ['sips', '--rotate', degrees.toString(), imagePath];
+    const result = await executor(rotateArgs, `${LOG_PREFIX}: rotate image`, false);
+    return result.success;
+  } catch (error) {
+    log('warning', `${LOG_PREFIX}: Image rotation failed: ${error}`);
+    return false;
+  }
+}
 
 // Define schema as ZodObject
 const screenshotSchema = z.object({
@@ -68,6 +141,17 @@ export async function screenshotLogic(
     log('info', `${LOG_PREFIX}/screenshot: Success for ${simulatorId}`);
 
     try {
+      // Fix landscape orientation: simctl captures in portrait orientation regardless of device rotation
+      // Detect if simulator window is landscape and rotate the image +90° to correct
+      const isLandscape = await detectLandscapeMode(executor);
+      if (isLandscape) {
+        log('info', `${LOG_PREFIX}/screenshot: Landscape mode detected, rotating +90°`);
+        const rotated = await rotateImage(screenshotPath, 90, executor);
+        if (!rotated) {
+          log('warning', `${LOG_PREFIX}/screenshot: Rotation failed, continuing with original`);
+        }
+      }
+
       // Optimize the image for LLM consumption: resize to max 800px width and convert to JPEG
       const optimizeArgs = [
         'sips',
