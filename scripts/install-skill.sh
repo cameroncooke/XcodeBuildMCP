@@ -51,7 +51,7 @@ if [[ -z "${destination}" ]]; then
 fi
 
 skill_dir="${destination}/xcodebuildmcp"
-skill_url="https://raw.githubusercontent.com/cameroncook/XcodeBuildMCP/main/skills/xcodebuildmcp/SKILL.md"
+skill_url="https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/main/skills/xcodebuildmcp/SKILL.md"
 
 rm -rf "${skill_dir}"
 mkdir -p "${skill_dir}"

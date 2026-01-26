@@ -5,13 +5,13 @@ This repository bundles a minimal skill that summarizes XcodeBuildMCP workflows 
 ## Install (Codex CLI)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cameroncook/XcodeBuildMCP/main/scripts/install-skill.sh | bash -s -- --codex
+curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/main/scripts/install-skill.sh | bash -s -- --codex
 ```
 
 ## Install (Claude Code)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cameroncook/XcodeBuildMCP/main/scripts/install-skill.sh | bash -s -- --claude
+curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/main/scripts/install-skill.sh | bash -s -- --claude
 ```
 
 ## Install (Other Clients)
