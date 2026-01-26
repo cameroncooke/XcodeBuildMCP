@@ -17,6 +17,7 @@ import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
+import { getSnapshotUiWarning } from './shared/snapshot-ui-state.ts';
 
 export interface AxeHelpers {
   getAxePath: () => string | null;
@@ -90,25 +91,6 @@ const publicSchemaObject = z.strictObject(baseTapSchema.omit({ simulatorId: true
 
 const LOG_PREFIX = '[AXe]';
 
-// Session tracking for snapshot_ui warnings (shared across UI tools)
-const snapshotUiTimestamps = new Map<string, { timestamp: number }>();
-const SNAPSHOT_UI_WARNING_TIMEOUT = 60000; // 60 seconds
-
-function getCoordinateWarning(simulatorId: string): string | null {
-  const session = snapshotUiTimestamps.get(simulatorId);
-  if (!session) {
-    return 'Warning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.';
-  }
-
-  const timeSinceDescribe = Date.now() - session.timestamp;
-  if (timeSinceDescribe > SNAPSHOT_UI_WARNING_TIMEOUT) {
-    const secondsAgo = Math.round(timeSinceDescribe / 1000);
-    return `Warning: snapshot_ui was last called ${secondsAgo} seconds ago. Consider refreshing UI coordinates with snapshot_ui instead of using potentially stale coordinates.`;
-  }
-
-  return null;
-}
-
 export async function tapLogic(
   params: TapParams,
   executor: CommandExecutor,
@@ -167,7 +149,7 @@ export async function tapLogic(
     await executeAxeCommand(commandArgs, simulatorId, 'tap', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
 
-    const coordinateWarning = usesCoordinates ? getCoordinateWarning(simulatorId) : null;
+    const coordinateWarning = usesCoordinates ? getSnapshotUiWarning(simulatorId) : null;
     const message = `${actionDescription} simulated successfully.`;
     const warnings = [guard.warningText, coordinateWarning].filter(Boolean).join('\n\n');
 

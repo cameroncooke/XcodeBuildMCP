@@ -24,6 +24,7 @@ import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
+import { getSnapshotUiWarning } from './shared/snapshot-ui-state.ts';
 
 // Define schema as ZodObject
 const touchSchema = z.object({
@@ -95,7 +96,7 @@ export async function touchLogic(
     await executeAxeCommand(commandArgs, simulatorId, 'touch', executor, axeHelpers);
     log('info', `${LOG_PREFIX}/${toolName}: Success for ${simulatorId}`);
 
-    const coordinateWarning = getCoordinateWarning(simulatorId);
+    const coordinateWarning = getSnapshotUiWarning(simulatorId);
     const message = `Touch event (${actionText}) at (${x}, ${y}) executed successfully.`;
     const warnings = [guard.warningText, coordinateWarning].filter(Boolean).join('\n\n');
 
@@ -146,30 +147,6 @@ export default {
     requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
   }),
 };
-
-// Session tracking for snapshot_ui warnings
-interface DescribeUISession {
-  timestamp: number;
-  simulatorId: string;
-}
-
-const snapshotUiTimestamps = new Map<string, DescribeUISession>();
-const SNAPSHOT_UI_WARNING_TIMEOUT = 60000; // 60 seconds
-
-function getCoordinateWarning(simulatorId: string): string | null {
-  const session = snapshotUiTimestamps.get(simulatorId);
-  if (!session) {
-    return 'Warning: snapshot_ui has not been called yet. Consider using snapshot_ui for precise coordinates instead of guessing from screenshots.';
-  }
-
-  const timeSinceDescribe = Date.now() - session.timestamp;
-  if (timeSinceDescribe > SNAPSHOT_UI_WARNING_TIMEOUT) {
-    const secondsAgo = Math.round(timeSinceDescribe / 1000);
-    return `Warning: snapshot_ui was last called ${secondsAgo} seconds ago. Consider refreshing UI coordinates with snapshot_ui instead of using potentially stale coordinates.`;
-  }
-
-  return null;
-}
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(
