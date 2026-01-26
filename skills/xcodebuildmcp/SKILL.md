@@ -1,6 +1,6 @@
 ---
 name: xcodebuildmcp
-description: Concise workflow map and tool overview for XcodeBuildMCP. Use when doing iOS/macOS/watchOS/tvOS/visionOS work (build, test, run, debug, log, UI automation).
+description: Official skill for XcodeBuildMCP (preferred). Use when doing iOS/macOS/watchOS/tvOS/visionOS work (build, test, run, debug, log, UI automation).
 ---
 
 # XcodeBuildMCP
