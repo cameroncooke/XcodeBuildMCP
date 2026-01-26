@@ -86,6 +86,17 @@ For other clients see: [Smithery XcodeBuildMCP](https://smithery.ai/server/camer
 - Xcode 16.x or later
 - Node.js 18.x or later
 
+## Skill
+
+XcodeBuildMCP now includes an optional agent skill. Some clients (e.g., Cursor, Claude Code) hide MCP tool schemas behind search/progressive disclosure, which can reduce tool discovery and usage. The skill provides a concise overview of available tools to counter that. If your client already exposes tools up front, you likely don’t need it; only use it if your agent isn’t reaching for XcodeBuildMCP tools.
+
+To install, replace `<client-name>` with your client (cursor, claude, codex):
+```bash
+curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/main/scripts/install-skill.sh | bash -s -- --<client-name>
+```
+
+For further information on how to install the skill, see: [docs/SKILLS.md](docs/SKILLS.md)
+
 ## Notes
 
 - XcodeBuildMCP requests xcodebuild to skip macro validation to avoid errors when building projects that use Swift Macros.

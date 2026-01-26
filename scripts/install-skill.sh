@@ -3,11 +3,11 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: install-skill.sh --codex|--claude|--dest <path>
+Usage: install-skill.sh --codex|--claude|--cursor|--dest <path>
 
 Installs (or replaces) the XcodeBuildMCP skill.
 
-You must choose a destination with --codex, --claude, or --dest.
+You must choose a destination with --codex, --claude, --cursor, or --dest.
 EOF
 }
 
@@ -21,6 +21,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --claude)
       destination="${HOME}/.claude/skills"
+      shift
+      ;;
+    --cursor)
+      destination="${HOME}/.cursor/skills"
       shift
       ;;
     --dest)
