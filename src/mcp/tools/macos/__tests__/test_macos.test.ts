@@ -4,6 +4,8 @@
  * Using dependency injection for deterministic testing
  */
 import { describe, it, expect, beforeEach } from 'vitest';
+import path from 'node:path';
+import os from 'node:os';
 import * as z from 'zod';
 import {
   createMockCommandResponse,
@@ -14,11 +16,15 @@ import {
 import { sessionStore } from '../../../../utils/session-store.ts';
 import testMacos, { testMacosLogic } from '../test_macos.ts';
 
+// Platform-appropriate temp directory for test assertions
+const testTmpDir = os.tmpdir();
+const testResultPath = path.join(testTmpDir, 'xcodebuild-test-abc123', 'TestResults.xcresult');
+
 const createTestFileSystemExecutor = (overrides: Partial<FileSystemExecutor> = {}) =>
   createMockFileSystemExecutor({
-    mkdtemp: async () => '/tmp/test-123',
+    mkdtemp: async () => path.join(testTmpDir, 'xcodebuild-test-abc123'),
     rm: async () => {},
-    tmpdir: () => '/tmp',
+    tmpdir: () => testTmpDir,
     stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
     ...overrides,
   });
@@ -327,7 +333,7 @@ describe('test_macos plugin (unified)', () => {
 
       // Mock file system dependencies using approved utility
       const mockFileSystemExecutor = createTestFileSystemExecutor({
-        mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
+        mkdtemp: async () => path.join(testTmpDir, 'xcodebuild-test-abc123'),
       });
 
       const result = await testMacosLogic(
@@ -353,7 +359,7 @@ describe('test_macos plugin (unified)', () => {
         '-destination',
         'platform=macOS',
         '-resultBundlePath',
-        '/tmp/xcodebuild-test-abc123/TestResults.xcresult',
+        testResultPath,
         'test',
       ]);
       expect(commandCalls[0].logPrefix).toBe('Test Run');
@@ -367,7 +373,7 @@ describe('test_macos plugin (unified)', () => {
         'test-results',
         'summary',
         '--path',
-        '/tmp/xcodebuild-test-abc123/TestResults.xcresult',
+        testResultPath,
       ]);
       expect(commandCalls[1].logPrefix).toBe('Parse xcresult bundle');
 
@@ -428,7 +434,7 @@ describe('test_macos plugin (unified)', () => {
 
       // Mock file system dependencies
       const mockFileSystemExecutor = createTestFileSystemExecutor({
-        mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
+        mkdtemp: async () => path.join(testTmpDir, 'xcodebuild-test-abc123'),
       });
 
       const result = await testMacosLogic(
@@ -492,7 +498,7 @@ describe('test_macos plugin (unified)', () => {
 
       // Mock file system dependencies
       const mockFileSystemExecutor = createTestFileSystemExecutor({
-        mkdtemp: async () => '/tmp/xcodebuild-test-abc123',
+        mkdtemp: async () => path.join(testTmpDir, 'xcodebuild-test-abc123'),
       });
 
       const result = await testMacosLogic(

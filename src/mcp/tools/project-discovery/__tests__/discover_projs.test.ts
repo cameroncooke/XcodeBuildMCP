@@ -8,9 +8,13 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import path from 'node:path';
 import * as z from 'zod';
 import plugin, { discover_projsLogic } from '../discover_projs.ts';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
+
+// Platform-appropriate test paths
+const testWorkspacePath = path.join('/workspace');
 
 describe('discover_projs plugin', () => {
   let mockFileSystemExecutor: any;
@@ -99,7 +103,7 @@ describe('discover_projs plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Failed to access scan path: /workspace. Error: ENOENT: no such file or directory',
+            text: `Failed to access scan path: ${testWorkspacePath}. Error: ENOENT: no such file or directory`,
           },
         ],
         isError: true,
@@ -119,7 +123,7 @@ describe('discover_projs plugin', () => {
       );
 
       expect(result).toEqual({
-        content: [{ type: 'text', text: 'Scan path is not a directory: /workspace' }],
+        content: [{ type: 'text', text: `Scan path is not a directory: ${testWorkspacePath}` }],
         isError: true,
       });
     });
@@ -162,8 +166,8 @@ describe('discover_projs plugin', () => {
       expect(result).toEqual({
         content: [
           { type: 'text', text: 'Discovery finished. Found 1 projects and 1 workspaces.' },
-          { type: 'text', text: 'Projects found:\n - /workspace/MyApp.xcodeproj' },
-          { type: 'text', text: 'Workspaces found:\n - /workspace/MyWorkspace.xcworkspace' },
+          { type: 'text', text: `Projects found:\n - ${path.join(testWorkspacePath, 'MyApp.xcodeproj')}` },
+          { type: 'text', text: `Workspaces found:\n - ${path.join(testWorkspacePath, 'MyWorkspace.xcworkspace')}` },
           {
             type: 'text',
             text: "Hint: Save a default with session-set-defaults { projectPath: '...' } or { workspacePath: '...' }.",
@@ -193,7 +197,7 @@ describe('discover_projs plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'Failed to access scan path: /workspace. Error: Permission denied',
+            text: `Failed to access scan path: ${testWorkspacePath}. Error: Permission denied`,
           },
         ],
         isError: true,
@@ -216,7 +220,7 @@ describe('discover_projs plugin', () => {
 
       expect(result).toEqual({
         content: [
-          { type: 'text', text: 'Failed to access scan path: /workspace. Error: String error' },
+          { type: 'text', text: `Failed to access scan path: ${testWorkspacePath}. Error: String error` },
         ],
         isError: true,
       });
@@ -279,7 +283,7 @@ describe('discover_projs plugin', () => {
 
       expect(result).toEqual({
         content: [
-          { type: 'text', text: 'Failed to access scan path: /workspace. Error: Access denied' },
+          { type: 'text', text: `Failed to access scan path: ${testWorkspacePath}. Error: Access denied` },
         ],
         isError: true,
       });

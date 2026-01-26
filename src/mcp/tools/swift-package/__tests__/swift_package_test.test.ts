@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import path from 'node:path';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
@@ -13,6 +14,9 @@ import {
 } from '../../../../test-utils/mock-executors.ts';
 import swiftPackageTest, { swift_package_testLogic } from '../swift_package_test.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
+
+// Helper to get platform-appropriate resolved path for test assertions
+const testPackagePath = path.resolve('/test/package');
 
 describe('swift_package_test plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -83,7 +87,7 @@ describe('swift_package_test plugin', () => {
 
       expect(calls).toHaveLength(1);
       expect(calls[0]).toEqual({
-        args: ['swift', 'test', '--package-path', '/test/package'],
+        args: ['swift', 'test', '--package-path', testPackagePath],
         name: 'Swift Package Test',
         hideOutput: true,
         opts: undefined,
@@ -125,7 +129,7 @@ describe('swift_package_test plugin', () => {
           'swift',
           'test',
           '--package-path',
-          '/test/package',
+          testPackagePath,
           '-c',
           'release',
           '--test-product',

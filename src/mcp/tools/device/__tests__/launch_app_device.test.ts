@@ -96,7 +96,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         '--device',
         'test-device-123',
         '--json-output',
-        expect.stringMatching(/^\/.*\/launch-\d+\.json$/),
+        expect.stringMatching(/launch-\d+\.json$/),
         '--terminate-existing',
         'com.example.app',
       ]);
@@ -136,7 +136,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         '--device',
         '00008030-001E14BE2288802E',
         '--json-output',
-        expect.stringMatching(/^\/.*\/launch-\d+\.json$/),
+        expect.stringMatching(/launch-\d+\.json$/),
         '--terminate-existing',
         'com.apple.mobilesafari',
       ]);

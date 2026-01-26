@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import path from 'node:path';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
@@ -13,6 +14,9 @@ import {
 } from '../../../../test-utils/mock-executors.ts';
 import swiftPackageBuild, { swift_package_buildLogic } from '../swift_package_build.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
+
+// Helper to get platform-appropriate resolved path for test assertions
+const testPackagePath = path.resolve('/test/package');
 
 describe('swift_package_build plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -78,7 +82,7 @@ describe('swift_package_build plugin', () => {
 
       expect(executorCalls).toEqual([
         {
-          args: ['swift', 'build', '--package-path', '/test/package'],
+          args: ['swift', 'build', '--package-path', testPackagePath],
           description: 'Swift Package Build',
           useShell: true,
           cwd: undefined,
@@ -106,7 +110,7 @@ describe('swift_package_build plugin', () => {
 
       expect(executorCalls).toEqual([
         {
-          args: ['swift', 'build', '--package-path', '/test/package', '-c', 'release'],
+          args: ['swift', 'build', '--package-path', testPackagePath, '-c', 'release'],
           description: 'Swift Package Build',
           useShell: true,
           cwd: undefined,
@@ -141,7 +145,7 @@ describe('swift_package_build plugin', () => {
             'swift',
             'build',
             '--package-path',
-            '/test/package',
+            testPackagePath,
             '-c',
             'release',
             '--target',

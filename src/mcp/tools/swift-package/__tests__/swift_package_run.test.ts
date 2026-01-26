@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import path from 'node:path';
 import * as z from 'zod';
 import {
   createMockExecutor,
@@ -13,6 +14,9 @@ import {
 } from '../../../../test-utils/mock-executors.ts';
 import swiftPackageRun, { swift_package_runLogic } from '../swift_package_run.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
+
+// Helper to get platform-appropriate resolved path for test assertions
+const testPackagePath = path.resolve('/test/package');
 
 describe('swift_package_run plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -97,7 +101,7 @@ describe('swift_package_run plugin', () => {
       );
 
       expect(executorCalls[0]).toEqual({
-        command: ['swift', 'run', '--package-path', '/test/package'],
+        command: ['swift', 'run', '--package-path', testPackagePath],
         logPrefix: 'Swift Package Run',
         useShell: true,
         opts: undefined,
@@ -125,7 +129,7 @@ describe('swift_package_run plugin', () => {
       );
 
       expect(executorCalls[0]).toEqual({
-        command: ['swift', 'run', '--package-path', '/test/package', '-c', 'release'],
+        command: ['swift', 'run', '--package-path', testPackagePath, '-c', 'release'],
         logPrefix: 'Swift Package Run',
         useShell: true,
         opts: undefined,
@@ -153,7 +157,7 @@ describe('swift_package_run plugin', () => {
       );
 
       expect(executorCalls[0]).toEqual({
-        command: ['swift', 'run', '--package-path', '/test/package', 'MyApp'],
+        command: ['swift', 'run', '--package-path', testPackagePath, 'MyApp'],
         logPrefix: 'Swift Package Run',
         useShell: true,
         opts: undefined,
@@ -181,7 +185,7 @@ describe('swift_package_run plugin', () => {
       );
 
       expect(executorCalls[0]).toEqual({
-        command: ['swift', 'run', '--package-path', '/test/package', '--', 'arg1', 'arg2'],
+        command: ['swift', 'run', '--package-path', testPackagePath, '--', 'arg1', 'arg2'],
         logPrefix: 'Swift Package Run',
         useShell: true,
         opts: undefined,
@@ -213,7 +217,7 @@ describe('swift_package_run plugin', () => {
           'swift',
           'run',
           '--package-path',
-          '/test/package',
+          testPackagePath,
           '-Xswiftc',
           '-parse-as-library',
         ],
@@ -251,7 +255,7 @@ describe('swift_package_run plugin', () => {
           'swift',
           'run',
           '--package-path',
-          '/test/package',
+          testPackagePath,
           '-c',
           'release',
           '-Xswiftc',

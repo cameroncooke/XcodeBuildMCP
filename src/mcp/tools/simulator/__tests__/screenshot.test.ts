@@ -221,16 +221,17 @@ describe('screenshot plugin', () => {
       expect(firstCommand[2]).toBe('io');
       expect(firstCommand[3]).toBe('test-uuid');
       expect(firstCommand[4]).toBe('screenshot');
-      expect(firstCommand[5]).toMatch(/\/.*\/screenshot_.*\.png/);
+      // Use platform-independent path matching (works on both Unix and Windows)
+      expect(firstCommand[5]).toMatch(/screenshot_.*\.png$/);
 
       // Second command should be sips optimization
       const secondCommand = capturedCommands[1];
       expect(secondCommand[0]).toBe('sips');
       expect(secondCommand[1]).toBe('-Z');
       expect(secondCommand[2]).toBe('800');
-      // Should have proper PNG input and JPG output paths
-      expect(secondCommand[secondCommand.length - 3]).toMatch(/\/.*\/screenshot_.*\.png/);
-      expect(secondCommand[secondCommand.length - 1]).toMatch(/\/.*\/screenshot_optimized_.*\.jpg/);
+      // Should have proper PNG input and JPG output paths (platform-independent matching)
+      expect(secondCommand[secondCommand.length - 3]).toMatch(/screenshot_.*\.png$/);
+      expect(secondCommand[secondCommand.length - 1]).toMatch(/screenshot_optimized_.*\.jpg$/);
     });
   });
 
