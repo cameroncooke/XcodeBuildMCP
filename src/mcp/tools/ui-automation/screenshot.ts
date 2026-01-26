@@ -26,32 +26,92 @@ import {
 const LOG_PREFIX = '[Screenshot]';
 
 /**
- * Swift code to detect simulator window dimensions via CoreGraphics.
- * Returns "width,height" of the first iPhone/iPad simulator window found.
+ * Type for simctl device list response
  */
-const WINDOW_DETECTION_SWIFT_CODE = `
+interface SimctlDevice {
+  udid: string;
+  name: string;
+  state?: string;
+}
+
+interface SimctlDeviceList {
+  devices: Record<string, SimctlDevice[]>;
+}
+
+/**
+ * Generates Swift code to detect simulator window dimensions via CoreGraphics.
+ * Filters by device name to handle multiple open simulators correctly.
+ * Returns "width,height" of the matching simulator window.
+ */
+function getWindowDetectionSwiftCode(deviceName: string): string {
+  // Escape the device name for use in Swift string
+  const escapedDeviceName = deviceName.replace(/"/g, '\\"');
+  return `
 import Cocoa
 import CoreGraphics
+let deviceName = "${escapedDeviceName}"
 let opts = CGWindowListOption(arrayLiteral: .optionOnScreenOnly, .excludeDesktopElements)
 if let wins = CGWindowListCopyWindowInfo(opts, kCGNullWindowID) as? [[String: Any]] {
   for w in wins {
     if let o = w[kCGWindowOwnerName as String] as? String, o == "Simulator",
        let b = w[kCGWindowBounds as String] as? [String: Any],
        let n = w[kCGWindowName as String] as? String,
-       n.contains("iPhone") || n.contains("iPad") {
+       n.contains(deviceName) {
       print("\\(b["Width"] as? Int ?? 0),\\(b["Height"] as? Int ?? 0)")
       break
     }
   }
 }`.trim();
+}
+
+/**
+ * Gets the device name for a simulator ID using simctl.
+ * Returns the device name or null if not found.
+ */
+export async function getDeviceNameForSimulatorId(
+  simulatorId: string,
+  executor: CommandExecutor,
+): Promise<string | null> {
+  try {
+    const listCommand = ['xcrun', 'simctl', 'list', 'devices', '-j'];
+    const result = await executor(listCommand, `${LOG_PREFIX}: list devices`, false);
+
+    if (result.success && result.output) {
+      const data = JSON.parse(result.output) as SimctlDeviceList;
+      const devices = data.devices;
+
+      for (const runtime of Object.keys(devices)) {
+        for (const device of devices[runtime]) {
+          if (device.udid === simulatorId) {
+            log('info', `${LOG_PREFIX}: Found device name "${device.name}" for ${simulatorId}`);
+            return device.name;
+          }
+        }
+      }
+    }
+    log('warning', `${LOG_PREFIX}: Could not find device name for ${simulatorId}`);
+    return null;
+  } catch (error) {
+    log('warning', `${LOG_PREFIX}: Failed to get device name: ${error}`);
+    return null;
+  }
+}
 
 /**
  * Detects if the simulator window is in landscape orientation.
+ * Uses the device name to filter when multiple simulators are open.
  * Returns true if width > height, indicating landscape mode.
  */
-export async function detectLandscapeMode(executor: CommandExecutor): Promise<boolean> {
+export async function detectLandscapeMode(
+  executor: CommandExecutor,
+  deviceName?: string,
+): Promise<boolean> {
   try {
-    const swiftCommand = ['swift', '-e', WINDOW_DETECTION_SWIFT_CODE];
+    // If no device name, fall back to matching any iPhone/iPad
+    const swiftCode = deviceName
+      ? getWindowDetectionSwiftCode(deviceName)
+      : getWindowDetectionSwiftCode('iPhone');
+    const swiftCommand = ['swift', '-e', swiftCode];
     const result = await executor(swiftCommand, `${LOG_PREFIX}: detect orientation`, false);
 
     if (result.success && result.output) {
@@ -142,8 +202,10 @@ export async function screenshotLogic(
 
     try {
       // Fix landscape orientation: simctl captures in portrait orientation regardless of device rotation
+      // Get device name to identify the correct simulator window when multiple are open
+      const deviceName = await getDeviceNameForSimulatorId(simulatorId, executor);
       // Detect if simulator window is landscape and rotate the image +90° to correct
-      const isLandscape = await detectLandscapeMode(executor);
+      const isLandscape = await detectLandscapeMode(executor, deviceName ?? undefined);
       if (isLandscape) {
         log('info', `${LOG_PREFIX}/screenshot: Landscape mode detected, rotating +90°`);
         const rotated = await rotateImage(screenshotPath, 90, executor);

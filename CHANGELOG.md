@@ -21,7 +21,7 @@
 - Fix tool loading bugs in static tool registration.
 - Fix xcodemake command argument corruption when project directory path appears as substring in non-path arguments.
 - Fix snapshot_ui warning state being isolated per UI automation tool, causing false warnings.
-- Fix screenshot tool capturing rotated images when simulator is in landscape orientation. The tool now detects landscape mode via window dimensions and applies +90° rotation to correct the framebuffer capture.
+- Fixed screenshot tool capturing rotated images when simulator is in landscape orientation by detecting window dimensions and applying +90° rotation to correct the framebuffer capture. ([`#186`](https://github.com/cameroncooke/XcodeBuildMCP/pull/186) by [`@VincentStark`](https://github.com/VincentStark))
 
 ## [1.14.0] - 2025-09-22
 - Add video capture tool for simulators

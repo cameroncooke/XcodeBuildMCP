@@ -85,8 +85,8 @@ describe('screenshot plugin', () => {
         mockUuidDeps,
       );
 
-      // Should execute all commands in sequence: screenshot, orientation detection, optimization
-      expect(capturedCommands).toHaveLength(3);
+      // Should execute all commands in sequence: screenshot, list devices, orientation detection, optimization
+      expect(capturedCommands).toHaveLength(4);
 
       // First command: xcrun simctl screenshot
       expect(capturedCommands[0]).toEqual([
@@ -98,12 +98,17 @@ describe('screenshot plugin', () => {
         '/tmp/screenshot_mock-uuid-123.png',
       ]);
 
-      // Second command: swift orientation detection
-      expect(capturedCommands[1][0]).toBe('swift');
-      expect(capturedCommands[1][1]).toBe('-e');
+      // Second command: xcrun simctl list devices (to get device name)
+      expect(capturedCommands[1][0]).toBe('xcrun');
+      expect(capturedCommands[1][1]).toBe('simctl');
+      expect(capturedCommands[1][2]).toBe('list');
 
-      // Third command: sips optimization
-      expect(capturedCommands[2]).toEqual([
+      // Third command: swift orientation detection
+      expect(capturedCommands[2][0]).toBe('swift');
+      expect(capturedCommands[2][1]).toBe('-e');
+
+      // Fourth command: sips optimization
+      expect(capturedCommands[3]).toEqual([
         'sips',
         '-Z',
         '800',
@@ -156,8 +161,8 @@ describe('screenshot plugin', () => {
         mockUuidDeps,
       );
 
-      // Should execute all commands in sequence: screenshot, orientation detection, optimization
-      expect(capturedCommands).toHaveLength(3);
+      // Should execute all commands in sequence: screenshot, list devices, orientation detection, optimization
+      expect(capturedCommands).toHaveLength(4);
 
       // First command: xcrun simctl screenshot
       expect(capturedCommands[0]).toEqual([
@@ -169,12 +174,17 @@ describe('screenshot plugin', () => {
         '/tmp/screenshot_different-uuid-456.png',
       ]);
 
-      // Second command: swift orientation detection
-      expect(capturedCommands[1][0]).toBe('swift');
-      expect(capturedCommands[1][1]).toBe('-e');
+      // Second command: xcrun simctl list devices (to get device name)
+      expect(capturedCommands[1][0]).toBe('xcrun');
+      expect(capturedCommands[1][1]).toBe('simctl');
+      expect(capturedCommands[1][2]).toBe('list');
 
-      // Third command: sips optimization
-      expect(capturedCommands[2]).toEqual([
+      // Third command: swift orientation detection
+      expect(capturedCommands[2][0]).toBe('swift');
+      expect(capturedCommands[2][1]).toBe('-e');
+
+      // Fourth command: sips optimization
+      expect(capturedCommands[3]).toEqual([
         'sips',
         '-Z',
         '800',
@@ -216,8 +226,8 @@ describe('screenshot plugin', () => {
         mockFileSystemExecutor,
       );
 
-      // Should execute all commands in sequence: screenshot, orientation detection, optimization
-      expect(capturedCommands).toHaveLength(3);
+      // Should execute all commands in sequence: screenshot, list devices, orientation detection, optimization
+      expect(capturedCommands).toHaveLength(4);
 
       // First command should be generated with real os.tmpdir, path.join, and uuidv4
       const firstCommand = capturedCommands[0];
@@ -229,12 +239,17 @@ describe('screenshot plugin', () => {
       expect(firstCommand[4]).toBe('screenshot');
       expect(firstCommand[5]).toMatch(/\/.*\/screenshot_.*\.png/);
 
-      // Second command should be swift orientation detection
-      expect(capturedCommands[1][0]).toBe('swift');
-      expect(capturedCommands[1][1]).toBe('-e');
+      // Second command should be xcrun simctl list devices
+      expect(capturedCommands[1][0]).toBe('xcrun');
+      expect(capturedCommands[1][1]).toBe('simctl');
+      expect(capturedCommands[1][2]).toBe('list');
 
-      // Third command should be sips optimization
-      const thirdCommand = capturedCommands[2];
+      // Third command should be swift orientation detection
+      expect(capturedCommands[2][0]).toBe('swift');
+      expect(capturedCommands[2][1]).toBe('-e');
+
+      // Fourth command should be sips optimization
+      const thirdCommand = capturedCommands[3];
       expect(thirdCommand[0]).toBe('sips');
       expect(thirdCommand[1]).toBe('-Z');
       expect(thirdCommand[2]).toBe('800');
@@ -416,8 +431,8 @@ describe('screenshot plugin', () => {
         mockUuidDeps,
       );
 
-      // Should capture all command executions: screenshot, orientation detection, optimization
-      expect(capturedArgs).toHaveLength(3);
+      // Should capture all command executions: screenshot, list devices, orientation detection, optimization
+      expect(capturedArgs).toHaveLength(4);
 
       // First call: xcrun simctl screenshot (3 args: command, logPrefix, useShell)
       expect(capturedArgs[0]).toEqual([
@@ -426,14 +441,21 @@ describe('screenshot plugin', () => {
         false,
       ]);
 
-      // Second call: swift orientation detection
-      expect(capturedArgs[1][0][0]).toBe('swift');
-      expect(capturedArgs[1][0][1]).toBe('-e');
-      expect(capturedArgs[1][1]).toBe('[Screenshot]: detect orientation');
+      // Second call: xcrun simctl list devices (to get device name)
+      expect(capturedArgs[1][0][0]).toBe('xcrun');
+      expect(capturedArgs[1][0][1]).toBe('simctl');
+      expect(capturedArgs[1][0][2]).toBe('list');
+      expect(capturedArgs[1][1]).toBe('[Screenshot]: list devices');
       expect(capturedArgs[1][2]).toBe(false);
 
-      // Third call: sips optimization (3 args: command, logPrefix, useShell)
-      expect(capturedArgs[2]).toEqual([
+      // Third call: swift orientation detection
+      expect(capturedArgs[2][0][0]).toBe('swift');
+      expect(capturedArgs[2][0][1]).toBe('-e');
+      expect(capturedArgs[2][1]).toBe('[Screenshot]: detect orientation');
+      expect(capturedArgs[2][2]).toBe(false);
+
+      // Fourth call: sips optimization (3 args: command, logPrefix, useShell)
+      expect(capturedArgs[3]).toEqual([
         [
           'sips',
           '-Z',

@@ -595,6 +595,19 @@ describe('Screenshot Plugin', () => {
   });
 
   describe('Landscape Screenshot Integration', () => {
+    // Mock device list JSON response
+    const mockDeviceListJson = JSON.stringify({
+      devices: {
+        'com.apple.CoreSimulator.SimRuntime.iOS-17-2': [
+          {
+            udid: '12345678-1234-4234-8234-123456789012',
+            name: 'iPhone 15 Pro',
+            state: 'Booted',
+          },
+        ],
+      },
+    });
+
     it('should rotate screenshot when landscape mode is detected', async () => {
       const capturedCommands: string[][] = [];
       let commandIndex = 0;
@@ -611,8 +624,17 @@ describe('Screenshot Plugin', () => {
             process: mockProcess,
           };
         }
-        // Second call: swift orientation detection (simulate landscape)
+        // Second call: list devices to get device name
         if (idx === 1) {
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Third call: swift orientation detection (simulate landscape)
+        if (idx === 2) {
           return {
             success: true,
             output: '844,390',
@@ -620,8 +642,8 @@ describe('Screenshot Plugin', () => {
             process: mockProcess,
           };
         }
-        // Third call: sips rotation
-        if (idx === 2) {
+        // Fourth call: sips rotation
+        if (idx === 3) {
           return {
             success: true,
             output: '',
@@ -629,7 +651,7 @@ describe('Screenshot Plugin', () => {
             process: mockProcess,
           };
         }
-        // Fourth call: sips optimization
+        // Fifth call: sips optimization
         return {
           success: true,
           output: '',
@@ -650,8 +672,8 @@ describe('Screenshot Plugin', () => {
         { v4: () => 'test-uuid' },
       );
 
-      // Verify rotation command was called with +90 degrees
-      expect(capturedCommands[2]).toEqual([
+      // Verify rotation command was called with +90 degrees (index 3)
+      expect(capturedCommands[3]).toEqual([
         'sips',
         '--rotate',
         '90',
@@ -675,8 +697,17 @@ describe('Screenshot Plugin', () => {
             process: mockProcess,
           };
         }
-        // Second call: swift orientation detection (simulate portrait)
+        // Second call: list devices to get device name
         if (idx === 1) {
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Third call: swift orientation detection (simulate portrait)
+        if (idx === 2) {
           return {
             success: true,
             output: '390,844',
@@ -684,7 +715,7 @@ describe('Screenshot Plugin', () => {
             process: mockProcess,
           };
         }
-        // Third call: sips optimization (no rotation in portrait)
+        // Fourth call: sips optimization (no rotation in portrait)
         return {
           success: true,
           output: '',
@@ -705,11 +736,11 @@ describe('Screenshot Plugin', () => {
         { v4: () => 'test-uuid' },
       );
 
-      // Should have: screenshot, orientation detection, optimization (no rotation)
-      expect(capturedCommands.length).toBe(3);
-      // Third command should be optimization, not rotation
-      expect(capturedCommands[2][0]).toBe('sips');
-      expect(capturedCommands[2]).toContain('-Z');
+      // Should have: screenshot, list devices, orientation detection, optimization (no rotation)
+      expect(capturedCommands.length).toBe(4);
+      // Fourth command should be optimization, not rotation
+      expect(capturedCommands[3][0]).toBe('sips');
+      expect(capturedCommands[3]).toContain('-Z');
     });
 
     it('should continue without rotation if orientation detection fails', async () => {
@@ -728,8 +759,17 @@ describe('Screenshot Plugin', () => {
             process: mockProcess,
           };
         }
-        // Second call: swift orientation detection (fails)
+        // Second call: list devices to get device name
         if (idx === 1) {
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Third call: swift orientation detection (fails)
+        if (idx === 2) {
           return {
             success: false,
             output: '',
@@ -737,7 +777,7 @@ describe('Screenshot Plugin', () => {
             process: mockProcess,
           };
         }
-        // Third call: sips optimization
+        // Fourth call: sips optimization
         return {
           success: true,
           output: '',
@@ -760,8 +800,8 @@ describe('Screenshot Plugin', () => {
 
       // Should still succeed
       expect(result.isError).toBe(false);
-      // Should have: screenshot, failed orientation detection, optimization
-      expect(capturedCommands.length).toBe(3);
+      // Should have: screenshot, list devices, failed orientation detection, optimization
+      expect(capturedCommands.length).toBe(4);
     });
 
     it('should continue if rotation fails but still return image', async () => {
@@ -780,8 +820,17 @@ describe('Screenshot Plugin', () => {
             process: mockProcess,
           };
         }
-        // Second call: swift orientation detection (landscape)
+        // Second call: list devices to get device name
         if (idx === 1) {
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Third call: swift orientation detection (landscape)
+        if (idx === 2) {
           return {
             success: true,
             output: '844,390',
@@ -789,8 +838,8 @@ describe('Screenshot Plugin', () => {
             process: mockProcess,
           };
         }
-        // Third call: sips rotation (fails)
-        if (idx === 2) {
+        // Fourth call: sips rotation (fails)
+        if (idx === 3) {
           return {
             success: false,
             output: '',
@@ -798,7 +847,7 @@ describe('Screenshot Plugin', () => {
             process: mockProcess,
           };
         }
-        // Fourth call: sips optimization
+        // Fifth call: sips optimization
         return {
           success: true,
           output: '',
