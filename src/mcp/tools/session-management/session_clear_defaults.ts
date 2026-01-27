@@ -1,20 +1,11 @@
 import * as z from 'zod';
 import { sessionStore } from '../../../utils/session-store.ts';
+import { sessionDefaultKeys } from '../../../utils/session-defaults-schema.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import type { ToolResponse } from '../../../types/common.ts';
 
-const keys = [
-  'projectPath',
-  'workspacePath',
-  'scheme',
-  'configuration',
-  'simulatorName',
-  'simulatorId',
-  'deviceId',
-  'useLatestOS',
-  'arch',
-] as const;
+const keys = sessionDefaultKeys;
 
 const schemaObj = z.object({
   keys: z.array(z.enum(keys)).optional(),

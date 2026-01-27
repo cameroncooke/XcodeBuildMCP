@@ -13,7 +13,7 @@ If a capability is missing, assume your tool list may be hiding tools (search/pr
 
 ### Session defaults
 
-Most tools require session defaults to be set before they can be used, be sure to set all required defaults before tools. You may need to call one or more discovery/list tools to obtain the values needed for certain defaults.
+Before you call any other tools, call `session_show_defaults` to show the current defaults, ensure you then fill in the apropiate missing defaults. You may need to call one or more discovery/list tools to obtain the values needed for certain defaults.
 
 - `session_set_defaults`
   - Set the session defaults, should be called at least once to set tool defaults.
