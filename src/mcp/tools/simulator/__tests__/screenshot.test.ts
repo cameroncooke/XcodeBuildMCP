@@ -68,7 +68,12 @@ describe('screenshot plugin', () => {
         const cmdStr = command.join(' ');
         // Return device list JSON for list command
         if (cmdStr.includes('simctl list devices')) {
-          return { success: true, output: mockDeviceListJson, error: undefined, process: mockProcess };
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
         }
         // Return success for all other commands
         return { success: true, output: '', error: undefined, process: mockProcess };
@@ -145,7 +150,12 @@ describe('screenshot plugin', () => {
         const cmdStr = command.join(' ');
         // Return device list JSON for list command
         if (cmdStr.includes('simctl list devices')) {
-          return { success: true, output: mockDeviceListJson, error: undefined, process: mockProcess };
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
         }
         // Return success for all other commands
         return { success: true, output: '', error: undefined, process: mockProcess };
@@ -222,7 +232,12 @@ describe('screenshot plugin', () => {
         const cmdStr = command.join(' ');
         // Return device list JSON for list command
         if (cmdStr.includes('simctl list devices')) {
-          return { success: true, output: mockDeviceListJson, error: undefined, process: mockProcess };
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
         }
         // Return success for all other commands
         return { success: true, output: '', error: undefined, process: mockProcess };
@@ -427,7 +442,12 @@ describe('screenshot plugin', () => {
         const cmdStr = command.join(' ');
         // Return device list JSON for list command
         if (cmdStr.includes('simctl list devices')) {
-          return { success: true, output: mockDeviceListJson, error: undefined, process: mockProcess };
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
         }
         // Return success for all other commands
         return { success: true, output: '', error: undefined, process: mockProcess };
