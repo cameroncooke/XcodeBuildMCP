@@ -10,6 +10,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
   createCommandMatchingMockExecutor,
+  mockProcess,
 } from '../../../../test-utils/mock-executors.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { SystemError } from '../../../../utils/responses/index.ts';
@@ -67,10 +68,10 @@ describe('screenshot plugin', () => {
         const cmdStr = command.join(' ');
         // Return device list JSON for list command
         if (cmdStr.includes('simctl list devices')) {
-          return { success: true, output: mockDeviceListJson, error: undefined };
+          return { success: true, output: mockDeviceListJson, error: undefined, process: mockProcess };
         }
         // Return success for all other commands
-        return { success: true, output: '', error: undefined };
+        return { success: true, output: '', error: undefined, process: mockProcess };
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
@@ -144,10 +145,10 @@ describe('screenshot plugin', () => {
         const cmdStr = command.join(' ');
         // Return device list JSON for list command
         if (cmdStr.includes('simctl list devices')) {
-          return { success: true, output: mockDeviceListJson, error: undefined };
+          return { success: true, output: mockDeviceListJson, error: undefined, process: mockProcess };
         }
         // Return success for all other commands
-        return { success: true, output: '', error: undefined };
+        return { success: true, output: '', error: undefined, process: mockProcess };
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
@@ -221,10 +222,10 @@ describe('screenshot plugin', () => {
         const cmdStr = command.join(' ');
         // Return device list JSON for list command
         if (cmdStr.includes('simctl list devices')) {
-          return { success: true, output: mockDeviceListJson, error: undefined };
+          return { success: true, output: mockDeviceListJson, error: undefined, process: mockProcess };
         }
         // Return success for all other commands
-        return { success: true, output: '', error: undefined };
+        return { success: true, output: '', error: undefined, process: mockProcess };
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
@@ -426,10 +427,10 @@ describe('screenshot plugin', () => {
         const cmdStr = command.join(' ');
         // Return device list JSON for list command
         if (cmdStr.includes('simctl list devices')) {
-          return { success: true, output: mockDeviceListJson, error: undefined };
+          return { success: true, output: mockDeviceListJson, error: undefined, process: mockProcess };
         }
         // Return success for all other commands
-        return { success: true, output: '', error: undefined };
+        return { success: true, output: '', error: undefined, process: mockProcess };
       };
 
       const mockFileSystemExecutor = createMockFileSystemExecutor({
