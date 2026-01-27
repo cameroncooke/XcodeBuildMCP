@@ -261,7 +261,10 @@ Please read [TESTING.md](TESTING.md) in its entirety before writing tests.
 
 ```bash
 # 1. Run linting (must pass with 0 errors)
-npm run lint
+npm run lint:fix
+
+# 2. Run typechecker (must pass with 0 errors)
+npm run typecheck
 
 # 2. Run formatting (must format all files)
 npm run format
