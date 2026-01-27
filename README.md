@@ -7,14 +7,11 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 
 ## Easy install
 
-Easiest way to install XcodeBuildMCP is to use [Smithery](https://smithery.ai) to install it from the registry. Copy and paste one of the following commands into your terminal.
+The easiest way to install XcodeBuildMCP is to use [Smithery](https://smithery.ai) to install it from the registry. Use the following command in your terminal below (requires npm/node) and replace `<client-name>` with the name of your AI agent (claude-code, codex, etc.) or use one of the client-specific examples provided.
 
 ```bash
-npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client client-name
+npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client <client-name>
 ```
-
-> [!IMPORTANT]
-> Due to a Smithery limitation the AXe library isn't bundled with Smithery installs, instead to ensure UI-automation tools work please install AXe and ensure it's globally available by issuing `brew install cameroncooke/axe/axe`, see [AXe](https://github.com/cameroncooke/axe) for more details.
 
 <details>
   <summary>Cursor</summary>
