@@ -52,6 +52,12 @@ Smithery installs ship only the compiled entrypoint, while the server hard-requi
 **Evidence:** `node_modules/@smithery/cli/dist/index.js:~2716600-2717500`, `smithery.config.js:1-47`
 **Conclusion:** Confirmed. Bundling must run outside esbuild plugins; Linux builders must skip binary verification.
 
+### 2026-01-27 - Upstream fix landed (Smithery CLI PR #532)
+**Hypothesis:** Smithery CLI now supports bundling non-code assets in stdio deploys, removing the need for the local workaround.
+**Findings:** PR #532 adds a `build.assets` array in `smithery.yaml` for stdio bundles, copies matched assets into `.smithery/stdio/` before packing `server.mcpb`, and preserves directory structure. It uses `fast-glob` patterns, excludes `**/node_modules/**` and `**/.git/**` by default, warns when assets are configured for non-stdio transports or when patterns match zero files, and fails the build if patterns escape the project root, hit permission errors, or match reserved root filenames (`index.cjs`, `mcpb-manifest.json`, `manifest.json`, `server.mcpb`). The PR also documents runtime access via `__dirname` with assets available at the same relative paths inside the bundle.
+**Evidence:** Smithery issue `smithery-ai/cli#524` (opened Jan 22, 2026) and PR `smithery-ai/cli#532` (merged Jan 27, 2026) summary/usage/behavior sections.
+**Conclusion:** We can migrate from the `smithery.config.js` side-effect bundling workaround once we upgrade to a CLI version that includes PR #532 and configure `smithery.yaml` `build.assets` for `bundled/**`.
+
 ## Root Cause
 Two coupled assumptions break Smithery installs:
 1) `getAxePath()` is bundled-only and derives the path from `process.argv[1]`, which points into Smithery’s cache (missing `bundled/axe`), so it always returns null.  
@@ -62,6 +68,15 @@ Two coupled assumptions break Smithery installs:
 2. Distinguish bundled vs system AXe in UI tools and video capture; only apply bundled-specific env when the bundled binary is used.
 3. Align Doctor output: show both bundled availability and PATH availability, and use that in the UI automation supported status.
 4. Update Smithery build to run `bundle:axe` and copy `bundled/` into the Smithery bundle output; skip binary verification on non-mac builders to avoid build failures.
+
+## Migration Plan (official Smithery resource bundling)
+1. Upgrade Smithery CLI to `>=3.4.0` on all developer machines and CI that build/deploy via Smithery.
+2. Replace the `smithery.config.js` side-effect copy workaround with official bundling config in `smithery.yaml`:
+   - `build.assets: [ "bundled/**" ]`
+3. Remove the Smithery prepack copy step once 3.4.0 is in use.
+4. Ensure `bundle:axe` still runs during build so `bundled/` exists before Smithery packages resources.
+5. Validate a Smithery install contains `bundled/axe` in its cache and that UI automation + `record_sim_video` work without PATH fallbacks.
+6. Remove any Linux-specific skips that were only needed to avoid bundled verification for the workaround, once the official bundling flow proves stable.
 
 ## Preventive Measures
 - Add tests for AXe resolution precedence (bundled, env override, PATH) and for Doctor output consistency.

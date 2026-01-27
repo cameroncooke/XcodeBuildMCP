@@ -1,4 +1,5 @@
 runtime: typescript
 target: local
 build:
-  prepackCommand: "bash scripts/smithery-prepack.sh"
+  assets:
+    - "bundled/**"

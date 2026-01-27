@@ -42,14 +42,6 @@ jobs:
           rm -rf node_modules package-lock.json
           npm install --ignore-scripts
 
-      - name: Enable pnpm (for Smithery CLI fork)
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.27.0 --activate
-
-      - name: Use forked Smithery CLI (stdio prepack)
-        run: npm install --no-save --no-package-lock @smithery/cli@github:cameroncooke/cli#stdio-prepack-hook
-
       - name: Check formatting
         run: npm run format:check
 
