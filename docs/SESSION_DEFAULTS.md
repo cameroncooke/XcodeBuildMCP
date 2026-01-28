@@ -27,7 +27,7 @@ Session defaults can be persisted between sessions by asking your agent to set t
 
 The persisted config is patch-only (only provided keys are written).
 
-You can also manually create the config file to essentually seed the defaults at startup see [CONFIGURATION.md](CONFIGURATION.md) for more information.
+You can also manually create the config file to essentially seed the defaults at startup; see [CONFIGURATION.md](CONFIGURATION.md) for more information.
 
 ## Related docs
 - Configuration options: [CONFIGURATION.md](CONFIGURATION.md)
