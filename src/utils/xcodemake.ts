@@ -19,6 +19,7 @@ import { existsSync, readdirSync } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs/promises';
+import { getConfig } from './config-store.ts';
 
 // Environment variable to control xcodemake usage
 export const XCODEMAKE_ENV_VAR = 'INCREMENTAL_BUILDS_ENABLED';
@@ -31,8 +32,7 @@ let overriddenXcodemakePath: string | null = null;
  * @returns boolean indicating if xcodemake should be used
  */
 export function isXcodemakeEnabled(): boolean {
-  const envValue = process.env[XCODEMAKE_ENV_VAR];
-  return envValue === '1' || envValue === 'true' || envValue === 'yes';
+  return getConfig().incrementalBuildsEnabled;
 }
 
 /**

@@ -1,20 +1,22 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
+import { __resetConfigStoreForTests, initConfigStore } from '../../../../utils/config-store.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 import plugin, { sessionSetDefaultsLogic } from '../session_set_defaults.ts';
 
 describe('session-set-defaults tool', () => {
   beforeEach(() => {
+    __resetConfigStoreForTests();
     sessionStore.clear();
   });
 
   const cwd = '/repo';
   const configPath = path.join(cwd, '.xcodebuildmcp', 'config.yaml');
 
-  function createContext(overrides = {}) {
-    return { fs: createMockFileSystemExecutor(overrides), cwd };
+  function createContext() {
+    return {};
   }
 
   describe('Export Field Validation (Literal)', () => {
@@ -162,7 +164,7 @@ describe('session-set-defaults tool', () => {
       ].join('\n');
 
       const writes: { path: string; content: string }[] = [];
-      const context = createContext({
+      const fs = createMockFileSystemExecutor({
         existsSync: (targetPath: string) => targetPath === configPath,
         readFile: async (targetPath: string) => {
           if (targetPath !== configPath) {
@@ -175,9 +177,11 @@ describe('session-set-defaults tool', () => {
         },
       });
 
+      await initConfigStore({ cwd, fs });
+
       const result = await sessionSetDefaultsLogic(
         { workspacePath: '/new/App.xcworkspace', simulatorId: 'SIM-1', persist: true },
-        context,
+        createContext(),
       );
 
       expect(result.content[0].text).toContain('Persisted defaults to');
@@ -194,13 +198,7 @@ describe('session-set-defaults tool', () => {
     });
 
     it('should not persist when persist is true but no defaults were provided', async () => {
-      const context = createContext({
-        writeFile: async () => {
-          throw new Error('writeFile should not be called');
-        },
-      });
-
-      const result = await sessionSetDefaultsLogic({ persist: true }, context);
+      const result = await sessionSetDefaultsLogic({ persist: true }, createContext());
 
       expect(result.content[0].text).toContain('No defaults provided to persist');
     });

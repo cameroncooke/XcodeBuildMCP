@@ -4,6 +4,8 @@ import { bootstrapServer } from './server/bootstrap.ts';
 import { createServer } from './server/server.ts';
 import { log } from './utils/logger.ts';
 import { initSentry } from './utils/sentry.ts';
+import { getDefaultFileSystemExecutor } from './utils/command.ts';
+import { initConfigStore, type RuntimeConfigOverrides } from './utils/config-store.ts';
 
 export const configSchema = z.object({
   incrementalBuildsEnabled: z
@@ -14,39 +16,52 @@ export const configSchema = z.object({
     .string()
     .default('')
     .describe('Comma-separated list of workflows to load at startup.'),
-  sentryDisabled: z.boolean().default(false).describe('Disable Sentry error reporting.'),
   debug: z.boolean().default(false).describe('Enable debug logging.'),
 });
 
 export type SmitheryConfig = z.infer<typeof configSchema>;
 
-function applyConfig(config: SmitheryConfig): string[] {
-  process.env.INCREMENTAL_BUILDS_ENABLED = config.incrementalBuildsEnabled ? '1' : '0';
-  process.env.XCODEBUILDMCP_ENABLED_WORKFLOWS = config.enabledWorkflows;
-  process.env.XCODEBUILDMCP_SENTRY_DISABLED = config.sentryDisabled ? 'true' : 'false';
-  process.env.XCODEBUILDMCP_DEBUG = config.debug ? 'true' : 'false';
-
-  return config.enabledWorkflows
+function parseEnabledWorkflows(value: string): string[] | undefined {
+  const normalized = value
     .split(',')
-    .map((name) => name.trim())
+    .map((name) => name.trim().toLowerCase())
     .filter(Boolean);
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function buildOverrides(config: SmitheryConfig): RuntimeConfigOverrides {
+  const overrides: RuntimeConfigOverrides = {
+    incrementalBuildsEnabled: config.incrementalBuildsEnabled,
+    debug: config.debug,
+  };
+
+  const enabledWorkflows = parseEnabledWorkflows(config.enabledWorkflows);
+  if (enabledWorkflows) {
+    overrides.enabledWorkflows = enabledWorkflows;
+  }
+
+  return overrides;
 }
 
 export default function createSmitheryServer({ config }: { config: SmitheryConfig }): McpServer {
-  const workflowNames = applyConfig(config);
-
-  initSentry();
+  const overrides = buildOverrides(config);
 
   const server = createServer();
-  const bootstrapPromise = bootstrapServer(server, { enabledWorkflows: workflowNames }).catch(
-    (error) => {
-      log(
-        'error',
-        `Failed to bootstrap Smithery server: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      throw error;
-    },
-  );
+  const bootstrapPromise: Promise<void> = (async (): Promise<void> => {
+    await initConfigStore({
+      cwd: process.cwd(),
+      fs: getDefaultFileSystemExecutor(),
+      overrides,
+    });
+    initSentry();
+    await bootstrapServer(server, { configOverrides: overrides });
+  })().catch((error) => {
+    log(
+      'error',
+      `Failed to bootstrap Smithery server: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    throw error;
+  });
 
   const handler: ProxyHandler<McpServer> = {
     get(target, prop, receiver): unknown {

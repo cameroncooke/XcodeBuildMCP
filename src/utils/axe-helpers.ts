@@ -11,8 +11,7 @@ import { createTextResponse } from './validation.ts';
 import { ToolResponse } from '../types/common.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { getDefaultCommandExecutor } from './execution/index.ts';
-
-const AXE_PATH_ENV_VARS = ['XCODEBUILDMCP_AXE_PATH', 'AXE_PATH'] as const;
+import { getConfig } from './config-store.ts';
 
 export type AxeBinarySource = 'env' | 'bundled' | 'path';
 
@@ -43,16 +42,11 @@ function isExecutable(path: string): boolean {
   }
 }
 
-function resolveAxePathFromEnv(): string | null {
-  for (const envVar of AXE_PATH_ENV_VARS) {
-    const value = process.env[envVar];
-    if (!value) continue;
-    const resolved = resolve(value);
-    if (isExecutable(resolved)) {
-      return resolved;
-    }
-  }
-  return null;
+function resolveAxePathFromConfig(): string | null {
+  const value = getConfig().axePath;
+  if (!value) return null;
+  const resolved = resolve(value);
+  return isExecutable(resolved) ? resolved : null;
 }
 
 function resolveBundledAxePath(): string | null {
@@ -87,9 +81,9 @@ function resolveAxePathFromPath(): string | null {
 }
 
 export function resolveAxeBinary(): AxeBinary | null {
-  const envPath = resolveAxePathFromEnv();
-  if (envPath) {
-    return { path: envPath, source: 'env' };
+  const configPath = resolveAxePathFromConfig();
+  if (configPath) {
+    return { path: configPath, source: 'env' };
   }
 
   const bundledPath = resolveBundledAxePath();

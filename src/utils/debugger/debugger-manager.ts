@@ -9,6 +9,7 @@ import type {
   DebugSessionInfo,
   DebuggerBackendKind,
 } from './types.ts';
+import { getConfig } from '../config-store.ts';
 
 export type DebuggerBackendFactory = (kind: DebuggerBackendKind) => Promise<DebuggerBackend>;
 
@@ -205,12 +206,7 @@ export class DebuggerManager {
 
 function resolveBackendKind(explicit?: DebuggerBackendKind): DebuggerBackendKind {
   if (explicit) return explicit;
-  const envValue = process.env.XCODEBUILDMCP_DEBUGGER_BACKEND;
-  if (!envValue) return 'dap';
-  const normalized = envValue.trim().toLowerCase();
-  if (normalized === 'lldb-cli' || normalized === 'lldb') return 'lldb-cli';
-  if (normalized === 'dap') return 'dap';
-  throw new Error(`Unsupported debugger backend: ${envValue}`);
+  return getConfig().debuggerBackend;
 }
 
 const defaultBackendFactory: DebuggerBackendFactory = async (kind) => {

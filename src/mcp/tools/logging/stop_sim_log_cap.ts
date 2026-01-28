@@ -54,10 +54,10 @@ export async function stop_sim_log_capLogic(
 
 export default {
   name: 'stop_sim_log_cap',
-  description: 'Stop sim log capture.',
+  description: 'Stop sim app and return logs.',
   schema: stopSimLogCapSchema.shape, // MCP SDK compatibility
   annotations: {
-    title: 'Stop Simulator Log Capture',
+    title: 'Stop Simulator and Return Logs',
     destructiveHint: true,
   },
   handler: createTypedTool(

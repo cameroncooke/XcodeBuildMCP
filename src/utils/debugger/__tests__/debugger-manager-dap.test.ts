@@ -1,8 +1,21 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import type { BreakpointInfo, BreakpointSpec } from '../types.ts';
 import type { DebuggerBackend } from '../backends/DebuggerBackend.ts';
 import { DebuggerManager } from '../debugger-manager.ts';
+import {
+  __resetConfigStoreForTests,
+  initConfigStore,
+  type RuntimeConfigOverrides,
+} from '../../config-store.ts';
+import { createMockFileSystemExecutor } from '../../../test-utils/mock-executors.ts';
+
+const cwd = '/repo';
+
+async function initConfigStoreForTest(overrides?: RuntimeConfigOverrides): Promise<void> {
+  __resetConfigStoreForTests();
+  await initConfigStore({ cwd, fs: createMockFileSystemExecutor(), overrides });
+}
 
 function createBackend(overrides: Partial<DebuggerBackend> = {}): DebuggerBackend {
   const base: DebuggerBackend = {
@@ -27,20 +40,8 @@ function createBackend(overrides: Partial<DebuggerBackend> = {}): DebuggerBacken
 }
 
 describe('DebuggerManager DAP selection', () => {
-  const envKey = 'XCODEBUILDMCP_DEBUGGER_BACKEND';
-  let prevEnv: string | undefined;
-
-  afterEach(() => {
-    if (prevEnv === undefined) {
-      delete process.env[envKey];
-    } else {
-      process.env[envKey] = prevEnv;
-    }
-  });
-
-  it('selects dap backend when env is set', async () => {
-    prevEnv = process.env[envKey];
-    process.env[envKey] = 'dap';
+  it('selects dap backend when config override is set', async () => {
+    await initConfigStoreForTest({ debuggerBackend: 'dap' });
 
     let selected: string | null = null;
     const backend = createBackend({ kind: 'dap' });

@@ -328,10 +328,10 @@ export async function stopDeviceLogCapture(
 
 export default {
   name: 'stop_device_log_cap',
-  description: 'Stop device log capture.',
+  description: 'Stop device app and return logs.',
   schema: stopDeviceLogCapSchema.shape, // MCP SDK compatibility
   annotations: {
-    title: 'Stop Device Log Capture',
+    title: 'Stop Device and Return Logs',
     destructiveHint: true,
   },
   handler: createTypedTool(

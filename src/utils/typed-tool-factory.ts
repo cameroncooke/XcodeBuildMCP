@@ -14,7 +14,7 @@ import { ToolResponse } from '../types/common.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { createErrorResponse } from './responses/index.ts';
 import { sessionStore, type SessionDefaults } from './session-store.ts';
-import { isSessionDefaultsSchemaOptOutEnabled } from './environment.ts';
+import { isSessionDefaultsOptOutEnabled } from './environment.ts';
 
 function createValidatedHandler<TParams, TContext>(
   schema: z.ZodType<TParams, unknown>,
@@ -94,7 +94,7 @@ export function getSessionAwareToolSchemaShape(opts: {
   sessionAware: z.ZodObject<ToolSchemaShape>;
   legacy: z.ZodObject<ToolSchemaShape>;
 }): ToolSchemaShape {
-  return isSessionDefaultsSchemaOptOutEnabled() ? opts.legacy.shape : opts.sessionAware.shape;
+  return isSessionDefaultsOptOutEnabled() ? opts.legacy.shape : opts.sessionAware.shape;
 }
 
 export function createSessionAwareTool<TParams>(opts: {
@@ -190,7 +190,7 @@ function createSessionAwareHandler<TParams, TContext>(opts: {
             const { title, body } = formatRequirementError({
               message: req.message ?? `Required: ${req.allOf.join(', ')}`,
               setHint,
-              optOutEnabled: isSessionDefaultsSchemaOptOutEnabled(),
+              optOutEnabled: isSessionDefaultsOptOutEnabled(),
             });
             return createErrorResponse(title, body);
           }
@@ -204,7 +204,7 @@ function createSessionAwareHandler<TParams, TContext>(opts: {
             const { title, body } = formatRequirementError({
               message: req.message ?? `Provide one of: ${options}`,
               setHint: `Set with: ${setHints}`,
-              optOutEnabled: isSessionDefaultsSchemaOptOutEnabled(),
+              optOutEnabled: isSessionDefaultsOptOutEnabled(),
             });
             return createErrorResponse(title, body);
           }

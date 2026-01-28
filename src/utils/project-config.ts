@@ -1,27 +1,18 @@
 import path from 'node:path';
-import * as z from 'zod';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { FileSystemExecutor } from './FileSystemExecutor.ts';
 import type { SessionDefaults } from './session-store.ts';
 import { log } from './logger.ts';
-import { sessionDefaultsSchema } from './session-defaults-schema.ts';
-import { removeUndefined } from './remove-undefined.ts';
+import { runtimeConfigFileSchema, type RuntimeConfigFile } from './runtime-config-schema.ts';
 
 const CONFIG_DIR = '.xcodebuildmcp';
 const CONFIG_FILE = 'config.yaml';
 
-const projectConfigSchema = z
-  .object({
-    schemaVersion: z.literal(1).optional().default(1),
-    sessionDefaults: sessionDefaultsSchema.optional(),
-  })
-  .passthrough();
-
-type ProjectConfigSchema = z.infer<typeof projectConfigSchema>;
-
-export type ProjectConfig = {
+export type ProjectConfig = RuntimeConfigFile & {
   schemaVersion: 1;
   sessionDefaults?: Partial<SessionDefaults>;
+  enabledWorkflows?: string[];
+  debuggerBackend?: 'dap' | 'lldb-cli';
   [key: string]: unknown;
 };
 
@@ -32,7 +23,6 @@ export type LoadProjectConfigOptions = {
 
 export type LoadProjectConfigResult =
   | { found: false }
-  | { found: false; path: string; error: Error }
   | { found: true; path: string; config: ProjectConfig; notices: string[] };
 
 export type PersistSessionDefaultsOptions = {
@@ -54,8 +44,14 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function toError(value: unknown): Error {
-  return value instanceof Error ? value : new Error(String(value));
+function removeUndefined<T extends Record<string, unknown>>(input: T): Partial<T> {
+  const result: Partial<T> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (value !== undefined) {
+      result[key as keyof T] = value as T[keyof T];
+    }
+  }
+  return result;
 }
 
 function hasValue<T extends Record<string, unknown>>(defaults: T, key: keyof T): boolean {
@@ -99,12 +95,66 @@ function resolveRelativeSessionPaths(
   return resolved;
 }
 
-function parseProjectConfig(rawText: string): ProjectConfigSchema {
+function normalizeEnabledWorkflows(value: unknown): string[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) {
+    const normalized = value
+      .filter((name): name is string => typeof name === 'string')
+      .map((name) => name.trim().toLowerCase())
+      .filter(Boolean);
+    return normalized;
+  }
+  if (typeof value === 'string') {
+    const normalized = value
+      .split(',')
+      .map((name) => name.trim().toLowerCase())
+      .filter(Boolean);
+    return normalized;
+  }
+  return [];
+}
+
+function resolveRelativeTopLevelPaths(config: ProjectConfig, cwd: string): ProjectConfig {
+  const resolved: ProjectConfig = { ...config };
+  const pathKeys = ['axePath', 'iosTemplatePath', 'macosTemplatePath'] as const;
+
+  for (const key of pathKeys) {
+    const value = resolved[key];
+    if (typeof value === 'string' && value.length > 0 && !path.isAbsolute(value)) {
+      resolved[key] = path.resolve(cwd, value);
+    }
+  }
+
+  return resolved;
+}
+
+function normalizeDebuggerBackend(config: RuntimeConfigFile): ProjectConfig {
+  if (config.debuggerBackend === 'lldb') {
+    const normalized: RuntimeConfigFile = { ...config, debuggerBackend: 'lldb-cli' };
+    return toProjectConfig(normalized);
+  }
+  return toProjectConfig(config);
+}
+
+function normalizeConfigForPersistence(config: RuntimeConfigFile): ProjectConfig {
+  const base = normalizeDebuggerBackend(config);
+  if (config.enabledWorkflows === undefined) {
+    return base;
+  }
+  const normalizedWorkflows = normalizeEnabledWorkflows(config.enabledWorkflows);
+  return { ...base, enabledWorkflows: normalizedWorkflows };
+}
+
+function toProjectConfig(config: RuntimeConfigFile): ProjectConfig {
+  return config as ProjectConfig;
+}
+
+function parseProjectConfig(rawText: string): RuntimeConfigFile {
   const parsed: unknown = parseYaml(rawText);
   if (!isPlainObject(parsed)) {
     throw new Error('Project config must be an object');
   }
-  return projectConfigSchema.parse(parsed);
+  return runtimeConfigFileSchema.parse(parsed) as RuntimeConfigFile;
 }
 
 export async function loadProjectConfig(
@@ -116,27 +166,27 @@ export async function loadProjectConfig(
     return { found: false };
   }
 
-  let parsed: ProjectConfigSchema;
-  try {
-    const rawText = await options.fs.readFile(configPath, 'utf8');
-    parsed = parseProjectConfig(rawText);
+  const rawText = await options.fs.readFile(configPath, 'utf8');
+  const parsed = parseProjectConfig(rawText);
+  const notices: string[] = [];
 
-    if (!parsed.sessionDefaults) {
-      return { found: true, path: configPath, config: parsed, notices: [] };
-    }
+  let config = normalizeDebuggerBackend(parsed);
 
-    const { normalized, notices } = normalizeMutualExclusivity(parsed.sessionDefaults);
-    const resolved = resolveRelativeSessionPaths(normalized, options.cwd);
-
-    const config: ProjectConfig = {
-      ...parsed,
-      sessionDefaults: resolved,
-    };
-
-    return { found: true, path: configPath, config, notices };
-  } catch (error) {
-    return { found: false, path: configPath, error: toError(error) };
+  if (parsed.enabledWorkflows !== undefined) {
+    const normalizedWorkflows = normalizeEnabledWorkflows(parsed.enabledWorkflows);
+    config = { ...config, enabledWorkflows: normalizedWorkflows };
   }
+
+  if (config.sessionDefaults) {
+    const normalized = normalizeMutualExclusivity(config.sessionDefaults);
+    notices.push(...normalized.notices);
+    const resolved = resolveRelativeSessionPaths(normalized.normalized, options.cwd);
+    config = { ...config, sessionDefaults: resolved };
+  }
+
+  config = resolveRelativeTopLevelPaths(config, options.cwd);
+
+  return { found: true, path: configPath, config, notices };
 }
 
 export async function persistSessionDefaultsToProjectConfig(
@@ -153,12 +203,11 @@ export async function persistSessionDefaultsToProjectConfig(
     try {
       const rawText = await options.fs.readFile(configPath, 'utf8');
       const parsed = parseProjectConfig(rawText);
-      baseConfig = { ...parsed, schemaVersion: 1 };
+      baseConfig = { ...normalizeConfigForPersistence(parsed), schemaVersion: 1 };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       log(
         'warning',
-        `Failed to read or parse project config at ${configPath}. Overwriting with new config. ${errorMessage}`,
+        `Failed to parse project config at ${configPath}. Overwriting with new config. ${error}`,
       );
       baseConfig = { schemaVersion: 1 };
     }

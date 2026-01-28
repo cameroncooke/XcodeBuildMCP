@@ -14,13 +14,24 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
 } from '../../../../test-utils/mock-executors.ts';
+import {
+  __resetConfigStoreForTests,
+  initConfigStore,
+  type RuntimeConfigOverrides,
+} from '../../../../utils/config-store.ts';
+
+const cwd = '/repo';
+
+async function initConfigStoreForTest(overrides?: RuntimeConfigOverrides): Promise<void> {
+  __resetConfigStoreForTests();
+  await initConfigStore({ cwd, fs: createMockFileSystemExecutor(), overrides });
+}
 
 describe('scaffold_ios_project plugin', () => {
   let mockCommandExecutor: any;
   let mockFileSystemExecutor: any;
-  let originalEnv: string | undefined;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Create mock executor using approved utility
     mockCommandExecutor = createMockExecutor({
       success: true,
@@ -51,19 +62,7 @@ describe('scaffold_ios_project plugin', () => {
       stat: async () => ({ isDirectory: () => true, mtimeMs: 0 }),
     });
 
-    // Store original environment for cleanup
-    originalEnv = process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH;
-    // Set local template path to avoid download and chdir issues
-    process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH = '/mock/template/path';
-  });
-
-  afterEach(() => {
-    // Restore original environment
-    if (originalEnv !== undefined) {
-      process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH = originalEnv;
-    } else {
-      delete process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH;
-    }
+    await initConfigStoreForTest({ iosTemplatePath: '/mock/template/path' });
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -152,8 +151,7 @@ describe('scaffold_ios_project plugin', () => {
 
   describe('Command Generation Tests', () => {
     it('should generate correct curl command for iOS template download', async () => {
-      // Temporarily disable local template to force download
-      delete process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH;
+      await initConfigStoreForTest({ iosTemplatePath: '' });
 
       // Track commands executed
       let capturedCommands: string[][] = [];
@@ -191,13 +189,11 @@ describe('scaffold_ios_project plugin', () => {
         ),
       ]);
 
-      // Restore environment variable
-      process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH = '/mock/template/path';
+      await initConfigStoreForTest({ iosTemplatePath: '/mock/template/path' });
     });
 
     it.skip('should generate correct unzip command for iOS template extraction', async () => {
-      // Temporarily disable local template to force download
-      delete process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH;
+      await initConfigStoreForTest({ iosTemplatePath: '' });
 
       // Create a mock that returns false for local template paths to force download
       const downloadMockFileSystemExecutor = createMockFileSystemExecutor({
@@ -248,17 +244,11 @@ describe('scaffold_ios_project plugin', () => {
       expect(unzipCommand).toBeDefined();
       expect(unzipCommand).toEqual(['unzip', '-q', expect.stringMatching(/template\.zip$/)]);
 
-      // Restore environment variable
-      process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH = '/mock/template/path';
+      await initConfigStoreForTest({ iosTemplatePath: '/mock/template/path' });
     });
 
     it('should generate correct commands when using custom template version', async () => {
-      // Temporarily disable local template to force download
-      delete process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH;
-
-      // Set custom template version
-      const originalVersion = process.env.XCODEBUILD_MCP_IOS_TEMPLATE_VERSION;
-      process.env.XCODEBUILD_MCP_IOS_TEMPLATE_VERSION = 'v2.0.0';
+      await initConfigStoreForTest({ iosTemplatePath: '', iosTemplateVersion: 'v2.0.0' });
 
       // Track commands executed
       let capturedCommands: string[][] = [];
@@ -294,20 +284,11 @@ describe('scaffold_ios_project plugin', () => {
         'https://github.com/cameroncooke/XcodeBuildMCP-iOS-Template/releases/download/v2.0.0/XcodeBuildMCP-iOS-Template-2.0.0.zip',
       ]);
 
-      // Restore original version
-      if (originalVersion) {
-        process.env.XCODEBUILD_MCP_IOS_TEMPLATE_VERSION = originalVersion;
-      } else {
-        delete process.env.XCODEBUILD_MCP_IOS_TEMPLATE_VERSION;
-      }
-
-      // Restore environment variable
-      process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH = '/mock/template/path';
+      await initConfigStoreForTest({ iosTemplatePath: '/mock/template/path' });
     });
 
     it.skip('should generate correct commands with no command executor passed', async () => {
-      // Temporarily disable local template to force download
-      delete process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH;
+      await initConfigStoreForTest({ iosTemplatePath: '' });
 
       // Create a mock that returns false for local template paths to force download
       const downloadMockFileSystemExecutor = createMockFileSystemExecutor({
@@ -367,8 +348,7 @@ describe('scaffold_ios_project plugin', () => {
       expect(curlCommand[0]).toBe('curl');
       expect(unzipCommand[0]).toBe('unzip');
 
-      // Restore environment variable
-      process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH = '/mock/template/path';
+      await initConfigStoreForTest({ iosTemplatePath: '/mock/template/path' });
     });
   });
 
@@ -557,8 +537,7 @@ describe('scaffold_ios_project plugin', () => {
     });
 
     it('should return error response for template download failure', async () => {
-      // Temporarily disable local template to force download
-      delete process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH;
+      await initConfigStoreForTest({ iosTemplatePath: '' });
 
       // Mock command executor to fail for curl commands
       const failingMockCommandExecutor = createMockExecutor({
@@ -595,13 +574,11 @@ describe('scaffold_ios_project plugin', () => {
         isError: true,
       });
 
-      // Restore environment variable
-      process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH = '/mock/template/path';
+      await initConfigStoreForTest({ iosTemplatePath: '/mock/template/path' });
     });
 
     it.skip('should return error response for template extraction failure', async () => {
-      // Temporarily disable local template to force download
-      delete process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH;
+      await initConfigStoreForTest({ iosTemplatePath: '' });
 
       // Create a mock that returns false for local template paths to force download
       const downloadMockFileSystemExecutor = createMockFileSystemExecutor({
@@ -660,8 +637,7 @@ describe('scaffold_ios_project plugin', () => {
         isError: true,
       });
 
-      // Restore environment variable
-      process.env.XCODEBUILDMCP_IOS_TEMPLATE_PATH = '/mock/template/path';
+      await initConfigStoreForTest({ iosTemplatePath: '/mock/template/path' });
     });
   });
 });

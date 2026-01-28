@@ -2,11 +2,27 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import { createSessionAwareTool } from '../typed-tool-factory.ts';
 import { sessionStore } from '../session-store.ts';
-import { createMockExecutor } from '../../test-utils/mock-executors.ts';
+import {
+  createMockExecutor,
+  createMockFileSystemExecutor,
+} from '../../test-utils/mock-executors.ts';
+import {
+  __resetConfigStoreForTests,
+  initConfigStore,
+  type RuntimeConfigOverrides,
+} from '../config-store.ts';
+
+const cwd = '/repo';
+
+async function initConfigStoreForTest(overrides?: RuntimeConfigOverrides): Promise<void> {
+  __resetConfigStoreForTests();
+  await initConfigStore({ cwd, fs: createMockFileSystemExecutor(), overrides });
+}
 
 describe('createSessionAwareTool', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     sessionStore.clear();
+    await initConfigStoreForTest({ disableSessionDefaults: false });
   });
 
   const internalSchema = z
@@ -99,23 +115,14 @@ describe('createSessionAwareTool', () => {
   });
 
   it('uses opt-out messaging when session defaults schema is disabled', async () => {
-    const original = process.env.XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS;
-    process.env.XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS = 'true';
+    await initConfigStoreForTest({ disableSessionDefaults: true });
 
-    try {
-      const result = await handler({ projectPath: '/p.xcodeproj', simulatorId: 'SIM-1' });
-      expect(result.isError).toBe(true);
-      const text = result.content[0].text;
-      expect(text).toContain('Missing required parameters');
-      expect(text).toContain('scheme is required');
-      expect(text).not.toContain('session defaults');
-    } finally {
-      if (original === undefined) {
-        delete process.env.XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS;
-      } else {
-        process.env.XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS = original;
-      }
-    }
+    const result = await handler({ projectPath: '/p.xcodeproj', simulatorId: 'SIM-1' });
+    expect(result.isError).toBe(true);
+    const text = result.content[0].text;
+    expect(text).toContain('Missing required parameters');
+    expect(text).toContain('scheme is required');
+    expect(text).not.toContain('session defaults');
   });
 
   it('should surface Zod validation errors when invalid', async () => {

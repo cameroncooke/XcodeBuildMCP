@@ -1,4 +1,5 @@
 import type { WorkflowGroup } from '../core/plugin-types.ts';
+import { getConfig } from './config-store.ts';
 
 export const REQUIRED_WORKFLOW = 'session-management';
 export const WORKFLOW_DISCOVERY_WORKFLOW = 'workflow-discovery';
@@ -15,13 +16,11 @@ function isWorkflowGroup(value: WorkflowGroup | undefined): value is WorkflowGro
 }
 
 export function isDebugEnabled(): boolean {
-  const value = process.env.XCODEBUILDMCP_DEBUG ?? '';
-  return value.toLowerCase() === 'true' || value === '1';
+  return getConfig().debug;
 }
 
 export function isWorkflowDiscoveryEnabled(): boolean {
-  const value = process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY ?? '';
-  return value.toLowerCase() === 'true' || value === '1';
+  return getConfig().experimentalWorkflowDiscovery;
 }
 
 /**

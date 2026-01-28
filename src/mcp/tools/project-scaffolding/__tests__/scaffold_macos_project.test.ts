@@ -18,6 +18,18 @@ import {
 } from '../../../../test-utils/mock-executors.ts';
 import plugin, { scaffold_macos_projectLogic } from '../scaffold_macos_project.ts';
 import { TemplateManager } from '../../../../utils/template/index.ts';
+import {
+  __resetConfigStoreForTests,
+  initConfigStore,
+  type RuntimeConfigOverrides,
+} from '../../../../utils/config-store.ts';
+
+const cwd = '/repo';
+
+async function initConfigStoreForTest(overrides?: RuntimeConfigOverrides): Promise<void> {
+  __resetConfigStoreForTests();
+  await initConfigStore({ cwd, fs: createMockFileSystemExecutor(), overrides });
+}
 
 // ONLY ALLOWED MOCKING: createMockFileSystemExecutor
 
@@ -82,6 +94,8 @@ describe('scaffold_macos_project plugin', () => {
     // Replace the real TemplateManager with our stub for most tests
     (TemplateManager as any).getTemplatePath = templateManagerStub.getTemplatePath;
     (TemplateManager as any).cleanup = templateManagerStub.cleanup;
+
+    await initConfigStoreForTest();
   });
 
   describe('Export Field Validation (Literal)', () => {
@@ -176,16 +190,12 @@ describe('scaffold_macos_project plugin', () => {
         });
       };
 
-      // Store original environment variable
-      const originalEnv = process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH;
-
       // Mock local template path exists
       mockFileSystemExecutor.existsSync = (path: string) => {
         return path === '/local/template/path' || path === '/local/template/path/template';
       };
 
-      // Set environment variable for local template path
-      process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH = '/local/template/path';
+      await initConfigStoreForTest({ macosTemplatePath: '/local/template/path' });
 
       // Restore original TemplateManager for command generation tests
       const { TemplateManager: OriginalTemplateManager } = await import(
@@ -211,9 +221,6 @@ describe('scaffold_macos_project plugin', () => {
       expect(capturedCommands).not.toContainEqual(
         expect.arrayContaining(['unzip', expect.anything(), expect.anything()]),
       );
-
-      // Clean up environment variable
-      process.env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH = originalEnv;
 
       // Restore stub after test
       (TemplateManager as any).getTemplatePath = templateManagerStub.getTemplatePath;

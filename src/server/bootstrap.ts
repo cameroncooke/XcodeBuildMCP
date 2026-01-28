@@ -5,21 +5,15 @@ import { registerResources } from '../core/resources.ts';
 import { getDefaultFileSystemExecutor } from '../utils/command.ts';
 import type { FileSystemExecutor } from '../utils/FileSystemExecutor.ts';
 import { log, setLogLevel, type LogLevel } from '../utils/logger.ts';
-import { loadProjectConfig } from '../utils/project-config.ts';
+import { getConfig, initConfigStore, type RuntimeConfigOverrides } from '../utils/config-store.ts';
 import { sessionStore } from '../utils/session-store.ts';
 import { registerWorkflows } from '../utils/tool-registry.ts';
 
 export interface BootstrapOptions {
   enabledWorkflows?: string[];
+  configOverrides?: RuntimeConfigOverrides;
   fileSystemExecutor?: FileSystemExecutor;
   cwd?: string;
-}
-
-function parseEnabledWorkflows(value: string): string[] {
-  return value
-    .split(',')
-    .map((name) => name.trim().toLowerCase())
-    .filter(Boolean);
 }
 
 export async function bootstrapServer(
@@ -36,37 +30,37 @@ export async function bootstrapServer(
   const cwd = options.cwd ?? process.cwd();
   const fileSystemExecutor = options.fileSystemExecutor ?? getDefaultFileSystemExecutor();
 
-  try {
-    const configResult = await loadProjectConfig({ fs: fileSystemExecutor, cwd });
-    if (configResult.found) {
-      const defaults = configResult.config.sessionDefaults ?? {};
-      if (Object.keys(defaults).length > 0) {
-        sessionStore.setDefaults(defaults);
-      }
-      for (const notice of configResult.notices) {
-        log('info', `[ProjectConfig] ${notice}`);
-      }
-    } else if ('error' in configResult) {
-      const errorMessage =
-        configResult.error instanceof Error
-          ? configResult.error.message
-          : String(configResult.error);
-      log(
-        'warning',
-        `Failed to read or parse project config at ${configResult.path}. ${errorMessage}`,
-      );
-    }
-  } catch (error) {
-    log('warning', `Failed to load project config from ${cwd}. ${error}`);
+  const hasLegacyEnabledWorkflows = Object.prototype.hasOwnProperty.call(
+    options,
+    'enabledWorkflows',
+  );
+  let overrides: RuntimeConfigOverrides | undefined;
+  if (options.configOverrides !== undefined) {
+    overrides = { ...options.configOverrides };
+  }
+  if (hasLegacyEnabledWorkflows) {
+    overrides ??= {};
+    overrides.enabledWorkflows = options.enabledWorkflows ?? [];
   }
 
-  const defaultEnabledWorkflows = ['simulator'];
+  const configResult = await initConfigStore({
+    cwd,
+    fs: fileSystemExecutor,
+    overrides,
+  });
+  if (configResult.found) {
+    for (const notice of configResult.notices) {
+      log('info', `[ProjectConfig] ${notice}`);
+    }
+  }
 
-  const enabledWorkflows = options.enabledWorkflows?.length
-    ? options.enabledWorkflows
-    : process.env.XCODEBUILDMCP_ENABLED_WORKFLOWS
-      ? parseEnabledWorkflows(process.env.XCODEBUILDMCP_ENABLED_WORKFLOWS)
-      : defaultEnabledWorkflows;
+  const config = getConfig();
+  const defaults = config.sessionDefaults ?? {};
+  if (Object.keys(defaults).length > 0) {
+    sessionStore.setDefaults(defaults);
+  }
+
+  const enabledWorkflows = config.enabledWorkflows;
 
   if (enabledWorkflows.length > 0) {
     log('info', `🚀 Initializing server with selected workflows: ${enabledWorkflows.join(', ')}`);

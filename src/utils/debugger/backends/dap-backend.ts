@@ -3,6 +3,7 @@ import type { BreakpointInfo, BreakpointSpec, DebugExecutionState } from '../typ
 import type { CommandExecutor, InteractiveSpawner } from '../../execution/index.ts';
 import { getDefaultCommandExecutor, getDefaultInteractiveSpawner } from '../../execution/index.ts';
 import { log } from '../../logging/index.ts';
+import { getConfig } from '../../config-store.ts';
 import type {
   DapEvent,
   EvaluateResponseBody,
@@ -16,7 +17,6 @@ import type {
 import { DapTransport } from '../dap/transport.ts';
 import { resolveLldbDapCommand } from '../dap/adapter-discovery.ts';
 
-const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 const LOG_PREFIX = '[DAP Backend]';
 
 type FileLineBreakpointRecord = { line: number; condition?: string; id?: number };
@@ -579,33 +579,20 @@ function formatVariable(variable: { name: string; value: string; type?: string }
   return `${variable.name}${typeSuffix} = ${variable.value}`;
 }
 
-function parseRequestTimeoutMs(): number {
-  const raw = process.env.XCODEBUILDMCP_DAP_REQUEST_TIMEOUT_MS;
-  if (!raw) return DEFAULT_REQUEST_TIMEOUT_MS;
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return DEFAULT_REQUEST_TIMEOUT_MS;
-  }
-  return parsed;
-}
-
-function parseLogEvents(): boolean {
-  return process.env.XCODEBUILDMCP_DAP_LOG_EVENTS === 'true';
-}
-
 export async function createDapBackend(opts?: {
   executor?: CommandExecutor;
   spawner?: InteractiveSpawner;
   requestTimeoutMs?: number;
 }): Promise<DebuggerBackend> {
+  const config = getConfig();
   const executor = opts?.executor ?? getDefaultCommandExecutor();
   const spawner = opts?.spawner ?? getDefaultInteractiveSpawner();
-  const requestTimeoutMs = opts?.requestTimeoutMs ?? parseRequestTimeoutMs();
+  const requestTimeoutMs = opts?.requestTimeoutMs ?? config.dapRequestTimeoutMs;
   const backend = new DapBackend({
     executor,
     spawner,
     requestTimeoutMs,
-    logEvents: parseLogEvents(),
+    logEvents: config.dapLogEvents,
   });
   return backend;
 }

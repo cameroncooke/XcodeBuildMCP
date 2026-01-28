@@ -7,25 +7,21 @@ By default, XcodeBuildMCP uses a session-aware mode. The client sets shared defa
 - Tools reuse those defaults automatically.
 - Agent can call `session_show_defaults` to inspect current values.
 - Agent can call `session_clear_defaults` to clear values when switching contexts.
-- Defaults can also be seeded from `.xcodebuildmcp/config.yaml` at server startup.
+- Defaults can be seeded from `.xcodebuildmcp/config.yaml` at server startup.
 
 See the session-management tools in [TOOLS.md](TOOLS.md).
 
 ## Opting out
-If you prefer explicit parameters on every tool call, set:
+If you prefer explicit parameters on every tool call, set `disableSessionDefaults: true` in your `.xcodebuildmcp/config.yaml` file.
 
-```json
-"env": {
-  "XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS": "true"
-}
-```
+This restores the legacy schemas with per-call parameters while still honoring any defaults you choose to set.
 
-This restores the legacy schemas with per-call parameters while still honoring any defaults you choose to set. Though this is not recommended, it can be useful in certain scenarios where you are working on monorepos or multiple projects at once.
+See [CONFIGURATION.md](CONFIGURATION.md) for more information.
 
 ## Persisting defaults
-Session defaults can be persisted between sessions by asking your agent to set the defaults with the `persist` flag set to `true`. This will save the defaults into `.xcodebuildmcp/config.yaml` at the root of your project's workspace.
+Session defaults can be persisted between sessions by setting the `persist` flag to `true` on `session_set_defaults`. This writes to `.xcodebuildmcp/config.yaml` at the root of your workspace.
 
-The persisted config is patch-only (only provided keys are written).
+The persistence is patch-only: only keys provided in that call are written (plus any removals needed for mutual exclusivity).
 
 You can also manually create the config file to essentially seed the defaults at startup; see [CONFIGURATION.md](CONFIGURATION.md) for more information.
 
