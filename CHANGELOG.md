@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.0.0] - 2026-01-28
 
 ### Breaking
 - By default when the `enabledWorkflows` configuration option or `XCODEBUILDMCP_ENABLED_WORKFLOWS` environment variable is not set or empty, XcodeBuildMCP will default to loading only the `simulator` workflow. This is a change in behaviour; previously it would load all workflows and therefore tools by default.
@@ -40,6 +40,21 @@ For more information see the [CONFIGURATION.md](docs/CONFIGURATION.md) documenta
 - Fix snapshot_ui warning state being isolated per UI automation tool, causing false warnings.
 - Fixed screenshot tool capturing rotated images when simulator is in landscape orientation by detecting window dimensions and applying +90° rotation to correct the framebuffer capture. ([`#186`](https://github.com/cameroncooke/XcodeBuildMCP/pull/186) by [`@VincentStark`](https://github.com/VincentStark))
 - Fixed Sentry ESM compatibility by upgrading `@sentry/node` from 10.5.0 to 10.37.0 and `@sentry/cli` from 2.43.1 to 3.1.0 (Fixes XCODEBUILD-MCP-13SX)
+
+## [1.15.1] - 2025-12-20
+
+### Changed
+- Add suppressWarnings to suppress warnings from the build tools.
+- Update AXe to 1.2.0
+- Update tap tool to accept label/id as tap targets.
+
+## [1.15.0] - 2025-12-15
+
+### Added
+- Add support for in-memory session defaults.
+
+### Changed
+- Various bug fixes and improvements
 
 ## [1.14.0] - 2025-09-22
 - Add video capture tool for simulators
