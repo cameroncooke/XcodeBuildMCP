@@ -63,7 +63,7 @@ Responsibilities:
 - Normalize mutual exclusivity:
   - If both `projectPath` and `workspacePath` are set, keep `workspacePath`.
   - If both `simulatorId` and `simulatorName` are set, keep `simulatorId`.
-- Resolve relative paths for: `projectPath`, `workspacePath`, `derivedDataPath`.
+- Resolve relative paths for `projectPath`, `workspacePath`, and `derivedDataPath`.
 - Persist changes when requested:
   - Merge provided keys into `sessionDefaults`.
   - Remove keys that were cleared due to exclusivity.
