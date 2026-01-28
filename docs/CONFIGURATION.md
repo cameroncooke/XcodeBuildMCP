@@ -19,7 +19,7 @@ Example:
 
 ```yaml
 schemaVersion: 1
-enabledWorkflows: ["simulator, ui-automation, debugging"]
+enabledWorkflows: ["simulator", "ui-automation", "debugging"]
 experimentalWorkflowDiscovery: false
 disableSessionDefaults: false
 incrementalBuildsEnabled: false
