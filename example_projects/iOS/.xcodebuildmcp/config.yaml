@@ -1,7 +1,6 @@
 schemaVersion: 1
 sessionDefaults:
-  projectPath: /Volumes/Developer/XcodeBuildMCP/example_projects/iOS/MCPTest.xcodeproj
+  projectPath: ./MCPTest.xcodeproj
   scheme: MCPTest
-  simulatorId: B38FE93D-578B-454B-BE9A-C6FA0CE5F096
   useLatestOS: true
   platform: iOS Simulator
