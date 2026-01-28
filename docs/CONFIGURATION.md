@@ -51,8 +51,6 @@ By default, when the agent calls `session_set_defaults`, defaults are only store
 
 ## Workflow selection
 
-By default, XcodeBuildMCP loads all workflows at startup.
-
 You can configure workflows in either:
 - `enabledWorkflows` in `config.yaml` (preferred), or
 - via environment variable `XCODEBUILDMCP_ENABLED_WORKFLOWS` (comma-separated)

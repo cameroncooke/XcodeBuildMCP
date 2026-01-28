@@ -61,14 +61,8 @@ export async function bootstrapServer(
   }
 
   const enabledWorkflows = config.enabledWorkflows;
-
-  if (enabledWorkflows.length > 0) {
-    log('info', `🚀 Initializing server with selected workflows: ${enabledWorkflows.join(', ')}`);
-    await registerWorkflows(enabledWorkflows);
-  } else {
-    log('info', '🚀 Initializing server with all tools...');
-    await registerWorkflows([]);
-  }
+  log('info', `🚀 Initializing server...`);
+  await registerWorkflows(enabledWorkflows);
 
   await registerResources(server);
 }

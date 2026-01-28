@@ -95,7 +95,7 @@ describe('resolveSelectedWorkflows', () => {
     ]);
   });
 
-  it('returns all workflows when no selection list is provided', async () => {
+  it('defaults to simulator workflow when no selection list is provided', async () => {
     await initConfigStoreForTest({
       debug: true,
       experimentalWorkflowDiscovery: true,
@@ -109,7 +109,12 @@ describe('resolveSelectedWorkflows', () => {
 
     const result = resolveSelectedWorkflows([], workflows);
 
-    expect(result.selectedNames).toBeNull();
+    expect(result.selectedNames).toEqual([
+      'session-management',
+      'workflow-discovery',
+      'doctor',
+      'simulator',
+    ]);
     expect(result.selectedWorkflows.map((workflow) => workflow.directoryName)).toEqual([
       'session-management',
       'workflow-discovery',
@@ -127,7 +132,7 @@ describe('resolveSelectedWorkflows', () => {
 
     const result = resolveSelectedWorkflows([], workflows);
 
-    expect(result.selectedNames).toBeNull();
+    expect(result.selectedNames).toEqual(['session-management', 'simulator']);
     expect(result.selectedWorkflows.map((workflow) => workflow.directoryName)).toEqual([
       'session-management',
       'simulator',
