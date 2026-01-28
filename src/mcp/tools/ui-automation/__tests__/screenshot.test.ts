@@ -12,7 +12,11 @@ import {
 } from '../../../../test-utils/mock-executors.ts';
 import { SystemError } from '../../../../utils/responses/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import screenshotPlugin, { screenshotLogic } from '../screenshot.ts';
+import screenshotPlugin, {
+  screenshotLogic,
+  detectLandscapeMode,
+  rotateImage,
+} from '../screenshot.ts';
 
 describe('Screenshot Plugin', () => {
   beforeEach(() => {
@@ -438,6 +442,449 @@ describe('Screenshot Plugin', () => {
         ],
         isError: true,
       });
+    });
+  });
+
+  describe('Landscape Detection', () => {
+    it('should detect landscape mode when window width > height', async () => {
+      const mockExecutor = async () => ({
+        success: true,
+        output: '844,390',
+        error: undefined,
+        process: mockProcess,
+      });
+
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
+
+      expect(result).toBe(true);
+    });
+
+    it('should detect portrait mode when window height > width', async () => {
+      const mockExecutor = async () => ({
+        success: true,
+        output: '390,844',
+        error: undefined,
+        process: mockProcess,
+      });
+
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when swift command fails', async () => {
+      const mockExecutor = async () => ({
+        success: false,
+        output: '',
+        error: 'Command failed',
+        process: mockProcess,
+      });
+
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when output format is unexpected', async () => {
+      const mockExecutor = async () => ({
+        success: true,
+        output: 'invalid output',
+        error: undefined,
+        process: mockProcess,
+      });
+
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when executor throws an error', async () => {
+      const mockExecutor = async () => {
+        throw new Error('Execution failed');
+      };
+
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
+
+      expect(result).toBe(false);
+    });
+
+    it('should handle output with whitespace and newlines', async () => {
+      const mockExecutor = async () => ({
+        success: true,
+        output: '\n  844,390  \n',
+        error: undefined,
+        process: mockProcess,
+      });
+
+      const result = await detectLandscapeMode(mockExecutor, 'iPhone 15 Pro');
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when no device name is provided', async () => {
+      const mockExecutor = async () => ({
+        success: true,
+        output: '844,390',
+        error: undefined,
+        process: mockProcess,
+      });
+
+      // When no device name is provided, should skip orientation detection
+      const result = await detectLandscapeMode(mockExecutor);
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('Image Rotation', () => {
+    it('should call sips with correct rotation arguments', async () => {
+      const capturedCommands: string[][] = [];
+      const mockExecutor = async (command: string[]) => {
+        capturedCommands.push(command);
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: mockProcess,
+        };
+      };
+
+      await rotateImage('/tmp/test.png', 90, mockExecutor);
+
+      expect(capturedCommands[0]).toEqual(['sips', '--rotate', '90', '/tmp/test.png']);
+    });
+
+    it('should return true on successful rotation', async () => {
+      const mockExecutor = async () => ({
+        success: true,
+        output: '',
+        error: undefined,
+        process: mockProcess,
+      });
+
+      const result = await rotateImage('/tmp/test.png', 90, mockExecutor);
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when rotation command fails', async () => {
+      const mockExecutor = async () => ({
+        success: false,
+        output: '',
+        error: 'sips: error',
+        process: mockProcess,
+      });
+
+      const result = await rotateImage('/tmp/test.png', 90, mockExecutor);
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when executor throws an error', async () => {
+      const mockExecutor = async () => {
+        throw new Error('Execution failed');
+      };
+
+      const result = await rotateImage('/tmp/test.png', 90, mockExecutor);
+
+      expect(result).toBe(false);
+    });
+
+    it('should handle different rotation angles', async () => {
+      const capturedCommands: string[][] = [];
+      const mockExecutor = async (command: string[]) => {
+        capturedCommands.push(command);
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: mockProcess,
+        };
+      };
+
+      await rotateImage('/tmp/test.png', 270, mockExecutor);
+
+      expect(capturedCommands[0]).toEqual(['sips', '--rotate', '270', '/tmp/test.png']);
+    });
+  });
+
+  describe('Landscape Screenshot Integration', () => {
+    // Mock device list JSON response
+    const mockDeviceListJson = JSON.stringify({
+      devices: {
+        'com.apple.CoreSimulator.SimRuntime.iOS-17-2': [
+          {
+            udid: '12345678-1234-4234-8234-123456789012',
+            name: 'iPhone 15 Pro',
+            state: 'Booted',
+          },
+        ],
+      },
+    });
+
+    it('should rotate screenshot when landscape mode is detected', async () => {
+      const capturedCommands: string[][] = [];
+      let commandIndex = 0;
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommands.push(command);
+        const idx = commandIndex++;
+
+        // First call: screenshot command
+        if (idx === 0) {
+          return {
+            success: true,
+            output: 'Screenshot saved',
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Second call: list devices to get device name
+        if (idx === 1) {
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Third call: swift orientation detection (simulate landscape)
+        if (idx === 2) {
+          return {
+            success: true,
+            output: '844,390',
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Fourth call: sips rotation
+        if (idx === 3) {
+          return {
+            success: true,
+            output: '',
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Fifth call: sips optimization
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: mockProcess,
+        };
+      };
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => 'fake-image-data',
+      });
+
+      await screenshotLogic(
+        { simulatorId: '12345678-1234-4234-8234-123456789012' },
+        trackingExecutor,
+        mockFileSystemExecutor,
+        { tmpdir: () => '/tmp', join: (...paths) => paths.join('/') },
+        { v4: () => 'test-uuid' },
+      );
+
+      // Verify rotation command was called with +90 degrees (index 3)
+      expect(capturedCommands[3]).toEqual([
+        'sips',
+        '--rotate',
+        '90',
+        '/tmp/screenshot_test-uuid.png',
+      ]);
+    });
+
+    it('should not rotate screenshot when portrait mode is detected', async () => {
+      const capturedCommands: string[][] = [];
+      let commandIndex = 0;
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommands.push(command);
+        const idx = commandIndex++;
+
+        // First call: screenshot command
+        if (idx === 0) {
+          return {
+            success: true,
+            output: 'Screenshot saved',
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Second call: list devices to get device name
+        if (idx === 1) {
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Third call: swift orientation detection (simulate portrait)
+        if (idx === 2) {
+          return {
+            success: true,
+            output: '390,844',
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Fourth call: sips optimization (no rotation in portrait)
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: mockProcess,
+        };
+      };
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => 'fake-image-data',
+      });
+
+      await screenshotLogic(
+        { simulatorId: '12345678-1234-4234-8234-123456789012' },
+        trackingExecutor,
+        mockFileSystemExecutor,
+        { tmpdir: () => '/tmp', join: (...paths) => paths.join('/') },
+        { v4: () => 'test-uuid' },
+      );
+
+      // Should have: screenshot, list devices, orientation detection, optimization (no rotation)
+      expect(capturedCommands.length).toBe(4);
+      // Fourth command should be optimization, not rotation
+      expect(capturedCommands[3][0]).toBe('sips');
+      expect(capturedCommands[3]).toContain('-Z');
+    });
+
+    it('should continue without rotation if orientation detection fails', async () => {
+      const capturedCommands: string[][] = [];
+      let commandIndex = 0;
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommands.push(command);
+        const idx = commandIndex++;
+
+        // First call: screenshot command
+        if (idx === 0) {
+          return {
+            success: true,
+            output: 'Screenshot saved',
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Second call: list devices to get device name
+        if (idx === 1) {
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Third call: swift orientation detection (fails)
+        if (idx === 2) {
+          return {
+            success: false,
+            output: '',
+            error: 'Swift not found',
+            process: mockProcess,
+          };
+        }
+        // Fourth call: sips optimization
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: mockProcess,
+        };
+      };
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => 'fake-image-data',
+      });
+
+      const result = await screenshotLogic(
+        { simulatorId: '12345678-1234-4234-8234-123456789012' },
+        trackingExecutor,
+        mockFileSystemExecutor,
+        { tmpdir: () => '/tmp', join: (...paths) => paths.join('/') },
+        { v4: () => 'test-uuid' },
+      );
+
+      // Should still succeed
+      expect(result.isError).toBe(false);
+      // Should have: screenshot, list devices, failed orientation detection, optimization
+      expect(capturedCommands.length).toBe(4);
+    });
+
+    it('should continue if rotation fails but still return image', async () => {
+      const capturedCommands: string[][] = [];
+      let commandIndex = 0;
+      const trackingExecutor = async (command: string[]) => {
+        capturedCommands.push(command);
+        const idx = commandIndex++;
+
+        // First call: screenshot command
+        if (idx === 0) {
+          return {
+            success: true,
+            output: 'Screenshot saved',
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Second call: list devices to get device name
+        if (idx === 1) {
+          return {
+            success: true,
+            output: mockDeviceListJson,
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Third call: swift orientation detection (landscape)
+        if (idx === 2) {
+          return {
+            success: true,
+            output: '844,390',
+            error: undefined,
+            process: mockProcess,
+          };
+        }
+        // Fourth call: sips rotation (fails)
+        if (idx === 3) {
+          return {
+            success: false,
+            output: '',
+            error: 'sips failed',
+            process: mockProcess,
+          };
+        }
+        // Fifth call: sips optimization
+        return {
+          success: true,
+          output: '',
+          error: undefined,
+          process: mockProcess,
+        };
+      };
+
+      const mockFileSystemExecutor = createMockFileSystemExecutor({
+        readFile: async () => 'fake-image-data',
+      });
+
+      const result = await screenshotLogic(
+        { simulatorId: '12345678-1234-4234-8234-123456789012' },
+        trackingExecutor,
+        mockFileSystemExecutor,
+        { tmpdir: () => '/tmp', join: (...paths) => paths.join('/') },
+        { v4: () => 'test-uuid' },
+      );
+
+      // Should still succeed even if rotation failed
+      expect(result.isError).toBe(false);
+      expect(result.content[0].type).toBe('image');
     });
   });
 });
