@@ -39,6 +39,7 @@ For more information see the [CONFIGURATION.md](docs/CONFIGURATION.md) documenta
 - Fix xcodemake command argument corruption when project directory path appears as substring in non-path arguments.
 - Fix snapshot_ui warning state being isolated per UI automation tool, causing false warnings.
 - Fixed screenshot tool capturing rotated images when simulator is in landscape orientation by detecting window dimensions and applying +90° rotation to correct the framebuffer capture. ([`#186`](https://github.com/cameroncooke/XcodeBuildMCP/pull/186) by [`@VincentStark`](https://github.com/VincentStark))
+- Fixed Sentry ESM compatibility by upgrading `@sentry/node` from 10.5.0 to 10.37.0 and `@sentry/cli` from 2.43.1 to 3.1.0 (Fixes XCODEBUILD-MCP-13SX)
 
 ## [1.14.0] - 2025-09-22
 - Add video capture tool for simulators
