@@ -4,44 +4,18 @@ import { bootstrapServer } from './server/bootstrap.ts';
 import { createServer } from './server/server.ts';
 import { log } from './utils/logger.ts';
 import { initSentry } from './utils/sentry.ts';
-import type { RuntimeConfigOverrides } from './utils/config-store.ts';
 
-export const configSchema = z.object({
-  incrementalBuildsEnabled: z
-    .boolean()
-    .default(false)
-    .describe('Enable incremental builds via xcodemake (true/false).'),
-  enabledWorkflows: z
-    .string()
-    .default('')
-    .describe('Comma-separated list of workflows to load at startup.'),
-  debug: z.boolean().default(false).describe('Enable debug logging.'),
-});
+// Empty config schema - all configuration comes from config.yaml and env vars
+export const configSchema = z.object({});
 
 export type SmitheryConfig = z.infer<typeof configSchema>;
 
-function parseEnabledWorkflows(value: string): string[] {
-  return value
-    .split(',')
-    .map((name) => name.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-function buildOverrides(config: SmitheryConfig): RuntimeConfigOverrides {
-  return {
-    incrementalBuildsEnabled: config.incrementalBuildsEnabled,
-    debug: config.debug,
-    enabledWorkflows: parseEnabledWorkflows(config.enabledWorkflows),
-  };
-}
-
-export default function createSmitheryServer({ config }: { config: SmitheryConfig }): McpServer {
-  const overrides = buildOverrides(config);
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function createSmitheryServer(options: { config: SmitheryConfig }): McpServer {
   const server = createServer();
   const bootstrapPromise: Promise<void> = (async (): Promise<void> => {
     initSentry();
-    await bootstrapServer(server, { configOverrides: overrides });
+    await bootstrapServer(server);
   })().catch((error) => {
     log(
       'error',

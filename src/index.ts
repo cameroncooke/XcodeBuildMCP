@@ -24,9 +24,6 @@ import { getDefaultDebuggerManager } from './utils/debugger/index.ts';
 // Import version
 import { version } from './version.ts';
 
-// Import xcodemake utilities
-import { isXcodemakeEnabled, isXcodemakeAvailable } from './utils/xcodemake.ts';
-
 // Import process for stdout configuration
 import process from 'node:process';
 
@@ -38,22 +35,6 @@ import { bootstrapServer } from './server/bootstrap.ts';
 async function main(): Promise<void> {
   try {
     initSentry();
-
-    // Check if xcodemake is enabled and available
-    if (isXcodemakeEnabled()) {
-      log('info', 'xcodemake is enabled, checking if available...');
-      const available = await isXcodemakeAvailable();
-      if (available) {
-        log('info', 'xcodemake is available and will be used for builds');
-      } else {
-        log(
-          'warn',
-          'xcodemake is enabled but could not be made available, falling back to xcodebuild',
-        );
-      }
-    } else {
-      log('debug', 'xcodemake is disabled, using standard xcodebuild');
-    }
 
     // Create the server
     const server = createServer();
