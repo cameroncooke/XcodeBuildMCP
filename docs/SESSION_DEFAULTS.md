@@ -1,6 +1,6 @@
 # Session Defaults
 
-By default, XcodeBuildMCP uses a session-aware mode. The client sets shared defaults once (simulator, device, project/workspace, scheme, etc.) and all tools reuse them. This reduces schema size and repeated payloads and ensure a more deterministic experience.
+By default, XcodeBuildMCP uses a session-aware mode. The client sets shared defaults once (simulator, device, project/workspace, scheme, etc.) and all tools reuse them. This reduces schema size and repeated payloads and ensures a more deterministic experience.
 
 ## How it works
 - Agent calls `session_set_defaults` once at the start of a workflow.
