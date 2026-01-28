@@ -4,6 +4,7 @@ import type { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 import { sessionStore, type SessionDefaults } from '../../../utils/session-store.ts';
 import { getDefaultFileSystemExecutor } from '../../../utils/command.ts';
 import { persistSessionDefaultsToProjectConfig } from '../../../utils/project-config.ts';
+import { removeUndefined } from '../../../utils/remove-undefined.ts';
 import { sessionDefaultsSchema } from '../../../utils/session-defaults-schema.ts';
 import { createTypedToolWithContext } from '../../../utils/typed-tool-factory.ts';
 import type { ToolResponse } from '../../../types/common.ts';
@@ -21,16 +22,6 @@ type SessionSetDefaultsContext = {
   fs: FileSystemExecutor;
   cwd: string;
 };
-
-function removeUndefined<T extends Record<string, unknown>>(input: T): Partial<T> {
-  const result: Partial<T> = {};
-  for (const [key, value] of Object.entries(input)) {
-    if (value !== undefined) {
-      result[key as keyof T] = value as T[keyof T];
-    }
-  }
-  return result;
-}
 
 export async function sessionSetDefaultsLogic(
   params: Params,

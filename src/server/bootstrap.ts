@@ -46,6 +46,15 @@ export async function bootstrapServer(
       for (const notice of configResult.notices) {
         log('info', `[ProjectConfig] ${notice}`);
       }
+    } else if ('error' in configResult) {
+      const errorMessage =
+        configResult.error instanceof Error
+          ? configResult.error.message
+          : String(configResult.error);
+      log(
+        'warning',
+        `Failed to read or parse project config at ${configResult.path}. ${errorMessage}`,
+      );
     }
   } catch (error) {
     log('warning', `Failed to load project config from ${cwd}. ${error}`);

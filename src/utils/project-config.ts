@@ -5,6 +5,7 @@ import type { FileSystemExecutor } from './FileSystemExecutor.ts';
 import type { SessionDefaults } from './session-store.ts';
 import { log } from './logger.ts';
 import { sessionDefaultsSchema } from './session-defaults-schema.ts';
+import { removeUndefined } from './remove-undefined.ts';
 
 const CONFIG_DIR = '.xcodebuildmcp';
 const CONFIG_FILE = 'config.yaml';
@@ -31,6 +32,7 @@ export type LoadProjectConfigOptions = {
 
 export type LoadProjectConfigResult =
   | { found: false }
+  | { found: false; path: string; error: Error }
   | { found: true; path: string; config: ProjectConfig; notices: string[] };
 
 export type PersistSessionDefaultsOptions = {
@@ -52,14 +54,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function removeUndefined<T extends Record<string, unknown>>(input: T): Partial<T> {
-  const result: Partial<T> = {};
-  for (const [key, value] of Object.entries(input)) {
-    if (value !== undefined) {
-      result[key as keyof T] = value as T[keyof T];
-    }
-  }
-  return result;
+function toError(value: unknown): Error {
+  return value instanceof Error ? value : new Error(String(value));
 }
 
 function hasValue<T extends Record<string, unknown>>(defaults: T, key: keyof T): boolean {
@@ -120,22 +116,27 @@ export async function loadProjectConfig(
     return { found: false };
   }
 
-  const rawText = await options.fs.readFile(configPath, 'utf8');
-  const parsed = parseProjectConfig(rawText);
+  let parsed: ProjectConfigSchema;
+  try {
+    const rawText = await options.fs.readFile(configPath, 'utf8');
+    parsed = parseProjectConfig(rawText);
 
-  if (!parsed.sessionDefaults) {
-    return { found: true, path: configPath, config: parsed, notices: [] };
+    if (!parsed.sessionDefaults) {
+      return { found: true, path: configPath, config: parsed, notices: [] };
+    }
+
+    const { normalized, notices } = normalizeMutualExclusivity(parsed.sessionDefaults);
+    const resolved = resolveRelativeSessionPaths(normalized, options.cwd);
+
+    const config: ProjectConfig = {
+      ...parsed,
+      sessionDefaults: resolved,
+    };
+
+    return { found: true, path: configPath, config, notices };
+  } catch (error) {
+    return { found: false, path: configPath, error: toError(error) };
   }
-
-  const { normalized, notices } = normalizeMutualExclusivity(parsed.sessionDefaults);
-  const resolved = resolveRelativeSessionPaths(normalized, options.cwd);
-
-  const config: ProjectConfig = {
-    ...parsed,
-    sessionDefaults: resolved,
-  };
-
-  return { found: true, path: configPath, config, notices };
 }
 
 export async function persistSessionDefaultsToProjectConfig(
@@ -154,9 +155,10 @@ export async function persistSessionDefaultsToProjectConfig(
       const parsed = parseProjectConfig(rawText);
       baseConfig = { ...parsed, schemaVersion: 1 };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       log(
         'warning',
-        `Failed to parse project config at ${configPath}. Overwriting with new config. ${error}`,
+        `Failed to read or parse project config at ${configPath}. Overwriting with new config. ${errorMessage}`,
       );
       baseConfig = { schemaVersion: 1 };
     }

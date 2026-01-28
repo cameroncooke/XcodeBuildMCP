@@ -1,13 +1,13 @@
 schemaVersion: 1
 sessionDefaults:
-  workspacePath: /Volumes/Developer/XcodeBuildMCP/example_projects/iOS_Calculator/CalculatorApp.xcworkspace
+  workspacePath: ./iOS_Calculator/CalculatorApp.xcworkspace
   scheme: CalculatorApp
   configuration: Debug
   simulatorId: B38FE93D-578B-454B-BE9A-C6FA0CE5F096
   useLatestOS: true
   arch: arm64
   suppressWarnings: false
-  derivedDataPath: /Volumes/Developer/XcodeBuildMCP/example_projects/iOS_Calculator/.derivedData
+  derivedDataPath: ./iOS_Calculator/.derivedData
   preferXcodebuild: true
   platform: iOS
   bundleId: com.example.calculatorapp
