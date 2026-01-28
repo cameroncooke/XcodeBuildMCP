@@ -4,8 +4,7 @@ import { bootstrapServer } from './server/bootstrap.ts';
 import { createServer } from './server/server.ts';
 import { log } from './utils/logger.ts';
 import { initSentry } from './utils/sentry.ts';
-import { getDefaultFileSystemExecutor } from './utils/command.ts';
-import { initConfigStore, type RuntimeConfigOverrides } from './utils/config-store.ts';
+import type { RuntimeConfigOverrides } from './utils/config-store.ts';
 
 export const configSchema = z.object({
   incrementalBuildsEnabled: z
@@ -41,11 +40,6 @@ export default function createSmitheryServer({ config }: { config: SmitheryConfi
 
   const server = createServer();
   const bootstrapPromise: Promise<void> = (async (): Promise<void> => {
-    await initConfigStore({
-      cwd: process.cwd(),
-      fs: getDefaultFileSystemExecutor(),
-      overrides,
-    });
     initSentry();
     await bootstrapServer(server, { configOverrides: overrides });
   })().catch((error) => {
