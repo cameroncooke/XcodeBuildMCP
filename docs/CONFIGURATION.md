@@ -96,7 +96,7 @@ Behavior:
 
 ### Persisting defaults from an agent
 
-By default when the agent calls `session_set_defaults`, defaults are only stored in memory for that session, to persist them to the config file, ask the agent to set the `persist` flag to `true`.
+By default, when the agent calls `session_set_defaults`, defaults are only stored in memory for that session. To persist them to the config file, ask the agent to set the `persist` flag to `true`.
 
 > [!IMPORTANT]
 > The write is **patch-only**: only keys provided in that call are written (plus any removals needed for mutual exclusivity).
