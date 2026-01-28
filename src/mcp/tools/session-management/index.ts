@@ -1,5 +1,5 @@
 export const workflow = {
   name: 'session-management',
   description:
-    'Manage session defaults for projectPath/workspacePath, scheme, configuration, simulatorName/simulatorId, deviceId, useLatestOS and arch. These defaults are required by many tools and must be set before attempting to call tools that would depend on these values.',
+    'Manage session defaults for project/workspace paths, scheme, configuration, simulatorName/simulatorId, deviceId, useLatestOS, arch, suppressWarnings, derivedDataPath, preferXcodebuild, platform, and bundleId. Defaults can be seeded from .xcodebuildmcp/config.yaml at startup.',
 };

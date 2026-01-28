@@ -12,6 +12,7 @@ describe('session-clear-defaults tool', () => {
       deviceId: 'DEVICE-123',
       useLatestOS: true,
       arch: 'arm64',
+      derivedDataPath: '/tmp/derived-data',
     });
   });
 
@@ -40,13 +41,16 @@ describe('session-clear-defaults tool', () => {
 
   describe('Handler Behavior', () => {
     it('should clear specific keys when provided', async () => {
-      const result = await sessionClearDefaultsLogic({ keys: ['scheme', 'deviceId'] });
+      const result = await sessionClearDefaultsLogic({
+        keys: ['scheme', 'deviceId', 'derivedDataPath'],
+      });
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toContain('Session defaults cleared');
 
       const current = sessionStore.getAll();
       expect(current.scheme).toBeUndefined();
       expect(current.deviceId).toBeUndefined();
+      expect(current.derivedDataPath).toBeUndefined();
       expect(current.projectPath).toBe('/path/to/proj.xcodeproj');
       expect(current.simulatorName).toBe('iPhone 16');
       expect(current.useLatestOS).toBe(true);

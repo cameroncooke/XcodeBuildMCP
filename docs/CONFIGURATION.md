@@ -56,6 +56,51 @@ If you prefer the older, explicit style where each tool requires its own paramet
 
 Leave this unset for the streamlined session-aware experience; enable it to force explicit parameters on each tool call.
 
+## Project config (config.yaml)
+
+You can provide deterministic session defaults for every AI coding session by creating a project config file at:
+
+```
+<workspace-root>/.xcodebuildmcp/config.yaml
+```
+
+Notes:
+- Put the file in your **workspace root** (where your Xcode project is located).
+- Agents can persist changes by calling `session_set_defaults` with `"persist": true` (see below).
+
+### Schema
+
+```yaml
+schemaVersion: 1
+sessionDefaults:
+  projectPath: "./MyApp.xcodeproj"      # xor workspacePath
+  workspacePath: "./MyApp.xcworkspace"  # xor projectPath
+  scheme: "MyApp"
+  configuration: "Debug"
+  simulatorName: "iPhone 16"            # xor simulatorId
+  simulatorId: "<UUID>"                 # xor simulatorName
+  deviceId: "<UUID>"
+  useLatestOS: true
+  arch: "arm64"
+  suppressWarnings: false
+  derivedDataPath: "./.derivedData"
+  preferXcodebuild: false
+  platform: "iOS"
+  bundleId: "com.example.myapp"
+```
+
+Behavior:
+- Relative paths in `projectPath`, `workspacePath`, and `derivedDataPath` resolve against the workspace root at load time.
+- If both `projectPath` and `workspacePath` are set, **workspacePath wins**.
+- If both `simulatorId` and `simulatorName` are set, **simulatorId wins**.
+
+### Persisting defaults from an agent
+
+By default, when the agent calls `session_set_defaults`, defaults are only stored in memory for that session. To persist them to the config file, ask the agent to set the `persist` flag to `true`.
+
+> [!IMPORTANT]
+> The write is **patch-only**: only keys provided in that call are written (plus any removals needed for mutual exclusivity).
+
 ## Sentry telemetry opt-out
 
 If you do not wish to send error logs to Sentry, set `XCODEBUILDMCP_SENTRY_DISABLED=true`.

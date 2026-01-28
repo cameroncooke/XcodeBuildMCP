@@ -2,11 +2,17 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SetLevelRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import process from 'node:process';
 import { registerResources } from '../core/resources.ts';
+import { getDefaultFileSystemExecutor } from '../utils/command.ts';
+import type { FileSystemExecutor } from '../utils/FileSystemExecutor.ts';
 import { log, setLogLevel, type LogLevel } from '../utils/logger.ts';
+import { loadProjectConfig } from '../utils/project-config.ts';
+import { sessionStore } from '../utils/session-store.ts';
 import { registerWorkflows } from '../utils/tool-registry.ts';
 
 export interface BootstrapOptions {
   enabledWorkflows?: string[];
+  fileSystemExecutor?: FileSystemExecutor;
+  cwd?: string;
 }
 
 function parseEnabledWorkflows(value: string): string[] {
@@ -26,6 +32,33 @@ export async function bootstrapServer(
     log('info', `Client requested log level: ${level}`);
     return {};
   });
+
+  const cwd = options.cwd ?? process.cwd();
+  const fileSystemExecutor = options.fileSystemExecutor ?? getDefaultFileSystemExecutor();
+
+  try {
+    const configResult = await loadProjectConfig({ fs: fileSystemExecutor, cwd });
+    if (configResult.found) {
+      const defaults = configResult.config.sessionDefaults ?? {};
+      if (Object.keys(defaults).length > 0) {
+        sessionStore.setDefaults(defaults);
+      }
+      for (const notice of configResult.notices) {
+        log('info', `[ProjectConfig] ${notice}`);
+      }
+    } else if ('error' in configResult) {
+      const errorMessage =
+        configResult.error instanceof Error
+          ? configResult.error.message
+          : String(configResult.error);
+      log(
+        'warning',
+        `Failed to read or parse project config at ${configResult.path}. ${errorMessage}`,
+      );
+    }
+  } catch (error) {
+    log('warning', `Failed to load project config from ${cwd}. ${error}`);
+  }
 
   const defaultEnabledWorkflows = ['simulator'];
 

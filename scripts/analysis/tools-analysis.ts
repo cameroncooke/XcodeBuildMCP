@@ -297,6 +297,7 @@ export async function getStaticToolAnalysis(): Promise<StaticAnalysisResult> {
       '**/index.ts',
       '**/*.test.ts',
       '**/lib/**',
+      '**/shared/**',
       '**/*-processes.ts', // Process management utilities
       '**/*.deps.ts', // Dependency files
       '**/*-utils.ts', // Utility files

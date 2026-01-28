@@ -73,6 +73,7 @@
     "@sentry/cli": "^2.43.1",
     "@sentry/node": "^10.5.0",
     "uuid": "^11.1.0",
+    "yaml": "^2.4.5",
     "zod": "^4.0.0"
   },
   "devDependencies": {

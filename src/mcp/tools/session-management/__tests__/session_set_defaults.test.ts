@@ -1,11 +1,21 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import path from 'node:path';
+import { parse as parseYaml } from 'yaml';
 import { sessionStore } from '../../../../utils/session-store.ts';
+import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 import plugin, { sessionSetDefaultsLogic } from '../session_set_defaults.ts';
 
 describe('session-set-defaults tool', () => {
   beforeEach(() => {
     sessionStore.clear();
   });
+
+  const cwd = '/repo';
+  const configPath = path.join(cwd, '.xcodebuildmcp', 'config.yaml');
+
+  function createContext(overrides = {}) {
+    return { fs: createMockFileSystemExecutor(overrides), cwd };
+  }
 
   describe('Export Field Validation (Literal)', () => {
     it('should have correct name', () => {
@@ -30,12 +40,15 @@ describe('session-set-defaults tool', () => {
 
   describe('Handler Behavior', () => {
     it('should set provided defaults and return updated state', async () => {
-      const result = await sessionSetDefaultsLogic({
-        scheme: 'MyScheme',
-        simulatorName: 'iPhone 16',
-        useLatestOS: true,
-        arch: 'arm64',
-      });
+      const result = await sessionSetDefaultsLogic(
+        {
+          scheme: 'MyScheme',
+          simulatorName: 'iPhone 16',
+          useLatestOS: true,
+          arch: 'arm64',
+        },
+        createContext(),
+      );
 
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toContain('Defaults updated:');
@@ -59,7 +72,10 @@ describe('session-set-defaults tool', () => {
 
     it('should clear workspacePath when projectPath is set', async () => {
       sessionStore.setDefaults({ workspacePath: '/old/App.xcworkspace' });
-      const result = await sessionSetDefaultsLogic({ projectPath: '/new/App.xcodeproj' });
+      const result = await sessionSetDefaultsLogic(
+        { projectPath: '/new/App.xcodeproj' },
+        createContext(),
+      );
       const current = sessionStore.getAll();
       expect(current.projectPath).toBe('/new/App.xcodeproj');
       expect(current.workspacePath).toBeUndefined();
@@ -70,7 +86,10 @@ describe('session-set-defaults tool', () => {
 
     it('should clear projectPath when workspacePath is set', async () => {
       sessionStore.setDefaults({ projectPath: '/old/App.xcodeproj' });
-      const result = await sessionSetDefaultsLogic({ workspacePath: '/new/App.xcworkspace' });
+      const result = await sessionSetDefaultsLogic(
+        { workspacePath: '/new/App.xcworkspace' },
+        createContext(),
+      );
       const current = sessionStore.getAll();
       expect(current.workspacePath).toBe('/new/App.xcworkspace');
       expect(current.projectPath).toBeUndefined();
@@ -81,7 +100,7 @@ describe('session-set-defaults tool', () => {
 
     it('should clear simulatorName when simulatorId is set', async () => {
       sessionStore.setDefaults({ simulatorName: 'iPhone 16' });
-      const result = await sessionSetDefaultsLogic({ simulatorId: 'SIM-UUID' });
+      const result = await sessionSetDefaultsLogic({ simulatorId: 'SIM-UUID' }, createContext());
       const current = sessionStore.getAll();
       expect(current.simulatorId).toBe('SIM-UUID');
       expect(current.simulatorName).toBeUndefined();
@@ -92,7 +111,7 @@ describe('session-set-defaults tool', () => {
 
     it('should clear simulatorId when simulatorName is set', async () => {
       sessionStore.setDefaults({ simulatorId: 'SIM-UUID' });
-      const result = await sessionSetDefaultsLogic({ simulatorName: 'iPhone 16' });
+      const result = await sessionSetDefaultsLogic({ simulatorName: 'iPhone 16' }, createContext());
       const current = sessionStore.getAll();
       expect(current.simulatorName).toBe('iPhone 16');
       expect(current.simulatorId).toBeUndefined();
@@ -102,10 +121,13 @@ describe('session-set-defaults tool', () => {
     });
 
     it('should prefer workspacePath when both projectPath and workspacePath are provided', async () => {
-      const res = await sessionSetDefaultsLogic({
-        projectPath: '/app/App.xcodeproj',
-        workspacePath: '/app/App.xcworkspace',
-      });
+      const res = await sessionSetDefaultsLogic(
+        {
+          projectPath: '/app/App.xcodeproj',
+          workspacePath: '/app/App.xcworkspace',
+        },
+        createContext(),
+      );
       const current = sessionStore.getAll();
       expect(current.workspacePath).toBe('/app/App.xcworkspace');
       expect(current.projectPath).toBeUndefined();
@@ -115,16 +137,72 @@ describe('session-set-defaults tool', () => {
     });
 
     it('should prefer simulatorId when both simulatorId and simulatorName are provided', async () => {
-      const res = await sessionSetDefaultsLogic({
-        simulatorId: 'SIM-1',
-        simulatorName: 'iPhone 16',
-      });
+      const res = await sessionSetDefaultsLogic(
+        {
+          simulatorId: 'SIM-1',
+          simulatorName: 'iPhone 16',
+        },
+        createContext(),
+      );
       const current = sessionStore.getAll();
       expect(current.simulatorId).toBe('SIM-1');
       expect(current.simulatorName).toBeUndefined();
       expect(res.content[0].text).toContain(
         'Both simulatorId and simulatorName were provided; keeping simulatorId and ignoring simulatorName.',
       );
+    });
+
+    it('should persist defaults when persist is true', async () => {
+      const yaml = [
+        'schemaVersion: 1',
+        'sessionDefaults:',
+        '  projectPath: "/old/App.xcodeproj"',
+        '  simulatorName: "OldSim"',
+        '',
+      ].join('\n');
+
+      const writes: { path: string; content: string }[] = [];
+      const context = createContext({
+        existsSync: (targetPath: string) => targetPath === configPath,
+        readFile: async (targetPath: string) => {
+          if (targetPath !== configPath) {
+            throw new Error(`Unexpected readFile path: ${targetPath}`);
+          }
+          return yaml;
+        },
+        writeFile: async (targetPath: string, content: string) => {
+          writes.push({ path: targetPath, content });
+        },
+      });
+
+      const result = await sessionSetDefaultsLogic(
+        { workspacePath: '/new/App.xcworkspace', simulatorId: 'SIM-1', persist: true },
+        context,
+      );
+
+      expect(result.content[0].text).toContain('Persisted defaults to');
+      expect(writes.length).toBe(1);
+      expect(writes[0].path).toBe(configPath);
+
+      const parsed = parseYaml(writes[0].content) as {
+        sessionDefaults?: Record<string, unknown>;
+      };
+      expect(parsed.sessionDefaults?.workspacePath).toBe('/new/App.xcworkspace');
+      expect(parsed.sessionDefaults?.projectPath).toBeUndefined();
+      expect(parsed.sessionDefaults?.simulatorId).toBe('SIM-1');
+      expect(parsed.sessionDefaults?.simulatorName).toBeUndefined();
+    });
+
+    it('should not persist when persist is true but no defaults were provided', async () => {
+      const context = createContext({
+        writeFile: async () => {
+          throw new Error('writeFile should not be called');
+        },
+      });
+
+      const result = await sessionSetDefaultsLogic({ persist: true }, context);
+
+      expect(result.content[0].text).toContain('No defaults provided to persist');
     });
   });
 });
