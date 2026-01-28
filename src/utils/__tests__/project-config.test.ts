@@ -103,19 +103,27 @@ describe('project-config', () => {
       expect(result.config.macosTemplatePath).toBe('/opt/templates/macos');
     });
 
-    it('should throw when schemaVersion is unsupported', async () => {
+    it('should return an error result when schemaVersion is unsupported', async () => {
       const yaml = ['schemaVersion: 2', 'sessionDefaults:', '  scheme: "App"', ''].join('\n');
       const { fs } = createFsFixture({ exists: true, readFile: yaml });
 
-      await expect(loadProjectConfig({ fs, cwd })).rejects.toThrow();
+      const result = await loadProjectConfig({ fs, cwd });
+      expect(result.found).toBe(false);
+      expect('error' in result).toBe(true);
+      if ('error' in result) {
+        expect(result.error).toBeInstanceOf(Error);
+      }
     });
 
-    it('should throw when YAML does not parse to an object', async () => {
+    it('should return an error result when YAML does not parse to an object', async () => {
       const { fs } = createFsFixture({ exists: true, readFile: '- item' });
 
-      await expect(loadProjectConfig({ fs, cwd })).rejects.toThrow(
-        'Project config must be an object',
-      );
+      const result = await loadProjectConfig({ fs, cwd });
+      expect(result.found).toBe(false);
+      expect('error' in result).toBe(true);
+      if ('error' in result) {
+        expect(result.error.message).toBe('Project config must be an object');
+      }
     });
   });
 

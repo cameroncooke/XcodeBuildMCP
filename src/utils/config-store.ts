@@ -385,6 +385,10 @@ export async function initConfigStore(opts: {
       found = true;
       path = result.path;
       notices = result.notices;
+    } else if ('error' in result) {
+      const errorMessage =
+        result.error instanceof Error ? result.error.message : String(result.error);
+      log('warning', `Failed to read or parse project config at ${result.path}. ${errorMessage}`);
     }
   } catch (error) {
     log('warning', `Failed to load project config from ${opts.cwd}. ${error}`);

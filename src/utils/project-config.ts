@@ -23,6 +23,7 @@ export type LoadProjectConfigOptions = {
 
 export type LoadProjectConfigResult =
   | { found: false }
+  | { found: false; path: string; error: Error }
   | { found: true; path: string; config: ProjectConfig; notices: string[] };
 
 export type PersistSessionDefaultsOptions = {
@@ -42,6 +43,10 @@ function getConfigPath(cwd: string): string {
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function toError(value: unknown): Error {
+  return value instanceof Error ? value : new Error(String(value));
 }
 
 function removeUndefined<T extends Record<string, unknown>>(input: T): Partial<T> {
@@ -166,27 +171,31 @@ export async function loadProjectConfig(
     return { found: false };
   }
 
-  const rawText = await options.fs.readFile(configPath, 'utf8');
-  const parsed = parseProjectConfig(rawText);
-  const notices: string[] = [];
+  try {
+    const rawText = await options.fs.readFile(configPath, 'utf8');
+    const parsed = parseProjectConfig(rawText);
+    const notices: string[] = [];
 
-  let config = normalizeDebuggerBackend(parsed);
+    let config = normalizeDebuggerBackend(parsed);
 
-  if (parsed.enabledWorkflows !== undefined) {
-    const normalizedWorkflows = normalizeEnabledWorkflows(parsed.enabledWorkflows);
-    config = { ...config, enabledWorkflows: normalizedWorkflows };
+    if (parsed.enabledWorkflows !== undefined) {
+      const normalizedWorkflows = normalizeEnabledWorkflows(parsed.enabledWorkflows);
+      config = { ...config, enabledWorkflows: normalizedWorkflows };
+    }
+
+    if (config.sessionDefaults) {
+      const normalized = normalizeMutualExclusivity(config.sessionDefaults);
+      notices.push(...normalized.notices);
+      const resolved = resolveRelativeSessionPaths(normalized.normalized, options.cwd);
+      config = { ...config, sessionDefaults: resolved };
+    }
+
+    config = resolveRelativeTopLevelPaths(config, options.cwd);
+
+    return { found: true, path: configPath, config, notices };
+  } catch (error) {
+    return { found: false, path: configPath, error: toError(error) };
   }
-
-  if (config.sessionDefaults) {
-    const normalized = normalizeMutualExclusivity(config.sessionDefaults);
-    notices.push(...normalized.notices);
-    const resolved = resolveRelativeSessionPaths(normalized.normalized, options.cwd);
-    config = { ...config, sessionDefaults: resolved };
-  }
-
-  config = resolveRelativeTopLevelPaths(config, options.cwd);
-
-  return { found: true, path: configPath, config, notices };
 }
 
 export async function persistSessionDefaultsToProjectConfig(
@@ -205,9 +214,10 @@ export async function persistSessionDefaultsToProjectConfig(
       const parsed = parseProjectConfig(rawText);
       baseConfig = { ...normalizeConfigForPersistence(parsed), schemaVersion: 1 };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       log(
         'warning',
-        `Failed to parse project config at ${configPath}. Overwriting with new config. ${error}`,
+        `Failed to read or parse project config at ${configPath}. Overwriting with new config. ${errorMessage}`,
       );
       baseConfig = { schemaVersion: 1 };
     }
