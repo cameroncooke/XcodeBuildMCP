@@ -119,7 +119,7 @@ Responsibilities:
 
 ### 7) Smithery overrides
 **File:** `src/smithery.ts`
-- Pass overrides into bootstrap/config store so Smithery is highest precedence.
+- Pass overrides into bootstrap/config store, so Smithery has highest precedence.
 
 ### 8) Documentation updates
 - Update `docs/CONFIGURATION.md`, `docs/GETTING_STARTED.md`, `docs/SESSION_DEFAULTS.md`.

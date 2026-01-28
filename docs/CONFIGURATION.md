@@ -86,7 +86,7 @@ Enable via:
 Enables experimental workflow discovery, this feature adds a `manage-workflows` tool that the agent can use to add/remove workflows at runtime. This requires clients to support tools changed notifications and therefore is an opt-in and experimental feature.
 
 > [!IMPORTANT]
-> At time of writing neither Cursor, Claude Code or Codex support tools changed notifications.
+> At the time of writing, neither Cursor, Claude Code, nor Codex support tools changed notifications.
 
 ## Session-aware opt-out
 
@@ -94,7 +94,7 @@ Disable session-aware schemas with:
 - `disableSessionDefaults: true` in `config.yaml` (preferred), or
 - via environment variable `XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS=true`
 
-Disables the session-aware defaults feature. This means that the agent will need to set the defaults for each tool call explictly. This is not recommended and will use more tokens per call. It's recommended to only enable this if your specific requirements need the build, device and simulator settings change frequently in a single coding session, i.e. monorepos with multiple projects.
+Disables the session-aware defaults feature. This means that the agent will need to set the defaults for each tool call explicitly. This is not recommended and will use more tokens per call. It's recommended to only enable this if your specific requirements need the build, device and simulator settings change frequently in a single coding session, i.e. monorepos with multiple projects.
 
 ## UI automation guard
 
@@ -123,7 +123,7 @@ Configure the binary path with:
 - `axePath: "/opt/axe/bin/axe"` in `config.yaml` (preferred), or
 - via environment variable `XCODEBUILDMCP_AXE_PATH=/opt/axe/bin/axe`
 
-For more information about AXe see: [https://github.com/cameroncooke/axe](https://github.com/cameroncooke/axe).
+For more information about AXe see the [AXe repository](https://github.com/cameroncooke/axe).
 
 ## Template overrides
 
@@ -147,7 +147,7 @@ Select the debugger backend with:
 - `debuggerBackend: "dap" | "lldb-cli"` in `config.yaml`, or
 - `XCODEBUILDMCP_DEBUGGER_BACKEND=dap|lldb-cli`
 
-This overridens the debugger backend and defaults to `dap`. It's not generally recommended to change this.
+This overrides the debugger backend and defaults to `dap`. It's not generally recommended to change this.
 
 ## DAP backend settings
 

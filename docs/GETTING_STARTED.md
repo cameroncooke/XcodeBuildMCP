@@ -37,7 +37,7 @@ Most MCP clients use JSON configuration. Add the following to your client config
 ## Project config (optional)
 For deterministic session defaults and runtime configuration, add a config file at:
 
-```
+```text
 <workspace-root>/.xcodebuildmcp/config.yaml
 ```
 
