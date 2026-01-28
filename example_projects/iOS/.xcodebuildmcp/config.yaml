@@ -1,0 +1,6 @@
+schemaVersion: 1
+sessionDefaults:
+  projectPath: ./MCPTest.xcodeproj
+  scheme: MCPTest
+  useLatestOS: true
+  platform: iOS Simulator

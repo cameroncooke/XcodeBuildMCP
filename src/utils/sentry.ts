@@ -85,7 +85,7 @@ let initialized = false;
 
 function isSentryDisabled(): boolean {
   return (
-    process.env.SENTRY_DISABLED === 'true' || process.env.XCODEBUILDMCP_SENTRY_DISABLED === 'true'
+    process.env.XCODEBUILDMCP_SENTRY_DISABLED === 'true' || process.env.SENTRY_DISABLED === 'true'
   );
 }
 

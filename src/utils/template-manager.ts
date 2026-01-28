@@ -5,6 +5,7 @@ import { log } from './logger.ts';
 import { iOSTemplateVersion, macOSTemplateVersion } from '../version.ts';
 import { CommandExecutor } from './command.ts';
 import { FileSystemExecutor } from './FileSystemExecutor.ts';
+import { getConfig } from './config-store.ts';
 
 /**
  * Template manager for downloading and managing project templates
@@ -23,16 +24,19 @@ export class TemplateManager {
     commandExecutor: CommandExecutor,
     fileSystemExecutor: FileSystemExecutor,
   ): Promise<string> {
-    // Check for local override
-    const envVar =
-      platform === 'iOS' ? 'XCODEBUILDMCP_IOS_TEMPLATE_PATH' : 'XCODEBUILDMCP_MACOS_TEMPLATE_PATH';
-
-    const localPath = process.env[envVar];
-    log('debug', `[TemplateManager] Checking env var '${envVar}'. Value: '${localPath}'`);
+    const config = getConfig();
+    const localPath = platform === 'iOS' ? config.iosTemplatePath : config.macosTemplatePath;
+    log(
+      'debug',
+      `[TemplateManager] Checking config override for ${platform} template. Value: '${localPath}'`,
+    );
 
     if (localPath) {
       const pathExists = fileSystemExecutor.existsSync(localPath);
-      log('debug', `[TemplateManager] Env var set. Path '${localPath}' exists? ${pathExists}`);
+      log(
+        'debug',
+        `[TemplateManager] Config override set. Path '${localPath}' exists? ${pathExists}`,
+      );
       if (pathExists) {
         const templateSubdir = join(localPath, 'template');
         const subdirExists = fileSystemExecutor.existsSync(templateSubdir);
@@ -49,7 +53,7 @@ export class TemplateManager {
       }
     }
 
-    log('debug', '[TemplateManager] Env var not set or path invalid, proceeding to download.');
+    log('debug', '[TemplateManager] No valid config override, proceeding to download.');
     // Download from GitHub release
     return await this.downloadTemplate(platform, commandExecutor, fileSystemExecutor);
   }
@@ -64,12 +68,11 @@ export class TemplateManager {
   ): Promise<string> {
     const repo = platform === 'iOS' ? this.IOS_TEMPLATE_REPO : this.MACOS_TEMPLATE_REPO;
     const defaultVersion = platform === 'iOS' ? iOSTemplateVersion : macOSTemplateVersion;
-    const envVarName =
-      platform === 'iOS'
-        ? 'XCODEBUILD_MCP_IOS_TEMPLATE_VERSION'
-        : 'XCODEBUILD_MCP_MACOS_TEMPLATE_VERSION';
+    const config = getConfig();
     const version = String(
-      process.env[envVarName] ?? process.env.XCODEBUILD_MCP_TEMPLATE_VERSION ?? defaultVersion,
+      platform === 'iOS'
+        ? (config.iosTemplateVersion ?? defaultVersion)
+        : (config.macosTemplateVersion ?? defaultVersion),
     );
 
     // Create temp directory for download

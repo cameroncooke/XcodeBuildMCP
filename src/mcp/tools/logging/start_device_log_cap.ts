@@ -24,6 +24,7 @@ import {
   type DeviceLogSession,
 } from '../../../utils/log-capture/device-log-sessions.ts';
 import type { WriteStream } from 'fs';
+import { getConfig } from '../../../utils/config-store.ts';
 
 /**
  * Log file retention policy for device logs:
@@ -71,17 +72,11 @@ type DevicectlLaunchJson = {
 };
 
 function getJsonResultWaitMs(): number {
-  const raw = process.env.XBMCP_LAUNCH_JSON_WAIT_MS;
-  if (raw === undefined) {
+  const configured = getConfig().launchJsonWaitMs;
+  if (!Number.isFinite(configured) || configured < 0) {
     return DEFAULT_JSON_RESULT_WAIT_MS;
   }
-
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    return DEFAULT_JSON_RESULT_WAIT_MS;
-  }
-
-  return parsed;
+  return configured;
 }
 
 function safeParseJson(text: string): DevicectlLaunchJson | null {

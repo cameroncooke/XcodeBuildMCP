@@ -7,6 +7,8 @@
 
 import { execSync } from 'child_process';
 import { log } from './logger.ts';
+import { getConfig } from './config-store.ts';
+import type { UiDebuggerGuardMode } from './runtime-config-types.ts';
 
 /**
  * Interface for environment detection abstraction
@@ -71,24 +73,12 @@ export function getDefaultEnvironmentDetector(): EnvironmentDetector {
  * Global opt-out for session defaults in MCP tool schemas.
  * When enabled, tools re-expose all parameters instead of hiding session-managed fields.
  */
-export function isSessionDefaultsSchemaOptOutEnabled(): boolean {
-  const raw = process.env.XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS;
-  if (!raw) return false;
-
-  const normalized = raw.trim().toLowerCase();
-  return ['1', 'true', 'yes', 'on'].includes(normalized);
+export function isSessionDefaultsOptOutEnabled(): boolean {
+  return getConfig().disableSessionDefaults;
 }
 
-export type UiDebuggerGuardMode = 'error' | 'warn' | 'off';
-
 export function getUiDebuggerGuardMode(): UiDebuggerGuardMode {
-  const raw = process.env.XCODEBUILDMCP_UI_DEBUGGER_GUARD_MODE;
-  if (!raw) return 'error';
-
-  const normalized = raw.trim().toLowerCase();
-  if (['off', '0', 'false', 'no'].includes(normalized)) return 'off';
-  if (['warn', 'warning'].includes(normalized)) return 'warn';
-  return 'error';
+  return getConfig().uiDebuggerGuardMode;
 }
 
 /**

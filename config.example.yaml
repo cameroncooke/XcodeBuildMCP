@@ -1,0 +1,20 @@
+schemaVersion: 1
+enabledWorkflows: ["simulator", "ui-automation", "debugging"]
+experimentalWorkflowDiscovery: false
+disableSessionDefaults: false
+incrementalBuildsEnabled: false
+sessionDefaults:
+  projectPath: "./MyApp.xcodeproj"      # xor workspacePath
+  workspacePath: "./MyApp.xcworkspace"  # xor projectPath
+  scheme: "MyApp"
+  configuration: "Debug"
+  simulatorName: "iPhone 16"            # xor simulatorId
+  simulatorId: "<UUID>"                 # xor simulatorName
+  deviceId: "<UUID>"
+  useLatestOS: true
+  arch: "arm64"
+  suppressWarnings: false
+  derivedDataPath: "./.derivedData"
+  preferXcodebuild: false
+  platform: "iOS"
+  bundleId: "com.example.myapp"

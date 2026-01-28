@@ -34,6 +34,15 @@ Most MCP clients use JSON configuration. Add the following to your client config
 }
 ```
 
+## Project config (optional)
+For deterministic session defaults and runtime configuration, add a config file at:
+
+```text
+<workspace-root>/.xcodebuildmcp/config.yaml
+```
+
+See [CONFIGURATION.md](CONFIGURATION.md) for the full schema and examples.
+
 ## Client-specific configuration
 
 ### OpenAI Codex CLI
@@ -43,7 +52,7 @@ Codex uses TOML for MCP configuration. Add this to your Codex CLI config file:
 [mcp_servers.XcodeBuildMCP]
 command = "npx"
 args = ["-y", "xcodebuildmcp@latest"]
-env = { "INCREMENTAL_BUILDS_ENABLED" = "false", "XCODEBUILDMCP_SENTRY_DISABLED" = "false" }
+env = { "XCODEBUILDMCP_SENTRY_DISABLED" = "false" }
 ```
 
 If you see tool calls timing out (for example, `timed out awaiting tools/call after 60s`), increase the timeout:
@@ -61,7 +70,7 @@ https://github.com/openai/codex/blob/main/docs/config.md#connecting-to-mcp-serve
 claude mcp add XcodeBuildMCP npx xcodebuildmcp@latest
 
 # Or with environment variables
-claude mcp add XcodeBuildMCP npx xcodebuildmcp@latest -e INCREMENTAL_BUILDS_ENABLED=false -e XCODEBUILDMCP_SENTRY_DISABLED=false
+claude mcp add XcodeBuildMCP npx xcodebuildmcp@latest -e XCODEBUILDMCP_SENTRY_DISABLED=false
 ```
 
 Note: XcodeBuildMCP requests xcodebuild to skip macro validation to avoid Swift Macro build errors.

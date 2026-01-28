@@ -1,7 +1,20 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { z } from 'zod';
 import { resolveSelectedWorkflows } from '../workflow-selection.ts';
 import type { WorkflowGroup } from '../../core/plugin-types.ts';
+import {
+  __resetConfigStoreForTests,
+  initConfigStore,
+  type RuntimeConfigOverrides,
+} from '../config-store.ts';
+import { createMockFileSystemExecutor } from '../../test-utils/mock-executors.ts';
+
+const cwd = '/repo';
+
+async function initConfigStoreForTest(overrides: RuntimeConfigOverrides): Promise<void> {
+  __resetConfigStoreForTests();
+  await initConfigStore({ cwd, fs: createMockFileSystemExecutor(), overrides });
+}
 
 function makeWorkflow(name: string): WorkflowGroup {
   return {
@@ -32,30 +45,11 @@ function makeWorkflowMap(names: string[]): Map<string, WorkflowGroup> {
 }
 
 describe('resolveSelectedWorkflows', () => {
-  let originalDebug: string | undefined;
-  let originalWorkflowDiscovery: string | undefined;
-
-  beforeEach(() => {
-    originalDebug = process.env.XCODEBUILDMCP_DEBUG;
-    originalWorkflowDiscovery = process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY;
-  });
-
-  afterEach(() => {
-    if (typeof originalDebug === 'undefined') {
-      delete process.env.XCODEBUILDMCP_DEBUG;
-    } else {
-      process.env.XCODEBUILDMCP_DEBUG = originalDebug;
-    }
-    if (typeof originalWorkflowDiscovery === 'undefined') {
-      delete process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY;
-    } else {
-      process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY = originalWorkflowDiscovery;
-    }
-  });
-
-  it('adds doctor when debug is enabled and selection list is provided', () => {
-    process.env.XCODEBUILDMCP_DEBUG = 'true';
-    process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY = 'true';
+  it('adds doctor when debug is enabled and selection list is provided', async () => {
+    await initConfigStoreForTest({
+      debug: true,
+      experimentalWorkflowDiscovery: true,
+    });
     const workflows = makeWorkflowMap([
       'session-management',
       'workflow-discovery',
@@ -79,9 +73,11 @@ describe('resolveSelectedWorkflows', () => {
     ]);
   });
 
-  it('does not add doctor when debug is disabled', () => {
-    process.env.XCODEBUILDMCP_DEBUG = 'false';
-    process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY = 'true';
+  it('does not add doctor when debug is disabled', async () => {
+    await initConfigStoreForTest({
+      debug: false,
+      experimentalWorkflowDiscovery: true,
+    });
     const workflows = makeWorkflowMap([
       'session-management',
       'workflow-discovery',
@@ -99,9 +95,11 @@ describe('resolveSelectedWorkflows', () => {
     ]);
   });
 
-  it('returns all workflows when no selection list is provided', () => {
-    process.env.XCODEBUILDMCP_DEBUG = 'true';
-    process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY = 'true';
+  it('defaults to simulator workflow when no selection list is provided', async () => {
+    await initConfigStoreForTest({
+      debug: true,
+      experimentalWorkflowDiscovery: true,
+    });
     const workflows = makeWorkflowMap([
       'session-management',
       'workflow-discovery',
@@ -111,7 +109,12 @@ describe('resolveSelectedWorkflows', () => {
 
     const result = resolveSelectedWorkflows([], workflows);
 
-    expect(result.selectedNames).toBeNull();
+    expect(result.selectedNames).toEqual([
+      'session-management',
+      'workflow-discovery',
+      'doctor',
+      'simulator',
+    ]);
     expect(result.selectedWorkflows.map((workflow) => workflow.directoryName)).toEqual([
       'session-management',
       'workflow-discovery',
@@ -120,14 +123,16 @@ describe('resolveSelectedWorkflows', () => {
     ]);
   });
 
-  it('excludes workflow-discovery when experimental flag is disabled', () => {
-    process.env.XCODEBUILDMCP_DEBUG = 'false';
-    process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY = 'false';
+  it('excludes workflow-discovery when experimental flag is disabled', async () => {
+    await initConfigStoreForTest({
+      debug: false,
+      experimentalWorkflowDiscovery: false,
+    });
     const workflows = makeWorkflowMap(['session-management', 'workflow-discovery', 'simulator']);
 
     const result = resolveSelectedWorkflows([], workflows);
 
-    expect(result.selectedNames).toBeNull();
+    expect(result.selectedNames).toEqual(['session-management', 'simulator']);
     expect(result.selectedWorkflows.map((workflow) => workflow.directoryName)).toEqual([
       'session-management',
       'simulator',

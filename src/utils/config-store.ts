@@ -1,0 +1,459 @@
+import type { FileSystemExecutor } from './FileSystemExecutor.ts';
+import type { SessionDefaults } from './session-store.ts';
+import { log } from './logger.ts';
+import {
+  loadProjectConfig,
+  persistSessionDefaultsToProjectConfig,
+  type ProjectConfig,
+} from './project-config.ts';
+import type { DebuggerBackendKind } from './debugger/types.ts';
+import type { UiDebuggerGuardMode } from './runtime-config-types.ts';
+
+export type RuntimeConfigOverrides = Partial<{
+  enabledWorkflows: string[];
+  debug: boolean;
+  experimentalWorkflowDiscovery: boolean;
+  disableSessionDefaults: boolean;
+  uiDebuggerGuardMode: UiDebuggerGuardMode;
+  incrementalBuildsEnabled: boolean;
+  dapRequestTimeoutMs: number;
+  dapLogEvents: boolean;
+  launchJsonWaitMs: number;
+  axePath: string;
+  iosTemplatePath: string;
+  iosTemplateVersion: string;
+  macosTemplatePath: string;
+  macosTemplateVersion: string;
+  debuggerBackend: DebuggerBackendKind;
+  sessionDefaults: Partial<SessionDefaults>;
+}>;
+
+export type ResolvedRuntimeConfig = {
+  enabledWorkflows: string[];
+  debug: boolean;
+  experimentalWorkflowDiscovery: boolean;
+  disableSessionDefaults: boolean;
+  uiDebuggerGuardMode: UiDebuggerGuardMode;
+  incrementalBuildsEnabled: boolean;
+  dapRequestTimeoutMs: number;
+  dapLogEvents: boolean;
+  launchJsonWaitMs: number;
+  axePath?: string;
+  iosTemplatePath?: string;
+  iosTemplateVersion?: string;
+  macosTemplatePath?: string;
+  macosTemplateVersion?: string;
+  debuggerBackend: DebuggerBackendKind;
+  sessionDefaults?: Partial<SessionDefaults>;
+};
+
+type ConfigStoreState = {
+  initialized: boolean;
+  cwd?: string;
+  fs?: FileSystemExecutor;
+  overrides?: RuntimeConfigOverrides;
+  fileConfig?: ProjectConfig;
+  resolved: ResolvedRuntimeConfig;
+};
+
+const DEFAULT_CONFIG: ResolvedRuntimeConfig = {
+  enabledWorkflows: [],
+  debug: false,
+  experimentalWorkflowDiscovery: false,
+  disableSessionDefaults: false,
+  uiDebuggerGuardMode: 'error',
+  incrementalBuildsEnabled: false,
+  dapRequestTimeoutMs: 30_000,
+  dapLogEvents: false,
+  launchJsonWaitMs: 8000,
+  debuggerBackend: 'dap',
+};
+
+const storeState: ConfigStoreState = {
+  initialized: false,
+  resolved: { ...DEFAULT_CONFIG },
+};
+
+function hasOwnProperty<T extends object, K extends PropertyKey>(
+  obj: T | undefined,
+  key: K,
+): obj is T & Record<K, unknown> {
+  if (!obj) return false;
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+function parseBoolean(value: string | undefined): boolean | undefined {
+  if (!value) return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+  return undefined;
+}
+
+function parsePositiveInt(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  return Math.floor(parsed);
+}
+
+function parseNonNegativeInt(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+  return Math.floor(parsed);
+}
+
+function parseEnabledWorkflows(value: string | undefined): string[] | undefined {
+  if (value == null) return undefined;
+  const normalized = value
+    .split(',')
+    .map((name) => name.trim().toLowerCase())
+    .filter(Boolean);
+  return normalized;
+}
+
+function parseUiDebuggerGuardMode(value: string | undefined): UiDebuggerGuardMode | undefined {
+  if (!value) return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (['off', '0', 'false', 'no'].includes(normalized)) return 'off';
+  if (['warn', 'warning'].includes(normalized)) return 'warn';
+  if (['error', '1', 'true', 'yes', 'on'].includes(normalized)) return 'error';
+  return undefined;
+}
+
+function parseDebuggerBackend(value: string | undefined): DebuggerBackendKind | undefined {
+  if (!value) return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'lldb' || normalized === 'lldb-cli') return 'lldb-cli';
+  if (normalized === 'dap') return 'dap';
+  log('warning', `Unsupported debugger backend '${value}', falling back to defaults.`);
+  return undefined;
+}
+
+function setIfDefined<K extends keyof RuntimeConfigOverrides>(
+  config: RuntimeConfigOverrides,
+  key: K,
+  value: RuntimeConfigOverrides[K] | undefined,
+): void {
+  if (value !== undefined) {
+    config[key] = value;
+  }
+}
+
+function readEnvConfig(env: NodeJS.ProcessEnv): RuntimeConfigOverrides {
+  const config: RuntimeConfigOverrides = {};
+
+  setIfDefined(
+    config,
+    'enabledWorkflows',
+    parseEnabledWorkflows(env.XCODEBUILDMCP_ENABLED_WORKFLOWS),
+  );
+
+  setIfDefined(config, 'debug', parseBoolean(env.XCODEBUILDMCP_DEBUG));
+
+  setIfDefined(
+    config,
+    'experimentalWorkflowDiscovery',
+    parseBoolean(env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY),
+  );
+
+  setIfDefined(
+    config,
+    'disableSessionDefaults',
+    parseBoolean(env.XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS),
+  );
+
+  setIfDefined(
+    config,
+    'uiDebuggerGuardMode',
+    parseUiDebuggerGuardMode(env.XCODEBUILDMCP_UI_DEBUGGER_GUARD_MODE),
+  );
+
+  setIfDefined(config, 'incrementalBuildsEnabled', parseBoolean(env.INCREMENTAL_BUILDS_ENABLED));
+
+  const axePath = env.XCODEBUILDMCP_AXE_PATH ?? env.AXE_PATH;
+  if (axePath) config.axePath = axePath;
+
+  const iosTemplatePath = env.XCODEBUILDMCP_IOS_TEMPLATE_PATH;
+  if (iosTemplatePath) config.iosTemplatePath = iosTemplatePath;
+
+  const macosTemplatePath = env.XCODEBUILDMCP_MACOS_TEMPLATE_PATH;
+  if (macosTemplatePath) config.macosTemplatePath = macosTemplatePath;
+
+  const iosTemplateVersion =
+    env.XCODEBUILD_MCP_IOS_TEMPLATE_VERSION ?? env.XCODEBUILD_MCP_TEMPLATE_VERSION;
+  if (iosTemplateVersion) config.iosTemplateVersion = iosTemplateVersion;
+
+  const macosTemplateVersion =
+    env.XCODEBUILD_MCP_MACOS_TEMPLATE_VERSION ?? env.XCODEBUILD_MCP_TEMPLATE_VERSION;
+  if (macosTemplateVersion) config.macosTemplateVersion = macosTemplateVersion;
+
+  setIfDefined(config, 'debuggerBackend', parseDebuggerBackend(env.XCODEBUILDMCP_DEBUGGER_BACKEND));
+
+  setIfDefined(
+    config,
+    'dapRequestTimeoutMs',
+    parsePositiveInt(env.XCODEBUILDMCP_DAP_REQUEST_TIMEOUT_MS),
+  );
+
+  setIfDefined(config, 'dapLogEvents', parseBoolean(env.XCODEBUILDMCP_DAP_LOG_EVENTS));
+
+  setIfDefined(config, 'launchJsonWaitMs', parseNonNegativeInt(env.XBMCP_LAUNCH_JSON_WAIT_MS));
+
+  return config;
+}
+
+function resolveFromLayers<T>(opts: {
+  key: keyof RuntimeConfigOverrides;
+  overrides?: RuntimeConfigOverrides;
+  fileConfig?: ProjectConfig;
+  envConfig: RuntimeConfigOverrides;
+  fallback: T;
+}): T;
+function resolveFromLayers<T>(opts: {
+  key: keyof RuntimeConfigOverrides;
+  overrides?: RuntimeConfigOverrides;
+  fileConfig?: ProjectConfig;
+  envConfig: RuntimeConfigOverrides;
+  fallback?: undefined;
+}): T | undefined;
+function resolveFromLayers<T>(opts: {
+  key: keyof RuntimeConfigOverrides;
+  overrides?: RuntimeConfigOverrides;
+  fileConfig?: ProjectConfig;
+  envConfig: RuntimeConfigOverrides;
+  fallback?: T;
+}): T | undefined {
+  const { key, overrides, fileConfig, envConfig, fallback } = opts;
+  if (hasOwnProperty(overrides, key)) {
+    return overrides[key] as T | undefined;
+  }
+  if (hasOwnProperty(fileConfig, key)) {
+    return fileConfig[key] as T | undefined;
+  }
+  if (hasOwnProperty(envConfig, key)) {
+    return envConfig[key] as T | undefined;
+  }
+  return fallback;
+}
+
+function resolveSessionDefaults(opts: {
+  overrides?: RuntimeConfigOverrides;
+  fileConfig?: ProjectConfig;
+}): Partial<SessionDefaults> | undefined {
+  const overrideDefaults = opts.overrides?.sessionDefaults;
+  const fileDefaults = opts.fileConfig?.sessionDefaults;
+  if (!overrideDefaults && !fileDefaults) return undefined;
+  return { ...(fileDefaults ?? {}), ...(overrideDefaults ?? {}) };
+}
+
+function resolveConfig(opts: {
+  fileConfig?: ProjectConfig;
+  overrides?: RuntimeConfigOverrides;
+  env?: NodeJS.ProcessEnv;
+}): ResolvedRuntimeConfig {
+  const envConfig = readEnvConfig(opts.env ?? process.env);
+
+  return {
+    enabledWorkflows: resolveFromLayers<string[]>({
+      key: 'enabledWorkflows',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+      fallback: DEFAULT_CONFIG.enabledWorkflows,
+    }),
+    debug: resolveFromLayers({
+      key: 'debug',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+      fallback: DEFAULT_CONFIG.debug,
+    }),
+    experimentalWorkflowDiscovery: resolveFromLayers({
+      key: 'experimentalWorkflowDiscovery',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+      fallback: DEFAULT_CONFIG.experimentalWorkflowDiscovery,
+    }),
+    disableSessionDefaults: resolveFromLayers({
+      key: 'disableSessionDefaults',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+      fallback: DEFAULT_CONFIG.disableSessionDefaults,
+    }),
+    uiDebuggerGuardMode: resolveFromLayers({
+      key: 'uiDebuggerGuardMode',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+      fallback: DEFAULT_CONFIG.uiDebuggerGuardMode,
+    }),
+    incrementalBuildsEnabled: resolveFromLayers({
+      key: 'incrementalBuildsEnabled',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+      fallback: DEFAULT_CONFIG.incrementalBuildsEnabled,
+    }),
+    dapRequestTimeoutMs: resolveFromLayers({
+      key: 'dapRequestTimeoutMs',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+      fallback: DEFAULT_CONFIG.dapRequestTimeoutMs,
+    }),
+    dapLogEvents: resolveFromLayers({
+      key: 'dapLogEvents',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+      fallback: DEFAULT_CONFIG.dapLogEvents,
+    }),
+    launchJsonWaitMs: resolveFromLayers({
+      key: 'launchJsonWaitMs',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+      fallback: DEFAULT_CONFIG.launchJsonWaitMs,
+    }),
+    axePath: resolveFromLayers<string>({
+      key: 'axePath',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+    }),
+    iosTemplatePath: resolveFromLayers<string>({
+      key: 'iosTemplatePath',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+    }),
+    iosTemplateVersion: resolveFromLayers<string>({
+      key: 'iosTemplateVersion',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+    }),
+    macosTemplatePath: resolveFromLayers<string>({
+      key: 'macosTemplatePath',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+    }),
+    macosTemplateVersion: resolveFromLayers<string>({
+      key: 'macosTemplateVersion',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+    }),
+    debuggerBackend: resolveFromLayers({
+      key: 'debuggerBackend',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+      fallback: DEFAULT_CONFIG.debuggerBackend,
+    }),
+    sessionDefaults: resolveSessionDefaults({
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+    }),
+  };
+}
+
+export async function initConfigStore(opts: {
+  cwd: string;
+  fs: FileSystemExecutor;
+  overrides?: RuntimeConfigOverrides;
+  env?: NodeJS.ProcessEnv;
+}): Promise<{ found: boolean; path?: string; notices: string[] }> {
+  storeState.cwd = opts.cwd;
+  storeState.fs = opts.fs;
+  storeState.overrides = opts.overrides;
+
+  let fileConfig: ProjectConfig | undefined;
+  let found = false;
+  let path: string | undefined;
+  let notices: string[] = [];
+
+  try {
+    const result = await loadProjectConfig({ fs: opts.fs, cwd: opts.cwd });
+    if (result.found) {
+      fileConfig = result.config;
+      found = true;
+      path = result.path;
+      notices = result.notices;
+    } else if ('error' in result) {
+      const errorMessage =
+        result.error instanceof Error ? result.error.message : String(result.error);
+      log('warning', `Failed to read or parse project config at ${result.path}. ${errorMessage}`);
+    }
+  } catch (error) {
+    log('warning', `Failed to load project config from ${opts.cwd}. ${error}`);
+  }
+
+  storeState.fileConfig = fileConfig;
+  storeState.resolved = resolveConfig({
+    fileConfig,
+    overrides: opts.overrides,
+    env: opts.env,
+  });
+  storeState.initialized = true;
+  return { found, path, notices };
+}
+
+export function getConfig(): ResolvedRuntimeConfig {
+  if (!storeState.initialized) {
+    return resolveConfig({});
+  }
+
+  return storeState.resolved;
+}
+
+export async function persistSessionDefaultsPatch(opts: {
+  patch: Partial<SessionDefaults>;
+  deleteKeys?: (keyof SessionDefaults)[];
+}): Promise<{ path: string }> {
+  if (!storeState.initialized || !storeState.fs || !storeState.cwd) {
+    throw new Error('Config store has not been initialized.');
+  }
+
+  const result = await persistSessionDefaultsToProjectConfig({
+    fs: storeState.fs,
+    cwd: storeState.cwd,
+    patch: opts.patch,
+    deleteKeys: opts.deleteKeys,
+  });
+
+  const nextSessionDefaults: Partial<SessionDefaults> = {
+    ...(storeState.fileConfig?.sessionDefaults ?? {}),
+    ...opts.patch,
+  };
+
+  for (const key of opts.deleteKeys ?? []) {
+    delete nextSessionDefaults[key];
+  }
+
+  storeState.fileConfig = {
+    ...(storeState.fileConfig ?? { schemaVersion: 1 }),
+    sessionDefaults: nextSessionDefaults,
+  };
+
+  storeState.resolved = resolveConfig({
+    fileConfig: storeState.fileConfig,
+    overrides: storeState.overrides,
+  });
+
+  return result;
+}
+
+export function __resetConfigStoreForTests(): void {
+  storeState.initialized = false;
+  storeState.cwd = undefined;
+  storeState.fs = undefined;
+  storeState.overrides = undefined;
+  storeState.fileConfig = undefined;
+  storeState.resolved = { ...DEFAULT_CONFIG };
+}

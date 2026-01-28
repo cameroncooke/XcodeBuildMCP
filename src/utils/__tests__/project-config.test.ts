@@ -55,6 +55,9 @@ describe('project-config', () => {
     it('should normalize mutual exclusivity and resolve relative paths', async () => {
       const yaml = [
         'schemaVersion: 1',
+        'enabledWorkflows: simulator,device',
+        'debug: true',
+        'axePath: "./bin/axe"',
         'sessionDefaults:',
         '  projectPath: "./App.xcodeproj"',
         '  workspacePath: "./App.xcworkspace"',
@@ -70,12 +73,34 @@ describe('project-config', () => {
       if (!result.found) throw new Error('expected config to be found');
 
       const defaults = result.config.sessionDefaults ?? {};
+      expect(result.config.enabledWorkflows).toEqual(['simulator', 'device']);
+      expect(result.config.debug).toBe(true);
+      expect(result.config.axePath).toBe(path.join(cwd, 'bin', 'axe'));
       expect(defaults.workspacePath).toBe(path.join(cwd, 'App.xcworkspace'));
       expect(defaults.projectPath).toBeUndefined();
       expect(defaults.simulatorId).toBe('SIM-1');
       expect(defaults.simulatorName).toBeUndefined();
       expect(defaults.derivedDataPath).toBe(path.join(cwd, '.derivedData'));
       expect(result.notices.length).toBeGreaterThan(0);
+    });
+
+    it('should normalize debuggerBackend and resolve template paths', async () => {
+      const yaml = [
+        'schemaVersion: 1',
+        'debuggerBackend: lldb',
+        'iosTemplatePath: "./templates/ios"',
+        'macosTemplatePath: "/opt/templates/macos"',
+        '',
+      ].join('\n');
+
+      const { fs } = createFsFixture({ exists: true, readFile: yaml });
+      const result = await loadProjectConfig({ fs, cwd });
+
+      if (!result.found) throw new Error('expected config to be found');
+
+      expect(result.config.debuggerBackend).toBe('lldb-cli');
+      expect(result.config.iosTemplatePath).toBe(path.join(cwd, 'templates', 'ios'));
+      expect(result.config.macosTemplatePath).toBe('/opt/templates/macos');
     });
 
     it('should return an error result when schemaVersion is unsupported', async () => {
@@ -106,6 +131,9 @@ describe('project-config', () => {
     it('should merge patches, delete exclusive keys, and preserve unknown sections', async () => {
       const yaml = [
         'schemaVersion: 1',
+        'debug: true',
+        'enabledWorkflows:',
+        '  - simulator',
         'sessionDefaults:',
         '  scheme: "Old"',
         '  simulatorName: "OldSim"',
@@ -130,11 +158,15 @@ describe('project-config', () => {
 
       const parsed = parseYaml(writes[0].content) as {
         schemaVersion: number;
+        debug?: boolean;
+        enabledWorkflows?: string[];
         sessionDefaults?: Record<string, unknown>;
         server?: { enabledWorkflows?: string[] };
       };
 
       expect(parsed.schemaVersion).toBe(1);
+      expect(parsed.debug).toBe(true);
+      expect(parsed.enabledWorkflows).toEqual(['simulator']);
       expect(parsed.sessionDefaults?.scheme).toBe('New');
       expect(parsed.sessionDefaults?.simulatorId).toBe('SIM-1');
       expect(parsed.sessionDefaults?.simulatorName).toBeUndefined();

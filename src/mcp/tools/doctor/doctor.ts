@@ -11,6 +11,7 @@ import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { version } from '../../../utils/version/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
+import { getConfig } from '../../../utils/config-store.ts';
 import { type DoctorDependencies, createDoctorDependencies } from './lib/doctor.deps.ts';
 
 // Constants
@@ -67,8 +68,8 @@ export async function runDoctor(
   const xcodemakeAvailable = await deps.features.isXcodemakeAvailable();
   const makefileExists = deps.features.doesMakefileExist('./');
   const lldbDapAvailable = await checkLldbDapAvailability(deps.commandExecutor);
-  const selectedDebuggerBackend = process.env.XCODEBUILDMCP_DEBUGGER_BACKEND?.trim();
-  const dapSelected = !selectedDebuggerBackend || selectedDebuggerBackend.toLowerCase() === 'dap';
+  const selectedDebuggerBackend = getConfig().debuggerBackend;
+  const dapSelected = selectedDebuggerBackend === 'dap';
 
   const doctorInfo = {
     serverVersion: version,
@@ -95,7 +96,7 @@ export async function runDoctor(
       debugger: {
         dap: {
           available: lldbDapAvailable,
-          selected: selectedDebuggerBackend ?? '(default dap)',
+          selected: selectedDebuggerBackend,
         },
       },
     },

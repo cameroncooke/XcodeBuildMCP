@@ -67,7 +67,7 @@ export async function applyWorkflowSelection(workflowNames: string[]): Promise<R
 
   registryState.enabledWorkflows = desiredWorkflows;
 
-  const workflowLabel = selection.selectedNames?.join(', ') ?? 'all workflows';
+  const workflowLabel = selection.selectedNames.join(', ');
   log('info', `✅ Registered ${desiredToolNames.size} tools from workflows: ${workflowLabel}`);
 
   return {

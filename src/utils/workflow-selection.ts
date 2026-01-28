@@ -1,8 +1,10 @@
 import type { WorkflowGroup } from '../core/plugin-types.ts';
+import { getConfig } from './config-store.ts';
 
 export const REQUIRED_WORKFLOW = 'session-management';
 export const WORKFLOW_DISCOVERY_WORKFLOW = 'workflow-discovery';
 export const DEBUG_WORKFLOW = 'doctor';
+export const DEFAULT_WORKFLOW = 'simulator';
 
 type WorkflowName = string;
 
@@ -15,13 +17,11 @@ function isWorkflowGroup(value: WorkflowGroup | undefined): value is WorkflowGro
 }
 
 export function isDebugEnabled(): boolean {
-  const value = process.env.XCODEBUILDMCP_DEBUG ?? '';
-  return value.toLowerCase() === 'true' || value === '1';
+  return getConfig().debug;
 }
 
 export function isWorkflowDiscoveryEnabled(): boolean {
-  const value = process.env.XCODEBUILDMCP_EXPERIMENTAL_WORKFLOW_DISCOVERY ?? '';
-  return value.toLowerCase() === 'true' || value === '1';
+  return getConfig().experimentalWorkflowDiscovery;
 }
 
 /**
@@ -36,7 +36,7 @@ export function resolveSelectedWorkflowNames(
   availableWorkflowNames: WorkflowName[] = [],
 ): {
   selectedWorkflowNames: WorkflowName[];
-  selectedNames: WorkflowName[] | null;
+  selectedNames: WorkflowName[];
 } {
   const normalizedNames = normalizeWorkflowNames(workflowNames);
   const baseAutoSelected = [REQUIRED_WORKFLOW];
@@ -49,24 +49,14 @@ export function resolveSelectedWorkflowNames(
     baseAutoSelected.push(DEBUG_WORKFLOW);
   }
 
-  let selectedNames: WorkflowName[] | null = null;
-  if (normalizedNames.length > 0) {
-    selectedNames = [...new Set([...baseAutoSelected, ...normalizedNames])];
-  }
+  // When no workflows specified, default to simulator workflow
+  const effectiveNames = normalizedNames.length > 0 ? normalizedNames : [DEFAULT_WORKFLOW];
+  const selectedNames = [...new Set([...baseAutoSelected, ...effectiveNames])];
 
   // Filter selected names to only include workflows that match real workflows.
-  let selectedWorkflowNames: WorkflowName[];
-  if (selectedNames) {
-    selectedWorkflowNames = selectedNames.filter((workflowName) =>
-      availableWorkflowNames.includes(workflowName),
-    );
-  } else if (isWorkflowDiscoveryEnabled()) {
-    selectedWorkflowNames = [...availableWorkflowNames];
-  } else {
-    selectedWorkflowNames = availableWorkflowNames.filter(
-      (workflowName) => workflowName !== WORKFLOW_DISCOVERY_WORKFLOW,
-    );
-  }
+  const selectedWorkflowNames = selectedNames.filter((workflowName) =>
+    availableWorkflowNames.includes(workflowName),
+  );
 
   return { selectedWorkflowNames, selectedNames };
 }
@@ -84,7 +74,7 @@ export function resolveSelectedWorkflows(
   workflowGroupsParam?: Map<WorkflowName, WorkflowGroup>,
 ): {
   selectedWorkflows: WorkflowGroup[];
-  selectedNames: WorkflowName[] | null;
+  selectedNames: WorkflowName[];
 } {
   const resolvedWorkflowGroups = workflowGroupsParam ?? new Map<WorkflowName, WorkflowGroup>();
   const availableWorkflowNames = [...resolvedWorkflowGroups.keys()];

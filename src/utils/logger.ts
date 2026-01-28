@@ -21,8 +21,13 @@ import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 // Note: Removed "import * as Sentry from '@sentry/node'" to prevent native module loading at import time
 
-const SENTRY_ENABLED =
-  process.env.SENTRY_DISABLED !== 'true' && process.env.XCODEBUILDMCP_SENTRY_DISABLED !== 'true';
+function isSentryDisabledFromEnv(): boolean {
+  return (
+    process.env.SENTRY_DISABLED === 'true' || process.env.XCODEBUILDMCP_SENTRY_DISABLED === 'true'
+  );
+}
+
+const sentryEnabled = !isSentryDisabledFromEnv();
 
 // Log levels in order of severity (lower number = more severe)
 const LOG_LEVELS = {
@@ -64,7 +69,7 @@ const require = createRequire(
 let cachedSentry: SentryModule | null = null;
 
 function loadSentrySync(): SentryModule | null {
-  if (!SENTRY_ENABLED || isTestEnv()) return null;
+  if (!sentryEnabled || isTestEnv()) return null;
   if (cachedSentry) return cachedSentry;
   try {
     cachedSentry = require('@sentry/node') as SentryModule;
@@ -82,14 +87,6 @@ function withSentry(cb: (s: SentryModule) => void): void {
     cb(s);
   } catch {
     // no-op: avoid throwing inside logger
-  }
-}
-
-if (!SENTRY_ENABLED) {
-  if (process.env.SENTRY_DISABLED === 'true') {
-    log('info', 'Sentry disabled due to SENTRY_DISABLED environment variable');
-  } else if (process.env.XCODEBUILDMCP_SENTRY_DISABLED === 'true') {
-    log('info', 'Sentry disabled due to XCODEBUILDMCP_SENTRY_DISABLED environment variable');
   }
 }
 
@@ -153,7 +150,7 @@ export function log(level: string, message: string, context?: LogContext): void 
 
   // Default: error level goes to Sentry
   // But respect explicit override from context
-  const captureToSentry = SENTRY_ENABLED && (context?.sentry ?? level === 'error');
+  const captureToSentry = sentryEnabled && (context?.sentry ?? level === 'error');
 
   if (captureToSentry) {
     withSentry((s) => s.captureMessage(logMessage));

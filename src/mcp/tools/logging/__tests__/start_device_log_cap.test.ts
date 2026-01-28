@@ -2,7 +2,7 @@
  * Tests for start_device_log_cap plugin
  * Following CLAUDE.md testing standards with pure dependency injection
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { EventEmitter } from 'events';
 import { Readable } from 'stream';
 import type { ChildProcess } from 'child_process';
@@ -14,6 +14,18 @@ import {
 import plugin, { start_device_log_capLogic } from '../start_device_log_cap.ts';
 import { activeDeviceLogSessions } from '../../../../utils/log-capture/device-log-sessions.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
+import {
+  __resetConfigStoreForTests,
+  initConfigStore,
+  type RuntimeConfigOverrides,
+} from '../../../../utils/config-store.ts';
+
+const cwd = '/repo';
+
+async function initConfigStoreForTest(overrides?: RuntimeConfigOverrides): Promise<void> {
+  __resetConfigStoreForTests();
+  await initConfigStore({ cwd, fs: createMockFileSystemExecutor(), overrides });
+}
 
 type Mutable<T> = {
   -readonly [K in keyof T]: T[K];
@@ -35,20 +47,10 @@ describe('start_device_log_cap plugin', () => {
   let mkdirCalls: string[] = [];
   let writeFileCalls: Array<{ path: string; content: string }> = [];
 
-  const originalJsonWaitEnv = process.env.XBMCP_LAUNCH_JSON_WAIT_MS;
-
-  beforeEach(() => {
+  beforeEach(async () => {
     sessionStore.clear();
     activeDeviceLogSessions.clear();
-    process.env.XBMCP_LAUNCH_JSON_WAIT_MS = '25';
-  });
-
-  afterEach(() => {
-    if (originalJsonWaitEnv === undefined) {
-      delete process.env.XBMCP_LAUNCH_JSON_WAIT_MS;
-    } else {
-      process.env.XBMCP_LAUNCH_JSON_WAIT_MS = originalJsonWaitEnv;
-    }
+    await initConfigStoreForTest({ launchJsonWaitMs: 25 });
   });
 
   describe('Plugin Structure', () => {

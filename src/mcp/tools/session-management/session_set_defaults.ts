@@ -1,10 +1,7 @@
 import * as z from 'zod';
-import process from 'node:process';
-import type { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
-import { sessionStore, type SessionDefaults } from '../../../utils/session-store.ts';
-import { getDefaultFileSystemExecutor } from '../../../utils/command.ts';
-import { persistSessionDefaultsToProjectConfig } from '../../../utils/project-config.ts';
+import { persistSessionDefaultsPatch } from '../../../utils/config-store.ts';
 import { removeUndefined } from '../../../utils/remove-undefined.ts';
+import { sessionStore, type SessionDefaults } from '../../../utils/session-store.ts';
 import { sessionDefaultsSchema } from '../../../utils/session-defaults-schema.ts';
 import { createTypedToolWithContext } from '../../../utils/typed-tool-factory.ts';
 import type { ToolResponse } from '../../../types/common.ts';
@@ -18,14 +15,11 @@ const schemaObj = sessionDefaultsSchema.extend({
 
 type Params = z.infer<typeof schemaObj>;
 
-type SessionSetDefaultsContext = {
-  fs: FileSystemExecutor;
-  cwd: string;
-};
+type SessionSetDefaultsContext = Record<string, never>;
 
 export async function sessionSetDefaultsLogic(
   params: Params,
-  context: SessionSetDefaultsContext,
+  neverContext: SessionSetDefaultsContext,
 ): Promise<ToolResponse> {
   const notices: string[] = [];
   const current = sessionStore.getAll();
@@ -112,9 +106,7 @@ export async function sessionSetDefaultsLogic(
     if (Object.keys(nextParams).length === 0 && toClear.size === 0) {
       notices.push('No defaults provided to persist.');
     } else {
-      const { path } = await persistSessionDefaultsToProjectConfig({
-        fs: context.fs,
-        cwd: context.cwd,
+      const { path } = await persistSessionDefaultsPatch({
         patch: nextParams,
         deleteKeys: Array.from(toClear),
       });
@@ -143,8 +135,5 @@ export default {
     title: 'Set Session Defaults',
     destructiveHint: true,
   },
-  handler: createTypedToolWithContext(schemaObj, sessionSetDefaultsLogic, () => ({
-    fs: getDefaultFileSystemExecutor(),
-    cwd: process.cwd(),
-  })),
+  handler: createTypedToolWithContext(schemaObj, sessionSetDefaultsLogic, () => ({})),
 };
