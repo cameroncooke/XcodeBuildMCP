@@ -21,26 +21,19 @@ export const configSchema = z.object({
 
 export type SmitheryConfig = z.infer<typeof configSchema>;
 
-function parseEnabledWorkflows(value: string): string[] | undefined {
-  const normalized = value
+function parseEnabledWorkflows(value: string): string[] {
+  return value
     .split(',')
     .map((name) => name.trim().toLowerCase())
     .filter(Boolean);
-  return normalized.length > 0 ? normalized : undefined;
 }
 
 function buildOverrides(config: SmitheryConfig): RuntimeConfigOverrides {
-  const overrides: RuntimeConfigOverrides = {
+  return {
     incrementalBuildsEnabled: config.incrementalBuildsEnabled,
     debug: config.debug,
+    enabledWorkflows: parseEnabledWorkflows(config.enabledWorkflows),
   };
-
-  const enabledWorkflows = parseEnabledWorkflows(config.enabledWorkflows);
-  if (enabledWorkflows) {
-    overrides.enabledWorkflows = enabledWorkflows;
-  }
-
-  return overrides;
 }
 
 export default function createSmitheryServer({ config }: { config: SmitheryConfig }): McpServer {
