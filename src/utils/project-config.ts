@@ -3,6 +3,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { FileSystemExecutor } from './FileSystemExecutor.ts';
 import type { SessionDefaults } from './session-store.ts';
 import { log } from './logger.ts';
+import { removeUndefined } from './remove-undefined.ts';
 import { runtimeConfigFileSchema, type RuntimeConfigFile } from './runtime-config-schema.ts';
 
 const CONFIG_DIR = '.xcodebuildmcp';
@@ -47,16 +48,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 function toError(value: unknown): Error {
   return value instanceof Error ? value : new Error(String(value));
-}
-
-function removeUndefined<T extends Record<string, unknown>>(input: T): Partial<T> {
-  const result: Partial<T> = {};
-  for (const [key, value] of Object.entries(input)) {
-    if (value !== undefined) {
-      result[key as keyof T] = value as T[keyof T];
-    }
-  }
-  return result;
 }
 
 function hasValue<T extends Record<string, unknown>>(defaults: T, key: keyof T): boolean {
