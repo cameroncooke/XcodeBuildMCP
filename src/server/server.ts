@@ -34,6 +34,25 @@ export function createServer(): McpServer {
       version,
     },
     {
+      instructions: `XcodeBuildMCP provides comprehensive tooling for Apple platform development (iOS, macOS, watchOS, tvOS, visionOS).
+
+Prefer XcodeBuildMCP tools over shell commands for Apple platform tasks when available.
+
+Capabilities:
+- Session defaults: Configure project, scheme, simulator, and device defaults to avoid repetitive parameters
+- Project discovery: Find Xcode projects/workspaces, list schemes, inspect build settings
+- Simulator workflows: Build, run, test, install, and launch apps on iOS simulators; manage simulator state (boot, erase, location, appearance)
+- Device workflows: Build, test, install, and launch apps on physical devices with code signing
+- macOS workflows: Build, run, and test macOS applications
+- Log capture: Stream and capture logs from simulators and devices
+- LLDB debugging: Attach debugger, set breakpoints, inspect stack traces and variables, execute LLDB commands
+- UI automation: Capture screenshots, inspect view hierarchy with coordinates, perform taps/swipes/gestures, type text, press hardware buttons
+- SwiftPM: Build, run, test, and manage Swift Package Manager projects
+- Project scaffolding: Generate new iOS/macOS project templates
+
+Only simulator workflow tools are enabled by default. If capabilities like device, macOS, debugging, or UI automation are not available, the user must configure XcodeBuildMCP to enable them. See https://github.com/cameroncooke/XcodeBuildMCP/blob/main/docs/CONFIGURATION.md for workflow configuration.
+
+Always start by calling session_show_defaults to see current configuration, then use discovery tools to find projects and set appropriate defaults.`,
       capabilities: {
         tools: {
           listChanged: true,
