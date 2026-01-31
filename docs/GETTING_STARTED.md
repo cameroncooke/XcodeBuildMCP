@@ -5,34 +5,18 @@
 - Xcode 16.x or later
 - Node.js 18.x or later
 
-## Install options
+## Installation
 
-### Smithery (recommended)
-```bash
-npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client client-name
-```
-
-### One click install
-If you are using Cursor or VS Code you can use the quick install links below.
-
-[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=XcodeBuildMCP&config=eyJ0eXBlIjoic3RkaW8iLCJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAbGF0ZXN0IiwiZW52Ijp7IklOQ1JFTUVOVEFMX0JVSUxEU19FTkFCTEVEIjoiZmFsc2UiLCJYQ09ERUJVSUxETUNQX1NFTlRSWV9ESVNBQkxFRCI6ImZhbHNlIn19)
-
-[<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D)
-
-[<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D&quality=insiders)
-
-### Manual installation
-Most MCP clients use JSON configuration. Add the following to your client configuration under `mcpServers`:
+Most MCP clients use JSON configuration. Add the following server entry to your client's MCP config:
 
 ```json
 "XcodeBuildMCP": {
   "command": "npx",
-  "args": [
-    "-y",
-    "xcodebuildmcp@latest"
-  ]
+  "args": ["-y", "xcodebuildmcp@latest"]
 }
 ```
+
+See the main [README](../README.md#installation) for client-specific configuration paths and quick install links.
 
 ## Project config (optional)
 For deterministic session defaults and runtime configuration, add a config file at:
@@ -46,7 +30,7 @@ See [CONFIGURATION.md](CONFIGURATION.md) for the full schema and examples.
 ## Client-specific configuration
 
 ### OpenAI Codex CLI
-Codex uses TOML for MCP configuration. Add this to your Codex CLI config file:
+Codex uses TOML for MCP configuration. Add this to `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.XcodeBuildMCP]

@@ -5,20 +5,46 @@ A Model Context Protocol (MCP) server that provides Xcode-related tools for inte
 [![CI](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml/badge.svg)](https://github.com/cameroncooke/XcodeBuildMCP/actions/workflows/ci.yml)
 [![npm version](https://badge.fury.io/js/xcodebuildmcp.svg)](https://badge.fury.io/js/xcodebuildmcp) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Node.js](https://img.shields.io/badge/node->=18.x-brightgreen.svg)](https://nodejs.org/) [![Xcode 16](https://img.shields.io/badge/Xcode-16-blue.svg)](https://developer.apple.com/xcode/) [![macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/) [![MCP](https://img.shields.io/badge/MCP-Compatible-green.svg)](https://modelcontextprotocol.io/) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/cameroncooke/XcodeBuildMCP)
 
-## Easy install
+## Installation
 
-The easiest way to install XcodeBuildMCP is to use [Smithery](https://smithery.ai) to install it from the registry. Use the following command in your terminal below (requires npm/node) and replace `<client-name>` with the name of your AI agent (claude-code, codex, etc.) or use one of the client-specific examples provided.
+Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON configuration with the following server entry:
 
-```bash
-npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client <client-name>
+```json
+"XcodeBuildMCP": {
+  "command": "npx",
+  "args": ["-y", "xcodebuildmcp@latest"]
+}
 ```
 
 <details>
   <summary>Cursor</summary>
   <br />
 
+  Add to `~/.cursor/mcp.json`:
+  ```json
+  {
+    "mcpServers": {
+      "XcodeBuildMCP": {
+        "command": "npx",
+        "args": ["-y", "xcodebuildmcp@latest"]
+      }
+    }
+  }
+  ```
+
+  Or use the quick install link:
+
+  [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=XcodeBuildMCP&config=eyJ0eXBlIjoic3RkaW8iLCJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAbGF0ZXN0IiwiZW52Ijp7IklOQ1JFTUVOVEFMX0JVSUxEU19FTkFCTEVEIjoiZmFsc2UiLCJYQ09ERUJVSUxETUNQX1NFTlRSWV9ESVNBQkxFRCI6ImZhbHNlIn19)
+  <br />
+</details>
+
+<details>
+  <summary>Claude Code</summary>
+  <br />
+
+  Run:
   ```bash
-  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client cursor
+  claude mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@latest
   ```
   <br />
 </details>
@@ -27,18 +53,11 @@ npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client <client-
   <summary>Codex CLI</summary>
   <br />
 
-  ```bash
-  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client codex
-  ```
-  <br />
-</details>
-
-<details>
-  <summary>Claude Code</summary>
-  <br />
-
-  ```bash
-  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client claude-code
+  Add to `~/.codex/config.toml`:
+  ```toml
+  [mcp_servers.XcodeBuildMCP]
+  command = "npx"
+  args = ["-y", "xcodebuildmcp@latest"]
   ```
   <br />
 </details>
@@ -47,19 +66,40 @@ npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client <client-
   <summary>Claude Desktop</summary>
   <br />
 
-  ```bash
-  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client claude
+  Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+  ```json
+  {
+    "mcpServers": {
+      "XcodeBuildMCP": {
+        "command": "npx",
+        "args": ["-y", "xcodebuildmcp@latest"]
+      }
+    }
+  }
   ```
   <br />
 </details>
 
 <details>
-  <summary>VS Code</summary>
+  <summary>VS Code / VS Code Insiders</summary>
   <br />
 
-  ```bash
-  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client vscode
+  Add to your VS Code settings JSON:
+  ```json
+  "mcp": {
+    "servers": {
+      "XcodeBuildMCP": {
+        "command": "npx",
+        "args": ["-y", "xcodebuildmcp@latest"]
+      }
+    }
+  }
   ```
+
+  Or use the quick install links:
+
+  [<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D)
+  [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D&quality=insiders)
   <br />
 </details>
 
@@ -67,15 +107,23 @@ npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client <client-
   <summary>Windsurf</summary>
   <br />
 
-  ```bash
-  npx -y @smithery/cli@latest install cameroncooke/xcodebuildmcp --client windsurf
+  Add to `~/.codeium/windsurf/mcp_config.json`:
+  ```json
+  {
+    "mcpServers": {
+      "XcodeBuildMCP": {
+        "command": "npx",
+        "args": ["-y", "xcodebuildmcp@latest"]
+      }
+    }
+  }
   ```
   <br />
 </details>
 
 <br />
 
-For other clients see: [Smithery XcodeBuildMCP](https://smithery.ai/server/cameroncooke/xcodebuildmcp), for other installation options including manual installation see [Getting Started](docs/GETTING_STARTED.md)
+For other installation options see [Getting Started](docs/GETTING_STARTED.md)
 
 ## Requirements
 
