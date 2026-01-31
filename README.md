@@ -53,7 +53,12 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
   <summary>Codex CLI</summary>
   <br />
 
-  Add to `~/.codex/config.toml`:
+  Run:
+  ```bash
+  codex mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@latest
+  ```
+
+  Or add to `~/.codex/config.toml`:
   ```toml
   [mcp_servers.XcodeBuildMCP]
   command = "npx"
