@@ -29,6 +29,7 @@ Minimal example:
 
 ```yaml
 schemaVersion: 1
+enabledWorkflows: ["simulator", "ui-automation", "debugging"]
 ```
 
 Full example with all options:
