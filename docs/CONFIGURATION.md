@@ -32,7 +32,7 @@ schemaVersion: 1
 enabledWorkflows: ["simulator", "ui-automation", "debugging"]
 ```
 
-Full example with all options:
+Full example options:
 
 ```yaml
 schemaVersion: 1
@@ -49,6 +49,12 @@ sessionDefaults:
   configuration: "Debug"
   simulatorName: "iPhone 16"
   platform: "iOS"
+  useLatestOS: true
+  arch: "arm64"
+  suppressWarnings: true
+  derivedDataPath: "./.derivedData"
+  preferXcodebuild: false
+  bundleId: "com.example.myapp"
 
 # Build settings
 incrementalBuildsEnabled: false
