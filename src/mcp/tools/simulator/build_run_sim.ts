@@ -4,6 +4,9 @@
  * Builds and runs an app from a project or workspace on a specific simulator by UUID or name.
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  * Accepts mutually exclusive `simulatorId` or `simulatorName`.
+ *
+ * Automatically detects the target platform (iOS, watchOS, tvOS, visionOS) from the
+ * scheme's build settings.
  */
 
 import * as z from 'zod';
@@ -19,6 +22,7 @@ import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { determineSimulatorUuid } from '../../../utils/simulator-utils.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
+import { detectPlatformFromScheme } from '../../../utils/platform-detection.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
 const baseOptions = {
@@ -81,7 +85,7 @@ async function _handleSimulatorBuildLogic(
   params: BuildRunSimulatorParams,
   executor: CommandExecutor,
   executeXcodeBuildCommandFn: typeof executeXcodeBuildCommand = executeXcodeBuildCommand,
-): Promise<ToolResponse> {
+): Promise<{ response: ToolResponse; detectedPlatform: XcodePlatform }> {
   const projectType = params.projectPath ? 'project' : 'workspace';
   const filePath = params.projectPath ?? params.workspacePath;
 
@@ -93,10 +97,31 @@ async function _handleSimulatorBuildLogic(
     );
   }
 
+  // Auto-detect platform from scheme's build settings
+  const detectionResult = await detectPlatformFromScheme(
+    params.projectPath,
+    params.workspacePath,
+    params.scheme,
+    executor,
+  );
+
+  // Default to iOS Simulator if detection fails
+  const detectedPlatform = detectionResult.platform ?? XcodePlatform.iOSSimulator;
+
+  // Generate appropriate log prefix based on detected platform
+  const platformName = detectedPlatform.replace(' Simulator', '');
+  const logPrefix = `${platformName} Simulator Build`;
+
   log(
     'info',
-    `Starting iOS Simulator build for scheme ${params.scheme} from ${projectType}: ${filePath}`,
+    `Starting ${logPrefix} for scheme ${params.scheme} from ${projectType}: ${filePath}`,
   );
+
+  if (detectionResult.platform) {
+    log('info', `Auto-detected platform: ${detectedPlatform}`);
+  } else {
+    log('warning', `Could not detect platform from scheme, defaulting to iOS Simulator`);
+  }
 
   // Create SharedBuildParams object with required configuration property
   const sharedBuildParams: SharedBuildParams = {
@@ -108,22 +133,24 @@ async function _handleSimulatorBuildLogic(
     extraArgs: params.extraArgs,
   };
 
-  return executeXcodeBuildCommandFn(
+  const response = await executeXcodeBuildCommandFn(
     sharedBuildParams,
     {
-      platform: XcodePlatform.iOSSimulator,
+      platform: detectedPlatform,
       simulatorId: params.simulatorId,
       simulatorName: params.simulatorName,
       useLatestOS: params.simulatorId ? false : params.useLatestOS,
-      logPrefix: 'iOS Simulator Build',
+      logPrefix,
     },
     params.preferXcodebuild as boolean,
     'build',
     executor,
   );
+
+  return { response, detectedPlatform };
 }
 
-// Exported business logic function for building and running iOS Simulator apps.
+// Exported business logic function for building and running Simulator apps.
 export async function build_run_simLogic(
   params: BuildRunSimulatorParams,
   executor: CommandExecutor,
@@ -134,12 +161,12 @@ export async function build_run_simLogic(
 
   log(
     'info',
-    `Starting iOS Simulator build and run for scheme ${params.scheme} from ${projectType}: ${filePath}`,
+    `Starting Simulator build and run for scheme ${params.scheme} from ${projectType}: ${filePath}`,
   );
 
   try {
     // --- Build Step ---
-    const buildResult = await _handleSimulatorBuildLogic(
+    const { response: buildResult, detectedPlatform } = await _handleSimulatorBuildLogic(
       params,
       executor,
       executeXcodeBuildCommandFn,
@@ -148,6 +175,10 @@ export async function build_run_simLogic(
     if (buildResult.isError) {
       return buildResult; // Return the build error
     }
+
+    // Get the platform string for destination (e.g., "iOS Simulator", "watchOS Simulator")
+    const platformDestination = detectedPlatform;
+    const platformName = detectedPlatform.replace(' Simulator', '');
 
     // --- Get App Path Step ---
     // Create the command array for xcodebuild with -showBuildSettings option
@@ -164,15 +195,15 @@ export async function build_run_simLogic(
     command.push('-scheme', params.scheme);
     command.push('-configuration', params.configuration ?? 'Debug');
 
-    // Handle destination for simulator
+    // Handle destination for simulator using detected platform
     let destinationString: string;
     if (params.simulatorId) {
-      destinationString = `platform=iOS Simulator,id=${params.simulatorId}`;
+      destinationString = `platform=${platformDestination},id=${params.simulatorId}`;
     } else if (params.simulatorName) {
-      destinationString = `platform=iOS Simulator,name=${params.simulatorName}${(params.useLatestOS ?? true) ? ',OS=latest' : ''}`;
+      destinationString = `platform=${platformDestination},name=${params.simulatorName}${(params.useLatestOS ?? true) ? ',OS=latest' : ''}`;
     } else {
       // This shouldn't happen due to validation, but handle it
-      destinationString = 'platform=iOS Simulator';
+      destinationString = `platform=${platformDestination}`;
     }
     command.push('-destination', destinationString);
 
@@ -449,7 +480,7 @@ export async function build_run_simLogic(
     }
 
     // --- Success ---
-    log('info', '✅ iOS simulator build & run succeeded.');
+    log('info', `✅ ${platformName} simulator build & run succeeded.`);
 
     const target = params.simulatorId
       ? `simulator UUID '${params.simulatorId}'`
@@ -461,9 +492,9 @@ export async function build_run_simLogic(
       content: [
         {
           type: 'text',
-          text: `✅ iOS simulator build and run succeeded for scheme ${params.scheme} from ${sourceType} ${sourcePath} targeting ${target}.
-          
-The app (${bundleId}) is now running in the iOS Simulator. 
+          text: `✅ ${platformName} simulator build and run succeeded for scheme ${params.scheme} from ${sourceType} ${sourcePath} targeting ${target}.
+
+The app (${bundleId}) is now running in the ${platformName} Simulator.
 If you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.
 
 Next Steps:
@@ -481,8 +512,8 @@ When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    log('error', `Error in iOS Simulator build and run: ${errorMessage}`);
-    return createTextResponse(`Error in iOS Simulator build and run: ${errorMessage}`, true);
+    log('error', `Error in Simulator build and run: ${errorMessage}`);
+    return createTextResponse(`Error in Simulator build and run: ${errorMessage}`, true);
   }
 }
 

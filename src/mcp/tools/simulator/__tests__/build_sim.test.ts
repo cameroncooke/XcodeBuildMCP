@@ -217,9 +217,13 @@ describe('build_sim tool', () => {
         trackingExecutor,
       );
 
-      // Should generate one build command
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
+      // Should generate two commands: platform detection + build
+      expect(callHistory).toHaveLength(2);
+      // First call is platform detection
+      expect(callHistory[0].command[0]).toBe('xcodebuild');
+      expect(callHistory[0].command).toContain('-showBuildSettings');
+      // Second call is the actual build
+      expect(callHistory[1].command).toEqual([
         'xcodebuild',
         '-workspace',
         '/path/to/MyProject.xcworkspace',
@@ -232,7 +236,7 @@ describe('build_sim tool', () => {
         'platform=iOS Simulator,name=iPhone 16,OS=latest',
         'build',
       ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expect(callHistory[1].logPrefix).toBe('iOS Simulator Build');
     });
 
     it('should generate correct build command with minimal parameters (project)', async () => {
@@ -262,9 +266,13 @@ describe('build_sim tool', () => {
         trackingExecutor,
       );
 
-      // Should generate one build command
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
+      // Should generate two commands: platform detection + build
+      expect(callHistory).toHaveLength(2);
+      // First call is platform detection
+      expect(callHistory[0].command[0]).toBe('xcodebuild');
+      expect(callHistory[0].command).toContain('-showBuildSettings');
+      // Second call is the actual build
+      expect(callHistory[1].command).toEqual([
         'xcodebuild',
         '-project',
         '/path/to/MyProject.xcodeproj',
@@ -277,7 +285,7 @@ describe('build_sim tool', () => {
         'platform=iOS Simulator,name=iPhone 16,OS=latest',
         'build',
       ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expect(callHistory[1].logPrefix).toBe('iOS Simulator Build');
     });
 
     it('should generate correct build command with all optional parameters', async () => {
@@ -311,9 +319,13 @@ describe('build_sim tool', () => {
         trackingExecutor,
       );
 
-      // Should generate one build command with all parameters
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
+      // Should generate two commands: platform detection + build
+      expect(callHistory).toHaveLength(2);
+      // First call is platform detection
+      expect(callHistory[0].command[0]).toBe('xcodebuild');
+      expect(callHistory[0].command).toContain('-showBuildSettings');
+      // Second call is the actual build with all parameters
+      expect(callHistory[1].command).toEqual([
         'xcodebuild',
         '-workspace',
         '/path/to/MyProject.xcworkspace',
@@ -329,7 +341,7 @@ describe('build_sim tool', () => {
         '--verbose',
         'build',
       ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expect(callHistory[1].logPrefix).toBe('iOS Simulator Build');
     });
 
     it('should handle paths with spaces in command generation', async () => {
@@ -359,9 +371,13 @@ describe('build_sim tool', () => {
         trackingExecutor,
       );
 
-      // Should generate one build command with paths containing spaces
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
+      // Should generate two commands: platform detection + build
+      expect(callHistory).toHaveLength(2);
+      // First call is platform detection
+      expect(callHistory[0].command[0]).toBe('xcodebuild');
+      expect(callHistory[0].command).toContain('-showBuildSettings');
+      // Second call is the actual build with paths containing spaces
+      expect(callHistory[1].command).toEqual([
         'xcodebuild',
         '-workspace',
         '/Users/dev/My Project/MyProject.xcworkspace',
@@ -374,7 +390,7 @@ describe('build_sim tool', () => {
         'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest',
         'build',
       ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expect(callHistory[1].logPrefix).toBe('iOS Simulator Build');
     });
 
     it('should generate correct build command with useLatestOS set to true', async () => {
@@ -405,9 +421,13 @@ describe('build_sim tool', () => {
         trackingExecutor,
       );
 
-      // Should generate one build command with OS=latest
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
+      // Should generate two commands: platform detection + build
+      expect(callHistory).toHaveLength(2);
+      // First call is platform detection
+      expect(callHistory[0].command[0]).toBe('xcodebuild');
+      expect(callHistory[0].command).toContain('-showBuildSettings');
+      // Second call is the actual build with OS=latest
+      expect(callHistory[1].command).toEqual([
         'xcodebuild',
         '-workspace',
         '/path/to/MyProject.xcworkspace',
@@ -420,7 +440,7 @@ describe('build_sim tool', () => {
         'platform=iOS Simulator,name=iPhone 16,OS=latest',
         'build',
       ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expect(callHistory[1].logPrefix).toBe('iOS Simulator Build');
     });
   });
 

@@ -4,6 +4,9 @@
  * Builds an app from a project or workspace for a specific simulator by UUID or name.
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  * Accepts mutually exclusive `simulatorId` or `simulatorName`.
+ *
+ * Automatically detects the target platform (iOS, watchOS, tvOS, visionOS) from the
+ * scheme's build settings, so Watch apps use watchOS Simulator, iOS apps use iOS Simulator, etc.
  */
 
 import * as z from 'zod';
@@ -17,6 +20,7 @@ import {
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
+import { detectPlatformFromScheme } from '../../../utils/platform-detection.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
 const baseOptions = {
@@ -90,10 +94,31 @@ async function _handleSimulatorBuildLogic(
     );
   }
 
+  // Auto-detect platform from scheme's build settings
+  const detectionResult = await detectPlatformFromScheme(
+    params.projectPath,
+    params.workspacePath,
+    params.scheme,
+    executor,
+  );
+
+  // Default to iOS Simulator if detection fails
+  const detectedPlatform = detectionResult.platform ?? XcodePlatform.iOSSimulator;
+
+  // Generate appropriate log prefix based on detected platform
+  const platformName = detectedPlatform.replace(' Simulator', '');
+  const logPrefix = `${platformName} Simulator Build`;
+
   log(
     'info',
-    `Starting iOS Simulator build for scheme ${params.scheme} from ${projectType}: ${filePath}`,
+    `Starting ${logPrefix} for scheme ${params.scheme} from ${projectType}: ${filePath}`,
   );
+
+  if (detectionResult.platform) {
+    log('info', `Auto-detected platform: ${detectedPlatform}`);
+  } else {
+    log('warning', `Could not detect platform from scheme, defaulting to iOS Simulator`);
+  }
 
   // Ensure configuration has a default value for SharedBuildParams compatibility
   const sharedBuildParams = {
@@ -105,11 +130,11 @@ async function _handleSimulatorBuildLogic(
   return executeXcodeBuildCommand(
     sharedBuildParams,
     {
-      platform: XcodePlatform.iOSSimulator,
+      platform: detectedPlatform,
       simulatorName: params.simulatorName,
       simulatorId: params.simulatorId,
       useLatestOS: params.simulatorId ? false : params.useLatestOS, // Ignore useLatestOS with ID
-      logPrefix: 'iOS Simulator Build',
+      logPrefix,
     },
     params.preferXcodebuild ?? false,
     'build',
