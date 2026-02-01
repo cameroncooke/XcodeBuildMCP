@@ -126,6 +126,24 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
   <br />
 </details>
 
+<details>
+  <summary>Trae</summary>
+  <br />
+
+  Add to `'~/Library/Application Support/Trae/User/mcp.json'`:
+  ```json
+  {
+    "mcpServers": {
+      "XcodeBuildMCP": {
+        "command": "npx",
+        "args": ["-y", "xcodebuildmcp@latest"]
+      }
+    }
+  }
+  ```
+  <br />
+</details>
+
 <br />
 
 For other installation options see [Getting Started](docs/GETTING_STARTED.md)
