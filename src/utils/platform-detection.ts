@@ -33,7 +33,11 @@ function sdkrootToSimulatorPlatform(sdkroot: string): XcodePlatform | null {
   if (sdkLower.includes('xrsimulator') || sdkLower.includes('visionos')) {
     return XcodePlatform.visionOSSimulator;
   }
-  if (sdkLower.includes('iphonesimulator') || sdkLower.includes('iphoneos') || sdkLower.includes('ios')) {
+  if (
+    sdkLower.includes('iphonesimulator') ||
+    sdkLower.includes('iphoneos') ||
+    sdkLower.includes('ios')
+  ) {
     return XcodePlatform.iOSSimulator;
   }
   if (sdkLower.includes('macos') || sdkLower.includes('macosx')) {

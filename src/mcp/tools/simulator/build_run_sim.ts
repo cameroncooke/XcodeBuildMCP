@@ -112,10 +112,7 @@ async function _handleSimulatorBuildLogic(
   const platformName = detectedPlatform.replace(' Simulator', '');
   const logPrefix = `${platformName} Simulator Build`;
 
-  log(
-    'info',
-    `Starting ${logPrefix} for scheme ${params.scheme} from ${projectType}: ${filePath}`,
-  );
+  log('info', `Starting ${logPrefix} for scheme ${params.scheme} from ${projectType}: ${filePath}`);
 
   if (detectionResult.platform) {
     log('info', `Auto-detected platform: ${detectedPlatform}`);
