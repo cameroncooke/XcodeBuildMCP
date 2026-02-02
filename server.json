@@ -8,13 +8,13 @@
     "source": "github",
     "id": "945551361"
   },
-  "version": "1.15.1",
+  "version": "2.0.0-beta.1",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "xcodebuildmcp",
-      "version": "1.15.1",
+      "version": "2.0.0-beta.1",
       "transport": {
         "type": "stdio"
       },
