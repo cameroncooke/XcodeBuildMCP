@@ -22,13 +22,13 @@ xcodebuildmcp mcp
 xcodebuildmcp tools
 
 # Build for simulator
-xcodebuildmcp build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
+xcodebuildmcp simulator build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
 
 # List simulators
-xcodebuildmcp list-sims
+xcodebuildmcp simulator list-sims
 
 # Run tests
-xcodebuildmcp test-sim --scheme MyApp --simulator-name "iPhone 16 Pro"
+xcodebuildmcp simulator test-sim --scheme MyApp --simulator-name "iPhone 17 Pro"
 ```
 
 ## Per-Workspace Daemon
@@ -110,20 +110,20 @@ Total: 2 (1 running, 1 stale)
 Each tool supports `--help` for detailed options:
 
 ```bash
-xcodebuildmcp build-sim --help
+xcodebuildmcp simulator build-sim --help
 ```
 
 Common patterns:
 
 ```bash
 # Pass options as flags
-xcodebuildmcp build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
+xcodebuildmcp simulator build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
 
 # Pass complex options as JSON
-xcodebuildmcp build-sim --json '{"scheme": "MyApp", "projectPath": "./MyApp.xcodeproj"}'
+xcodebuildmcp simulatorbuild-sim --json '{"scheme": "MyApp", "projectPath": "./MyApp.xcodeproj"}'
 
 # Control output format
-xcodebuildmcp list-sims --output json
+xcodebuildmcp simulator list-sims --output json
 ```
 
 ## Stateful vs Stateless Tools
@@ -162,7 +162,7 @@ The CLI respects the same configuration as the MCP server:
 sessionDefaults:
   scheme: MyApp
   projectPath: ./MyApp.xcodeproj
-  simulatorName: iPhone 16 Pro
+  simulatorName: iPhone 17 Pro
 
 enabledWorkflows:
   - simulator
@@ -184,42 +184,42 @@ See [CONFIGURATION.md](CONFIGURATION.md) for the full schema.
 
 ```bash
 # Discover projects
-xcodebuildmcp discover-projs
+xcodebuildmcp simulatordiscover-projs
 
 # List schemes
-xcodebuildmcp list-schemes --project-path ./MyApp.xcodeproj
+xcodebuildmcp simulatordiscover list-schemes --project-path ./MyApp.xcodeproj
 
 # Build
-xcodebuildmcp build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
+xcodebuildmcp simulator build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
 
 # Boot simulator
-xcodebuildmcp boot-sim --simulator-name "iPhone 16 Pro"
+xcodebuildmcp simulator boot-sim --simulator-name "iPhone 17 Pro"
 
 # Install and launch
-xcodebuildmcp install-app-sim --simulator-id <UDID> --app-path ./build/MyApp.app
-xcodebuildmcp launch-app-sim --simulator-id <UDID> --bundle-id com.example.MyApp
+xcodebuildmcp simulator install-app-sim --simulator-id <UDID> --app-path ./build/MyApp.app
+xcodebuildmcp simulator launch-app-sim --simulator-id <UDID> --bundle-id com.example.MyApp
 ```
 
 ### Log Capture Workflow
 
 ```bash
 # Start log capture (daemon auto-starts)
-xcodebuildmcp start-sim-log-cap --simulator-id <UDID> --bundle-id com.example.MyApp
+xcodebuildmcp logging start-sim-log-cap --simulator-id <UDID> --bundle-id com.example.MyApp
 
 # ... use your app ...
 
 # Stop and retrieve logs
-xcodebuildmcp stop-sim-log-cap --session-id <SESSION_ID>
+xcodebuildmcp logging stop-sim-log-cap --session-id <SESSION_ID>
 ```
 
 ### Testing
 
 ```bash
 # Run all tests
-xcodebuildmcp test-sim --scheme MyAppTests --project-path ./MyApp.xcodeproj
+xcodebuildmcp simulator test-sim --scheme MyAppTests --project-path ./MyApp.xcodeproj
 
 # Run with specific simulator
-xcodebuildmcp test-sim --scheme MyAppTests --simulator-name "iPhone 16 Pro"
+xcodebuildmcp simulator test-sim --scheme MyAppTests --simulator-name "iPhone 17 Pro"
 ```
 
 ## CLI vs MCP Mode

@@ -1,16 +1,11 @@
 # Changelog
 
-## [Unreleased]
-
-### Fixed
-- Honor CLI socket overrides when auto-starting the daemon.
-- Disable log file output after stream errors to prevent daemon crashes.
-- Update MCP examples and debugging docs to use the `mcp` subcommand.
-- Stop routing tool commands through `sh` by default to avoid `spawn sh ENOENT` failures.
-
-## [2.0.0] - 2026-01-28
+## [2.0.0] - 2026-02-02
 
 ### Breaking
+
+#### Workflow selection
+
 - By default when the `enabledWorkflows` configuration option or `XCODEBUILDMCP_ENABLED_WORKFLOWS` environment variable is not set or empty, XcodeBuildMCP will default to loading only the `simulator` workflow. This is a change in behaviour; previously it would load all workflows and therefore tools by default.
 
 This change reduces the number of tools loaded by default and requires the user to opt in to enable additional sets of tools based on their project or workflow requirements.
@@ -21,25 +16,52 @@ For more information see the [CONFIGURATION.md](docs/CONFIGURATION.md) documenta
 
 - Tool names and descriptions have been made more concise to reduce token consumption. Tool argument names that are self-explanatory have had their descriptions removed entirely.
 
-### Added
-- Add Smithery support for packaging/distribution.
+#### XcodeBuildMCP is now a first-class CLI
+
+- XcodeBuildMCP now has a first class CLI interface. This allows you or your agent to invoke tools directly from the terminal which can help reduce the upfront context costs of MCP.
+
+- When calling `xcodebuildmcp` without any arguments it will default to CLI mode, this is a **breaking** change, you must update your mcp client's configuration to pass the `mcp` argument:
+
+From:
+```json
+"XcodeBuildMCP": {
+  "command": "npx",
+  "args": [
+    "-y",
+    "xcodebuildmcp@latest"
+  ]
+}
+```
+
+To:
+```json
+"XcodeBuildMCP": {
+  "command": "npx",
+  "args": [
+    "-y",
+    "xcodebuildmcp@latest",
+    "mcp" // <--- add this argument
+  ]
+}
+```
+
+To lean more about the CLI interface see the [CLI.md](docs/CLI.md) documentation.
+
+### New!
 - Add DAP-based debugger backend and simulator debugging toolset (attach, breakpoints, stack, variables, LLDB command).
+- XcodeBuildMCP uses a new project config file at `.xcodebuildmcp/config.yaml` for runtime configuration, this is a more flexible and powerful way to configure XcodeBuildMCP than environment variables.
+
+### Added
 - Add session-status MCP resource with session identifiers.
 - Add UI automation guard that blocks UI tools when the debugger is paused.
 - Add `manage-workflows` tool to allow agents to change the workflows enable/disabling tools at runtime. This requires clients to support tools changed notifications. (opt-in only)
 - Add XcodeBuildMCP skill to improve MCP client tool use/discovery, this needs to be installed see [README.md](README.md) for more information.
-- Added support for `.xcodebuildmcp/config.yaml` files for runtime configuration, this is a more flexible and powerful way to configure XcodeBuildMCP than environment variables.
 - Added support for session-aware defaults that are persisted between sessions in the config file.
 
 ### Changed
 - Migrate to Zod v4.
-- Improve session default handling (reconcile mutual exclusivity and ignore explicit undefined clears).
-- Auto-include workflow-discovery when workflow selection is configured.
 - Remove dynamic tool discovery (`discover_tools`) and `XCODEBUILDMCP_DYNAMIC_TOOLS`. Use `XCODEBUILDMCP_ENABLED_WORKFLOWS` to limit startup tool registration.
 - Add MCP tool annotations to all tools.
-- Route runtime configuration reads through the config store with layered precedence.
-- Treat missing/empty `enabledWorkflows` as "load all workflows".
-- Add config.yaml support for DAP/log capture tuning (`dapRequestTimeoutMs`, `dapLogEvents`, `launchJsonWaitMs`).
 
 ### Fixed
 - Update UI automation guard guidance to point at `debug_continue` when paused.
