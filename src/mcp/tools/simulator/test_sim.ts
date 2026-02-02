@@ -4,6 +4,9 @@
  * Runs tests for a project or workspace on a simulator by UUID or name.
  * Accepts mutually exclusive `projectPath` or `workspacePath`.
  * Accepts mutually exclusive `simulatorId` or `simulatorName`.
+ *
+ * Automatically detects the target platform (iOS, watchOS, tvOS, visionOS) from the
+ * scheme's build settings.
  */
 
 import * as z from 'zod';
@@ -18,6 +21,7 @@ import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
+import { detectPlatformFromScheme } from '../../../utils/platform-detection.ts';
 
 // Define base schema object with all fields
 const baseSchemaObject = z.object({
@@ -91,6 +95,23 @@ export async function test_simLogic(
     );
   }
 
+  // Auto-detect platform from scheme's build settings
+  const detectionResult = await detectPlatformFromScheme(
+    params.projectPath,
+    params.workspacePath,
+    params.scheme,
+    executor,
+  );
+
+  // Default to iOS Simulator if detection fails
+  const detectedPlatform = detectionResult.platform ?? XcodePlatform.iOSSimulator;
+
+  if (detectionResult.platform) {
+    log('info', `Auto-detected platform for tests: ${detectedPlatform}`);
+  } else {
+    log('warning', `Could not detect platform from scheme, defaulting to iOS Simulator`);
+  }
+
   return handleTestLogic(
     {
       projectPath: params.projectPath,
@@ -103,7 +124,7 @@ export async function test_simLogic(
       extraArgs: params.extraArgs,
       useLatestOS: params.simulatorId ? false : (params.useLatestOS ?? false),
       preferXcodebuild: params.preferXcodebuild ?? false,
-      platform: XcodePlatform.iOSSimulator,
+      platform: detectedPlatform,
       testRunnerEnv: params.testRunnerEnv,
     },
     executor,

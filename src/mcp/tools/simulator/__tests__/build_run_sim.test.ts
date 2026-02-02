@@ -63,13 +63,19 @@ describe('build_run_sim tool', () => {
       const mockExecutor: CommandExecutor = async (command) => {
         callCount++;
         if (callCount === 1) {
-          // First call: build succeeds
+          // First call: platform detection succeeds
+          return createMockCommandResponse({
+            success: true,
+            output: 'SDKROOT = iphonesimulator\nSUPPORTED_PLATFORMS = iphonesimulator iphoneos',
+          });
+        } else if (callCount === 2) {
+          // Second call: build succeeds
           return createMockCommandResponse({
             success: true,
             output: 'BUILD SUCCEEDED',
           });
-        } else if (callCount === 2) {
-          // Second call: showBuildSettings fails to get app path
+        } else if (callCount === 3) {
+          // Third call: showBuildSettings fails to get app path
           return createMockCommandResponse({
             success: false,
             error: 'Could not get build settings',
@@ -258,9 +264,13 @@ describe('build_run_sim tool', () => {
         trackingExecutor,
       );
 
-      // Should generate the initial build command
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
+      // Should generate two commands: platform detection + build
+      expect(callHistory).toHaveLength(2);
+      // First call is platform detection
+      expect(callHistory[0].command[0]).toBe('xcodebuild');
+      expect(callHistory[0].command).toContain('-showBuildSettings');
+      // Second call is the actual build
+      expect(callHistory[1].command).toEqual([
         'xcodebuild',
         '-workspace',
         '/path/to/MyProject.xcworkspace',
@@ -273,7 +283,7 @@ describe('build_run_sim tool', () => {
         'platform=iOS Simulator,name=iPhone 16,OS=latest',
         'build',
       ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expect(callHistory[1].logPrefix).toBe('iOS Simulator Build');
     });
 
     it('should generate correct build command after finding simulator', async () => {
@@ -285,26 +295,16 @@ describe('build_run_sim tool', () => {
       }> = [];
 
       let callCount = 0;
-      // Create tracking executor that succeeds on first call (list) and fails on second
+      // Create tracking executor: platform detection, then build (fails)
       const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
         callHistory.push({ command, logPrefix, useShell, opts });
         callCount++;
 
         if (callCount === 1) {
-          // First call: simulator list succeeds
+          // First call: platform detection succeeds
           return createMockCommandResponse({
             success: true,
-            output: JSON.stringify({
-              devices: {
-                'iOS 16.0': [
-                  {
-                    udid: 'test-uuid-123',
-                    name: 'iPhone 16',
-                    state: 'Booted',
-                  },
-                ],
-              },
-            }),
+            output: 'SDKROOT = iphonesimulator\nSUPPORTED_PLATFORMS = iphonesimulator iphoneos',
             error: undefined,
           });
         } else {
@@ -326,11 +326,16 @@ describe('build_run_sim tool', () => {
         trackingExecutor,
       );
 
-      // Should generate build command and then build settings command
+      // Should generate platform detection and then build command
       expect(callHistory).toHaveLength(2);
 
-      // First call: build command
-      expect(callHistory[0].command).toEqual([
+      // First call: platform detection
+      expect(callHistory[0].command[0]).toBe('xcodebuild');
+      expect(callHistory[0].command).toContain('-showBuildSettings');
+      expect(callHistory[0].logPrefix).toBe('Platform Detection');
+
+      // Second call: build command (which fails)
+      expect(callHistory[1].command).toEqual([
         'xcodebuild',
         '-workspace',
         '/path/to/MyProject.xcworkspace',
@@ -343,22 +348,7 @@ describe('build_run_sim tool', () => {
         'platform=iOS Simulator,name=iPhone 16,OS=latest',
         'build',
       ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
-
-      // Second call: build settings command to get app path
-      expect(callHistory[1].command).toEqual([
-        'xcodebuild',
-        '-showBuildSettings',
-        '-workspace',
-        '/path/to/MyProject.xcworkspace',
-        '-scheme',
-        'MyScheme',
-        '-configuration',
-        'Debug',
-        '-destination',
-        'platform=iOS Simulator,name=iPhone 16,OS=latest',
-      ]);
-      expect(callHistory[1].logPrefix).toBe('Get App Path');
+      expect(callHistory[1].logPrefix).toBe('iOS Simulator Build');
     });
 
     it('should generate correct build settings command after successful build', async () => {
@@ -370,26 +360,16 @@ describe('build_run_sim tool', () => {
       }> = [];
 
       let callCount = 0;
-      // Create tracking executor that succeeds on first two calls and fails on third
+      // Create tracking executor: platform detection, build, then build settings for app path
       const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
         callHistory.push({ command, logPrefix, useShell, opts });
         callCount++;
 
         if (callCount === 1) {
-          // First call: simulator list succeeds
+          // First call: platform detection succeeds
           return createMockCommandResponse({
             success: true,
-            output: JSON.stringify({
-              devices: {
-                'iOS 16.0': [
-                  {
-                    udid: 'test-uuid-123',
-                    name: 'iPhone 16',
-                    state: 'Booted',
-                  },
-                ],
-              },
-            }),
+            output: 'SDKROOT = iphonesimulator\nSUPPORTED_PLATFORMS = iphonesimulator iphoneos',
             error: undefined,
           });
         } else if (callCount === 2) {
@@ -420,11 +400,16 @@ describe('build_run_sim tool', () => {
         trackingExecutor,
       );
 
-      // Should generate build command and build settings command
-      expect(callHistory).toHaveLength(2);
+      // Should generate platform detection, build command, and build settings command
+      expect(callHistory).toHaveLength(3);
 
-      // First call: build command
-      expect(callHistory[0].command).toEqual([
+      // First call: platform detection
+      expect(callHistory[0].command[0]).toBe('xcodebuild');
+      expect(callHistory[0].command).toContain('-showBuildSettings');
+      expect(callHistory[0].logPrefix).toBe('Platform Detection');
+
+      // Second call: build command
+      expect(callHistory[1].command).toEqual([
         'xcodebuild',
         '-workspace',
         '/path/to/MyProject.xcworkspace',
@@ -437,10 +422,10 @@ describe('build_run_sim tool', () => {
         'platform=iOS Simulator,name=iPhone 16',
         'build',
       ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expect(callHistory[1].logPrefix).toBe('iOS Simulator Build');
 
-      // Second call: build settings command
-      expect(callHistory[1].command).toEqual([
+      // Third call: build settings command for app path
+      expect(callHistory[2].command).toEqual([
         'xcodebuild',
         '-showBuildSettings',
         '-workspace',
@@ -452,7 +437,7 @@ describe('build_run_sim tool', () => {
         '-destination',
         'platform=iOS Simulator,name=iPhone 16',
       ]);
-      expect(callHistory[1].logPrefix).toBe('Get App Path');
+      expect(callHistory[2].logPrefix).toBe('Get App Path');
     });
 
     it('should handle paths with spaces in command generation', async () => {
@@ -482,9 +467,13 @@ describe('build_run_sim tool', () => {
         trackingExecutor,
       );
 
-      // Should generate build command first
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
+      // Should generate two commands: platform detection + build
+      expect(callHistory).toHaveLength(2);
+      // First call is platform detection
+      expect(callHistory[0].command[0]).toBe('xcodebuild');
+      expect(callHistory[0].command).toContain('-showBuildSettings');
+      // Second call is the actual build with paths containing spaces
+      expect(callHistory[1].command).toEqual([
         'xcodebuild',
         '-workspace',
         '/Users/dev/My Project/MyProject.xcworkspace',
@@ -497,7 +486,7 @@ describe('build_run_sim tool', () => {
         'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest',
         'build',
       ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expect(callHistory[1].logPrefix).toBe('iOS Simulator Build');
     });
   });
 
