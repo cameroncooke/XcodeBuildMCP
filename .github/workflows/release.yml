@@ -106,6 +106,7 @@ jobs:
 
       - name: Deploy to Smithery (production releases only)
         if: github.event_name == 'push'
+        continue-on-error: true
         env:
           SMITHERY_TOKEN: ${{ secrets.SMITHERY_TOKEN }}
         run: |
