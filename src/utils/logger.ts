@@ -52,8 +52,8 @@ export interface LogContext {
   sentry?: boolean;
 }
 
-// Client-requested log level (null means no filtering)
-let clientLogLevel: LogLevel | null = null;
+// Client-requested log level ("none" means no output unless explicitly enabled)
+let clientLogLevel: LogLevel = 'none';
 
 let logFileStream: WriteStream | null = null;
 let logFilePath: string | null = null;
@@ -152,9 +152,9 @@ export function setLogFile(path: string | null): void {
 
 /**
  * Get the current client-requested log level
- * @returns The current log level or null if no filtering is active
+ * @returns The current log level
  */
-export function getLogLevel(): LogLevel | null {
+export function getLogLevel(): LogLevel {
   return clientLogLevel;
 }
 
@@ -169,9 +169,8 @@ function shouldLog(level: string): boolean {
     return false;
   }
 
-  // If no client level set, log everything
-  if (clientLogLevel === null) {
-    return true;
+  if (clientLogLevel === 'none') {
+    return false;
   }
 
   // Check if the level is valid
