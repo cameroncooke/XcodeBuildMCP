@@ -36,7 +36,7 @@ export async function install_app_simLogic(
 
   try {
     const command = ['xcrun', 'simctl', 'install', params.simulatorId, params.appPath];
-    const result = await executor(command, 'Install App in Simulator', true, undefined);
+    const result = await executor(command, 'Install App in Simulator', false, undefined);
 
     if (!result.success) {
       return {
@@ -68,15 +68,24 @@ export async function install_app_simLogic(
       content: [
         {
           type: 'text',
-          text: `App installed successfully in simulator ${params.simulatorId}`,
+          text: `App installed successfully in simulator ${params.simulatorId}.`,
+        },
+      ],
+      nextSteps: [
+        {
+          tool: 'open_sim',
+          label: 'Open the Simulator app',
+          params: {},
+          priority: 1,
         },
         {
-          type: 'text',
-          text: `Next Steps:
-1. Open the Simulator app: open_sim({})
-2. Launch the app: launch_app_sim({ simulatorId: "${params.simulatorId}"${
-            bundleId ? `, bundleId: "${bundleId}"` : ', bundleId: "YOUR_APP_BUNDLE_ID"'
-          } })`,
+          tool: 'launch_app_sim',
+          label: 'Launch the app',
+          params: {
+            simulatorId: params.simulatorId,
+            bundleId: bundleId || 'YOUR_APP_BUNDLE_ID',
+          },
+          priority: 2,
         },
       ],
     };

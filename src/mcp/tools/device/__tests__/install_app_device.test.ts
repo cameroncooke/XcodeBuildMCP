@@ -95,7 +95,7 @@ describe('install_app_device plugin', () => {
         '/path/to/test.app',
       ]);
       expect(capturedDescription).toBe('Install app on device');
-      expect(capturedUseShell).toBe(true);
+      expect(capturedUseShell).toBe(false);
       expect(capturedEnv).toBe(undefined);
     });
 

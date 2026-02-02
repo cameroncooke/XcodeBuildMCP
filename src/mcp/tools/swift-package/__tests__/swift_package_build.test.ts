@@ -88,7 +88,7 @@ describe('swift_package_build plugin', () => {
         {
           args: ['swift', 'build', '--package-path', '/test/package'],
           description: 'Swift Package Build',
-          useShell: true,
+          useShell: false,
           cwd: undefined,
         },
       ]);
@@ -116,7 +116,7 @@ describe('swift_package_build plugin', () => {
         {
           args: ['swift', 'build', '--package-path', '/test/package', '-c', 'release'],
           description: 'Swift Package Build',
-          useShell: true,
+          useShell: false,
           cwd: undefined,
         },
       ]);
@@ -162,7 +162,7 @@ describe('swift_package_build plugin', () => {
             '-parse-as-library',
           ],
           description: 'Swift Package Build',
-          useShell: true,
+          useShell: false,
           cwd: undefined,
         },
       ]);

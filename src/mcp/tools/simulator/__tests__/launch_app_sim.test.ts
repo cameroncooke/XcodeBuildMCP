@@ -106,7 +106,31 @@ describe('launch_app_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: `✅ App launched successfully in simulator test-uuid-123.\n\nNext Steps:\n1. To see simulator: open_sim()\n2. Log capture: start_sim_log_cap({ simulatorId: "test-uuid-123", bundleId: "com.example.testapp" })\n   With console: start_sim_log_cap({ simulatorId: "test-uuid-123", bundleId: "com.example.testapp", captureConsole: true })\n3. Stop logs: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
+            text: 'App launched successfully in simulator test-uuid-123.',
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'open_sim',
+            label: 'Open Simulator app to see it',
+            params: {},
+            priority: 1,
+          },
+          {
+            tool: 'start_sim_log_cap',
+            label: 'Capture structured logs (app continues running)',
+            params: { simulatorId: 'test-uuid-123', bundleId: 'com.example.testapp' },
+            priority: 2,
+          },
+          {
+            tool: 'start_sim_log_cap',
+            label: 'Capture console + structured logs (app restarts)',
+            params: {
+              simulatorId: 'test-uuid-123',
+              bundleId: 'com.example.testapp',
+              captureConsole: true,
+            },
+            priority: 3,
           },
         ],
       });
@@ -341,7 +365,31 @@ describe('launch_app_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: `✅ App launched successfully in simulator "iPhone 16" (resolved-uuid).\n\nNext Steps:\n1. To see simulator: open_sim()\n2. Log capture: start_sim_log_cap({ simulatorName: "iPhone 16", bundleId: "com.example.testapp" })\n   With console: start_sim_log_cap({ simulatorName: "iPhone 16", bundleId: "com.example.testapp", captureConsole: true })\n3. Stop logs: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
+            text: 'App launched successfully in simulator "iPhone 16" (resolved-uuid).',
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'open_sim',
+            label: 'Open Simulator app to see it',
+            params: {},
+            priority: 1,
+          },
+          {
+            tool: 'start_sim_log_cap',
+            label: 'Capture structured logs (app continues running)',
+            params: { simulatorId: 'resolved-uuid', bundleId: 'com.example.testapp' },
+            priority: 2,
+          },
+          {
+            tool: 'start_sim_log_cap',
+            label: 'Capture console + structured logs (app restarts)',
+            params: {
+              simulatorId: 'resolved-uuid',
+              bundleId: 'com.example.testapp',
+              captureConsole: true,
+            },
+            priority: 3,
           },
         ],
       });

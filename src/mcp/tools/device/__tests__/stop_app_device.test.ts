@@ -94,7 +94,7 @@ describe('stop_app_device plugin', () => {
         '12345',
       ]);
       expect(capturedDescription).toBe('Stop app on device');
-      expect(capturedUseShell).toBe(true);
+      expect(capturedUseShell).toBe(false);
       expect(capturedEnv).toBe(undefined);
     });
 

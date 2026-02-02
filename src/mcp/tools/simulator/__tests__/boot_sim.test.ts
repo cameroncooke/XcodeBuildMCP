@@ -62,7 +62,27 @@ describe('boot_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: `✅ Simulator booted successfully. To make it visible, use: open_sim()\n\nNext steps:\n1. Open the Simulator app (makes it visible): open_sim()\n2. Install an app: install_app_sim({ simulatorId: "test-uuid-123", appPath: "PATH_TO_YOUR_APP" })\n3. Launch an app: launch_app_sim({ simulatorId: "test-uuid-123", bundleId: "YOUR_APP_BUNDLE_ID" })`,
+            text: 'Simulator booted successfully.',
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'open_sim',
+            label: 'Open the Simulator app (makes it visible)',
+            params: {},
+            priority: 1,
+          },
+          {
+            tool: 'install_app_sim',
+            label: 'Install an app',
+            params: { simulatorId: 'test-uuid-123', appPath: 'PATH_TO_YOUR_APP' },
+            priority: 2,
+          },
+          {
+            tool: 'launch_app_sim',
+            label: 'Launch an app',
+            params: { simulatorId: 'test-uuid-123', bundleId: 'YOUR_APP_BUNDLE_ID' },
+            priority: 3,
           },
         ],
       });
@@ -149,7 +169,7 @@ describe('boot_sim tool', () => {
       expect(calls[0]).toEqual({
         command: ['xcrun', 'simctl', 'boot', 'test-uuid-123'],
         description: 'Boot Simulator',
-        allowStderr: true,
+        allowStderr: false,
         opts: undefined,
       });
     });

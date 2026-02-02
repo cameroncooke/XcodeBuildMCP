@@ -87,11 +87,19 @@ export async function get_mac_bundle_idLogic(
           type: 'text',
           text: `✅ Bundle ID: ${bundleId}`,
         },
+      ],
+      nextSteps: [
         {
-          type: 'text',
-          text: `Next Steps:
-- Launch: launch_mac_app({ appPath: "${appPath}" })
-- Build again: build_macos({ scheme: "SCHEME_NAME" })`,
+          tool: 'launch_mac_app',
+          label: 'Launch the app',
+          params: { appPath },
+          priority: 1,
+        },
+        {
+          tool: 'build_macos',
+          label: 'Build again',
+          params: { scheme: 'SCHEME_NAME' },
+          priority: 2,
         },
       ],
       isError: false,

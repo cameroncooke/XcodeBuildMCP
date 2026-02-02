@@ -151,8 +151,9 @@ describe('start_device_log_cap plugin', () => {
         mockFileSystemExecutor,
       );
 
-      expect(result.content[0].text).toContain('Next Steps:');
-      expect(result.content[0].text).toContain('Use stop_device_log_cap');
+      expect(result.content[0].text).toContain('Interact with your app');
+      expect(result.nextSteps).toBeDefined();
+      expect(result.nextSteps![0].tool).toBe('stop_device_log_cap');
     });
 
     it('should surface early launch failures when process exits immediately', async () => {

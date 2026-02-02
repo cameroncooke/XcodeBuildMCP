@@ -111,7 +111,7 @@ export async function get_mac_app_pathLogic(
     }
 
     // Execute the command directly with executor
-    const result = await executor(command, 'Get App Path', true, undefined);
+    const result = await executor(command, 'Get App Path', false, undefined);
 
     if (!result.success) {
       return {
@@ -157,20 +157,25 @@ export async function get_mac_app_pathLogic(
     const fullProductName = fullProductNameMatch[1].trim();
     const appPath = `${builtProductsDir}/${fullProductName}`;
 
-    // Include next steps guidance (following workspace pattern)
-    const nextStepsText = `Next Steps:
-1. Get bundle ID: get_app_bundle_id({ appPath: "${appPath}" })
-2. Launch app: launch_mac_app({ appPath: "${appPath}" })`;
-
     return {
       content: [
         {
           type: 'text',
           text: `✅ App path retrieved successfully: ${appPath}`,
         },
+      ],
+      nextSteps: [
         {
-          type: 'text',
-          text: nextStepsText,
+          tool: 'get_mac_bundle_id',
+          label: 'Get bundle ID',
+          params: { appPath },
+          priority: 1,
+        },
+        {
+          tool: 'launch_mac_app',
+          label: 'Launch app',
+          params: { appPath },
+          priority: 2,
         },
       ],
     };

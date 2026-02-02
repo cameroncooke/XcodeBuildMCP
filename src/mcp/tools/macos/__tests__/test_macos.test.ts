@@ -353,7 +353,7 @@ describe('test_macos plugin (unified)', () => {
         'test',
       ]);
       expect(commandCalls[0].logPrefix).toBe('Test Run');
-      expect(commandCalls[0].useShell).toBe(true);
+      expect(commandCalls[0].useShell).toBe(false);
 
       // Verify xcresulttool was called
       expect(commandCalls[1].command).toEqual([

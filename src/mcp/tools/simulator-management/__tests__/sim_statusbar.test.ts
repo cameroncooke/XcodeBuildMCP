@@ -204,7 +204,7 @@ describe('sim_statusbar tool', () => {
           'wifi',
         ],
         operationDescription: 'Set Status Bar',
-        keepAlive: true,
+        keepAlive: false,
         opts: undefined,
       });
     });
@@ -245,7 +245,7 @@ describe('sim_statusbar tool', () => {
       expect(calls[0]).toEqual({
         command: ['xcrun', 'simctl', 'status_bar', 'test-uuid-123', 'clear'],
         operationDescription: 'Set Status Bar',
-        keepAlive: true,
+        keepAlive: false,
         opts: undefined,
       });
     });

@@ -171,7 +171,7 @@ describe('simulators resource', () => {
       expect(result.contents[0].text).not.toContain('iPhone 14');
     });
 
-    it('should include next steps guidance', async () => {
+    it('should include hint about setting defaults', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
         output: JSON.stringify({
@@ -190,11 +190,10 @@ describe('simulators resource', () => {
 
       const result = await simulatorsResourceLogic(mockExecutor);
 
-      expect(result.contents[0].text).toContain('Next Steps:');
-      expect(result.contents[0].text).toContain('boot_sim');
-      expect(result.contents[0].text).toContain('open_sim');
-      expect(result.contents[0].text).toContain('build_sim');
-      expect(result.contents[0].text).toContain('get_sim_app_path');
+      // The resource returns text content with simulator list and hint
+      expect(result.contents[0].text).toContain('iPhone 15 Pro');
+      expect(result.contents[0].text).toContain('ABC123-DEF456-GHI789');
+      expect(result.contents[0].text).toContain('session-set-defaults');
     });
   });
 });

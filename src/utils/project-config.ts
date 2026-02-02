@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { FileSystemExecutor } from './FileSystemExecutor.ts';
 import type { SessionDefaults } from './session-store.ts';
@@ -74,6 +75,32 @@ function normalizeMutualExclusivity(defaults: Partial<SessionDefaults>): {
   return { normalized, notices };
 }
 
+function tryFileUrlToPath(value: string): string | null {
+  if (!value.startsWith('file:')) {
+    return null;
+  }
+
+  try {
+    return fileURLToPath(value);
+  } catch (error) {
+    log('warning', `Failed to parse file URL path: ${value}. ${String(error)}`);
+    return null;
+  }
+}
+
+function normalizePathValue(value: string, cwd: string): string {
+  const fileUrlPath = tryFileUrlToPath(value);
+  if (fileUrlPath) {
+    return fileUrlPath;
+  }
+
+  if (path.isAbsolute(value)) {
+    return value;
+  }
+
+  return path.resolve(cwd, value);
+}
+
 function resolveRelativeSessionPaths(
   defaults: Partial<SessionDefaults>,
   cwd: string,
@@ -83,8 +110,8 @@ function resolveRelativeSessionPaths(
 
   for (const key of pathKeys) {
     const value = resolved[key];
-    if (typeof value === 'string' && value.length > 0 && !path.isAbsolute(value)) {
-      resolved[key] = path.resolve(cwd, value);
+    if (typeof value === 'string' && value.length > 0) {
+      resolved[key] = normalizePathValue(value, cwd);
     }
   }
 
@@ -116,8 +143,8 @@ function resolveRelativeTopLevelPaths(config: ProjectConfig, cwd: string): Proje
 
   for (const key of pathKeys) {
     const value = resolved[key];
-    if (typeof value === 'string' && value.length > 0 && !path.isAbsolute(value)) {
-      resolved[key] = path.resolve(cwd, value);
+    if (typeof value === 'string' && value.length > 0) {
+      resolved[key] = normalizePathValue(value, cwd);
     }
   }
 

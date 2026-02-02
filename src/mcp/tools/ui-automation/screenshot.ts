@@ -12,7 +12,11 @@ import * as z from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import { ToolResponse, createImageContent } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
-import { createErrorResponse, SystemError } from '../../../utils/responses/index.ts';
+import {
+  createErrorResponse,
+  createTextResponse,
+  SystemError,
+} from '../../../utils/responses/index.ts';
 import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
 import {
   getDefaultFileSystemExecutor,
@@ -164,6 +168,10 @@ export async function rotateImage(
 // Define schema as ZodObject
 const screenshotSchema = z.object({
   simulatorId: z.uuid({ message: 'Invalid Simulator UUID format' }),
+  returnFormat: z
+    .enum(['path', 'base64'])
+    .optional()
+    .describe('Return image path or base64 data (path|base64)'),
 });
 
 // Use z.infer for type safety
@@ -181,6 +189,9 @@ export async function screenshotLogic(
   uuidUtils: { v4: () => string } = { v4: uuidv4 },
 ): Promise<ToolResponse> {
   const { simulatorId } = params;
+  const runtime = process.env.XCODEBUILDMCP_RUNTIME;
+  const defaultFormat = runtime === 'cli' || runtime === 'daemon' ? 'path' : 'base64';
+  const returnFormat = params.returnFormat ?? defaultFormat;
   const tempDir = pathUtils.tmpdir();
   const screenshotFilename = `screenshot_${uuidUtils.v4()}.png`;
   const screenshotPath = pathUtils.join(tempDir, screenshotFilename);
@@ -242,42 +253,59 @@ export async function screenshotLogic(
 
       if (!optimizeResult.success) {
         log('warning', `${LOG_PREFIX}/screenshot: Image optimization failed, using original PNG`);
-        // Fallback to original PNG if optimization fails
-        const base64Image = await fileSystemExecutor.readFile(screenshotPath, 'base64');
+        if (returnFormat === 'base64') {
+          // Fallback to original PNG if optimization fails
+          const base64Image = await fileSystemExecutor.readFile(screenshotPath, 'base64');
 
-        // Clean up
-        try {
-          await fileSystemExecutor.rm(screenshotPath);
-        } catch (err) {
-          log('warning', `${LOG_PREFIX}/screenshot: Failed to delete temp file: ${err}`);
+          // Clean up
+          try {
+            await fileSystemExecutor.rm(screenshotPath);
+          } catch (err) {
+            log('warning', `${LOG_PREFIX}/screenshot: Failed to delete temp file: ${err}`);
+          }
+
+          return {
+            content: [createImageContent(base64Image, 'image/png')],
+            isError: false,
+          };
         }
 
-        return {
-          content: [createImageContent(base64Image, 'image/png')],
-          isError: false,
-        };
+        return createTextResponse(
+          `Screenshot captured: ${screenshotPath} (image/png, optimization failed)`,
+        );
       }
 
       log('info', `${LOG_PREFIX}/screenshot: Image optimized successfully`);
 
-      // Read the optimized image file as base64
-      const base64Image = await fileSystemExecutor.readFile(optimizedPath, 'base64');
+      if (returnFormat === 'base64') {
+        // Read the optimized image file as base64
+        const base64Image = await fileSystemExecutor.readFile(optimizedPath, 'base64');
 
-      log('info', `${LOG_PREFIX}/screenshot: Successfully encoded image as Base64`);
+        log('info', `${LOG_PREFIX}/screenshot: Successfully encoded image as Base64`);
 
-      // Clean up both temporary files
-      try {
-        await fileSystemExecutor.rm(screenshotPath);
-        await fileSystemExecutor.rm(optimizedPath);
-      } catch (err) {
-        log('warning', `${LOG_PREFIX}/screenshot: Failed to delete temporary files: ${err}`);
+        // Clean up both temporary files
+        try {
+          await fileSystemExecutor.rm(screenshotPath);
+          await fileSystemExecutor.rm(optimizedPath);
+        } catch (err) {
+          log('warning', `${LOG_PREFIX}/screenshot: Failed to delete temporary files: ${err}`);
+        }
+
+        // Return the optimized image (JPEG format, smaller size)
+        return {
+          content: [createImageContent(base64Image, 'image/jpeg')],
+          isError: false,
+        };
       }
 
-      // Return the optimized image (JPEG format, smaller size)
-      return {
-        content: [createImageContent(base64Image, 'image/jpeg')],
-        isError: false,
-      };
+      // Keep optimized file on disk for path-based return
+      try {
+        await fileSystemExecutor.rm(screenshotPath);
+      } catch (err) {
+        log('warning', `${LOG_PREFIX}/screenshot: Failed to delete temp file: ${err}`);
+      }
+
+      return createTextResponse(`Screenshot captured: ${optimizedPath} (image/jpeg)`);
     } catch (fileError) {
       log('error', `${LOG_PREFIX}/screenshot: Failed to process image file: ${fileError}`);
       return createErrorResponse(

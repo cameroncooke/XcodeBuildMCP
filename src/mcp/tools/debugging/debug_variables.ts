@@ -32,6 +32,9 @@ export async function debug_variablesLogic(
 export default {
   name: 'debug_variables',
   description: 'Get frame variables.',
+  cli: {
+    stateful: true,
+  },
   schema: debugVariablesSchema.shape,
   handler: createTypedToolWithContext<DebugVariablesParams, DebuggerToolContext>(
     debugVariablesSchema,

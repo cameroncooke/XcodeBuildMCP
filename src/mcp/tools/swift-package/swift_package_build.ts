@@ -55,7 +55,7 @@ export async function swift_package_buildLogic(
 
   log('info', `Running swift ${swiftArgs.join(' ')}`);
   try {
-    const result = await executor(['swift', ...swiftArgs], 'Swift Package Build', true, undefined);
+    const result = await executor(['swift', ...swiftArgs], 'Swift Package Build', false, undefined);
     if (!result.success) {
       const errorMessage = result.error ?? result.output ?? 'Unknown error';
       return createErrorResponse('Swift package build failed', errorMessage);

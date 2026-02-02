@@ -111,6 +111,9 @@ export default {
     title: 'Hardware Button',
     destructiveHint: true,
   },
+  cli: {
+    daemonAffinity: 'preferred',
+  },
   handler: createSessionAwareTool<ButtonParams>({
     internalSchema: buttonSchema as unknown as z.ZodType<ButtonParams, unknown>,
     logicFunction: (params: ButtonParams, executor: CommandExecutor) =>

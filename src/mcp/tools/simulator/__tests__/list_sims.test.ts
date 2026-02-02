@@ -101,13 +101,13 @@ describe('list_sims tool', () => {
       expect(callHistory[0]).toEqual({
         command: ['xcrun', 'simctl', 'list', 'devices', '--json'],
         logPrefix: 'List Simulators (JSON)',
-        useShell: true,
+        useShell: false,
         env: undefined,
       });
       expect(callHistory[1]).toEqual({
         command: ['xcrun', 'simctl', 'list', 'devices'],
         logPrefix: 'List Simulators (Text)',
-        useShell: true,
+        useShell: false,
         env: undefined,
       });
 
@@ -120,12 +120,37 @@ describe('list_sims tool', () => {
 iOS 17.0:
 - iPhone 15 (test-uuid-123)
 
-Next Steps:
-1. Boot a simulator: boot_sim({ simulatorId: 'UUID_FROM_ABOVE' })
-2. Open the simulator UI: open_sim({})
-3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })
-4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })
 Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FROM_ABOVE' } (or simulatorName).`,
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'boot_sim',
+            label: 'Boot a simulator',
+            params: { simulatorId: 'UUID_FROM_ABOVE' },
+            priority: 1,
+          },
+          {
+            tool: 'open_sim',
+            label: 'Open the simulator UI',
+            params: {},
+            priority: 2,
+          },
+          {
+            tool: 'build_sim',
+            label: 'Build for simulator',
+            params: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
+            priority: 3,
+          },
+          {
+            tool: 'get_sim_app_path',
+            label: 'Get app path',
+            params: {
+              scheme: 'YOUR_SCHEME',
+              platform: 'iOS Simulator',
+              simulatorId: 'UUID_FROM_ABOVE',
+            },
+            priority: 4,
           },
         ],
       });
@@ -175,12 +200,37 @@ Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FR
 iOS 17.0:
 - iPhone 15 (test-uuid-123) [Booted]
 
-Next Steps:
-1. Boot a simulator: boot_sim({ simulatorId: 'UUID_FROM_ABOVE' })
-2. Open the simulator UI: open_sim({})
-3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })
-4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })
 Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FROM_ABOVE' } (or simulatorName).`,
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'boot_sim',
+            label: 'Boot a simulator',
+            params: { simulatorId: 'UUID_FROM_ABOVE' },
+            priority: 1,
+          },
+          {
+            tool: 'open_sim',
+            label: 'Open the simulator UI',
+            params: {},
+            priority: 2,
+          },
+          {
+            tool: 'build_sim',
+            label: 'Build for simulator',
+            params: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
+            priority: 3,
+          },
+          {
+            tool: 'get_sim_app_path',
+            label: 'Get app path',
+            params: {
+              scheme: 'YOUR_SCHEME',
+              platform: 'iOS Simulator',
+              simulatorId: 'UUID_FROM_ABOVE',
+            },
+            priority: 4,
           },
         ],
       });
@@ -236,12 +286,37 @@ iOS 18.6:
 iOS 26.0:
 - iPhone 17 Pro (text-uuid-456)
 
-Next Steps:
-1. Boot a simulator: boot_sim({ simulatorId: 'UUID_FROM_ABOVE' })
-2. Open the simulator UI: open_sim({})
-3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })
-4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })
 Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FROM_ABOVE' } (or simulatorName).`,
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'boot_sim',
+            label: 'Boot a simulator',
+            params: { simulatorId: 'UUID_FROM_ABOVE' },
+            priority: 1,
+          },
+          {
+            tool: 'open_sim',
+            label: 'Open the simulator UI',
+            params: {},
+            priority: 2,
+          },
+          {
+            tool: 'build_sim',
+            label: 'Build for simulator',
+            params: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
+            priority: 3,
+          },
+          {
+            tool: 'get_sim_app_path',
+            label: 'Get app path',
+            params: {
+              scheme: 'YOUR_SCHEME',
+              platform: 'iOS Simulator',
+              simulatorId: 'UUID_FROM_ABOVE',
+            },
+            priority: 4,
           },
         ],
       });
@@ -302,12 +377,37 @@ Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FR
 iOS 17.0:
 - iPhone 15 (test-uuid-456)
 
-Next Steps:
-1. Boot a simulator: boot_sim({ simulatorId: 'UUID_FROM_ABOVE' })
-2. Open the simulator UI: open_sim({})
-3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })
-4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })
 Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FROM_ABOVE' } (or simulatorName).`,
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'boot_sim',
+            label: 'Boot a simulator',
+            params: { simulatorId: 'UUID_FROM_ABOVE' },
+            priority: 1,
+          },
+          {
+            tool: 'open_sim',
+            label: 'Open the simulator UI',
+            params: {},
+            priority: 2,
+          },
+          {
+            tool: 'build_sim',
+            label: 'Build for simulator',
+            params: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
+            priority: 3,
+          },
+          {
+            tool: 'get_sim_app_path',
+            label: 'Get app path',
+            params: {
+              scheme: 'YOUR_SCHEME',
+              platform: 'iOS Simulator',
+              simulatorId: 'UUID_FROM_ABOVE',
+            },
+            priority: 4,
           },
         ],
       });

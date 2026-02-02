@@ -10,6 +10,11 @@ export {
   SystemError,
   ValidationError,
 } from '../errors.ts';
+export {
+  processToolResponse,
+  renderNextStep,
+  renderNextStepsSection,
+} from './next-steps-renderer.ts';
 
 // Types
-export type { ToolResponse } from '../../types/common.ts';
+export type { ToolResponse, NextStep, OutputStyle } from '../../types/common.ts';

@@ -138,7 +138,7 @@ describe('set_sim_appearance plugin', () => {
         [
           ['xcrun', 'simctl', 'ui', 'test-uuid-123', 'appearance', 'dark'],
           'Set Simulator Appearance',
-          true,
+          false,
           undefined,
         ],
       ]);

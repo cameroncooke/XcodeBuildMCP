@@ -136,7 +136,7 @@ describe('get_mac_app_path plugin', () => {
           'Debug',
         ],
         'Get App Path',
-        true,
+        false,
         undefined,
       ]);
     });
@@ -174,7 +174,7 @@ describe('get_mac_app_path plugin', () => {
           'Debug',
         ],
         'Get App Path',
-        true,
+        false,
         undefined,
       ]);
     });
@@ -216,7 +216,7 @@ describe('get_mac_app_path plugin', () => {
           'platform=macOS,arch=arm64',
         ],
         'Get App Path',
-        true,
+        false,
         undefined,
       ]);
     });
@@ -258,7 +258,7 @@ describe('get_mac_app_path plugin', () => {
           'platform=macOS,arch=x86_64',
         ],
         'Get App Path',
-        true,
+        false,
         undefined,
       ]);
     });
@@ -302,7 +302,7 @@ describe('get_mac_app_path plugin', () => {
           '--verbose',
         ],
         'Get App Path',
-        true,
+        false,
         undefined,
       ]);
     });
@@ -343,7 +343,7 @@ describe('get_mac_app_path plugin', () => {
           'platform=macOS,arch=arm64',
         ],
         'Get App Path',
-        true,
+        false,
         undefined,
       ]);
     });
@@ -383,9 +383,25 @@ FULL_PRODUCT_NAME = MyApp.app
             type: 'text',
             text: '✅ App path retrieved successfully: /Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
           },
+        ],
+        nextSteps: [
           {
-            type: 'text',
-            text: 'Next Steps:\n1. Get bundle ID: get_app_bundle_id({ appPath: "/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app" })\n2. Launch app: launch_mac_app({ appPath: "/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app" })',
+            tool: 'get_mac_bundle_id',
+            label: 'Get bundle ID',
+            params: {
+              appPath:
+                '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
+            },
+            priority: 1,
+          },
+          {
+            tool: 'launch_mac_app',
+            label: 'Launch app',
+            params: {
+              appPath:
+                '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
+            },
+            priority: 2,
           },
         ],
       });
@@ -414,9 +430,25 @@ FULL_PRODUCT_NAME = MyApp.app
             type: 'text',
             text: '✅ App path retrieved successfully: /Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
           },
+        ],
+        nextSteps: [
           {
-            type: 'text',
-            text: 'Next Steps:\n1. Get bundle ID: get_app_bundle_id({ appPath: "/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app" })\n2. Launch app: launch_mac_app({ appPath: "/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app" })',
+            tool: 'get_mac_bundle_id',
+            label: 'Get bundle ID',
+            params: {
+              appPath:
+                '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
+            },
+            priority: 1,
+          },
+          {
+            tool: 'launch_mac_app',
+            label: 'Launch app',
+            params: {
+              appPath:
+                '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
+            },
+            priority: 2,
           },
         ],
       });

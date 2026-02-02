@@ -124,6 +124,9 @@ export default {
     title: 'Key Sequence',
     destructiveHint: true,
   },
+  cli: {
+    daemonAffinity: 'preferred',
+  },
   handler: createSessionAwareTool<KeySequenceParams>({
     internalSchema: keySequenceSchema as unknown as z.ZodType<KeySequenceParams, unknown>,
     logicFunction: (params: KeySequenceParams, executor: CommandExecutor) =>

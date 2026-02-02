@@ -232,6 +232,6 @@ export async function executeMakeCommand(
   projectDir: string,
   logPrefix: string,
 ): Promise<CommandResponse> {
-  const command = ['cd', projectDir, '&&', 'make'];
-  return getDefaultCommandExecutor()(command, logPrefix);
+  const command = ['make'];
+  return getDefaultCommandExecutor()(command, logPrefix, false, { cwd: projectDir });
 }

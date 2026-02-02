@@ -275,7 +275,7 @@ describe('stop_app_sim tool', () => {
         {
           command: ['xcrun', 'simctl', 'terminate', 'test-uuid', 'com.example.App'],
           logPrefix: 'Stop App in Simulator',
-          useShell: true,
+          useShell: false,
           opts: undefined,
           detached: undefined,
         },

@@ -11,6 +11,8 @@ export interface ProcessInfo {
     pid?: number;
   };
   startedAt: Date;
+  executableName?: string;
+  packagePath?: string;
 }
 
 // Global map to track active processes

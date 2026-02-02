@@ -13,6 +13,31 @@
  */
 
 /**
+ * Represents a suggested next step that can be rendered for CLI or MCP.
+ */
+export interface NextStep {
+  /** MCP tool name (e.g., "boot_sim") */
+  tool: string;
+  /** CLI tool name (kebab-case, disambiguated) */
+  cliTool?: string;
+  /** Workflow name for CLI grouping (e.g., "simulator") */
+  workflow?: string;
+  /** Human-readable description of the action */
+  label: string;
+  /** Parameters to pass to the tool */
+  params: Record<string, string | number | boolean>;
+  /** Lower priority values appear first (default: 0) */
+  priority?: number;
+}
+
+/**
+ * Output style controls verbosity of tool responses.
+ * - 'normal': Full output including next steps
+ * - 'minimal': Essential result only, no next steps
+ */
+export type OutputStyle = 'normal' | 'minimal';
+
+/**
  * Enum representing Xcode build platforms.
  */
 export enum XcodePlatform {
@@ -35,6 +60,8 @@ export interface ToolResponse {
   content: ToolResponseContent[];
   isError?: boolean;
   _meta?: Record<string, unknown>;
+  /** Structured next steps that get rendered differently for CLI vs MCP */
+  nextSteps?: NextStep[];
   [key: string]: unknown; // Index signature to match CallToolResult
 }
 

@@ -111,7 +111,7 @@ async function _getAppPathFromBuildSettings(
     }
 
     // Execute the command directly
-    const result = await executor(command, 'Get Build Settings for Launch', true, undefined);
+    const result = await executor(command, 'Get Build Settings for Launch', false, undefined);
 
     if (!result.success) {
       return {
@@ -176,7 +176,7 @@ export async function buildRunMacOSLogic(
     log('info', `App path determined as: ${appPath}`);
 
     // 4. Launch the app using CommandExecutor
-    const launchResult = await executor(['open', appPath], 'Launch macOS App', true);
+    const launchResult = await executor(['open', appPath], 'Launch macOS App', false);
 
     if (!launchResult.success) {
       log('error', `Build succeeded, but failed to launch app ${appPath}: ${launchResult.error}`);

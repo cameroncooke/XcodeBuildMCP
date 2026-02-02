@@ -30,6 +30,9 @@ export async function debug_breakpoint_removeLogic(
 export default {
   name: 'debug_breakpoint_remove',
   description: 'Remove breakpoint.',
+  cli: {
+    stateful: true,
+  },
   schema: debugBreakpointRemoveSchema.shape,
   handler: createTypedToolWithContext<DebugBreakpointRemoveParams, DebuggerToolContext>(
     debugBreakpointRemoveSchema,

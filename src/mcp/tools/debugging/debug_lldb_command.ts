@@ -36,6 +36,9 @@ export async function debug_lldb_commandLogic(
 export default {
   name: 'debug_lldb_command',
   description: 'Run LLDB command.',
+  cli: {
+    stateful: true,
+  },
   schema: baseSchemaObject.shape,
   handler: createTypedToolWithContext<DebugLldbCommandParams, DebuggerToolContext>(
     debugLldbCommandSchema as unknown as z.ZodType<DebugLldbCommandParams, unknown>,

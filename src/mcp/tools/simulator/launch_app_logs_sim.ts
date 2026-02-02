@@ -59,8 +59,16 @@ export async function launch_app_logs_simLogic(
   return {
     content: [
       createTextContent(
-        `App launched successfully in simulator ${params.simulatorId} with log capture enabled.\n\nLog capture session ID: ${sessionId}\n\nNext Steps:\n1. Interact with your app in the simulator.\n2. Use 'stop_and_get_simulator_log({ logSessionId: "${sessionId}" })' to stop capture and retrieve logs.`,
+        `App launched successfully in simulator ${params.simulatorId} with log capture enabled.\n\nLog capture session ID: ${sessionId}\n\nInteract with your app in the simulator, then stop capture to retrieve logs.`,
       ),
+    ],
+    nextSteps: [
+      {
+        tool: 'stop_sim_log_cap',
+        label: 'Stop capture and retrieve logs',
+        params: { logSessionId: sessionId },
+        priority: 1,
+      },
     ],
     isError: false,
   };
@@ -69,6 +77,9 @@ export async function launch_app_logs_simLogic(
 export default {
   name: 'launch_app_logs_sim',
   description: 'Launch sim app with logs.',
+  cli: {
+    stateful: true,
+  },
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: launchAppLogsSimSchemaObject,

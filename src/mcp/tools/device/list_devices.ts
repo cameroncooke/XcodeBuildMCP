@@ -49,7 +49,7 @@ export async function list_devicesLogic(
       const result = await executor(
         ['xcrun', 'devicectl', 'list', 'devices', '--json-output', tempJsonPath],
         'List Devices (devicectl with JSON)',
-        true,
+        false,
         undefined,
       );
 
@@ -290,7 +290,7 @@ export async function list_devicesLogic(
       const result = await executor(
         ['xcrun', 'xctrace', 'list', 'devices'],
         'List Devices (xctrace)',
-        true,
+        false,
         undefined,
       );
 
@@ -388,15 +388,38 @@ export async function list_devicesLogic(
       (d) => d.state === 'Available' || d.state === 'Available (WiFi)' || d.state === 'Connected',
     );
 
+    const nextSteps: Array<{
+      tool: string;
+      label: string;
+      params: Record<string, string | number | boolean>;
+      priority?: number;
+    }> = [];
+
     if (availableDevicesExist) {
-      responseText += 'Next Steps:\n';
-      responseText +=
-        "1. Build for device: build_device({ scheme: 'SCHEME', deviceId: 'DEVICE_UDID' })\n";
-      responseText += "2. Run tests: test_device({ scheme: 'SCHEME', deviceId: 'DEVICE_UDID' })\n";
-      responseText += "3. Get app path: get_device_app_path({ scheme: 'SCHEME' })\n\n";
       responseText += 'Note: Use the device ID/UDID from above when required by other tools.\n';
       responseText +=
         "Hint: Save a default device with session-set-defaults { deviceId: 'DEVICE_UDID' }.\n";
+
+      nextSteps.push(
+        {
+          tool: 'build_device',
+          label: 'Build for device',
+          params: { scheme: 'SCHEME', deviceId: 'DEVICE_UDID' },
+          priority: 1,
+        },
+        {
+          tool: 'test_device',
+          label: 'Run tests on device',
+          params: { scheme: 'SCHEME', deviceId: 'DEVICE_UDID' },
+          priority: 2,
+        },
+        {
+          tool: 'get_device_app_path',
+          label: 'Get app path',
+          params: { scheme: 'SCHEME' },
+          priority: 3,
+        },
+      );
     } else if (uniqueDevices.length > 0) {
       responseText +=
         'Note: No devices are currently available for testing. Make sure devices are:\n';
@@ -412,6 +435,7 @@ export async function list_devicesLogic(
           text: responseText,
         },
       ],
+      nextSteps,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

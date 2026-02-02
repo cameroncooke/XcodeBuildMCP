@@ -7,20 +7,19 @@ import * as z from 'zod';
 import { ToolResponse, createTextContent } from '../../../types/common.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { getDefaultCommandExecutor } from '../../../utils/command.ts';
-
-interface ProcessInfo {
-  executableName?: string;
-  startedAt: Date;
-  packagePath: string;
-}
-
-const activeProcesses = new Map<number, ProcessInfo>();
+import { activeProcesses } from './active-processes.ts';
 
 /**
  * Process list dependencies for dependency injection
  */
+type ListProcessInfo = {
+  executableName?: string;
+  packagePath?: string;
+  startedAt: Date;
+};
+
 export interface ProcessListDependencies {
-  processMap?: Map<number, ProcessInfo>;
+  processMap?: Map<number, ListProcessInfo>;
   arrayFrom?: typeof Array.from;
   dateNow?: typeof Date.now;
 }
@@ -35,7 +34,18 @@ export async function swift_package_listLogic(
   params?: unknown,
   dependencies?: ProcessListDependencies,
 ): Promise<ToolResponse> {
-  const processMap = dependencies?.processMap ?? activeProcesses;
+  const processMap =
+    dependencies?.processMap ??
+    new Map<number, ListProcessInfo>(
+      Array.from(activeProcesses.entries()).map(([pid, info]) => [
+        pid,
+        {
+          executableName: info.executableName,
+          packagePath: info.packagePath,
+          startedAt: info.startedAt,
+        },
+      ]),
+    );
   const arrayFrom = dependencies?.arrayFrom ?? Array.from;
   const dateNow = dependencies?.dateNow ?? Date.now;
 
@@ -57,10 +67,9 @@ export async function swift_package_listLogic(
     // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
     const executableName = info.executableName || 'default';
     const runtime = Math.max(1, Math.round((dateNow() - info.startedAt.getTime()) / 1000));
+    const packagePath = info.packagePath ?? 'unknown package';
     content.push(
-      createTextContent(
-        `  • PID ${pid}: ${executableName} (${info.packagePath}) - running ${runtime}s`,
-      ),
+      createTextContent(`  • PID ${pid}: ${executableName} (${packagePath}) - running ${runtime}s`),
     );
   }
 
@@ -78,6 +87,9 @@ type SwiftPackageListParams = z.infer<typeof swiftPackageListSchema>;
 export default {
   name: 'swift_package_list',
   description: 'List SwiftPM processes.',
+  cli: {
+    stateful: true,
+  },
   schema: swiftPackageListSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Swift Package List',

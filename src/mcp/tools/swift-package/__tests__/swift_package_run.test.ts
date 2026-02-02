@@ -105,7 +105,7 @@ describe('swift_package_run plugin', () => {
       expect(executorCalls[0]).toEqual({
         command: ['swift', 'run', '--package-path', '/test/package'],
         logPrefix: 'Swift Package Run',
-        useShell: true,
+        useShell: false,
         opts: undefined,
       });
     });
@@ -133,7 +133,7 @@ describe('swift_package_run plugin', () => {
       expect(executorCalls[0]).toEqual({
         command: ['swift', 'run', '--package-path', '/test/package', '-c', 'release'],
         logPrefix: 'Swift Package Run',
-        useShell: true,
+        useShell: false,
         opts: undefined,
       });
     });
@@ -161,7 +161,7 @@ describe('swift_package_run plugin', () => {
       expect(executorCalls[0]).toEqual({
         command: ['swift', 'run', '--package-path', '/test/package', 'MyApp'],
         logPrefix: 'Swift Package Run',
-        useShell: true,
+        useShell: false,
         opts: undefined,
       });
     });
@@ -189,7 +189,7 @@ describe('swift_package_run plugin', () => {
       expect(executorCalls[0]).toEqual({
         command: ['swift', 'run', '--package-path', '/test/package', '--', 'arg1', 'arg2'],
         logPrefix: 'Swift Package Run',
-        useShell: true,
+        useShell: false,
         opts: undefined,
       });
     });
@@ -224,7 +224,7 @@ describe('swift_package_run plugin', () => {
           '-parse-as-library',
         ],
         logPrefix: 'Swift Package Run',
-        useShell: true,
+        useShell: false,
         opts: undefined,
       });
     });
@@ -267,7 +267,7 @@ describe('swift_package_run plugin', () => {
           'arg1',
         ],
         logPrefix: 'Swift Package Run',
-        useShell: true,
+        useShell: false,
         opts: undefined,
       });
     });

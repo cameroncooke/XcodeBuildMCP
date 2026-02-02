@@ -12,6 +12,7 @@
 - [Product overview and rationale](OVERVIEW.md)
 - [Session defaults and opt-out](SESSION_DEFAULTS.md)
 - [Device code signing notes](DEVICE_CODE_SIGNING.md)
+- [CLI reference](CLI.md)
 
 ## Developer docs
 - [Developer documentation index](dev/README.md)

@@ -70,7 +70,7 @@ export async function launch_app_deviceLogic(
         bundleId,
       ],
       'Launch app on device',
-      true, // useShell
+      false, // useShell
       undefined, // env
     );
 
@@ -119,9 +119,23 @@ export async function launch_app_deviceLogic(
 
     if (processId) {
       responseText += `\n\nProcess ID: ${processId}`;
-      responseText += `\n\nNext Steps:`;
-      responseText += `\n1. Interact with your app on the device`;
-      responseText += `\n2. Stop the app: stop_app_device({ deviceId: "${deviceId}", processId: ${processId} })`;
+      responseText += `\n\nInteract with your app on the device.`;
+    }
+
+    const nextSteps: Array<{
+      tool: string;
+      label: string;
+      params: Record<string, string | number | boolean>;
+      priority?: number;
+    }> = [];
+
+    if (processId) {
+      nextSteps.push({
+        tool: 'stop_app_device',
+        label: 'Stop the app',
+        params: { deviceId, processId },
+        priority: 1,
+      });
     }
 
     return {
@@ -131,6 +145,7 @@ export async function launch_app_deviceLogic(
           text: responseText,
         },
       ],
+      nextSteps,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

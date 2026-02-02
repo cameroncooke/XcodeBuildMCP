@@ -112,15 +112,11 @@ export async function record_sim_videoLogic(
       notes.push(startRes.warning);
     }
 
-    const nextSteps = `Next Steps:
-Stop and save the recording:
-record_sim_video({ simulatorId: "${params.simulatorId}", stop: true, outputFile: "/path/to/output.mp4" })`;
-
     return {
       content: [
         {
           type: 'text',
-          text: `🎥 Video recording started for simulator ${params.simulatorId} at ${fpsUsed} fps.\nSession: ${startRes.sessionId}`,
+          text: `Video recording started for simulator ${params.simulatorId} at ${fpsUsed} fps.\nSession: ${startRes.sessionId}`,
         },
         ...(notes.length > 0
           ? [
@@ -130,9 +126,17 @@ record_sim_video({ simulatorId: "${params.simulatorId}", stop: true, outputFile:
               },
             ]
           : []),
+      ],
+      nextSteps: [
         {
-          type: 'text',
-          text: nextSteps,
+          tool: 'record_sim_video',
+          label: 'Stop and save the recording',
+          params: {
+            simulatorId: params.simulatorId,
+            stop: true,
+            outputFile: '/path/to/output.mp4',
+          },
+          priority: 1,
         },
       ],
       isError: false,
@@ -224,6 +228,9 @@ const publicSchemaObject = z.strictObject(
 export default {
   name: 'record_sim_video',
   description: 'Record sim video.',
+  cli: {
+    stateful: true,
+  },
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: recordSimVideoSchemaObject,

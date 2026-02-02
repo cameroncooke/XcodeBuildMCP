@@ -228,7 +228,7 @@ export async function executeXcodeBuildCommand(
     } else {
       // Use standard xcodebuild
       // Pass projectDir as cwd to ensure CocoaPods relative paths resolve correctly
-      result = await executor(command, platformOptions.logPrefix, true, {
+      result = await executor(command, platformOptions.logPrefix, false, {
         ...execOpts,
         cwd: projectDir,
       });

@@ -52,7 +52,7 @@ export async function launch_app_simLogic(
     const simulatorListResult = await executor(
       ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
       'List Simulators',
-      true,
+      false,
     );
     if (!simulatorListResult.success) {
       return {
@@ -122,7 +122,7 @@ export async function launch_app_simLogic(
     const getAppContainerResult = await executor(
       getAppContainerCmd,
       'Check App Installed',
-      true,
+      false,
       undefined,
     );
     if (!getAppContainerResult.success) {
@@ -154,7 +154,7 @@ export async function launch_app_simLogic(
       command.push(...params.args);
     }
 
-    const result = await executor(command, 'Launch App in Simulator', true, undefined);
+    const result = await executor(command, 'Launch App in Simulator', false, undefined);
 
     if (!result.success) {
       return {
@@ -167,14 +167,31 @@ export async function launch_app_simLogic(
       };
     }
 
-    const userParamName = params.simulatorId ? 'simulatorId' : 'simulatorName';
-    const userParamValue = params.simulatorId ?? params.simulatorName ?? simulatorId;
-
     return {
       content: [
         {
           type: 'text',
-          text: `✅ App launched successfully in simulator ${simulatorDisplayName || simulatorId}.\n\nNext Steps:\n1. To see simulator: open_sim()\n2. Log capture: start_sim_log_cap({ ${userParamName}: "${userParamValue}", bundleId: "${params.bundleId}" })\n   With console: start_sim_log_cap({ ${userParamName}: "${userParamValue}", bundleId: "${params.bundleId}", captureConsole: true })\n3. Stop logs: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
+          text: `App launched successfully in simulator ${simulatorDisplayName || simulatorId}.`,
+        },
+      ],
+      nextSteps: [
+        {
+          tool: 'open_sim',
+          label: 'Open Simulator app to see it',
+          params: {},
+          priority: 1,
+        },
+        {
+          tool: 'start_sim_log_cap',
+          label: 'Capture structured logs (app continues running)',
+          params: { simulatorId, bundleId: params.bundleId },
+          priority: 2,
+        },
+        {
+          tool: 'start_sim_log_cap',
+          label: 'Capture console + structured logs (app restarts)',
+          params: { simulatorId, bundleId: params.bundleId, captureConsole: true },
+          priority: 3,
         },
       ],
     };

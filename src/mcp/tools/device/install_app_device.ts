@@ -44,7 +44,7 @@ export async function install_app_deviceLogic(
     const result = await executor(
       ['xcrun', 'devicectl', 'device', 'install', 'app', '--device', deviceId, appPath],
       'Install app on device',
-      true, // useShell
+      false, // useShell
       undefined, // env
     );
 

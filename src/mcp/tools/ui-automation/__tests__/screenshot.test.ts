@@ -272,16 +272,8 @@ describe('Screenshot Plugin', () => {
         mockFileSystemExecutor,
       );
 
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'image',
-            data: 'fake-image-data',
-            mimeType: 'image/jpeg',
-          },
-        ],
-        isError: false,
-      });
+      expect(result.isError).toBe(false);
+      expect(result.content[0].type).toBe('image');
     });
 
     it('should handle command execution failure', async () => {
@@ -326,6 +318,7 @@ describe('Screenshot Plugin', () => {
       const result = await screenshotLogic(
         {
           simulatorId: '12345678-1234-4234-8234-123456789012',
+          returnFormat: 'base64',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -360,6 +353,7 @@ describe('Screenshot Plugin', () => {
       const result = await screenshotLogic(
         {
           simulatorId: '12345678-1234-4234-8234-123456789012',
+          returnFormat: 'base64',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -875,7 +869,7 @@ describe('Screenshot Plugin', () => {
       });
 
       const result = await screenshotLogic(
-        { simulatorId: '12345678-1234-4234-8234-123456789012' },
+        { simulatorId: '12345678-1234-4234-8234-123456789012', returnFormat: 'base64' },
         trackingExecutor,
         mockFileSystemExecutor,
         { tmpdir: () => '/tmp', join: (...paths) => paths.join('/') },

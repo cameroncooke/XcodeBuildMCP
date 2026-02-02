@@ -128,7 +128,7 @@ describe('build_run_macos', () => {
           'build',
         ],
         description: 'macOS Build',
-        logOutput: true,
+        logOutput: false,
         opts: { cwd: '/path/to' },
       });
 
@@ -145,7 +145,7 @@ describe('build_run_macos', () => {
           'Debug',
         ],
         description: 'Get Build Settings for Launch',
-        logOutput: true,
+        logOutput: false,
         opts: undefined,
       });
 
@@ -228,7 +228,7 @@ describe('build_run_macos', () => {
           'build',
         ],
         description: 'macOS Build',
-        logOutput: true,
+        logOutput: false,
         opts: { cwd: '/path/to' },
       });
 
@@ -245,7 +245,7 @@ describe('build_run_macos', () => {
           'Debug',
         ],
         description: 'Get Build Settings for Launch',
-        logOutput: true,
+        logOutput: false,
         opts: undefined,
       });
 
@@ -513,7 +513,7 @@ describe('build_run_macos', () => {
           'build',
         ],
         description: 'macOS Build',
-        logOutput: true,
+        logOutput: false,
         opts: { cwd: '/path/to' },
       });
     });

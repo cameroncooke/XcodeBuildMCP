@@ -118,11 +118,31 @@ describe('get_app_bundle_id plugin', () => {
             type: 'text',
             text: '✅ Bundle ID: com.example.MyApp',
           },
+        ],
+        nextSteps: [
           {
-            type: 'text',
-            text: `Next Steps:
-- Simulator: install_app_sim + launch_app_sim
-- Device: install_app_device + launch_app_device`,
+            tool: 'install_app_sim',
+            label: 'Install on simulator',
+            params: { simulatorId: 'SIMULATOR_UUID', appPath: '/path/to/MyApp.app' },
+            priority: 1,
+          },
+          {
+            tool: 'launch_app_sim',
+            label: 'Launch on simulator',
+            params: { simulatorId: 'SIMULATOR_UUID', bundleId: 'com.example.MyApp' },
+            priority: 2,
+          },
+          {
+            tool: 'install_app_device',
+            label: 'Install on device',
+            params: { deviceId: 'DEVICE_UDID', appPath: '/path/to/MyApp.app' },
+            priority: 3,
+          },
+          {
+            tool: 'launch_app_device',
+            label: 'Launch on device',
+            params: { deviceId: 'DEVICE_UDID', bundleId: 'com.example.MyApp' },
+            priority: 4,
           },
         ],
         isError: false,
@@ -153,11 +173,31 @@ describe('get_app_bundle_id plugin', () => {
             type: 'text',
             text: '✅ Bundle ID: com.example.MyApp',
           },
+        ],
+        nextSteps: [
           {
-            type: 'text',
-            text: `Next Steps:
-- Simulator: install_app_sim + launch_app_sim
-- Device: install_app_device + launch_app_device`,
+            tool: 'install_app_sim',
+            label: 'Install on simulator',
+            params: { simulatorId: 'SIMULATOR_UUID', appPath: '/path/to/MyApp.app' },
+            priority: 1,
+          },
+          {
+            tool: 'launch_app_sim',
+            label: 'Launch on simulator',
+            params: { simulatorId: 'SIMULATOR_UUID', bundleId: 'com.example.MyApp' },
+            priority: 2,
+          },
+          {
+            tool: 'install_app_device',
+            label: 'Install on device',
+            params: { deviceId: 'DEVICE_UDID', appPath: '/path/to/MyApp.app' },
+            priority: 3,
+          },
+          {
+            tool: 'launch_app_device',
+            label: 'Launch on device',
+            params: { deviceId: 'DEVICE_UDID', bundleId: 'com.example.MyApp' },
+            priority: 4,
           },
         ],
         isError: false,

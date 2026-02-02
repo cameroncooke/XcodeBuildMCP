@@ -89,7 +89,7 @@ export async function swift_package_runLogic(
         const result = await executor(
           command,
           'Swift Package Run (Background)',
-          true,
+          false,
           cleanEnv,
           true,
         );
@@ -112,6 +112,8 @@ export async function swift_package_runLogic(
               pid: result.process.pid,
             },
             startedAt: new Date(),
+            executableName: params.executableName,
+            packagePath: resolvedPath,
           });
 
           return {
@@ -138,7 +140,7 @@ export async function swift_package_runLogic(
       const command = ['swift', ...swiftArgs];
 
       // Create a promise that will either complete with the command result or timeout
-      const commandPromise = executor(command, 'Swift Package Run', true, undefined);
+      const commandPromise = executor(command, 'Swift Package Run', false, undefined);
 
       const timeoutPromise = new Promise<{
         success: boolean;
@@ -219,6 +221,9 @@ export async function swift_package_runLogic(
 export default {
   name: 'swift_package_run',
   description: 'swift package target run.',
+  cli: {
+    stateful: true,
+  },
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,

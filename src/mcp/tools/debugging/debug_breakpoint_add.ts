@@ -56,6 +56,9 @@ export async function debug_breakpoint_addLogic(
 export default {
   name: 'debug_breakpoint_add',
   description: 'Add breakpoint.',
+  cli: {
+    stateful: true,
+  },
   schema: baseSchemaObject.shape,
   handler: createTypedToolWithContext<DebugBreakpointAddParams, DebuggerToolContext>(
     debugBreakpointAddSchema as unknown as z.ZodType<DebugBreakpointAddParams, unknown>,

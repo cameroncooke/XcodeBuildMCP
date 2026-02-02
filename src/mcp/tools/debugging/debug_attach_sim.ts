@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
-import { createErrorResponse, createTextResponse } from '../../../utils/responses/index.ts';
+import { createErrorResponse } from '../../../utils/responses/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 import { determineSimulatorUuid } from '../../../utils/simulator-utils.ts';
 import {
@@ -134,16 +134,39 @@ export async function debug_attach_simLogic(
 
     const backendLabel = session.backend === 'dap' ? 'DAP debugger' : 'LLDB';
 
-    return createTextResponse(
-      `${warningText}✅ Attached ${backendLabel} to simulator process ${pid} (${simulatorId}).\n\n` +
-        `Debug session ID: ${session.id}\n` +
-        `${currentText}\n` +
-        `${resumeText}\n\n` +
-        `Next steps:\n` +
-        `1. debug_breakpoint_add({ debugSessionId: "${session.id}", file: "...", line: 123 })\n` +
-        `2. debug_continue({ debugSessionId: "${session.id}" })\n` +
-        `3. debug_stack({ debugSessionId: "${session.id}" })`,
-    );
+    return {
+      content: [
+        {
+          type: 'text',
+          text:
+            `${warningText}✅ Attached ${backendLabel} to simulator process ${pid} (${simulatorId}).\n\n` +
+            `Debug session ID: ${session.id}\n` +
+            `${currentText}\n` +
+            `${resumeText}`,
+        },
+      ],
+      nextSteps: [
+        {
+          tool: 'debug_breakpoint_add',
+          label: 'Add a breakpoint',
+          params: { debugSessionId: session.id, file: '...', line: 123 },
+          priority: 1,
+        },
+        {
+          tool: 'debug_continue',
+          label: 'Continue execution',
+          params: { debugSessionId: session.id },
+          priority: 2,
+        },
+        {
+          tool: 'debug_stack',
+          label: 'Show call stack',
+          params: { debugSessionId: session.id },
+          priority: 3,
+        },
+      ],
+      isError: false,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     log('error', `Failed to attach LLDB: ${message}`);
@@ -161,6 +184,9 @@ const publicSchemaObject = z.strictObject(
 export default {
   name: 'debug_attach_sim',
   description: 'Attach LLDB to sim app.',
+  cli: {
+    stateful: true,
+  },
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: baseSchemaObject,
