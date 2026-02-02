@@ -12,7 +12,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 ```json
 "XcodeBuildMCP": {
   "command": "npx",
-  "args": ["-y", "xcodebuildmcp@latest"]
+  "args": ["-y", "xcodebuildmcp@latest", "mcp"]
 }
 ```
 
@@ -26,7 +26,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
     "mcpServers": {
       "XcodeBuildMCP": {
         "command": "npx",
-        "args": ["-y", "xcodebuildmcp@latest"]
+        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
       }
     }
   }
@@ -34,7 +34,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 
   Or use the quick install link:
 
-  [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=XcodeBuildMCP&config=eyJ0eXBlIjoic3RkaW8iLCJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAbGF0ZXN0IiwiZW52Ijp7IklOQ1JFTUVOVEFMX0JVSUxEU19FTkFCTEVEIjoiZmFsc2UiLCJYQ09ERUJVSUxETUNQX1NFTlRSWV9ESVNBQkxFRCI6ImZhbHNlIn19)
+  [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsInhjb2RlYnVpbGRtY3BAbGF0ZXN0IiwibWNwIl19)
   <br />
 </details>
 
@@ -44,7 +44,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 
   Run:
   ```bash
-  claude mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@latest
+  claude mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@latest mcp
   ```
   <br />
 </details>
@@ -55,14 +55,14 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 
   Run:
   ```bash
-  codex mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@latest
+  codex mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@latest mcp
   ```
 
   Or add to `~/.codex/config.toml`:
   ```toml
   [mcp_servers.XcodeBuildMCP]
   command = "npx"
-  args = ["-y", "xcodebuildmcp@latest"]
+  args = ["-y", "xcodebuildmcp@latest", "mcp"]
   ```
   <br />
 </details>
@@ -77,7 +77,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
     "mcpServers": {
       "XcodeBuildMCP": {
         "command": "npx",
-        "args": ["-y", "xcodebuildmcp@latest"]
+        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
       }
     }
   }
@@ -95,7 +95,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
     "servers": {
       "XcodeBuildMCP": {
         "command": "npx",
-        "args": ["-y", "xcodebuildmcp@latest"]
+        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
       }
     }
   }
@@ -103,8 +103,8 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 
   Or use the quick install links:
 
-  [<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D)
-  [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%5D%7D&quality=insiders)
+  [<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%2C%22mcp%22%5D%7D)
+  [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%2C%22mcp%22%5D%7D&quality=insiders)
   <br />
 </details>
 
@@ -118,7 +118,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
     "mcpServers": {
       "XcodeBuildMCP": {
         "command": "npx",
-        "args": ["-y", "xcodebuildmcp@latest"]
+        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
       }
     }
   }
@@ -130,13 +130,13 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
   <summary>Trae</summary>
   <br />
 
-  Add to `'~/Library/Application Support/Trae/User/mcp.json'`:
+  Add to `~/Library/Application Support/Trae/User/mcp.json`:
   ```json
   {
     "mcpServers": {
       "XcodeBuildMCP": {
         "command": "npx",
-        "args": ["-y", "xcodebuildmcp@latest"]
+        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
       }
     }
   }
@@ -147,6 +147,8 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 <br />
 
 For other installation options see [Getting Started](docs/GETTING_STARTED.md)
+
+When configuring a client manually, ensure the command includes the `mcp` subcommand (for example, `npx -y xcodebuildmcp@latest mcp`).
 
 ## Requirements
 
@@ -174,9 +176,30 @@ For further information on how to install the skill, see: [docs/SKILLS.md](docs/
 
 XcodeBuildMCP uses Sentry for error telemetry. For more information or to opt out of error telemetry see [docs/PRIVACY.md](docs/PRIVACY.md).
 
+## CLI
+
+XcodeBuildMCP provides a unified command-line interface. The `mcp` subcommand starts the MCP server, while all other commands provide direct terminal access to tools:
+
+```bash
+# Install globally
+npm install -g xcodebuildmcp
+
+# Start the MCP server (for MCP clients)
+xcodebuildmcp mcp
+
+# List available tools
+xcodebuildmcp tools
+
+# Build for simulator
+xcodebuildmcp build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
+```
+
+The CLI uses a per-workspace daemon for stateful operations (log capture, debugging, etc.) that auto-starts when needed. See [docs/CLI.md](docs/CLI.md) for full documentation.
+
 ## Documentation
 
 - Getting started: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
+- CLI usage: [docs/CLI.md](docs/CLI.md)
 - Configuration and options: [docs/CONFIGURATION.md](docs/CONFIGURATION.md)
 - Tools reference: [docs/TOOLS.md](docs/TOOLS.md)
 - Troubleshooting: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)

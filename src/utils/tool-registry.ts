@@ -4,6 +4,7 @@ import { ToolResponse } from '../types/common.ts';
 import { log } from './logger.ts';
 import { loadWorkflowGroups } from '../core/plugin-registry.ts';
 import { resolveSelectedWorkflows } from './workflow-selection.ts';
+import { processToolResponse } from './responses/index.ts';
 
 export interface RuntimeToolInfo {
   enabledWorkflows: string[];
@@ -51,7 +52,11 @@ export async function applyWorkflowSelection(workflowNames: string[]): Promise<R
             inputSchema: schema,
             annotations,
           },
-          (args: unknown): Promise<ToolResponse> => handler(args as Record<string, unknown>),
+          async (args: unknown): Promise<ToolResponse> => {
+            const response = await handler(args as Record<string, unknown>);
+            // Apply MCP-style next steps rendering
+            return processToolResponse(response, 'mcp', 'normal');
+          },
         );
         registryState.tools.set(name, registeredTool);
       }

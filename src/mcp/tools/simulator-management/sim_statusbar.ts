@@ -60,7 +60,7 @@ export async function sim_statusbarLogic(
       successMessage = `Successfully set simulator ${params.simulatorId} status bar data network to ${params.dataNetwork}`;
     }
 
-    const result = await executor(command, 'Set Status Bar', true, undefined);
+    const result = await executor(command, 'Set Status Bar', false, undefined);
 
     if (!result.success) {
       const failureMessage = `Failed to set status bar: ${result.error}`;

@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Honor CLI socket overrides when auto-starting the daemon.
+- Disable log file output after stream errors to prevent daemon crashes.
+- Update MCP examples and debugging docs to use the `mcp` subcommand.
+- Stop routing tool commands through `sh` by default to avoid `spawn sh ENOENT` failures.
+
 ## [2.0.0] - 2026-01-28
 
 ### Breaking

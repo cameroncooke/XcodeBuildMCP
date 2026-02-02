@@ -187,7 +187,7 @@ export async function build_run_simLogic(
     }
 
     // Execute the command directly
-    const result = await executor(command, 'Get App Path', true, undefined);
+    const result = await executor(command, 'Get App Path', false, undefined);
 
     // If there was an error with the command execution, return it
     if (!result.success) {
@@ -461,20 +461,27 @@ export async function build_run_simLogic(
       content: [
         {
           type: 'text',
-          text: `✅ iOS simulator build and run succeeded for scheme ${params.scheme} from ${sourceType} ${sourcePath} targeting ${target}.
-          
-The app (${bundleId}) is now running in the iOS Simulator. 
-If you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.
-
-Next Steps:
-- Option 1: Capture structured logs only (app continues running):
-  start_simulator_log_capture({ simulatorId: '${simulatorId}', bundleId: '${bundleId}' })
-- Option 2: Capture both console and structured logs (app will restart):
-  start_simulator_log_capture({ simulatorId: '${simulatorId}', bundleId: '${bundleId}', captureConsole: true })
-- Option 3: Launch app with logs in one step (for a fresh start):
-  launch_app_with_logs_in_simulator({ simulatorId: '${simulatorId}', bundleId: '${bundleId}' })
-
-When done with any option, use: stop_sim_log_cap({ logSessionId: 'SESSION_ID' })`,
+          text: `✅ iOS simulator build and run succeeded for scheme ${params.scheme} from ${sourceType} ${sourcePath} targeting ${target}.\n\nThe app (${bundleId}) is now running in the iOS Simulator.\nIf you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.`,
+        },
+      ],
+      nextSteps: [
+        {
+          tool: 'start_sim_log_cap',
+          label: 'Capture structured logs (app continues running)',
+          params: { simulatorId, bundleId },
+          priority: 1,
+        },
+        {
+          tool: 'start_sim_log_cap',
+          label: 'Capture console + structured logs (app restarts)',
+          params: { simulatorId, bundleId, captureConsole: true },
+          priority: 2,
+        },
+        {
+          tool: 'launch_app_logs_sim',
+          label: 'Launch app with logs in one step',
+          params: { simulatorId, bundleId },
+          priority: 3,
         },
       ],
       isError: false,

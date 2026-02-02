@@ -1,0 +1,95 @@
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import type { ToolCatalog } from '../runtime/types.ts';
+import type { ResolvedRuntimeConfig } from '../utils/config-store.ts';
+import { registerDaemonCommands } from './commands/daemon.ts';
+import { registerMcpCommand } from './commands/mcp.ts';
+import { registerToolsCommand } from './commands/tools.ts';
+import { registerToolCommands } from './register-tool-commands.ts';
+import { version } from '../version.ts';
+import { setLogLevel, type LogLevel } from '../utils/logger.ts';
+
+export interface YargsAppOptions {
+  catalog: ToolCatalog;
+  runtimeConfig: ResolvedRuntimeConfig;
+  defaultSocketPath: string;
+  workspaceRoot: string;
+  workspaceKey: string;
+  enabledWorkflows: string[];
+}
+
+/**
+ * Build the main yargs application with all commands registered.
+ */
+export function buildYargsApp(opts: YargsAppOptions): ReturnType<typeof yargs> {
+  const app = yargs(hideBin(process.argv))
+    .scriptName('')
+    .usage('Usage: xcodebuildmcp <command> [options]')
+    .strict()
+    .recommendCommands()
+    .wrap(Math.min(120, yargs().terminalWidth()))
+    .parserConfiguration({
+      // Accept --derived-data-path -> derivedDataPath
+      'camel-case-expansion': true,
+    })
+    .option('socket', {
+      type: 'string',
+      describe: 'Override daemon unix socket path',
+      default: opts.defaultSocketPath,
+      hidden: true,
+    })
+    .option('daemon', {
+      type: 'boolean',
+      describe: 'Force daemon execution even for stateless tools',
+      default: false,
+      hidden: true,
+    })
+    .option('no-daemon', {
+      type: 'boolean',
+      describe: 'Disable daemon usage and auto-start (stateful tools will fail)',
+      default: false,
+    })
+    .option('log-level', {
+      type: 'string',
+      describe: 'Set log verbosity level',
+      choices: ['none', 'error', 'warning', 'info', 'debug'] as const,
+      default: 'none',
+    })
+    .option('style', {
+      type: 'string',
+      describe: 'Output verbosity (minimal hides next steps)',
+      choices: ['normal', 'minimal'] as const,
+      default: 'normal',
+    })
+    .middleware((argv) => {
+      const level = argv['log-level'] as LogLevel | undefined;
+      if (level) {
+        setLogLevel(level);
+      }
+    })
+    .version(version)
+    .help()
+    .alias('h', 'help')
+    .alias('v', 'version')
+    .demandCommand(1, '')
+    .epilogue(
+      `Run 'xcodebuildmcp mcp' to start the MCP server.\n` +
+        `Run 'xcodebuildmcp tools' to see all available tools.\n` +
+        `Run 'xcodebuildmcp <workflow> <tool> --help' for tool-specific help.`,
+    );
+
+  // Register command groups with workspace context
+  registerMcpCommand(app);
+  registerDaemonCommands(app, {
+    defaultSocketPath: opts.defaultSocketPath,
+    workspaceRoot: opts.workspaceRoot,
+    workspaceKey: opts.workspaceKey,
+  });
+  registerToolsCommand(app, opts.catalog);
+  registerToolCommands(app, opts.catalog, {
+    workspaceRoot: opts.workspaceRoot,
+    enabledWorkflows: opts.enabledWorkflows,
+  });
+
+  return app;
+}

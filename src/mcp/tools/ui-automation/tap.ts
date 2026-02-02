@@ -191,6 +191,9 @@ export default {
     title: 'Tap',
     destructiveHint: true,
   },
+  cli: {
+    daemonAffinity: 'preferred',
+  },
   handler: createSessionAwareTool<TapParams>({
     internalSchema: tapSchema as unknown as z.ZodType<TapParams, unknown>,
     logicFunction: (params: TapParams, executor: CommandExecutor) =>

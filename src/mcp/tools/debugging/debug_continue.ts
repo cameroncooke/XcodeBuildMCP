@@ -31,6 +31,9 @@ export async function debug_continueLogic(
 export default {
   name: 'debug_continue',
   description: 'Continue debug session.',
+  cli: {
+    stateful: true,
+  },
   schema: debugContinueSchema.shape,
   handler: createTypedToolWithContext<DebugContinueParams, DebuggerToolContext>(
     debugContinueSchema,

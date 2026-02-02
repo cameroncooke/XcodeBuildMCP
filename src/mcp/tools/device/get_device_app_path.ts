@@ -104,7 +104,7 @@ export async function get_device_app_pathLogic(
     command.push('-destination', destinationString);
 
     // Execute the command directly
-    const result = await executor(command, 'Get App Path', true);
+    const result = await executor(command, 'Get App Path', false);
 
     if (!result.success) {
       return createTextResponse(`Failed to get app path: ${result.error}`, true);
@@ -129,20 +129,31 @@ export async function get_device_app_pathLogic(
     const fullProductName = fullProductNameMatch[1].trim();
     const appPath = `${builtProductsDir}/${fullProductName}`;
 
-    const nextStepsText = `Next Steps:
-1. Get bundle ID: get_app_bundle_id({ appPath: "${appPath}" })
-2. Install app on device: install_app_device({ deviceId: "DEVICE_UDID", appPath: "${appPath}" })
-3. Launch app on device: launch_app_device({ deviceId: "DEVICE_UDID", bundleId: "BUNDLE_ID" })`;
-
     return {
       content: [
         {
           type: 'text',
           text: `✅ App path retrieved successfully: ${appPath}`,
         },
+      ],
+      nextSteps: [
         {
-          type: 'text',
-          text: nextStepsText,
+          tool: 'get_app_bundle_id',
+          label: 'Get bundle ID',
+          params: { appPath },
+          priority: 1,
+        },
+        {
+          tool: 'install_app_device',
+          label: 'Install app on device',
+          params: { deviceId: 'DEVICE_UDID', appPath },
+          priority: 2,
+        },
+        {
+          tool: 'launch_app_device',
+          label: 'Launch app on device',
+          params: { deviceId: 'DEVICE_UDID', bundleId: 'BUNDLE_ID' },
+          priority: 3,
         },
       ],
     };

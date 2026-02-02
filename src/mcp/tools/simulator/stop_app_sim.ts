@@ -51,7 +51,7 @@ export async function stop_app_simLogic(
     const simulatorListResult = await executor(
       ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
       'List Simulators',
-      true,
+      false,
     );
     if (!simulatorListResult.success) {
       return {
@@ -111,7 +111,7 @@ export async function stop_app_simLogic(
 
   try {
     const command = ['xcrun', 'simctl', 'terminate', simulatorId, params.bundleId];
-    const result = await executor(command, 'Stop App in Simulator', true, undefined);
+    const result = await executor(command, 'Stop App in Simulator', false, undefined);
 
     if (!result.success) {
       return {

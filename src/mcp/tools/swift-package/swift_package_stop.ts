@@ -104,6 +104,9 @@ export async function swift_package_stopLogic(
 export default {
   name: 'swift_package_stop',
   description: 'Stop SwiftPM run.',
+  cli: {
+    stateful: true,
+  },
   schema: swiftPackageStopSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Swift Package Stop',

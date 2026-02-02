@@ -17,6 +17,7 @@
  * It's used by virtually all other modules for status reporting and error logging.
  */
 
+import { createWriteStream, type WriteStream } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 // Note: Removed "import * as Sentry from '@sentry/node'" to prevent native module loading at import time
@@ -31,6 +32,7 @@ const sentryEnabled = !isSentryDisabledFromEnv();
 
 // Log levels in order of severity (lower number = more severe)
 const LOG_LEVELS = {
+  none: -1,
   emergency: 0,
   alert: 1,
   critical: 2,
@@ -52,6 +54,9 @@ export interface LogContext {
 
 // Client-requested log level (null means no filtering)
 let clientLogLevel: LogLevel | null = null;
+
+let logFileStream: WriteStream | null = null;
+let logFilePath: string | null = null;
 
 function isTestEnv(): boolean {
   return (
@@ -99,6 +104,52 @@ export function setLogLevel(level: LogLevel): void {
   log('debug', `Log level set to: ${level}`);
 }
 
+export function setLogFile(path: string | null): void {
+  if (!path) {
+    if (logFileStream) {
+      try {
+        logFileStream.end();
+      } catch {
+        // ignore
+      }
+    }
+    logFileStream = null;
+    logFilePath = null;
+    return;
+  }
+
+  if (logFilePath === path && logFileStream) {
+    return;
+  }
+
+  if (logFileStream) {
+    try {
+      logFileStream.end();
+    } catch {
+      // ignore
+    }
+  }
+
+  try {
+    const stream = createWriteStream(path, { flags: 'a' });
+    stream.on('error', (error) => {
+      if (stream !== logFileStream) return;
+      logFileStream = null;
+      logFilePath = null;
+      const message = error instanceof Error ? error.message : String(error);
+      const timestamp = new Date().toISOString();
+      console.error(`[${timestamp}] [ERROR] Log file disabled after error: ${message}`);
+    });
+    logFileStream = stream;
+    logFilePath = path;
+    const timestamp = new Date().toISOString();
+    logFileStream.write(`[${timestamp}] [INFO] Log file initialized\n`);
+  } catch {
+    logFileStream = null;
+    logFilePath = null;
+  }
+}
+
 /**
  * Get the current client-requested log level
  * @returns The current log level or null if no filtering is active
@@ -114,7 +165,7 @@ export function getLogLevel(): LogLevel | null {
  */
 function shouldLog(level: string): boolean {
   // Suppress logging during tests to keep test output clean
-  if (isTestEnv()) {
+  if (isTestEnv() && !logFileStream) {
     return false;
   }
 
@@ -140,11 +191,6 @@ function shouldLog(level: string): boolean {
  * @param context Optional context to control Sentry capture and other behavior
  */
 export function log(level: string, message: string, context?: LogContext): void {
-  // Check if we should log this level
-  if (!shouldLog(level)) {
-    return;
-  }
-
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
 
@@ -154,6 +200,19 @@ export function log(level: string, message: string, context?: LogContext): void 
 
   if (captureToSentry) {
     withSentry((s) => s.captureMessage(logMessage));
+  }
+
+  if (logFileStream && clientLogLevel !== 'none') {
+    try {
+      logFileStream.write(`${logMessage}\n`);
+    } catch {
+      // ignore file logging failures
+    }
+  }
+
+  // Check if we should log this level to stderr
+  if (!shouldLog(level)) {
+    return;
   }
 
   // It's important to use console.error here to ensure logs don't interfere with MCP protocol communication

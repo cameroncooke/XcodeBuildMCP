@@ -380,7 +380,7 @@ describe('set_sim_location tool', () => {
       expect(capturedArgs).toEqual([
         ['xcrun', 'simctl', 'location', 'test-uuid-123', 'set', '37.7749,-122.4194'],
         'Set Simulator Location',
-        true,
+        false,
         {},
       ]);
     });

@@ -74,14 +74,31 @@ describe('list_schemes plugin', () => {
           },
           {
             type: 'text',
-            text: `Next Steps:
-1. Build the app: build_macos({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject" })
-   or for iOS: build_sim({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject", simulatorName: "iPhone 16" })
-2. Show build settings: show_build_settings({ projectPath: "/path/to/MyProject.xcodeproj", scheme: "MyProject" })`,
+            text: 'Hint: Consider saving a default scheme with session-set-defaults { scheme: "MyProject" } to avoid repeating it.',
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'build_macos',
+            label: 'Build for macOS',
+            params: { projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyProject' },
+            priority: 1,
           },
           {
-            type: 'text',
-            text: 'Hint: Consider saving a default scheme with session-set-defaults { scheme: "MyProject" } to avoid repeating it.',
+            tool: 'build_sim',
+            label: 'Build for iOS Simulator',
+            params: {
+              projectPath: '/path/to/MyProject.xcodeproj',
+              scheme: 'MyProject',
+              simulatorName: 'iPhone 16',
+            },
+            priority: 2,
+          },
+          {
+            tool: 'show_build_settings',
+            label: 'Show build settings',
+            params: { projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyProject' },
+            priority: 3,
           },
         ],
         isError: false,
@@ -153,11 +170,8 @@ describe('list_schemes plugin', () => {
             type: 'text',
             text: '',
           },
-          {
-            type: 'text',
-            text: '',
-          },
         ],
+        nextSteps: [],
         isError: false,
       });
     });
@@ -227,7 +241,7 @@ describe('list_schemes plugin', () => {
         [
           ['xcodebuild', '-list', '-project', '/path/to/MyProject.xcodeproj'],
           'List Schemes',
-          true,
+          false,
           undefined,
         ],
       ]);
@@ -298,14 +312,31 @@ describe('list_schemes plugin', () => {
           },
           {
             type: 'text',
-            text: `Next Steps:
-1. Build the app: build_macos({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp" })
-   or for iOS: build_sim({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp", simulatorName: "iPhone 16" })
-2. Show build settings: show_build_settings({ workspacePath: "/path/to/MyProject.xcworkspace", scheme: "MyApp" })`,
+            text: 'Hint: Consider saving a default scheme with session-set-defaults { scheme: "MyApp" } to avoid repeating it.',
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'build_macos',
+            label: 'Build for macOS',
+            params: { workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyApp' },
+            priority: 1,
           },
           {
-            type: 'text',
-            text: 'Hint: Consider saving a default scheme with session-set-defaults { scheme: "MyApp" } to avoid repeating it.',
+            tool: 'build_sim',
+            label: 'Build for iOS Simulator',
+            params: {
+              workspacePath: '/path/to/MyProject.xcworkspace',
+              scheme: 'MyApp',
+              simulatorName: 'iPhone 16',
+            },
+            priority: 2,
+          },
+          {
+            tool: 'show_build_settings',
+            label: 'Show build settings',
+            params: { workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyApp' },
+            priority: 3,
           },
         ],
         isError: false,
@@ -338,7 +369,7 @@ describe('list_schemes plugin', () => {
         [
           ['xcodebuild', '-list', '-workspace', '/path/to/MyProject.xcworkspace'],
           'List Schemes',
-          true,
+          false,
           undefined,
         ],
       ]);

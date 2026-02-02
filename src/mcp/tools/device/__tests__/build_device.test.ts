@@ -178,7 +178,7 @@ describe('build_device plugin', () => {
           'build',
         ],
         logPrefix: 'iOS Device Build',
-        silent: true,
+        silent: false,
         opts: { cwd: '/path/to' },
       });
     });
@@ -230,7 +230,7 @@ describe('build_device plugin', () => {
           'build',
         ],
         logPrefix: 'iOS Device Build',
-        silent: true,
+        silent: false,
         opts: { cwd: '/path/to' },
       });
     });
@@ -345,7 +345,7 @@ describe('build_device plugin', () => {
           'build',
         ],
         logPrefix: 'iOS Device Build',
-        silent: true,
+        silent: false,
         opts: { cwd: '/path/to' },
       });
     });

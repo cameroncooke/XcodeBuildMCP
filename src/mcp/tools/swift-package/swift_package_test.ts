@@ -65,7 +65,7 @@ export async function swift_package_testLogic(
 
   log('info', `Running swift ${swiftArgs.join(' ')}`);
   try {
-    const result = await executor(['swift', ...swiftArgs], 'Swift Package Test', true, undefined);
+    const result = await executor(['swift', ...swiftArgs], 'Swift Package Test', false, undefined);
     if (!result.success) {
       const errorMessage = result.error ?? result.output ?? 'Unknown error';
       return createErrorResponse('Swift package tests failed', errorMessage);

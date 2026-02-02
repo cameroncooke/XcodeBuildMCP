@@ -136,7 +136,7 @@ describe('get_device_app_path plugin', () => {
           'generic/platform=iOS',
         ],
         logPrefix: 'Get App Path',
-        useShell: true,
+        useShell: false,
         opts: undefined,
       });
     });
@@ -191,7 +191,7 @@ describe('get_device_app_path plugin', () => {
           'generic/platform=watchOS',
         ],
         logPrefix: 'Get App Path',
-        useShell: true,
+        useShell: false,
         opts: undefined,
       });
     });
@@ -245,7 +245,7 @@ describe('get_device_app_path plugin', () => {
           'generic/platform=iOS',
         ],
         logPrefix: 'Get App Path',
-        useShell: true,
+        useShell: false,
         opts: undefined,
       });
     });
@@ -271,9 +271,25 @@ describe('get_device_app_path plugin', () => {
             type: 'text',
             text: '✅ App path retrieved successfully: /path/to/build/Debug-iphoneos/MyApp.app',
           },
+        ],
+        nextSteps: [
           {
-            type: 'text',
-            text: 'Next Steps:\n1. Get bundle ID: get_app_bundle_id({ appPath: "/path/to/build/Debug-iphoneos/MyApp.app" })\n2. Install app on device: install_app_device({ deviceId: "DEVICE_UDID", appPath: "/path/to/build/Debug-iphoneos/MyApp.app" })\n3. Launch app on device: launch_app_device({ deviceId: "DEVICE_UDID", bundleId: "BUNDLE_ID" })',
+            tool: 'get_app_bundle_id',
+            label: 'Get bundle ID',
+            params: { appPath: '/path/to/build/Debug-iphoneos/MyApp.app' },
+            priority: 1,
+          },
+          {
+            tool: 'install_app_device',
+            label: 'Install app on device',
+            params: { deviceId: 'DEVICE_UDID', appPath: '/path/to/build/Debug-iphoneos/MyApp.app' },
+            priority: 2,
+          },
+          {
+            tool: 'launch_app_device',
+            label: 'Launch app on device',
+            params: { deviceId: 'DEVICE_UDID', bundleId: 'BUNDLE_ID' },
+            priority: 3,
           },
         ],
       });
@@ -379,7 +395,7 @@ describe('get_device_app_path plugin', () => {
           'generic/platform=iOS',
         ],
         logPrefix: 'Get App Path',
-        useShell: true,
+        useShell: false,
         opts: undefined,
       });
     });

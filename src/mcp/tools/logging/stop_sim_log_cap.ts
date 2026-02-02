@@ -55,6 +55,9 @@ export async function stop_sim_log_capLogic(
 export default {
   name: 'stop_sim_log_cap',
   description: 'Stop sim app and return logs.',
+  cli: {
+    stateful: true,
+  },
   schema: stopSimLogCapSchema.shape, // MCP SDK compatibility
   annotations: {
     title: 'Stop Simulator and Return Logs',

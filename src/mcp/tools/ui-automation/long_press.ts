@@ -141,6 +141,9 @@ export default {
     title: 'Long Press',
     destructiveHint: true,
   },
+  cli: {
+    daemonAffinity: 'preferred',
+  },
   handler: createSessionAwareTool<LongPressParams>({
     internalSchema: longPressSchema as unknown as z.ZodType<LongPressParams, unknown>,
     logicFunction: (params: LongPressParams, executor: CommandExecutor) =>

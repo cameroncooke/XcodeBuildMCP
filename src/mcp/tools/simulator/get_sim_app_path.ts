@@ -215,7 +215,7 @@ export async function get_sim_app_pathLogic(
     command.push('-destination', destinationString);
 
     // Execute the command directly
-    const result = await executor(command, 'Get App Path', true, undefined);
+    const result = await executor(command, 'Get App Path', false, undefined);
 
     if (!result.success) {
       return createTextResponse(`Failed to get app path: ${result.error}`, true);
@@ -240,17 +240,56 @@ export async function get_sim_app_pathLogic(
     const fullProductName = fullProductNameMatch[1].trim();
     const appPath = `${builtProductsDir}/${fullProductName}`;
 
-    let nextStepsText = '';
+    // Build nextSteps based on platform
+    let nextSteps: Array<{
+      tool: string;
+      label: string;
+      params: Record<string, string | number | boolean>;
+      priority?: number;
+    }> = [];
+
     if (platform === XcodePlatform.macOS) {
-      nextStepsText = `Next Steps:
-1. Get bundle ID: get_mac_bundle_id({ appPath: "${appPath}" })
-2. Launch the app: launch_mac_app({ appPath: "${appPath}" })`;
+      nextSteps = [
+        {
+          tool: 'get_mac_bundle_id',
+          label: 'Get bundle ID',
+          params: { appPath },
+          priority: 1,
+        },
+        {
+          tool: 'launch_mac_app',
+          label: 'Launch the app',
+          params: { appPath },
+          priority: 2,
+        },
+      ];
     } else if (isSimulatorPlatform) {
-      nextStepsText = `Next Steps:
-1. Get bundle ID: get_app_bundle_id({ appPath: "${appPath}" })
-2. Boot simulator: boot_sim({ simulatorId: "SIMULATOR_UUID" })
-3. Install app: install_app_sim({ simulatorId: "SIMULATOR_UUID", appPath: "${appPath}" })
-4. Launch app: launch_app_sim({ simulatorId: "SIMULATOR_UUID", bundleId: "BUNDLE_ID" })`;
+      nextSteps = [
+        {
+          tool: 'get_app_bundle_id',
+          label: 'Get bundle ID',
+          params: { appPath },
+          priority: 1,
+        },
+        {
+          tool: 'boot_sim',
+          label: 'Boot simulator',
+          params: { simulatorId: 'SIMULATOR_UUID' },
+          priority: 2,
+        },
+        {
+          tool: 'install_app_sim',
+          label: 'Install app',
+          params: { simulatorId: 'SIMULATOR_UUID', appPath },
+          priority: 3,
+        },
+        {
+          tool: 'launch_app_sim',
+          label: 'Launch app',
+          params: { simulatorId: 'SIMULATOR_UUID', bundleId: 'BUNDLE_ID' },
+          priority: 4,
+        },
+      ];
     } else if (
       [
         XcodePlatform.iOS,
@@ -259,15 +298,26 @@ export async function get_sim_app_pathLogic(
         XcodePlatform.visionOS,
       ].includes(platform)
     ) {
-      nextStepsText = `Next Steps:
-1. Get bundle ID: get_app_bundle_id({ appPath: "${appPath}" })
-2. Install app on device: install_app_device({ deviceId: "DEVICE_UDID", appPath: "${appPath}" })
-3. Launch app on device: launch_app_device({ deviceId: "DEVICE_UDID", bundleId: "BUNDLE_ID" })`;
-    } else {
-      // For other platforms
-      nextStepsText = `Next Steps:
-1. The app has been built for ${platform}
-2. Use platform-specific deployment tools to install and run the app`;
+      nextSteps = [
+        {
+          tool: 'get_app_bundle_id',
+          label: 'Get bundle ID',
+          params: { appPath },
+          priority: 1,
+        },
+        {
+          tool: 'install_app_device',
+          label: 'Install app on device',
+          params: { deviceId: 'DEVICE_UDID', appPath },
+          priority: 2,
+        },
+        {
+          tool: 'launch_app_device',
+          label: 'Launch app on device',
+          params: { deviceId: 'DEVICE_UDID', bundleId: 'BUNDLE_ID' },
+          priority: 3,
+        },
+      ];
     }
 
     return {
@@ -276,11 +326,8 @@ export async function get_sim_app_pathLogic(
           type: 'text',
           text: `✅ App path retrieved successfully: ${appPath}`,
         },
-        {
-          type: 'text',
-          text: nextStepsText,
-        },
       ],
+      nextSteps,
       isError: false,
     };
   } catch (error) {

@@ -97,11 +97,19 @@ describe('get_mac_bundle_id plugin', () => {
             type: 'text',
             text: '✅ Bundle ID: com.example.MyMacApp',
           },
+        ],
+        nextSteps: [
           {
-            type: 'text',
-            text: `Next Steps:
-- Launch: launch_mac_app({ appPath: "/Applications/MyApp.app" })
-- Build again: build_macos({ scheme: "SCHEME_NAME" })`,
+            tool: 'launch_mac_app',
+            label: 'Launch the app',
+            params: { appPath: '/Applications/MyApp.app' },
+            priority: 1,
+          },
+          {
+            tool: 'build_macos',
+            label: 'Build again',
+            params: { scheme: 'SCHEME_NAME' },
+            priority: 2,
           },
         ],
         isError: false,
@@ -132,11 +140,19 @@ describe('get_mac_bundle_id plugin', () => {
             type: 'text',
             text: '✅ Bundle ID: com.example.MyMacApp',
           },
+        ],
+        nextSteps: [
           {
-            type: 'text',
-            text: `Next Steps:
-- Launch: launch_mac_app({ appPath: "/Applications/MyApp.app" })
-- Build again: build_macos({ scheme: "SCHEME_NAME" })`,
+            tool: 'launch_mac_app',
+            label: 'Launch the app',
+            params: { appPath: '/Applications/MyApp.app' },
+            priority: 1,
+          },
+          {
+            tool: 'build_macos',
+            label: 'Build again',
+            params: { scheme: 'SCHEME_NAME' },
+            priority: 2,
           },
         ],
         isError: false,

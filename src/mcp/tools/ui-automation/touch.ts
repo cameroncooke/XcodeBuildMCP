@@ -140,6 +140,9 @@ export default {
     title: 'Touch',
     destructiveHint: true,
   },
+  cli: {
+    daemonAffinity: 'preferred',
+  },
   handler: createSessionAwareTool<TouchParams>({
     internalSchema: touchSchema as unknown as z.ZodType<TouchParams, unknown>,
     logicFunction: (params: TouchParams, executor: CommandExecutor) => touchLogic(params, executor),

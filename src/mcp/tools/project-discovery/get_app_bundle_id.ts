@@ -90,11 +90,31 @@ export async function get_app_bundle_idLogic(
           type: 'text',
           text: `✅ Bundle ID: ${bundleId}`,
         },
+      ],
+      nextSteps: [
         {
-          type: 'text',
-          text: `Next Steps:
-- Simulator: install_app_sim + launch_app_sim
-- Device: install_app_device + launch_app_device`,
+          tool: 'install_app_sim',
+          label: 'Install on simulator',
+          params: { simulatorId: 'SIMULATOR_UUID', appPath },
+          priority: 1,
+        },
+        {
+          tool: 'launch_app_sim',
+          label: 'Launch on simulator',
+          params: { simulatorId: 'SIMULATOR_UUID', bundleId: bundleId.trim() },
+          priority: 2,
+        },
+        {
+          tool: 'install_app_device',
+          label: 'Install on device',
+          params: { deviceId: 'DEVICE_UDID', appPath },
+          priority: 3,
+        },
+        {
+          tool: 'launch_app_device',
+          label: 'Launch on device',
+          params: { deviceId: 'DEVICE_UDID', bundleId: bundleId.trim() },
+          priority: 4,
         },
       ],
       isError: false,

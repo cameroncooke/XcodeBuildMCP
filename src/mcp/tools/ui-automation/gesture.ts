@@ -180,6 +180,9 @@ export default {
     title: 'Gesture',
     destructiveHint: true,
   },
+  cli: {
+    daemonAffinity: 'preferred',
+  },
   handler: createSessionAwareTool<GestureParams>({
     internalSchema: gestureSchema as unknown as z.ZodType<GestureParams, unknown>,
     logicFunction: (params: GestureParams, executor: CommandExecutor) =>

@@ -158,6 +158,9 @@ export default {
     title: 'Swipe',
     destructiveHint: true,
   },
+  cli: {
+    daemonAffinity: 'preferred',
+  },
   handler: createSessionAwareTool<SwipeParams>({
     internalSchema: swipeSchema as unknown as z.ZodType<SwipeParams>,
     logicFunction: (params: SwipeParams, executor: CommandExecutor) =>

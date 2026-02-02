@@ -106,11 +106,27 @@ describe('Snapshot UI Plugin', () => {
           },
           {
             type: 'text' as const,
-            text: `Next Steps:
-- Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)
-- Re-run snapshot_ui after layout changes
-- If a debugger is attached, ensure the app is running (not stopped on breakpoints)
-- Screenshots are for visual verification only`,
+            text: 'Tips:\n- Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)\n- If a debugger is attached, ensure the app is running (not stopped on breakpoints)\n- Screenshots are for visual verification only',
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'snapshot_ui',
+            label: 'Refresh after layout changes',
+            params: { simulatorId: '12345678-1234-4234-8234-123456789012' },
+            priority: 1,
+          },
+          {
+            tool: 'tap_coordinate',
+            label: 'Tap on element',
+            params: { simulatorId: '12345678-1234-4234-8234-123456789012', x: 0, y: 0 },
+            priority: 2,
+          },
+          {
+            tool: 'take_screenshot',
+            label: 'Take screenshot for verification',
+            params: { simulatorId: '12345678-1234-4234-8234-123456789012' },
+            priority: 3,
           },
         ],
       });

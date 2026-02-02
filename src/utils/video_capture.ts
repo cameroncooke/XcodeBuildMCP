@@ -100,7 +100,7 @@ export async function startSimulatorVideoCapture(
 
   log('info', `Starting AXe video recording for simulator ${simulatorUuid} at ${fps} fps`);
 
-  const result = await executor(command, 'Start Simulator Video Capture', true, { env }, true);
+  const result = await executor(command, 'Start Simulator Video Capture', false, { env }, true);
 
   if (!result.success || !result.process) {
     return {

@@ -1,13 +1,11 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SetLevelRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import process from 'node:process';
 import { registerResources } from '../core/resources.ts';
-import { getDefaultFileSystemExecutor } from '../utils/command.ts';
 import type { FileSystemExecutor } from '../utils/FileSystemExecutor.ts';
 import { log, setLogLevel, type LogLevel } from '../utils/logger.ts';
-import { getConfig, initConfigStore, type RuntimeConfigOverrides } from '../utils/config-store.ts';
-import { sessionStore } from '../utils/session-store.ts';
+import type { RuntimeConfigOverrides } from '../utils/config-store.ts';
 import { registerWorkflows } from '../utils/tool-registry.ts';
+import { bootstrapRuntime } from '../runtime/bootstrap-runtime.ts';
 
 export interface BootstrapOptions {
   enabledWorkflows?: string[];
@@ -27,9 +25,6 @@ export async function bootstrapServer(
     return {};
   });
 
-  const cwd = options.cwd ?? process.cwd();
-  const fileSystemExecutor = options.fileSystemExecutor ?? getDefaultFileSystemExecutor();
-
   const hasLegacyEnabledWorkflows = Object.prototype.hasOwnProperty.call(
     options,
     'enabledWorkflows',
@@ -43,24 +38,20 @@ export async function bootstrapServer(
     overrides.enabledWorkflows = options.enabledWorkflows ?? [];
   }
 
-  const configResult = await initConfigStore({
-    cwd,
-    fs: fileSystemExecutor,
-    overrides,
+  const result = await bootstrapRuntime({
+    runtime: 'mcp',
+    cwd: options.cwd,
+    fs: options.fileSystemExecutor,
+    configOverrides: overrides,
   });
-  if (configResult.found) {
-    for (const notice of configResult.notices) {
+
+  if (result.configFound) {
+    for (const notice of result.notices) {
       log('info', `[ProjectConfig] ${notice}`);
     }
   }
 
-  const config = getConfig();
-  const defaults = config.sessionDefaults ?? {};
-  if (Object.keys(defaults).length > 0) {
-    sessionStore.setDefaults(defaults);
-  }
-
-  const enabledWorkflows = config.enabledWorkflows;
+  const enabledWorkflows = result.runtime.config.enabledWorkflows;
   log('info', `🚀 Initializing server...`);
   await registerWorkflows(enabledWorkflows);
 

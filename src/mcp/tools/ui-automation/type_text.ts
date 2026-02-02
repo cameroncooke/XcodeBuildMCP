@@ -112,6 +112,9 @@ export default {
     title: 'Type Text',
     destructiveHint: true,
   },
+  cli: {
+    daemonAffinity: 'preferred',
+  },
   handler: createSessionAwareTool<TypeTextParams>({
     internalSchema: typeTextSchema as unknown as z.ZodType<TypeTextParams, unknown>,
     logicFunction: (params: TypeTextParams, executor: CommandExecutor) =>

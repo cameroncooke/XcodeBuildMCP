@@ -48,7 +48,7 @@ export async function stop_app_deviceLogic(
         processId.toString(),
       ],
       'Stop app on device',
-      true, // useShell
+      false, // useShell
       undefined, // env
     );
 

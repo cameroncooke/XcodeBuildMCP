@@ -151,7 +151,7 @@ describe('get_sim_app_path tool', () => {
 
       expect(callHistory).toHaveLength(1);
       expect(callHistory[0].logPrefix).toBe('Get App Path');
-      expect(callHistory[0].useShell).toBe(true);
+      expect(callHistory[0].useShell).toBe(false);
       expect(callHistory[0].command).toEqual([
         'xcodebuild',
         '-showBuildSettings',

@@ -95,7 +95,7 @@ describe('install_app_sim tool', () => {
         [
           ['xcrun', 'simctl', 'install', 'test-uuid-123', '/path/to/app.app'],
           'Install App in Simulator',
-          true,
+          false,
           undefined,
         ],
         [
@@ -136,7 +136,7 @@ describe('install_app_sim tool', () => {
         [
           ['xcrun', 'simctl', 'install', 'different-uuid-456', '/different/path/MyApp.app'],
           'Install App in Simulator',
-          true,
+          false,
           undefined,
         ],
         [
@@ -218,13 +218,21 @@ describe('install_app_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: 'App installed successfully in simulator test-uuid-123',
+            text: 'App installed successfully in simulator test-uuid-123.',
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'open_sim',
+            label: 'Open the Simulator app',
+            params: {},
+            priority: 1,
           },
           {
-            type: 'text',
-            text: `Next Steps:
-1. Open the Simulator app: open_sim({})
-2. Launch the app: launch_app_sim({ simulatorId: "test-uuid-123", bundleId: "YOUR_APP_BUNDLE_ID" })`,
+            tool: 'launch_app_sim',
+            label: 'Launch the app',
+            params: { simulatorId: 'test-uuid-123', bundleId: 'YOUR_APP_BUNDLE_ID' },
+            priority: 2,
           },
         ],
       });
@@ -274,13 +282,21 @@ describe('install_app_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: 'App installed successfully in simulator test-uuid-123',
+            text: 'App installed successfully in simulator test-uuid-123.',
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'open_sim',
+            label: 'Open the Simulator app',
+            params: {},
+            priority: 1,
           },
           {
-            type: 'text',
-            text: `Next Steps:
-1. Open the Simulator app: open_sim({})
-2. Launch the app: launch_app_sim({ simulatorId: "test-uuid-123", bundleId: "com.example.myapp" })`,
+            tool: 'launch_app_sim',
+            label: 'Launch the app',
+            params: { simulatorId: 'test-uuid-123', bundleId: 'com.example.myapp' },
+            priority: 2,
           },
         ],
       });

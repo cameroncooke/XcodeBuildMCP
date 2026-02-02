@@ -102,7 +102,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         'com.example.app',
       ]);
       expect(calls[0].logPrefix).toBe('Launch app on device');
-      expect(calls[0].useShell).toBe(true);
+      expect(calls[0].useShell).toBe(false);
       expect(calls[0].env).toBeUndefined();
     });
 
@@ -167,6 +167,7 @@ describe('launch_app_device plugin (device-shared)', () => {
             text: '✅ App launched successfully\n\nApp launched successfully',
           },
         ],
+        nextSteps: [],
       });
     });
 
@@ -192,6 +193,7 @@ describe('launch_app_device plugin (device-shared)', () => {
             text: '✅ App launched successfully\n\nLaunch succeeded with detailed output',
           },
         ],
+        nextSteps: [],
       });
     });
 
@@ -226,7 +228,15 @@ describe('launch_app_device plugin (device-shared)', () => {
         content: [
           {
             type: 'text',
-            text: '✅ App launched successfully\n\nApp launched successfully\n\nProcess ID: 12345\n\nNext Steps:\n1. Interact with your app on the device\n2. Stop the app: stop_app_device({ deviceId: "test-device-123", processId: 12345 })',
+            text: '✅ App launched successfully\n\nApp launched successfully\n\nProcess ID: 12345\n\nInteract with your app on the device.',
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'stop_app_device',
+            label: 'Stop the app',
+            params: { deviceId: 'test-device-123', processId: 12345 },
+            priority: 1,
           },
         ],
       });
@@ -254,6 +264,7 @@ describe('launch_app_device plugin (device-shared)', () => {
             text: '✅ App launched successfully\n\nApp "com.example.app" launched on device "test-device-123"',
           },
         ],
+        nextSteps: [],
       });
     });
   });

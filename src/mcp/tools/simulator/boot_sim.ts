@@ -28,7 +28,7 @@ export async function boot_simLogic(
 
   try {
     const command = ['xcrun', 'simctl', 'boot', params.simulatorId];
-    const result = await executor(command, 'Boot Simulator', true);
+    const result = await executor(command, 'Boot Simulator', false);
 
     if (!result.success) {
       return {
@@ -45,12 +45,27 @@ export async function boot_simLogic(
       content: [
         {
           type: 'text',
-          text: `✅ Simulator booted successfully. To make it visible, use: open_sim()
-
-Next steps:
-1. Open the Simulator app (makes it visible): open_sim()
-2. Install an app: install_app_sim({ simulatorId: "${params.simulatorId}", appPath: "PATH_TO_YOUR_APP" })
-3. Launch an app: launch_app_sim({ simulatorId: "${params.simulatorId}", bundleId: "YOUR_APP_BUNDLE_ID" })`,
+          text: `Simulator booted successfully.`,
+        },
+      ],
+      nextSteps: [
+        {
+          tool: 'open_sim',
+          label: 'Open the Simulator app (makes it visible)',
+          params: {},
+          priority: 1,
+        },
+        {
+          tool: 'install_app_sim',
+          label: 'Install an app',
+          params: { simulatorId: params.simulatorId, appPath: 'PATH_TO_YOUR_APP' },
+          priority: 2,
+        },
+        {
+          tool: 'launch_app_sim',
+          label: 'Launch an app',
+          params: { simulatorId: params.simulatorId, bundleId: 'YOUR_APP_BUNDLE_ID' },
+          priority: 3,
         },
       ],
     };

@@ -61,20 +61,33 @@ describe('open_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: 'Simulator app opened successfully',
+            text: 'Simulator app opened successfully.',
+          },
+        ],
+        nextSteps: [
+          {
+            tool: 'boot_sim',
+            label: 'Boot a simulator if needed',
+            params: { simulatorId: 'UUID_FROM_LIST_SIMS' },
+            priority: 1,
           },
           {
-            type: 'text',
-            text: `Next Steps:
-1. Boot a simulator if needed: boot_sim({ simulatorId: 'UUID_FROM_LIST_SIMULATORS' })
-2. Launch your app and interact with it
-3. Log capture options:
-   - Option 1: Capture structured logs only (app continues running):
-     start_sim_log_cap({ simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' })
-   - Option 2: Capture both console and structured logs (app will restart):
-     start_sim_log_cap({ simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID', captureConsole: true })
-   - Option 3: Launch app with logs in one step:
-     launch_app_logs_sim({ simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' })`,
+            tool: 'start_sim_log_cap',
+            label: 'Capture structured logs (app continues running)',
+            params: { simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' },
+            priority: 2,
+          },
+          {
+            tool: 'start_sim_log_cap',
+            label: 'Capture console + structured logs (app restarts)',
+            params: { simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID', captureConsole: true },
+            priority: 3,
+          },
+          {
+            tool: 'launch_app_logs_sim',
+            label: 'Launch app with logs in one step',
+            params: { simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' },
+            priority: 4,
           },
         ],
       });
@@ -162,7 +175,7 @@ describe('open_sim tool', () => {
       expect(calls[0]).toEqual({
         command: ['open', '-a', 'Simulator'],
         description: 'Open Simulator',
-        hideOutput: true,
+        hideOutput: false,
         opts: undefined,
       });
     });

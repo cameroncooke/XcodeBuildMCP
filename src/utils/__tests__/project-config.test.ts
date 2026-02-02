@@ -103,6 +103,27 @@ describe('project-config', () => {
       expect(result.config.macosTemplatePath).toBe('/opt/templates/macos');
     });
 
+    it('should resolve file URLs in session defaults and top-level paths', async () => {
+      const yaml = [
+        'schemaVersion: 1',
+        'axePath: "file:///repo/bin/axe"',
+        'sessionDefaults:',
+        '  workspacePath: "file:///repo/App.xcworkspace"',
+        '  derivedDataPath: "file:///repo/.derivedData"',
+        '',
+      ].join('\n');
+
+      const { fs } = createFsFixture({ exists: true, readFile: yaml });
+      const result = await loadProjectConfig({ fs, cwd });
+
+      if (!result.found) throw new Error('expected config to be found');
+
+      expect(result.config.axePath).toBe('/repo/bin/axe');
+      const defaults = result.config.sessionDefaults ?? {};
+      expect(defaults.workspacePath).toBe('/repo/App.xcworkspace');
+      expect(defaults.derivedDataPath).toBe('/repo/.derivedData');
+    });
+
     it('should return an error result when schemaVersion is unsupported', async () => {
       const yaml = ['schemaVersion: 2', 'sessionDefaults:', '  scheme: "App"', ''].join('\n');
       const { fs } = createFsFixture({ exists: true, readFile: yaml });

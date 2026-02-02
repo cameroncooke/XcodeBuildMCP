@@ -73,8 +73,16 @@ export async function start_sim_log_capLogic(
   return {
     content: [
       createTextContent(
-        `Log capture started successfully. Session ID: ${sessionId}.\n\n${captureConsole ? 'Note: Your app was relaunched to capture console output.\n' : ''}${filterDescription}\n\nNext Steps:\n1.  Interact with your simulator and app.\n2.  Use 'stop_sim_log_cap' with session ID '${sessionId}' to stop capture and retrieve logs.`,
+        `Log capture started successfully. Session ID: ${sessionId}.\n\n${captureConsole ? 'Note: Your app was relaunched to capture console output.\n' : ''}${filterDescription}\n\nInteract with your simulator and app, then stop capture to retrieve logs.`,
       ),
+    ],
+    nextSteps: [
+      {
+        tool: 'stop_sim_log_cap',
+        label: 'Stop capture and retrieve logs',
+        params: { logSessionId: sessionId },
+        priority: 1,
+      },
     ],
   };
 }
@@ -86,6 +94,9 @@ const publicSchemaObject = z.strictObject(
 export default {
   name: 'start_sim_log_cap',
   description: 'Start sim log capture.',
+  cli: {
+    stateful: true,
+  },
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: startSimLogCapSchema,

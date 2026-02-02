@@ -63,7 +63,7 @@ export async function listSchemesLogic(
       command.push('-workspace', params.workspacePath!);
     }
 
-    const result = await executor(command, 'List Schemes', true);
+    const result = await executor(command, 'List Schemes', false);
 
     if (!result.success) {
       return createTextResponse(`Failed to list schemes: ${result.error}`, true);
@@ -80,33 +80,55 @@ export async function listSchemesLogic(
     const schemes = schemeLines.map((line) => line.trim()).filter((line) => line);
 
     // Prepare next steps with the first scheme if available
-    let nextStepsText = '';
+    const nextSteps: Array<{
+      tool: string;
+      label: string;
+      params: Record<string, string | number | boolean>;
+      priority?: number;
+    }> = [];
     let hintText = '';
+
     if (schemes.length > 0) {
       const firstScheme = schemes[0];
 
-      // Note: After Phase 2, these will be unified tool names too
-      nextStepsText = `Next Steps:
-1. Build the app: build_macos({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })
-   or for iOS: build_sim({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}", simulatorName: "iPhone 16" })
-2. Show build settings: show_build_settings({ ${projectOrWorkspace}Path: "${path}", scheme: "${firstScheme}" })`;
+      nextSteps.push(
+        {
+          tool: 'build_macos',
+          label: 'Build for macOS',
+          params: { [`${projectOrWorkspace}Path`]: path!, scheme: firstScheme },
+          priority: 1,
+        },
+        {
+          tool: 'build_sim',
+          label: 'Build for iOS Simulator',
+          params: {
+            [`${projectOrWorkspace}Path`]: path!,
+            scheme: firstScheme,
+            simulatorName: 'iPhone 16',
+          },
+          priority: 2,
+        },
+        {
+          tool: 'show_build_settings',
+          label: 'Show build settings',
+          params: { [`${projectOrWorkspace}Path`]: path!, scheme: firstScheme },
+          priority: 3,
+        },
+      );
 
       hintText =
         `Hint: Consider saving a default scheme with session-set-defaults ` +
         `{ scheme: "${firstScheme}" } to avoid repeating it.`;
     }
 
-    const content = [
-      createTextBlock('✅ Available schemes:'),
-      createTextBlock(schemes.join('\n')),
-      createTextBlock(nextStepsText),
-    ];
+    const content = [createTextBlock('✅ Available schemes:'), createTextBlock(schemes.join('\n'))];
     if (hintText.length > 0) {
       content.push(createTextBlock(hintText));
     }
 
     return {
       content,
+      nextSteps,
       isError: false,
     };
   } catch (error) {

@@ -108,7 +108,7 @@ export async function list_simsLogic(
   try {
     // Try JSON first for structured data
     const jsonCommand = ['xcrun', 'simctl', 'list', 'devices', '--json'];
-    const jsonResult = await executor(jsonCommand, 'List Simulators (JSON)', true);
+    const jsonResult = await executor(jsonCommand, 'List Simulators (JSON)', false);
 
     if (!jsonResult.success) {
       return {
@@ -134,7 +134,7 @@ export async function list_simsLogic(
 
     // Fallback to text parsing for Apple simctl bugs (duplicate runtime IDs in iOS 26.0 beta)
     const textCommand = ['xcrun', 'simctl', 'list', 'devices'];
-    const textResult = await executor(textCommand, 'List Simulators (Text)', true);
+    const textResult = await executor(textCommand, 'List Simulators (Text)', false);
 
     const textDevices = textResult.success ? parseTextOutput(textResult.output) : [];
 
@@ -183,13 +183,6 @@ export async function list_simsLogic(
       responseText += '\n';
     }
 
-    responseText += 'Next Steps:\n';
-    responseText += "1. Boot a simulator: boot_sim({ simulatorId: 'UUID_FROM_ABOVE' })\n";
-    responseText += '2. Open the simulator UI: open_sim({})\n';
-    responseText +=
-      "3. Build for simulator: build_sim({ scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' })\n";
-    responseText +=
-      "4. Get app path: get_sim_app_path({ scheme: 'YOUR_SCHEME', platform: 'iOS Simulator', simulatorId: 'UUID_FROM_ABOVE' })\n";
     responseText +=
       "Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FROM_ABOVE' } (or simulatorName).";
 
@@ -198,6 +191,36 @@ export async function list_simsLogic(
         {
           type: 'text',
           text: responseText,
+        },
+      ],
+      nextSteps: [
+        {
+          tool: 'boot_sim',
+          label: 'Boot a simulator',
+          params: { simulatorId: 'UUID_FROM_ABOVE' },
+          priority: 1,
+        },
+        {
+          tool: 'open_sim',
+          label: 'Open the simulator UI',
+          params: {},
+          priority: 2,
+        },
+        {
+          tool: 'build_sim',
+          label: 'Build for simulator',
+          params: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
+          priority: 3,
+        },
+        {
+          tool: 'get_sim_app_path',
+          label: 'Get app path',
+          params: {
+            scheme: 'YOUR_SCHEME',
+            platform: 'iOS Simulator',
+            simulatorId: 'UUID_FROM_ABOVE',
+          },
+          priority: 4,
         },
       ],
     };

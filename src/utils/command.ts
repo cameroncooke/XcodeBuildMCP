@@ -27,20 +27,20 @@ export { FileSystemExecutor } from './FileSystemExecutor.ts';
  * @param logPrefix Prefix for logging
  * @param useShell Whether to use shell execution (true) or direct execution (false)
  * @param opts Optional execution options (env: environment variables to merge with process.env, cwd: working directory)
- * @param detached Whether to spawn process without waiting for completion (for streaming/background processes)
+ * @param detached Whether to resolve without waiting for completion (does not detach/unref the process)
  * @returns Promise resolving to command response with the process
  */
 async function defaultExecutor(
   command: string[],
   logPrefix?: string,
-  useShell: boolean = true,
+  useShell: boolean = false,
   opts?: CommandExecOptions,
   detached: boolean = false,
 ): Promise<CommandResponse> {
   // Properly escape arguments for shell
   let escapedCommand = command;
   if (useShell) {
-    // For shell execution, we need to format as ['sh', '-c', 'full command string']
+    // For shell execution, we need to format as ['/bin/sh', '-c', 'full command string']
     const commandString = command
       .map((arg) => {
         // Shell metacharacters that require quoting: space, quotes, equals, dollar, backticks, semicolons, pipes, etc.
@@ -52,22 +52,45 @@ async function defaultExecutor(
       })
       .join(' ');
 
-    escapedCommand = ['sh', '-c', commandString];
+    escapedCommand = ['/bin/sh', '-c', commandString];
   }
 
-  // Log the actual command that will be executed
-  const displayCommand =
-    useShell && escapedCommand.length === 3 ? escapedCommand[2] : escapedCommand.join(' ');
-  log('info', `Executing ${logPrefix ?? ''} command: ${displayCommand}`);
-
   return new Promise((resolve, reject) => {
-    const executable = escapedCommand[0];
-    const args = escapedCommand.slice(1);
+    let executable = escapedCommand[0];
+    let args = escapedCommand.slice(1);
+
+    if (!useShell && executable === 'xcodebuild') {
+      const xcrunPath = '/usr/bin/xcrun';
+      if (existsSync(xcrunPath)) {
+        executable = xcrunPath;
+        args = ['xcodebuild', ...args];
+      }
+    }
+
+    // Log the actual command that will be executed
+    const displayCommand =
+      useShell && escapedCommand.length === 3 ? escapedCommand[2] : [executable, ...args].join(' ');
+    log('info', `Executing ${logPrefix ?? ''} command: ${displayCommand}`);
 
     const spawnOpts: Parameters<typeof spawn>[2] = {
       stdio: ['ignore', 'pipe', 'pipe'], // ignore stdin, pipe stdout/stderr
       env: { ...process.env, ...(opts?.env ?? {}) },
       cwd: opts?.cwd,
+    };
+
+    log('info', `defaultExecutor PATH: ${process.env.PATH ?? ''}`);
+
+    const logSpawnError = (err: Error): void => {
+      const errnoErr = err as NodeJS.ErrnoException & { spawnargs?: string[] };
+      const errorDetails = {
+        code: errnoErr.code,
+        errno: errnoErr.errno,
+        syscall: errnoErr.syscall,
+        path: errnoErr.path,
+        spawnargs: errnoErr.spawnargs,
+        stack: errnoErr.stack,
+      };
+      log('error', `Spawn error details: ${JSON.stringify(errorDetails, null, 2)}`);
     };
 
     const childProcess = spawn(executable, args, spawnOpts);
@@ -91,6 +114,7 @@ async function defaultExecutor(
       childProcess.on('error', (err) => {
         if (!resolved) {
           resolved = true;
+          logSpawnError(err);
           reject(err);
         }
       });
@@ -131,6 +155,7 @@ async function defaultExecutor(
       });
 
       childProcess.on('error', (err) => {
+        logSpawnError(err);
         reject(err);
       });
     }

@@ -83,11 +83,27 @@ export async function snapshot_uiLogic(
         },
         {
           type: 'text',
-          text: `Next Steps:
-- Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)
-- Re-run snapshot_ui after layout changes
-- If a debugger is attached, ensure the app is running (not stopped on breakpoints)
-- Screenshots are for visual verification only`,
+          text: `Tips:\n- Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)\n- If a debugger is attached, ensure the app is running (not stopped on breakpoints)\n- Screenshots are for visual verification only`,
+        },
+      ],
+      nextSteps: [
+        {
+          tool: 'snapshot_ui',
+          label: 'Refresh after layout changes',
+          params: { simulatorId },
+          priority: 1,
+        },
+        {
+          tool: 'tap_coordinate',
+          label: 'Tap on element',
+          params: { simulatorId, x: 0, y: 0 },
+          priority: 2,
+        },
+        {
+          tool: 'take_screenshot',
+          label: 'Take screenshot for verification',
+          params: { simulatorId },
+          priority: 3,
         },
       ],
     };
@@ -131,6 +147,9 @@ export default {
   annotations: {
     title: 'Snapshot UI',
     readOnlyHint: true,
+  },
+  cli: {
+    daemonAffinity: 'preferred',
   },
   handler: createSessionAwareTool<SnapshotUiParams>({
     internalSchema: snapshotUiSchema as unknown as z.ZodType<SnapshotUiParams, unknown>,

@@ -68,7 +68,7 @@ describe('swift_package_clean plugin', () => {
       expect(calls[0]).toEqual({
         command: ['swift', 'package', '--package-path', '/test/package', 'clean'],
         description: 'Swift Package Clean',
-        useShell: true,
+        useShell: false,
         opts: undefined,
       });
     });

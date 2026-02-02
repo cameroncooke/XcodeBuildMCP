@@ -532,7 +532,7 @@ Add a section “DAP Backend (lldb-dap)”:
 1. Ensure `lldb-dap` is discoverable:
    - `xcrun --find lldb-dap`
 2. Run server with DAP enabled:
-   - `XCODEBUILDMCP_DEBUGGER_BACKEND=dap node build/index.js`
+   - `XCODEBUILDMCP_DEBUGGER_BACKEND=dap node build/index.js mcp`
 3. Use existing MCP tool flow:
    - `debug_attach_sim` (attach by PID or bundleId)
    - `debug_breakpoint_add` (with condition)

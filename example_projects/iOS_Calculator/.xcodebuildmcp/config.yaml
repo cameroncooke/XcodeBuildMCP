@@ -1,6 +1,7 @@
 schemaVersion: 1
+enabledWorkflows: ["simulator", "ui-automation", "debugging"]
 sessionDefaults:
-  workspacePath: ./iOS_Calculator/CalculatorApp.xcworkspace
+  workspacePath: ./CalculatorApp.xcworkspace
   scheme: CalculatorApp
   configuration: Debug
   simulatorId: B38FE93D-578B-454B-BE9A-C6FA0CE5F096

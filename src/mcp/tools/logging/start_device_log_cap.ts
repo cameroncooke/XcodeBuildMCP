@@ -657,7 +657,15 @@ export async function start_device_log_capLogic(
     content: [
       {
         type: 'text',
-        text: `✅ Device log capture started successfully\n\nSession ID: ${sessionId}\n\nNote: The app has been launched on the device with console output capture enabled.\n\nNext Steps:\n1. Interact with your app on the device\n2. Use stop_device_log_cap({ logSessionId: '${sessionId}' }) to stop capture and retrieve logs`,
+        text: `✅ Device log capture started successfully\n\nSession ID: ${sessionId}\n\nNote: The app has been launched on the device with console output capture enabled.\n\nInteract with your app on the device, then stop capture to retrieve logs.`,
+      },
+    ],
+    nextSteps: [
+      {
+        tool: 'stop_device_log_cap',
+        label: 'Stop capture and retrieve logs',
+        params: { logSessionId: sessionId },
+        priority: 1,
       },
     ],
   };
@@ -666,6 +674,9 @@ export async function start_device_log_capLogic(
 export default {
   name: 'start_device_log_cap',
   description: 'Start device log capture.',
+  cli: {
+    stateful: true,
+  },
   schema: getSessionAwareToolSchemaShape({
     sessionAware: publicSchemaObject,
     legacy: startDeviceLogCapSchema,

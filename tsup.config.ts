@@ -4,8 +4,9 @@ import { createPluginDiscoveryPlugin } from './build-plugins/plugin-discovery.js
 
 export default defineConfig({
   entry: {
-    index: 'src/index.ts',
+    index: 'src/cli.ts',
     'doctor-cli': 'src/doctor-cli.ts',
+    daemon: 'src/daemon.ts',
   },
   format: ['esm'],
   target: 'node18',
@@ -15,7 +16,7 @@ export default defineConfig({
   sourcemap: true, // Enable source maps for debugging
   dts: {
     entry: {
-      index: 'src/index.ts',
+      index: 'src/cli.ts',
     },
   },
   splitting: false,
@@ -27,11 +28,11 @@ export default defineConfig({
     console.log('✅ Build complete!');
 
     // Set executable permissions for built files
-    if (existsSync('build/index.js')) {
-      chmodSync('build/index.js', '755');
-    }
-    if (existsSync('build/doctor-cli.js')) {
-      chmodSync('build/doctor-cli.js', '755');
+    const executables = ['build/index.js', 'build/doctor-cli.js', 'build/daemon.js'];
+    for (const file of executables) {
+      if (existsSync(file)) {
+        chmodSync(file, '755');
+      }
     }
   },
 });

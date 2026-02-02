@@ -64,13 +64,13 @@ export async function showBuildSettingsLogic(
     command.push('-scheme', params.scheme);
 
     // Execute the command directly
-    const result = await executor(command, 'Show Build Settings', true);
+    const result = await executor(command, 'Show Build Settings', false);
 
     if (!result.success) {
       return createTextResponse(`Failed to show build settings: ${result.error}`, true);
     }
 
-    // Create response based on which type was used (similar to workspace version with next steps)
+    // Create response based on which type was used
     const content: Array<{ type: 'text'; text: string }> = [
       {
         type: 'text',
@@ -84,19 +84,41 @@ export async function showBuildSettingsLogic(
       },
     ];
 
-    // Add next steps for workspace (similar to original workspace implementation)
-    if (!hasProjectPath && path) {
-      content.push({
-        type: 'text',
-        text: `Next Steps:
-- Build the workspace: build_macos({ workspacePath: "${path}", scheme: "${params.scheme}" })
-- For iOS: build_sim({ workspacePath: "${path}", scheme: "${params.scheme}", simulatorName: "iPhone 16" })
-- List schemes: list_schemes({ workspacePath: "${path}" })`,
-      });
+    // Build next steps
+    const nextSteps: Array<{
+      tool: string;
+      label: string;
+      params: Record<string, string | number | boolean>;
+      priority?: number;
+    }> = [];
+
+    if (path) {
+      const pathKey = hasProjectPath ? 'projectPath' : 'workspacePath';
+      nextSteps.push(
+        {
+          tool: 'build_macos',
+          label: 'Build for macOS',
+          params: { [pathKey]: path, scheme: params.scheme },
+          priority: 1,
+        },
+        {
+          tool: 'build_sim',
+          label: 'Build for iOS Simulator',
+          params: { [pathKey]: path, scheme: params.scheme, simulatorName: 'iPhone 16' },
+          priority: 2,
+        },
+        {
+          tool: 'list_schemes',
+          label: 'List schemes',
+          params: { [pathKey]: path },
+          priority: 3,
+        },
+      );
     }
 
     return {
       content,
+      nextSteps,
       isError: false,
     };
   } catch (error) {

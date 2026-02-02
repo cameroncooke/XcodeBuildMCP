@@ -121,6 +121,9 @@ export default {
     title: 'Key Press',
     destructiveHint: true,
   },
+  cli: {
+    daemonAffinity: 'preferred',
+  },
   handler: createSessionAwareTool<KeyPressParams>({
     internalSchema: keyPressSchema as unknown as z.ZodType<KeyPressParams, unknown>,
     logicFunction: (params: KeyPressParams, executor: CommandExecutor) =>

@@ -102,7 +102,7 @@ describe('swift_package_test plugin', () => {
       expect(calls[0]).toEqual({
         args: ['swift', 'test', '--package-path', '/test/package'],
         name: 'Swift Package Test',
-        hideOutput: true,
+        hideOutput: false,
         opts: undefined,
       });
     });
@@ -155,7 +155,7 @@ describe('swift_package_test plugin', () => {
           '-parse-as-library',
         ],
         name: 'Swift Package Test',
-        hideOutput: true,
+        hideOutput: false,
         opts: undefined,
       });
     });
