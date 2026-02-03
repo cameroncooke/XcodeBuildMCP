@@ -296,6 +296,17 @@ else
 fi
 
 if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
+  NPM_TAG="latest"
+  if [[ "$VERSION" == *"-"* ]]; then
+    PRERELEASE_TAG="${VERSION#*-}"
+    PRERELEASE_LABEL="${PRERELEASE_TAG%%.*}"
+    if [[ "$PRERELEASE_LABEL" == "alpha" ]]; then
+      NPM_TAG="alpha"
+    elif [[ "$PRERELEASE_LABEL" == "beta" ]]; then
+      NPM_TAG="beta"
+    fi
+  fi
+
   # Version update
   echo ""
   echo "🔧 Setting version to $VERSION..."
@@ -303,15 +314,16 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
 
   # README update
   echo ""
-  echo "📝 Updating version in README.md..."
-  # Update version references in code examples using extended regex for precise semver matching
-  README_AT_SEMVER_REGEX='@[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?'
-  run sed_inplace "s/${README_AT_SEMVER_REGEX}/@${VERSION}/g" README.md
+  echo "📝 Updating install tags in README.md and docs/GETTING_STARTED.md..."
+  README_AT_TAG_REGEX='xcodebuildmcp@([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?|latest|beta|alpha)'
+  README_URLENCODED_AT_TAG_REGEX='xcodebuildmcp%40([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?|latest|beta|alpha)'
+  run sed_inplace "s/${README_AT_TAG_REGEX}/xcodebuildmcp@${NPM_TAG}/g" README.md
+  run sed_inplace "s/${README_AT_TAG_REGEX}/xcodebuildmcp@${NPM_TAG}/g" docs/GETTING_STARTED.md
+  run sed_inplace "s/${README_URLENCODED_AT_TAG_REGEX}/xcodebuildmcp%40${NPM_TAG}/g" README.md
 
-  # Update URL-encoded version references in shield links
-  echo "📝 Updating version in README.md shield links..."
-  README_URLENCODED_NPM_AT_SEMVER_REGEX='npm%3Axcodebuildmcp%40[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?'
-  run sed_inplace "s/${README_URLENCODED_NPM_AT_SEMVER_REGEX}/npm%3Axcodebuildmcp%40${VERSION}/g" README.md
+  echo "📝 Updating Cursor install link config in README.md..."
+  CURSOR_INSTALL_CONFIG=$(node -e "const tag='${NPM_TAG}';const config=JSON.stringify({command:\`npx -y xcodebuildmcp@\${tag} mcp\`});console.log(encodeURIComponent(Buffer.from(config).toString('base64')));")
+  run node -e "const fs=require('fs');const path='README.md';const next='config=${CURSOR_INSTALL_CONFIG}';const contents=fs.readFileSync(path,'utf8');const updated=contents.replace(/config=[^)\\s]+/g,next);fs.writeFileSync(path,updated);"
 
   # Update skill installer URL and versioned ref in README.md
   echo "📝 Updating skill installer URL in README.md..."
