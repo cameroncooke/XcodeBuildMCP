@@ -518,32 +518,6 @@ export async function getStaticToolAnalysis(): Promise<StaticAnalysisResult> {
   };
 }
 
-/**
- * Get only canonical tools (excluding re-exports) for documentation generation
- */
-export async function getCanonicalTools(): Promise<ToolInfo[]> {
-  const analysis = await getStaticToolAnalysis();
-  return analysis.tools.filter((tool) => tool.isCanonical);
-}
-
-/**
- * Get tools grouped by workflow for documentation generation
- */
-export async function getToolsByWorkflow(): Promise<Map<string, ToolInfo[]>> {
-  const analysis = await getStaticToolAnalysis();
-  const workflowMap = new Map<string, ToolInfo[]>();
-
-  for (const workflow of analysis.workflows) {
-    // Only include canonical tools for documentation
-    const canonicalTools = workflow.tools.filter((tool) => tool.isCanonical);
-    if (canonicalTools.length > 0) {
-      workflowMap.set(workflow.name, canonicalTools);
-    }
-  }
-
-  return workflowMap;
-}
-
 // CLI support - if run directly, perform analysis and output results
 if (import.meta.url === `file://${process.argv[1]}`) {
   async function main(): Promise<void> {
