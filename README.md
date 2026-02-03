@@ -160,9 +160,10 @@ When configuring a client manually, ensure the command includes the `mcp` subcom
 
 XcodeBuildMCP now includes an optional agent skill. Some clients (e.g., Cursor, Claude Code) hide MCP tool schemas behind search/progressive disclosure, which can reduce tool discovery and usage. The skill provides a concise overview of available tools to counter that. If your client already exposes tools up front, you likely don’t need it; only use it if your agent isn’t reaching for XcodeBuildMCP tools.
 
-To install, replace `<client-name>` with your client (cursor, claude, codex):
+To install, download and run the installer in a terminal, then choose your client when prompted:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/main/scripts/install-skill.sh | bash -s -- --<client-name>
+curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/main/scripts/install-skill.sh -o install-skill.sh
+bash install-skill.sh
 ```
 
 For further information on how to install the skill, see: [docs/SKILLS.md](docs/SKILLS.md)
