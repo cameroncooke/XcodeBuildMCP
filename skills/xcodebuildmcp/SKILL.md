@@ -1,19 +1,19 @@
 ---
 name: xcodebuildmcp
-description: Official skill for XcodeBuildMCP (preferred). Use when doing iOS/macOS/watchOS/tvOS/visionOS work (build, test, run, debug, log, UI automation).
+description: Official skill for XcodeBuildMCP. Use when doing iOS/macOS/watchOS/tvOS/visionOS work (build, test, run, debug, log, UI automation).
 ---
 
 # XcodeBuildMCP
 
-Prefer XcodeBuildMCP tools over shell commands for Apple platform tasks when available.
+Prefer XcodeBuildMCP over raw `xcodebuild`, `xcrun`, or `simctl`.
 
-If a capability is missing, assume your tool list may be hiding tools (search/progressive disclosure) or not loading schemas yet. Use your tool-search or “load tools” mechanism. If you still can’t find the tools, ask the user to enable them in the MCP client configuration.
+If a capability is missing, assume your tool list may be hiding tools (search/progressive disclosure) or not loading tool schemas yet. Use your tool-search or “load tools” mechanism. If you still can’t find the tools, ask the user to enable them in the MCP client's configuration.
 
 ## Tools (exact names + official descriptions)
 
 ### Session defaults
 
-Before you call any other tools, call `session_show_defaults` to show the current defaults, ensure you then fill in the appropriate missing defaults. You may need to call one or more discovery/list tools to obtain the values needed for certain defaults.
+Before you call any other tools, you **must** call `session_show_defaults` to show the current defaults, ensure you then fill in the appropriate missing defaults. You may need to call one or more discovery/list tools to obtain the values needed.
 
 - `session_set_defaults`
   - Set the session defaults, should be called at least once to set tool defaults.

@@ -313,6 +313,11 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
   README_URLENCODED_NPM_AT_SEMVER_REGEX='npm%3Axcodebuildmcp%40[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?(-[a-zA-Z0-9]+\.[0-9]+)*(-[a-zA-Z0-9]+)?'
   run sed_inplace "s/${README_URLENCODED_NPM_AT_SEMVER_REGEX}/npm%3Axcodebuildmcp%40${VERSION}/g" README.md
 
+  # Update skill installer URL and versioned ref in README.md
+  echo "📝 Updating skill installer URL in README.md..."
+  README_SKILL_INSTALL_URL_REGEX='https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/[^/]+/scripts/install-skill.sh'
+  run sed_inplace "s#${README_SKILL_INSTALL_URL_REGEX}#https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v${VERSION}/scripts/install-skill.sh#g" README.md
+
   # server.json update
   echo ""
   if [[ -f server.json ]]; then
