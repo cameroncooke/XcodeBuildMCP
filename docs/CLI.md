@@ -1,6 +1,6 @@
 # XcodeBuildMCP CLI
 
-`xcodebuildmcp` is a unified command-line interface that provides both an MCP server and direct tool access via first-class CLI interface.
+`xcodebuildmcp` is a unified command-line interface that provides both an MCP server and direct tool access via a first-class CLI.
 
 Use `xcodebuildmcp` CLI to invoke tools or start the MCP server by passing the `mcp` argument.
 
