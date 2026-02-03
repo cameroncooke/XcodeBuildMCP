@@ -165,7 +165,7 @@ XcodeBuildMCP now includes two optional agent skills:
 - **CLI Skill**: Primes the agent with instructions on how to navigate the CLI (recommended when using the CLI).
 
 
-To install, copy and past the below command into a terminal and follow the on-screen instructions.
+To install, copy and paste the command below into a terminal and follow the on-screen instructions.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/main/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh
