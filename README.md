@@ -112,7 +112,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 
   Or use the quick install links:
 
-  [![Install MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/en-US/install-mcp?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAYmV0YSBtY3AifQ%3D%3D)
+  [![Install in VS Code](https://img.shields.io/badge/VS_Code-XcodeBuildMCP-0098FF?style=flat&logo=visualstudiocode&logoColor=ffffff)](vscode:mcp/install?%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40beta%22%2C%22mcp%22%5D%7D)
   [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-XcodeBuildMCP-24bfa5?style=flat&logo=visualstudiocode&logoColor=ffffff)](vscode-insiders:mcp/install?%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40beta%22%2C%22mcp%22%5D%7D)
   <br />
 </details>
