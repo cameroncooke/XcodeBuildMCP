@@ -11,7 +11,6 @@ if [[ -t 1 ]] && [[ "${TERM:-}" != "dumb" ]]; then
   YELLOW='\033[0;33m'
   BLUE='\033[0;34m'
   CYAN='\033[0;36m'
-  WHITE='\033[0;37m'
 else
   BOLD=''
   DIM=''
@@ -21,7 +20,6 @@ else
   YELLOW=''
   BLUE=''
   CYAN=''
-  WHITE=''
 fi
 
 # Symbols
