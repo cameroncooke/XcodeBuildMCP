@@ -1,16 +1,80 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Colors and formatting
+if [[ -t 1 ]] && [[ "${TERM:-}" != "dumb" ]]; then
+  BOLD='\033[1m'
+  DIM='\033[2m'
+  RESET='\033[0m'
+  RED='\033[0;31m'
+  GREEN='\033[0;32m'
+  YELLOW='\033[0;33m'
+  BLUE='\033[0;34m'
+  CYAN='\033[0;36m'
+  WHITE='\033[0;37m'
+else
+  BOLD=''
+  DIM=''
+  RESET=''
+  RED=''
+  GREEN=''
+  YELLOW=''
+  BLUE=''
+  CYAN=''
+  WHITE=''
+fi
+
+# Symbols
+CHECK="${GREEN}✓${RESET}"
+CROSS="${RED}✗${RESET}"
+ARROW="${CYAN}→${RESET}"
+WARN="${YELLOW}!${RESET}"
+
+print_header() {
+  printf "\n"
+  printf "${BOLD}${BLUE}╭──────────────────────────────────╮${RESET}\n"
+  printf "${BOLD}${BLUE}│${RESET}   ${BOLD}XcodeBuildMCP Skill Installer${RESET}  ${BOLD}${BLUE}│${RESET}\n"
+  printf "${BOLD}${BLUE}╰──────────────────────────────────╯${RESET}\n"
+}
+
+print_success() {
+  printf "  ${CHECK} ${GREEN}%s${RESET}\n" "$1"
+}
+
+print_error() {
+  printf "  ${CROSS} ${RED}%s${RESET}\n" "$1" >&2
+}
+
+print_warning() {
+  printf "  ${WARN} ${YELLOW}%s${RESET}\n" "$1"
+}
+
+print_info() {
+  printf "  ${ARROW} %s\n" "$1"
+}
+
+print_step() {
+  printf "\n${BOLD}%s${RESET}\n" "$1"
+}
+
 usage() {
-  cat <<'EOF'
-Usage: install-skill.sh --codex|--claude|--cursor|--dest <path> [--skill <mcp|cli>] [--ref <git-ref>] [--remove-conflict]
+  cat <<EOF
+${BOLD}Usage:${RESET} install-skill.sh --codex|--claude|--cursor|--dest <path> [options]
 
-Installs (or replaces) the XcodeBuildMCP skill. If --skill is omitted, the
-installer will ask which skill to install.
-If the script is run from a local checkout, it installs the local skill file.
-Otherwise it downloads the skill from the provided --ref or from main.
+${BOLD}Options:${RESET}
+  --codex             Install to Codex skills directory
+  --claude            Install to Claude skills directory
+  --cursor            Install to Cursor skills directory
+  --dest <path>       Install to custom directory
+  --skill <mcp|cli>   Skill to install (prompted if omitted)
+  --ref <git-ref>     Git ref to download from (default: main)
+  --remove-conflict   Auto-remove conflicting skill
+  -h, --help          Show this help message
 
-If no destination is provided, the installer will prompt for a client.
+${BOLD}Description:${RESET}
+  Installs the XcodeBuildMCP skill for your AI coding assistant.
+  If run from a local checkout, installs the local skill file.
+  Otherwise downloads from GitHub.
 EOF
 }
 
@@ -79,53 +143,69 @@ while [[ $# -gt 0 ]]; do
 done
 
 prompt_for_destination() {
+  print_step "Select Target Client"
   while true; do
-    printf "Which client should receive the skill?\n"
-    printf "1) Codex\n"
-    printf "2) Claude\n"
-    printf "3) Cursor\n"
-    read -r -p "Enter 1, 2, or 3: " selection
+    printf "\n"
+    printf "  ${CYAN}[1]${RESET} Codex\n"
+    printf "  ${CYAN}[2]${RESET} Claude\n"
+    printf "  ${CYAN}[3]${RESET} Cursor\n"
+    printf "\n"
+    printf "  ${DIM}Enter your choice${RESET} ${BOLD}[1-3]:${RESET} "
+    read -r selection
     case "${selection}" in
       1)
         destination="${HOME}/.codex/skills/public"
+        print_success "Selected Codex"
         return 0
         ;;
       2)
         destination="${HOME}/.claude/skills"
+        print_success "Selected Claude"
         return 0
         ;;
       3)
         destination="${HOME}/.cursor/skills"
+        print_success "Selected Cursor"
         return 0
         ;;
       *)
-        echo "Invalid selection. Please enter 1, 2, or 3."
+        print_error "Invalid selection. Please enter 1, 2, or 3."
         ;;
     esac
   done
 }
 
 prompt_for_skill() {
+  print_step "Select Skill Type"
   while true; do
-    printf "Which skill would you like to install?\n"
-    printf "1) XcodeBuildMCP (MCP server)\n"
-    printf "2) XcodeBuildMCP CLI\n"
-    read -r -p "Enter 1 or 2: " selection
+    printf "\n"
+    printf "  ${CYAN}[1]${RESET} XcodeBuildMCP ${DIM}(MCP server)${RESET}\n"
+    printf "      ${DIM}Full MCP integration with all tools${RESET}\n"
+    printf "\n"
+    printf "  ${CYAN}[2]${RESET} XcodeBuildMCP CLI\n"
+    printf "      ${DIM}Lightweight CLI-based commands${RESET}\n"
+    printf "\n"
+    printf "  ${DIM}Enter your choice${RESET} ${BOLD}[1-2]:${RESET} "
+    read -r selection
     case "${selection}" in
       1)
         skill_choice="mcp"
+        print_success "Selected MCP server skill"
         return 0
         ;;
       2)
         skill_choice="cli"
+        print_success "Selected CLI skill"
         return 0
         ;;
       *)
-        echo "Invalid selection. Please enter 1 or 2."
+        print_error "Invalid selection. Please enter 1 or 2."
         ;;
     esac
   done
 }
+
+print_header
 
 if [[ -z "${destination}" ]]; then
   prompt_for_destination
@@ -165,18 +245,28 @@ if [[ -n "${skill_ref_override}" ]]; then
   skill_ref="${skill_ref_override}"
 fi
 
+print_step "Installing"
+
 if [[ -e "${alt_dir}" ]]; then
   if [[ "${remove_conflict}" == "true" ]]; then
     rm -r "${alt_dir}"
+    print_info "Removed conflicting skill: ${alt_label}"
   else
-    printf "%s\n" "Only one skill can be installed at a time because the MCP and CLI skills conflict."
-    read -r -p "Found ${alt_label} at ${alt_dir}. Remove it to continue? [y/N]: " confirm
+    printf "\n"
+    print_warning "Conflict detected!"
+    printf "  ${DIM}Only one skill can be installed at a time.${RESET}\n"
+    printf "  ${DIM}Found:${RESET} ${alt_label}\n"
+    printf "  ${DIM}Path:${RESET}  ${alt_dir}\n"
+    printf "\n"
+    printf "  ${BOLD}Remove existing skill to continue?${RESET} ${DIM}[y/N]:${RESET} "
+    read -r confirm
     case "${confirm}" in
       y|Y|yes|YES)
         rm -r "${alt_dir}"
+        print_success "Removed ${alt_label}"
         ;;
       *)
-        echo "Aborting to avoid installing both skills."
+        print_error "Installation cancelled"
         exit 1
         ;;
     esac
@@ -185,6 +275,7 @@ fi
 
 if [[ -e "${skill_dir}" ]]; then
   rm -r "${skill_dir}"
+  print_info "Replacing existing installation"
 fi
 mkdir -p "${skill_dir}"
 
@@ -194,16 +285,28 @@ local_skill_path="${repo_root}/${skill_path}"
 
 if [[ -f "${local_skill_path}" ]]; then
   cp "${local_skill_path}" "${skill_dir}/SKILL.md"
+  print_info "Installed from local checkout"
 else
-  if ! curl -fsSL "${primary_url}" -o "${skill_dir}/SKILL.md"; then
+  print_info "Downloading from GitHub..."
+  if ! curl -fsSL "${primary_url}" -o "${skill_dir}/SKILL.md" 2>/dev/null; then
     if [[ "${skill_ref}" != "main" ]]; then
-      printf "%s\n" "Release tag ${skill_ref} not found. Falling back to main."
-      curl -fsSL "${fallback_url}" -o "${skill_dir}/SKILL.md"
+      print_warning "Tag ${skill_ref} not found, falling back to main"
+      if ! curl -fsSL "${fallback_url}" -o "${skill_dir}/SKILL.md" 2>/dev/null; then
+        print_error "Failed to download skill"
+        exit 1
+      fi
     else
-      printf "%s\n" "Failed to download ${primary_url}." >&2
+      print_error "Failed to download skill"
       exit 1
     fi
   fi
 fi
 
-printf 'Installed %s to %s\n' "${skill_label}" "${skill_dir}"
+printf "\n"
+printf "${BOLD}${GREEN}╭─────────────────────────────────────╮${RESET}\n"
+printf "${BOLD}${GREEN}│${RESET}       ${CHECK} ${BOLD}Installation Complete${RESET}       ${BOLD}${GREEN}│${RESET}\n"
+printf "${BOLD}${GREEN}╰─────────────────────────────────────╯${RESET}\n"
+printf "\n"
+printf "  ${BOLD}Skill:${RESET}    %s\n" "${skill_label}"
+printf "  ${BOLD}Location:${RESET} %s\n" "${skill_dir}"
+printf "\n"
