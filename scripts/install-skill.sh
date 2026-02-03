@@ -139,11 +139,11 @@ case "${skill_choice}" in
   mcp|server|xcodebuildmcp)
     skill_dir_name="xcodebuildmcp"
     skill_label="XcodeBuildMCP (MCP server)"
-    alt_dir_name="xcodebuilmcp-cli"
+    alt_dir_name="xcodebuildmcp-cli"
     alt_label="XcodeBuildMCP CLI"
     ;;
   cli|xcodebuildmcp-cli)
-    skill_dir_name="xcodebuilmcp-cli"
+    skill_dir_name="xcodebuildmcp-cli"
     skill_label="XcodeBuildMCP CLI"
     alt_dir_name="xcodebuildmcp"
     alt_label="XcodeBuildMCP (MCP server)"
