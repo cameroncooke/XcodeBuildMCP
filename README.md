@@ -160,7 +160,7 @@ When configuring a client manually, ensure the command includes the `mcp` subcom
 
 XcodeBuildMCP now includes two optional agent skills:
 
-- **MPC Skill**: Primes the agent with instructions on how to use the MCP server's tools (optional when using the MCP server).
+- **MCP Skill**: Primes the agent with instructions on how to use the MCP server's tools (optional when using the MCP server).
 
 - **CLI Skill**: Primes the agent with instructions on how to navigate the CLI (recommended when using the CLI).
 
