@@ -12,7 +12,7 @@ XcodeBuildMCP provides a unified CLI with two modes:
 | Command | Use Case |
 |---------|----------|
 | `xcodebuildmcp mcp` | Start MCP server for AI-assisted development |
-| `xcodebuildmcp <tool>` | Direct terminal usage, scripts, CI pipelines |
+| `xcodebuildmcp <workflow> <tool>` | Direct terminal usage, scripts, CI pipelines |
 
 Both share the same tools and configuration.
 
@@ -25,7 +25,7 @@ Most MCP clients use JSON configuration. Add the following server entry to your 
   "command": "npx",
   "args": [
     "-y",
-    "xcodebuildmcp@latest",
+    "xcodebuildmcp@beta",
     "mcp"
   ]
 }
@@ -35,13 +35,19 @@ Most MCP clients use JSON configuration. Add the following server entry to your 
 
 ```bash
 # Install globally
-npm install -g xcodebuildmcp
+npm install -g xcodebuildmcp@beta
 
 # Verify installation
 xcodebuildmcp --version
 
 # List available tools
 xcodebuildmcp tools
+
+# View CLI help
+xcodebuildmcp --help
+
+# View tool help
+xcodebuildmcp <workflow> <tool> --help
 ```
 
 See [CLI.md](CLI.md) for full CLI documentation.
@@ -63,7 +69,7 @@ Codex uses TOML for MCP configuration. Add this to `~/.codex/config.toml`:
 ```toml
 [mcp_servers.XcodeBuildMCP]
 command = "npx"
-args = ["-y", "xcodebuildmcp@latest", "mcp"]
+args = ["-y", "xcodebuildmcp@beta", "mcp"]
 env = { "XCODEBUILDMCP_SENTRY_DISABLED" = "false" }
 ```
 
@@ -79,10 +85,10 @@ https://github.com/openai/codex/blob/main/docs/config.md#connecting-to-mcp-serve
 ### Claude Code CLI
 ```bash
 # Add XcodeBuildMCP server to Claude Code
-claude mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@latest mcp
+claude mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@beta mcp
 
 # Or with environment variables
-claude mcp add XcodeBuildMCP -e XCODEBUILDMCP_SENTRY_DISABLED=false -- npx -y xcodebuildmcp@latest mcp
+claude mcp add XcodeBuildMCP -e XCODEBUILDMCP_SENTRY_DISABLED=false -- npx -y xcodebuildmcp@beta mcp
 ```
 
 Note: XcodeBuildMCP requests xcodebuild to skip macro validation to avoid Swift Macro build errors.

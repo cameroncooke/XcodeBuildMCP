@@ -42,6 +42,9 @@ export interface ToolInfo {
   path: string;
   relativePath: string;
   description: string;
+  cliName?: string;
+  originWorkflow?: string;
+  stateful?: boolean;
   isCanonical: boolean;
 }
 
@@ -68,11 +71,72 @@ export interface StaticAnalysisResult {
   stats: AnalysisStats;
 }
 
+type ExtractStringOptions = {
+  allowFallback: boolean;
+};
+
+function extractStringValue(
+  sourceFile: SourceFile,
+  node: Node,
+  options: ExtractStringOptions = { allowFallback: false },
+): string | null {
+  if (isStringLiteral(node)) {
+    return node.text;
+  }
+
+  if (isTemplateExpression(node) || isNoSubstitutionTemplateLiteral(node)) {
+    let text = node.getFullText(sourceFile).trim();
+    if (text.startsWith('`') && text.endsWith('`')) {
+      text = text.slice(1, -1);
+    }
+    return text;
+  }
+
+  if (!options.allowFallback) {
+    return null;
+  }
+
+  const fullText = node.getFullText(sourceFile).trim();
+  let cleaned = fullText;
+  if (
+    (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+    (cleaned.startsWith("'") && cleaned.endsWith("'"))
+  ) {
+    cleaned = cleaned.slice(1, -1);
+  }
+  return cleaned.replace(/\s+/g, ' ').trim();
+}
+
+function extractBooleanValue(node: Node): boolean | null {
+  if (node.kind === SyntaxKind.TrueKeyword) {
+    return true;
+  }
+  if (node.kind === SyntaxKind.FalseKeyword) {
+    return false;
+  }
+  return null;
+}
+
+function getCodeLines(content: string): string[] {
+  const contentWithoutBlockComments = content.replace(/\/\*[\s\S]*?\*\//g, '');
+
+  return contentWithoutBlockComments
+    .split('\n')
+    .map((line) => line.split('//')[0].trim())
+    .filter((line) => line.length > 0);
+}
+
 /**
  * Extract the description from a tool's default export using TypeScript AST
  */
-function extractToolDescription(sourceFile: SourceFile): string {
+function extractToolMetadata(sourceFile: SourceFile): {
+  description: string;
+  cliName?: string;
+  stateful?: boolean;
+} {
   let description: string | null = null;
+  let cliName: string | null = null;
+  let stateful: boolean | null = null;
 
   function visit(node: Node): void {
     let objectExpression: ObjectLiteralExpression | null = null;
@@ -86,43 +150,36 @@ function extractToolDescription(sourceFile: SourceFile): string {
     }
 
     if (objectExpression) {
-      // Found export default { ... }, now look for description property
+      // Found export default { ... }, now look for description and CLI metadata
       for (const property of objectExpression.properties) {
-        if (
-          isPropertyAssignment(property) &&
-          isIdentifier(property.name) &&
-          property.name.text === 'description'
-        ) {
-          // Extract the description value
-          if (isStringLiteral(property.initializer)) {
-            // This is the most common case - simple string literal
-            description = property.initializer.text;
-          } else if (
-            isTemplateExpression(property.initializer) ||
-            isNoSubstitutionTemplateLiteral(property.initializer)
-          ) {
-            // Handle template literals - get the raw text and clean it
-            description = property.initializer.getFullText(sourceFile).trim();
-            // Remove surrounding backticks
-            if (description.startsWith('`') && description.endsWith('`')) {
-              description = description.slice(1, -1);
+        if (!isPropertyAssignment(property) || !isIdentifier(property.name)) {
+          continue;
+        }
+
+        if (property.name.text === 'description') {
+          description = extractStringValue(sourceFile, property.initializer, {
+            allowFallback: true,
+          });
+          continue;
+        }
+
+        if (property.name.text === 'cli' && isObjectLiteralExpression(property.initializer)) {
+          for (const cliProperty of property.initializer.properties) {
+            if (!isPropertyAssignment(cliProperty) || !isIdentifier(cliProperty.name)) {
+              continue;
             }
-          } else {
-            // Handle any other expression (multiline strings, computed values)
-            const fullText = property.initializer.getFullText(sourceFile).trim();
-            // This covers cases where the description spans multiple lines
-            // Remove surrounding quotes and normalize whitespace
-            let cleaned = fullText;
-            if (
-              (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
-              (cleaned.startsWith("'") && cleaned.endsWith("'"))
-            ) {
-              cleaned = cleaned.slice(1, -1);
+
+            if (cliProperty.name.text === 'name') {
+              cliName = extractStringValue(sourceFile, cliProperty.initializer, {
+                allowFallback: true,
+              });
+              continue;
             }
-            // Collapse multiple whitespaces and newlines into single spaces
-            description = cleaned.replace(/\s+/g, ' ').trim();
+
+            if (cliProperty.name.text === 'stateful') {
+              stateful = extractBooleanValue(cliProperty.initializer);
+            }
           }
-          return; // Found description, stop looking
         }
       }
     }
@@ -136,7 +193,11 @@ function extractToolDescription(sourceFile: SourceFile): string {
     throw new Error('Could not extract description from tool export default object');
   }
 
-  return description;
+  return {
+    description,
+    cliName: cliName ?? undefined,
+    stateful: stateful ?? undefined,
+  };
 }
 
 /**
@@ -144,19 +205,7 @@ function extractToolDescription(sourceFile: SourceFile): string {
  */
 function isReExportFile(filePath: string): boolean {
   const content = fs.readFileSync(filePath, 'utf-8');
-
-  // Remove comments and empty lines, then check for re-export pattern
-  // First remove multi-line comments
-  const contentWithoutBlockComments = content.replace(/\/\*[\s\S]*?\*\//g, '');
-
-  const cleanedLines = contentWithoutBlockComments
-    .split('\n')
-    .map((line) => {
-      // Remove inline comments but preserve the code before them
-      const codeBeforeComment = line.split('//')[0].trim();
-      return codeBeforeComment;
-    })
-    .filter((line) => line.length > 0);
+  const cleanedLines = getCodeLines(content);
 
   // Should have exactly one line: export { default } from '...';
   if (cleanedLines.length !== 1) {
@@ -165,6 +214,42 @@ function isReExportFile(filePath: string): boolean {
 
   const exportLine = cleanedLines[0];
   return /^export\s*{\s*default\s*}\s*from\s*['"][^'"]+['"];?\s*$/.test(exportLine);
+}
+
+function getReExportTargetInfo(filePath: string): { filePath: string; workflow: string } | null {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const cleanedLines = getCodeLines(content);
+
+  if (cleanedLines.length !== 1) {
+    return null;
+  }
+
+  const match = cleanedLines[0].match(/export\s*{\s*default\s*}\s*from\s*['"]([^'"]+)['"];?\s*$/);
+  if (!match) {
+    return null;
+  }
+
+  let targetFilePath = path.resolve(path.dirname(filePath), match[1]);
+  if (!path.extname(targetFilePath)) {
+    targetFilePath += '.ts';
+  }
+
+  if (!targetFilePath.startsWith(toolsDir)) {
+    throw new Error(
+      `Re-export target for ${path.relative(projectRoot, filePath)} is outside tools directory: ${targetFilePath}`,
+    );
+  }
+
+  if (!fs.existsSync(targetFilePath)) {
+    throw new Error(
+      `Re-export target for ${path.relative(projectRoot, filePath)} does not exist: ${targetFilePath}`,
+    );
+  }
+
+  return {
+    filePath: targetFilePath,
+    workflow: path.basename(path.dirname(targetFilePath)),
+  };
 }
 
 /**
@@ -204,13 +289,16 @@ async function getWorkflowMetadata(
               if (isPropertyAssignment(property) && isIdentifier(property.name)) {
                 const propertyName = property.name.text;
 
-                if (propertyName === 'name' && isStringLiteral(property.initializer)) {
-                  workflowExport.name = property.initializer.text;
-                } else if (
-                  propertyName === 'description' &&
-                  isStringLiteral(property.initializer)
-                ) {
-                  workflowExport.description = property.initializer.text;
+                if (propertyName === 'name') {
+                  const value = extractStringValue(sourceFile, property.initializer);
+                  if (value) {
+                    workflowExport.name = value;
+                  }
+                } else if (propertyName === 'description') {
+                  const value = extractStringValue(sourceFile, property.initializer);
+                  if (value) {
+                    workflowExport.description = value;
+                  }
                 }
               }
             }
@@ -327,6 +415,9 @@ export async function getStaticToolAnalysis(): Promise<StaticAnalysisResult> {
     const isReExport = isReExportFile(filePath);
 
     let description = '';
+    let cliName: string | undefined;
+    let originWorkflow: string | undefined;
+    let stateful: boolean | undefined;
 
     if (!isReExport) {
       // Extract description from canonical tool using AST
@@ -334,13 +425,38 @@ export async function getStaticToolAnalysis(): Promise<StaticAnalysisResult> {
         const content = fs.readFileSync(filePath, 'utf-8');
         const sourceFile = createSourceFile(filePath, content, ScriptTarget.Latest, true);
 
-        description = extractToolDescription(sourceFile);
+        const metadata = extractToolMetadata(sourceFile);
+        description = metadata.description;
+        cliName = metadata.cliName;
+        stateful = metadata.stateful;
         canonicalCount++;
       } catch (error) {
         throw new Error(`Failed to extract description from ${relativePath}: ${error}`);
       }
     } else {
-      description = '(Re-exported from shared workflow)';
+      const reExportInfo = getReExportTargetInfo(filePath);
+      if (!reExportInfo) {
+        throw new Error(`Failed to resolve re-export target for ${relativePath}`);
+      }
+
+      originWorkflow = reExportInfo.workflow;
+      try {
+        const targetContent = fs.readFileSync(reExportInfo.filePath, 'utf-8');
+        const targetSourceFile = createSourceFile(
+          reExportInfo.filePath,
+          targetContent,
+          ScriptTarget.Latest,
+          true,
+        );
+        const metadata = extractToolMetadata(targetSourceFile);
+        description = metadata.description;
+        cliName = metadata.cliName;
+        stateful = metadata.stateful;
+      } catch (error) {
+        throw new Error(
+          `Failed to extract description for re-export ${relativePath}: ${error as Error}`,
+        );
+      }
       reExportCount++;
     }
 
@@ -350,6 +466,9 @@ export async function getStaticToolAnalysis(): Promise<StaticAnalysisResult> {
       path: filePath,
       relativePath,
       description,
+      cliName,
+      originWorkflow,
+      stateful,
       isCanonical: !isReExport,
     };
 

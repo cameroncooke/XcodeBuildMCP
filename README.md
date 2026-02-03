@@ -12,7 +12,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 ```json
 "XcodeBuildMCP": {
   "command": "npx",
-  "args": ["-y", "xcodebuildmcp@latest", "mcp"]
+  "args": ["-y", "xcodebuildmcp@beta", "mcp"]
 }
 ```
 
@@ -26,7 +26,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
     "mcpServers": {
       "XcodeBuildMCP": {
         "command": "npx",
-        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
+        "args": ["-y", "xcodebuildmcp@beta", "mcp"]
       }
     }
   }
@@ -34,7 +34,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 
   Or use the quick install link:
 
-  [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsInhjb2RlYnVpbGRtY3BAbGF0ZXN0IiwibWNwIl19)
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/en-US/install-mcp?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAYmV0YSBtY3AifQ%3D%3D)
   <br />
 </details>
 
@@ -44,7 +44,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 
   Run:
   ```bash
-  claude mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@latest mcp
+  claude mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@beta mcp
   ```
   <br />
 </details>
@@ -55,14 +55,14 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 
   Run:
   ```bash
-  codex mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@latest mcp
+  codex mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@beta mcp
   ```
 
   Or add to `~/.codex/config.toml`:
   ```toml
   [mcp_servers.XcodeBuildMCP]
   command = "npx"
-  args = ["-y", "xcodebuildmcp@latest", "mcp"]
+  args = ["-y", "xcodebuildmcp@beta", "mcp"]
   ```
   <br />
 </details>
@@ -77,7 +77,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
     "mcpServers": {
       "XcodeBuildMCP": {
         "command": "npx",
-        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
+        "args": ["-y", "xcodebuildmcp@beta", "mcp"]
       }
     }
   }
@@ -95,7 +95,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
     "servers": {
       "XcodeBuildMCP": {
         "command": "npx",
-        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
+        "args": ["-y", "xcodebuildmcp@beta", "mcp"]
       }
     }
   }
@@ -103,8 +103,8 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 
   Or use the quick install links:
 
-  [<img src="https://img.shields.io/badge/VS_Code-VS_Code?style=flat-square&label=Install%20Server&color=0098FF" alt="Install in VS Code">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%2C%22mcp%22%5D%7D)
-  [<img alt="Install in VS Code Insiders" src="https://img.shields.io/badge/VS_Code_Insiders-VS_Code_Insiders?style=flat-square&label=Install%20Server&color=24bfa5">](https://insiders.vscode.dev/redirect/mcp/install?name=XcodeBuildMCP&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40latest%22%2C%22mcp%22%5D%7D&quality=insiders)
+  [![Install MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/en-US/install-mcp?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAYmV0YSBtY3AifQ%3D%3D)
+  [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-XcodeBuildMCP-24bfa5?style=flat&logo=visualstudiocode&logoColor=ffffff)](vscode-insiders:mcp/install?%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40beta%22%2C%22mcp%22%5D%7D)
   <br />
 </details>
 
@@ -118,7 +118,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
     "mcpServers": {
       "XcodeBuildMCP": {
         "command": "npx",
-        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
+        "args": ["-y", "xcodebuildmcp@beta", "mcp"]
       }
     }
   }
@@ -136,7 +136,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
     "mcpServers": {
       "XcodeBuildMCP": {
         "command": "npx",
-        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
+        "args": ["-y", "xcodebuildmcp@beta", "mcp"]
       }
     }
   }
@@ -182,7 +182,7 @@ XcodeBuildMCP provides a unified command-line interface. The `mcp` subcommand st
 
 ```bash
 # Install globally
-npm install -g xcodebuildmcp
+npm install -g xcodebuildmcp@beta
 
 # Start the MCP server (for MCP clients)
 xcodebuildmcp mcp
@@ -191,7 +191,7 @@ xcodebuildmcp mcp
 xcodebuildmcp tools
 
 # Build for simulator
-xcodebuildmcp build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
+xcodebuildmcp simulator build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
 ```
 
 The CLI uses a per-workspace daemon for stateful operations (log capture, debugging, etc.) that auto-starts when needed. See [docs/CLI.md](docs/CLI.md) for full documentation.

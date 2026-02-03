@@ -3,8 +3,8 @@
 /**
  * XcodeBuildMCP Tools Documentation Updater
  *
- * Automatically updates docs/TOOLS.md with current tool and workflow information
- * using static AST analysis. Ensures documentation always reflects the actual codebase.
+ * Automatically updates docs/TOOLS.md and docs/TOOLS-CLI.md with current tool and workflow information
+ * using the build tools manifest.
  *
  * Usage:
  *   npx tsx scripts/update-tools-docs.ts [--dry-run] [--verbose]
@@ -18,17 +18,27 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import {
-  getStaticToolAnalysis,
-  type StaticAnalysisResult,
-  type WorkflowInfo,
-} from './analysis/tools-analysis.js';
 
 // Get project paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const docsPath = path.join(projectRoot, 'docs', 'TOOLS.md');
+const docsCliPath = path.join(projectRoot, 'docs', 'TOOLS-CLI.md');
+const manifestPath = path.join(projectRoot, 'build', 'tools-manifest.json');
+const cliExcludedWorkflows = new Set(['session-management', 'workflow-discovery']);
+
+type ToolsManifest = {
+  generatedAt: string;
+  stats: {
+    totalTools: number;
+    canonicalTools: number;
+    reExportTools: number;
+    workflowCount: number;
+  };
+  workflows: DocumentationWorkflow[];
+  tools: DocumentationTool[];
+};
 
 // CLI options
 const args = process.argv.slice(2);
@@ -53,7 +63,7 @@ if (options.help) {
   console.log(`
 ${colors.bright}${colors.blue}XcodeBuildMCP Tools Documentation Updater${colors.reset}
 
-Automatically updates docs/TOOLS.md with current tool and workflow information.
+Automatically updates docs/TOOLS.md and docs/TOOLS-CLI.md with current tool and workflow information.
 
 ${colors.bright}Usage:${colors.reset}
   npx tsx scripts/update-tools-docs.ts [options]
@@ -64,7 +74,7 @@ ${colors.bright}Options:${colors.reset}
   --help, -h         Show this help message
 
 ${colors.bright}Examples:${colors.reset}
-  ${colors.cyan}npx tsx scripts/update-tools-docs.ts${colors.reset}                    # Update docs/TOOLS.md
+  ${colors.cyan}npx tsx scripts/update-tools-docs.ts${colors.reset}                    # Update docs/TOOLS.md + docs/TOOLS-CLI.md
   ${colors.cyan}npx tsx scripts/update-tools-docs.ts --dry-run${colors.reset}          # Preview changes
   ${colors.cyan}npx tsx scripts/update-tools-docs.ts --verbose${colors.reset}          # Show detailed progress
 `);
@@ -74,54 +84,237 @@ ${colors.bright}Examples:${colors.reset}
 /**
  * Generate the workflow section content
  */
-function generateWorkflowSection(workflow: WorkflowInfo): string {
-  const canonicalTools = workflow.tools.filter((tool) => tool.isCanonical);
-  const toolCount = canonicalTools.length;
+function cleanToolDescription(description: string | undefined): string {
+  if (!description) {
+    return 'No description available';
+  }
+
+  return description
+    .replace(/IMPORTANT:.*?Example:.*?\)/g, '') // Remove IMPORTANT sections
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+}
+
+type DocumentationTool = {
+  name: string;
+  description?: string;
+  isCanonical?: boolean;
+  originWorkflowDisplayName?: string;
+  workflow?: string;
+  cliName?: string;
+  originWorkflow?: string;
+};
+
+type DocumentationWorkflow = {
+  name: string;
+  displayName: string;
+  description: string;
+};
+
+function generateWorkflowSection(
+  workflow: DocumentationWorkflow,
+  tools: DocumentationTool[],
+): string {
+  const toolCount = tools.length;
 
   let content = `### ${workflow.displayName} (\`${workflow.name}\`)\n`;
   content += `**Purpose**: ${workflow.description} (${toolCount} tools)\n\n`;
 
   // List each tool with its description
-  for (const tool of canonicalTools.sort((a, b) => a.name.localeCompare(b.name))) {
-    // Clean up the description for documentation
-    const cleanDescription = tool.description
-      .replace(/IMPORTANT:.*?Example:.*?\)/g, '') // Remove IMPORTANT sections
-      .replace(/\s+/g, ' ') // Normalize whitespace
-      .trim();
+  const sortedTools = [...tools].sort((a, b) => a.name.localeCompare(b.name));
+  for (const tool of sortedTools) {
+    let description = tool.description;
+    if (tool.isCanonical === false) {
+      if (tool.originWorkflowDisplayName) {
+        description = `Defined in ${tool.originWorkflowDisplayName} workflow.`;
+      } else {
+        description = 'Defined in another workflow.';
+      }
+    }
 
+    const cleanDescription = cleanToolDescription(description);
     content += `- \`${tool.name}\` - ${cleanDescription}\n`;
   }
 
+  content += '\n\n';
+
   return content;
+}
+
+function loadManifest(): ToolsManifest {
+  if (!fs.existsSync(manifestPath)) {
+    throw new Error(
+      `Missing tools manifest at ${path.relative(projectRoot, manifestPath)}. Run \"npm run build\" first.`,
+    );
+  }
+
+  const raw = fs.readFileSync(manifestPath, 'utf-8');
+  return JSON.parse(raw) as ToolsManifest;
 }
 
 /**
  * Generate the complete TOOLS.md content
  */
-function generateToolsDocumentation(analysis: StaticAnalysisResult): string {
-  const { workflows, stats } = analysis;
+function generateToolsDocumentation(manifest: ToolsManifest): string {
+  const { workflows, stats, tools } = manifest;
 
   // Sort workflows by display name for consistent ordering
-  const sortedWorkflows = workflows.sort((a, b) => a.displayName.localeCompare(b.displayName));
+  const sortedWorkflows = [...workflows].sort((a, b) => a.displayName.localeCompare(b.displayName));
+  const workflowMeta = new Map(workflows.map((workflow) => [workflow.name, workflow]));
+  const toolsByWorkflow = new Map<string, DocumentationTool[]>();
+  for (const tool of tools) {
+    const workflowKey = tool.workflow ?? '';
+    const workflowTools = toolsByWorkflow.get(workflowKey) ?? [];
+    workflowTools.push(tool);
+    toolsByWorkflow.set(workflowKey, workflowTools);
+  }
+  const workflowSections = sortedWorkflows
+    .map((workflow) => {
+      const workflowTools = toolsByWorkflow.get(workflow.name) ?? [];
+      const docTools = workflowTools.map((tool) => {
+        const originWorkflow = tool.originWorkflow
+          ? workflowMeta.get(tool.originWorkflow)?.displayName ?? tool.originWorkflow
+          : undefined;
 
-  const content = `# XcodeBuildMCP Tools Reference
+        return {
+          name: tool.name,
+          description: tool.description,
+          isCanonical: tool.isCanonical,
+          originWorkflowDisplayName: originWorkflow,
+        };
+      });
 
-XcodeBuildMCP provides ${stats.canonicalTools} tools organized into ${stats.workflowCount} workflow groups for comprehensive Apple development workflows.
+      return generateWorkflowSection(
+        {
+          name: workflow.name,
+          displayName: workflow.displayName,
+          description: workflow.description,
+        },
+        docTools,
+      );
+    })
+    .join('\n');
+
+  const lastUpdated = `${new Date(manifest.generatedAt).toISOString()} UTC`;
+
+  const content = `# XcodeBuildMCP MCP Tools Reference
+
+This document lists MCP tool names as exposed to MCP clients. XcodeBuildMCP provides ${stats.canonicalTools} canonical tools organized into ${stats.workflowCount} workflow groups for comprehensive Apple development workflows.
 
 ## Workflow Groups
 
-${sortedWorkflows.map((workflow) => generateWorkflowSection(workflow)).join('')}
+${workflowSections}
 ## Summary Statistics
 
-- **Total Tools**: ${stats.canonicalTools} canonical tools + ${stats.reExportTools} re-exports = ${stats.totalTools} total
+- **Canonical Tools**: ${stats.canonicalTools}
+- **Total Tools**: ${stats.totalTools}
 - **Workflow Groups**: ${stats.workflowCount}
 
 ---
 
-*This documentation is automatically generated by \`scripts/update-tools-docs.ts\` using static analysis. Last updated: ${new Date().toISOString().split('T')[0]}*
+*This documentation is automatically generated by \`scripts/update-tools-docs.ts\` from the tools manifest. Last updated: ${lastUpdated}*
 `;
 
   return content;
+}
+
+/**
+ * Generate CLI tools documentation content
+ */
+type CliDocumentationStats = {
+  toolCount: number;
+  canonicalToolCount: number;
+  workflowCount: number;
+};
+
+type CliDocumentationResult = {
+  content: string;
+  stats: CliDocumentationStats;
+};
+
+function generateCliToolsDocumentation(manifest: ToolsManifest): CliDocumentationResult {
+  const workflowMeta = new Map(manifest.workflows.map((workflow) => [workflow.name, workflow]));
+  const toolsByWorkflow = new Map<string, DocumentationTool[]>();
+  let canonicalToolCount = 0;
+  for (const tool of manifest.tools) {
+    if (cliExcludedWorkflows.has(tool.workflow)) {
+      continue;
+    }
+
+    if (tool.isCanonical) {
+      canonicalToolCount++;
+    }
+
+    const tools = toolsByWorkflow.get(tool.workflow) ?? [];
+    const originWorkflow = tool.originWorkflow
+      ? workflowMeta.get(tool.originWorkflow)?.displayName ?? tool.originWorkflow
+      : undefined;
+
+    tools.push({
+      name: tool.cliName ?? tool.name,
+      description: tool.description,
+      isCanonical: tool.isCanonical,
+      originWorkflowDisplayName: originWorkflow,
+    });
+    toolsByWorkflow.set(tool.workflow, tools);
+  }
+
+  const sortedWorkflows = [...manifest.workflows]
+    .filter((workflow) => toolsByWorkflow.has(workflow.name))
+    .filter((workflow) => !cliExcludedWorkflows.has(workflow.name))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+  const workflowSections = sortedWorkflows
+    .map((workflow) => {
+      const tools = toolsByWorkflow.get(workflow.name) ?? [];
+      const meta = workflowMeta.get(workflow.name);
+      return generateWorkflowSection(
+        {
+          name: workflow.name,
+          displayName: meta?.displayName ?? workflow.name,
+          description: meta?.description ?? `${workflow.name} related tools`,
+        },
+        tools,
+      );
+    })
+    .join('\n');
+
+  const workflowCount = sortedWorkflows.length;
+  const totalTools = Array.from(toolsByWorkflow.values()).reduce(
+    (sum, tools) => sum + tools.length,
+    0,
+  );
+
+  const lastUpdated = `${new Date(manifest.generatedAt).toISOString()} UTC`;
+
+  const content = `# XcodeBuildMCP CLI Tools Reference
+
+This document lists CLI tool names as exposed by \`xcodebuildmcp <workflow> <tool>\`.
+
+XcodeBuildMCP provides ${canonicalToolCount} canonical tools organized into ${workflowCount} workflow groups.
+
+## Workflow Groups
+
+${workflowSections}
+## Summary Statistics
+
+- **Canonical Tools**: ${canonicalToolCount}
+- **Total Tools**: ${totalTools}
+- **Workflow Groups**: ${workflowCount}
+
+---
+
+*This documentation is automatically generated by \`scripts/update-tools-docs.ts\` from the tools manifest. Last updated: ${lastUpdated}*
+`;
+
+  return {
+    content,
+    stats: {
+      toolCount: totalTools,
+      canonicalToolCount,
+      workflowCount,
+    },
+  };
 }
 
 /**
@@ -177,46 +370,66 @@ async function main(): Promise<void> {
 
     console.log(`${colors.cyan}📊 Analyzing tools...${colors.reset}`);
 
-    // Get current tool analysis
-    const analysis = await getStaticToolAnalysis();
+    const manifest = loadManifest();
 
     if (options.verbose) {
       console.log(
-        `${colors.green}✓ Found ${analysis.stats.canonicalTools} canonical tools in ${analysis.stats.workflowCount} workflows${colors.reset}`,
-      );
-      console.log(
-        `${colors.green}✓ Found ${analysis.stats.reExportTools} re-export files${colors.reset}`,
+        `${colors.green}✓ Found ${manifest.stats.canonicalTools} canonical tools in ${manifest.stats.workflowCount} workflows${colors.reset}`,
       );
     }
 
     // Generate new documentation content
     console.log(`${colors.cyan}📝 Generating documentation...${colors.reset}`);
-    const newContent = generateToolsDocumentation(analysis);
+    const mcpContent = generateToolsDocumentation(manifest);
+    const cliDocumentation = generateCliToolsDocumentation(manifest);
+    const cliContent = cliDocumentation.content;
+    const cliStats = cliDocumentation.stats;
 
-    // Read current content for comparison
-    let oldContent = '';
-    if (fs.existsSync(docsPath)) {
-      oldContent = fs.readFileSync(docsPath, 'utf-8');
-    }
+    const targets = [
+      { label: 'MCP tools', path: docsPath, content: mcpContent },
+      { label: 'CLI tools', path: docsCliPath, content: cliContent },
+    ];
+
+    const changes = targets.map((target) => {
+      const existing = fs.existsSync(target.path)
+        ? fs.readFileSync(target.path, 'utf-8')
+        : '';
+
+      const changed = existing !== target.content;
+      return { ...target, existing, changed };
+    });
+
+    const changedTargets = changes.filter((target) => target.changed);
 
     // Check if content has changed
-    if (oldContent === newContent) {
+    if (changedTargets.length === 0) {
       console.log(`${colors.green}✅ Documentation is already up to date!${colors.reset}`);
       return;
     }
 
     // Show differences if verbose
-    if (oldContent && options.verbose) {
-      showDiff(oldContent, newContent);
+    if (options.verbose) {
+      for (const target of changedTargets) {
+        if (target.existing) {
+          console.log(
+            `${colors.bright}${colors.magenta}📄 ${target.label} content comparison:${colors.reset}`,
+          );
+          showDiff(target.existing, target.content);
+        }
+      }
     }
 
     if (options.dryRun) {
       console.log(
         `${colors.yellow}📋 Dry run completed. Documentation would be updated with:${colors.reset}`,
       );
-      console.log(`   - ${analysis.stats.canonicalTools} canonical tools`);
-      console.log(`   - ${analysis.stats.workflowCount} workflow groups`);
-      console.log(`   - ${newContent.split('\n').length} lines total`);
+      for (const target of changedTargets) {
+        console.log(`   - ${path.relative(projectRoot, target.path)} (${target.label})`);
+      }
+      console.log(`   - MCP tools: ${manifest.stats.canonicalTools} canonical tools`);
+      console.log(`   - CLI tools: ${cliStats.toolCount} tools across ${cliStats.workflowCount} workflows`);
+      console.log(`   - MCP lines: ${mcpContent.split('\n').length}`);
+      console.log(`   - CLI lines: ${cliContent.split('\n').length}`);
 
       if (!options.verbose) {
         console.log(`\n${colors.cyan}💡 Use --verbose to see detailed changes${colors.reset}`);
@@ -227,20 +440,24 @@ async function main(): Promise<void> {
 
     // Write new content
     console.log(`${colors.cyan}✏️  Writing updated documentation...${colors.reset}`);
-    fs.writeFileSync(docsPath, newContent, 'utf-8');
-
-    console.log(
-      `${colors.green}✅ Successfully updated ${path.relative(projectRoot, docsPath)}!${colors.reset}`,
-    );
+    for (const target of changedTargets) {
+      fs.writeFileSync(target.path, target.content, 'utf-8');
+      console.log(
+        `${colors.green}✅ Successfully updated ${path.relative(projectRoot, target.path)}!${colors.reset}`,
+      );
+    }
 
     if (options.verbose) {
       console.log(`\n${colors.bright}📈 Update Summary:${colors.reset}`);
       console.log(
-        `   Tools: ${analysis.stats.canonicalTools} canonical + ${analysis.stats.reExportTools} re-exports = ${analysis.stats.totalTools} total`,
+        `   MCP tools: ${manifest.stats.canonicalTools} canonical (${manifest.stats.totalTools} total)`,
       );
-      console.log(`   Workflows: ${analysis.stats.workflowCount}`);
-      console.log(`   File size: ${(newContent.length / 1024).toFixed(1)}KB`);
-      console.log(`   Lines: ${newContent.split('\n').length}`);
+      console.log(`   MCP workflows: ${manifest.stats.workflowCount}`);
+      console.log(`   CLI tools: ${cliStats.toolCount} across ${cliStats.workflowCount} workflows`);
+      console.log(`   MCP file size: ${(mcpContent.length / 1024).toFixed(1)}KB`);
+      console.log(`   CLI file size: ${(cliContent.length / 1024).toFixed(1)}KB`);
+      console.log(`   MCP lines: ${mcpContent.split('\n').length}`);
+      console.log(`   CLI lines: ${cliContent.split('\n').length}`);
     }
   } catch (error) {
     console.error(`${colors.red}❌ Error: ${(error as Error).message}${colors.reset}`);

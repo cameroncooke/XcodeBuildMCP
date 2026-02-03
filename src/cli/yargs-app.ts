@@ -85,7 +85,7 @@ export function buildYargsApp(opts: YargsAppOptions): ReturnType<typeof yargs> {
     workspaceRoot: opts.workspaceRoot,
     workspaceKey: opts.workspaceKey,
   });
-  registerToolsCommand(app, opts.catalog);
+  registerToolsCommand(app);
   registerToolCommands(app, opts.catalog, {
     workspaceRoot: opts.workspaceRoot,
     enabledWorkflows: opts.enabledWorkflows,
