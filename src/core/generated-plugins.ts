@@ -225,7 +225,10 @@ export const WORKFLOW_LOADERS = {
     );
     const tool_16 = await import('../mcp/tools/simulator/snapshot_ui.ts').then((m) => m.default);
     const tool_17 = await import('../mcp/tools/simulator/stop_app_sim.ts').then((m) => m.default);
-    const tool_18 = await import('../mcp/tools/simulator/test_sim.ts').then((m) => m.default);
+    const tool_18 = await import('../mcp/tools/simulator/stop_sim_log_cap.ts').then(
+      (m) => m.default,
+    );
+    const tool_19 = await import('../mcp/tools/simulator/test_sim.ts').then((m) => m.default);
 
     return {
       workflow,
@@ -247,7 +250,8 @@ export const WORKFLOW_LOADERS = {
       show_build_settings: tool_15,
       snapshot_ui: tool_16,
       stop_app_sim: tool_17,
-      test_sim: tool_18,
+      stop_sim_log_cap: tool_18,
+      test_sim: tool_19,
     };
   },
   'simulator-management': async () => {

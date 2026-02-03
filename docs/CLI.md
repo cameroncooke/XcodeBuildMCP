@@ -1,35 +1,138 @@
 # XcodeBuildMCP CLI
 
-`xcodebuildmcp` is a unified command-line interface that provides both the MCP server and direct tool access. Use `xcodebuildmcp mcp` to start the MCP server, or invoke tools directly from your terminal.
+`xcodebuildmcp` is a unified command-line interface that provides both an MCP server and direct tool access via first-class CLI interface.
+
+Use `xcodebuildmcp` CLI to invoke tools or start the MCP server by passing the `mcp` argument.
 
 ## Installation
 
 ```bash
 # Install globally
-npm install -g xcodebuildmcp
+npm install -g xcodebuildmcp@beta
 
 # Or run via npx
-npx xcodebuildmcp --help
+npx xcodebuildmcp@beta --help
 ```
 
 ## Quick Start
 
 ```bash
-# Start MCP server (for MCP clients like Claude, Cursor, etc.)
-xcodebuildmcp mcp
-
 # List available tools
 xcodebuildmcp tools
 
-# Build for simulator
+# View CLI help
+xcodebuildmcp --help
+
+# View tool help
+xcodebuildmcp <workflow> <tool> --help
+```
+
+## Tool Options
+
+Each tool supports `--help` for detailed options:
+
+```bash
+xcodebuildmcp simulator build-sim --help
+```
+
+Common patterns:
+
+```bash
+# Pass options as flags
 xcodebuildmcp simulator build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
 
-# List simulators
-xcodebuildmcp simulator list-sims
+# Pass complex options as JSON
+xcodebuildmcp simulator build-sim --json '{"scheme": "MyApp", "projectPath": "./MyApp.xcodeproj"}'
 
-# Run tests
-xcodebuildmcp simulator test-sim --scheme MyApp --simulator-name "iPhone 17 Pro"
+# Control output format
+xcodebuildmcp simulator list-sims --output json
 ```
+
+## Examples
+
+### Build and Run Workflow
+
+```bash
+# Discover projects
+xcodebuildmcp simulator discover-projs
+
+# List schemes
+xcodebuildmcp simulator list-schemes --project-path ./MyApp.xcodeproj
+
+# Build
+xcodebuildmcp simulator build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
+
+# Boot simulator
+xcodebuildmcp simulator boot-sim --simulator-name "iPhone 17 Pro"
+
+# Install and launch
+xcodebuildmcp simulator install-app-sim --simulator-id <UDID> --app-path ./build/MyApp.app
+
+xcodebuildmcp simulator launch-app-sim --simulator-id <UDID> --bundle-id com.example.MyApp
+
+# Or... build and run in a single command
+xcodebuildmcp simulator build-run-sim --scheme MyApp --project-path ./MyApp.xcodeproj
+```
+
+### Log Capture Workflow
+
+```bash
+# Start log capture
+xcodebuildmcp logging start-sim-log-cap --simulator-id <UDID> --bundle-id com.example.MyApp
+
+> Log capture started successfully. Session ID: 51e2142a-1a99-442a-af01-0586540043df.
+
+# Stop and retrieve logs
+xcodebuildmcp logging stop-sim-log-cap --session-id <SESSION_ID>
+```
+
+### Testing
+
+```bash
+# Run all tests
+xcodebuildmcp simulator test-sim --scheme MyAppTests --project-path ./MyApp.xcodeproj
+
+# Run with specific simulator
+xcodebuildmcp simulator test-sim --scheme MyAppTests --simulator-name "iPhone 17 Pro"
+```
+
+For a full list of workflows and tools, see [TOOLS-CLI.md](TOOLS-CLI.md).
+
+## Configuration
+
+The CLI respects the same configuration as the MCP server:
+
+```yaml
+# .xcodebuildmcp/config.yaml
+sessionDefaults:
+  scheme: MyApp
+  projectPath: ./MyApp.xcodeproj
+  simulatorName: iPhone 17 Pro
+
+enabledWorkflows:
+  - simulator
+  - project-discovery
+```
+
+See [CONFIGURATION.md](CONFIGURATION.md) for the full schema.
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `XCODEBUILDMCP_SOCKET` | Override socket path for all commands |
+| `XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS` | Disable session defaults |
+
+## CLI vs MCP Mode
+
+| Feature | CLI (`xcodebuildmcp <tool>`) | MCP (`xcodebuildmcp mcp`) |
+|---------|------------------------------|---------------------------|
+| Invocation | Direct terminal | MCP client (Claude, etc.) |
+| Session state | Per-workspace daemon | In-process |
+| Use case | Scripts, CI, manual | AI-assisted development |
+| Configuration | Same config.yaml | Same config.yaml |
+
+Both share the same underlying tool implementations.
 
 ## Per-Workspace Daemon
 
@@ -95,36 +198,15 @@ Daemons:
 Total: 2 (1 running, 1 stale)
 ```
 
-## Global Options
+### Opting Out of Daemon
 
-| Option | Description |
-|--------|-------------|
-| `--socket <path>` | Override the daemon socket path (hidden) |
-| `--daemon` | Force daemon execution for stateless tools (hidden) |
-| `--no-daemon` | Disable daemon usage; stateful tools will fail |
-| `-h, --help` | Show help |
-| `-v, --version` | Show version |
-
-## Tool Options
-
-Each tool supports `--help` for detailed options:
+If you want to disable daemon auto-start (stateful tools will error):
 
 ```bash
-xcodebuildmcp simulator build-sim --help
+xcodebuildmcp build-sim --no-daemon --scheme MyApp
 ```
 
-Common patterns:
-
-```bash
-# Pass options as flags
-xcodebuildmcp simulator build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
-
-# Pass complex options as JSON
-xcodebuildmcp simulatorbuild-sim --json '{"scheme": "MyApp", "projectPath": "./MyApp.xcodeproj"}'
-
-# Control output format
-xcodebuildmcp simulator list-sims --output json
-```
+This is useful for CI environments or when you want explicit control.
 
 ## Stateful vs Stateless Tools
 
@@ -132,7 +214,7 @@ xcodebuildmcp simulator list-sims --output json
 Most tools run directly without the daemon:
 - `build-sim`, `test-sim`, `clean`
 - `list-sims`, `list-schemes`, `discover-projs`
-- `boot-sim`, `install-app-sim`, `launch-app-sim`
+- `boot-sim`, `install-app-sim`, `launch-app-sim` etc.
 
 ### Stateful Tools (require daemon)
 Some tools maintain state and route through the daemon:
@@ -143,95 +225,15 @@ Some tools maintain state and route through the daemon:
 
 When you invoke a stateful tool, the daemon auto-starts if needed.
 
-## Opting Out of Daemon
+## Global Options
 
-If you want to disable daemon auto-start (stateful tools will error):
-
-```bash
-xcodebuildmcp build-sim --no-daemon --scheme MyApp
-```
-
-This is useful for CI environments or when you want explicit control.
-
-## Configuration
-
-The CLI respects the same configuration as the MCP server:
-
-```yaml
-# .xcodebuildmcp/config.yaml
-sessionDefaults:
-  scheme: MyApp
-  projectPath: ./MyApp.xcodeproj
-  simulatorName: iPhone 17 Pro
-
-enabledWorkflows:
-  - simulator
-  - project-discovery
-```
-
-See [CONFIGURATION.md](CONFIGURATION.md) for the full schema.
-
-## Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `XCODEBUILDMCP_SOCKET` | Override socket path for all commands |
-| `XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS` | Disable session defaults |
-
-## Examples
-
-### Build and Run Workflow
-
-```bash
-# Discover projects
-xcodebuildmcp simulatordiscover-projs
-
-# List schemes
-xcodebuildmcp simulatordiscover list-schemes --project-path ./MyApp.xcodeproj
-
-# Build
-xcodebuildmcp simulator build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
-
-# Boot simulator
-xcodebuildmcp simulator boot-sim --simulator-name "iPhone 17 Pro"
-
-# Install and launch
-xcodebuildmcp simulator install-app-sim --simulator-id <UDID> --app-path ./build/MyApp.app
-xcodebuildmcp simulator launch-app-sim --simulator-id <UDID> --bundle-id com.example.MyApp
-```
-
-### Log Capture Workflow
-
-```bash
-# Start log capture (daemon auto-starts)
-xcodebuildmcp logging start-sim-log-cap --simulator-id <UDID> --bundle-id com.example.MyApp
-
-# ... use your app ...
-
-# Stop and retrieve logs
-xcodebuildmcp logging stop-sim-log-cap --session-id <SESSION_ID>
-```
-
-### Testing
-
-```bash
-# Run all tests
-xcodebuildmcp simulator test-sim --scheme MyAppTests --project-path ./MyApp.xcodeproj
-
-# Run with specific simulator
-xcodebuildmcp simulator test-sim --scheme MyAppTests --simulator-name "iPhone 17 Pro"
-```
-
-## CLI vs MCP Mode
-
-| Feature | CLI (`xcodebuildmcp <tool>`) | MCP (`xcodebuildmcp mcp`) |
-|---------|------------------------------|---------------------------|
-| Invocation | Direct terminal | MCP client (Claude, etc.) |
-| Session state | Per-workspace daemon | In-process |
-| Use case | Scripts, CI, manual | AI-assisted development |
-| Configuration | Same config.yaml | Same config.yaml |
-
-Both share the same underlying tool implementations.
+| Option | Description |
+|--------|-------------|
+| `--socket <path>` | Override the daemon socket path (hidden) |
+| `--daemon` | Force daemon execution for stateless tools (hidden) |
+| `--no-daemon` | Disable daemon usage; stateful tools will fail |
+| `-h, --help` | Show help |
+| `-v, --version` | Show version |
 
 ## Troubleshooting
 
