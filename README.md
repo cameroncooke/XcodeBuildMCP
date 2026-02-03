@@ -156,14 +156,19 @@ When configuring a client manually, ensure the command includes the `mcp` subcom
 - Xcode 16.x or later
 - Node.js 18.x or later
 
-## Skill
+## Skills
 
-XcodeBuildMCP now includes an optional agent skill. Some clients (e.g., Cursor, Claude Code) hide MCP tool schemas behind search/progressive disclosure, which can reduce tool discovery and usage. The skill provides a concise overview of available tools to counter that. If your client already exposes tools up front, you likely don’t need it; only use it if your agent isn’t reaching for XcodeBuildMCP tools.
+XcodeBuildMCP now includes two optional agent skills:
 
-To install, download and run the installer in a terminal, then choose your client when prompted:
+- **MPC Skill**: Primes the agent with instructions on how to use the MCP server's tools (optional when using the MCP server).
+
+- **CLI Skill**: Primes the agent with instructions on how to navigate the CLI (recommended when using the CLI).
+
+
+To install, copy and past the below command into a terminal and follow the on-screen instructions.
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/main/scripts/install-skill.sh -o install-skill.sh
-bash install-skill.sh
+curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/main/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh
 ```
 
 For further information on how to install the skill, see: [docs/SKILLS.md](docs/SKILLS.md)

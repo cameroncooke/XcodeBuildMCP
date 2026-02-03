@@ -318,6 +318,14 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
   README_SKILL_INSTALL_URL_REGEX='https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/[^/]+/scripts/install-skill.sh'
   run sed_inplace "s#${README_SKILL_INSTALL_URL_REGEX}#https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v${VERSION}/scripts/install-skill.sh#g" README.md
 
+  # Update skill installer URL in docs/SKILLS.md
+  if [[ -f docs/SKILLS.md ]]; then
+    echo "📝 Updating skill installer URL in docs/SKILLS.md..."
+    run sed_inplace "s#${README_SKILL_INSTALL_URL_REGEX}#https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v${VERSION}/scripts/install-skill.sh#g" docs/SKILLS.md
+  else
+    echo "⚠️  docs/SKILLS.md not found; skipping update"
+  fi
+
   # server.json update
   echo ""
   if [[ -f server.json ]]; then
