@@ -6,6 +6,7 @@ import { log, setLogLevel, type LogLevel } from '../utils/logger.ts';
 import type { RuntimeConfigOverrides } from '../utils/config-store.ts';
 import { registerWorkflows } from '../utils/tool-registry.ts';
 import { bootstrapRuntime } from '../runtime/bootstrap-runtime.ts';
+import { getXcodeToolsBridgeManager } from '../integrations/xcode-tools-bridge/index.ts';
 
 export interface BootstrapOptions {
   enabledWorkflows?: string[];
@@ -54,6 +55,20 @@ export async function bootstrapServer(
   const enabledWorkflows = result.runtime.config.enabledWorkflows;
   log('info', `🚀 Initializing server...`);
   await registerWorkflows(enabledWorkflows);
+
+  const xcodeIdeEnabled = enabledWorkflows.includes('xcode-ide');
+  const xcodeToolsBridge = getXcodeToolsBridgeManager(server);
+  xcodeToolsBridge?.setWorkflowEnabled(xcodeIdeEnabled);
+  if (xcodeIdeEnabled && xcodeToolsBridge) {
+    try {
+      await xcodeToolsBridge.syncTools({ reason: 'startup' });
+    } catch (error) {
+      log(
+        'warn',
+        `[xcode-ide] Startup sync failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
 
   await registerResources(server);
 }

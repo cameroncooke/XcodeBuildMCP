@@ -375,6 +375,25 @@ export const WORKFLOW_LOADERS = {
       manage_workflows: tool_0,
     };
   },
+  'xcode-ide': async () => {
+    const { workflow } = await import('../mcp/tools/xcode-ide/index.ts');
+    const tool_0 = await import('../mcp/tools/xcode-ide/xcode_tools_bridge_disconnect.ts').then(
+      (m) => m.default,
+    );
+    const tool_1 = await import('../mcp/tools/xcode-ide/xcode_tools_bridge_status.ts').then(
+      (m) => m.default,
+    );
+    const tool_2 = await import('../mcp/tools/xcode-ide/xcode_tools_bridge_sync.ts').then(
+      (m) => m.default,
+    );
+
+    return {
+      workflow,
+      xcode_tools_bridge_disconnect: tool_0,
+      xcode_tools_bridge_status: tool_1,
+      xcode_tools_bridge_sync: tool_2,
+    };
+  },
 };
 
 export type WorkflowName = keyof typeof WORKFLOW_LOADERS;
@@ -449,5 +468,9 @@ export const WORKFLOW_METADATA = {
   'workflow-discovery': {
     name: 'Workflow Discovery',
     description: 'Manage the workflows that are enabled and disabled.',
+  },
+  'xcode-ide': {
+    name: 'Xcode IDE (mcpbridge)',
+    description: 'Proxy Xcode',
   },
 };

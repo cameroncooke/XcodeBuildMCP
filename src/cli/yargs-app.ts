@@ -15,6 +15,7 @@ export interface YargsAppOptions {
   defaultSocketPath: string;
   workspaceRoot: string;
   workspaceKey: string;
+  workflowNames: string[];
   enabledWorkflows: string[];
 }
 
@@ -89,6 +90,7 @@ export function buildYargsApp(opts: YargsAppOptions): ReturnType<typeof yargs> {
   registerToolCommands(app, opts.catalog, {
     workspaceRoot: opts.workspaceRoot,
     enabledWorkflows: opts.enabledWorkflows,
+    workflowNames: opts.workflowNames,
   });
 
   return app;

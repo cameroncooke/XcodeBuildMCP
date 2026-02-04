@@ -14,6 +14,7 @@ import { getDefaultDebuggerManager } from '../utils/debugger/index.ts';
 import { version } from '../version.ts';
 import process from 'node:process';
 import { bootstrapServer } from './bootstrap.ts';
+import { shutdownXcodeToolsBridge } from '../integrations/xcode-tools-bridge/index.ts';
 
 /**
  * Start the MCP server.
@@ -31,12 +32,14 @@ export async function startMcpServer(): Promise<void> {
     await startServer(server);
 
     process.on('SIGTERM', async () => {
+      await shutdownXcodeToolsBridge();
       await getDefaultDebuggerManager().disposeAll();
       await server.close();
       process.exit(0);
     });
 
     process.on('SIGINT', async () => {
+      await shutdownXcodeToolsBridge();
       await getDefaultDebuggerManager().disposeAll();
       await server.close();
       process.exit(0);

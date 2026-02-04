@@ -11,6 +11,8 @@ import { WORKFLOW_METADATA, type WorkflowName } from '../core/generated-plugins.
 export interface RegisterToolCommandsOptions {
   workspaceRoot: string;
   enabledWorkflows?: string[];
+  /** Workflows to register as command groups (even if currently empty) */
+  workflowNames?: string[];
 }
 
 /**
@@ -24,8 +26,10 @@ export function registerToolCommands(
   const invoker = new DefaultToolInvoker(catalog);
   const toolsByWorkflow = groupToolsByWorkflow(catalog);
   const enabledWorkflows = opts.enabledWorkflows ?? [...toolsByWorkflow.keys()];
+  const workflowNames = opts.workflowNames ?? [...toolsByWorkflow.keys()];
 
-  for (const [workflowName, tools] of toolsByWorkflow) {
+  for (const workflowName of workflowNames) {
+    const tools = toolsByWorkflow.get(workflowName) ?? [];
     const workflowMeta = WORKFLOW_METADATA[workflowName as WorkflowName];
     const workflowDescription = workflowMeta?.name ?? workflowName;
 
@@ -44,10 +48,28 @@ export function registerToolCommands(
           registerToolSubcommand(yargs, tool, invoker, opts, enabledWorkflows);
         }
 
+        if (tools.length === 0) {
+          const hint =
+            workflowName === 'xcode-ide'
+              ? `No CLI commands are currently exposed for '${workflowName}'.\n` +
+                `Bridge debug tools are hidden unless XcodeBuildMCP debug mode is enabled.\n` +
+                `Set XCODEBUILDMCP_DEBUG=true to expose xcode_tools_bridge_{status,sync,disconnect}.`
+              : `No CLI commands are currently exposed for '${workflowName}'.`;
+
+          yargs.epilogue(hint);
+          return yargs.help();
+        }
+
         return yargs.demandCommand(1, '').help();
       },
       () => {
-        // No-op handler - subcommands handle execution
+        if (tools.length === 0) {
+          console.error(
+            workflowName === 'xcode-ide'
+              ? `No CLI commands are currently exposed for '${workflowName}'. Set XCODEBUILDMCP_DEBUG=true to expose bridge debug commands.`
+              : `No CLI commands are currently exposed for '${workflowName}'.`,
+          );
+        }
       },
     );
   }

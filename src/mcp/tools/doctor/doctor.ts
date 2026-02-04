@@ -13,6 +13,8 @@ import { ToolResponse } from '../../../types/common.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { getConfig } from '../../../utils/config-store.ts';
 import { type DoctorDependencies, createDoctorDependencies } from './lib/doctor.deps.ts';
+import { getServer } from '../../../server/server-state.ts';
+import { getXcodeToolsBridgeManager } from '../../../integrations/xcode-tools-bridge/index.ts';
 
 // Constants
 const LOG_PREFIX = '[Doctor]';
@@ -31,6 +33,60 @@ async function checkLldbDapAvailability(executor: CommandExecutor): Promise<bool
     return result.success && result.output.trim().length > 0;
   } catch {
     return false;
+  }
+}
+
+type XcodeToolsBridgeDoctorInfo =
+  | {
+      available: true;
+      workflowEnabled: boolean;
+      bridgePath: string | null;
+      xcodeRunning: boolean | null;
+      connected: boolean;
+      bridgePid: number | null;
+      proxiedToolCount: number;
+      lastError: string | null;
+    }
+  | { available: false; reason: string };
+
+async function getXcodeToolsBridgeDoctorInfo(
+  executor: CommandExecutor,
+): Promise<XcodeToolsBridgeDoctorInfo> {
+  try {
+    const server = getServer();
+    if (server) {
+      const manager = getXcodeToolsBridgeManager(server);
+      if (manager) {
+        const status = await manager.getStatus();
+        return {
+          available: true,
+          workflowEnabled: status.workflowEnabled,
+          bridgePath: status.bridgePath,
+          xcodeRunning: status.xcodeRunning,
+          connected: status.connected,
+          bridgePid: status.bridgePid,
+          proxiedToolCount: status.proxiedToolCount,
+          lastError: status.lastError,
+        };
+      }
+    }
+
+    const config = getConfig();
+    const bridgePathResult = await executor(['xcrun', '--find', 'mcpbridge'], 'Check mcpbridge');
+    const bridgePath = bridgePathResult.success ? bridgePathResult.output.trim() : '';
+    return {
+      available: true,
+      workflowEnabled: config.enabledWorkflows.includes('xcode-ide'),
+      bridgePath: bridgePath.length > 0 ? bridgePath : null,
+      xcodeRunning: null,
+      connected: false,
+      bridgePid: null,
+      proxiedToolCount: 0,
+      lastError: null,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { available: false, reason: message };
   }
 }
 
@@ -70,6 +126,7 @@ export async function runDoctor(
   const lldbDapAvailable = await checkLldbDapAvailability(deps.commandExecutor);
   const selectedDebuggerBackend = getConfig().debuggerBackend;
   const dapSelected = selectedDebuggerBackend === 'dap';
+  const xcodeToolsBridge = await getXcodeToolsBridgeDoctorInfo(deps.commandExecutor);
 
   const doctorInfo = {
     serverVersion: version,
@@ -246,6 +303,20 @@ export async function runDoctor(
     ...(runtimeRegistration.enabledWorkflows.length > 0
       ? [`- Workflows: ${runtimeRegistration.enabledWorkflows.join(', ')}`]
       : []),
+
+    `\n### Xcode IDE Bridge (mcpbridge)`,
+    ...(xcodeToolsBridge.available
+      ? [
+          `- Workflow enabled: ${xcodeToolsBridge.workflowEnabled ? '✅ Yes' : '❌ No'}`,
+          `- mcpbridge path: ${xcodeToolsBridge.bridgePath ?? '(not found)'}`,
+          `- Xcode running: ${xcodeToolsBridge.xcodeRunning ?? '(unknown)'}`,
+          `- Connected: ${xcodeToolsBridge.connected ? '✅ Yes' : '❌ No'}`,
+          `- Bridge PID: ${xcodeToolsBridge.bridgePid ?? '(none)'}`,
+          `- Proxied tools: ${xcodeToolsBridge.proxiedToolCount}`,
+          `- Last error: ${xcodeToolsBridge.lastError ?? '(none)'}`,
+          `- Note: Bridge debug tools (status/sync/disconnect) are only registered when debug: true`,
+        ]
+      : [`- Unavailable: ${xcodeToolsBridge.reason}`]),
 
     `\n## Tool Availability Summary`,
     `- Build Tools: ${!('error' in doctorInfo.xcode) ? '\u2705 Available' : '\u274c Not available'}`,

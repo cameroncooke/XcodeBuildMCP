@@ -5,6 +5,7 @@ import { log } from './logger.ts';
 import { loadWorkflowGroups } from '../core/plugin-registry.ts';
 import { resolveSelectedWorkflows } from './workflow-selection.ts';
 import { processToolResponse } from './responses/index.ts';
+import { shouldExposeTool } from './tool-visibility.ts';
 
 export interface RuntimeToolInfo {
   enabledWorkflows: string[];
@@ -43,6 +44,9 @@ export async function applyWorkflowSelection(workflowNames: string[]): Promise<R
     desiredWorkflows.add(workflow.directoryName);
     for (const tool of workflow.tools) {
       const { name, description, schema, annotations, handler } = tool;
+      if (!shouldExposeTool(workflow.directoryName, name)) {
+        continue;
+      }
       desiredToolNames.add(name);
       if (!registryState.tools.has(name)) {
         const registeredTool = server.registerTool(

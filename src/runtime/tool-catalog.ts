@@ -1,5 +1,6 @@
 import { loadWorkflowGroups } from '../core/plugin-registry.ts';
 import { resolveSelectedWorkflows } from '../utils/workflow-selection.ts';
+import { shouldExposeTool } from '../utils/tool-visibility.ts';
 import type { ToolCatalog, ToolDefinition, ToolResolution } from './types.ts';
 import { toKebabCase, disambiguateCliNames } from './naming.ts';
 
@@ -18,6 +19,9 @@ export async function buildToolCatalog(opts: {
       continue;
     }
     for (const tool of wf.tools) {
+      if (!shouldExposeTool(wf.directoryName, tool.name)) {
+        continue;
+      }
       const baseCliName = tool.cli?.name ?? toKebabCase(tool.name);
       tools.push({
         cliName: baseCliName, // Will be disambiguated below

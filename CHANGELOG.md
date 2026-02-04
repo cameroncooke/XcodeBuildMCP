@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Added optional `xcode-ide` workflow to proxy Xcode IDE MCP tools via `xcrun mcpbridge`.
+
+### Changed
+- Hide `xcode_tools_bridge_{status,sync,disconnect}` unless `debug: true` is enabled (these are troubleshooting tools).
+
 ## [2.0.0] - 2026-02-02
 
 ### Breaking

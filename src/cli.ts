@@ -4,6 +4,7 @@ import { buildCliToolCatalog } from './cli/cli-tool-catalog.ts';
 import { buildYargsApp } from './cli/yargs-app.ts';
 import { getSocketPath, getWorkspaceKey, resolveWorkspaceRoot } from './daemon/socket-path.ts';
 import { startMcpServer } from './server/start-mcp-server.ts';
+import { WORKFLOW_METADATA } from './core/generated-plugins.ts';
 
 async function main(): Promise<void> {
   if (process.argv.includes('mcp')) {
@@ -39,6 +40,11 @@ async function main(): Promise<void> {
     projectConfigPath: result.configPath,
   });
 
+  const CLI_EXCLUDED_WORKFLOWS = new Set(['session-management', 'workflow-discovery']);
+  const workflowNames = Object.keys(WORKFLOW_METADATA).filter(
+    (name) => !CLI_EXCLUDED_WORKFLOWS.has(name),
+  );
+
   const enabledWorkflows = [...new Set(catalog.tools.map((tool) => tool.workflow))];
 
   const yargsApp = buildYargsApp({
@@ -47,6 +53,7 @@ async function main(): Promise<void> {
     defaultSocketPath,
     workspaceRoot,
     workspaceKey,
+    workflowNames,
     enabledWorkflows,
   });
 
