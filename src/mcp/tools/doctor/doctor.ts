@@ -12,6 +12,7 @@ import { version } from '../../../utils/version/index.ts';
 import { ToolResponse } from '../../../types/common.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { getConfig } from '../../../utils/config-store.ts';
+import { detectXcodeRuntime } from '../../../utils/xcode-process.ts';
 import { type DoctorDependencies, createDoctorDependencies } from './lib/doctor.deps.ts';
 import { getServer } from '../../../server/server-state.ts';
 import { getXcodeToolsBridgeManager } from '../../../integrations/xcode-tools-bridge/index.ts';
@@ -112,6 +113,7 @@ export async function runDoctor(
   const envVars = deps.env.getEnvironmentVariables();
   const systemInfo = deps.env.getSystemInfo();
   const nodeInfo = deps.env.getNodeInfo();
+  const xcodeRuntime = await detectXcodeRuntime(deps.commandExecutor);
   const axeAvailable = deps.features.areAxeToolsAvailable();
   const pluginSystemInfo = await deps.plugins.getPluginSystemInfo();
   const runtimeInfo = await deps.runtime.getRuntimeToolInfo();
@@ -133,6 +135,9 @@ export async function runDoctor(
     timestamp: new Date().toISOString(),
     system: systemInfo,
     node: nodeInfo,
+    processTree: xcodeRuntime.processTree,
+    processTreeError: xcodeRuntime.error,
+    runningUnderXcode: xcodeRuntime.runningUnderXcode,
     xcode: xcodeInfo,
     dependencies: binaryStatus,
     environmentVariables: envVars,
@@ -241,6 +246,18 @@ export async function runDoctor(
 
     `\n## Node.js Information`,
     ...Object.entries(doctorInfo.node).map(([key, value]) => `- ${key}: ${value}`),
+
+    `\n## Process Tree`,
+    `- Running under Xcode: ${doctorInfo.runningUnderXcode ? '✅ Yes' : '❌ No'}`,
+    ...(doctorInfo.processTree.length > 0
+      ? doctorInfo.processTree.map(
+          (entry) =>
+            `- ${entry.pid} (ppid ${entry.ppid}): ${entry.name}${
+              entry.command ? ` — ${entry.command}` : ''
+            }`,
+        )
+      : ['- (unavailable)']),
+    ...(doctorInfo.processTreeError ? [`- Error: ${doctorInfo.processTreeError}`] : []),
 
     `\n## Xcode Information`,
     ...('error' in doctorInfo.xcode
