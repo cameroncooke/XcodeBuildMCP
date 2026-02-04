@@ -173,7 +173,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
   tool_timeout_sec = 10000
   ```
 
-  > [!NOTE]
+  > **NOTE**: 
   > Codex Agent when running in Xcode has a limited PATH by default. The above example should work for most users but if you find the server doesn't start or is not available, it's likely because npx is not found so you might have to adjust the above configuration accordingly.
 
   <br />
@@ -202,7 +202,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
   }
   ```
 
-  > [!NOTE]
+  > **NOTE**: 
   > Claude Code Agent when running in Xcode has a limited PATH by default. The above example should work for most users but if you find the server doesn't start or is not available, it's likely because npx is not found so you might have to adjust the above configuration accordingly.
 
   <br />
