@@ -1,0 +1,25 @@
+id: macos
+title: "macOS Development"
+description: "Complete macOS development workflow for both .xcodeproj and .xcworkspace files. Build, test, deploy, and manage macOS applications."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+selection:
+  mcp:
+    mandatory: false
+    defaultEnabled: false
+    autoInclude: false
+predicates: []
+tools:
+  - build_macos
+  - build_run_macos
+  - test_macos
+  - launch_mac_app
+  - stop_mac_app
+  - get_mac_app_path
+  - get_mac_bundle_id
+  - clean
+  - discover_projs
+  - list_schemes
+  - show_build_settings

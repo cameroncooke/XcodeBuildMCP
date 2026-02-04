@@ -11,9 +11,9 @@ import {
   activeDeviceLogSessions,
   type DeviceLogSession,
 } from '../../../utils/log-capture/device-log-sessions.ts';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
-import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
+import type { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject

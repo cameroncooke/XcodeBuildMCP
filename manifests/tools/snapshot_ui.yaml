@@ -1,0 +1,13 @@
+id: snapshot_ui
+module: mcp/tools/ui-automation/snapshot_ui
+names:
+  mcp: snapshot_ui
+description: "Print view hierarchy with precise view coordinates (x, y, width, height) for visible elements."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: false
+  daemonAffinity: preferred

@@ -1,6 +1,6 @@
 import * as z from 'zod';
-import { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
-import { ToolResponse } from '../types/common.ts';
+import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolResponse } from '../types/common.ts';
 
 export type ToolSchemaShape = Record<string, z.ZodType>;
 

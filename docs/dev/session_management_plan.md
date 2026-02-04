@@ -436,7 +436,7 @@ npm run build
 2) Discover a scheme (optional helper):
 
 ```bash
-mcpli --raw list-schemes --projectPath "/Volumes/Developer/XcodeBuildMCP/example_projects/iOS/MCPTest.xcodeproj" -- node build/index.js mcp
+mcpli --raw list-schemes --projectPath "/Volumes/Developer/XcodeBuildMCP/example_projects/iOS/MCPTest.xcodeproj" -- node build/cli.js mcp
 ```
 
 3) Set the session defaults (project/workspace, scheme, and simulator):
@@ -446,30 +446,30 @@ mcpli --raw session-set-defaults \
   --projectPath "/Volumes/Developer/XcodeBuildMCP/example_projects/iOS/MCPTest.xcodeproj" \
   --scheme MCPTest \
   --simulatorName "iPhone 16" \
-  -- node build/index.js mcp
+  -- node build/cli.js mcp
 ```
 
 4) Verify defaults are stored:
 
 ```bash
-mcpli --raw session-show-defaults -- node build/index.js mcp
+mcpli --raw session-show-defaults -- node build/cli.js mcp
 ```
 
 5) Run a session‑aware tool with zero or minimal args (defaults are merged automatically):
 
 ```bash
 # Optionally provide a scratch derived data path and a short timeout
-mcpli --tool-timeout=60 --raw build-sim --derivedDataPath "/tmp/XBMCP_DD" -- node build/index.js mcp
+mcpli --tool-timeout=60 --raw build-sim --derivedDataPath "/tmp/XBMCP_DD" -- node build/cli.js mcp
 ```
 
 Troubleshooting:
 
 - If you see validation errors like “Missing required session defaults …”, (re)run step 3 with the missing keys.
 - If you see connect ECONNREFUSED or the daemon appears flaky:
-  - Check logs: `mcpli daemon log --since=10m -- node build/index.js mcp`
-  - Restart daemon: `mcpli daemon restart -- node build/index.js mcp`
-  - Clean daemon state: `mcpli daemon clean -- node build/index.js mcp` then `mcpli daemon start -- node build/index.js mcp`
-  - After code changes, always: `npm run build` then `mcpli daemon restart -- node build/index.js mcp`
+  - Check logs: `mcpli daemon log --since=10m -- node build/cli.js mcp`
+  - Restart daemon: `mcpli daemon restart -- node build/cli.js mcp`
+  - Clean daemon state: `mcpli daemon clean -- node build/cli.js mcp` then `mcpli daemon start -- node build/cli.js mcp`
+  - After code changes, always: `npm run build` then `mcpli daemon restart -- node build/cli.js mcp`
 
 Notes:
 

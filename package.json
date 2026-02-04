@@ -7,21 +7,19 @@
   "type": "module",
   "module": "src/smithery.ts",
   "exports": {
-    ".": "./build/index.js",
+    ".": "./build/cli.js",
     "./package.json": "./package.json"
   },
   "bin": {
-    "xcodebuildmcp": "build/index.js",
+    "xcodebuildmcp": "build/cli.js",
     "xcodebuildmcp-doctor": "build/doctor-cli.js"
   },
   "scripts": {
     "build": "npm run build:tsup && npx smithery build --transport stdio",
-    "dev": "npm run generate:version && npm run generate:loaders && npx smithery dev",
-    "build:tsup": "npm run generate:version && npm run generate:loaders && tsup && npm run generate:tools-manifest",
+    "dev": "npm run generate:version && npx smithery dev",
+    "build:tsup": "npm run generate:version && tsup",
     "dev:tsup": "npm run build:tsup && tsup --watch",
     "generate:version": "npx tsx scripts/generate-version.ts",
-    "generate:loaders": "npx tsx scripts/generate-loaders.ts",
-    "generate:tools-manifest": "npx tsx scripts/generate-tools-manifest.ts",
     "bundle:axe": "scripts/bundle-axe.sh",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
@@ -30,7 +28,7 @@
     "typecheck": "npx tsc --noEmit && npx tsc -p tsconfig.test.json",
     "typecheck:tests": "npx tsc -p tsconfig.test.json",
     "verify:smithery-bundle": "bash scripts/verify-smithery-bundle.sh",
-    "inspect": "npx @modelcontextprotocol/inspector node build/index.js mcp",
+    "inspect": "npx @modelcontextprotocol/inspector node build/cli.js mcp",
     "doctor": "node build/doctor-cli.js",
     "tools": "npx tsx scripts/tools-cli.ts",
     "tools:list": "npx tsx scripts/tools-cli.ts list",
@@ -47,7 +45,8 @@
   "files": [
     "build",
     "bundled",
-    "plugins"
+    "plugins",
+    "manifests"
   ],
   "keywords": [
     "xcodebuild",
@@ -82,7 +81,7 @@
     "@bacons/xcode": "^1.0.0-alpha.24",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.23.0",
-    "@smithery/cli": "^3.4.0",
+    "@smithery/cli": "^3.7.0",
     "@types/node": "^22.13.6",
     "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^8.28.0",

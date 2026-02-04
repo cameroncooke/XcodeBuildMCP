@@ -19,8 +19,8 @@ import { ChildProcess } from 'child_process';
 import type { WriteStream } from 'fs';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
-import { CommandExecutor, type CommandResponse } from '../utils/CommandExecutor.ts';
-import { FileSystemExecutor } from '../utils/FileSystemExecutor.ts';
+import type { CommandExecutor, CommandResponse } from '../utils/CommandExecutor.ts';
+import type { FileSystemExecutor } from '../utils/FileSystemExecutor.ts';
 import type { InteractiveProcess, InteractiveSpawner } from '../utils/execution/index.ts';
 
 export type { CommandExecutor, FileSystemExecutor };

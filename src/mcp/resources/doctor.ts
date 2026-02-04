@@ -6,7 +6,8 @@
  */
 
 import { log } from '../../utils/logging/index.ts';
-import { getDefaultCommandExecutor, CommandExecutor } from '../../utils/execution/index.ts';
+import type { CommandExecutor } from '../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../utils/execution/index.ts';
 import { doctorLogic } from '../tools/doctor/doctor.ts';
 
 // Testable resource logic separated from MCP handler

@@ -1,0 +1,13 @@
+id: long_press
+module: mcp/tools/ui-automation/long_press
+names:
+  mcp: long_press
+description: "Long press at coords."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: false
+  daemonAffinity: preferred

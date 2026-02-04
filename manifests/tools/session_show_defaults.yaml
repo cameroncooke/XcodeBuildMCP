@@ -1,0 +1,10 @@
+id: session_show_defaults
+module: mcp/tools/session-management/session_show_defaults
+names:
+  mcp: session_show_defaults
+description: "Show session defaults."
+availability:
+  mcp: true
+  cli: false
+  daemon: false
+predicates: []

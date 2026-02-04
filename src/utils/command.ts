@@ -13,12 +13,12 @@ import { spawn } from 'child_process';
 import { createWriteStream, existsSync } from 'fs';
 import { tmpdir as osTmpdir } from 'os';
 import { log } from './logger.ts';
-import { FileSystemExecutor } from './FileSystemExecutor.ts';
-import { CommandExecutor, CommandResponse, CommandExecOptions } from './CommandExecutor.ts';
+import type { FileSystemExecutor } from './FileSystemExecutor.ts';
+import type { CommandExecutor, CommandResponse, CommandExecOptions } from './CommandExecutor.ts';
 
 // Re-export types for backward compatibility
-export { CommandExecutor, CommandResponse, CommandExecOptions } from './CommandExecutor.ts';
-export { FileSystemExecutor } from './FileSystemExecutor.ts';
+export type { CommandExecutor, CommandResponse, CommandExecOptions } from './CommandExecutor.ts';
+export type { FileSystemExecutor } from './FileSystemExecutor.ts';
 
 /**
  * Default executor implementation using spawn (current production behavior)

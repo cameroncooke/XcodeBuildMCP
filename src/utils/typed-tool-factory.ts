@@ -10,7 +10,7 @@
  */
 
 import * as z from 'zod';
-import { ToolResponse } from '../types/common.ts';
+import type { ToolResponse } from '../types/common.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { createErrorResponse } from './responses/index.ts';
 import { sessionStore, type SessionDefaults } from './session-store.ts';

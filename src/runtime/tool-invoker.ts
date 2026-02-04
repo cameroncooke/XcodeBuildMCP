@@ -24,7 +24,7 @@ function enrichNextStepsForCli(response: ToolResponse, catalog: ToolCatalog): To
       return {
         ...step,
         workflow: target.workflow,
-        cliTool: target.cliName,
+        cliTool: target.cliName, // Canonical CLI name from manifest
       };
     }),
   };

@@ -7,7 +7,8 @@
 
 import * as z from 'zod';
 import { join } from 'path';
-import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';

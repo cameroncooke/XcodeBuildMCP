@@ -1,0 +1,13 @@
+id: list_sims
+module: mcp/tools/simulator/list_sims
+names:
+  mcp: list_sims
+description: "List iOS simulators."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: false
+  daemonAffinity: preferred

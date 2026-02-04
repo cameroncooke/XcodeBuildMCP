@@ -1,0 +1,13 @@
+id: gesture
+module: mcp/tools/ui-automation/gesture
+names:
+  mcp: gesture
+description: "Simulator gesture preset."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: false
+  daemonAffinity: preferred

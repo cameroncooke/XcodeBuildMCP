@@ -11,6 +11,7 @@
     "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
     "inlineSources": true,
+    "verbatimModuleSyntax": true,
 
     // Set `sourceRoot` to  "/" to strip the build path prefix
     // from generated source code references.

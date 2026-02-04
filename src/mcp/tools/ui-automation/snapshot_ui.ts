@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { createErrorResponse } from '../../../utils/responses/index.ts';
 import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';

@@ -1,0 +1,13 @@
+id: type_text
+module: mcp/tools/ui-automation/type_text
+names:
+  mcp: type_text
+description: "Type text."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: false
+  daemonAffinity: preferred

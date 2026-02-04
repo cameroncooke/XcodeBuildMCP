@@ -1,0 +1,14 @@
+id: test_sim
+module: mcp/tools/simulator/test_sim
+names:
+  mcp: test_sim
+description: "Test on iOS sim."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates:
+  - hideWhenXcodeAgentMode
+routing:
+  stateful: false
+  daemonAffinity: preferred

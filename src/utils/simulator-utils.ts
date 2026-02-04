@@ -3,7 +3,7 @@
  */
 
 import type { CommandExecutor } from './execution/index.ts';
-import { ToolResponse } from '../types/common.ts';
+import type { ToolResponse } from '../types/common.ts';
 import { log } from './logging/index.ts';
 import { createErrorResponse } from './responses/index.ts';
 

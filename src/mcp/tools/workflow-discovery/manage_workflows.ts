@@ -4,8 +4,12 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { getDefaultCommandExecutor, type CommandExecutor } from '../../../utils/execution/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import type { ToolResponse } from '../../../types/common.ts';
-import { applyWorkflowSelection, getRegisteredWorkflows } from '../../../utils/tool-registry.ts';
-import { listWorkflowDirectoryNames } from '../../../core/plugin-registry.ts';
+import {
+  applyWorkflowSelectionFromManifest,
+  getRegisteredWorkflows,
+  getMcpPredicateContext,
+} from '../../../utils/tool-registry.ts';
+import { loadManifest } from '../../../core/manifest/load-manifest.ts';
 
 const baseSchemaObject = z.object({
   workflowNames: z.array(z.string()).describe('Workflow directory name(s).'),
@@ -31,14 +35,19 @@ export async function manage_workflowsLogic(
   } else {
     nextWorkflows = [...new Set([...currentWorkflows, ...workflowNames])];
   }
-  const registryState = await applyWorkflowSelection(nextWorkflows);
+
+  // Use the stored MCP predicate context to preserve Xcode detection state
+  const ctx = getMcpPredicateContext();
+
+  const registryState = await applyWorkflowSelectionFromManifest(nextWorkflows, ctx);
 
   return createTextResponse(`Workflows enabled: ${registryState.enabledWorkflows.join(', ')}`);
 }
 
-const workflowNames = listWorkflowDirectoryNames();
+const manifest = loadManifest();
+const allWorkflowIds = Array.from(manifest.workflows.keys());
 const availableWorkflows =
-  workflowNames.length > 0 ? workflowNames.join(', ') : 'none (no workflows discovered)';
+  allWorkflowIds.length > 0 ? allWorkflowIds.join(', ') : 'none (no workflows discovered)';
 
 export default {
   name: 'manage-workflows',

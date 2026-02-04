@@ -1,7 +1,8 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import type { CommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,

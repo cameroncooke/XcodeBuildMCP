@@ -10,7 +10,8 @@ import * as path from 'path';
 import { tmpdir } from 'os';
 import * as z from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import { ToolResponse, createImageContent } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { createImageContent } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import {
   createErrorResponse,

@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { createErrorResponse, createTextResponse } from '../../../utils/responses/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 import { createTypedToolWithContext } from '../../../utils/typed-tool-factory.ts';

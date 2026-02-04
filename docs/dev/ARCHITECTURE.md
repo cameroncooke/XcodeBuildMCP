@@ -30,7 +30,7 @@ XcodeBuildMCP is a Model Context Protocol (MCP) server that exposes Xcode operat
 ### Runtime Flow
 
 1. **Initialization**
-   - The `xcodebuildmcp` executable, as defined in `package.json`, points to the compiled `build/index.js` (CLI entrypoint from `src/cli.ts`); the MCP server starts via the `mcp` subcommand which invokes `src/index.ts`.
+   - The `xcodebuildmcp` executable, as defined in `package.json`, points to the compiled `build/cli.js` (CLI entrypoint from `src/cli.ts`); the MCP server starts via the `mcp` subcommand which invokes `src/index.ts`.
    - Sentry initialized for error tracking (optional)
    - Version information loaded from `package.json`
 

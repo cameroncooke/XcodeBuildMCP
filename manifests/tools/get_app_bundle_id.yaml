@@ -1,0 +1,13 @@
+id: get_app_bundle_id
+module: mcp/tools/project-discovery/get_app_bundle_id
+names:
+  mcp: get_app_bundle_id
+description: "Extract bundle id from .app."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: false
+  daemonAffinity: preferred

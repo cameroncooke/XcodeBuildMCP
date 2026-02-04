@@ -1,0 +1,13 @@
+id: open_sim
+module: mcp/tools/simulator/open_sim
+names:
+  mcp: open_sim
+description: "Open Simulator app."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: false
+  daemonAffinity: preferred

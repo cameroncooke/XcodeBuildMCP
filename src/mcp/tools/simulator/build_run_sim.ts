@@ -7,7 +7,8 @@
  */
 
 import * as z from 'zod';
-import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.ts';
+import type { ToolResponse, SharedBuildParams } from '../../../types/common.ts';
+import { XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import {

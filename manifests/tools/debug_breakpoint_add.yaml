@@ -1,0 +1,13 @@
+id: debug_breakpoint_add
+module: mcp/tools/debugging/debug_breakpoint_add
+names:
+  mcp: debug_breakpoint_add
+description: "Add breakpoint."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: true
+  daemonAffinity: required

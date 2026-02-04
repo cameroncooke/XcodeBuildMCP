@@ -9,13 +9,10 @@ import { join, dirname, basename } from 'path';
 import { log } from '../../../utils/logging/index.ts';
 import { ValidationError } from '../../../utils/responses/index.ts';
 import { TemplateManager } from '../../../utils/template/index.ts';
-import { ToolResponse } from '../../../types/common.ts';
-import {
-  CommandExecutor,
-  getDefaultCommandExecutor,
-  getDefaultFileSystemExecutor,
-} from '../../../utils/command.ts';
-import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import type { CommandExecutor } from '../../../utils/command.ts';
+import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from '../../../utils/command.ts';
+import type { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 
 // Common base schema for both iOS and macOS
 const BaseScaffoldSchema = z.object({

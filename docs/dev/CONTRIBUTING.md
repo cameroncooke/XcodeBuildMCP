@@ -64,7 +64,7 @@ brew install axe
    ```
 4. Start the server:
    ```
-   node build/index.js mcp
+   node build/cli.js mcp
    ```
 
 ### Configure your MCP client
@@ -77,7 +77,7 @@ Most MCP clients (Cursor, VS Code, Windsurf, Claude Desktop etc) have standardis
     "XcodeBuildMCP": {
       "command": "node",
       "args": [
-        "/path_to/XcodeBuildMCP/build/index.js",
+        "/path_to/XcodeBuildMCP/build/cli.js",
         "mcp"
       ]
     }
@@ -110,7 +110,7 @@ npm run inspect
 or if you prefer the explicit command:
 
 ```bash
-npx @modelcontextprotocol/inspector node build/index.js mcp
+npx @modelcontextprotocol/inspector node build/cli.js mcp
 ```
 
 #### Reloaderoo (Advanced Debugging) - **RECOMMENDED**
@@ -127,7 +127,7 @@ Provides transparent hot-reloading without disconnecting your MCP client:
 npm install -g reloaderoo
 
 # Start XcodeBuildMCP through reloaderoo proxy
-reloaderoo -- node build/index.js mcp
+reloaderoo -- node build/cli.js mcp
 ```
 
 **Benefits**:
@@ -140,7 +140,7 @@ reloaderoo -- node build/index.js mcp
 ```json
 "XcodeBuildMCP": {
   "command": "reloaderoo",
-  "args": ["--", "node", "/path/to/XcodeBuildMCP/build/index.js", "mcp"],
+  "args": ["--", "node", "/path/to/XcodeBuildMCP/build/cli.js", "mcp"],
   "env": {
     "XCODEBUILDMCP_DEBUG": "true"
   }
@@ -152,7 +152,7 @@ Exposes debug tools for making raw MCP protocol calls and inspecting server resp
 
 ```bash
 # Start reloaderoo in inspection mode
-reloaderoo inspect mcp -- node build/index.js mcp
+reloaderoo inspect mcp -- node build/cli.js mcp
 ```
 
 **Available Debug Tools**:
@@ -174,7 +174,7 @@ reloaderoo inspect mcp -- node build/index.js mcp
     "inspect", "mcp",
     "--working-dir", "/path/to/XcodeBuildMCP",
     "--",
-    "node", "/path/to/XcodeBuildMCP/build/index.js", "mcp"
+    "node", "/path/to/XcodeBuildMCP/build/cli.js", "mcp"
   ],
   "env": {
     "XCODEBUILDMCP_DEBUG": "true"
@@ -188,10 +188,10 @@ Test full vs. selective workflow registration during development:
 
 ```bash
 # Test full tool registration (default)
-reloaderoo inspect mcp -- node build/index.js mcp
+reloaderoo inspect mcp -- node build/cli.js mcp
 
 # Test selective workflow registration
-XCODEBUILDMCP_ENABLED_WORKFLOWS=simulator,device reloaderoo inspect mcp -- node build/index.js mcp
+XCODEBUILDMCP_ENABLED_WORKFLOWS=simulator,device reloaderoo inspect mcp -- node build/cli.js mcp
 ```
 **Key Differences to Test**:
 - **Full Registration**: All tools are available immediately via `list_tools`
@@ -212,7 +212,7 @@ Running the XcodeBuildMCP server with the environmental variable `XCODEBUILDMCP_
 1. **Start Development Session**:
    ```bash
    # Terminal 1: Start in hot-reload mode
-   reloaderoo -- node build/index.js mcp
+   reloaderoo -- node build/cli.js mcp
 
    # Terminal 2: Start build watcher
    npm run build:watch
@@ -338,7 +338,7 @@ When developing or testing changes to the templates:
 ```json
 "XcodeBuildMCP": {
   "command": "node",
-  "args": ["/path_to/XcodeBuildMCP/build/index.js", "mcp"],
+  "args": ["/path_to/XcodeBuildMCP/build/cli.js", "mcp"],
   "env": {
     "XCODEBUILDMCP_IOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-iOS-Template",
     "XCODEBUILDMCP_MACOS_TEMPLATE_PATH": "/path/to/XcodeBuildMCP-macOS-Template"

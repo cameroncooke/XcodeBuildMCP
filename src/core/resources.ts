@@ -2,20 +2,19 @@
  * Resource Management - MCP Resource handlers and URI management
  *
  * This module manages MCP resources, providing a unified interface for exposing
- * data through the Model Context Protocol resource system. Resources allow clients
- * to access data via URI references without requiring tool calls.
- *
- * Responsibilities:
- * - Loading resources from the plugin-based resource system
- * - Managing resource registration with the MCP server
- * - Providing fallback compatibility for clients without resource support
+ * data through the Model Context Protocol resource system.
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
+import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import { log } from '../utils/logging/index.ts';
 import type { CommandExecutor } from '../utils/execution/index.ts';
-import { RESOURCE_LOADERS } from './generated-resources.ts';
+
+// Direct imports - no codegen needed
+import devicesResource from '../mcp/resources/devices.ts';
+import doctorResource from '../mcp/resources/doctor.ts';
+import sessionStatusResource from '../mcp/resources/session-status.ts';
+import simulatorsResource from '../mcp/resources/simulators.ts';
 
 /**
  * Resource metadata interface
@@ -34,46 +33,46 @@ export interface ResourceMeta {
 }
 
 /**
- * Load all resources using generated loaders
+ * All available resources
+ */
+const RESOURCES: ResourceMeta[] = [
+  devicesResource,
+  doctorResource,
+  sessionStatusResource,
+  simulatorsResource,
+];
+
+/**
+ * Load all resources
  * @returns Map of resource URI to resource metadata
  */
 export async function loadResources(): Promise<Map<string, ResourceMeta>> {
   const resources = new Map<string, ResourceMeta>();
 
-  for (const [resourceName, loader] of Object.entries(RESOURCE_LOADERS)) {
-    try {
-      const resource = (await loader()) as ResourceMeta;
-
-      if (!resource.uri || !resource.handler || typeof resource.handler !== 'function') {
-        throw new Error(`Invalid resource structure for ${resourceName}`);
-      }
-
-      resources.set(resource.uri, resource);
-      log('info', `Loaded resource: ${resourceName} (${resource.uri})`);
-    } catch (error) {
-      log(
-        'error',
-        `Failed to load resource ${resourceName}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+  for (const resource of RESOURCES) {
+    if (!resource.uri || !resource.handler || typeof resource.handler !== 'function') {
+      log('error', `Invalid resource structure for ${resource.name ?? 'unknown'}`);
+      continue;
     }
+
+    resources.set(resource.uri, resource);
+    log('info', `Loaded resource: ${resource.name} (${resource.uri})`);
   }
 
   return resources;
 }
 
 /**
- * Register all resources with the MCP server if client supports resources
+ * Register all resources with the MCP server
  * @param server The MCP server instance
- * @returns true if resources were registered, false if skipped due to client limitations
+ * @returns true if resources were registered
  */
 export async function registerResources(server: McpServer): Promise<boolean> {
   const resources = await loadResources();
 
   for (const [uri, resource] of Array.from(resources)) {
-    // Create a handler wrapper that matches ReadResourceCallback signature
     const readCallback = async (resourceUri: URL): Promise<ReadResourceResult> => {
       const result = await resource.handler(resourceUri);
-      // Transform the content to match MCP SDK expectations
       return {
         contents: result.contents.map((content) => ({
           uri: resourceUri.toString(),

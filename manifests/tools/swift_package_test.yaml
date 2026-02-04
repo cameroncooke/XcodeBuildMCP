@@ -1,0 +1,14 @@
+id: swift_package_test
+module: mcp/tools/swift-package/swift_package_test
+names:
+  mcp: swift_package_test
+description: "Run swift package target tests."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates:
+  - hideWhenXcodeAgentMode
+routing:
+  stateful: false
+  daemonAffinity: preferred

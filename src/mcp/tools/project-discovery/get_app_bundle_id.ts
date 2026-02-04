@@ -7,13 +7,10 @@
 
 import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
-import { ToolResponse } from '../../../types/common.ts';
-import {
-  CommandExecutor,
-  getDefaultFileSystemExecutor,
-  getDefaultCommandExecutor,
-} from '../../../utils/command.ts';
-import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import type { CommandExecutor } from '../../../utils/command.ts';
+import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
+import type { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject

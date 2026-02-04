@@ -6,7 +6,7 @@ import { schemaToYargsOptions, getUnsupportedSchemaKeys } from './schema-to-yarg
 import { convertArgvToToolParams } from '../runtime/naming.ts';
 import { printToolResponse, type OutputFormat } from './output.ts';
 import { groupToolsByWorkflow } from '../runtime/tool-catalog.ts';
-import { WORKFLOW_METADATA, type WorkflowName } from '../core/generated-plugins.ts';
+import { getWorkflowMetadataFromManifest } from '../core/manifest/load-manifest.ts';
 
 export interface RegisterToolCommandsOptions {
   workspaceRoot: string;
@@ -27,10 +27,11 @@ export function registerToolCommands(
   const toolsByWorkflow = groupToolsByWorkflow(catalog);
   const enabledWorkflows = opts.enabledWorkflows ?? [...toolsByWorkflow.keys()];
   const workflowNames = opts.workflowNames ?? [...toolsByWorkflow.keys()];
+  const workflowMetadata = getWorkflowMetadataFromManifest();
 
   for (const workflowName of workflowNames) {
     const tools = toolsByWorkflow.get(workflowName) ?? [];
-    const workflowMeta = WORKFLOW_METADATA[workflowName as WorkflowName];
+    const workflowMeta = workflowMetadata[workflowName];
     const workflowDescription = workflowMeta?.name ?? workflowName;
 
     app.command(

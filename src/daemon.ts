@@ -3,8 +3,8 @@ import net from 'node:net';
 import { dirname } from 'node:path';
 import { existsSync, mkdirSync, renameSync, statSync } from 'node:fs';
 import { bootstrapRuntime } from './runtime/bootstrap-runtime.ts';
-import { listWorkflowDirectoryNames } from './core/plugin-registry.ts';
-import { buildToolCatalog } from './runtime/tool-catalog.ts';
+import { buildDaemonToolCatalogFromManifest } from './runtime/tool-catalog.ts';
+import { loadManifest } from './core/manifest/load-manifest.ts';
 import {
   ensureSocketDir,
   removeStaleSocket,
@@ -167,14 +167,16 @@ async function main(): Promise<void> {
   // Remove stale socket file
   removeStaleSocket(socketPath);
 
-  const excludedWorkflows = new Set(['session-management', 'workflow-discovery']);
-  const allWorkflows = listWorkflowDirectoryNames();
-  const daemonWorkflows = allWorkflows.filter((workflow) => !excludedWorkflows.has(workflow));
+  const excludedWorkflows = ['session-management', 'workflow-discovery'];
 
-  // Build tool catalog (CLI daemon always loads all workflows except MCP-only ones)
-  const catalog = await buildToolCatalog({
-    enabledWorkflows: allWorkflows,
-    excludeWorkflows: [...excludedWorkflows],
+  // Get all workflows from manifest (for reporting purposes)
+  const manifest = loadManifest();
+  const allWorkflowIds = Array.from(manifest.workflows.keys());
+  const daemonWorkflows = allWorkflowIds.filter((wf) => !excludedWorkflows.includes(wf));
+
+  // Build tool catalog using manifest system
+  const catalog = await buildDaemonToolCatalogFromManifest({
+    excludeWorkflows: excludedWorkflows,
   });
 
   log('info', `[Daemon] Loaded ${catalog.tools.length} tools`);

@@ -1,0 +1,322 @@
+/**
+ * Manifest loader for YAML-based tool and workflow definitions.
+ * Loads and merges multiple YAML files into a resolved manifest.
+ */
+
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parse as parseYaml } from 'yaml';
+import {
+  toolManifestEntrySchema,
+  workflowManifestEntrySchema,
+  type ToolManifestEntry,
+  type WorkflowManifestEntry,
+  type ResolvedManifest,
+  getEffectiveCliName,
+} from './schema.ts';
+
+// Re-export types for consumers
+export type { ResolvedManifest, ToolManifestEntry, WorkflowManifestEntry };
+import { isValidPredicate } from '../../visibility/predicate-registry.ts';
+
+// Capture import.meta.url at module load time (before any CJS bundling issues)
+// This works because the value is captured when the module is first evaluated
+const importMetaUrl: string | undefined = ((): string | undefined => {
+  try {
+    // This will be undefined in CJS bundles but valid in ESM
+    return import.meta.url;
+  } catch {
+    return undefined;
+  }
+})();
+
+/**
+ * Get the current file path, handling both ESM and CJS contexts.
+ * Smithery bundles to CJS where import.meta.url is undefined.
+ */
+function getCurrentFilePath(): string {
+  // ESM context - use captured import.meta.url
+  if (importMetaUrl) {
+    return fileURLToPath(importMetaUrl);
+  }
+
+  // CJS context (Smithery bundle) - __filename is shimmed by esbuild
+  if (typeof __filename !== 'undefined' && __filename) {
+    return __filename as string;
+  }
+
+  // Fallback: try to resolve from cwd
+  const cwd = process.cwd();
+  const possiblePaths = [
+    path.join(cwd, 'build', 'core', 'manifest', 'load-manifest.ts'),
+    path.join(cwd, 'src', 'core', 'manifest', 'load-manifest.ts'),
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return p;
+    }
+  }
+
+  throw new Error('Cannot determine current file path in this runtime context');
+}
+
+/**
+ * Get the package root directory.
+ * Works correctly for both development and npx/npm installs.
+ */
+export function getPackageRoot(): string {
+  // Start from this file's directory and go up to find package.json
+  const currentFile = getCurrentFilePath();
+  let dir = path.dirname(currentFile);
+
+  // Walk up until we find package.json
+  while (dir !== path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, 'package.json'))) {
+      return dir;
+    }
+    dir = path.dirname(dir);
+  }
+
+  throw new Error('Could not find package root (no package.json found in parent directories)');
+}
+
+/**
+ * Get the manifests directory path.
+ */
+export function getManifestsDir(): string {
+  return path.join(getPackageRoot(), 'manifests');
+}
+
+/**
+ * Load all YAML files from a directory.
+ */
+function loadYamlFiles(dir: string): unknown[] {
+  if (!fs.existsSync(dir)) {
+    return [];
+  }
+
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
+  const results: unknown[] = [];
+
+  for (const file of files) {
+    const filePath = path.join(dir, file);
+    const content = fs.readFileSync(filePath, 'utf-8');
+    try {
+      const parsed = parseYaml(content) as Record<string, unknown> | null;
+      if (parsed) {
+        results.push({ ...parsed, _sourceFile: file });
+      }
+    } catch (err) {
+      throw new Error(`Failed to parse YAML file ${filePath}: ${err}`);
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Validation error for manifest loading.
+ */
+export class ManifestValidationError extends Error {
+  constructor(
+    message: string,
+    public readonly sourceFile?: string,
+  ) {
+    super(sourceFile ? `${message} (in ${sourceFile})` : message);
+    this.name = 'ManifestValidationError';
+  }
+}
+
+/**
+ * Load and validate the complete manifest registry.
+ * Merges all YAML files from manifests/tools/ and manifests/workflows/.
+ */
+export function loadManifest(): ResolvedManifest {
+  const manifestsDir = getManifestsDir();
+  const toolsDir = path.join(manifestsDir, 'tools');
+  const workflowsDir = path.join(manifestsDir, 'workflows');
+
+  const tools = new Map<string, ToolManifestEntry>();
+  const workflows = new Map<string, WorkflowManifestEntry>();
+
+  // Load tools
+  const toolFiles = loadYamlFiles(toolsDir);
+  for (const raw of toolFiles) {
+    const sourceFile = (raw as { _sourceFile?: string })._sourceFile;
+    const result = toolManifestEntrySchema.safeParse(raw);
+    if (!result.success) {
+      throw new ManifestValidationError(
+        `Invalid tool manifest: ${result.error.message}`,
+        sourceFile,
+      );
+    }
+
+    const tool = result.data;
+
+    // Check for duplicate ID
+    if (tools.has(tool.id)) {
+      throw new ManifestValidationError(`Duplicate tool ID '${tool.id}'`, sourceFile);
+    }
+
+    // Validate predicates
+    for (const pred of tool.predicates) {
+      if (!isValidPredicate(pred)) {
+        throw new ManifestValidationError(
+          `Unknown predicate '${pred}' in tool '${tool.id}'`,
+          sourceFile,
+        );
+      }
+    }
+
+    tools.set(tool.id, tool);
+  }
+
+  // Load workflows
+  const workflowFiles = loadYamlFiles(workflowsDir);
+  for (const raw of workflowFiles) {
+    const sourceFile = (raw as { _sourceFile?: string })._sourceFile;
+    const result = workflowManifestEntrySchema.safeParse(raw);
+    if (!result.success) {
+      throw new ManifestValidationError(
+        `Invalid workflow manifest: ${result.error.message}`,
+        sourceFile,
+      );
+    }
+
+    const workflow = result.data;
+
+    // Check for duplicate ID
+    if (workflows.has(workflow.id)) {
+      throw new ManifestValidationError(`Duplicate workflow ID '${workflow.id}'`, sourceFile);
+    }
+
+    // Validate predicates
+    for (const pred of workflow.predicates) {
+      if (!isValidPredicate(pred)) {
+        throw new ManifestValidationError(
+          `Unknown predicate '${pred}' in workflow '${workflow.id}'`,
+          sourceFile,
+        );
+      }
+    }
+
+    // Validate tool references
+    for (const toolId of workflow.tools) {
+      if (!tools.has(toolId)) {
+        throw new ManifestValidationError(
+          `Workflow '${workflow.id}' references unknown tool '${toolId}'`,
+          sourceFile,
+        );
+      }
+    }
+
+    workflows.set(workflow.id, workflow);
+  }
+
+  // Validate MCP name uniqueness
+  const mcpNames = new Map<string, string>(); // mcpName -> toolId
+  for (const [toolId, tool] of tools) {
+    const existing = mcpNames.get(tool.names.mcp);
+    if (existing) {
+      throw new ManifestValidationError(
+        `Duplicate MCP name '${tool.names.mcp}' used by tools '${existing}' and '${toolId}'`,
+      );
+    }
+    mcpNames.set(tool.names.mcp, toolId);
+  }
+
+  // Validate CLI name uniqueness (after derivation)
+  const cliNames = new Map<string, string>(); // cliName -> toolId
+  for (const [toolId, tool] of tools) {
+    const cliName = getEffectiveCliName(tool);
+    const existing = cliNames.get(cliName);
+    if (existing) {
+      throw new ManifestValidationError(
+        `Duplicate CLI name '${cliName}' used by tools '${existing}' and '${toolId}'. ` +
+          `Set explicit 'names.cli' in one of the tool manifests to resolve.`,
+      );
+    }
+    cliNames.set(cliName, toolId);
+  }
+
+  return { tools, workflows };
+}
+
+/**
+ * Validate that all tool modules exist on disk.
+ * Call this at startup to fail fast on missing modules.
+ */
+export function validateToolModules(manifest: ResolvedManifest): void {
+  const packageRoot = getPackageRoot();
+
+  for (const [toolId, tool] of manifest.tools) {
+    const modulePath = path.join(packageRoot, 'build', `${tool.module}.js`);
+    if (!fs.existsSync(modulePath)) {
+      throw new ManifestValidationError(
+        `Tool '${toolId}' references missing module: ${modulePath}`,
+      );
+    }
+  }
+}
+
+/**
+ * Get tools for a specific workflow.
+ */
+export function getWorkflowTools(
+  manifest: ResolvedManifest,
+  workflowId: string,
+): ToolManifestEntry[] {
+  const workflow = manifest.workflows.get(workflowId);
+  if (!workflow) {
+    return [];
+  }
+
+  return workflow.tools
+    .map((toolId) => manifest.tools.get(toolId))
+    .filter((t): t is ToolManifestEntry => t !== undefined);
+}
+
+/**
+ * Get all unique tools across selected workflows.
+ */
+export function getToolsForWorkflows(
+  manifest: ResolvedManifest,
+  workflowIds: string[],
+): ToolManifestEntry[] {
+  const seenToolIds = new Set<string>();
+  const tools: ToolManifestEntry[] = [];
+
+  for (const workflowId of workflowIds) {
+    const workflowTools = getWorkflowTools(manifest, workflowId);
+    for (const tool of workflowTools) {
+      if (!seenToolIds.has(tool.id)) {
+        seenToolIds.add(tool.id);
+        tools.push(tool);
+      }
+    }
+  }
+
+  return tools;
+}
+
+/**
+ * Get workflow metadata from the manifest.
+ * Returns a record mapping workflow IDs to their title/description.
+ */
+export function getWorkflowMetadataFromManifest(): Record<
+  string,
+  { name: string; description: string }
+> {
+  const manifest = loadManifest();
+  const metadata: Record<string, { name: string; description: string }> = {};
+
+  for (const [id, workflow] of manifest.workflows.entries()) {
+    metadata[id] = {
+      name: workflow.title,
+      description: workflow.description,
+    };
+  }
+
+  return metadata;
+}

@@ -19,8 +19,8 @@
 
 import { log } from './logger.ts';
 import { XcodePlatform, constructDestinationString } from './xcode.ts';
-import { CommandExecutor, CommandExecOptions } from './command.ts';
-import { ToolResponse, SharedBuildParams, PlatformBuildOptions } from '../types/common.ts';
+import type { CommandExecutor, CommandExecOptions } from './command.ts';
+import type { ToolResponse, SharedBuildParams, PlatformBuildOptions } from '../types/common.ts';
 import { createTextResponse, consolidateContentForClaudeCode } from './validation.ts';
 import {
   isXcodemakeEnabled,

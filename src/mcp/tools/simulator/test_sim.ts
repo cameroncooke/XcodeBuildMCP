@@ -9,8 +9,8 @@
 import * as z from 'zod';
 import { handleTestLogic } from '../../../utils/test/index.ts';
 import { log } from '../../../utils/logging/index.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { XcodePlatform } from '../../../types/common.ts';
-import { ToolResponse } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';

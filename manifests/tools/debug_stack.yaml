@@ -1,0 +1,13 @@
+id: debug_stack
+module: mcp/tools/debugging/debug_stack
+names:
+  mcp: debug_stack
+description: "Get backtrace."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: true
+  daemonAffinity: required

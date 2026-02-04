@@ -1,0 +1,13 @@
+id: swift_package_run
+module: mcp/tools/swift-package/swift_package_run
+names:
+  mcp: swift_package_run
+description: "swift package target run."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: true
+  daemonAffinity: required

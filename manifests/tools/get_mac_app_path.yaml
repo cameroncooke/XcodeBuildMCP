@@ -1,0 +1,13 @@
+id: get_mac_app_path
+module: mcp/tools/macos/get_mac_app_path
+names:
+  mcp: get_mac_app_path
+description: "Get macOS built app path."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: false
+  daemonAffinity: preferred

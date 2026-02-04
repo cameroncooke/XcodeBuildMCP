@@ -8,9 +8,10 @@
 import * as z from 'zod';
 import * as path from 'node:path';
 import { log } from '../../../utils/logging/index.ts';
-import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { createTextContent } from '../../../types/common.ts';
 import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
-import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
+import type { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Constants

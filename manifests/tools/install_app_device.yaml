@@ -1,0 +1,13 @@
+id: install_app_device
+module: mcp/tools/device/install_app_device
+names:
+  mcp: install_app_device
+description: "Install app on device."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: false
+  daemonAffinity: preferred

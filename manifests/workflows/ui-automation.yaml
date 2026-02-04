@@ -1,0 +1,25 @@
+id: ui-automation
+title: "UI Automation"
+description: "UI automation and accessibility testing tools for iOS simulators. Perform gestures, interactions, screenshots, and UI analysis for automated testing workflows."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+selection:
+  mcp:
+    mandatory: false
+    defaultEnabled: false
+    autoInclude: false
+predicates: []
+tools:
+  - tap
+  - touch
+  - long_press
+  - swipe
+  - gesture
+  - button
+  - key_press
+  - key_sequence
+  - type_text
+  - screenshot
+  - snapshot_ui

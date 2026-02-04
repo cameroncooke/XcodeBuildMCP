@@ -1,0 +1,13 @@
+id: record_sim_video
+module: mcp/tools/simulator/record_sim_video
+names:
+  mcp: record_sim_video
+description: "Record sim video."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: true
+  daemonAffinity: preferred

@@ -4,12 +4,9 @@ import type { Writable } from 'stream';
 import { finished } from 'stream/promises';
 import { v4 as uuidv4 } from 'uuid';
 import { log } from '../utils/logger.ts';
-import {
-  CommandExecutor,
-  getDefaultCommandExecutor,
-  getDefaultFileSystemExecutor,
-} from './command.ts';
-import { FileSystemExecutor } from './FileSystemExecutor.ts';
+import type { CommandExecutor } from './command.ts';
+import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from './command.ts';
+import type { FileSystemExecutor } from './FileSystemExecutor.ts';
 
 /**
  * Log file retention policy:

@@ -3,8 +3,8 @@ import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
 import { log } from './logger.ts';
 import { iOSTemplateVersion, macOSTemplateVersion } from '../version.ts';
-import { CommandExecutor } from './command.ts';
-import { FileSystemExecutor } from './FileSystemExecutor.ts';
+import type { CommandExecutor } from './command.ts';
+import type { FileSystemExecutor } from './FileSystemExecutor.ts';
 import { getConfig } from './config-store.ts';
 
 /**

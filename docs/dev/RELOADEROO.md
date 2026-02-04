@@ -36,44 +36,44 @@ Direct command-line access to MCP servers without client setup - perfect for tes
 
 ```bash
 # List all available tools
-npx reloaderoo@latest inspect list-tools -- node build/index.js mcp
+npx reloaderoo@latest inspect list-tools -- node build/cli.js mcp
 
 # Call any tool with parameters  
-npx reloaderoo@latest inspect call-tool <tool_name> --params '<json>' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool <tool_name> --params '<json>' -- node build/cli.js mcp
 
 # Get server information
-npx reloaderoo@latest inspect server-info -- node build/index.js mcp
+npx reloaderoo@latest inspect server-info -- node build/cli.js mcp
 
 # List available resources
-npx reloaderoo@latest inspect list-resources -- node build/index.js mcp
+npx reloaderoo@latest inspect list-resources -- node build/cli.js mcp
 
 # Read a specific resource
-npx reloaderoo@latest inspect read-resource "<uri>" -- node build/index.js mcp
+npx reloaderoo@latest inspect read-resource "<uri>" -- node build/cli.js mcp
 
 # List available prompts
-npx reloaderoo@latest inspect list-prompts -- node build/index.js mcp
+npx reloaderoo@latest inspect list-prompts -- node build/cli.js mcp
 
 # Get a specific prompt
-npx reloaderoo@latest inspect get-prompt <name> --args '<json>' -- node build/index.js mcp
+npx reloaderoo@latest inspect get-prompt <name> --args '<json>' -- node build/cli.js mcp
 
 # Check server connectivity
-npx reloaderoo@latest inspect ping -- node build/index.js mcp
+npx reloaderoo@latest inspect ping -- node build/cli.js mcp
 ```
 
 **Example Tool Calls:**
 
 ```bash
 # List connected devices
-npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/cli.js mcp
 
 # Get doctor information
-npx reloaderoo@latest inspect call-tool doctor --params '{}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool doctor --params '{}' -- node build/cli.js mcp
 
 # List iOS simulators
-npx reloaderoo@latest inspect call-tool list_sims --params '{}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool list_sims --params '{}' -- node build/cli.js mcp
 
 # Read devices resource
-npx reloaderoo@latest inspect read-resource "xcodebuildmcp://devices" -- node build/index.js mcp
+npx reloaderoo@latest inspect read-resource "xcodebuildmcp://devices" -- node build/cli.js mcp
 ```
 
 ### 🔄 **Proxy Mode** (Hot-Reload Development)
@@ -91,10 +91,10 @@ Transparent MCP proxy server that enables seamless hot-reloading during developm
 
 ```bash
 # Start proxy mode (your AI client connects to this)
-npx reloaderoo@latest proxy -- node build/index.js mcp
+npx reloaderoo@latest proxy -- node build/cli.js mcp
 
 # With debug logging
-npx reloaderoo@latest proxy --log-level debug -- node build/index.js mcp
+npx reloaderoo@latest proxy --log-level debug -- node build/cli.js mcp
 
 # Then in your AI session, request:
 # "Please restart the MCP server to load my latest changes"
@@ -108,7 +108,7 @@ Start CLI mode as a persistent MCP server for interactive debugging through MCP 
 
 ```bash
 # Start reloaderoo in CLI mode as an MCP server
-npx reloaderoo@latest inspect mcp -- node build/index.js mcp
+npx reloaderoo@latest inspect mcp -- node build/cli.js mcp
 ```
 
 This runs CLI mode as a persistent MCP server, exposing 8 debug tools through the MCP protocol:
@@ -172,9 +172,9 @@ Options:
   --dry-run                        Validate configuration without starting proxy
 
 Examples:
-  npx reloaderoo proxy -- node build/index.js mcp
-  npx reloaderoo -- node build/index.js mcp                    # Same as above (proxy is default)
-  npx reloaderoo proxy --log-level debug -- node build/index.js mcp
+  npx reloaderoo proxy -- node build/cli.js mcp
+  npx reloaderoo -- node build/cli.js mcp                    # Same as above (proxy is default)
+  npx reloaderoo proxy --log-level debug -- node build/cli.js mcp
 ```
 
 ### 🔍 **CLI Mode Commands**
@@ -193,9 +193,9 @@ Subcommands:
   ping [options]                   Check server connectivity
 
 Examples:
-  npx reloaderoo@latest inspect list-tools -- node build/index.js mcp
-  npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/index.js mcp
-  npx reloaderoo@latest inspect server-info -- node build/index.js mcp
+  npx reloaderoo@latest inspect list-tools -- node build/cli.js mcp
+  npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/cli.js mcp
+  npx reloaderoo@latest inspect server-info -- node build/cli.js mcp
 ```
 
 ### **Info Command**
@@ -260,14 +260,14 @@ Perfect for testing individual tools or debugging server issues without MCP clie
 npm run build
 
 # 2. Test your server quickly
-npx reloaderoo@latest inspect list-tools -- node build/index.js mcp
+npx reloaderoo@latest inspect list-tools -- node build/cli.js mcp
 
 # 3. Call specific tools to verify behavior
-npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/cli.js mcp
 
 # 4. Check server health and resources
-npx reloaderoo@latest inspect ping -- node build/index.js mcp
-npx reloaderoo@latest inspect list-resources -- node build/index.js mcp
+npx reloaderoo@latest inspect ping -- node build/cli.js mcp
+npx reloaderoo@latest inspect list-resources -- node build/cli.js mcp
 ```
 
 ### 🔄 **Proxy Mode Workflow** (Hot-Reload Development)
@@ -277,9 +277,9 @@ For full development sessions with AI clients that need persistent connections:
 #### 1. **Start Development Session**
 Configure your AI client to connect to reloaderoo proxy instead of your server directly:
 ```bash
-npx reloaderoo@latest proxy -- node build/index.js mcp
+npx reloaderoo@latest proxy -- node build/cli.js mcp
 # or with debug logging:
-npx reloaderoo@latest proxy --log-level debug -- node build/index.js mcp
+npx reloaderoo@latest proxy --log-level debug -- node build/cli.js mcp
 ```
 
 #### 2. **Develop Your MCP Server**
@@ -305,7 +305,7 @@ For interactive debugging through MCP clients:
 
 ```bash
 # Start reloaderoo CLI mode as an MCP server
-npx reloaderoo@latest inspect mcp -- node build/index.js mcp
+npx reloaderoo@latest inspect mcp -- node build/cli.js mcp
 
 # Then connect with an MCP client to access debug tools
 # Available tools: list_tools, call_tool, list_resources, etc.
@@ -318,16 +318,16 @@ npx reloaderoo@latest inspect mcp -- node build/index.js mcp
 **Server won't start in proxy mode:**
 ```bash
 # Check if XcodeBuildMCP runs independently first
-node build/index.js mcp
+node build/cli.js mcp
 
 # Then try with reloaderoo proxy to validate configuration
-npx reloaderoo@latest proxy -- node build/index.js mcp
+npx reloaderoo@latest proxy -- node build/cli.js mcp
 ```
 
 **Connection problems with MCP clients:**
 ```bash
 # Enable debug logging to see what's happening
-npx reloaderoo@latest proxy --log-level debug -- node build/index.js mcp
+npx reloaderoo@latest proxy --log-level debug -- node build/cli.js mcp
 
 # Check system info and configuration
 npx reloaderoo@latest info --verbose
@@ -336,10 +336,10 @@ npx reloaderoo@latest info --verbose
 **Restart failures in proxy mode:**
 ```bash
 # Increase restart timeout
-npx reloaderoo@latest proxy --restart-timeout 60000 -- node build/index.js mcp
+npx reloaderoo@latest proxy --restart-timeout 60000 -- node build/cli.js mcp
 
 # Check restart limits  
-npx reloaderoo@latest proxy --max-restarts 5 -- node build/index.js mcp
+npx reloaderoo@latest proxy --max-restarts 5 -- node build/cli.js mcp
 ```
 
 ### 🔍 **CLI Mode Issues**
@@ -347,19 +347,19 @@ npx reloaderoo@latest proxy --max-restarts 5 -- node build/index.js mcp
 **CLI commands failing:**
 ```bash
 # Test basic connectivity first
-npx reloaderoo@latest inspect ping -- node build/index.js mcp
+npx reloaderoo@latest inspect ping -- node build/cli.js mcp
 
 # Enable debug logging for CLI commands (via proxy debug mode)
-npx reloaderoo@latest proxy --log-level debug -- node build/index.js mcp
+npx reloaderoo@latest proxy --log-level debug -- node build/cli.js mcp
 ```
 
 **JSON parsing errors:**
 ```bash
 # Check server information for troubleshooting
-npx reloaderoo@latest inspect server-info -- node build/index.js mcp
+npx reloaderoo@latest inspect server-info -- node build/cli.js mcp
 
 # Ensure your server outputs valid JSON
-node build/index.js mcp | head -10
+node build/cli.js mcp | head -10
 ```
 
 ### **General Issues**
@@ -376,15 +376,15 @@ npm install -g reloaderoo
 **Parameter validation:**
 ```bash
 # Ensure JSON parameters are properly quoted
-npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool list_devices --params '{}' -- node build/cli.js mcp
 ```
 
 ### **General Debug Mode**
 
 ```bash
 # Get detailed information about what's happening
-npx reloaderoo@latest proxy --debug -- node build/index.js mcp  # For proxy mode
-npx reloaderoo@latest proxy --log-level debug -- node build/index.js mcp  # For detailed proxy logging
+npx reloaderoo@latest proxy --debug -- node build/cli.js mcp  # For proxy mode
+npx reloaderoo@latest proxy --log-level debug -- node build/cli.js mcp  # For detailed proxy logging
 
 # View system information
 npx reloaderoo@latest info --verbose
@@ -421,14 +421,14 @@ export MCPDEV_PROXY_CWD=/path/to/directory     # Default working directory
 ### Custom Working Directory
 
 ```bash
-npx reloaderoo@latest proxy --working-dir /custom/path -- node build/index.js mcp
-npx reloaderoo@latest inspect list-tools --working-dir /custom/path -- node build/index.js mcp
+npx reloaderoo@latest proxy --working-dir /custom/path -- node build/cli.js mcp
+npx reloaderoo@latest inspect list-tools --working-dir /custom/path -- node build/cli.js mcp
 ```
 
 ### Timeout Configuration
 
 ```bash
-npx reloaderoo@latest proxy --restart-timeout 60000 -- node build/index.js mcp
+npx reloaderoo@latest proxy --restart-timeout 60000 -- node build/cli.js mcp
 ```
 
 ## Integration with XcodeBuildMCP

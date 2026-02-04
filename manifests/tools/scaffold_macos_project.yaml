@@ -1,0 +1,14 @@
+id: scaffold_macos_project
+module: mcp/tools/project-scaffolding/scaffold_macos_project
+names:
+  mcp: scaffold_macos_project
+description: "Scaffold macOS project."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates:
+  - hideWhenXcodeAgentMode
+routing:
+  stateful: false
+  daemonAffinity: preferred

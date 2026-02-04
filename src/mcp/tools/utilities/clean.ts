@@ -13,7 +13,8 @@ import {
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
-import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.ts';
+import type { ToolResponse, SharedBuildParams } from '../../../types/common.ts';
+import { XcodePlatform } from '../../../types/common.ts';
 import { createErrorResponse } from '../../../utils/responses/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 

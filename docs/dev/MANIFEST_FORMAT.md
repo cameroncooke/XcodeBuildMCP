@@ -1,0 +1,465 @@
+# Manifest Format Reference
+
+This document describes the YAML manifest format used to define tools and workflows in XcodeBuildMCP. Manifests are the single source of truth for tool/workflow metadata, visibility rules, and runtime behavior.
+
+## Overview
+
+Manifests are stored in the `manifests/` directory:
+
+```
+manifests/
+├── tools/           # Tool manifest files
+│   ├── build_sim.yaml
+│   ├── list_sims.yaml
+│   └── ...
+└── workflows/       # Workflow manifest files
+    ├── simulator.yaml
+    ├── device.yaml
+    └── ...
+```
+
+Each tool and workflow has its own YAML file. The manifest loader reads all files at startup and validates them against the schema.
+
+## Directory Structure
+
+Tool implementations live in `src/mcp/tools/<category>/`:
+
+```
+src/mcp/tools/
+├── simulator/
+│   ├── build_sim.ts        # Tool implementation
+│   ├── build_run_sim.ts
+│   ├── list_sims.ts
+│   └── ...
+├── device/
+│   ├── build_device.ts
+│   └── ...
+└── ...
+```
+
+## Tool Manifest Format
+
+Tool manifests define individual tools and their metadata.
+
+### Schema
+
+```yaml
+# Required fields
+id: string              # Unique tool identifier (must match filename without .yaml)
+module: string          # Module path (see Module Path section)
+names:
+  mcp: string           # MCP tool name (globally unique, used in MCP protocol)
+  cli: string           # CLI command name (optional, derived from mcp if omitted)
+
+# Optional fields
+description: string     # Tool description (shown in tool listings)
+availability:           # Per-runtime availability flags
+  mcp: boolean          # Available via MCP server (default: true)
+  cli: boolean          # Available via CLI (default: true)
+  daemon: boolean       # Available via daemon (default: true)
+predicates: string[]    # Predicate names for visibility filtering (default: [])
+routing:                # Daemon routing hints
+  stateful: boolean     # Tool maintains state (default: false)
+  daemonAffinity: enum  # 'preferred' or 'required' (optional)
+```
+
+### Example: Basic Tool
+
+```yaml
+id: list_sims
+module: mcp/tools/simulator/list_sims
+names:
+  mcp: list_sims
+description: "List available iOS simulators."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: false
+  daemonAffinity: preferred
+```
+
+### Example: Tool with Predicates
+
+```yaml
+id: build_sim
+module: mcp/tools/simulator/build_sim
+names:
+  mcp: build_sim
+description: "Build for iOS sim."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates:
+  - hideWhenXcodeAgentMode  # Hidden when Xcode provides equivalent tool
+routing:
+  stateful: false
+  daemonAffinity: preferred
+```
+
+### Example: MCP-Only Tool
+
+```yaml
+id: manage_workflows
+module: mcp/tools/workflow-discovery/manage_workflows
+names:
+  mcp: manage-workflows     # Note: MCP name uses hyphens
+description: "Manage enabled workflows at runtime."
+availability:
+  mcp: true
+  cli: false                # Not available in CLI
+  daemon: false             # Not available via daemon
+predicates:
+  - experimentalWorkflowDiscoveryEnabled
+```
+
+## Workflow Manifest Format
+
+Workflow manifests define groups of related tools.
+
+### Schema
+
+```yaml
+# Required fields
+id: string              # Unique workflow identifier (must match filename without .yaml)
+title: string           # Display title
+description: string     # Workflow description
+tools: string[]         # Array of tool IDs belonging to this workflow
+
+# Optional fields
+availability:           # Per-runtime availability flags
+  mcp: boolean          # Available via MCP server (default: true)
+  cli: boolean          # Available via CLI (default: true)
+  daemon: boolean       # Available via daemon (default: true)
+selection:              # MCP selection rules
+  mcp:
+    mandatory: boolean    # Always included, cannot be disabled (default: false)
+    defaultEnabled: boolean  # Enabled when config.enabledWorkflows is empty (default: false)
+    autoInclude: boolean  # Include when predicates pass, even if not requested (default: false)
+predicates: string[]    # Predicate names for visibility filtering (default: [])
+```
+
+### Example: Default-Enabled Workflow
+
+```yaml
+id: simulator
+title: "iOS Simulator Development"
+description: "Complete iOS development workflow for simulators."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+selection:
+  mcp:
+    mandatory: false
+    defaultEnabled: true   # Enabled by default
+    autoInclude: false
+predicates: []
+tools:
+  - list_sims
+  - boot_sim
+  - build_sim
+  - build_run_sim
+  - test_sim
+  # ... more tools
+```
+
+### Example: Auto-Include Workflow
+
+```yaml
+id: doctor
+title: "MCP Doctor"
+description: "Diagnostic tool for the MCP server environment."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+selection:
+  mcp:
+    mandatory: false
+    defaultEnabled: false
+    autoInclude: true      # Auto-included when predicates pass
+predicates:
+  - debugEnabled           # Only shown in debug mode
+tools:
+  - doctor
+```
+
+### Example: Conditional Workflow
+
+```yaml
+id: workflow-discovery
+title: "Workflow Discovery"
+description: "Manage enabled workflows at runtime."
+availability:
+  mcp: true
+  cli: false
+  daemon: false
+selection:
+  mcp:
+    mandatory: false
+    defaultEnabled: false
+    autoInclude: true
+predicates:
+  - experimentalWorkflowDiscoveryEnabled  # Feature flag
+tools:
+  - manage_workflows
+```
+
+## Field Reference
+
+### Tool Fields
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `id` | string | Yes | - | Unique identifier, must match filename |
+| `module` | string | Yes | - | Module path relative to `src/` (extensionless) |
+| `names.mcp` | string | Yes | - | MCP protocol tool name |
+| `names.cli` | string | No | Derived from MCP name | CLI command name |
+| `description` | string | No | - | Tool description |
+| `availability.mcp` | boolean | No | `true` | Available via MCP |
+| `availability.cli` | boolean | No | `true` | Available via CLI |
+| `availability.daemon` | boolean | No | `true` | Available via daemon |
+| `predicates` | string[] | No | `[]` | Visibility predicates (all must pass) |
+| `routing.stateful` | boolean | No | `false` | Tool maintains state |
+| `routing.daemonAffinity` | enum | No | - | `'preferred'` or `'required'` |
+
+### Workflow Fields
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `id` | string | Yes | - | Unique identifier, must match filename |
+| `title` | string | Yes | - | Display title |
+| `description` | string | Yes | - | Workflow description |
+| `tools` | string[] | Yes | - | Tool IDs in this workflow |
+| `availability.mcp` | boolean | No | `true` | Available via MCP |
+| `availability.cli` | boolean | No | `true` | Available via CLI |
+| `availability.daemon` | boolean | No | `true` | Available via daemon |
+| `selection.mcp.mandatory` | boolean | No | `false` | Cannot be disabled |
+| `selection.mcp.defaultEnabled` | boolean | No | `false` | Enabled when no workflows configured |
+| `selection.mcp.autoInclude` | boolean | No | `false` | Auto-include when predicates pass |
+| `predicates` | string[] | No | `[]` | Visibility predicates (all must pass) |
+
+## Module Path
+
+The `module` field specifies where to find the tool implementation. It uses a package-relative path without file extension:
+
+```
+mcp/tools/<category>/<tool_name>
+```
+
+At runtime, this resolves to:
+```
+build/mcp/tools/<category>/<tool_name>.js
+```
+
+The module must export either:
+1. **Named exports** (preferred): `{ schema, handler, annotations? }`
+2. **Legacy default export**: `export default { name, schema, handler, annotations? }`
+
+Example module structure:
+```typescript
+// src/mcp/tools/simulator/build_sim.ts
+import { z } from 'zod';
+
+export const schema = z.object({
+  projectPath: z.string().describe('Path to project'),
+  // ...
+});
+
+export async function handler(params: z.infer<typeof schema>) {
+  // Implementation
+}
+
+export const annotations = {
+  title: 'Build for Simulator',
+  // ...
+};
+```
+
+## Naming Conventions
+
+### Tool ID
+- Use `snake_case`: `build_sim`, `list_devices`
+- Must match the YAML filename (without `.yaml`)
+- Must be unique across all tools
+
+### MCP Name (`names.mcp`)
+- Use `snake_case` or `kebab-case` consistently
+- Must be globally unique across all tools
+- This is what LLMs see and call
+
+### CLI Name (`names.cli`)
+- Optional; if omitted, derived from MCP name
+- Derivation: `snake_case` → `kebab-case` (`build_sim` → `build-sim`)
+- Use `kebab-case` for explicit names
+
+### Workflow ID
+- Use `kebab-case`: `simulator`, `swift-package`, `ui-automation`
+- Must match the YAML filename (without `.yaml`)
+
+## Predicates
+
+Predicates control visibility based on runtime context. All predicates in the array must pass (AND logic) for the tool/workflow to be visible.
+
+### Available Predicates
+
+| Predicate | Description |
+|-----------|-------------|
+| `debugEnabled` | Show only when `config.debug` is `true` |
+| `experimentalWorkflowDiscoveryEnabled` | Show only when experimental workflow discovery is enabled |
+| `hideWhenXcodeAgentMode` | Hide when running under Xcode agent AND Xcode Tools bridge is active |
+| `always` | Always visible (explicit documentation) |
+| `never` | Never visible (temporarily disable) |
+
+### Predicate Context
+
+Predicates receive a context object:
+
+```typescript
+interface PredicateContext {
+  runtime: 'cli' | 'mcp' | 'daemon';
+  config: ResolvedRuntimeConfig;
+  runningUnderXcode: boolean;
+  xcodeToolsActive: boolean;
+}
+```
+
+### Adding New Predicates
+
+To add a new predicate, edit `src/visibility/predicate-registry.ts`:
+
+```typescript
+export const PREDICATES: Record<string, PredicateFn> = {
+  // Existing predicates...
+
+  myNewPredicate: (ctx: PredicateContext): boolean => {
+    return ctx.config.someFlag === true;
+  },
+};
+```
+
+## Workflow Selection Rules
+
+For MCP runtime, workflows are selected based on these rules (in order):
+
+1. **Mandatory workflows** (`mandatory: true`) are always included
+2. **Explicitly requested workflows** from `config.enabledWorkflows`
+3. **Default workflows** (`defaultEnabled: true`) when `config.enabledWorkflows` is empty
+4. **Auto-include workflows** (`autoInclude: true`) when their predicates pass
+
+### Selection Examples
+
+```yaml
+# Always included regardless of config
+selection:
+  mcp:
+    mandatory: true
+
+# Enabled by default, can be disabled
+selection:
+  mcp:
+    defaultEnabled: true
+
+# Auto-included when predicates pass (e.g., debug mode)
+selection:
+  mcp:
+    autoInclude: true
+predicates:
+  - debugEnabled
+```
+
+## Tool Re-export
+
+A single tool can belong to multiple workflows. This is useful for shared utilities:
+
+```yaml
+# manifests/workflows/simulator.yaml
+tools:
+  - clean           # Shared tool
+  - discover_projs  # Shared tool
+  - build_sim
+
+# manifests/workflows/device.yaml
+tools:
+  - clean           # Same tool, different workflow
+  - discover_projs  # Same tool, different workflow
+  - build_device
+```
+
+The tool is defined once in `manifests/tools/clean.yaml` but referenced by both workflows.
+
+## Daemon Routing
+
+The `routing` field provides hints for daemon-based execution:
+
+- **`stateful: true`**: Tool maintains state across calls (e.g., debug sessions)
+- **`daemonAffinity: 'preferred'`**: Prefer daemon execution but fall back to direct
+- **`daemonAffinity: 'required'`**: Must run via daemon (fails if daemon unavailable)
+
+## Validation
+
+Manifests are validated at load time against Zod schemas. Invalid manifests cause startup failures with descriptive error messages.
+
+The schema definitions are in `src/core/manifest/schema.ts`.
+
+## Runtime Tool Registration
+
+At startup, tools are registered dynamically from manifests:
+
+```
+1. loadManifest()
+   └── Reads all YAML files from manifests/tools/ and manifests/workflows/
+   └── Validates against Zod schemas
+   └── Returns { tools: Map, workflows: Map }
+
+2. selectWorkflowsForMcp(workflows, requestedWorkflows, ctx)
+   └── Filters workflows by availability (mcp: true)
+   └── Applies selection rules (mandatory, defaultEnabled, autoInclude)
+   └── Evaluates predicates against context
+
+3. For each selected workflow:
+   └── For each tool ID in workflow.tools:
+       └── Look up tool manifest by ID
+       └── Check tool availability and predicates
+       └── importToolModule(module) → { schema, handler, annotations }
+       └── server.registerTool(mcpName, schema, handler)
+```
+
+Key files:
+- `src/core/manifest/load-manifest.ts` - Manifest loading and caching
+- `src/core/manifest/import-tool-module.ts` - Dynamic module imports
+- `src/utils/tool-registry.ts` - MCP server tool registration
+- `src/runtime/tool-catalog.ts` - CLI/daemon tool catalog building
+- `src/visibility/exposure.ts` - Workflow/tool visibility filtering
+
+## Creating a New Tool
+
+1. **Create the tool module** in `src/mcp/tools/<category>/<tool_name>.ts`
+2. **Create the manifest** in `manifests/tools/<tool_name>.yaml`
+3. **Add to workflow(s)** in `manifests/workflows/<workflow>.yaml`
+4. **Run tests** to validate
+
+Example checklist:
+- [ ] Tool ID matches filename
+- [ ] Module path is correct
+- [ ] MCP name is unique
+- [ ] Tool is added to at least one workflow
+- [ ] Predicates reference valid predicate names
+- [ ] Availability flags match intended runtimes
+
+## Creating a New Workflow
+
+1. **Create the manifest** in `manifests/workflows/<workflow_id>.yaml`
+2. **Add tool references** (tools must already exist)
+3. **Configure selection rules** for MCP behavior
+4. **Run tests** to validate
+
+Example checklist:
+- [ ] Workflow ID matches filename
+- [ ] All referenced tool IDs exist
+- [ ] Selection rules are appropriate
+- [ ] Predicates reference valid predicate names

@@ -6,7 +6,8 @@
 
 import * as z from 'zod';
 import { stopLogCapture as _stopLogCapture } from '../../../utils/log-capture/index.ts';
-import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { createTextContent } from '../../../types/common.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import type { CommandExecutor } from '../../../utils/command.ts';
 import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from '../../../utils/command.ts';

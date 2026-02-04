@@ -1,5 +1,6 @@
 import * as z from 'zod';
-import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { createTextContent } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { startLogCapture } from '../../../utils/log-capture/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';

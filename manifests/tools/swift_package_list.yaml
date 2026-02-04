@@ -1,0 +1,13 @@
+id: swift_package_list
+module: mcp/tools/swift-package/swift_package_list
+names:
+  mcp: swift_package_list
+description: "List SwiftPM processes."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: true
+  daemonAffinity: required

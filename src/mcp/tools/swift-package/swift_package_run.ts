@@ -4,7 +4,8 @@ import { createTextResponse, createErrorResponse } from '../../../utils/response
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { createTextContent } from '../../../types/common.ts';
 import { addProcess } from './active-processes.ts';
 import {
   createSessionAwareTool,

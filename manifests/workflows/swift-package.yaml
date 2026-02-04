@@ -1,0 +1,20 @@
+id: swift-package
+title: "Swift Package Development"
+description: "Build, test, run and manage Swift Package Manager projects."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+selection:
+  mcp:
+    mandatory: false
+    defaultEnabled: true
+    autoInclude: false
+predicates: []
+tools:
+  - swift_package_build
+  - swift_package_test
+  - swift_package_clean
+  - swift_package_run
+  - swift_package_stop
+  - swift_package_list

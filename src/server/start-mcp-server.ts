@@ -8,7 +8,7 @@
  */
 
 import { createServer, startServer } from './server.ts';
-import { log } from '../utils/logger.ts';
+import { log, setLogLevel } from '../utils/logger.ts';
 import { initSentry } from '../utils/sentry.ts';
 import { getDefaultDebuggerManager } from '../utils/debugger/index.ts';
 import { version } from '../version.ts';
@@ -23,6 +23,10 @@ import { shutdownXcodeToolsBridge } from '../integrations/xcode-tools-bridge/ind
  */
 export async function startMcpServer(): Promise<void> {
   try {
+    // MCP mode defaults to info level logging
+    // Clients can override via logging/setLevel MCP request
+    setLogLevel('info');
+
     initSentry();
 
     const server = createServer();

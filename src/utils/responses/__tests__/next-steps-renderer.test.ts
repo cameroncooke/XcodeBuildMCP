@@ -11,6 +11,7 @@ describe('next-steps-renderer', () => {
     it('should format step for CLI with workflow and no params', () => {
       const step: NextStep = {
         tool: 'open_sim',
+        cliTool: 'open-sim',
         workflow: 'simulator',
         label: 'Open the Simulator app',
         params: {},
@@ -23,6 +24,7 @@ describe('next-steps-renderer', () => {
     it('should format step for CLI with workflow and params', () => {
       const step: NextStep = {
         tool: 'install_app_sim',
+        cliTool: 'install-app-sim',
         workflow: 'simulator',
         label: 'Install an app',
         params: { simulatorId: 'ABC123', appPath: '/path/to/app' },
@@ -34,7 +36,7 @@ describe('next-steps-renderer', () => {
       );
     });
 
-    it('should prefer cliTool when provided', () => {
+    it('should use cliTool for CLI rendering', () => {
       const step: NextStep = {
         tool: 'install_app_sim',
         cliTool: 'install-app',
@@ -49,9 +51,22 @@ describe('next-steps-renderer', () => {
       );
     });
 
-    it('should format step for CLI without workflow (backwards compat)', () => {
+    it('should throw error for CLI without cliTool', () => {
       const step: NextStep = {
         tool: 'open_sim',
+        label: 'Open the Simulator app',
+        params: {},
+      };
+
+      expect(() => renderNextStep(step, 'cli')).toThrow(
+        "Next step for tool 'open_sim' is missing cliTool - ensure enrichNextStepsForCli was called",
+      );
+    });
+
+    it('should format step for CLI without workflow', () => {
+      const step: NextStep = {
+        tool: 'open_sim',
+        cliTool: 'open-sim',
         label: 'Open the Simulator app',
         params: {},
       };
@@ -63,6 +78,7 @@ describe('next-steps-renderer', () => {
     it('should format step for CLI with boolean param (true)', () => {
       const step: NextStep = {
         tool: 'some_tool',
+        cliTool: 'some-tool',
         label: 'Do something',
         params: { verbose: true },
       };
@@ -74,6 +90,7 @@ describe('next-steps-renderer', () => {
     it('should format step for CLI with boolean param (false)', () => {
       const step: NextStep = {
         tool: 'some_tool',
+        cliTool: 'some-tool',
         label: 'Do something',
         params: { verbose: false },
       };
@@ -148,8 +165,13 @@ describe('next-steps-renderer', () => {
 
     it('should render numbered list for CLI', () => {
       const steps: NextStep[] = [
-        { tool: 'open_sim', label: 'Open Simulator', params: {} },
-        { tool: 'install_app_sim', label: 'Install app', params: { simulatorId: 'X' } },
+        { tool: 'open_sim', cliTool: 'open-sim', label: 'Open Simulator', params: {} },
+        {
+          tool: 'install_app_sim',
+          cliTool: 'install-app-sim',
+          label: 'Install app',
+          params: { simulatorId: 'X' },
+        },
       ];
 
       const result = renderNextStepsSection(steps, 'cli');
@@ -214,7 +236,7 @@ describe('next-steps-renderer', () => {
     it('should strip nextSteps in minimal style', () => {
       const response: ToolResponse = {
         content: [{ type: 'text', text: 'Success!' }],
-        nextSteps: [{ tool: 'foo', label: 'Do foo', params: {} }],
+        nextSteps: [{ tool: 'foo', cliTool: 'foo', label: 'Do foo', params: {} }],
       };
 
       const result = processToolResponse(response, 'cli', 'minimal');
@@ -227,7 +249,15 @@ describe('next-steps-renderer', () => {
     it('should append next steps to last text content in normal style', () => {
       const response: ToolResponse = {
         content: [{ type: 'text', text: 'Simulator booted.' }],
-        nextSteps: [{ tool: 'open_sim', label: 'Open Simulator', params: {}, priority: 1 }],
+        nextSteps: [
+          {
+            tool: 'open_sim',
+            cliTool: 'open-sim',
+            label: 'Open Simulator',
+            params: {},
+            priority: 1,
+          },
+        ],
       };
 
       const result = processToolResponse(response, 'cli', 'normal');
@@ -266,7 +296,7 @@ describe('next-steps-renderer', () => {
         content: [{ type: 'text', text: 'Error!' }],
         isError: true,
         _meta: { foo: 'bar' },
-        nextSteps: [{ tool: 'retry', label: 'Retry', params: {} }],
+        nextSteps: [{ tool: 'retry', cliTool: 'retry', label: 'Retry', params: {} }],
       };
 
       const result = processToolResponse(response, 'cli', 'minimal');
@@ -277,7 +307,7 @@ describe('next-steps-renderer', () => {
     it('should not mutate original response', () => {
       const response: ToolResponse = {
         content: [{ type: 'text', text: 'Original' }],
-        nextSteps: [{ tool: 'foo', label: 'Foo', params: {} }],
+        nextSteps: [{ tool: 'foo', cliTool: 'foo', label: 'Foo', params: {} }],
       };
 
       processToolResponse(response, 'cli', 'normal');
@@ -289,7 +319,7 @@ describe('next-steps-renderer', () => {
     it('should default to normal style when not specified', () => {
       const response: ToolResponse = {
         content: [{ type: 'text', text: 'Success!' }],
-        nextSteps: [{ tool: 'foo', label: 'Do foo', params: {} }],
+        nextSteps: [{ tool: 'foo', cliTool: 'foo', label: 'Do foo', params: {} }],
       };
 
       const result = processToolResponse(response, 'cli');

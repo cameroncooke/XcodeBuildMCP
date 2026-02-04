@@ -1,0 +1,13 @@
+id: get_sim_app_path
+module: mcp/tools/simulator/get_sim_app_path
+names:
+  mcp: get_sim_app_path
+description: "Get sim built app path."
+availability:
+  mcp: true
+  cli: true
+  daemon: true
+predicates: []
+routing:
+  stateful: false
+  daemonAffinity: preferred
