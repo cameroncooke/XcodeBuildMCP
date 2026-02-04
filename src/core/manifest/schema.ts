@@ -27,6 +27,20 @@ export const routingSchema = z.object({
 export type Routing = z.infer<typeof routingSchema>;
 
 /**
+ * MCP tool annotations (hints for clients).
+ * All properties are optional hints, not guarantees.
+ */
+export const annotationsSchema = z.object({
+  title: z.string().optional(),
+  readOnlyHint: z.boolean().optional(),
+  destructiveHint: z.boolean().optional(),
+  idempotentHint: z.boolean().optional(),
+  openWorldHint: z.boolean().optional(),
+});
+
+export type Annotations = z.infer<typeof annotationsSchema>;
+
+/**
  * Tool names for MCP and CLI.
  */
 export const toolNamesSchema = z.object({
@@ -66,6 +80,9 @@ export const toolManifestEntrySchema = z.object({
 
   /** Routing hints for daemon */
   routing: routingSchema.optional(),
+
+  /** MCP annotations (hints for clients) */
+  annotations: annotationsSchema.optional(),
 });
 
 export type ToolManifestEntry = z.infer<typeof toolManifestEntrySchema>;
