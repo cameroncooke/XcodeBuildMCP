@@ -112,7 +112,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 
   Or use the quick install links:
 
-  [![Install MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/en-US/install-mcp?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAYmV0YSBtY3AifQ%3D%3D)
+  [![Install in VS Code](https://img.shields.io/badge/VS_Code-XcodeBuildMCP-0098FF?style=flat&logo=visualstudiocode&logoColor=ffffff)](vscode:mcp/install?%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40beta%22%2C%22mcp%22%5D%7D)
   [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-XcodeBuildMCP-24bfa5?style=flat&logo=visualstudiocode&logoColor=ffffff)](vscode-insiders:mcp/install?%7B%22name%22%3A%22XcodeBuildMCP%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22xcodebuildmcp%40beta%22%2C%22mcp%22%5D%7D)
   <br />
 </details>
@@ -150,6 +150,61 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
     }
   }
   ```
+  <br />
+</details>
+
+<details>
+  <summary>Xcode (Codex Agent)</summary>
+  <br />
+
+  Requires Xcode 26.3 or later. Codex agent must be installed and configured in Xcode Settings -> Intelligence -> Open AI.
+
+  The only way at the time of writing to add an MCP server is to use a project scoped `.codex/config.toml` file in the root of your project workspace:
+  `/path/to/your/project/.codex/config.toml`
+
+  ```toml
+  [mcp_servers.XcodeBuildMCP]
+  args = [
+  "-lc",
+  "PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin; export NVM_DIR=\"$HOME/.nvm\"; [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"; nvm use --silent >/dev/null 2>&1 || true; npx -y xcodebuildmcp@beta mcp"
+  ]
+  command = "/bin/zsh"
+  enabled = true
+  tool_timeout_sec = 10000
+  ```
+
+  > [!NOTE]
+  > Codex Agent when running in Xcode has a limited PATH by default. The above example should work for most users but if you find the server doesn't start or is not available, it's likely because npx is not found so you might have to adjust the above configuration accordingly.
+
+  <br />
+</details>
+
+<details>
+  <summary>Xcode (Claude Code Agent)</summary>
+  <br />
+
+  Requires Xcode 26.3 or later. Claude Code agent must be installed and configured in Xcode Settings -> Intelligence -> Anthropic.
+
+  Add to the end or replace the existing `mcpServers` object in Xcode's Claude Code agent config at:
+  `~/Library/Developer/Xcode/CodingAssistant/ClaudeAgentConfig/.claude.json`
+
+  ```json
+    // ... rest of file ...
+    "mcpServers": {
+      "XcodeBuildMCP": {
+        "command": "/bin/zsh",
+        "args": [
+          "-lc",
+          "PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin; export NVM_DIR=\"$HOME/.nvm\"; [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"; nvm use --silent >/dev/null 2>&1 || true; npx -y xcodebuildmcp@beta mcp"
+        ]
+      }
+    }
+  }
+  ```
+
+  > [!NOTE]
+  > Claude Code Agent when running in Xcode has a limited PATH by default. The above example should work for most users but if you find the server doesn't start or is not available, it's likely because npx is not found so you might have to adjust the above configuration accordingly.
+
   <br />
 </details>
 
