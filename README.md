@@ -153,6 +153,61 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
   <br />
 </details>
 
+<details>
+  <summary>Xcode (Codex Agent)</summary>
+  <br />
+
+  Requires Xcode 26.3 or later. Codex agent must be installed and configured in Xcode Settings -> Intelligence -> Open AI.
+
+  The only way at the time of writing to add an MCP server is to use a project scoped `.codex/config.toml` file in the root of your project workspace:
+  `/path/to/your/project/.codex/config.toml`
+
+  ```toml
+  [mcp_servers.XcodeBuildMCP]
+  args = [
+  "-lc",
+  "PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin; export NVM_DIR=\"$HOME/.nvm\"; [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"; nvm use --silent >/dev/null 2>&1 || true; npx -y xcodebuildmcp@beta mcp"
+  ]
+  command = "/bin/zsh"
+  enabled = true
+  tool_timeout_sec = 10000
+  ```
+
+  > [!NOTE]
+  > Codex Agent when running in Xcode has a limted PATH by default. The above example should work for most users but if you find the server doesn't start or is not available, it's likely because npx is not found so you might have to adjust the above configuration accordingly.
+
+  <br />
+</details>
+
+<details>
+  <summary>Xcode (Claude Code Agent)</summary>
+  <br />
+
+  Requires Xcode 26.3 or later. Claude Code agent must be installed and configured in Xcode Settings -> Intelligence -> Anthropic.
+
+  Add to the end or replace the existing `mcpServers` object in Xcode's Claude Code agent config at:
+  `~/Library/Developer/Xcode/CodingAssistant/ClaudeAgentConfig/.claude.json`
+
+  ```json
+    # rest of file...
+    "mcpServers": {
+      "XcodeBuildMCP": {
+        "command": "/bin/zsh",
+        "args": [
+          "-lc",
+          "PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin; export NVM_DIR=\"$HOME/.nvm\"; [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"; nvm use --silent >/dev/null 2>&1 || true; npx -y xcodebuildmcp@beta mcp"
+        ]
+      }
+    }
+  }
+  ```
+
+  > [!NOTE]
+  > Claude Code Agent when running in Xcode has a limted PATH by default. The above example should work for most users but if you find the server doesn't start or is not available, it's likely because npx is not found so you might have to adjust the above configuration accordingly.
+
+  <br />
+</details>
+
 <br />
 
 For other installation options see [Getting Started](docs/GETTING_STARTED.md)
