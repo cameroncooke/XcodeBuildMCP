@@ -1,7 +1,7 @@
 ---
 description: Build with rp-cli context builder → chat → implement
 repoprompt_managed: true
-repoprompt_commands_version: 5
+repoprompt_skills_version: 6
 repoprompt_variant: cli
 ---
 
@@ -40,9 +40,12 @@ rp-cli -e 'select set src/ && context'
 
 Use `rp-cli -e 'describe <tool>'` for help on a specific tool, or `rp-cli --help` for CLI usage.
 
+**⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several minutes to complete. When invoking rp-cli, **set your command timeout to at least 2700 seconds (45 minutes)** to avoid premature termination.
+
 ---
 ## The Workflow
 
+0. **Verify workspace** – Confirm the target codebase is loaded
 1. **Quick scan** – Understand how the task relates to the codebase
 2. **Context builder** – Call `builder` with a clear prompt to get deep context + an architectural plan
 3. **Refine with chat** – Use `chat` to clarify the plan if needed
@@ -53,10 +56,35 @@ Use `rp-cli -e 'describe <tool>'` for help on a specific tool, or `rp-cli --help
 ## CRITICAL REQUIREMENT
 
 ⚠️ **DO NOT START IMPLEMENTATION** until you have:
-1. Completed Phase 1 (Quick Scan)
-2. **Called `builder`** and received its plan
+1. Completed Phase 0 (Workspace Verification)
+2. Completed Phase 1 (Quick Scan)
+3. **Called `builder`** and received its plan
 
 Skipping `builder` results in shallow implementations that miss architectural patterns, related code, and edge cases. The quick scan alone is NOT sufficient for implementation.
+
+---
+
+## Phase 0: Workspace Verification (REQUIRED)
+
+Before any exploration, confirm the target codebase is loaded:
+
+```bash
+# First, list available windows to find the right one
+rp-cli -e 'windows'
+
+# Then check roots in a specific window (REQUIRED - CLI cannot auto-bind)
+rp-cli -w <window_id> -e 'tree --type roots'
+```
+
+**Check the output:**
+- If your target root appears in a window → note the window ID and proceed to Phase 1
+- If not → the codebase isn't loaded in any window
+
+**CLI Window Routing (CRITICAL):**
+- CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
+- Use `rp-cli -e 'windows'` to list all open windows and their workspaces
+- Always include `-w <window_id>` in ALL subsequent commands
+- Without `-w`, commands may target the wrong workspace
 
 ---
 
@@ -66,13 +94,13 @@ Skipping `builder` results in shallow implementations that miss architectural pa
 
 Start by getting a lay of the land with the file tree:
 ```bash
-rp-cli -e 'tree'
+rp-cli -w <window_id> -e 'tree'
 ```
 
 Then use targeted searches to understand how the task maps to the codebase:
 ```bash
-rp-cli -e 'search "<key term from task>"'
-rp-cli -e 'structure RootName/likely/relevant/area/'
+rp-cli -w <window_id> -e 'search "<key term from task>"'
+rp-cli -w <window_id> -e 'structure RootName/likely/relevant/area/'
 ```
 
 Use what you learn to **reformulate the user's prompt** with added clarity—reference specific modules, patterns, or terminology from the codebase.
@@ -86,7 +114,7 @@ Use what you learn to **reformulate the user's prompt** with added clarity—ref
 Call `builder` with your informed prompt. Use `response_type: "plan"` to get an actionable architectural plan.
 
 ```bash
-rp-cli -e 'builder "<reformulated prompt with codebase context>" --response-type plan'
+rp-cli -w <window_id> -e 'builder "<reformulated prompt with codebase context>" --response-type plan'
 ```
 
 **What you get back:**
@@ -139,21 +167,21 @@ Implement the plan directly. **Do not use `chat` with `mode:"edit"`** – you im
 **Primary tools:**
 ```bash
 # Modify existing files (search/replace) - JSON format required
-rp-cli -e 'call apply_edits {"path":"Root/File.swift","search":"old","replace":"new"}'
+rp-cli -w <window_id> -e 'call apply_edits {"path":"Root/File.swift","search":"old","replace":"new"}'
 
 # Multiline edits
-rp-cli -e 'call apply_edits {"path":"Root/File.swift","search":"old\ntext","replace":"new\ntext"}'
+rp-cli -w <window_id> -e 'call apply_edits {"path":"Root/File.swift","search":"old\ntext","replace":"new\ntext"}'
 
 # Create new files
-rp-cli -e 'file create Root/NewFile.swift "content..."'
+rp-cli -w <window_id> -e 'file create Root/NewFile.swift "content..."'
 
 # Read specific sections during implementation
-rp-cli -e 'read Root/File.swift --start-line 50 --limit 30'
+rp-cli -w <window_id> -e 'read Root/File.swift --start-line 50 --limit 30'
 ```
 
 **Ask the chat when stuck:**
 ```bash
-rp-cli -t '<tab_id>' -e 'chat "I'\''m implementing X but unsure about Y. What pattern should I follow?" --mode chat'
+rp-cli -w <window_id> -t '<tab_id>' -e 'chat "I'\''m implementing X but unsure about Y. What pattern should I follow?" --mode chat'
 ```
 
 ---
@@ -169,13 +197,13 @@ rp-cli -t '<tab_id>' -e 'chat "I'\''m implementing X but unsure about Y. What pa
 
 ```bash
 # Check current selection and tokens
-rp-cli -e 'select get'
+rp-cli -w <window_id> -e 'select get'
 
 # Add a file if needed
-rp-cli -e 'select add Root/path/to/file.swift'
+rp-cli -w <window_id> -e 'select add Root/path/to/file.swift'
 
 # Add a slice of a large file
-rp-cli -e 'select add Root/large/file.swift:100-200'
+rp-cli -w <window_id> -e 'select add Root/large/file.swift:100-200'
 ```
 
 **Chat sees only the selection:** If you need the chat's insight on a file, it must be selected first.
@@ -193,6 +221,7 @@ rp-cli -e 'select add Root/large/file.swift:100-200'
 - 🚫 **CRITICAL:** Doing extensive exploration (5+ tool calls) before calling `builder` – the quick scan should be 2-3 calls max
 - 🚫 Reading full file contents during Phase 1 – save that for after `builder` builds context
 - 🚫 Convincing yourself you understand enough to skip `builder` – you don't
+- 🚫 **CLI:** Forgetting to pass `-w <window_id>` – CLI invocations are stateless and require explicit window targeting
 
 ---
 
