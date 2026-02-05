@@ -8,7 +8,7 @@ import { createMockExecutor, mockProcess } from '../../../../test-utils/mock-exe
 import { SystemError } from '../../../../utils/responses/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
-import { schema, handler, AxeHelpers, swipeLogic, SwipeParams } from '../swipe.ts';
+import { schema, handler, type AxeHelpers, swipeLogic, type SwipeParams } from '../swipe.ts';
 
 // Helper function to create mock axe helpers
 function createMockAxeHelpers(): AxeHelpers {

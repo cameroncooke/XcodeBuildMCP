@@ -40,6 +40,13 @@ export const PREDICATES: Record<string, PredicateFn> = {
   hideWhenXcodeAgentMode: (ctx: PredicateContext): boolean => !ctx.runningUnderXcode,
 
   /**
+   * Show only when Xcode auto-sync is disabled AND running under Xcode.
+   * Use for the manual sync tool that should appear when automatic sync is turned off.
+   */
+  xcodeAutoSyncDisabled: (ctx: PredicateContext): boolean =>
+    ctx.runningUnderXcode === true && ctx.config.disableXcodeAutoSync === true,
+
+  /**
    * Always visible - useful for explicit documentation in YAML.
    */
   always: (): boolean => true,

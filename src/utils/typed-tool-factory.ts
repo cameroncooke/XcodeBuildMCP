@@ -180,6 +180,23 @@ function createSessionAwareHandler<TParams, TContext>(opts: {
         }
       }
 
+      // When both values of an exclusive pair come from session defaults (not user args),
+      // prefer the first key in the pair. This ensures simulatorId is preferred over simulatorName.
+      for (const pair of exclusivePairs) {
+        const allFromDefaults = pair.every(
+          (k) => !Object.prototype.hasOwnProperty.call(sanitizedArgs, k),
+        );
+        if (!allFromDefaults) continue;
+
+        const presentKeys = pair.filter((k) => merged[k] != null);
+        if (presentKeys.length > 1) {
+          // Keep first key (preferred), remove others
+          for (let i = 1; i < presentKeys.length; i++) {
+            delete merged[presentKeys[i]];
+          }
+        }
+      }
+
       // Check requirements first (before expensive simulator resolution)
       for (const req of requirements) {
         if ('allOf' in req) {

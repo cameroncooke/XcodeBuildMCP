@@ -15,16 +15,29 @@ import type { ToolManifestEntry, WorkflowManifestEntry } from '../../core/manife
 import type { PredicateContext } from '../predicate-types.ts';
 import type { ResolvedRuntimeConfig } from '../../utils/config-store.ts';
 
-function createContext(overrides: Partial<PredicateContext> = {}): PredicateContext {
-  const defaultConfig: ResolvedRuntimeConfig = {
+function createDefaultConfig(
+  overrides: Partial<ResolvedRuntimeConfig> = {},
+): ResolvedRuntimeConfig {
+  return {
     debug: false,
     enabledWorkflows: [],
     experimentalWorkflowDiscovery: false,
+    disableSessionDefaults: false,
+    disableXcodeAutoSync: false,
+    uiDebuggerGuardMode: 'error',
+    incrementalBuildsEnabled: false,
+    dapRequestTimeoutMs: 30000,
+    dapLogEvents: false,
+    launchJsonWaitMs: 8000,
+    debuggerBackend: 'dap',
+    ...overrides,
   };
+}
 
+function createContext(overrides: Partial<PredicateContext> = {}): PredicateContext {
   return {
     runtime: 'mcp',
-    config: defaultConfig,
+    config: createDefaultConfig(),
     runningUnderXcode: false,
     xcodeToolsActive: false,
     ...overrides,
@@ -84,7 +97,7 @@ describe('exposure', () => {
       const workflow = createWorkflow({ predicates: ['debugEnabled'] });
       const ctx = createContext({
         runtime: 'mcp',
-        config: { debug: false, enabledWorkflows: [], experimentalWorkflowDiscovery: false },
+        config: createDefaultConfig({ debug: false }),
       });
       expect(isWorkflowEnabledForRuntime(workflow, ctx)).toBe(false);
     });
@@ -192,9 +205,18 @@ describe('exposure', () => {
   describe('getDefaultEnabledWorkflows', () => {
     it('should return only default-enabled workflows', () => {
       const workflows = [
-        createWorkflow({ id: 'wf1', selection: { mcp: { defaultEnabled: true } } }),
-        createWorkflow({ id: 'wf2', selection: { mcp: { defaultEnabled: false } } }),
-        createWorkflow({ id: 'wf3', selection: { mcp: { defaultEnabled: true } } }),
+        createWorkflow({
+          id: 'wf1',
+          selection: { mcp: { defaultEnabled: true, autoInclude: false } },
+        }),
+        createWorkflow({
+          id: 'wf2',
+          selection: { mcp: { defaultEnabled: false, autoInclude: false } },
+        }),
+        createWorkflow({
+          id: 'wf3',
+          selection: { mcp: { defaultEnabled: true, autoInclude: false } },
+        }),
       ];
 
       const defaultEnabled = getDefaultEnabledWorkflows(workflows);
@@ -208,22 +230,22 @@ describe('exposure', () => {
       const workflows = [
         createWorkflow({
           id: 'wf1',
-          selection: { mcp: { autoInclude: true } },
+          selection: { mcp: { defaultEnabled: false, autoInclude: true } },
           predicates: [],
         }),
         createWorkflow({
           id: 'wf2',
-          selection: { mcp: { autoInclude: true } },
+          selection: { mcp: { defaultEnabled: false, autoInclude: true } },
           predicates: ['debugEnabled'],
         }),
         createWorkflow({
           id: 'wf3',
-          selection: { mcp: { autoInclude: false } },
+          selection: { mcp: { defaultEnabled: false, autoInclude: false } },
         }),
       ];
 
       const ctx = createContext({
-        config: { debug: false, enabledWorkflows: [], experimentalWorkflowDiscovery: false },
+        config: createDefaultConfig({ debug: false }),
       });
 
       const autoInclude = getAutoIncludeWorkflows(workflows, ctx);
@@ -235,13 +257,13 @@ describe('exposure', () => {
       const workflows = [
         createWorkflow({
           id: 'doctor',
-          selection: { mcp: { autoInclude: true } },
+          selection: { mcp: { defaultEnabled: false, autoInclude: true } },
           predicates: ['debugEnabled'],
         }),
       ];
 
       const ctx = createContext({
-        config: { debug: true, enabledWorkflows: [], experimentalWorkflowDiscovery: false },
+        config: createDefaultConfig({ debug: true }),
       });
 
       const autoInclude = getAutoIncludeWorkflows(workflows, ctx);
@@ -299,7 +321,7 @@ describe('exposure', () => {
 
     it('should include auto-include workflows when predicates pass', () => {
       const ctx = createContext({
-        config: { debug: true, enabledWorkflows: [], experimentalWorkflowDiscovery: false },
+        config: createDefaultConfig({ debug: true }),
       });
       const selected = selectWorkflowsForMcp(allWorkflows, ['device'], ctx);
       expect(selected.map((w) => w.id)).toContain('doctor');
@@ -307,7 +329,7 @@ describe('exposure', () => {
 
     it('should not include auto-include workflows when predicates fail', () => {
       const ctx = createContext({
-        config: { debug: false, enabledWorkflows: [], experimentalWorkflowDiscovery: false },
+        config: createDefaultConfig({ debug: false }),
       });
       const selected = selectWorkflowsForMcp(allWorkflows, ['device'], ctx);
       expect(selected.map((w) => w.id)).not.toContain('doctor');

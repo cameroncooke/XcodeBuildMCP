@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
-import { schema, handler, AxeHelpers, tapLogic } from '../tap.ts';
+import { schema, handler, type AxeHelpers, tapLogic } from '../tap.ts';
 
 // Helper function to create mock axe helpers
 function createMockAxeHelpers(): AxeHelpers {

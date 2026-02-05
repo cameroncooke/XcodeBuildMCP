@@ -15,6 +15,7 @@ import devicesResource from '../mcp/resources/devices.ts';
 import doctorResource from '../mcp/resources/doctor.ts';
 import sessionStatusResource from '../mcp/resources/session-status.ts';
 import simulatorsResource from '../mcp/resources/simulators.ts';
+import xcodeIdeStateResource from '../mcp/resources/xcode-ide-state.ts';
 
 /**
  * Resource metadata interface
@@ -40,6 +41,7 @@ const RESOURCES: ResourceMeta[] = [
   doctorResource,
   sessionStatusResource,
   simulatorsResource,
+  xcodeIdeStateResource,
 ];
 
 /**

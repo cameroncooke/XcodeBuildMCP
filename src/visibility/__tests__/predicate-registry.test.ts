@@ -8,16 +8,29 @@ import {
 import type { PredicateContext } from '../predicate-types.ts';
 import type { ResolvedRuntimeConfig } from '../../utils/config-store.ts';
 
-function createContext(overrides: Partial<PredicateContext> = {}): PredicateContext {
-  const defaultConfig: ResolvedRuntimeConfig = {
+function createDefaultConfig(
+  overrides: Partial<ResolvedRuntimeConfig> = {},
+): ResolvedRuntimeConfig {
+  return {
     debug: false,
     enabledWorkflows: [],
     experimentalWorkflowDiscovery: false,
+    disableSessionDefaults: false,
+    disableXcodeAutoSync: false,
+    uiDebuggerGuardMode: 'error',
+    incrementalBuildsEnabled: false,
+    dapRequestTimeoutMs: 30000,
+    dapLogEvents: false,
+    launchJsonWaitMs: 8000,
+    debuggerBackend: 'dap',
+    ...overrides,
   };
+}
 
+function createContext(overrides: Partial<PredicateContext> = {}): PredicateContext {
   return {
     runtime: 'mcp',
-    config: defaultConfig,
+    config: createDefaultConfig(),
     runningUnderXcode: false,
     xcodeToolsActive: false,
     ...overrides,
@@ -29,14 +42,14 @@ describe('predicate-registry', () => {
     describe('debugEnabled', () => {
       it('should return true when debug is enabled', () => {
         const ctx = createContext({
-          config: { debug: true, enabledWorkflows: [], experimentalWorkflowDiscovery: false },
+          config: createDefaultConfig({ debug: true }),
         });
         expect(PREDICATES.debugEnabled(ctx)).toBe(true);
       });
 
       it('should return false when debug is disabled', () => {
         const ctx = createContext({
-          config: { debug: false, enabledWorkflows: [], experimentalWorkflowDiscovery: false },
+          config: createDefaultConfig({ debug: false }),
         });
         expect(PREDICATES.debugEnabled(ctx)).toBe(false);
       });
@@ -45,14 +58,14 @@ describe('predicate-registry', () => {
     describe('experimentalWorkflowDiscoveryEnabled', () => {
       it('should return true when experimental workflow discovery is enabled', () => {
         const ctx = createContext({
-          config: { debug: false, enabledWorkflows: [], experimentalWorkflowDiscovery: true },
+          config: createDefaultConfig({ experimentalWorkflowDiscovery: true }),
         });
         expect(PREDICATES.experimentalWorkflowDiscoveryEnabled(ctx)).toBe(true);
       });
 
       it('should return false when experimental workflow discovery is disabled', () => {
         const ctx = createContext({
-          config: { debug: false, enabledWorkflows: [], experimentalWorkflowDiscovery: false },
+          config: createDefaultConfig({ debug: false }),
         });
         expect(PREDICATES.experimentalWorkflowDiscoveryEnabled(ctx)).toBe(false);
       });
@@ -94,6 +107,40 @@ describe('predicate-registry', () => {
       });
     });
 
+    describe('xcodeAutoSyncDisabled', () => {
+      it('should return true when running under Xcode AND auto-sync is disabled', () => {
+        const ctx = createContext({
+          runningUnderXcode: true,
+          config: createDefaultConfig({ disableXcodeAutoSync: true }),
+        });
+        expect(PREDICATES.xcodeAutoSyncDisabled(ctx)).toBe(true);
+      });
+
+      it('should return false when running under Xcode but auto-sync is enabled', () => {
+        const ctx = createContext({
+          runningUnderXcode: true,
+          config: createDefaultConfig({ disableXcodeAutoSync: false }),
+        });
+        expect(PREDICATES.xcodeAutoSyncDisabled(ctx)).toBe(false);
+      });
+
+      it('should return false when not running under Xcode even if auto-sync is disabled', () => {
+        const ctx = createContext({
+          runningUnderXcode: false,
+          config: createDefaultConfig({ disableXcodeAutoSync: true }),
+        });
+        expect(PREDICATES.xcodeAutoSyncDisabled(ctx)).toBe(false);
+      });
+
+      it('should return false when not running under Xcode and auto-sync is enabled', () => {
+        const ctx = createContext({
+          runningUnderXcode: false,
+          config: createDefaultConfig({ disableXcodeAutoSync: false }),
+        });
+        expect(PREDICATES.xcodeAutoSyncDisabled(ctx)).toBe(false);
+      });
+    });
+
     describe('always', () => {
       it('should always return true', () => {
         const ctx = createContext();
@@ -122,7 +169,7 @@ describe('predicate-registry', () => {
 
     it('should return true when all predicates pass', () => {
       const ctx = createContext({
-        config: { debug: true, enabledWorkflows: [], experimentalWorkflowDiscovery: true },
+        config: createDefaultConfig({ debug: true, experimentalWorkflowDiscovery: true }),
       });
       expect(evalPredicates(['debugEnabled', 'experimentalWorkflowDiscoveryEnabled'], ctx)).toBe(
         true,
@@ -131,7 +178,7 @@ describe('predicate-registry', () => {
 
     it('should return false when any predicate fails', () => {
       const ctx = createContext({
-        config: { debug: true, enabledWorkflows: [], experimentalWorkflowDiscovery: false },
+        config: createDefaultConfig({ debug: true }),
       });
       expect(evalPredicates(['debugEnabled', 'experimentalWorkflowDiscoveryEnabled'], ctx)).toBe(
         false,
@@ -154,6 +201,7 @@ describe('predicate-registry', () => {
       expect(names).toContain('runningUnderXcodeAgent');
       expect(names).toContain('requiresXcodeTools');
       expect(names).toContain('hideWhenXcodeAgentMode');
+      expect(names).toContain('xcodeAutoSyncDisabled');
       expect(names).toContain('always');
       expect(names).toContain('never');
     });

@@ -213,4 +213,49 @@ describe('createSessionAwareTool', () => {
     expect(msg).toContain('projectPath');
     expect(msg).toContain('workspacePath');
   });
+
+  it('prefers first key when both values of exclusive pair come from session defaults', async () => {
+    // Create handler that echoes which simulator param was used
+    const echoHandler = createSessionAwareTool<Params>({
+      internalSchema: z.object({
+        scheme: z.string(),
+        projectPath: z.string().optional(),
+        simulatorId: z.string().optional(),
+        simulatorName: z.string().optional(),
+      }),
+      logicFunction: async (params) => ({
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              simulatorId: params.simulatorId,
+              simulatorName: params.simulatorName,
+            }),
+          },
+        ],
+        isError: false,
+      }),
+      getExecutor: () => createMockExecutor({ success: true }),
+      requirements: [{ allOf: ['scheme'] }],
+      exclusivePairs: [['simulatorId', 'simulatorName']],
+    });
+
+    // Set both simulatorId and simulatorName in session defaults
+    sessionStore.setDefaults({
+      scheme: 'App',
+      projectPath: '/a.xcodeproj',
+      simulatorId: 'SIM-123',
+      simulatorName: 'iPhone 16',
+    });
+
+    // Call with no args - both come from session defaults
+    const result = await echoHandler({});
+    expect(result.isError).toBe(false);
+
+    const content = result.content[0] as { type: 'text'; text: string };
+    const parsed = JSON.parse(content.text);
+    // simulatorId should be kept (first in pair), simulatorName should be pruned
+    expect(parsed.simulatorId).toBe('SIM-123');
+    expect(parsed.simulatorName).toBeUndefined();
+  });
 });

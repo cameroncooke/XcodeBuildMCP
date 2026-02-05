@@ -9,7 +9,7 @@ import {
   schema,
   handler,
   launch_app_logs_simLogic,
-  LogCaptureFunction,
+  type LogCaptureFunction,
 } from '../launch_app_logs_sim.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
