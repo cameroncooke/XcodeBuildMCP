@@ -91,10 +91,10 @@ export class DefaultToolInvoker implements ToolInvoker {
         }
 
         const client = new DaemonClient({ socketPath });
-        const enabledWorkflows = opts.enabledWorkflows;
+        const cliExposedWorkflowIds = opts.cliExposedWorkflowIds ?? opts.enabledWorkflows;
         const envOverrides: Record<string, string> = {};
-        if (enabledWorkflows && enabledWorkflows.length > 0) {
-          envOverrides.XCODEBUILDMCP_ENABLED_WORKFLOWS = enabledWorkflows.join(',');
+        if (cliExposedWorkflowIds && cliExposedWorkflowIds.length > 0) {
+          envOverrides.XCODEBUILDMCP_ENABLED_WORKFLOWS = cliExposedWorkflowIds.join(',');
         }
         if (opts.logLevel) {
           envOverrides.XCODEBUILDMCP_DAEMON_LOG_LEVEL = opts.logLevel;

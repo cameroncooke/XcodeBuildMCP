@@ -10,7 +10,7 @@ import { getWorkflowMetadataFromManifest } from '../core/manifest/load-manifest.
 
 export interface RegisterToolCommandsOptions {
   workspaceRoot: string;
-  enabledWorkflows?: string[];
+  cliExposedWorkflowIds?: string[];
   /** Workflows to register as command groups (even if currently empty) */
   workflowNames?: string[];
 }
@@ -25,7 +25,7 @@ export function registerToolCommands(
 ): void {
   const invoker = new DefaultToolInvoker(catalog);
   const toolsByWorkflow = groupToolsByWorkflow(catalog);
-  const enabledWorkflows = opts.enabledWorkflows ?? [...toolsByWorkflow.keys()];
+  const cliExposedWorkflowIds = opts.cliExposedWorkflowIds ?? [...toolsByWorkflow.keys()];
   const workflowNames = opts.workflowNames ?? [...toolsByWorkflow.keys()];
   const workflowMetadata = getWorkflowMetadataFromManifest();
 
@@ -46,15 +46,16 @@ export function registerToolCommands(
 
         // Register each tool as a subcommand under this workflow
         for (const tool of tools) {
-          registerToolSubcommand(yargs, tool, invoker, opts, enabledWorkflows);
+          registerToolSubcommand(yargs, tool, invoker, opts, cliExposedWorkflowIds);
         }
 
         if (tools.length === 0) {
           const hint =
             workflowName === 'xcode-ide'
               ? `No CLI commands are currently exposed for '${workflowName}'.\n` +
-                `Bridge debug tools are hidden unless XcodeBuildMCP debug mode is enabled.\n` +
-                `Set XCODEBUILDMCP_DEBUG=true to expose xcode_tools_bridge_{status,sync,disconnect}.`
+                `xcode-ide bridge tools are MCP-only and are not available as direct CLI subcommands.\n` +
+                `To use them, run the MCP server and connect with an MCP client.\n` +
+                `In Xcode, enable MCP Tools in Settings > Intelligence > Xcode Tools and click Allow if prompted.`
               : `No CLI commands are currently exposed for '${workflowName}'.`;
 
           yargs.epilogue(hint);
@@ -67,7 +68,7 @@ export function registerToolCommands(
         if (tools.length === 0) {
           console.error(
             workflowName === 'xcode-ide'
-              ? `No CLI commands are currently exposed for '${workflowName}'. Set XCODEBUILDMCP_DEBUG=true to expose bridge debug commands.`
+              ? `No CLI commands are currently exposed for '${workflowName}'. xcode-ide bridge tools are MCP-only (not direct CLI subcommands). Run the MCP server with an MCP client, and in Xcode enable MCP Tools in Settings > Intelligence > Xcode Tools and click Allow if prompted.`
               : `No CLI commands are currently exposed for '${workflowName}'.`,
           );
         }
@@ -84,7 +85,7 @@ function registerToolSubcommand(
   tool: ToolDefinition,
   invoker: DefaultToolInvoker,
   opts: RegisterToolCommandsOptions,
-  enabledWorkflows: string[],
+  cliExposedWorkflowIds: string[],
 ): void {
   const yargsOptions = schemaToYargsOptions(tool.cliSchema);
   const unsupportedKeys = getUnsupportedSchemaKeys(tool.cliSchema);
@@ -186,7 +187,7 @@ function registerToolSubcommand(
       // Invoke the tool
       const response = await invoker.invoke(tool.cliName, args, {
         runtime: 'cli',
-        enabledWorkflows,
+        cliExposedWorkflowIds,
         forceDaemon: Boolean(forceDaemon),
         disableDaemon: Boolean(noDaemon),
         socketPath,

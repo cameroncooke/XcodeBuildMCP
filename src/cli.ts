@@ -4,7 +4,6 @@ import { buildCliToolCatalog } from './cli/cli-tool-catalog.ts';
 import { buildYargsApp } from './cli/yargs-app.ts';
 import { getSocketPath, getWorkspaceKey, resolveWorkspaceRoot } from './daemon/socket-path.ts';
 import { startMcpServer } from './server/start-mcp-server.ts';
-import { loadManifest } from './core/manifest/load-manifest.ts';
 
 async function main(): Promise<void> {
   if (process.argv.includes('mcp')) {
@@ -20,8 +19,7 @@ async function main(): Promise<void> {
     },
   });
 
-  // CLI uses its own catalog with ALL workflows enabled (except session-management)
-  // This is independent of the enabledWorkflows config which is for MCP
+  // CLI uses its own manifest-resolved catalog.
   const catalog = await buildCliToolCatalog();
 
   // Compute workspace context for daemon routing
@@ -40,13 +38,8 @@ async function main(): Promise<void> {
     projectConfigPath: result.configPath,
   });
 
-  const CLI_EXCLUDED_WORKFLOWS = new Set(['session-management', 'workflow-discovery']);
-  const manifest = loadManifest();
-  const workflowNames = Array.from(manifest.workflows.keys()).filter(
-    (name) => !CLI_EXCLUDED_WORKFLOWS.has(name),
-  );
-
-  const enabledWorkflows = [...new Set(catalog.tools.map((tool) => tool.workflow))];
+  const cliExposedWorkflowIds = [...new Set(catalog.tools.map((tool) => tool.workflow))];
+  const workflowNames = cliExposedWorkflowIds;
 
   const yargsApp = buildYargsApp({
     catalog,
@@ -55,7 +48,7 @@ async function main(): Promise<void> {
     workspaceRoot,
     workspaceKey,
     workflowNames,
-    enabledWorkflows,
+    cliExposedWorkflowIds,
   });
 
   await yargsApp.parseAsync();

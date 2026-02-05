@@ -65,7 +65,9 @@ export interface ToolCatalog {
 
 export interface InvokeOptions {
   runtime: RuntimeKind;
-  /** If present, overrides enabled workflows */
+  /** CLI-exposed workflow IDs used for daemon environment overrides */
+  cliExposedWorkflowIds?: string[];
+  /** @deprecated Use cliExposedWorkflowIds instead */
   enabledWorkflows?: string[];
   /** If true, route even stateless tools to daemon */
   forceDaemon?: boolean;

@@ -16,7 +16,7 @@ export interface YargsAppOptions {
   workspaceRoot: string;
   workspaceKey: string;
   workflowNames: string[];
-  enabledWorkflows: string[];
+  cliExposedWorkflowIds: string[];
 }
 
 /**
@@ -84,7 +84,7 @@ export function buildYargsApp(opts: YargsAppOptions): ReturnType<typeof yargs> {
   registerToolsCommand(app);
   registerToolCommands(app, opts.catalog, {
     workspaceRoot: opts.workspaceRoot,
-    enabledWorkflows: opts.enabledWorkflows,
+    cliExposedWorkflowIds: opts.cliExposedWorkflowIds,
     workflowNames: opts.workflowNames,
   });
   // Daemon management is an advanced debugging tool - register last

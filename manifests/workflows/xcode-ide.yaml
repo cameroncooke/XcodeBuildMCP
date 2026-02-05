@@ -8,7 +8,7 @@ availability:
 selection:
   mcp:
     defaultEnabled: false
-    autoInclude: true
+    autoInclude: false
 predicates:
   - xcodeToolsAvailable
   - hideWhenXcodeAgentMode

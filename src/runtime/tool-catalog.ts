@@ -174,13 +174,12 @@ export async function buildToolCatalogFromManifest(opts: {
 
 /**
  * Build a CLI tool catalog from the manifest system.
- * CLI shows ALL workflows (not config-driven) except excluded ones.
+ * CLI visibility is determined by manifest availability and predicates.
  */
 export async function buildCliToolCatalogFromManifest(opts?: {
   excludeWorkflows?: string[];
 }): Promise<ToolCatalog> {
-  const defaultExclude = ['session-management', 'workflow-discovery'];
-  const excludeWorkflows = opts?.excludeWorkflows ?? defaultExclude;
+  const excludeWorkflows = opts?.excludeWorkflows ?? [];
 
   // CLI context: not running under Xcode, no Xcode tools active
   const ctx: PredicateContext = {
@@ -200,13 +199,12 @@ export async function buildCliToolCatalogFromManifest(opts?: {
 
 /**
  * Build a daemon tool catalog from the manifest system.
- * Daemon shows ALL workflows (not config-driven) except excluded ones.
+ * Daemon visibility is determined by manifest availability and predicates.
  */
 export async function buildDaemonToolCatalogFromManifest(opts?: {
   excludeWorkflows?: string[];
 }): Promise<ToolCatalog> {
-  const defaultExclude = ['session-management', 'workflow-discovery'];
-  const excludeWorkflows = opts?.excludeWorkflows ?? defaultExclude;
+  const excludeWorkflows = opts?.excludeWorkflows ?? [];
 
   // Daemon context: not running under Xcode, no Xcode tools active
   const ctx: PredicateContext = {
