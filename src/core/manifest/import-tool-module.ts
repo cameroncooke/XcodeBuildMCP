@@ -7,7 +7,6 @@
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { ToolSchemaShape } from '../plugin-types.ts';
-import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
 import { getPackageRoot } from './load-manifest.ts';
 
 /**
@@ -17,7 +16,6 @@ import { getPackageRoot } from './load-manifest.ts';
 export interface ImportedToolModule {
   schema: ToolSchemaShape;
   handler: (params: Record<string, unknown>) => Promise<unknown>;
-  annotations?: ToolAnnotations;
 }
 
 /**
@@ -29,11 +27,11 @@ const moduleCache = new Map<string, ImportedToolModule>();
  * Import a tool module by its manifest module path.
  *
  * Supports two module formats:
- * 1. Legacy: `export default { name, schema, handler, annotations?, ... }`
- * 2. New: Named exports `{ schema, handler, annotations? }`
+ * 1. Legacy: `export default { name, schema, handler, ... }`
+ * 2. New: Named exports `{ schema, handler }`
  *
  * @param moduleId - Extensionless module path (e.g., 'mcp/tools/simulator/build_sim')
- * @returns Imported tool module with schema, handler, and optional annotations
+ * @returns Imported tool module with schema and handler
  */
 export async function importToolModule(moduleId: string): Promise<ImportedToolModule> {
   // Check cache first
@@ -74,7 +72,6 @@ function extractToolExports(mod: Record<string, unknown>, moduleId: string): Imp
       return {
         schema: defaultExport.schema as ToolSchemaShape,
         handler: defaultExport.handler as (params: Record<string, unknown>) => Promise<unknown>,
-        annotations: defaultExport.annotations as ToolAnnotations | undefined,
       };
     }
   }
@@ -84,7 +81,6 @@ function extractToolExports(mod: Record<string, unknown>, moduleId: string): Imp
     return {
       schema: mod.schema as ToolSchemaShape,
       handler: mod.handler as (params: Record<string, unknown>) => Promise<unknown>,
-      annotations: mod.annotations as ToolAnnotations | undefined,
     };
   }
 

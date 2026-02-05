@@ -154,14 +154,12 @@ export async function buildToolCatalogFromManifest(opts: {
       }
 
       const cliName = getEffectiveCliName(toolManifest);
-      // Prefer annotations from manifest, fall back to module for backward compatibility
-      const annotations = toolManifest.annotations ?? toolModule.annotations;
       tools.push({
         cliName,
         mcpName: toolManifest.names.mcp,
         workflow: workflow.id,
         description: toolManifest.description,
-        annotations,
+        annotations: toolManifest.annotations,
         mcpSchema: toolModule.schema,
         cliSchema: toolModule.schema,
         stateful: toolManifest.routing?.stateful ?? false,
@@ -190,6 +188,7 @@ export async function buildCliToolCatalogFromManifest(opts?: {
     config: getConfig(),
     runningUnderXcode: false,
     xcodeToolsActive: false,
+    xcodeToolsAvailable: false,
   };
 
   return buildToolCatalogFromManifest({
@@ -215,6 +214,7 @@ export async function buildDaemonToolCatalogFromManifest(opts?: {
     config: getConfig(),
     runningUnderXcode: false,
     xcodeToolsActive: false,
+    xcodeToolsAvailable: false,
   };
 
   return buildToolCatalogFromManifest({

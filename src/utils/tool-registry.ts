@@ -111,7 +111,7 @@ export async function applyWorkflowSelectionFromManifest(
           {
             description: toolManifest.description ?? '',
             inputSchema: toolModule.schema,
-            annotations: toolModule.annotations,
+            annotations: toolManifest.annotations,
           },
           async (args: unknown): Promise<ToolResponse> => {
             const response = await toolModule.handler(args as Record<string, unknown>);
