@@ -180,6 +180,7 @@ function createSessionAwareHandler<TParams, TContext>(opts: {
         }
       }
 
+      // Check requirements first (before expensive simulator resolution)
       for (const req of requirements) {
         if ('allOf' in req) {
           const missing = missingFromMerged(req.allOf, merged);

@@ -36,7 +36,7 @@ describe('boot_sim tool', () => {
       expect(result.isError).toBe(true);
       const message = result.content[0].text;
       expect(message).toContain('Missing required session defaults');
-      expect(message).toContain('simulatorId is required');
+      expect(message).toContain('Provide simulatorId or simulatorName');
       expect(message).toContain('session-set-defaults');
     });
   });

@@ -40,7 +40,7 @@ describe('install_app_sim tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
-      expect(result.content[0].text).toContain('simulatorId is required');
+      expect(result.content[0].text).toContain('Provide simulatorId or simulatorName');
       expect(result.content[0].text).toContain('session-set-defaults');
     });
 

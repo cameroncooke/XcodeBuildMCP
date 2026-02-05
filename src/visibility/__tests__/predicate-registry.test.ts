@@ -84,17 +84,12 @@ describe('predicate-registry', () => {
 
     describe('hideWhenXcodeAgentMode', () => {
       it('should return true when not running under Xcode', () => {
-        const ctx = createContext({ runningUnderXcode: false, xcodeToolsActive: false });
+        const ctx = createContext({ runningUnderXcode: false });
         expect(PREDICATES.hideWhenXcodeAgentMode(ctx)).toBe(true);
       });
 
-      it('should return true when Xcode tools are not active', () => {
-        const ctx = createContext({ runningUnderXcode: true, xcodeToolsActive: false });
-        expect(PREDICATES.hideWhenXcodeAgentMode(ctx)).toBe(true);
-      });
-
-      it('should return false when running under Xcode AND tools are active', () => {
-        const ctx = createContext({ runningUnderXcode: true, xcodeToolsActive: true });
+      it('should return false when running under Xcode', () => {
+        const ctx = createContext({ runningUnderXcode: true });
         expect(PREDICATES.hideWhenXcodeAgentMode(ctx)).toBe(false);
       });
     });

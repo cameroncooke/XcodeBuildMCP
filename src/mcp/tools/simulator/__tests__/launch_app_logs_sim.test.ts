@@ -44,7 +44,7 @@ describe('launch_app_logs_sim tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
-      expect(result.content[0].text).toContain('Provide simulatorId and bundleId');
+      expect(result.content[0].text).toContain('Provide simulatorId or simulatorName');
       expect(result.content[0].text).toContain('session-set-defaults');
     });
 
@@ -55,7 +55,7 @@ describe('launch_app_logs_sim tool', () => {
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
-      expect(result.content[0].text).toContain('Provide simulatorId and bundleId');
+      expect(result.content[0].text).toContain('bundleId is required');
     });
   });
 

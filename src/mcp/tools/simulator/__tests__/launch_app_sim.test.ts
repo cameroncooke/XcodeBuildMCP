@@ -177,28 +177,66 @@ describe('launch_app_sim tool', () => {
       ]);
     });
 
-    it('should surface error when simulatorId missing after lookup', async () => {
-      const result = await launch_app_simLogic(
-        {
-          simulatorId: undefined,
-          bundleId: 'com.example.testapp',
-        } as any,
-        async () => ({
+    it('should display friendly name when simulatorName is provided alongside resolved simulatorId', async () => {
+      let callCount = 0;
+      const sequencedExecutor = async (command: string[]) => {
+        callCount++;
+        if (callCount === 1) {
+          return {
+            success: true,
+            output: '/path/to/app/container',
+            error: '',
+            process: {} as any,
+          };
+        }
+        return {
           success: true,
-          output: '',
+          output: 'App launched successfully',
           error: '',
           process: {} as any,
-        }),
+        };
+      };
+
+      const result = await launch_app_simLogic(
+        {
+          simulatorId: 'resolved-uuid',
+          simulatorName: 'iPhone 16',
+          bundleId: 'com.example.testapp',
+        },
+        sequencedExecutor,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: 'No simulator identifier provided',
+            text: 'App launched successfully in simulator "iPhone 16" (resolved-uuid).',
           },
         ],
-        isError: true,
+        nextSteps: [
+          {
+            tool: 'open_sim',
+            label: 'Open Simulator app to see it',
+            params: {},
+            priority: 1,
+          },
+          {
+            tool: 'start_sim_log_cap',
+            label: 'Capture structured logs (app continues running)',
+            params: { simulatorId: 'resolved-uuid', bundleId: 'com.example.testapp' },
+            priority: 2,
+          },
+          {
+            tool: 'start_sim_log_cap',
+            label: 'Capture console + structured logs (app restarts)',
+            params: {
+              simulatorId: 'resolved-uuid',
+              bundleId: 'com.example.testapp',
+              captureConsole: true,
+            },
+            priority: 3,
+          },
+        ],
       });
     });
 
@@ -306,140 +344,6 @@ describe('launch_app_sim tool', () => {
             text: 'Launch app in simulator operation failed: Launch failed',
           },
         ],
-      });
-    });
-
-    it('should launch using simulatorName by resolving UUID', async () => {
-      let callCount = 0;
-      const sequencedExecutor = async (command: string[]) => {
-        callCount++;
-        if (callCount === 1) {
-          return {
-            success: true,
-            output: JSON.stringify({
-              devices: {
-                'iOS 17.0': [
-                  {
-                    name: 'iPhone 16',
-                    udid: 'resolved-uuid',
-                    isAvailable: true,
-                    state: 'Shutdown',
-                  },
-                ],
-              },
-            }),
-            error: '',
-            process: {} as any,
-          };
-        }
-        if (callCount === 2) {
-          return {
-            success: true,
-            output: '/path/to/app/container',
-            error: '',
-            process: {} as any,
-          };
-        }
-        return {
-          success: true,
-          output: 'App launched successfully',
-          error: '',
-          process: {} as any,
-        };
-      };
-
-      const result = await launch_app_simLogic(
-        {
-          simulatorName: 'iPhone 16',
-          bundleId: 'com.example.testapp',
-        },
-        sequencedExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'App launched successfully in simulator "iPhone 16" (resolved-uuid).',
-          },
-        ],
-        nextSteps: [
-          {
-            tool: 'open_sim',
-            label: 'Open Simulator app to see it',
-            params: {},
-            priority: 1,
-          },
-          {
-            tool: 'start_sim_log_cap',
-            label: 'Capture structured logs (app continues running)',
-            params: { simulatorId: 'resolved-uuid', bundleId: 'com.example.testapp' },
-            priority: 2,
-          },
-          {
-            tool: 'start_sim_log_cap',
-            label: 'Capture console + structured logs (app restarts)',
-            params: {
-              simulatorId: 'resolved-uuid',
-              bundleId: 'com.example.testapp',
-              captureConsole: true,
-            },
-            priority: 3,
-          },
-        ],
-      });
-    });
-
-    it('should return error when simulator name is not found', async () => {
-      const mockListExecutor = async () => ({
-        success: true,
-        output: JSON.stringify({ devices: {} }),
-        error: '',
-        process: {} as any,
-      });
-
-      const result = await launch_app_simLogic(
-        {
-          simulatorName: 'Missing Simulator',
-          bundleId: 'com.example.testapp',
-        },
-        mockListExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Simulator named "Missing Simulator" not found. Use list_sims to see available simulators.',
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should return error when simctl list fails', async () => {
-      const mockExecutor = createMockExecutor({
-        success: false,
-        output: '',
-        error: 'simctl list failed',
-      });
-
-      const result = await launch_app_simLogic(
-        {
-          simulatorName: 'iPhone 16',
-          bundleId: 'com.example.testapp',
-        },
-        mockExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Failed to list simulators: simctl list failed',
-          },
-        ],
-        isError: true,
       });
     });
   });

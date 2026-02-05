@@ -8,15 +8,33 @@ import {
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
 
-const bootSimSchemaObject = z.object({
-  simulatorId: z.string().describe('UUID of the simulator to use (obtained from list_sims)'),
+const baseSchemaObject = z.object({
+  simulatorId: z
+    .string()
+    .optional()
+    .describe(
+      'UUID of the simulator to use (obtained from list_sims). Provide EITHER this OR simulatorName, not both',
+    ),
+  simulatorName: z
+    .string()
+    .optional()
+    .describe(
+      "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
+    ),
 });
 
-type BootSimParams = z.infer<typeof bootSimSchemaObject>;
+// Internal schema requires simulatorId (factory resolves simulatorName → simulatorId)
+const internalSchemaObject = z.object({
+  simulatorId: z.string(),
+  simulatorName: z.string().optional(),
+});
+
+type BootSimParams = z.infer<typeof internalSchemaObject>;
 
 const publicSchemaObject = z.strictObject(
-  bootSimSchemaObject.omit({
+  baseSchemaObject.omit({
     simulatorId: true,
+    simulatorName: true,
   } as const).shape,
 );
 
@@ -85,12 +103,15 @@ export async function boot_simLogic(
 
 export const schema = getSessionAwareToolSchemaShape({
   sessionAware: publicSchemaObject,
-  legacy: bootSimSchemaObject,
+  legacy: baseSchemaObject,
 });
 
 export const handler = createSessionAwareTool<BootSimParams>({
-  internalSchema: bootSimSchemaObject as unknown as z.ZodType<BootSimParams, unknown>,
+  internalSchema: internalSchemaObject as unknown as z.ZodType<BootSimParams, unknown>,
   logicFunction: boot_simLogic,
   getExecutor: getDefaultCommandExecutor,
-  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+  requirements: [
+    { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+  ],
+  exclusivePairs: [['simulatorId', 'simulatorName']],
 });

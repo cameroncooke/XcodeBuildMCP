@@ -115,22 +115,20 @@ describe('exposure', () => {
       expect(isToolExposedForRuntime(tool, ctx)).toBe(false);
     });
 
-    it('should return false when hideWhenXcodeAgentMode predicate fails', () => {
+    it('should return false when hideWhenXcodeAgentMode predicate fails (running under Xcode)', () => {
       const tool = createTool({ predicates: ['hideWhenXcodeAgentMode'] });
       const ctx = createContext({
         runtime: 'mcp',
         runningUnderXcode: true,
-        xcodeToolsActive: true,
       });
       expect(isToolExposedForRuntime(tool, ctx)).toBe(false);
     });
 
-    it('should return true when hideWhenXcodeAgentMode predicate passes', () => {
+    it('should return true when hideWhenXcodeAgentMode predicate passes (not under Xcode)', () => {
       const tool = createTool({ predicates: ['hideWhenXcodeAgentMode'] });
       const ctx = createContext({
         runtime: 'mcp',
-        runningUnderXcode: true,
-        xcodeToolsActive: false,
+        runningUnderXcode: false,
       });
       expect(isToolExposedForRuntime(tool, ctx)).toBe(true);
     });

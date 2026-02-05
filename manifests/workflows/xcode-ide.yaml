@@ -11,8 +11,7 @@ selection:
     autoInclude: true
 predicates:
   - debugEnabled
-  - runningUnderXcodeAgent
-  - requiresXcodeTools
+  - hideWhenXcodeAgentMode
 tools:
   - xcode_tools_bridge_status
   - xcode_tools_bridge_sync

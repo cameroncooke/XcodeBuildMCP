@@ -7,8 +7,7 @@ availability:
   mcp: true
   cli: true
   daemon: true
-predicates:
-  - hideWhenXcodeAgentMode
+predicates: []
 routing:
   stateful: false
   daemonAffinity: preferred

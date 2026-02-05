@@ -83,104 +83,31 @@ describe('stop_app_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: '✅ App com.example.App stopped successfully in simulator test-uuid',
+            text: 'App com.example.App stopped successfully in simulator test-uuid',
           },
         ],
       });
     });
 
-    it('should stop app successfully when resolving simulatorName', async () => {
-      let callCount = 0;
-      const sequencedExecutor = async (command: string[]) => {
-        callCount++;
-        if (callCount === 1) {
-          return {
-            success: true,
-            output: JSON.stringify({
-              devices: {
-                'iOS 17.0': [
-                  { name: 'iPhone 16', udid: 'resolved-uuid', isAvailable: true, state: 'Booted' },
-                ],
-              },
-            }),
-            error: '',
-            process: {} as any,
-          };
-        }
-        return {
-          success: true,
-          output: '',
-          error: '',
-          process: {} as any,
-        };
-      };
+    it('should display friendly name when simulatorName is provided alongside resolved simulatorId', async () => {
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
 
       const result = await stop_app_simLogic(
         {
+          simulatorId: 'resolved-uuid',
           simulatorName: 'iPhone 16',
           bundleId: 'com.example.App',
         },
-        sequencedExecutor,
+        mockExecutor,
       );
 
       expect(result).toEqual({
         content: [
           {
             type: 'text',
-            text: '✅ App com.example.App stopped successfully in simulator "iPhone 16" (resolved-uuid)',
+            text: 'App com.example.App stopped successfully in simulator "iPhone 16" (resolved-uuid)',
           },
         ],
-      });
-    });
-
-    it('should surface error when simulator name is missing', async () => {
-      const result = await stop_app_simLogic(
-        {
-          simulatorName: 'Missing Simulator',
-          bundleId: 'com.example.App',
-        },
-        async () => ({
-          success: true,
-          output: JSON.stringify({ devices: {} }),
-          error: '',
-          process: {} as any,
-        }),
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Simulator named "Missing Simulator" not found. Use list_sims to see available simulators.',
-          },
-        ],
-        isError: true,
-      });
-    });
-
-    it('should handle simulator list command failure', async () => {
-      const listExecutor = createMockExecutor({
-        success: false,
-        output: '',
-        error: 'simctl list failed',
-      });
-
-      const result = await stop_app_simLogic(
-        {
-          simulatorName: 'iPhone 16',
-          bundleId: 'com.example.App',
-        },
-        listExecutor,
-      );
-
-      expect(result).toEqual({
-        content: [
-          {
-            type: 'text',
-            text: 'Failed to list simulators: simctl list failed',
-          },
-        ],
-        isError: true,
       });
     });
 

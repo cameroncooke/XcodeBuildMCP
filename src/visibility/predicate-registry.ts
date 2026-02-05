@@ -34,11 +34,10 @@ export const PREDICATES: Record<string, PredicateFn> = {
   requiresXcodeTools: (ctx: PredicateContext): boolean => ctx.xcodeToolsActive === true,
 
   /**
-   * Hide when running in Xcode agent mode (both under Xcode AND tools bridge active).
+   * Hide when running inside Xcode's coding agent.
    * Use for XcodeBuildMCP tools that conflict with Xcode's native equivalents.
    */
-  hideWhenXcodeAgentMode: (ctx: PredicateContext): boolean =>
-    !(ctx.runningUnderXcode && ctx.xcodeToolsActive),
+  hideWhenXcodeAgentMode: (ctx: PredicateContext): boolean => !ctx.runningUnderXcode,
 
   /**
    * Always visible - useful for explicit documentation in YAML.
