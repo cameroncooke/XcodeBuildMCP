@@ -5,7 +5,7 @@ names:
 description: "Disconnect bridge and unregister proxied `xcode_tools_*` tools."
 availability:
   mcp: true
-  cli: false
+  cli: true
   daemon: false
 predicates:
   - debugEnabled

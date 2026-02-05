@@ -53,9 +53,8 @@ export function registerToolCommands(
           const hint =
             workflowName === 'xcode-ide'
               ? `No CLI commands are currently exposed for '${workflowName}'.\n` +
-                `xcode-ide bridge tools are MCP-only and are not available as direct CLI subcommands.\n` +
-                `To use them, run the MCP server and connect with an MCP client.\n` +
-                `In Xcode, enable MCP Tools in Settings > Intelligence > Xcode Tools and click Allow if prompted.`
+                `Open Xcode with the target project and enable MCP Tools in Settings > Intelligence > Xcode Tools.\n` +
+                `Click Allow if prompted.`
               : `No CLI commands are currently exposed for '${workflowName}'.`;
 
           yargs.epilogue(hint);
@@ -68,7 +67,7 @@ export function registerToolCommands(
         if (tools.length === 0) {
           console.error(
             workflowName === 'xcode-ide'
-              ? `No CLI commands are currently exposed for '${workflowName}'. xcode-ide bridge tools are MCP-only (not direct CLI subcommands). Run the MCP server with an MCP client, and in Xcode enable MCP Tools in Settings > Intelligence > Xcode Tools and click Allow if prompted.`
+              ? `No CLI commands are currently exposed for '${workflowName}'. Open Xcode with the target project, enable MCP Tools in Settings > Intelligence > Xcode Tools, and click Allow if prompted.`
               : `No CLI commands are currently exposed for '${workflowName}'.`,
           );
         }

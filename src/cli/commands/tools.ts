@@ -9,6 +9,7 @@ import { getEffectiveCliName } from '../../core/manifest/schema.ts';
 import { isWorkflowEnabledForRuntime, isToolExposedForRuntime } from '../../visibility/exposure.ts';
 import type { PredicateContext } from '../../visibility/predicate-types.ts';
 import { getConfig } from '../../utils/config-store.ts';
+import { getMcpBridgeAvailability } from '../../integrations/xcode-tools-bridge/core.ts';
 
 const CLI_EXCLUDED_WORKFLOWS = new Set(['session-management', 'workflow-discovery']);
 
@@ -80,22 +81,24 @@ function toGroupedJsonTool(tool: ToolListItem): JsonTool {
  * Build CLI predicate context.
  * CLI is never running under Xcode and never has Xcode tools active.
  */
-function buildCliPredicateContext(): PredicateContext {
+async function buildCliPredicateContext(): Promise<PredicateContext> {
+  const bridge = await getMcpBridgeAvailability();
   return {
     runtime: 'cli',
     config: getConfig(),
     runningUnderXcode: false,
     xcodeToolsActive: false,
+    xcodeToolsAvailable: bridge.available,
   };
 }
 
 /**
  * Build tool list from YAML manifest with predicate filtering.
  */
-function buildToolList(manifest: ResolvedManifest): ToolListItem[] {
+async function buildToolList(manifest: ResolvedManifest): Promise<ToolListItem[]> {
   const tools: ToolListItem[] = [];
   const seenToolIds = new Set<string>();
-  const ctx = buildCliPredicateContext();
+  const ctx = await buildCliPredicateContext();
 
   // Get all CLI-available workflows that pass predicate checks
   const cliWorkflows = Array.from(manifest.workflows.values()).filter(
@@ -191,9 +194,9 @@ export function registerToolsCommand(app: Argv): void {
           describe: 'Filter by workflow name',
         });
     },
-    (argv) => {
+    async (argv) => {
       const manifest = loadManifest();
-      let tools = buildToolList(manifest);
+      let tools = await buildToolList(manifest);
 
       // Filter by workflow if specified
       if (argv.workflow) {

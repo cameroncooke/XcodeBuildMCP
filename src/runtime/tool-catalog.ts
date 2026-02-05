@@ -1,8 +1,10 @@
 import type { ToolCatalog, ToolDefinition, ToolResolution } from './types.ts';
 import { toKebabCase } from './naming.ts';
+import type { ToolResponse } from '../types/common.ts';
 import { loadManifest, type WorkflowManifestEntry } from '../core/manifest/load-manifest.ts';
 import { getEffectiveCliName } from '../core/manifest/schema.ts';
 import { importToolModule } from '../core/manifest/import-tool-module.ts';
+import type { ToolSchemaShape } from '../core/plugin-types.ts';
 import type { PredicateContext, RuntimeKind } from '../visibility/predicate-types.ts';
 import {
   isWorkflowAvailableForRuntime,
@@ -12,6 +14,11 @@ import {
 } from '../visibility/exposure.ts';
 import { getConfig } from '../utils/config-store.ts';
 import { log } from '../utils/logging/index.ts';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { XcodeToolsBridgeClient } from '../integrations/xcode-tools-bridge/client.ts';
+import { getMcpBridgeAvailability } from '../integrations/xcode-tools-bridge/core.ts';
+import { jsonSchemaToZod } from '../integrations/xcode-tools-bridge/jsonschema-to-zod.ts';
+import { toLocalToolName } from '../integrations/xcode-tools-bridge/registry.ts';
 
 function createCatalog(tools: ToolDefinition[]): ToolCatalog {
   // Build lookup maps for fast resolution
@@ -89,6 +96,78 @@ export function groupToolsByWorkflow(catalog: ToolCatalog): Map<string, ToolDefi
   }
 
   return groups;
+}
+
+type JsonSchemaObject = {
+  properties?: Record<string, unknown>;
+  required?: unknown[];
+};
+
+function jsonSchemaToToolSchemaShape(inputSchema: unknown): ToolSchemaShape {
+  if (!inputSchema || typeof inputSchema !== 'object') {
+    return {};
+  }
+
+  const schema = inputSchema as JsonSchemaObject;
+  const properties = schema.properties;
+  if (!properties || typeof properties !== 'object' || Array.isArray(properties)) {
+    return {};
+  }
+
+  const requiredFields = new Set(
+    Array.isArray(schema.required)
+      ? schema.required.filter((name): name is string => typeof name === 'string')
+      : [],
+  );
+
+  const shape: ToolSchemaShape = {};
+  for (const [name, propertySchema] of Object.entries(properties)) {
+    const zodSchema = jsonSchemaToZod(propertySchema);
+    shape[name] = requiredFields.has(name) ? zodSchema : zodSchema.optional();
+  }
+
+  return shape;
+}
+
+function createCliXcodeProxyTool(remoteTool: Tool): ToolDefinition {
+  const mcpName = toLocalToolName(remoteTool.name);
+  const cliSchema = jsonSchemaToToolSchemaShape(remoteTool.inputSchema);
+
+  return {
+    cliName: `xcode-ide-${toKebabCase(remoteTool.name)}`,
+    mcpName,
+    workflow: 'xcode-ide',
+    description: remoteTool.description ?? '',
+    annotations: remoteTool.annotations,
+    mcpSchema: cliSchema,
+    cliSchema,
+    stateful: false,
+    handler: async (params): Promise<ToolResponse> => {
+      const client = new XcodeToolsBridgeClient();
+      await client.connectOnce();
+      try {
+        const result = await client.callTool(remoteTool.name, params);
+        return result as unknown as ToolResponse;
+      } finally {
+        await client.disconnect();
+      }
+    },
+  };
+}
+
+async function loadCliXcodeProxyTools(): Promise<ToolDefinition[]> {
+  const client = new XcodeToolsBridgeClient();
+  try {
+    await client.connectOnce();
+    const remoteTools = await client.listTools();
+    return remoteTools.map((tool) => createCliXcodeProxyTool(tool));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    log('warning', `[xcode-ide] CLI bridge discovery failed: ${message}`);
+    return [];
+  } finally {
+    await client.disconnect();
+  }
 }
 
 /**
@@ -180,6 +259,8 @@ export async function buildCliToolCatalogFromManifest(opts?: {
   excludeWorkflows?: string[];
 }): Promise<ToolCatalog> {
   const excludeWorkflows = opts?.excludeWorkflows ?? [];
+  const bridge = await getMcpBridgeAvailability();
+  const xcodeToolsAvailable = bridge.available;
 
   // CLI context: not running under Xcode, no Xcode tools active
   const ctx: PredicateContext = {
@@ -187,14 +268,39 @@ export async function buildCliToolCatalogFromManifest(opts?: {
     config: getConfig(),
     runningUnderXcode: false,
     xcodeToolsActive: false,
-    xcodeToolsAvailable: false,
+    xcodeToolsAvailable,
   };
 
-  return buildToolCatalogFromManifest({
+  const manifestCatalog = await buildToolCatalogFromManifest({
     runtime: 'cli',
     ctx,
     excludeWorkflows,
   });
+
+  const excludeSet = new Set(excludeWorkflows.map((name) => name.toLowerCase()));
+  const manifest = loadManifest();
+  const xcodeIdeWorkflow = manifest.workflows.get('xcode-ide');
+  const xcodeIdeEnabled =
+    xcodeIdeWorkflow !== undefined &&
+    !excludeSet.has('xcode-ide') &&
+    isWorkflowEnabledForRuntime(xcodeIdeWorkflow, ctx);
+
+  if (!xcodeIdeEnabled || !xcodeToolsAvailable) {
+    return manifestCatalog;
+  }
+
+  const dynamicXcodeTools = await loadCliXcodeProxyTools();
+  if (dynamicXcodeTools.length === 0) {
+    return manifestCatalog;
+  }
+
+  const existingCliNames = new Set(manifestCatalog.tools.map((tool) => tool.cliName));
+  const mergedTools = [
+    ...manifestCatalog.tools,
+    ...dynamicXcodeTools.filter((tool) => !existingCliNames.has(tool.cliName)),
+  ];
+
+  return createCatalog(mergedTools);
 }
 
 /**

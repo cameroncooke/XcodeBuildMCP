@@ -5,7 +5,7 @@ names:
 description: "One-shot connect + tools/list sync (manual retry; avoids background prompt spam)."
 availability:
   mcp: true
-  cli: false
+  cli: true
   daemon: false
 predicates:
   - debugEnabled

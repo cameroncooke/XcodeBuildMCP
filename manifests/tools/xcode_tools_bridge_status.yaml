@@ -5,7 +5,7 @@ names:
 description: "Show xcrun mcpbridge availability and proxy tool sync status."
 availability:
   mcp: true
-  cli: false
+  cli: true
   daemon: false
 predicates:
   - debugEnabled
