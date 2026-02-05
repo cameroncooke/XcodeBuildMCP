@@ -15,7 +15,7 @@ import { getConfig } from '../../../utils/config-store.ts';
 import { detectXcodeRuntime } from '../../../utils/xcode-process.ts';
 import { type DoctorDependencies, createDoctorDependencies } from './lib/doctor.deps.ts';
 import { peekXcodeToolsBridgeManager } from '../../../integrations/xcode-tools-bridge/index.ts';
-import { getMcpBridgeAvailability } from '../../../integrations/xcode-tools-bridge/manager.ts';
+import { getMcpBridgeAvailability } from '../../../integrations/xcode-tools-bridge/core.ts';
 
 // Constants
 const LOG_PREFIX = '[Doctor]';

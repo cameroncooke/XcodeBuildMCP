@@ -7,7 +7,7 @@ import type { RuntimeConfigOverrides } from '../utils/config-store.ts';
 import { getRegisteredWorkflows, registerWorkflowsFromManifest } from '../utils/tool-registry.ts';
 import { bootstrapRuntime } from '../runtime/bootstrap-runtime.ts';
 import { getXcodeToolsBridgeManager } from '../integrations/xcode-tools-bridge/index.ts';
-import { getMcpBridgeAvailability } from '../integrations/xcode-tools-bridge/manager.ts';
+import { getMcpBridgeAvailability } from '../integrations/xcode-tools-bridge/core.ts';
 import { detectXcodeRuntime } from '../utils/xcode-process.ts';
 import { readXcodeIdeState } from '../utils/xcode-state-reader.ts';
 import { sessionStore } from '../utils/session-store.ts';

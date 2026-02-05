@@ -1,7 +1,4 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { execFile } from 'node:child_process';
-import process from 'node:process';
-import { promisify } from 'node:util';
 import { log } from '../../utils/logger.ts';
 import {
   createErrorResponse,
@@ -10,21 +7,11 @@ import {
 } from '../../utils/responses/index.ts';
 import { XcodeToolsBridgeClient } from './client.ts';
 import { XcodeToolsProxyRegistry, type ProxySyncResult } from './registry.ts';
-
-const execFileAsync = promisify(execFile);
-
-export type XcodeToolsBridgeStatus = {
-  workflowEnabled: boolean;
-  bridgeAvailable: boolean;
-  bridgePath: string | null;
-  xcodeRunning: boolean | null;
-  connected: boolean;
-  bridgePid: number | null;
-  proxiedToolCount: number;
-  lastError: string | null;
-  xcodePid: string | null;
-  xcodeSessionId: string | null;
-};
+import {
+  buildXcodeToolsBridgeStatus,
+  getMcpBridgeAvailability,
+  type XcodeToolsBridgeStatus,
+} from './core.ts';
 
 export class XcodeToolsBridgeManager {
   private readonly server: McpServer;
@@ -59,23 +46,12 @@ export class XcodeToolsBridgeManager {
   }
 
   async getStatus(): Promise<XcodeToolsBridgeStatus> {
-    const bridge = await getMcpBridgeAvailability();
-    const xcodeRunning = await isXcodeRunning();
-    const clientStatus = this.client.getStatus();
-
-    return {
+    return buildXcodeToolsBridgeStatus({
       workflowEnabled: this.workflowEnabled,
-      bridgeAvailable: bridge.available,
-      bridgePath: bridge.path,
-      xcodeRunning,
-      connected: clientStatus.connected,
-      bridgePid: clientStatus.bridgePid,
       proxiedToolCount: this.registry.getRegisteredCount(),
-      lastError: this.lastError ?? clientStatus.lastError,
-      xcodePid: process.env.XCODEBUILDMCP_XCODE_PID ?? process.env.MCP_XCODE_PID ?? null,
-      xcodeSessionId:
-        process.env.XCODEBUILDMCP_XCODE_SESSION_ID ?? process.env.MCP_XCODE_SESSION_ID ?? null,
-    };
+      lastError: this.lastError,
+      clientStatus: this.client.getStatus(),
+    });
   }
 
   async syncTools(opts: {
@@ -172,28 +148,5 @@ export class XcodeToolsBridgeManager {
       const message = error instanceof Error ? error.message : String(error);
       return createErrorResponse('Bridge disconnect failed', message);
     }
-  }
-}
-
-export async function getMcpBridgeAvailability(): Promise<{
-  available: boolean;
-  path: string | null;
-}> {
-  try {
-    const res = await execFileAsync('xcrun', ['--find', 'mcpbridge'], { timeout: 2000 });
-    const out = (res.stdout ?? '').toString().trim();
-    return out ? { available: true, path: out } : { available: false, path: null };
-  } catch {
-    return { available: false, path: null };
-  }
-}
-
-async function isXcodeRunning(): Promise<boolean | null> {
-  try {
-    const res = await execFileAsync('pgrep', ['-x', 'Xcode'], { timeout: 1000 });
-    const out = (res.stdout ?? '').toString().trim();
-    return out.length > 0;
-  } catch {
-    return null;
   }
 }
