@@ -59,7 +59,7 @@ export class XcodeToolsBridgeManager {
   }
 
   async getStatus(): Promise<XcodeToolsBridgeStatus> {
-    const bridge = await findMcpBridge();
+    const bridge = await getMcpBridgeAvailability();
     const xcodeRunning = await isXcodeRunning();
     const clientStatus = this.client.getStatus();
 
@@ -88,7 +88,7 @@ export class XcodeToolsBridgeManager {
     if (this.syncInFlight) return this.syncInFlight;
 
     this.syncInFlight = (async (): Promise<ProxySyncResult> => {
-      const bridge = await findMcpBridge();
+      const bridge = await getMcpBridgeAvailability();
       if (!bridge.available) {
         this.lastError = 'mcpbridge not available (xcrun --find mcpbridge failed)';
         const existingCount = this.registry.getRegisteredCount();
@@ -175,7 +175,10 @@ export class XcodeToolsBridgeManager {
   }
 }
 
-async function findMcpBridge(): Promise<{ available: boolean; path: string | null }> {
+export async function getMcpBridgeAvailability(): Promise<{
+  available: boolean;
+  path: string | null;
+}> {
   try {
     const res = await execFileAsync('xcrun', ['--find', 'mcpbridge'], { timeout: 2000 });
     const out = (res.stdout ?? '').toString().trim();

@@ -26,6 +26,9 @@ export interface PredicateContext {
 
   /** Whether Xcode Tools bridge is active (MCP only; false otherwise) */
   xcodeToolsActive: boolean;
+
+  /** Whether the Xcode Tools bridge binary is available on this system */
+  xcodeToolsAvailable?: boolean;
 }
 
 /**

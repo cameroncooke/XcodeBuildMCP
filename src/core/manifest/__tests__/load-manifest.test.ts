@@ -83,6 +83,26 @@ describe('load-manifest', () => {
       expect(doctor?.predicates).toContain('debugEnabled');
       expect(doctor?.selection?.mcp?.autoInclude).toBe(true);
     });
+
+    it('should have xcode-ide workflow gated by xcode tools availability', () => {
+      const manifest = loadManifest();
+      const xcodeIde = manifest.workflows.get('xcode-ide');
+
+      expect(xcodeIde).toBeDefined();
+      expect(xcodeIde?.predicates).toContain('xcodeToolsAvailable');
+      expect(xcodeIde?.predicates).toContain('hideWhenXcodeAgentMode');
+      expect(xcodeIde?.predicates).not.toContain('debugEnabled');
+    });
+
+    it('should keep xcode bridge static tools gated by debugEnabled', () => {
+      const manifest = loadManifest();
+
+      expect(manifest.tools.get('xcode_tools_bridge_status')?.predicates).toContain('debugEnabled');
+      expect(manifest.tools.get('xcode_tools_bridge_sync')?.predicates).toContain('debugEnabled');
+      expect(manifest.tools.get('xcode_tools_bridge_disconnect')?.predicates).toContain(
+        'debugEnabled',
+      );
+    });
   });
 
   describe('getWorkflowTools', () => {

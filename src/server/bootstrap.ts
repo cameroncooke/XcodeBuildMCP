@@ -4,9 +4,10 @@ import { registerResources } from '../core/resources.ts';
 import type { FileSystemExecutor } from '../utils/FileSystemExecutor.ts';
 import { log, setLogLevel, type LogLevel } from '../utils/logger.ts';
 import type { RuntimeConfigOverrides } from '../utils/config-store.ts';
-import { registerWorkflowsFromManifest } from '../utils/tool-registry.ts';
+import { getRegisteredWorkflows, registerWorkflowsFromManifest } from '../utils/tool-registry.ts';
 import { bootstrapRuntime } from '../runtime/bootstrap-runtime.ts';
 import { getXcodeToolsBridgeManager } from '../integrations/xcode-tools-bridge/index.ts';
+import { getMcpBridgeAvailability } from '../integrations/xcode-tools-bridge/manager.ts';
 import { detectXcodeRuntime } from '../utils/xcode-process.ts';
 import { readXcodeIdeState } from '../utils/xcode-state-reader.ts';
 import { sessionStore } from '../utils/session-store.ts';
@@ -59,6 +60,8 @@ export async function bootstrapServer(
   }
 
   const enabledWorkflows = result.runtime.config.enabledWorkflows;
+  const mcpBridge = await getMcpBridgeAvailability();
+  const xcodeToolsAvailable = mcpBridge.available;
   log('info', `🚀 Initializing server...`);
 
   // Detect if running under Xcode
@@ -139,13 +142,15 @@ export async function bootstrapServer(
     config: result.runtime.config,
     runningUnderXcode: xcodeDetection.runningUnderXcode,
     xcodeToolsActive: false, // Will be updated after Xcode tools bridge sync
+    xcodeToolsAvailable,
   };
 
   // Register workflows using manifest system
   await registerWorkflowsFromManifest(enabledWorkflows, ctx);
 
-  const xcodeIdeEnabled = enabledWorkflows.includes('xcode-ide');
-  const xcodeToolsBridge = getXcodeToolsBridgeManager(server);
+  const resolvedWorkflows = getRegisteredWorkflows();
+  const xcodeIdeEnabled = resolvedWorkflows.includes('xcode-ide');
+  const xcodeToolsBridge = xcodeToolsAvailable ? getXcodeToolsBridgeManager(server) : null;
   xcodeToolsBridge?.setWorkflowEnabled(xcodeIdeEnabled);
   if (xcodeIdeEnabled && xcodeToolsBridge) {
     try {

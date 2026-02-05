@@ -54,6 +54,7 @@ export function getMcpPredicateContext(): PredicateContext {
     config: getConfig(),
     runningUnderXcode: false,
     xcodeToolsActive: false,
+    xcodeToolsAvailable: false,
   };
 }
 
@@ -153,6 +154,7 @@ export async function registerWorkflowsFromManifest(
     config: getConfig(),
     runningUnderXcode: false,
     xcodeToolsActive: false,
+    xcodeToolsAvailable: false,
   };
   await applyWorkflowSelectionFromManifest(workflowNames, effectiveCtx);
 }

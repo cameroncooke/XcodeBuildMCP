@@ -10,6 +10,10 @@ export function getXcodeToolsBridgeManager(server?: McpServer): XcodeToolsBridge
   return manager;
 }
 
+export function peekXcodeToolsBridgeManager(): XcodeToolsBridgeManager | null {
+  return manager;
+}
+
 export async function shutdownXcodeToolsBridge(): Promise<void> {
   await manager?.shutdown();
   manager = null;

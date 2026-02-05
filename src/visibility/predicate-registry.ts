@@ -34,6 +34,12 @@ export const PREDICATES: Record<string, PredicateFn> = {
   requiresXcodeTools: (ctx: PredicateContext): boolean => ctx.xcodeToolsActive === true,
 
   /**
+   * Show only when xcrun mcpbridge is available on the host system.
+   * Use for workflows/tools that depend on Xcode's MCP bridge binary.
+   */
+  xcodeToolsAvailable: (ctx: PredicateContext): boolean => ctx.xcodeToolsAvailable === true,
+
+  /**
    * Hide when running inside Xcode's coding agent.
    * Use for XcodeBuildMCP tools that conflict with Xcode's native equivalents.
    */

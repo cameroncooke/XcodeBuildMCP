@@ -40,6 +40,7 @@ function createContext(overrides: Partial<PredicateContext> = {}): PredicateCont
     config: createDefaultConfig(),
     runningUnderXcode: false,
     xcodeToolsActive: false,
+    xcodeToolsAvailable: false,
     ...overrides,
   };
 }

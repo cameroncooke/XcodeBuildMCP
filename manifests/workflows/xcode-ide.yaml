@@ -10,7 +10,7 @@ selection:
     defaultEnabled: false
     autoInclude: true
 predicates:
-  - debugEnabled
+  - xcodeToolsAvailable
   - hideWhenXcodeAgentMode
 tools:
   - xcode_tools_bridge_status
