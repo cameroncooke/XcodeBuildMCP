@@ -58,6 +58,30 @@ describe('predicate-registry', () => {
       });
     });
 
+    describe('runningUnderXcodeAgent', () => {
+      it('should return true when running under Xcode', () => {
+        const ctx = createContext({ runningUnderXcode: true });
+        expect(PREDICATES.runningUnderXcodeAgent(ctx)).toBe(true);
+      });
+
+      it('should return false when not running under Xcode', () => {
+        const ctx = createContext({ runningUnderXcode: false });
+        expect(PREDICATES.runningUnderXcodeAgent(ctx)).toBe(false);
+      });
+    });
+
+    describe('requiresXcodeTools', () => {
+      it('should return true when Xcode tools are active', () => {
+        const ctx = createContext({ xcodeToolsActive: true });
+        expect(PREDICATES.requiresXcodeTools(ctx)).toBe(true);
+      });
+
+      it('should return false when Xcode tools are not active', () => {
+        const ctx = createContext({ xcodeToolsActive: false });
+        expect(PREDICATES.requiresXcodeTools(ctx)).toBe(false);
+      });
+    });
+
     describe('hideWhenXcodeAgentMode', () => {
       it('should return true when not running under Xcode', () => {
         const ctx = createContext({ runningUnderXcode: false, xcodeToolsActive: false });
@@ -132,6 +156,8 @@ describe('predicate-registry', () => {
       const names = getPredicateNames();
       expect(names).toContain('debugEnabled');
       expect(names).toContain('experimentalWorkflowDiscoveryEnabled');
+      expect(names).toContain('runningUnderXcodeAgent');
+      expect(names).toContain('requiresXcodeTools');
       expect(names).toContain('hideWhenXcodeAgentMode');
       expect(names).toContain('always');
       expect(names).toContain('never');

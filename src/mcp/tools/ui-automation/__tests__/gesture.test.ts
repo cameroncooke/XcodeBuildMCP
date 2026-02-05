@@ -6,12 +6,11 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import {
   createMockExecutor,
-  createMockFileSystemExecutor,
   createNoopExecutor,
   mockProcess,
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import gesturePlugin, { gestureLogic } from '../gesture.ts';
+import { schema, handler, gestureLogic } from '../gesture.ts';
 
 describe('Gesture Plugin', () => {
   beforeEach(() => {
@@ -19,24 +18,16 @@ describe('Gesture Plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(gesturePlugin.name).toBe('gesture');
-    });
-
-    it('should have correct description', () => {
-      expect(gesturePlugin.description).toBe('Simulator gesture preset.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof gesturePlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose public schema without simulatorId field', () => {
-      const schema = z.object(gesturePlugin.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({ preset: 'scroll-up' }).success).toBe(true);
+      expect(schemaObj.safeParse({ preset: 'scroll-up' }).success).toBe(true);
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           preset: 'scroll-up',
           screenWidth: 375,
           screenHeight: 667,
@@ -46,22 +37,22 @@ describe('Gesture Plugin', () => {
           postDelay: 0.2,
         }).success,
       ).toBe(true);
-      expect(schema.safeParse({ preset: 'invalid-preset' }).success).toBe(false);
-      expect(schema.safeParse({ preset: 'scroll-up', screenWidth: 0 }).success).toBe(false);
-      expect(schema.safeParse({ preset: 'scroll-up', duration: -1 }).success).toBe(false);
+      expect(schemaObj.safeParse({ preset: 'invalid-preset' }).success).toBe(false);
+      expect(schemaObj.safeParse({ preset: 'scroll-up', screenWidth: 0 }).success).toBe(false);
+      expect(schemaObj.safeParse({ preset: 'scroll-up', duration: -1 }).success).toBe(false);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObj.safeParse({
         simulatorId: '12345678-1234-4234-8234-123456789012',
         preset: 'scroll-up',
       });
       expect(withSimId.success).toBe(true);
-      expect('simulatorId' in (withSimId.data as any)).toBe(false);
+      expect('simulatorId' in (withSimId.data as object)).toBe(false);
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require simulatorId session default when not provided', async () => {
-      const result = await gesturePlugin.handler({ preset: 'scroll-up' });
+      const result = await handler({ preset: 'scroll-up' });
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;
@@ -73,7 +64,7 @@ describe('Gesture Plugin', () => {
     it('should surface validation errors once simulator defaults exist', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await gesturePlugin.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;

@@ -127,13 +127,6 @@ export async function sessionSetDefaultsLogic(
   };
 }
 
-export default {
-  name: 'session-set-defaults',
-  description: 'Set the session defaults, should be called at least once to set tool defaults.',
-  schema: schemaObj.shape,
-  annotations: {
-    title: 'Set Session Defaults',
-    destructiveHint: true,
-  },
-  handler: createTypedToolWithContext(schemaObj, sessionSetDefaultsLogic, () => ({})),
-};
+export const schema = schemaObj.shape;
+
+export const handler = createTypedToolWithContext(schemaObj, sessionSetDefaultsLogic, () => ({}));

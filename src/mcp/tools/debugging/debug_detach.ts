@@ -28,16 +28,10 @@ export async function debug_detachLogic(
   }
 }
 
-export default {
-  name: 'debug_detach',
-  description: 'Detach debugger.',
-  cli: {
-    stateful: true,
-  },
-  schema: debugDetachSchema.shape,
-  handler: createTypedToolWithContext<DebugDetachParams, DebuggerToolContext>(
-    debugDetachSchema,
-    debug_detachLogic,
-    getDefaultDebuggerToolContext,
-  ),
-};
+export const schema = debugDetachSchema.shape;
+
+export const handler = createTypedToolWithContext<DebugDetachParams, DebuggerToolContext>(
+  debugDetachSchema,
+  debug_detachLogic,
+  getDefaultDebuggerToolContext,
+);

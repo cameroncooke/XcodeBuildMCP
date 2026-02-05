@@ -11,3 +11,6 @@ predicates: []
 routing:
   stateful: true
   daemonAffinity: required
+annotations:
+  title: "Stop Simulator and Return Logs"
+  destructiveHint: true

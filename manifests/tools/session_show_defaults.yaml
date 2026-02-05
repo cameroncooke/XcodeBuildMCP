@@ -8,3 +8,6 @@ availability:
   cli: false
   daemon: false
 predicates: []
+annotations:
+  title: "Show Session Defaults"
+  readOnlyHint: true

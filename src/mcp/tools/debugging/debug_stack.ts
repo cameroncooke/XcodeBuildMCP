@@ -31,16 +31,10 @@ export async function debug_stackLogic(
   }
 }
 
-export default {
-  name: 'debug_stack',
-  description: 'Get backtrace.',
-  cli: {
-    stateful: true,
-  },
-  schema: debugStackSchema.shape,
-  handler: createTypedToolWithContext<DebugStackParams, DebuggerToolContext>(
-    debugStackSchema,
-    debug_stackLogic,
-    getDefaultDebuggerToolContext,
-  ),
-};
+export const schema = debugStackSchema.shape;
+
+export const handler = createTypedToolWithContext<DebugStackParams, DebuggerToolContext>(
+  debugStackSchema,
+  debug_stackLogic,
+  getDefaultDebuggerToolContext,
+);

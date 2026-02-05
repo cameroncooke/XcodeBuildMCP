@@ -11,3 +11,6 @@ predicates: []
 routing:
   stateful: true
   daemonAffinity: required
+annotations:
+  title: "Stop Device and Return Logs"
+  destructiveHint: true

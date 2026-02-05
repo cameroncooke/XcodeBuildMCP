@@ -59,12 +59,12 @@ describe('load-manifest', () => {
       }
     });
 
-    it('should have session-management as mandatory workflow', () => {
+    it('should have session-management as auto-include workflow', () => {
       const manifest = loadManifest();
       const sessionMgmt = manifest.workflows.get('session-management');
 
       expect(sessionMgmt).toBeDefined();
-      expect(sessionMgmt?.selection?.mcp?.mandatory).toBe(true);
+      expect(sessionMgmt?.selection?.mcp?.autoInclude).toBe(true);
     });
 
     it('should have simulator as default-enabled workflow', () => {

@@ -61,6 +61,12 @@ predicates: string[]    # Predicate names for visibility filtering (default: [])
 routing:                # Daemon routing hints
   stateful: boolean     # Tool maintains state (default: false)
   daemonAffinity: enum  # 'preferred' or 'required' (optional)
+annotations:            # MCP tool annotations (hints for clients)
+  title: string         # Human-readable title (optional)
+  readOnlyHint: boolean # Tool only reads data (optional)
+  destructiveHint: boolean # Tool may modify/delete data (optional)
+  idempotentHint: boolean  # Safe to retry (optional)
+  openWorldHint: boolean   # May access external resources (optional)
 ```
 
 ### Example: Basic Tool
@@ -79,6 +85,9 @@ predicates: []
 routing:
   stateful: false
   daemonAffinity: preferred
+annotations:
+  title: "List Simulators"
+  readOnlyHint: true
 ```
 
 ### Example: Tool with Predicates
@@ -136,7 +145,6 @@ availability:           # Per-runtime availability flags
   daemon: boolean       # Available via daemon (default: true)
 selection:              # MCP selection rules
   mcp:
-    mandatory: boolean    # Always included, cannot be disabled (default: false)
     defaultEnabled: boolean  # Enabled when config.enabledWorkflows is empty (default: false)
     autoInclude: boolean  # Include when predicates pass, even if not requested (default: false)
 predicates: string[]    # Predicate names for visibility filtering (default: [])
@@ -154,7 +162,6 @@ availability:
   daemon: true
 selection:
   mcp:
-    mandatory: false
     defaultEnabled: true   # Enabled by default
     autoInclude: false
 predicates: []
@@ -179,7 +186,6 @@ availability:
   daemon: true
 selection:
   mcp:
-    mandatory: false
     defaultEnabled: false
     autoInclude: true      # Auto-included when predicates pass
 predicates:
@@ -200,7 +206,6 @@ availability:
   daemon: false
 selection:
   mcp:
-    mandatory: false
     defaultEnabled: false
     autoInclude: true
 predicates:
@@ -226,6 +231,11 @@ tools:
 | `predicates` | string[] | No | `[]` | Visibility predicates (all must pass) |
 | `routing.stateful` | boolean | No | `false` | Tool maintains state |
 | `routing.daemonAffinity` | enum | No | - | `'preferred'` or `'required'` |
+| `annotations.title` | string | No | - | Human-readable title |
+| `annotations.readOnlyHint` | boolean | No | - | Tool only reads data |
+| `annotations.destructiveHint` | boolean | No | - | Tool may modify/delete data |
+| `annotations.idempotentHint` | boolean | No | - | Safe to retry |
+| `annotations.openWorldHint` | boolean | No | - | May access external resources |
 
 ### Workflow Fields
 
@@ -238,7 +248,6 @@ tools:
 | `availability.mcp` | boolean | No | `true` | Available via MCP |
 | `availability.cli` | boolean | No | `true` | Available via CLI |
 | `availability.daemon` | boolean | No | `true` | Available via daemon |
-| `selection.mcp.mandatory` | boolean | No | `false` | Cannot be disabled |
 | `selection.mcp.defaultEnabled` | boolean | No | `false` | Enabled when no workflows configured |
 | `selection.mcp.autoInclude` | boolean | No | `false` | Auto-include when predicates pass |
 | `predicates` | string[] | No | `[]` | Visibility predicates (all must pass) |
@@ -257,8 +266,10 @@ build/mcp/tools/<category>/<tool_name>.js
 ```
 
 The module must export either:
-1. **Named exports** (preferred): `{ schema, handler, annotations? }`
-2. **Legacy default export**: `export default { name, schema, handler, annotations? }`
+1. **Named exports** (preferred): `{ schema, handler }`
+2. **Legacy default export**: `export default { schema, handler }`
+
+Note: `name`, `description`, and `annotations` are defined in the YAML manifest, not the module.
 
 Example module structure:
 ```typescript
@@ -273,11 +284,6 @@ export const schema = z.object({
 export async function handler(params: z.infer<typeof schema>) {
   // Implementation
 }
-
-export const annotations = {
-  title: 'Build for Simulator',
-  // ...
-};
 ```
 
 ## Naming Conventions
@@ -311,6 +317,8 @@ Predicates control visibility based on runtime context. All predicates in the ar
 |-----------|-------------|
 | `debugEnabled` | Show only when `config.debug` is `true` |
 | `experimentalWorkflowDiscoveryEnabled` | Show only when experimental workflow discovery is enabled |
+| `runningUnderXcodeAgent` | Show only when running under Xcode's coding agent |
+| `requiresXcodeTools` | Show only when Xcode Tools bridge is active |
 | `hideWhenXcodeAgentMode` | Hide when running under Xcode agent AND Xcode Tools bridge is active |
 | `always` | Always visible (explicit documentation) |
 | `never` | Never visible (temporarily disable) |
@@ -346,25 +354,25 @@ export const PREDICATES: Record<string, PredicateFn> = {
 
 For MCP runtime, workflows are selected based on these rules (in order):
 
-1. **Mandatory workflows** (`mandatory: true`) are always included
+1. **Auto-include workflows** (`autoInclude: true`) when their predicates pass
 2. **Explicitly requested workflows** from `config.enabledWorkflows`
 3. **Default workflows** (`defaultEnabled: true`) when `config.enabledWorkflows` is empty
-4. **Auto-include workflows** (`autoInclude: true`) when their predicates pass
+4. All selected workflows are filtered by availability + predicates
 
 ### Selection Examples
 
 ```yaml
-# Always included regardless of config
+# Always included (autoInclude with no predicates = always passes)
 selection:
   mcp:
-    mandatory: true
+    autoInclude: true
 
-# Enabled by default, can be disabled
+# Enabled by default when no workflows configured
 selection:
   mcp:
     defaultEnabled: true
 
-# Auto-included when predicates pass (e.g., debug mode)
+# Auto-included only when predicates pass (e.g., debug mode)
 selection:
   mcp:
     autoInclude: true
@@ -418,7 +426,7 @@ At startup, tools are registered dynamically from manifests:
 
 2. selectWorkflowsForMcp(workflows, requestedWorkflows, ctx)
    └── Filters workflows by availability (mcp: true)
-   └── Applies selection rules (mandatory, defaultEnabled, autoInclude)
+   └── Applies selection rules (defaultEnabled, autoInclude)
    └── Evaluates predicates against context
 
 3. For each selected workflow:

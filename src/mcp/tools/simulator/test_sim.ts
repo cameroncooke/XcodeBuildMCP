@@ -122,29 +122,22 @@ const publicSchemaObject = baseSchemaObject.omit({
   preferXcodebuild: true,
 } as const);
 
-export default {
-  name: 'test_sim',
-  description: 'Test on iOS sim.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Test Simulator',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<TestSimulatorParams>({
-    internalSchema: testSimulatorSchema as unknown as z.ZodType<TestSimulatorParams, unknown>,
-    logicFunction: test_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
-    ],
-    exclusivePairs: [
-      ['projectPath', 'workspacePath'],
-      ['simulatorId', 'simulatorName'],
-    ],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<TestSimulatorParams>({
+  internalSchema: testSimulatorSchema as unknown as z.ZodType<TestSimulatorParams, unknown>,
+  logicFunction: test_simLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['scheme'], message: 'scheme is required' },
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+    { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+  ],
+  exclusivePairs: [
+    ['projectPath', 'workspacePath'],
+    ['simulatorId', 'simulatorName'],
+  ],
+});

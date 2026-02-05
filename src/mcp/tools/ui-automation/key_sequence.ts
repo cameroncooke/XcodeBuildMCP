@@ -113,32 +113,22 @@ const publicSchemaObject = z.strictObject(
   keySequenceSchema.omit({ simulatorId: true } as const).shape,
 );
 
-export default {
-  name: 'key_sequence',
-  description: 'Press a sequence of keys by their keycodes.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: keySequenceSchema,
-  }),
-  annotations: {
-    title: 'Key Sequence',
-    destructiveHint: true,
-  },
-  cli: {
-    daemonAffinity: 'preferred',
-  },
-  handler: createSessionAwareTool<KeySequenceParams>({
-    internalSchema: keySequenceSchema as unknown as z.ZodType<KeySequenceParams, unknown>,
-    logicFunction: (params: KeySequenceParams, executor: CommandExecutor) =>
-      key_sequenceLogic(params, executor, {
-        getAxePath,
-        getBundledAxeEnvironment,
-        createAxeNotAvailableResponse,
-      }),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: keySequenceSchema,
+});
+
+export const handler = createSessionAwareTool<KeySequenceParams>({
+  internalSchema: keySequenceSchema as unknown as z.ZodType<KeySequenceParams, unknown>,
+  logicFunction: (params: KeySequenceParams, executor: CommandExecutor) =>
+    key_sequenceLogic(params, executor, {
+      getAxePath,
+      getBundledAxeEnvironment,
+      createAxeNotAvailableResponse,
+    }),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(

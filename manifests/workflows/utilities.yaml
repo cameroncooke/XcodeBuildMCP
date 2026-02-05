@@ -7,8 +7,7 @@ availability:
   daemon: true
 selection:
   mcp:
-    mandatory: false
-    defaultEnabled: true
+    defaultEnabled: false
     autoInclude: false
 predicates: []
 tools:

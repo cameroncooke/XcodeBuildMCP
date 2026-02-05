@@ -4,9 +4,9 @@
  * Using dependency injection for deterministic testing
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
-import doctor, { runDoctor, type DoctorDependencies } from '../doctor.ts';
+import { schema, runDoctor, type DoctorDependencies } from '../doctor.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 
 function createDeps(overrides?: Partial<DoctorDependencies>): DoctorDependencies {
@@ -122,33 +122,19 @@ function createDeps(overrides?: Partial<DoctorDependencies>): DoctorDependencies
 }
 
 describe('doctor tool', () => {
-  // Reset any state if needed
-
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(doctor.name).toBe('doctor');
-    });
-
-    it('should have correct description', () => {
-      expect(doctor.description).toBe('MCP environment info.');
-    });
-
-    it('should have handler function', () => {
-      expect(typeof doctor.handler).toBe('function');
-    });
-
+  describe('Schema Validation', () => {
     it('should have correct schema with enabled boolean field', () => {
-      const schema = z.object(doctor.schema);
+      const schemaObj = z.object(schema);
 
       // Valid inputs
-      expect(schema.safeParse({ enabled: true }).success).toBe(true);
-      expect(schema.safeParse({ enabled: false }).success).toBe(true);
-      expect(schema.safeParse({}).success).toBe(true); // enabled is optional
+      expect(schemaObj.safeParse({ enabled: true }).success).toBe(true);
+      expect(schemaObj.safeParse({ enabled: false }).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true); // enabled is optional
 
       // Invalid inputs
-      expect(schema.safeParse({ enabled: 'true' }).success).toBe(false);
-      expect(schema.safeParse({ enabled: 1 }).success).toBe(false);
-      expect(schema.safeParse({ enabled: null }).success).toBe(false);
+      expect(schemaObj.safeParse({ enabled: 'true' }).success).toBe(false);
+      expect(schemaObj.safeParse({ enabled: 1 }).success).toBe(false);
+      expect(schemaObj.safeParse({ enabled: null }).success).toBe(false);
     });
   });
 

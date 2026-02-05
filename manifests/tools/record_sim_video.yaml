@@ -11,3 +11,6 @@ predicates: []
 routing:
   stateful: true
   daemonAffinity: preferred
+annotations:
+  title: "Record Simulator Video"
+  destructiveHint: true

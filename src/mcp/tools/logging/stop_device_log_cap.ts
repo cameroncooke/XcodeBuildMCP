@@ -326,22 +326,12 @@ export async function stopDeviceLogCapture(
   return { logContent };
 }
 
-export default {
-  name: 'stop_device_log_cap',
-  description: 'Stop device app and return logs.',
-  cli: {
-    stateful: true,
+export const schema = stopDeviceLogCapSchema.shape; // MCP SDK compatibility
+
+export const handler = createTypedTool(
+  stopDeviceLogCapSchema,
+  (params: StopDeviceLogCapParams) => {
+    return stop_device_log_capLogic(params, getDefaultFileSystemExecutor());
   },
-  schema: stopDeviceLogCapSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Stop Device and Return Logs',
-    destructiveHint: true,
-  },
-  handler: createTypedTool(
-    stopDeviceLogCapSchema,
-    (params: StopDeviceLogCapParams) => {
-      return stop_device_log_capLogic(params, getDefaultFileSystemExecutor());
-    },
-    getDefaultCommandExecutor,
-  ),
-};
+  getDefaultCommandExecutor,
+);

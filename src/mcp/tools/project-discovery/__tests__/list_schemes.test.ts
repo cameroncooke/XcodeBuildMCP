@@ -10,7 +10,7 @@ import {
   createMockCommandResponse,
   createMockExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import plugin, { listSchemesLogic } from '../list_schemes.ts';
+import { schema, handler, listSchemesLogic } from '../list_schemes.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('list_schemes plugin', () => {
@@ -19,23 +19,17 @@ describe('list_schemes plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(plugin.name).toBe('list_schemes');
-    });
-
-    it('should have correct description', () => {
-      expect(plugin.description).toBe('List Xcode schemes.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof plugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose an empty public schema', () => {
-      const schema = z.strictObject(plugin.schema);
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(false);
-      expect(Object.keys(plugin.schema)).toEqual([]);
+      const schemaObj = z.strictObject(schema);
+      expect(schemaObj.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(
+        false,
+      );
+      expect(Object.keys(schema)).toEqual([]);
     });
   });
 
@@ -250,7 +244,7 @@ describe('list_schemes plugin', () => {
     it('should handle validation when testing with missing projectPath via plugin handler', async () => {
       // Note: Direct logic function calls bypass Zod validation, so we test the actual plugin handler
       // to verify Zod validation works properly. The createTypedTool wrapper handles validation.
-      const result = await plugin.handler({});
+      const result = await handler({});
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
       expect(result.content[0].text).toContain('Provide a project or workspace');
@@ -259,14 +253,14 @@ describe('list_schemes plugin', () => {
 
   describe('XOR Validation', () => {
     it('should error when neither projectPath nor workspacePath provided', async () => {
-      const result = await plugin.handler({});
+      const result = await handler({});
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
       expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
-      const result = await plugin.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
       });
@@ -275,7 +269,7 @@ describe('list_schemes plugin', () => {
     });
 
     it('should handle empty strings as undefined', async () => {
-      const result = await plugin.handler({
+      const result = await handler({
         projectPath: '',
         workspacePath: '',
       });

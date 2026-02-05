@@ -11,3 +11,6 @@ predicates: []
 routing:
   stateful: true
   daemonAffinity: required
+annotations:
+  title: "Swift Package Run"
+  destructiveHint: true

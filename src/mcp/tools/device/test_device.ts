@@ -286,33 +286,26 @@ export async function testDeviceLogic(
   }
 }
 
-export default {
-  name: 'test_device',
-  description: 'Test on device.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Test Device',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<TestDeviceParams>({
-    internalSchema: testDeviceSchema as unknown as z.ZodType<TestDeviceParams, unknown>,
-    logicFunction: (params: TestDeviceParams, executor: CommandExecutor) =>
-      testDeviceLogic(
-        {
-          ...params,
-          platform: params.platform ?? 'iOS',
-        },
-        executor,
-        getDefaultFileSystemExecutor(),
-      ),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme', 'deviceId'], message: 'Provide scheme and deviceId' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<TestDeviceParams>({
+  internalSchema: testDeviceSchema as unknown as z.ZodType<TestDeviceParams, unknown>,
+  logicFunction: (params: TestDeviceParams, executor: CommandExecutor) =>
+    testDeviceLogic(
+      {
+        ...params,
+        platform: params.platform ?? 'iOS',
+      },
+      executor,
+      getDefaultFileSystemExecutor(),
+    ),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['scheme', 'deviceId'], message: 'Provide scheme and deviceId' },
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+  ],
+  exclusivePairs: [['projectPath', 'workspacePath']],
+});

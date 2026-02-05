@@ -89,20 +89,13 @@ export async function swift_package_testLogic(
   }
 }
 
-export default {
-  name: 'swift_package_test',
-  description: 'Run swift package target tests.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }), // MCP SDK compatibility
-  annotations: {
-    title: 'Swift Package Test',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<SwiftPackageTestParams>({
-    internalSchema: swiftPackageTestSchema,
-    logicFunction: swift_package_testLogic,
-    getExecutor: getDefaultCommandExecutor,
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<SwiftPackageTestParams>({
+  internalSchema: swiftPackageTestSchema,
+  logicFunction: swift_package_testLogic,
+  getExecutor: getDefaultCommandExecutor,
+});

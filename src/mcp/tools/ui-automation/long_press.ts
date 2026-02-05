@@ -130,32 +130,22 @@ export async function long_pressLogic(
   }
 }
 
-export default {
-  name: 'long_press',
-  description: 'Long press at coords.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: longPressSchema,
-  }),
-  annotations: {
-    title: 'Long Press',
-    destructiveHint: true,
-  },
-  cli: {
-    daemonAffinity: 'preferred',
-  },
-  handler: createSessionAwareTool<LongPressParams>({
-    internalSchema: longPressSchema as unknown as z.ZodType<LongPressParams, unknown>,
-    logicFunction: (params: LongPressParams, executor: CommandExecutor) =>
-      long_pressLogic(params, executor, {
-        getAxePath,
-        getBundledAxeEnvironment,
-        createAxeNotAvailableResponse,
-      }),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: longPressSchema,
+});
+
+export const handler = createSessionAwareTool<LongPressParams>({
+  internalSchema: longPressSchema as unknown as z.ZodType<LongPressParams, unknown>,
+  logicFunction: (params: LongPressParams, executor: CommandExecutor) =>
+    long_pressLogic(params, executor, {
+      getAxePath,
+      getBundledAxeEnvironment,
+      createAxeNotAvailableResponse,
+    }),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(

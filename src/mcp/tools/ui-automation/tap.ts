@@ -180,32 +180,22 @@ export async function tapLogic(
   }
 }
 
-export default {
-  name: 'tap',
-  description: 'Tap coordinate or element.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseTapSchema,
-  }),
-  annotations: {
-    title: 'Tap',
-    destructiveHint: true,
-  },
-  cli: {
-    daemonAffinity: 'preferred',
-  },
-  handler: createSessionAwareTool<TapParams>({
-    internalSchema: tapSchema as unknown as z.ZodType<TapParams, unknown>,
-    logicFunction: (params: TapParams, executor: CommandExecutor) =>
-      tapLogic(params, executor, {
-        getAxePath,
-        getBundledAxeEnvironment,
-        createAxeNotAvailableResponse,
-      }),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseTapSchema,
+});
+
+export const handler = createSessionAwareTool<TapParams>({
+  internalSchema: tapSchema as unknown as z.ZodType<TapParams, unknown>,
+  logicFunction: (params: TapParams, executor: CommandExecutor) =>
+    tapLogic(params, executor, {
+      getAxePath,
+      getBundledAxeEnvironment,
+      createAxeNotAvailableResponse,
+    }),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(

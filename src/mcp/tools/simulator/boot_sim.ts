@@ -83,21 +83,14 @@ export async function boot_simLogic(
   }
 }
 
-export default {
-  name: 'boot_sim',
-  description: 'Boot iOS simulator.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: bootSimSchemaObject,
-  }),
-  annotations: {
-    title: 'Boot Simulator',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<BootSimParams>({
-    internalSchema: bootSimSchemaObject as unknown as z.ZodType<BootSimParams, unknown>,
-    logicFunction: boot_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: bootSimSchemaObject,
+});
+
+export const handler = createSessionAwareTool<BootSimParams>({
+  internalSchema: bootSimSchemaObject as unknown as z.ZodType<BootSimParams, unknown>,
+  logicFunction: boot_simLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});

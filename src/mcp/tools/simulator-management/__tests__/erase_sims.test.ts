@@ -1,26 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
-import eraseSims, { erase_simsLogic } from '../erase_sims.ts';
+import { schema, erase_simsLogic } from '../erase_sims.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 
 describe('erase_sims tool (single simulator)', () => {
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(eraseSims.name).toBe('erase_sims');
-    });
-
-    it('should have correct description', () => {
-      expect(eraseSims.description).toBe('Erase simulator.');
-    });
-
-    it('should have handler function', () => {
-      expect(typeof eraseSims.handler).toBe('function');
-    });
-
+  describe('Schema Validation', () => {
     it('should validate schema fields (shape only)', () => {
-      const schema = z.object(eraseSims.schema);
-      expect(schema.safeParse({ shutdownFirst: true }).success).toBe(true);
-      expect(schema.safeParse({}).success).toBe(true);
+      const schemaObj = z.object(schema);
+      expect(schemaObj.safeParse({ shutdownFirst: true }).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true);
     });
   });
 

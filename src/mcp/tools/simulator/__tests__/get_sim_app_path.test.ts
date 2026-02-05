@@ -8,7 +8,7 @@ import { ChildProcess } from 'child_process';
 import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import getSimAppPath, { get_sim_app_pathLogic } from '../get_sim_app_path.ts';
+import { schema, handler, get_sim_app_pathLogic } from '../get_sim_app_path.ts';
 import type { CommandExecutor } from '../../../../utils/CommandExecutor.ts';
 
 describe('get_sim_app_path tool', () => {
@@ -17,33 +17,25 @@ describe('get_sim_app_path tool', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(getSimAppPath.name).toBe('get_sim_app_path');
-    });
-
-    it('should have concise description', () => {
-      expect(getSimAppPath.description).toBe('Get sim built app path.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof getSimAppPath.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose only platform in public schema', () => {
-      const schema = z.object(getSimAppPath.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({ platform: 'iOS Simulator' }).success).toBe(true);
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(schema.safeParse({ platform: 'iOS' }).success).toBe(false);
+      expect(schemaObj.safeParse({ platform: 'iOS Simulator' }).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(false);
+      expect(schemaObj.safeParse({ platform: 'iOS' }).success).toBe(false);
 
-      const schemaKeys = Object.keys(getSimAppPath.schema).sort();
+      const schemaKeys = Object.keys(schema).sort();
       expect(schemaKeys).toEqual(['platform']);
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require scheme when not provided', async () => {
-      const result = await getSimAppPath.handler({
+      const result = await handler({
         platform: 'iOS Simulator',
       });
 
@@ -54,7 +46,7 @@ describe('get_sim_app_path tool', () => {
     it('should require project or workspace when scheme default exists', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
-      const result = await getSimAppPath.handler({
+      const result = await handler({
         platform: 'iOS Simulator',
       });
 
@@ -68,7 +60,7 @@ describe('get_sim_app_path tool', () => {
         projectPath: '/path/to/project.xcodeproj',
       });
 
-      const result = await getSimAppPath.handler({
+      const result = await handler({
         platform: 'iOS Simulator',
       });
 
@@ -79,7 +71,7 @@ describe('get_sim_app_path tool', () => {
     it('should error when both projectPath and workspacePath provided explicitly', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
-      const result = await getSimAppPath.handler({
+      const result = await handler({
         platform: 'iOS Simulator',
         projectPath: '/path/project.xcodeproj',
         workspacePath: '/path/workspace.xcworkspace',
@@ -97,7 +89,7 @@ describe('get_sim_app_path tool', () => {
         workspacePath: '/path/to/workspace.xcworkspace',
       });
 
-      const result = await getSimAppPath.handler({
+      const result = await handler({
         platform: 'iOS Simulator',
         simulatorId: 'SIM-UUID',
         simulatorName: 'iPhone 16',

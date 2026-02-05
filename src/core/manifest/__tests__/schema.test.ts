@@ -96,7 +96,6 @@ describe('schema', () => {
         availability: { mcp: true, cli: true, daemon: true },
         selection: {
           mcp: {
-            mandatory: false,
             defaultEnabled: true,
             autoInclude: false,
           },
@@ -143,7 +142,7 @@ describe('schema', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should parse mandatory workflow', () => {
+    it('should parse autoInclude workflow', () => {
       const input = {
         id: 'session-management',
         title: 'Session Management',
@@ -151,7 +150,6 @@ describe('schema', () => {
         availability: { mcp: true, cli: false, daemon: false },
         selection: {
           mcp: {
-            mandatory: true,
             defaultEnabled: true,
             autoInclude: true,
           },
@@ -162,7 +160,7 @@ describe('schema', () => {
       const result = workflowManifestEntrySchema.safeParse(input);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.selection?.mcp?.mandatory).toBe(true);
+        expect(result.data.selection?.mcp?.autoInclude).toBe(true);
         expect(result.data.availability.cli).toBe(false);
       }
     });

@@ -13,37 +13,30 @@ import {
   createMockCommandResponse,
   createMockFileSystemExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import launchMacApp, { launch_mac_appLogic } from '../launch_mac_app.ts';
+import { schema, handler } from '../launch_mac_app.ts';
+import { launch_mac_appLogic } from '../launch_mac_app.ts';
 
 describe('launch_mac_app plugin', () => {
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(launchMacApp.name).toBe('launch_mac_app');
-    });
-
-    it('should have correct description', () => {
-      expect(launchMacApp.description).toBe('Launch macOS app.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof launchMacApp.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema with valid inputs', () => {
-      const schema = z.object(launchMacApp.schema);
+      const zodSchema = z.object(schema);
       expect(
-        schema.safeParse({
+        zodSchema.safeParse({
           appPath: '/path/to/MyApp.app',
         }).success,
       ).toBe(true);
       expect(
-        schema.safeParse({
+        zodSchema.safeParse({
           appPath: '/Applications/Calculator.app',
           args: ['--debug'],
         }).success,
       ).toBe(true);
       expect(
-        schema.safeParse({
+        zodSchema.safeParse({
           appPath: '/path/to/MyApp.app',
           args: ['--debug', '--verbose'],
         }).success,
@@ -51,13 +44,13 @@ describe('launch_mac_app plugin', () => {
     });
 
     it('should validate schema with invalid inputs', () => {
-      const schema = z.object(launchMacApp.schema);
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(schema.safeParse({ appPath: null }).success).toBe(false);
-      expect(schema.safeParse({ appPath: 123 }).success).toBe(false);
-      expect(schema.safeParse({ appPath: '/path/to/MyApp.app', args: 'not-array' }).success).toBe(
-        false,
-      );
+      const zodSchema = z.object(schema);
+      expect(zodSchema.safeParse({}).success).toBe(false);
+      expect(zodSchema.safeParse({ appPath: null }).success).toBe(false);
+      expect(zodSchema.safeParse({ appPath: 123 }).success).toBe(false);
+      expect(
+        zodSchema.safeParse({ appPath: '/path/to/MyApp.app', args: 'not-array' }).success,
+      ).toBe(false);
     });
   });
 

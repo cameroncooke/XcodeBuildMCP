@@ -671,27 +671,14 @@ export async function start_device_log_capLogic(
   };
 }
 
-export default {
-  name: 'start_device_log_cap',
-  description: 'Start device log capture.',
-  cli: {
-    stateful: true,
-  },
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: startDeviceLogCapSchema,
-  }),
-  annotations: {
-    title: 'Start Device Log Capture',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<StartDeviceLogCapParams>({
-    internalSchema: startDeviceLogCapSchema as unknown as z.ZodType<
-      StartDeviceLogCapParams,
-      unknown
-    >,
-    logicFunction: start_device_log_capLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['deviceId', 'bundleId'], message: 'Provide deviceId and bundleId' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: startDeviceLogCapSchema,
+});
+
+export const handler = createSessionAwareTool<StartDeviceLogCapParams>({
+  internalSchema: startDeviceLogCapSchema as unknown as z.ZodType<StartDeviceLogCapParams, unknown>,
+  logicFunction: start_device_log_capLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['deviceId', 'bundleId'], message: 'Provide deviceId and bundleId' }],
+});

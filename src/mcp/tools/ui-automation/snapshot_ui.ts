@@ -136,33 +136,22 @@ const publicSchemaObject = z.strictObject(
   snapshotUiSchema.omit({ simulatorId: true } as const).shape,
 );
 
-export default {
-  name: 'snapshot_ui',
-  description:
-    'Print view hierarchy with precise view coordinates (x, y, width, height) for visible elements.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: snapshotUiSchema,
-  }),
-  annotations: {
-    title: 'Snapshot UI',
-    readOnlyHint: true,
-  },
-  cli: {
-    daemonAffinity: 'preferred',
-  },
-  handler: createSessionAwareTool<SnapshotUiParams>({
-    internalSchema: snapshotUiSchema as unknown as z.ZodType<SnapshotUiParams, unknown>,
-    logicFunction: (params: SnapshotUiParams, executor: CommandExecutor) =>
-      snapshot_uiLogic(params, executor, {
-        getAxePath,
-        getBundledAxeEnvironment,
-        createAxeNotAvailableResponse,
-      }),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: snapshotUiSchema,
+});
+
+export const handler = createSessionAwareTool<SnapshotUiParams>({
+  internalSchema: snapshotUiSchema as unknown as z.ZodType<SnapshotUiParams, unknown>,
+  logicFunction: (params: SnapshotUiParams, executor: CommandExecutor) =>
+    snapshot_uiLogic(params, executor, {
+      getAxePath,
+      getBundledAxeEnvironment,
+      createAxeNotAvailableResponse,
+    }),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(

@@ -12,3 +12,6 @@ predicates:
 routing:
   stateful: false
   daemonAffinity: preferred
+annotations:
+  title: "Build Run Simulator"
+  destructiveHint: true

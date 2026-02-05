@@ -327,23 +327,16 @@ export async function screenshotLogic(
   }
 }
 
-export default {
-  name: 'screenshot',
-  description: 'Capture screenshot.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: screenshotSchema,
-  }),
-  annotations: {
-    title: 'Screenshot',
-    readOnlyHint: true,
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: screenshotSchema,
+});
+
+export const handler = createSessionAwareTool<ScreenshotParams>({
+  internalSchema: screenshotSchema as unknown as z.ZodType<ScreenshotParams, unknown>,
+  logicFunction: (params: ScreenshotParams, executor: CommandExecutor) => {
+    return screenshotLogic(params, executor);
   },
-  handler: createSessionAwareTool<ScreenshotParams>({
-    internalSchema: screenshotSchema as unknown as z.ZodType<ScreenshotParams, unknown>,
-    logicFunction: (params: ScreenshotParams, executor: CommandExecutor) => {
-      return screenshotLogic(params, executor);
-    },
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});

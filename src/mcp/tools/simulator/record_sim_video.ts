@@ -225,24 +225,14 @@ const publicSchemaObject = z.strictObject(
   recordSimVideoSchemaObject.omit({ simulatorId: true } as const).shape,
 );
 
-export default {
-  name: 'record_sim_video',
-  description: 'Record sim video.',
-  cli: {
-    stateful: true,
-  },
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: recordSimVideoSchemaObject,
-  }),
-  annotations: {
-    title: 'Record Simulator Video',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<RecordSimVideoParams>({
-    internalSchema: recordSimVideoSchema as unknown as z.ZodType<RecordSimVideoParams, unknown>,
-    logicFunction: record_sim_videoLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: recordSimVideoSchemaObject,
+});
+
+export const handler = createSessionAwareTool<RecordSimVideoParams>({
+  internalSchema: recordSimVideoSchema as unknown as z.ZodType<RecordSimVideoParams, unknown>,
+  logicFunction: record_sim_videoLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});

@@ -6,30 +6,22 @@ import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
-import snapshotUIPlugin, { snapshot_uiLogic } from '../snapshot_ui.ts';
+import { schema, handler, snapshot_uiLogic } from '../snapshot_ui.ts';
 
 describe('Snapshot UI Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(snapshotUIPlugin.name).toBe('snapshot_ui');
-    });
-
-    it('should have correct description', () => {
-      expect(snapshotUIPlugin.description).toBe(
-        'Print view hierarchy with precise view coordinates (x, y, width, height) for visible elements.',
-      );
-    });
-
     it('should have handler function', () => {
-      expect(typeof snapshotUIPlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose public schema without simulatorId field', () => {
-      const schema = z.object(snapshotUIPlugin.schema);
+      const schemaObject = z.object(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(schemaObject.safeParse({}).success).toBe(true);
 
-      const withSimId = schema.safeParse({ simulatorId: '12345678-1234-4234-8234-123456789012' });
+      const withSimId = schemaObject.safeParse({
+        simulatorId: '12345678-1234-4234-8234-123456789012',
+      });
       expect(withSimId.success).toBe(true);
       expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });
@@ -37,7 +29,7 @@ describe('Snapshot UI Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should surface session default requirement when simulatorId is missing', async () => {
-      const result = await snapshotUIPlugin.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
@@ -46,7 +38,7 @@ describe('Snapshot UI Plugin', () => {
 
     it('should handle invalid simulatorId format via schema validation', async () => {
       // Test the actual handler with invalid UUID format
-      const result = await snapshotUIPlugin.handler({
+      const result = await handler({
         simulatorId: 'invalid-uuid-format',
       });
 

@@ -136,18 +136,11 @@ export async function get_app_bundle_idLogic(
   }
 }
 
-export default {
-  name: 'get_app_bundle_id',
-  description: 'Extract bundle id from .app.',
-  schema: getAppBundleIdSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Get App Bundle ID',
-    readOnlyHint: true,
-  },
-  handler: createTypedTool(
-    getAppBundleIdSchema,
-    (params: GetAppBundleIdParams) =>
-      get_app_bundle_idLogic(params, getDefaultCommandExecutor(), getDefaultFileSystemExecutor()),
-    getDefaultCommandExecutor,
-  ),
-};
+export const schema = getAppBundleIdSchema.shape;
+
+export const handler = createTypedTool(
+  getAppBundleIdSchema,
+  (params: GetAppBundleIdParams) =>
+    get_app_bundle_idLogic(params, getDefaultCommandExecutor(), getDefaultFileSystemExecutor()),
+  getDefaultCommandExecutor,
+);

@@ -20,13 +20,10 @@ export async function sessionClearDefaultsLogic(params: Params): Promise<ToolRes
   return { content: [{ type: 'text', text: 'Session defaults cleared' }], isError: false };
 }
 
-export default {
-  name: 'session-clear-defaults',
-  description: 'Clear session defaults.',
-  schema: schemaObj.shape,
-  annotations: {
-    title: 'Clear Session Defaults',
-    destructiveHint: true,
-  },
-  handler: createTypedTool(schemaObj, sessionClearDefaultsLogic, getDefaultCommandExecutor),
-};
+export const schema = schemaObj.shape;
+
+export const handler = createTypedTool(
+  schemaObj,
+  sessionClearDefaultsLogic,
+  getDefaultCommandExecutor,
+);

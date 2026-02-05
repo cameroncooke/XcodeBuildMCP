@@ -11,7 +11,7 @@ import {
 } from '../../../../test-utils/mock-executors.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import buildRunSim, { build_run_simLogic } from '../build_run_sim.ts';
+import { schema, handler, build_run_simLogic } from '../build_run_sim.ts';
 
 describe('build_run_sim tool', () => {
   beforeEach(() => {
@@ -19,34 +19,26 @@ describe('build_run_sim tool', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(buildRunSim.name).toBe('build_run_sim');
-    });
-
-    it('should have correct description', () => {
-      expect(buildRunSim.description).toBe('Build and run iOS sim.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof buildRunSim.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose only non-session fields in public schema', () => {
-      const schema = z.strictObject(buildRunSim.schema);
+      const schemaObj = z.strictObject(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true);
 
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           extraArgs: ['--verbose'],
         }).success,
       ).toBe(true);
 
-      expect(schema.safeParse({ derivedDataPath: '/path/to/derived' }).success).toBe(false);
-      expect(schema.safeParse({ extraArgs: [123] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: false }).success).toBe(false);
+      expect(schemaObj.safeParse({ derivedDataPath: '/path/to/derived' }).success).toBe(false);
+      expect(schemaObj.safeParse({ extraArgs: [123] }).success).toBe(false);
+      expect(schemaObj.safeParse({ preferXcodebuild: false }).success).toBe(false);
 
-      const schemaKeys = Object.keys(buildRunSim.schema).sort();
+      const schemaKeys = Object.keys(schema).sort();
       expect(schemaKeys).toEqual(['extraArgs']);
       expect(schemaKeys).not.toContain('scheme');
       expect(schemaKeys).not.toContain('simulatorName');
@@ -503,7 +495,7 @@ describe('build_run_sim tool', () => {
 
   describe('XOR Validation', () => {
     it('should error when neither projectPath nor workspacePath provided', async () => {
-      const result = await buildRunSim.handler({
+      const result = await handler({
         scheme: 'MyScheme',
         simulatorName: 'iPhone 16',
       });
@@ -513,7 +505,7 @@ describe('build_run_sim tool', () => {
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
-      const result = await buildRunSim.handler({
+      const result = await handler({
         projectPath: '/path/project.xcodeproj',
         workspacePath: '/path/workspace.xcworkspace',
         scheme: 'MyScheme',

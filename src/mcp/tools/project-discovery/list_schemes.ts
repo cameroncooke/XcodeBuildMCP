@@ -143,24 +143,17 @@ const publicSchemaObject = baseSchemaObject.omit({
   workspacePath: true,
 } as const);
 
-export default {
-  name: 'list_schemes',
-  description: 'List Xcode schemes.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'List Schemes',
-    readOnlyHint: true,
-  },
-  handler: createSessionAwareTool<ListSchemesParams>({
-    internalSchema: listSchemesSchema as unknown as z.ZodType<ListSchemesParams, unknown>,
-    logicFunction: listSchemesLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<ListSchemesParams>({
+  internalSchema: listSchemesSchema as unknown as z.ZodType<ListSchemesParams, unknown>,
+  logicFunction: listSchemesLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+  ],
+  exclusivePairs: [['projectPath', 'workspacePath']],
+});

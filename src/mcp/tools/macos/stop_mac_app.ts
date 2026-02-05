@@ -75,13 +75,10 @@ export async function stop_mac_appLogic(
   }
 }
 
-export default {
-  name: 'stop_mac_app',
-  description: 'Stop macOS app.',
-  schema: stopMacAppSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Stop macOS App',
-    destructiveHint: true,
-  },
-  handler: createTypedTool(stopMacAppSchema, stop_mac_appLogic, getDefaultCommandExecutor),
-};
+export const schema = stopMacAppSchema.shape;
+
+export const handler = createTypedTool(
+  stopMacAppSchema,
+  stop_mac_appLogic,
+  getDefaultCommandExecutor,
+);

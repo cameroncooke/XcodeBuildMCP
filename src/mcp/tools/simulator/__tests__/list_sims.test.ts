@@ -5,8 +5,8 @@ import {
   createMockExecutor,
 } from '../../../../test-utils/mock-executors.ts';
 
-// Import the plugin and logic function
-import listSims, { list_simsLogic } from '../list_sims.ts';
+// Import the named exports and logic function
+import { schema, handler, list_simsLogic } from '../list_sims.ts';
 
 describe('list_sims tool', () => {
   let callHistory: Array<{
@@ -19,31 +19,23 @@ describe('list_sims tool', () => {
   callHistory = [];
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(listSims.name).toBe('list_sims');
-    });
-
-    it('should have correct description', () => {
-      expect(listSims.description).toBe('List iOS simulators.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof listSims.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should have correct schema with enabled boolean field', () => {
-      const schema = z.object(listSims.schema);
+      const schemaObj = z.object(schema);
 
       // Valid inputs
-      expect(schema.safeParse({ enabled: true }).success).toBe(true);
-      expect(schema.safeParse({ enabled: false }).success).toBe(true);
-      expect(schema.safeParse({ enabled: undefined }).success).toBe(true);
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({ enabled: true }).success).toBe(true);
+      expect(schemaObj.safeParse({ enabled: false }).success).toBe(true);
+      expect(schemaObj.safeParse({ enabled: undefined }).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true);
 
       // Invalid inputs
-      expect(schema.safeParse({ enabled: 'yes' }).success).toBe(false);
-      expect(schema.safeParse({ enabled: 1 }).success).toBe(false);
-      expect(schema.safeParse({ enabled: null }).success).toBe(false);
+      expect(schemaObj.safeParse({ enabled: 'yes' }).success).toBe(false);
+      expect(schemaObj.safeParse({ enabled: 1 }).success).toBe(false);
+      expect(schemaObj.safeParse({ enabled: null }).success).toBe(false);
     });
   });
 

@@ -22,10 +22,20 @@ export const PREDICATES: Record<string, PredicateFn> = {
     ctx.config.experimentalWorkflowDiscovery,
 
   /**
-   * Hide when running under Xcode agent mode AND Xcode Tools bridge is active.
-   * This implements the conflict policy from XCODE_IDE_TOOL_CONFLICTS.md:
-   * - When Xcode provides equivalent tools via mcpbridge, hide our versions
-   * - Outside Xcode or when bridge is inactive, show our tools
+   * Show only when running under Xcode's coding agent.
+   * Use for tools/workflows that require the Xcode environment.
+   */
+  runningUnderXcodeAgent: (ctx: PredicateContext): boolean => ctx.runningUnderXcode === true,
+
+  /**
+   * Show only when Xcode Tools bridge is available and active.
+   * Use for tools/workflows that require the Xcode Tools integration.
+   */
+  requiresXcodeTools: (ctx: PredicateContext): boolean => ctx.xcodeToolsActive === true,
+
+  /**
+   * Hide when running in Xcode agent mode (both under Xcode AND tools bridge active).
+   * Use for XcodeBuildMCP tools that conflict with Xcode's native equivalents.
    */
   hideWhenXcodeAgentMode: (ctx: PredicateContext): boolean =>
     !(ctx.runningUnderXcode && ctx.xcodeToolsActive),

@@ -81,21 +81,14 @@ export async function erase_simsLogic(
 
 const publicSchemaObject = eraseSimsSchema.omit({ simulatorId: true } as const).passthrough();
 
-export default {
-  name: 'erase_sims',
-  description: 'Erase simulator.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: eraseSimsSchema,
-  }),
-  annotations: {
-    title: 'Erase Simulators',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<EraseSimsParams>({
-    internalSchema: eraseSimsSchema as unknown as z.ZodType<EraseSimsParams>,
-    logicFunction: erase_simsLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: eraseSimsSchema,
+});
+
+export const handler = createSessionAwareTool<EraseSimsParams>({
+  internalSchema: eraseSimsSchema as unknown as z.ZodType<EraseSimsParams>,
+  logicFunction: erase_simsLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});

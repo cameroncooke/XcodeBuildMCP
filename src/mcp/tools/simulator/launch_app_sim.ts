@@ -217,25 +217,18 @@ const publicSchemaObject = z.strictObject(
   } as const).shape,
 );
 
-export default {
-  name: 'launch_app_sim',
-  description: 'Launch app on simulator.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Launch App Simulator',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<LaunchAppSimParams>({
-    internalSchema: launchAppSimSchema as unknown as z.ZodType<LaunchAppSimParams, unknown>,
-    logicFunction: launch_app_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
-      { allOf: ['bundleId'], message: 'bundleId is required' },
-    ],
-    exclusivePairs: [['simulatorId', 'simulatorName']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<LaunchAppSimParams>({
+  internalSchema: launchAppSimSchema as unknown as z.ZodType<LaunchAppSimParams, unknown>,
+  logicFunction: launch_app_simLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+    { allOf: ['bundleId'], message: 'bundleId is required' },
+  ],
+  exclusivePairs: [['simulatorId', 'simulatorName']],
+});

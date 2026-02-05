@@ -87,21 +87,14 @@ export async function stop_app_deviceLogic(
   }
 }
 
-export default {
-  name: 'stop_app_device',
-  description: 'Stop device app.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: stopAppDeviceSchema,
-  }),
-  annotations: {
-    title: 'Stop App Device',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<StopAppDeviceParams>({
-    internalSchema: stopAppDeviceSchema as unknown as z.ZodType<StopAppDeviceParams>,
-    logicFunction: stop_app_deviceLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: stopAppDeviceSchema,
+});
+
+export const handler = createSessionAwareTool<StopAppDeviceParams>({
+  internalSchema: stopAppDeviceSchema as unknown as z.ZodType<StopAppDeviceParams>,
+  logicFunction: stop_app_deviceLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],
+});

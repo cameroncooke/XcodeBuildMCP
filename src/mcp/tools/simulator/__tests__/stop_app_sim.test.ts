@@ -6,7 +6,7 @@ import {
 } from '../../../../test-utils/mock-executors.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import plugin, { stop_app_simLogic } from '../stop_app_sim.ts';
+import { schema, handler, stop_app_simLogic } from '../stop_app_sim.ts';
 
 describe('stop_app_sim tool', () => {
   beforeEach(() => {
@@ -14,20 +14,15 @@ describe('stop_app_sim tool', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should expose correct metadata', () => {
-      expect(plugin.name).toBe('stop_app_sim');
-      expect(plugin.description).toBe('Stop sim app.');
-    });
-
     it('should expose empty public schema', () => {
-      const schema = z.object(plugin.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
-      expect(schema.safeParse({ bundleId: 42 }).success).toBe(true);
-      expect(Object.keys(plugin.schema)).toEqual([]);
+      expect(schemaObj.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
+      expect(schemaObj.safeParse({ bundleId: 42 }).success).toBe(true);
+      expect(Object.keys(schema)).toEqual([]);
 
-      const withSessionDefaults = schema.safeParse({
+      const withSessionDefaults = schemaObj.safeParse({
         simulatorId: 'SIM-UUID',
         simulatorName: 'iPhone 16',
       });
@@ -40,7 +35,7 @@ describe('stop_app_sim tool', () => {
 
   describe('Handler Requirements', () => {
     it('should require simulator identifier when not provided', async () => {
-      const result = await plugin.handler({ bundleId: 'com.example.app' });
+      const result = await handler({ bundleId: 'com.example.app' });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
@@ -51,7 +46,7 @@ describe('stop_app_sim tool', () => {
     it('should require bundleId when simulatorId default exists', async () => {
       sessionStore.setDefaults({ simulatorId: 'SIM-UUID' });
 
-      const result = await plugin.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
@@ -59,7 +54,7 @@ describe('stop_app_sim tool', () => {
     });
 
     it('should reject mutually exclusive simulator parameters', async () => {
-      const result = await plugin.handler({
+      const result = await handler({
         simulatorId: 'SIM-UUID',
         simulatorName: 'iPhone 16',
         bundleId: 'com.example.app',

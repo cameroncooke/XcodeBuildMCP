@@ -7,10 +7,12 @@ availability:
   daemon: false
 selection:
   mcp:
-    mandatory: false
     defaultEnabled: false
-    autoInclude: false
-predicates: []
+    autoInclude: true
+predicates:
+  - debugEnabled
+  - runningUnderXcodeAgent
+  - requiresXcodeTools
 tools:
   - xcode_tools_bridge_status
   - xcode_tools_bridge_sync

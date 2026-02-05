@@ -91,11 +91,9 @@ export type ToolManifestEntry = z.infer<typeof toolManifestEntrySchema>;
  * MCP-specific workflow selection rules.
  */
 export const workflowSelectionMcpSchema = z.object({
-  /** Mandatory workflows are always included in MCP selection */
-  mandatory: z.boolean().default(false),
   /** Used when config.enabledWorkflows is empty */
   defaultEnabled: z.boolean().default(false),
-  /** Include when predicates pass even if not requested */
+  /** Include when predicates pass, regardless of user selection */
   autoInclude: z.boolean().default(false),
 });
 

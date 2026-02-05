@@ -12,3 +12,6 @@ predicates:
 routing:
   stateful: false
   daemonAffinity: preferred
+annotations:
+  title: "Scaffold iOS Project"
+  destructiveHint: true

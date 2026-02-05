@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
-import tapPlugin, { AxeHelpers, tapLogic } from '../tap.ts';
+import { schema, handler, AxeHelpers, tapLogic } from '../tap.ts';
 
 // Helper function to create mock axe helpers
 function createMockAxeHelpers(): AxeHelpers {
@@ -48,36 +48,28 @@ describe('Tap Plugin', () => {
     sessionStore.clear();
   });
 
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(tapPlugin.name).toBe('tap');
-    });
-
-    it('should have correct description', () => {
-      expect(tapPlugin.description).toBe('Tap coordinate or element.');
-    });
-
+  describe('Schema Validation', () => {
     it('should have handler function', () => {
-      expect(typeof tapPlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema fields with safeParse', () => {
-      const schema = z.object(tapPlugin.schema);
+      const schemaObject = z.object(schema);
 
-      expect(schema.safeParse({ x: 100, y: 200 }).success).toBe(true);
+      expect(schemaObject.safeParse({ x: 100, y: 200 }).success).toBe(true);
 
-      expect(schema.safeParse({ id: 'loginButton' }).success).toBe(true);
+      expect(schemaObject.safeParse({ id: 'loginButton' }).success).toBe(true);
 
-      expect(schema.safeParse({ label: 'Log in' }).success).toBe(true);
+      expect(schemaObject.safeParse({ label: 'Log in' }).success).toBe(true);
 
-      expect(schema.safeParse({ x: 100, y: 200, id: 'loginButton' }).success).toBe(true);
-
-      expect(schema.safeParse({ x: 100, y: 200, id: 'loginButton', label: 'Log in' }).success).toBe(
-        true,
-      );
+      expect(schemaObject.safeParse({ x: 100, y: 200, id: 'loginButton' }).success).toBe(true);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({ x: 100, y: 200, id: 'loginButton', label: 'Log in' }).success,
+      ).toBe(true);
+
+      expect(
+        schemaObject.safeParse({
           x: 100,
           y: 200,
           preDelay: 0.5,
@@ -86,21 +78,21 @@ describe('Tap Plugin', () => {
       ).toBe(true);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x: 3.14,
           y: 200,
         }).success,
       ).toBe(false);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x: 100,
           y: 3.14,
         }).success,
       ).toBe(false);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x: 100,
           y: 200,
           preDelay: -1,
@@ -108,14 +100,14 @@ describe('Tap Plugin', () => {
       ).toBe(false);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x: 100,
           y: 200,
           postDelay: -1,
         }).success,
       ).toBe(false);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObject.safeParse({
         simulatorId: '12345678-1234-4234-8234-123456789012',
         x: 100,
         y: 200,
@@ -674,7 +666,7 @@ describe('Tap Plugin', () => {
 
   describe('Plugin Handler Validation', () => {
     it('should require simulatorId session default when not provided', async () => {
-      const result = await tapPlugin.handler({
+      const result = await handler({
         x: 100,
         y: 200,
       });
@@ -689,7 +681,7 @@ describe('Tap Plugin', () => {
     it('should return validation error for missing x coordinate', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await tapPlugin.handler({
+      const result = await handler({
         y: 200,
       });
 
@@ -702,7 +694,7 @@ describe('Tap Plugin', () => {
     it('should return validation error for missing y coordinate', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await tapPlugin.handler({
+      const result = await handler({
         x: 100,
       });
 
@@ -715,7 +707,7 @@ describe('Tap Plugin', () => {
     it('should return validation error when both id and label are provided without coordinates', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await tapPlugin.handler({
+      const result = await handler({
         id: 'loginButton',
         label: 'Log in',
       });
@@ -729,7 +721,7 @@ describe('Tap Plugin', () => {
     it('should return validation error for non-integer x coordinate', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await tapPlugin.handler({
+      const result = await handler({
         x: 3.14,
         y: 200,
       });
@@ -743,7 +735,7 @@ describe('Tap Plugin', () => {
     it('should return validation error for non-integer y coordinate', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await tapPlugin.handler({
+      const result = await handler({
         x: 100,
         y: 3.14,
       });
@@ -757,7 +749,7 @@ describe('Tap Plugin', () => {
     it('should return validation error for negative preDelay', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await tapPlugin.handler({
+      const result = await handler({
         x: 100,
         y: 200,
         preDelay: -1,
@@ -772,7 +764,7 @@ describe('Tap Plugin', () => {
     it('should return validation error for negative postDelay', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await tapPlugin.handler({
+      const result = await handler({
         x: 100,
         y: 200,
         postDelay: -1,

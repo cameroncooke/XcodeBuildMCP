@@ -90,24 +90,17 @@ const publicSchemaObject = z.strictObject(
   resetSimulatorLocationSchema.omit({ simulatorId: true } as const).shape,
 );
 
-export default {
-  name: 'reset_sim_location',
-  description: 'Reset sim location.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: resetSimulatorLocationSchema,
-  }),
-  annotations: {
-    title: 'Reset Simulator Location',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<ResetSimulatorLocationParams>({
-    internalSchema: resetSimulatorLocationSchema as unknown as z.ZodType<
-      ResetSimulatorLocationParams,
-      unknown
-    >,
-    logicFunction: reset_sim_locationLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: resetSimulatorLocationSchema,
+});
+
+export const handler = createSessionAwareTool<ResetSimulatorLocationParams>({
+  internalSchema: resetSimulatorLocationSchema as unknown as z.ZodType<
+    ResetSimulatorLocationParams,
+    unknown
+  >,
+  logicFunction: reset_sim_locationLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});

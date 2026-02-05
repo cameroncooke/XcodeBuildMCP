@@ -11,3 +11,6 @@ predicates: []
 routing:
   stateful: false
   daemonAffinity: preferred
+annotations:
+  title: "Boot Simulator"
+  destructiveHint: true

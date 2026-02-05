@@ -348,29 +348,22 @@ const publicSchemaObject = baseGetSimulatorAppPathSchema.omit({
   arch: true,
 } as const);
 
-export default {
-  name: 'get_sim_app_path',
-  description: 'Get sim built app path.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseGetSimulatorAppPathSchema,
-  }),
-  annotations: {
-    title: 'Get Simulator App Path',
-    readOnlyHint: true,
-  },
-  handler: createSessionAwareTool<GetSimulatorAppPathParams>({
-    internalSchema: getSimulatorAppPathSchema as unknown as z.ZodType<GetSimulatorAppPathParams>,
-    logicFunction: get_sim_app_pathLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
-    ],
-    exclusivePairs: [
-      ['projectPath', 'workspacePath'],
-      ['simulatorId', 'simulatorName'],
-    ],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseGetSimulatorAppPathSchema,
+});
+
+export const handler = createSessionAwareTool<GetSimulatorAppPathParams>({
+  internalSchema: getSimulatorAppPathSchema as unknown as z.ZodType<GetSimulatorAppPathParams>,
+  logicFunction: get_sim_app_pathLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['scheme'], message: 'scheme is required' },
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+    { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+  ],
+  exclusivePairs: [
+    ['projectPath', 'workspacePath'],
+    ['simulatorId', 'simulatorName'],
+  ],
+});

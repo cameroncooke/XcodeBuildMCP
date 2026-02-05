@@ -1,28 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
-import resetSimLocationPlugin, { reset_sim_locationLogic } from '../reset_sim_location.ts';
+import { schema, reset_sim_locationLogic } from '../reset_sim_location.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 
 describe('reset_sim_location plugin', () => {
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name field', () => {
-      expect(resetSimLocationPlugin.name).toBe('reset_sim_location');
-    });
-
-    it('should have correct description field', () => {
-      expect(resetSimLocationPlugin.description).toBe('Reset sim location.');
-    });
-
-    it('should have handler function', () => {
-      expect(typeof resetSimLocationPlugin.handler).toBe('function');
-    });
-
+  describe('Schema Validation', () => {
     it('should hide simulatorId from public schema', () => {
-      const schema = z.object(resetSimLocationPlugin.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true);
 
-      const withSimId = schema.safeParse({ simulatorId: 'abc123' });
+      const withSimId = schemaObj.safeParse({ simulatorId: 'abc123' });
       expect(withSimId.success).toBe(true);
       expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });

@@ -11,31 +11,23 @@ import {
   createNoopExecutor,
   createMockCommandResponse,
 } from '../../../../test-utils/mock-executors.ts';
-import swiftPackageRun, { swift_package_runLogic } from '../swift_package_run.ts';
+import { schema, handler, swift_package_runLogic } from '../swift_package_run.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 
 describe('swift_package_run plugin', () => {
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(swiftPackageRun.name).toBe('swift_package_run');
-    });
-
-    it('should have correct description', () => {
-      expect(swiftPackageRun.description).toBe('swift package target run.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof swiftPackageRun.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
-      const schema = z.strictObject(swiftPackageRun.schema);
+      const strictSchema = z.strictObject(schema);
 
-      expect(schema.safeParse({ packagePath: 'valid/path' }).success).toBe(true);
-      expect(schema.safeParse({ packagePath: null }).success).toBe(false);
+      expect(strictSchema.safeParse({ packagePath: 'valid/path' }).success).toBe(true);
+      expect(strictSchema.safeParse({ packagePath: null }).success).toBe(false);
 
       expect(
-        schema.safeParse({
+        strictSchema.safeParse({
           packagePath: 'valid/path',
           executableName: 'MyExecutable',
           arguments: ['arg1', 'arg2'],
@@ -45,24 +37,26 @@ describe('swift_package_run plugin', () => {
         }).success,
       ).toBe(true);
 
-      expect(schema.safeParse({ packagePath: 'valid/path', executableName: 123 }).success).toBe(
+      expect(
+        strictSchema.safeParse({ packagePath: 'valid/path', executableName: 123 }).success,
+      ).toBe(false);
+      expect(
+        strictSchema.safeParse({ packagePath: 'valid/path', arguments: ['arg1', 123] }).success,
+      ).toBe(false);
+      expect(
+        strictSchema.safeParse({ packagePath: 'valid/path', configuration: 'release' }).success,
+      ).toBe(false);
+      expect(strictSchema.safeParse({ packagePath: 'valid/path', timeout: '30' }).success).toBe(
         false,
       );
       expect(
-        schema.safeParse({ packagePath: 'valid/path', arguments: ['arg1', 123] }).success,
+        strictSchema.safeParse({ packagePath: 'valid/path', background: 'true' }).success,
       ).toBe(false);
       expect(
-        schema.safeParse({ packagePath: 'valid/path', configuration: 'release' }).success,
+        strictSchema.safeParse({ packagePath: 'valid/path', parseAsLibrary: 'true' }).success,
       ).toBe(false);
-      expect(schema.safeParse({ packagePath: 'valid/path', timeout: '30' }).success).toBe(false);
-      expect(schema.safeParse({ packagePath: 'valid/path', background: 'true' }).success).toBe(
-        false,
-      );
-      expect(schema.safeParse({ packagePath: 'valid/path', parseAsLibrary: 'true' }).success).toBe(
-        false,
-      );
 
-      const schemaKeys = Object.keys(swiftPackageRun.schema).sort();
+      const schemaKeys = Object.keys(schema).sort();
       expect(schemaKeys).toEqual(
         [
           'arguments',
@@ -293,7 +287,7 @@ describe('swift_package_run plugin', () => {
     it('should return validation error for missing packagePath', async () => {
       // Since the tool now uses createTypedTool, Zod validation happens at the handler level
       // Test the handler directly to see Zod validation
-      const result = await swiftPackageRun.handler({});
+      const result = await handler({});
 
       expect(result).toEqual({
         content: [

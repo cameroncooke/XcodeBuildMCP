@@ -13,7 +13,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import launchAppDevice, { launch_app_deviceLogic } from '../launch_app_device.ts';
+import { schema, handler, launch_app_deviceLogic } from '../launch_app_device.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('launch_app_device plugin (device-shared)', () => {
@@ -22,35 +22,27 @@ describe('launch_app_device plugin (device-shared)', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(launchAppDevice.name).toBe('launch_app_device');
-    });
-
-    it('should have correct description', () => {
-      expect(launchAppDevice.description).toBe('Launch app on device.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof launchAppDevice.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema with valid inputs', () => {
-      const schema = z.strictObject(launchAppDevice.schema);
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(false);
-      expect(Object.keys(launchAppDevice.schema)).toEqual([]);
+      const schemaObj = z.strictObject(schema);
+      expect(schemaObj.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({ bundleId: 'com.example.app' }).success).toBe(false);
+      expect(Object.keys(schema)).toEqual([]);
     });
 
     it('should validate schema with invalid inputs', () => {
-      const schema = z.strictObject(launchAppDevice.schema);
-      expect(schema.safeParse({ bundleId: null }).success).toBe(false);
-      expect(schema.safeParse({ bundleId: 123 }).success).toBe(false);
+      const schemaObj = z.strictObject(schema);
+      expect(schemaObj.safeParse({ bundleId: null }).success).toBe(false);
+      expect(schemaObj.safeParse({ bundleId: 123 }).success).toBe(false);
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require deviceId and bundleId when not provided', async () => {
-      const result = await launchAppDevice.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');

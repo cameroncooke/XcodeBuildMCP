@@ -38,11 +38,11 @@ At MCP server startup:
 
 3) `registerWorkflows(enabledWorkflows)` runs, which calls `applyWorkflowSelection(...)` (`src/utils/tool-registry.ts`).
 
-4) Workflow selection uses `resolveSelectedWorkflows(...)` (`src/utils/workflow-selection.ts`) which:
-   - always includes `session-management`,
-   - optionally includes `doctor` when `debug: true`,
-   - optionally includes `workflow-discovery` when `experimentalWorkflowDiscovery: true`,
-   - defaults to `simulator` when `enabledWorkflows` is empty.
+4) Workflow selection uses `selectWorkflowsForMcp(...)` (`src/visibility/exposure.ts`) which:
+   - includes auto-include workflows whose predicates pass (e.g., `session-management` with no predicates is always included),
+   - includes explicitly requested workflows from config,
+   - defaults to `defaultEnabled: true` workflows (e.g., `simulator`) when `enabledWorkflows` is empty,
+   - filters all selected workflows by availability + predicates.
 
 5) For each selected workflow, each tool is considered for registration, then filtered by `shouldExposeTool(workflowName, toolName)` (`src/utils/tool-registry.ts`).
 

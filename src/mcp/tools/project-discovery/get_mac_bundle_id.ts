@@ -121,18 +121,11 @@ export async function get_mac_bundle_idLogic(
   }
 }
 
-export default {
-  name: 'get_mac_bundle_id',
-  description: 'Extract bundle id from macOS .app.',
-  schema: getMacBundleIdSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Get Mac Bundle ID',
-    readOnlyHint: true,
-  },
-  handler: createTypedTool(
-    getMacBundleIdSchema,
-    (params: GetMacBundleIdParams) =>
-      get_mac_bundle_idLogic(params, getDefaultCommandExecutor(), getDefaultFileSystemExecutor()),
-    getDefaultCommandExecutor,
-  ),
-};
+export const schema = getMacBundleIdSchema.shape;
+
+export const handler = createTypedTool(
+  getMacBundleIdSchema,
+  (params: GetMacBundleIdParams) =>
+    get_mac_bundle_idLogic(params, getDefaultCommandExecutor(), getDefaultFileSystemExecutor()),
+  getDefaultCommandExecutor,
+);

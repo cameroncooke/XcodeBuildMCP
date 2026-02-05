@@ -83,21 +83,14 @@ export async function install_app_deviceLogic(
   }
 }
 
-export default {
-  name: 'install_app_device',
-  description: 'Install app on device.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: installAppDeviceSchema,
-  }),
-  annotations: {
-    title: 'Install App Device',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<InstallAppDeviceParams>({
-    internalSchema: installAppDeviceSchema as unknown as z.ZodType<InstallAppDeviceParams, unknown>,
-    logicFunction: install_app_deviceLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: installAppDeviceSchema,
+});
+
+export const handler = createSessionAwareTool<InstallAppDeviceParams>({
+  internalSchema: installAppDeviceSchema as unknown as z.ZodType<InstallAppDeviceParams, unknown>,
+  logicFunction: install_app_deviceLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['deviceId'], message: 'deviceId is required' }],
+});

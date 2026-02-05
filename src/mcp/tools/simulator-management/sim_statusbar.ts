@@ -91,21 +91,14 @@ const publicSchemaObject = z.strictObject(
   simStatusbarSchema.omit({ simulatorId: true } as const).shape,
 );
 
-export default {
-  name: 'sim_statusbar',
-  description: 'Set sim status bar network.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: simStatusbarSchema,
-  }), // MCP SDK compatibility
-  annotations: {
-    title: 'Simulator Statusbar',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<SimStatusbarParams>({
-    internalSchema: simStatusbarSchema as unknown as z.ZodType<SimStatusbarParams, unknown>,
-    logicFunction: sim_statusbarLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: simStatusbarSchema,
+});
+
+export const handler = createSessionAwareTool<SimStatusbarParams>({
+  internalSchema: simStatusbarSchema as unknown as z.ZodType<SimStatusbarParams, unknown>,
+  logicFunction: sim_statusbarLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});

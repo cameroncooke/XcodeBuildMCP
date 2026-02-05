@@ -156,25 +156,18 @@ const publicSchemaObject = z.strictObject(
   } as const).shape,
 );
 
-export default {
-  name: 'stop_app_sim',
-  description: 'Stop sim app.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Stop App Simulator',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<StopAppSimParams>({
-    internalSchema: stopAppSimSchema as unknown as z.ZodType<StopAppSimParams, unknown>,
-    logicFunction: stop_app_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
-      { allOf: ['bundleId'], message: 'bundleId is required' },
-    ],
-    exclusivePairs: [['simulatorId', 'simulatorName']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<StopAppSimParams>({
+  internalSchema: stopAppSimSchema as unknown as z.ZodType<StopAppSimParams, unknown>,
+  logicFunction: stop_app_simLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+    { allOf: ['bundleId'], message: 'bundleId is required' },
+  ],
+  exclusivePairs: [['simulatorId', 'simulatorName']],
+});

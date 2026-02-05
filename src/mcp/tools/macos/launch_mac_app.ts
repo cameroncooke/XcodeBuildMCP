@@ -72,13 +72,10 @@ export async function launch_mac_appLogic(
   }
 }
 
-export default {
-  name: 'launch_mac_app',
-  description: 'Launch macOS app.',
-  schema: launchMacAppSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Launch macOS App',
-    destructiveHint: true,
-  },
-  handler: createTypedTool(launchMacAppSchema, launch_mac_appLogic, getDefaultCommandExecutor),
-};
+export const schema = launchMacAppSchema.shape;
+
+export const handler = createTypedTool(
+  launchMacAppSchema,
+  launch_mac_appLogic,
+  getDefaultCommandExecutor,
+);

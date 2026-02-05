@@ -7,7 +7,6 @@ availability:
   daemon: false
 selection:
   mcp:
-    mandatory: true
     defaultEnabled: true
     autoInclude: true
 predicates: []

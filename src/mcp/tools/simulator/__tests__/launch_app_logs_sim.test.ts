@@ -5,7 +5,9 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import launchAppLogsSim, {
+import {
+  schema,
+  handler,
   launch_app_logs_simLogic,
   LogCaptureFunction,
 } from '../launch_app_logs_sim.ts';
@@ -18,22 +20,17 @@ describe('launch_app_logs_sim tool', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should expose correct metadata', () => {
-      expect(launchAppLogsSim.name).toBe('launch_app_logs_sim');
-      expect(launchAppLogsSim.description).toBe('Launch sim app with logs.');
-    });
-
     it('should expose only non-session fields in public schema', () => {
-      const schema = z.object(launchAppLogsSim.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ args: ['--debug'] }).success).toBe(true);
-      expect(schema.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
-      expect(schema.safeParse({ bundleId: 42 }).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({ args: ['--debug'] }).success).toBe(true);
+      expect(schemaObj.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
+      expect(schemaObj.safeParse({ bundleId: 42 }).success).toBe(true);
 
-      expect(Object.keys(launchAppLogsSim.schema).sort()).toEqual(['args']);
+      expect(Object.keys(schema).sort()).toEqual(['args']);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObj.safeParse({
         simulatorId: 'abc123',
       });
       expect(withSimId.success).toBe(true);
@@ -43,7 +40,7 @@ describe('launch_app_logs_sim tool', () => {
 
   describe('Handler Requirements', () => {
     it('should require simulatorId when not provided', async () => {
-      const result = await launchAppLogsSim.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
@@ -54,7 +51,7 @@ describe('launch_app_logs_sim tool', () => {
     it('should require bundleId when simulatorId default exists', async () => {
       sessionStore.setDefaults({ simulatorId: 'SIM-UUID' });
 
-      const result = await launchAppLogsSim.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');

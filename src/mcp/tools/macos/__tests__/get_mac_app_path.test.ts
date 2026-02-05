@@ -11,7 +11,8 @@ import {
   type CommandExecutor,
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import getMacAppPath, { get_mac_app_pathLogic } from '../get_mac_app_path.ts';
+import { schema, handler } from '../get_mac_app_path.ts';
+import { get_mac_app_pathLogic } from '../get_mac_app_path.ts';
 
 describe('get_mac_app_path plugin', () => {
   beforeEach(() => {
@@ -19,40 +20,32 @@ describe('get_mac_app_path plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(getMacAppPath.name).toBe('get_mac_app_path');
-    });
-
-    it('should have correct description', () => {
-      expect(getMacAppPath.description).toBe('Get macOS built app path.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof getMacAppPath.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
-      const schema = z.object(getMacAppPath.schema);
+      const zodSchema = z.object(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(zodSchema.safeParse({}).success).toBe(true);
       expect(
-        schema.safeParse({
+        zodSchema.safeParse({
           derivedDataPath: '/path/to/derived',
           extraArgs: ['--verbose'],
         }).success,
       ).toBe(true);
 
-      expect(schema.safeParse({ derivedDataPath: 7 }).success).toBe(false);
-      expect(schema.safeParse({ extraArgs: ['--bad', 1] }).success).toBe(false);
+      expect(zodSchema.safeParse({ derivedDataPath: 7 }).success).toBe(false);
+      expect(zodSchema.safeParse({ extraArgs: ['--bad', 1] }).success).toBe(false);
 
-      const schemaKeys = Object.keys(getMacAppPath.schema).sort();
+      const schemaKeys = Object.keys(schema).sort();
       expect(schemaKeys).toEqual(['derivedDataPath', 'extraArgs'].sort());
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require scheme before running', async () => {
-      const result = await getMacAppPath.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('scheme is required');
@@ -61,7 +54,7 @@ describe('get_mac_app_path plugin', () => {
     it('should require project or workspace when scheme default exists', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
-      const result = await getMacAppPath.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Provide a project or workspace');
@@ -70,7 +63,7 @@ describe('get_mac_app_path plugin', () => {
     it('should reject when both projectPath and workspacePath provided explicitly', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
-      const result = await getMacAppPath.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
       });
@@ -82,7 +75,7 @@ describe('get_mac_app_path plugin', () => {
 
   describe('XOR Validation', () => {
     it('should error when neither projectPath nor workspacePath provided', async () => {
-      const result = await getMacAppPath.handler({
+      const result = await handler({
         scheme: 'MyScheme',
       });
 
@@ -91,7 +84,7 @@ describe('get_mac_app_path plugin', () => {
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
-      const result = await getMacAppPath.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',
@@ -351,7 +344,7 @@ describe('get_mac_app_path plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should return Zod validation error for missing scheme', async () => {
-      const result = await getMacAppPath.handler({
+      const result = await handler({
         workspacePath: '/path/to/MyProject.xcworkspace',
       });
 

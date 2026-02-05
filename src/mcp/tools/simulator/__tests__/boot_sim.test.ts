@@ -10,7 +10,7 @@ import {
   createMockExecutor,
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import bootSim, { boot_simLogic } from '../boot_sim.ts';
+import { schema, handler, boot_simLogic } from '../boot_sim.ts';
 
 describe('boot_sim tool', () => {
   beforeEach(() => {
@@ -18,20 +18,12 @@ describe('boot_sim tool', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(bootSim.name).toBe('boot_sim');
-    });
-
-    it('should have concise description', () => {
-      expect(bootSim.description).toBe('Boot iOS simulator.');
-    });
-
     it('should expose empty public schema', () => {
-      const schema = z.object(bootSim.schema);
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(Object.keys(bootSim.schema)).toHaveLength(0);
+      const schemaObj = z.object(schema);
+      expect(schemaObj.safeParse({}).success).toBe(true);
+      expect(Object.keys(schema)).toHaveLength(0);
 
-      const withSimId = schema.safeParse({ simulatorId: 'abc' });
+      const withSimId = schemaObj.safeParse({ simulatorId: 'abc' });
       expect(withSimId.success).toBe(true);
       expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
     });
@@ -39,7 +31,7 @@ describe('boot_sim tool', () => {
 
   describe('Handler Requirements', () => {
     it('should require simulatorId when not provided', async () => {
-      const result = await bootSim.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;

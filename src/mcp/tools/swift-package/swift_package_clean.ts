@@ -48,17 +48,10 @@ export async function swift_package_cleanLogic(
   }
 }
 
-export default {
-  name: 'swift_package_clean',
-  description: 'swift package clean.',
-  schema: swiftPackageCleanSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Swift Package Clean',
-    destructiveHint: true,
-  },
-  handler: createTypedTool(
-    swiftPackageCleanSchema,
-    swift_package_cleanLogic,
-    getDefaultCommandExecutor,
-  ),
-};
+export const schema = swiftPackageCleanSchema.shape;
+
+export const handler = createTypedTool(
+  swiftPackageCleanSchema,
+  swift_package_cleanLogic,
+  getDefaultCommandExecutor,
+);

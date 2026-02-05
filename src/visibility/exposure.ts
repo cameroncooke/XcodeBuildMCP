@@ -97,13 +97,6 @@ export function filterEnabledWorkflows(
 }
 
 /**
- * Get mandatory workflows that should always be included.
- */
-export function getMandatoryWorkflows(workflows: WorkflowManifestEntry[]): WorkflowManifestEntry[] {
-  return workflows.filter((wf) => wf.selection?.mcp?.mandatory === true);
-}
-
-/**
  * Get default-enabled workflows (used when no workflows are explicitly selected).
  */
 export function getDefaultEnabledWorkflows(
@@ -128,11 +121,10 @@ export function getAutoIncludeWorkflows(
  * Select workflows for MCP runtime according to the manifest-driven selection rules.
  *
  * Selection logic:
- * 1. Always include mandatory workflows
- * 2. Include auto-include workflows whose predicates pass
- * 3. If user specified workflows, include those
- * 4. If no workflows specified, include default-enabled workflows
- * 5. Filter all by availability + predicates
+ * 1. Include auto-include workflows whose predicates pass
+ * 2. If user specified workflows, include those
+ * 3. If no workflows specified, include default-enabled workflows
+ * 4. Filter all by availability + predicates
  */
 export function selectWorkflowsForMcp(
   allWorkflows: WorkflowManifestEntry[],
@@ -141,17 +133,12 @@ export function selectWorkflowsForMcp(
 ): WorkflowManifestEntry[] {
   const selectedIds = new Set<string>();
 
-  // 1. Always include mandatory workflows
-  for (const wf of getMandatoryWorkflows(allWorkflows)) {
-    selectedIds.add(wf.id);
-  }
-
-  // 2. Include auto-include workflows whose predicates pass
+  // 1. Include auto-include workflows whose predicates pass
   for (const wf of getAutoIncludeWorkflows(allWorkflows, ctx)) {
     selectedIds.add(wf.id);
   }
 
-  // 3/4. Include requested or default-enabled workflows
+  // 2/3. Include requested or default-enabled workflows
   if (requestedWorkflowIds && requestedWorkflowIds.length > 0) {
     for (const id of requestedWorkflowIds) {
       selectedIds.add(id);
@@ -165,6 +152,6 @@ export function selectWorkflowsForMcp(
   // Build final list from selected IDs
   const selected = allWorkflows.filter((wf) => selectedIds.has(wf.id));
 
-  // 5. Filter by availability + predicates
+  // 4. Filter by availability + predicates
   return filterEnabledWorkflows(selected, ctx);
 }

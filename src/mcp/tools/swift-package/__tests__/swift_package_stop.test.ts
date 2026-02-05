@@ -6,7 +6,9 @@
 
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
-import swiftPackageStop, {
+import {
+  schema,
+  handler,
   createMockProcessManager,
   swift_package_stopLogic,
   type ProcessManager,
@@ -51,30 +53,22 @@ class MockProcess {
 
 describe('swift_package_stop plugin', () => {
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(swiftPackageStop.name).toBe('swift_package_stop');
-    });
-
-    it('should have correct description', () => {
-      expect(swiftPackageStop.description).toBe('Stop SwiftPM run.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof swiftPackageStop.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
       // Test valid inputs
-      expect(swiftPackageStop.schema.pid.safeParse(12345).success).toBe(true);
-      expect(swiftPackageStop.schema.pid.safeParse(0).success).toBe(true);
-      expect(swiftPackageStop.schema.pid.safeParse(-1).success).toBe(true);
+      expect(schema.pid.safeParse(12345).success).toBe(true);
+      expect(schema.pid.safeParse(0).success).toBe(true);
+      expect(schema.pid.safeParse(-1).success).toBe(true);
 
       // Test invalid inputs
-      expect(swiftPackageStop.schema.pid.safeParse('not-a-number').success).toBe(false);
-      expect(swiftPackageStop.schema.pid.safeParse(null).success).toBe(false);
-      expect(swiftPackageStop.schema.pid.safeParse(undefined).success).toBe(false);
-      expect(swiftPackageStop.schema.pid.safeParse({}).success).toBe(false);
-      expect(swiftPackageStop.schema.pid.safeParse([]).success).toBe(false);
+      expect(schema.pid.safeParse('not-a-number').success).toBe(false);
+      expect(schema.pid.safeParse(null).success).toBe(false);
+      expect(schema.pid.safeParse(undefined).success).toBe(false);
+      expect(schema.pid.safeParse({}).success).toBe(false);
+      expect(schema.pid.safeParse([]).success).toBe(false);
     });
   });
 

@@ -134,28 +134,18 @@ const publicSchemaObject = baseSchemaObject.omit({
   scheme: true,
 } as const);
 
-export default {
-  name: 'show_build_settings',
-  description: 'Show build settings.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Show Build Settings',
-    readOnlyHint: true,
-  },
-  handler: createSessionAwareTool<ShowBuildSettingsParams>({
-    internalSchema: showBuildSettingsSchema as unknown as z.ZodType<
-      ShowBuildSettingsParams,
-      unknown
-    >,
-    logicFunction: showBuildSettingsLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<ShowBuildSettingsParams>({
+  internalSchema: showBuildSettingsSchema as unknown as z.ZodType<ShowBuildSettingsParams, unknown>,
+  logicFunction: showBuildSettingsLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['scheme'], message: 'scheme is required' },
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+  ],
+  exclusivePairs: [['projectPath', 'workspacePath']],
+});

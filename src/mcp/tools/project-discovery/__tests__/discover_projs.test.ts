@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import plugin, { discover_projsLogic } from '../discover_projs.ts';
+import { schema, handler, discover_projsLogic } from '../discover_projs.ts';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 
 describe('discover_projs plugin', () => {
@@ -22,31 +22,21 @@ describe('discover_projs plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(plugin.name).toBe('discover_projs');
-    });
-
-    it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
-      );
-    });
-
     it('should have handler function', () => {
-      expect(typeof plugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema with valid inputs', () => {
-      const schema = z.object(plugin.schema);
-      expect(schema.safeParse({ workspaceRoot: '/path/to/workspace' }).success).toBe(true);
+      const schemaObj = z.object(schema);
+      expect(schemaObj.safeParse({ workspaceRoot: '/path/to/workspace' }).success).toBe(true);
       expect(
-        schema.safeParse({ workspaceRoot: '/path/to/workspace', scanPath: 'subdir' }).success,
+        schemaObj.safeParse({ workspaceRoot: '/path/to/workspace', scanPath: 'subdir' }).success,
       ).toBe(true);
-      expect(schema.safeParse({ workspaceRoot: '/path/to/workspace', maxDepth: 3 }).success).toBe(
-        true,
-      );
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({ workspaceRoot: '/path/to/workspace', maxDepth: 3 }).success,
+      ).toBe(true);
+      expect(
+        schemaObj.safeParse({
           workspaceRoot: '/path/to/workspace',
           scanPath: 'subdir',
           maxDepth: 5,
@@ -55,13 +45,15 @@ describe('discover_projs plugin', () => {
     });
 
     it('should validate schema with invalid inputs', () => {
-      const schema = z.object(plugin.schema);
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(schema.safeParse({ workspaceRoot: 123 }).success).toBe(false);
-      expect(schema.safeParse({ workspaceRoot: '/path', scanPath: 123 }).success).toBe(false);
-      expect(schema.safeParse({ workspaceRoot: '/path', maxDepth: 'invalid' }).success).toBe(false);
-      expect(schema.safeParse({ workspaceRoot: '/path', maxDepth: -1 }).success).toBe(false);
-      expect(schema.safeParse({ workspaceRoot: '/path', maxDepth: 1.5 }).success).toBe(false);
+      const schemaObj = z.object(schema);
+      expect(schemaObj.safeParse({}).success).toBe(false);
+      expect(schemaObj.safeParse({ workspaceRoot: 123 }).success).toBe(false);
+      expect(schemaObj.safeParse({ workspaceRoot: '/path', scanPath: 123 }).success).toBe(false);
+      expect(schemaObj.safeParse({ workspaceRoot: '/path', maxDepth: 'invalid' }).success).toBe(
+        false,
+      );
+      expect(schemaObj.safeParse({ workspaceRoot: '/path', maxDepth: -1 }).success).toBe(false);
+      expect(schemaObj.safeParse({ workspaceRoot: '/path', maxDepth: 1.5 }).success).toBe(false);
     });
   });
 

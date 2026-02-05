@@ -92,21 +92,14 @@ const publicSchemaObject = z.strictObject(
   setSimAppearanceSchema.omit({ simulatorId: true } as const).shape,
 );
 
-export default {
-  name: 'set_sim_appearance',
-  description: 'Set sim appearance.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: setSimAppearanceSchema,
-  }),
-  annotations: {
-    title: 'Set Simulator Appearance',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<SetSimAppearanceParams>({
-    internalSchema: setSimAppearanceSchema as unknown as z.ZodType<SetSimAppearanceParams, unknown>,
-    logicFunction: set_sim_appearanceLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: setSimAppearanceSchema,
+});
+
+export const handler = createSessionAwareTool<SetSimAppearanceParams>({
+  internalSchema: setSimAppearanceSchema as unknown as z.ZodType<SetSimAppearanceParams, unknown>,
+  logicFunction: set_sim_appearanceLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});

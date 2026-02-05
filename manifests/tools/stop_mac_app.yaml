@@ -11,3 +11,6 @@ predicates: []
 routing:
   stateful: false
   daemonAffinity: preferred
+annotations:
+  title: "Stop macOS App"
+  destructiveHint: true

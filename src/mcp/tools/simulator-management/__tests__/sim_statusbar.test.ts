@@ -11,32 +11,20 @@ import {
   createMockExecutor,
   type CommandExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import simStatusbar, { sim_statusbarLogic } from '../sim_statusbar.ts';
+import { schema, sim_statusbarLogic } from '../sim_statusbar.ts';
 
 describe('sim_statusbar tool', () => {
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(simStatusbar.name).toBe('sim_statusbar');
-    });
-
-    it('should have correct description', () => {
-      expect(simStatusbar.description).toBe('Set sim status bar network.');
-    });
-
-    it('should have handler function', () => {
-      expect(typeof simStatusbar.handler).toBe('function');
-    });
-
+  describe('Schema Validation', () => {
     it('should expose public schema without simulatorId field', () => {
-      const schema = z.object(simStatusbar.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({ dataNetwork: 'wifi' }).success).toBe(true);
-      expect(schema.safeParse({ dataNetwork: 'clear' }).success).toBe(true);
-      expect(schema.safeParse({ dataNetwork: 'invalid' }).success).toBe(false);
+      expect(schemaObj.safeParse({ dataNetwork: 'wifi' }).success).toBe(true);
+      expect(schemaObj.safeParse({ dataNetwork: 'clear' }).success).toBe(true);
+      expect(schemaObj.safeParse({ dataNetwork: 'invalid' }).success).toBe(false);
 
-      const withSimId = schema.safeParse({ simulatorId: 'test-uuid', dataNetwork: 'wifi' });
+      const withSimId = schemaObj.safeParse({ simulatorId: 'test-uuid', dataNetwork: 'wifi' });
       expect(withSimId.success).toBe(true);
-      expect('simulatorId' in (withSimId.data as any)).toBe(false);
+      expect('simulatorId' in (withSimId.data as object)).toBe(false);
     });
   });
 

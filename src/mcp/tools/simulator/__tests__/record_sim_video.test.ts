@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
 // Import the tool and logic
-import tool, { record_sim_videoLogic } from '../record_sim_video.ts';
+import { schema, handler, record_sim_videoLogic } from '../record_sim_video.ts';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
 
 const DUMMY_EXECUTOR: any = (async () => ({ success: true })) as any; // CommandExecutor stub
@@ -13,7 +13,7 @@ afterEach(() => {
 
 describe('record_sim_video tool - validation', () => {
   it('errors when start and stop are both true (mutually exclusive)', async () => {
-    const res = await tool.handler({
+    const res = await handler({
       simulatorId: VALID_SIM_ID,
       start: true,
       stop: true,
@@ -25,7 +25,7 @@ describe('record_sim_video tool - validation', () => {
   });
 
   it('errors when stop=true but outputFile is missing', async () => {
-    const res = await tool.handler({
+    const res = await handler({
       simulatorId: VALID_SIM_ID,
       stop: true,
     } as any);

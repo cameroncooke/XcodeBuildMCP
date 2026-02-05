@@ -4,7 +4,7 @@ import { parse as parseYaml } from 'yaml';
 import { __resetConfigStoreForTests, initConfigStore } from '../../../../utils/config-store.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
-import plugin, { sessionSetDefaultsLogic } from '../session_set_defaults.ts';
+import { schema, handler, sessionSetDefaultsLogic } from '../session_set_defaults.ts';
 
 describe('session-set-defaults tool', () => {
   beforeEach(() => {
@@ -19,24 +19,14 @@ describe('session-set-defaults tool', () => {
     return {};
   }
 
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(plugin.name).toBe('session-set-defaults');
-    });
-
-    it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        'Set the session defaults, should be called at least once to set tool defaults.',
-      );
-    });
-
+  describe('Export Field Validation', () => {
     it('should have handler function', () => {
-      expect(typeof plugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should have schema object', () => {
-      expect(plugin.schema).toBeDefined();
-      expect(typeof plugin.schema).toBe('object');
+      expect(schema).toBeDefined();
+      expect(typeof schema).toBe('object');
     });
   });
 
@@ -63,7 +53,7 @@ describe('session-set-defaults tool', () => {
     });
 
     it('should validate parameter types via Zod', async () => {
-      const result = await plugin.handler({
+      const result = await handler({
         useLatestOS: 'yes' as unknown as boolean,
       });
 

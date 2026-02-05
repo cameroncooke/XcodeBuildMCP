@@ -79,20 +79,13 @@ export async function swift_package_buildLogic(
   }
 }
 
-export default {
-  name: 'swift_package_build',
-  description: 'swift package target build.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }), // MCP SDK compatibility
-  annotations: {
-    title: 'Swift Package Build',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<SwiftPackageBuildParams>({
-    internalSchema: swiftPackageBuildSchema,
-    logicFunction: swift_package_buildLogic,
-    getExecutor: getDefaultCommandExecutor,
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<SwiftPackageBuildParams>({
+  internalSchema: swiftPackageBuildSchema,
+  logicFunction: swift_package_buildLogic,
+  getExecutor: getDefaultCommandExecutor,
+});

@@ -211,9 +211,11 @@ export function registerToolsCommand(app: Argv): void {
             })
             .map((tool) => toFlatJsonTool(tool));
 
+          const canonicalCount = flatTools.filter((t) => !t.canonicalWorkflow).length;
           writeLine(
             JSON.stringify(
               {
+                canonicalToolCount: canonicalCount,
                 toolCount: flatTools.length,
                 tools: flatTools,
               },
@@ -240,10 +242,12 @@ export function registerToolsCommand(app: Argv): void {
               .map((tool) => toGroupedJsonTool(tool)),
           }));
 
+        const canonicalCount = tools.filter((t) => t.isCanonical).length;
         writeLine(
           JSON.stringify(
             {
               workflowCount: grouped.length,
+              canonicalToolCount: canonicalCount,
               toolCount: tools.length,
               workflows: grouped,
             },
@@ -252,8 +256,9 @@ export function registerToolsCommand(app: Argv): void {
           ),
         );
       } else {
-        const count = tools.length;
-        writeLine(`Available tools (${count}):\n`);
+        const totalCount = tools.length;
+        const canonicalCount = tools.filter((t) => t.isCanonical).length;
+        writeLine(`Available tools (${canonicalCount} canonical, ${totalCount} total):\n`);
         // Default to grouped view (use --flat for flat list)
         writeLine(
           formatToolList(tools, {

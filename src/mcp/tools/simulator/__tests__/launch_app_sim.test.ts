@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import launchAppSim, { launch_app_simLogic } from '../launch_app_sim.ts';
+import { schema, handler, launch_app_simLogic } from '../launch_app_sim.ts';
 
 describe('launch_app_sim tool', () => {
   beforeEach(() => {
@@ -10,28 +10,23 @@ describe('launch_app_sim tool', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should expose correct name and description', () => {
-      expect(launchAppSim.name).toBe('launch_app_sim');
-      expect(launchAppSim.description).toBe('Launch app on simulator.');
-    });
-
     it('should expose only non-session fields in public schema', () => {
-      const schema = z.strictObject(launchAppSim.schema);
+      const schemaObj = z.strictObject(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true);
 
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           args: ['--debug'],
         }).success,
       ).toBe(true);
 
-      expect(schema.safeParse({ bundleId: 'com.example.testapp' }).success).toBe(false);
-      expect(schema.safeParse({ bundleId: 123 }).success).toBe(false);
+      expect(schemaObj.safeParse({ bundleId: 'com.example.testapp' }).success).toBe(false);
+      expect(schemaObj.safeParse({ bundleId: 123 }).success).toBe(false);
 
-      expect(Object.keys(launchAppSim.schema).sort()).toEqual(['args']);
+      expect(Object.keys(schema).sort()).toEqual(['args']);
 
-      const withSimDefaults = schema.safeParse({
+      const withSimDefaults = schemaObj.safeParse({
         simulatorId: 'sim-default',
         simulatorName: 'iPhone 16',
       });
@@ -41,7 +36,7 @@ describe('launch_app_sim tool', () => {
 
   describe('Handler Requirements', () => {
     it('should require simulator identifier when not provided', async () => {
-      const result = await launchAppSim.handler({ bundleId: 'com.example.testapp' });
+      const result = await handler({ bundleId: 'com.example.testapp' });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
@@ -52,7 +47,7 @@ describe('launch_app_sim tool', () => {
     it('should require bundleId when simulatorId default exists', async () => {
       sessionStore.setDefaults({ simulatorId: 'SIM-UUID' });
 
-      const result = await launchAppSim.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
@@ -60,7 +55,7 @@ describe('launch_app_sim tool', () => {
     });
 
     it('should reject when both simulatorId and simulatorName provided explicitly', async () => {
-      const result = await launchAppSim.handler({
+      const result = await handler({
         simulatorId: 'SIM-UUID',
         simulatorName: 'iPhone 16',
         bundleId: 'com.example.testapp',

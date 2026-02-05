@@ -28,16 +28,10 @@ export async function debug_continueLogic(
   }
 }
 
-export default {
-  name: 'debug_continue',
-  description: 'Continue debug session.',
-  cli: {
-    stateful: true,
-  },
-  schema: debugContinueSchema.shape,
-  handler: createTypedToolWithContext<DebugContinueParams, DebuggerToolContext>(
-    debugContinueSchema,
-    debug_continueLogic,
-    getDefaultDebuggerToolContext,
-  ),
-};
+export const schema = debugContinueSchema.shape;
+
+export const handler = createTypedToolWithContext<DebugContinueParams, DebuggerToolContext>(
+  debugContinueSchema,
+  debug_continueLogic,
+  getDefaultDebuggerToolContext,
+);

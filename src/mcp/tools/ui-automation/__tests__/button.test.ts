@@ -9,39 +9,31 @@ import {
   createNoopExecutor,
   createMockCommandResponse,
 } from '../../../../test-utils/mock-executors.ts';
-import buttonPlugin, { buttonLogic } from '../button.ts';
+import { schema, handler, buttonLogic } from '../button.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 
 describe('Button Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(buttonPlugin.name).toBe('button');
-    });
-
-    it('should have correct description', () => {
-      expect(buttonPlugin.description).toBe('Press simulator hardware button.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof buttonPlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose public schema without simulatorId field', () => {
-      const schema = z.object(buttonPlugin.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({ buttonType: 'home' }).success).toBe(true);
-      expect(schema.safeParse({ buttonType: 'home', duration: 2.5 }).success).toBe(true);
-      expect(schema.safeParse({ buttonType: 'invalid-button' }).success).toBe(false);
-      expect(schema.safeParse({ buttonType: 'home', duration: -1 }).success).toBe(false);
+      expect(schemaObj.safeParse({ buttonType: 'home' }).success).toBe(true);
+      expect(schemaObj.safeParse({ buttonType: 'home', duration: 2.5 }).success).toBe(true);
+      expect(schemaObj.safeParse({ buttonType: 'invalid-button' }).success).toBe(false);
+      expect(schemaObj.safeParse({ buttonType: 'home', duration: -1 }).success).toBe(false);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObj.safeParse({
         simulatorId: '12345678-1234-4234-8234-123456789012',
         buttonType: 'home',
       });
       expect(withSimId.success).toBe(true);
-      expect('simulatorId' in (withSimId.data as any)).toBe(false);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
 
-      expect(schema.safeParse({}).success).toBe(false);
+      expect(schemaObj.safeParse({}).success).toBe(false);
     });
   });
 
@@ -204,7 +196,7 @@ describe('Button Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should surface session default requirement when simulatorId is missing', async () => {
-      const result = await buttonPlugin.handler({ buttonType: 'home' });
+      const result = await handler({ buttonType: 'home' });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
@@ -212,7 +204,7 @@ describe('Button Plugin', () => {
     });
 
     it('should return error for missing buttonType', async () => {
-      const result = await buttonPlugin.handler({
+      const result = await handler({
         simulatorId: '12345678-1234-4234-8234-123456789012',
       });
 
@@ -224,7 +216,7 @@ describe('Button Plugin', () => {
     });
 
     it('should return error for invalid simulatorId format', async () => {
-      const result = await buttonPlugin.handler({
+      const result = await handler({
         simulatorId: 'invalid-uuid-format',
         buttonType: 'home',
       });
@@ -235,7 +227,7 @@ describe('Button Plugin', () => {
     });
 
     it('should return error for invalid buttonType', async () => {
-      const result = await buttonPlugin.handler({
+      const result = await handler({
         simulatorId: '12345678-1234-4234-8234-123456789012',
         buttonType: 'invalid-button',
       });
@@ -245,7 +237,7 @@ describe('Button Plugin', () => {
     });
 
     it('should return error for negative duration', async () => {
-      const result = await buttonPlugin.handler({
+      const result = await handler({
         simulatorId: '12345678-1234-4234-8234-123456789012',
         buttonType: 'home',
         duration: -1,

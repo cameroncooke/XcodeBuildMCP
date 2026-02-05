@@ -270,20 +270,12 @@ export async function discover_projsLogic(
   };
 }
 
-export default {
-  name: 'discover_projs',
-  description:
-    'Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.',
-  schema: discoverProjsSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Discover Projects',
-    readOnlyHint: true,
+export const schema = discoverProjsSchema.shape;
+
+export const handler = createTypedTool(
+  discoverProjsSchema,
+  (params: DiscoverProjsParams) => {
+    return discover_projsLogic(params, getDefaultFileSystemExecutor());
   },
-  handler: createTypedTool(
-    discoverProjsSchema,
-    (params: DiscoverProjsParams) => {
-      return discover_projsLogic(params, getDefaultFileSystemExecutor());
-    },
-    getDefaultCommandExecutor,
-  ),
-};
+  getDefaultCommandExecutor,
+);

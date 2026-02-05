@@ -11,37 +11,29 @@ import {
   createMockExecutor,
   type CommandExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import openSim, { open_simLogic } from '../open_sim.ts';
+import { schema, handler, open_simLogic } from '../open_sim.ts';
 
 describe('open_sim tool', () => {
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name field', () => {
-      expect(openSim.name).toBe('open_sim');
-    });
-
-    it('should have correct description field', () => {
-      expect(openSim.description).toBe('Open Simulator app.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof openSim.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should have correct schema validation', () => {
-      const schema = z.object(openSim.schema);
+      const schemaObj = z.object(schema);
 
       // Schema is empty, so any object should pass
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true);
 
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           anyProperty: 'value',
         }).success,
       ).toBe(true);
 
       // Empty schema should accept anything
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           enabled: true,
         }).success,
       ).toBe(true);

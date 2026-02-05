@@ -1,5 +1,5 @@
 /**
- * Tests for key_press tool plugin
+ * Tests for key_press tool
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -7,54 +7,45 @@ import * as z from 'zod';
 import {
   createMockCommandResponse,
   createMockExecutor,
-  createMockFileSystemExecutor,
   createNoopExecutor,
   mockProcess,
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import keyPressPlugin, { key_pressLogic } from '../key_press.ts';
+import { schema, handler, key_pressLogic } from '../key_press.ts';
 
-describe('Key Press Plugin', () => {
+describe('Key Press Tool', () => {
   beforeEach(() => {
     sessionStore.clear();
   });
 
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(keyPressPlugin.name).toBe('key_press');
-    });
-
-    it('should have correct description', () => {
-      expect(keyPressPlugin.description).toBe('Press key by keycode.');
-    });
-
+  describe('Schema Validation', () => {
     it('should have handler function', () => {
-      expect(typeof keyPressPlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose public schema without simulatorId field', () => {
-      const schema = z.object(keyPressPlugin.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({ keyCode: 40 }).success).toBe(true);
-      expect(schema.safeParse({ keyCode: 40, duration: 1.5 }).success).toBe(true);
-      expect(schema.safeParse({ keyCode: 'invalid' }).success).toBe(false);
-      expect(schema.safeParse({ keyCode: -1 }).success).toBe(false);
-      expect(schema.safeParse({ keyCode: 256 }).success).toBe(false);
+      expect(schemaObj.safeParse({ keyCode: 40 }).success).toBe(true);
+      expect(schemaObj.safeParse({ keyCode: 40, duration: 1.5 }).success).toBe(true);
+      expect(schemaObj.safeParse({ keyCode: 'invalid' }).success).toBe(false);
+      expect(schemaObj.safeParse({ keyCode: -1 }).success).toBe(false);
+      expect(schemaObj.safeParse({ keyCode: 256 }).success).toBe(false);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObj.safeParse({
         simulatorId: '12345678-1234-4234-8234-123456789012',
         keyCode: 40,
       });
       expect(withSimId.success).toBe(true);
-      expect('simulatorId' in (withSimId.data as any)).toBe(false);
+      expect('simulatorId' in (withSimId.data as object)).toBe(false);
 
-      expect(schema.safeParse({}).success).toBe(false);
+      expect(schemaObj.safeParse({}).success).toBe(false);
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require simulatorId session default when not provided', async () => {
-      const result = await keyPressPlugin.handler({ keyCode: 40 });
+      const result = await handler({ keyCode: 40 });
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;
@@ -66,7 +57,7 @@ describe('Key Press Plugin', () => {
     it('should surface validation errors once simulator default exists', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await keyPressPlugin.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;

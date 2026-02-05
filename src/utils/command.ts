@@ -70,7 +70,7 @@ async function defaultExecutor(
     // Log the actual command that will be executed
     const displayCommand =
       useShell && escapedCommand.length === 3 ? escapedCommand[2] : [executable, ...args].join(' ');
-    log('info', `Executing ${logPrefix ?? ''} command: ${displayCommand}`);
+    log('debug', `Executing ${logPrefix ?? ''} command: ${displayCommand}`);
 
     const spawnOpts: Parameters<typeof spawn>[2] = {
       stdio: ['ignore', 'pipe', 'pipe'], // ignore stdin, pipe stdout/stderr
@@ -78,7 +78,7 @@ async function defaultExecutor(
       cwd: opts?.cwd,
     };
 
-    log('info', `defaultExecutor PATH: ${process.env.PATH ?? ''}`);
+    log('debug', `defaultExecutor PATH: ${process.env.PATH ?? ''}`);
 
     const logSpawnError = (err: Error): void => {
       const errnoErr = err as NodeJS.ErrnoException & { spawnargs?: string[] };

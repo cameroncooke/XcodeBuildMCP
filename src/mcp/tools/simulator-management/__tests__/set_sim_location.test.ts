@@ -1,48 +1,38 @@
 /**
- * Tests for set_sim_location plugin
+ * Tests for set_sim_location tool
  * Following CLAUDE.md testing standards with literal validation
  * Using pure dependency injection for deterministic testing
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
 import {
   createMockCommandResponse,
   createMockExecutor,
   createNoopExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import setSimLocation, { set_sim_locationLogic } from '../set_sim_location.ts';
+import { schema, handler, set_sim_locationLogic } from '../set_sim_location.ts';
 
 describe('set_sim_location tool', () => {
-  // No mocks to clear since we use pure dependency injection
-
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(setSimLocation.name).toBe('set_sim_location');
-    });
-
-    it('should have correct description', () => {
-      expect(setSimLocation.description).toBe('Set sim location.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof setSimLocation.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose public schema without simulatorId field', () => {
-      const schema = z.object(setSimLocation.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({ latitude: 37.7749, longitude: -122.4194 }).success).toBe(true);
-      expect(schema.safeParse({ latitude: 0, longitude: 0 }).success).toBe(true);
-      expect(schema.safeParse({ latitude: 37.7749 }).success).toBe(false);
-      expect(schema.safeParse({ longitude: -122.4194 }).success).toBe(false);
-      const withSimId = schema.safeParse({
+      expect(schemaObj.safeParse({ latitude: 37.7749, longitude: -122.4194 }).success).toBe(true);
+      expect(schemaObj.safeParse({ latitude: 0, longitude: 0 }).success).toBe(true);
+      expect(schemaObj.safeParse({ latitude: 37.7749 }).success).toBe(false);
+      expect(schemaObj.safeParse({ longitude: -122.4194 }).success).toBe(false);
+      const withSimId = schemaObj.safeParse({
         simulatorId: 'test-uuid-123',
         latitude: 37.7749,
         longitude: -122.4194,
       });
       expect(withSimId.success).toBe(true);
-      expect('simulatorId' in (withSimId.data as any)).toBe(false);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
     });
   });
 

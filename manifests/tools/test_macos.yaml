@@ -12,3 +12,6 @@ predicates:
 routing:
   stateful: false
   daemonAffinity: preferred
+annotations:
+  title: "Test macOS"
+  destructiveHint: true

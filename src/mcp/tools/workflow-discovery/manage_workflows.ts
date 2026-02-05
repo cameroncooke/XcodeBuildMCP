@@ -9,7 +9,6 @@ import {
   getRegisteredWorkflows,
   getMcpPredicateContext,
 } from '../../../utils/tool-registry.ts';
-import { loadManifest } from '../../../core/manifest/load-manifest.ts';
 
 const baseSchemaObject = z.object({
   workflowNames: z.array(z.string()).describe('Workflow directory name(s).'),
@@ -36,7 +35,6 @@ export async function manage_workflowsLogic(
     nextWorkflows = [...new Set([...currentWorkflows, ...workflowNames])];
   }
 
-  // Use the stored MCP predicate context to preserve Xcode detection state
   const ctx = getMcpPredicateContext();
 
   const registryState = await applyWorkflowSelectionFromManifest(nextWorkflows, ctx);
@@ -44,17 +42,10 @@ export async function manage_workflowsLogic(
   return createTextResponse(`Workflows enabled: ${registryState.enabledWorkflows.join(', ')}`);
 }
 
-const manifest = loadManifest();
-const allWorkflowIds = Array.from(manifest.workflows.keys());
-const availableWorkflows =
-  allWorkflowIds.length > 0 ? allWorkflowIds.join(', ') : 'none (no workflows discovered)';
+export const schema = baseSchemaObject.shape;
 
-export default {
-  name: 'manage-workflows',
-  description: `Workflows are groups of tools exposed by XcodeBuildMCP.
-By default, not all workflows (and therefore tools) are enabled; only simulator tools are enabled by default.
-Some workflows are mandatory and can't be disabled.
-Available workflows: ${availableWorkflows}`,
-  schema: baseSchemaObject.shape,
-  handler: createTypedTool(manageWorkflowsSchema, manage_workflowsLogic, getDefaultCommandExecutor),
-};
+export const handler = createTypedTool(
+  manageWorkflowsSchema,
+  manage_workflowsLogic,
+  getDefaultCommandExecutor,
+);

@@ -162,22 +162,15 @@ export async function launch_app_deviceLogic(
   }
 }
 
-export default {
-  name: 'launch_app_device',
-  description: 'Launch app on device.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: launchAppDeviceSchema,
-  }),
-  annotations: {
-    title: 'Launch App Device',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<LaunchAppDeviceParams>({
-    internalSchema: launchAppDeviceSchema as unknown as z.ZodType<LaunchAppDeviceParams>,
-    logicFunction: (params, executor) =>
-      launch_app_deviceLogic(params, executor, getDefaultFileSystemExecutor()),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['deviceId', 'bundleId'], message: 'Provide deviceId and bundleId' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: launchAppDeviceSchema,
+});
+
+export const handler = createSessionAwareTool<LaunchAppDeviceParams>({
+  internalSchema: launchAppDeviceSchema as unknown as z.ZodType<LaunchAppDeviceParams>,
+  logicFunction: (params, executor) =>
+    launch_app_deviceLogic(params, executor, getDefaultFileSystemExecutor()),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['deviceId', 'bundleId'], message: 'Provide deviceId and bundleId' }],
+});

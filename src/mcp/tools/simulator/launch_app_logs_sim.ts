@@ -75,29 +75,19 @@ export async function launch_app_logs_simLogic(
   };
 }
 
-export default {
-  name: 'launch_app_logs_sim',
-  description: 'Launch sim app with logs.',
-  cli: {
-    stateful: true,
-  },
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: launchAppLogsSimSchemaObject,
-  }),
-  annotations: {
-    title: 'Launch App Logs Simulator',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<LaunchAppLogsSimParams>({
-    internalSchema: launchAppLogsSimSchemaObject as unknown as z.ZodType<
-      LaunchAppLogsSimParams,
-      unknown
-    >,
-    logicFunction: launch_app_logs_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['simulatorId', 'bundleId'], message: 'Provide simulatorId and bundleId' },
-    ],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: launchAppLogsSimSchemaObject,
+});
+
+export const handler = createSessionAwareTool<LaunchAppLogsSimParams>({
+  internalSchema: launchAppLogsSimSchemaObject as unknown as z.ZodType<
+    LaunchAppLogsSimParams,
+    unknown
+  >,
+  logicFunction: launch_app_logs_simLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['simulatorId', 'bundleId'], message: 'Provide simulatorId and bundleId' },
+  ],
+});

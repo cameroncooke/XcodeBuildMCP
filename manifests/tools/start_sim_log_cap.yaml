@@ -11,3 +11,6 @@ predicates: []
 routing:
   stateful: true
   daemonAffinity: required
+annotations:
+  title: "Start Simulator Log Capture"
+  destructiveHint: true

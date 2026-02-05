@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
-import stopAppDevice, { stop_app_deviceLogic } from '../stop_app_device.ts';
+import { schema, handler, stop_app_deviceLogic } from '../stop_app_device.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('stop_app_device plugin', () => {
@@ -16,31 +16,23 @@ describe('stop_app_device plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(stopAppDevice.name).toBe('stop_app_device');
-    });
-
-    it('should have correct description', () => {
-      expect(stopAppDevice.description).toBe('Stop device app.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof stopAppDevice.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should require processId in public schema', () => {
-      const schema = z.strictObject(stopAppDevice.schema);
-      expect(schema.safeParse({ processId: 12345 }).success).toBe(true);
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(schema.safeParse({ deviceId: 'test-device-123' }).success).toBe(false);
+      const schemaObj = z.strictObject(schema);
+      expect(schemaObj.safeParse({ processId: 12345 }).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(false);
+      expect(schemaObj.safeParse({ deviceId: 'test-device-123' }).success).toBe(false);
 
-      expect(Object.keys(stopAppDevice.schema)).toEqual(['processId']);
+      expect(Object.keys(schema)).toEqual(['processId']);
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require deviceId when not provided', async () => {
-      const result = await stopAppDevice.handler({ processId: 12345 });
+      const result = await handler({ processId: 12345 });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('deviceId is required');

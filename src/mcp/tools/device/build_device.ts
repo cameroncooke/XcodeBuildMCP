@@ -75,25 +75,18 @@ export async function buildDeviceLogic(
   );
 }
 
-export default {
-  name: 'build_device',
-  description: 'Build for device.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Build Device',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<BuildDeviceParams>({
-    internalSchema: buildDeviceSchema as unknown as z.ZodType<BuildDeviceParams, unknown>,
-    logicFunction: buildDeviceLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<BuildDeviceParams>({
+  internalSchema: buildDeviceSchema as unknown as z.ZodType<BuildDeviceParams, unknown>,
+  logicFunction: buildDeviceLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['scheme'], message: 'scheme is required' },
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+  ],
+  exclusivePairs: [['projectPath', 'workspacePath']],
+});

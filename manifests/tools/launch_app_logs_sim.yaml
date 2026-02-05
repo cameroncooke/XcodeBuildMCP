@@ -11,3 +11,6 @@ predicates: []
 routing:
   stateful: true
   daemonAffinity: preferred
+annotations:
+  title: "Launch App Logs Simulator"
+  destructiveHint: true

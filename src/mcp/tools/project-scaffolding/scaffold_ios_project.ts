@@ -469,20 +469,13 @@ async function scaffoldProject(
   }
 }
 
-export default {
-  name: 'scaffold_ios_project',
-  description: 'Scaffold iOS project.',
-  schema: ScaffoldiOSProjectSchema.shape,
-  annotations: {
-    title: 'Scaffold iOS Project',
-    destructiveHint: true,
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    const params = ScaffoldiOSProjectSchema.parse(args);
-    return scaffold_ios_projectLogic(
-      params,
-      getDefaultCommandExecutor(),
-      getDefaultFileSystemExecutor(),
-    );
-  },
-};
+export const schema = ScaffoldiOSProjectSchema.shape;
+
+export async function handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  const params = ScaffoldiOSProjectSchema.parse(args);
+  return scaffold_ios_projectLogic(
+    params,
+    getDefaultCommandExecutor(),
+    getDefaultFileSystemExecutor(),
+  );
+}

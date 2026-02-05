@@ -15,7 +15,7 @@ import {
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { SystemError } from '../../../../utils/responses/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import screenshotPlugin, { screenshotLogic } from '../../ui-automation/screenshot.ts';
+import { schema, handler, screenshotLogic } from '../../ui-automation/screenshot.ts';
 
 describe('screenshot plugin', () => {
   beforeEach(() => {
@@ -23,24 +23,16 @@ describe('screenshot plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name field', () => {
-      expect(screenshotPlugin.name).toBe('screenshot');
-    });
-
-    it('should have correct description field', () => {
-      expect(screenshotPlugin.description).toBe('Capture screenshot.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof screenshotPlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should have correct schema validation', () => {
-      const schema = z.object(screenshotPlugin.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObj.safeParse({
         simulatorId: '550e8400-e29b-41d4-a716-446655440000',
       });
       expect(withSimId.success).toBe(true);
@@ -334,7 +326,7 @@ describe('screenshot plugin', () => {
     });
 
     it('should handle missing simulatorId via handler', async () => {
-      const result = await screenshotPlugin.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;

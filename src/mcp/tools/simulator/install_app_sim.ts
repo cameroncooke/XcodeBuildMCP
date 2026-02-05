@@ -103,21 +103,14 @@ export async function install_app_simLogic(
   }
 }
 
-export default {
-  name: 'install_app_sim',
-  description: 'Install app on sim.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: installAppSimSchemaObject,
-  }),
-  annotations: {
-    title: 'Install App Simulator',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<InstallAppSimParams>({
-    internalSchema: installAppSimSchemaObject as unknown as z.ZodType<InstallAppSimParams, unknown>,
-    logicFunction: install_app_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: installAppSimSchemaObject,
+});
+
+export const handler = createSessionAwareTool<InstallAppSimParams>({
+  internalSchema: installAppSimSchemaObject as unknown as z.ZodType<InstallAppSimParams, unknown>,
+  logicFunction: install_app_simLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});

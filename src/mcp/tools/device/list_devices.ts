@@ -452,13 +452,10 @@ export async function list_devicesLogic(
   }
 }
 
-export default {
-  name: 'list_devices',
-  description: 'List connected devices.',
-  schema: listDevicesSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'List Devices',
-    readOnlyHint: true,
-  },
-  handler: createTypedTool(listDevicesSchema, list_devicesLogic, getDefaultCommandExecutor),
-};
+export const schema = listDevicesSchema.shape;
+
+export const handler = createTypedTool(
+  listDevicesSchema,
+  list_devicesLogic,
+  getDefaultCommandExecutor,
+);

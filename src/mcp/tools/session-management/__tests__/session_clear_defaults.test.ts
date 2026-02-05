@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import plugin, { sessionClearDefaultsLogic } from '../session_clear_defaults.ts';
+import { schema, handler, sessionClearDefaultsLogic } from '../session_clear_defaults.ts';
 
 describe('session-clear-defaults tool', () => {
   beforeEach(() => {
@@ -20,22 +20,14 @@ describe('session-clear-defaults tool', () => {
     sessionStore.clear();
   });
 
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(plugin.name).toBe('session-clear-defaults');
-    });
-
-    it('should have correct description', () => {
-      expect(plugin.description).toBe('Clear session defaults.');
-    });
-
+  describe('Export Field Validation', () => {
     it('should have handler function', () => {
-      expect(typeof plugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should have schema object', () => {
-      expect(plugin.schema).toBeDefined();
-      expect(typeof plugin.schema).toBe('object');
+      expect(schema).toBeDefined();
+      expect(typeof schema).toBe('object');
     });
   });
 
@@ -74,7 +66,7 @@ describe('session-clear-defaults tool', () => {
     });
 
     it('should validate keys enum', async () => {
-      const result = (await plugin.handler({ keys: ['invalid' as any] })) as any;
+      const result = (await handler({ keys: ['invalid' as any] })) as any;
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
       expect(result.content[0].text).toContain('keys');

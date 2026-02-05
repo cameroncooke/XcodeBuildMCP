@@ -7,5 +7,7 @@ availability:
   mcp: true
   cli: false
   daemon: false
-predicates:
-  - debugEnabled
+predicates: []
+annotations:
+  title: "Disconnect Xcode Tools Bridge"
+  readOnlyHint: false

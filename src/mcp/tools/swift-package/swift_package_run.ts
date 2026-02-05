@@ -219,23 +219,13 @@ export async function swift_package_runLogic(
   }
 }
 
-export default {
-  name: 'swift_package_run',
-  description: 'swift package target run.',
-  cli: {
-    stateful: true,
-  },
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }), // MCP SDK compatibility
-  annotations: {
-    title: 'Swift Package Run',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<SwiftPackageRunParams>({
-    internalSchema: swiftPackageRunSchema,
-    logicFunction: swift_package_runLogic,
-    getExecutor: getDefaultCommandExecutor,
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<SwiftPackageRunParams>({
+  internalSchema: swiftPackageRunSchema,
+  logicFunction: swift_package_runLogic,
+  getExecutor: getDefaultCommandExecutor,
+});

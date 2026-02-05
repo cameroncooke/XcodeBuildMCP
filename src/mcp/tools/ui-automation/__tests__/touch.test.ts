@@ -7,31 +7,23 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import { createMockExecutor, mockProcess } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import touchPlugin, { touchLogic } from '../touch.ts';
+import { schema, handler, touchLogic } from '../touch.ts';
 
 describe('Touch Plugin', () => {
   beforeEach(() => {
     sessionStore.clear();
   });
 
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(touchPlugin.name).toBe('touch');
-    });
-
-    it('should have correct description', () => {
-      expect(touchPlugin.description).toBe('Touch down/up at coords.');
-    });
-
+  describe('Schema Validation', () => {
     it('should have handler function', () => {
-      expect(typeof touchPlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema fields with safeParse', () => {
-      const schema = z.object(touchPlugin.schema);
+      const schemaObj = z.object(schema);
 
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           x: 100,
           y: 200,
           down: true,
@@ -39,7 +31,7 @@ describe('Touch Plugin', () => {
       ).toBe(true);
 
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           x: 100,
           y: 200,
           up: true,
@@ -47,7 +39,7 @@ describe('Touch Plugin', () => {
       ).toBe(true);
 
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           x: 100.5,
           y: 200,
           down: true,
@@ -55,7 +47,7 @@ describe('Touch Plugin', () => {
       ).toBe(false);
 
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           x: 100,
           y: 200.5,
           down: true,
@@ -63,7 +55,7 @@ describe('Touch Plugin', () => {
       ).toBe(false);
 
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           x: 100,
           y: 200,
           down: true,
@@ -71,7 +63,7 @@ describe('Touch Plugin', () => {
         }).success,
       ).toBe(false);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObj.safeParse({
         simulatorId: '12345678-1234-4234-8234-123456789012',
         x: 100,
         y: 200,
@@ -84,7 +76,7 @@ describe('Touch Plugin', () => {
 
   describe('Handler Requirements', () => {
     it('should require simulatorId session default', async () => {
-      const result = await touchPlugin.handler({
+      const result = await handler({
         x: 100,
         y: 200,
         down: true,
@@ -100,7 +92,7 @@ describe('Touch Plugin', () => {
     it('should surface parameter validation errors when defaults exist', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await touchPlugin.handler({
+      const result = await handler({
         y: 200,
         down: true,
       });

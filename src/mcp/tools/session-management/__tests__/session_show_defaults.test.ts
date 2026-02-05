@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import plugin from '../session_show_defaults.ts';
+import { schema, handler } from '../session_show_defaults.ts';
 
 describe('session-show-defaults tool', () => {
   beforeEach(() => {
@@ -12,26 +12,18 @@ describe('session-show-defaults tool', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(plugin.name).toBe('session-show-defaults');
-    });
-
-    it('should have correct description', () => {
-      expect(plugin.description).toBe('Show session defaults.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof plugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should have empty schema', () => {
-      expect(plugin.schema).toEqual({});
+      expect(schema).toEqual({});
     });
   });
 
   describe('Handler Behavior', () => {
     it('should return empty defaults when none set', async () => {
-      const result = await plugin.handler();
+      const result = await handler();
       expect(result.isError).toBe(false);
       expect(result.content).toHaveLength(1);
       expect(typeof result.content[0].text).toBe('string');
@@ -41,7 +33,7 @@ describe('session-show-defaults tool', () => {
 
     it('should return current defaults when set', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme', simulatorId: 'SIM-123' });
-      const result = await plugin.handler();
+      const result = await handler();
       expect(result.isError).toBe(false);
       expect(result.content).toHaveLength(1);
       expect(typeof result.content[0].text).toBe('string');

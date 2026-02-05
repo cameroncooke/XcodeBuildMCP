@@ -7,5 +7,7 @@ availability:
   mcp: true
   cli: true
   daemon: true
-predicates:
-  - debugEnabled
+predicates: []
+annotations:
+  title: "Doctor"
+  readOnlyHint: true

@@ -7,7 +7,6 @@ import {
   isToolInWorkflowExposed,
   filterExposedTools,
   filterEnabledWorkflows,
-  getMandatoryWorkflows,
   getDefaultEnabledWorkflows,
   getAutoIncludeWorkflows,
   selectWorkflowsForMcp,
@@ -192,20 +191,6 @@ describe('exposure', () => {
     });
   });
 
-  describe('getMandatoryWorkflows', () => {
-    it('should return only mandatory workflows', () => {
-      const workflows = [
-        createWorkflow({ id: 'wf1', selection: { mcp: { mandatory: true } } }),
-        createWorkflow({ id: 'wf2', selection: { mcp: { mandatory: false } } }),
-        createWorkflow({ id: 'wf3', selection: { mcp: { mandatory: true } } }),
-      ];
-
-      const mandatory = getMandatoryWorkflows(workflows);
-      expect(mandatory).toHaveLength(2);
-      expect(mandatory.map((w) => w.id)).toEqual(['wf1', 'wf3']);
-    });
-  });
-
   describe('getDefaultEnabledWorkflows', () => {
     it('should return only default-enabled workflows', () => {
       const workflows = [
@@ -271,24 +256,24 @@ describe('exposure', () => {
     const allWorkflows = [
       createWorkflow({
         id: 'session-management',
-        selection: { mcp: { mandatory: true, defaultEnabled: true, autoInclude: true } },
+        selection: { mcp: { defaultEnabled: true, autoInclude: true } },
       }),
       createWorkflow({
         id: 'simulator',
-        selection: { mcp: { mandatory: false, defaultEnabled: true, autoInclude: false } },
+        selection: { mcp: { defaultEnabled: true, autoInclude: false } },
       }),
       createWorkflow({
         id: 'device',
-        selection: { mcp: { mandatory: false, defaultEnabled: false, autoInclude: false } },
+        selection: { mcp: { defaultEnabled: false, autoInclude: false } },
       }),
       createWorkflow({
         id: 'doctor',
-        selection: { mcp: { mandatory: false, defaultEnabled: false, autoInclude: true } },
+        selection: { mcp: { defaultEnabled: false, autoInclude: true } },
         predicates: ['debugEnabled'],
       }),
     ];
 
-    it('should include mandatory workflows', () => {
+    it('should include auto-include workflows', () => {
       const ctx = createContext();
       const selected = selectWorkflowsForMcp(allWorkflows, undefined, ctx);
       expect(selected.map((w) => w.id)).toContain('session-management');
@@ -304,7 +289,7 @@ describe('exposure', () => {
       const ctx = createContext();
       const selected = selectWorkflowsForMcp(allWorkflows, ['device'], ctx);
       expect(selected.map((w) => w.id)).toContain('device');
-      expect(selected.map((w) => w.id)).toContain('session-management'); // mandatory
+      expect(selected.map((w) => w.id)).toContain('session-management'); // autoInclude
     });
 
     it('should not include default-enabled when workflows are requested', () => {

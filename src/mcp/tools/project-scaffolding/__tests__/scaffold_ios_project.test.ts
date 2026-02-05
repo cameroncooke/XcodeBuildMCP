@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as z from 'zod';
-import scaffoldIosProject, { scaffold_ios_projectLogic } from '../scaffold_ios_project.ts';
+import { schema, handler, scaffold_ios_projectLogic } from '../scaffold_ios_project.ts';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
@@ -66,24 +66,16 @@ describe('scaffold_ios_project plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name field', () => {
-      expect(scaffoldIosProject.name).toBe('scaffold_ios_project');
-    });
-
-    it('should have correct description field', () => {
-      expect(scaffoldIosProject.description).toBe('Scaffold iOS project.');
-    });
-
     it('should have handler as function', () => {
-      expect(typeof scaffoldIosProject.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should have valid schema with required fields', () => {
-      const schema = z.object(scaffoldIosProject.schema);
+      const schemaObj = z.object(schema);
 
       // Test valid input
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           projectName: 'MyTestApp',
           outputPath: '/path/to/output',
           bundleIdentifier: 'com.test.myapp',
@@ -100,7 +92,7 @@ describe('scaffold_ios_project plugin', () => {
 
       // Test minimal valid input
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           projectName: 'MyTestApp',
           outputPath: '/path/to/output',
         }).success,
@@ -108,21 +100,21 @@ describe('scaffold_ios_project plugin', () => {
 
       // Test invalid input - missing projectName
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           outputPath: '/path/to/output',
         }).success,
       ).toBe(false);
 
       // Test invalid input - missing outputPath
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           projectName: 'MyTestApp',
         }).success,
       ).toBe(false);
 
       // Test invalid input - wrong type for customizeNames
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           projectName: 'MyTestApp',
           outputPath: '/path/to/output',
           customizeNames: 'true',
@@ -131,7 +123,7 @@ describe('scaffold_ios_project plugin', () => {
 
       // Test invalid input - wrong enum value for targetedDeviceFamily
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           projectName: 'MyTestApp',
           outputPath: '/path/to/output',
           targetedDeviceFamily: ['invalid-device'],
@@ -140,7 +132,7 @@ describe('scaffold_ios_project plugin', () => {
 
       // Test invalid input - wrong enum value for supportedOrientations
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           projectName: 'MyTestApp',
           outputPath: '/path/to/output',
           supportedOrientations: ['invalid-orientation'],

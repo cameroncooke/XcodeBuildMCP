@@ -384,15 +384,8 @@ async function doctorMcpHandler(
   return doctorLogic(params, executor, false); // Always false for MCP
 }
 
-export default {
-  name: 'doctor',
-  description: 'MCP environment info.',
-  schema: doctorSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Doctor',
-    readOnlyHint: true,
-  },
-  handler: createTypedTool(doctorSchema, doctorMcpHandler, getDefaultCommandExecutor),
-};
+export const schema = doctorSchema.shape; // MCP SDK compatibility
+
+export const handler = createTypedTool(doctorSchema, doctorMcpHandler, getDefaultCommandExecutor);
 
 export type { DoctorDependencies } from './lib/doctor.deps.ts';

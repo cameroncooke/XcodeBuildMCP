@@ -120,24 +120,17 @@ const publicSchemaObject = z.strictObject(
   setSimulatorLocationSchema.omit({ simulatorId: true } as const).shape,
 );
 
-export default {
-  name: 'set_sim_location',
-  description: 'Set sim location.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: setSimulatorLocationSchema,
-  }),
-  annotations: {
-    title: 'Set Simulator Location',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<SetSimulatorLocationParams>({
-    internalSchema: setSimulatorLocationSchema as unknown as z.ZodType<
-      SetSimulatorLocationParams,
-      unknown
-    >,
-    logicFunction: set_sim_locationLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: setSimulatorLocationSchema,
+});
+
+export const handler = createSessionAwareTool<SetSimulatorLocationParams>({
+  internalSchema: setSimulatorLocationSchema as unknown as z.ZodType<
+    SetSimulatorLocationParams,
+    unknown
+  >,
+  logicFunction: set_sim_locationLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});

@@ -81,16 +81,17 @@ export function buildYargsApp(opts: YargsAppOptions): ReturnType<typeof yargs> {
 
   // Register command groups with workspace context
   registerMcpCommand(app);
-  registerDaemonCommands(app, {
-    defaultSocketPath: opts.defaultSocketPath,
-    workspaceRoot: opts.workspaceRoot,
-    workspaceKey: opts.workspaceKey,
-  });
   registerToolsCommand(app);
   registerToolCommands(app, opts.catalog, {
     workspaceRoot: opts.workspaceRoot,
     enabledWorkflows: opts.enabledWorkflows,
     workflowNames: opts.workflowNames,
+  });
+  // Daemon management is an advanced debugging tool - register last
+  registerDaemonCommands(app, {
+    defaultSocketPath: opts.defaultSocketPath,
+    workspaceRoot: opts.workspaceRoot,
+    workspaceKey: opts.workspaceKey,
   });
 
   return app;
