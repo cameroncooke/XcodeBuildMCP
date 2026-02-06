@@ -59,8 +59,8 @@ function escapeSwiftStringLiteral(value: string): string {
  */
 function getWindowDetectionSwiftCode(deviceName: string): string {
   const escapedDeviceName = escapeSwiftStringLiteral(deviceName);
-  // Use hasPrefix + boundary check to avoid matching "iPhone 15" when looking for "iPhone 15 Pro"
-  // Window titles are formatted like "iPhone 15 Pro – iOS 17.2"
+  // Match by title separator (en-dash) to avoid "iPhone 15" matching "iPhone 15 Pro"
+  // Window titles are formatted like "iPhone 15 Pro \u{2013} iOS 17.2"
   return `
 import Cocoa
 import CoreGraphics
@@ -71,8 +71,9 @@ if let wins = CGWindowListCopyWindowInfo(opts, kCGNullWindowID) as? [[String: An
     if let o = w[kCGWindowOwnerName as String] as? String, o == "Simulator",
        let b = w[kCGWindowBounds as String] as? [String: Any],
        let n = w[kCGWindowName as String] as? String {
-      // Check for exact match: name starts with deviceName followed by separator or end
-      let isMatch = n == deviceName || n.hasPrefix(deviceName + " ")
+      // Check for exact match: name equals deviceName or is followed by the title separator
+      // Window titles use en-dash: "iPhone 15 Pro \u{2013} iOS 17.2"
+      let isMatch = n == deviceName || n.hasPrefix(deviceName + " \\u{2013}") || n.hasPrefix(deviceName + " -")
       if isMatch {
         print("\\(b["Width"] as? Int ?? 0),\\(b["Height"] as? Int ?? 0)")
         break

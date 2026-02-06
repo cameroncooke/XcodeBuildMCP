@@ -130,9 +130,12 @@ export async function buildToolCatalogFromManifest(opts: {
   // Cache imported modules to avoid re-importing the same tool
   const moduleCache = new Map<string, Awaited<ReturnType<typeof importToolModule>>>();
   const tools: ToolDefinition[] = [];
+  const seenToolIds = new Set<string>();
 
   for (const workflow of filteredWorkflows) {
     for (const toolId of workflow.tools) {
+      if (seenToolIds.has(toolId)) continue;
+
       const toolManifest = manifest.tools.get(toolId);
       if (!toolManifest) continue;
 
@@ -154,6 +157,7 @@ export async function buildToolCatalogFromManifest(opts: {
         }
       }
 
+      seenToolIds.add(toolId);
       const cliName = getEffectiveCliName(toolManifest);
       tools.push({
         cliName,
