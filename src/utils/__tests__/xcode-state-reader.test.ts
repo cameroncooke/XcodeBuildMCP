@@ -78,6 +78,41 @@ describe('findXcodeStateFile', () => {
     expect(result).toBeUndefined();
   });
 
+  it('finds project in parent directory when cwd is nested within searchRoot', async () => {
+    const executor = createCommandMatchingMockExecutor({
+      whoami: { output: 'testuser\n' },
+      'find /test/project/subdir -maxdepth 6': { output: '' },
+      'find /test/project -maxdepth 1': { output: '/test/project/MyApp.xcodeproj\n' },
+      stat: { output: '1704067200\n' },
+    });
+
+    const result = await findXcodeStateFile({
+      executor,
+      cwd: '/test/project/subdir',
+      searchRoot: '/test/project',
+    });
+
+    expect(result).toBe(
+      '/test/project/MyApp.xcodeproj/project.xcworkspace/xcuserdata/testuser.xcuserdatad/UserInterfaceState.xcuserstate',
+    );
+  });
+
+  it('does not search above searchRoot boundary', async () => {
+    const executor = createCommandMatchingMockExecutor({
+      whoami: { output: 'testuser\n' },
+      'find /test/project/subdir -maxdepth 6': { output: '' },
+      'find /test/project -maxdepth 1': { output: '' },
+    });
+
+    const result = await findXcodeStateFile({
+      executor,
+      cwd: '/test/project/subdir',
+      searchRoot: '/test/project',
+    });
+
+    expect(result).toBeUndefined();
+  });
+
   it('uses configured workspacePath directly', async () => {
     const executor = createCommandMatchingMockExecutor({
       whoami: { output: 'testuser\n' },

@@ -179,6 +179,7 @@ async function processFileChange(): Promise<void> {
 export interface StartWatcherOptions {
   executor?: CommandExecutor;
   cwd?: string;
+  searchRoot?: string;
   workspacePath?: string;
   projectPath?: string;
 }
@@ -198,6 +199,7 @@ export async function startXcodeStateWatcher(options: StartWatcherOptions = {}):
   const xcuserstatePath = await findXcodeStateFile({
     executor,
     cwd,
+    searchRoot: options.searchRoot,
     workspacePath: options.workspacePath,
     projectPath: options.projectPath,
   });

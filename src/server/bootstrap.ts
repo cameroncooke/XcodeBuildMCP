@@ -8,6 +8,7 @@ import { getRegisteredWorkflows, registerWorkflowsFromManifest } from '../utils/
 import { bootstrapRuntime } from '../runtime/bootstrap-runtime.ts';
 import { getXcodeToolsBridgeManager } from '../integrations/xcode-tools-bridge/index.ts';
 import { getMcpBridgeAvailability } from '../integrations/xcode-tools-bridge/core.ts';
+import { resolveWorkspaceRoot } from '../daemon/socket-path.ts';
 import { detectXcodeRuntime } from '../utils/xcode-process.ts';
 import { readXcodeIdeState } from '../utils/xcode-state-reader.ts';
 import { sessionStore } from '../utils/session-store.ts';
@@ -60,6 +61,10 @@ export async function bootstrapServer(
   }
 
   const enabledWorkflows = result.runtime.config.enabledWorkflows;
+  const workspaceRoot = resolveWorkspaceRoot({
+    cwd: result.runtime.cwd,
+    projectConfigPath: result.configPath,
+  });
   const mcpBridge = await getMcpBridgeAvailability();
   const xcodeToolsAvailable = mcpBridge.available;
   log('info', `🚀 Initializing server...`);
@@ -79,6 +84,7 @@ export async function bootstrapServer(
     const xcodeState = await readXcodeIdeState({
       executor,
       cwd: result.runtime.cwd,
+      searchRoot: workspaceRoot,
       projectPath,
       workspacePath,
     });
@@ -125,6 +131,7 @@ export async function bootstrapServer(
       const watcherStarted = await startXcodeStateWatcher({
         executor,
         cwd: result.runtime.cwd,
+        searchRoot: workspaceRoot,
         projectPath,
         workspacePath,
       });

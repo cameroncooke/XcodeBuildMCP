@@ -8,6 +8,7 @@
  * running under Xcode's coding agent.
  */
 
+import { dirname, resolve, sep } from 'node:path';
 import { log } from './logger.ts';
 import { parseXcuserstate } from './nskeyedarchiver-parser.ts';
 import type { CommandExecutor } from './execution/index.ts';
@@ -22,6 +23,8 @@ export interface XcodeStateResult {
 export interface XcodeStateReaderContext {
   executor: CommandExecutor;
   cwd: string;
+  /** Optional boundary for parent-directory fallback search (typically workspace root) */
+  searchRoot?: string;
   /** Optional pre-configured workspace path to use directly */
   workspacePath?: string;
   /** Optional pre-configured project path to use directly */
@@ -33,16 +36,79 @@ export interface XcodeStateReaderContext {
  *
  * Search order:
  * 1. Use configured workspacePath/projectPath if provided
- * 2. Search for .xcworkspace/.xcodeproj in cwd and parent directories
+ * 2. Search for .xcworkspace/.xcodeproj under cwd
+ * 3. If none (or to broaden candidates), search direct children of parent directories
+ *    up to searchRoot (workspace boundary)
  *
  * For each found project:
  * - .xcworkspace: <workspace>/xcuserdata/<user>.xcuserdatad/UserInterfaceState.xcuserstate
  * - .xcodeproj: <project>/project.xcworkspace/xcuserdata/<user>.xcuserdatad/UserInterfaceState.xcuserstate
  */
+function buildFindProjectsCommand(root: string, maxDepth: number): string[] {
+  return [
+    'find',
+    root,
+    '-maxdepth',
+    String(maxDepth),
+    '(',
+    '-name',
+    '*.xcworkspace',
+    '-o',
+    '-name',
+    '*.xcodeproj',
+    ')',
+    '-type',
+    'd',
+  ];
+}
+
+function isPathWithinBoundary(path: string, boundary: string): boolean {
+  return path === boundary || path.startsWith(`${boundary}${sep}`);
+}
+
+function listParentDirectories(startPath: string, boundaryPath: string): string[] {
+  const parents: string[] = [];
+  const start = resolve(startPath);
+  const boundary = resolve(boundaryPath);
+
+  if (!isPathWithinBoundary(start, boundary)) {
+    return parents;
+  }
+
+  let current = start;
+  while (true) {
+    const parent = dirname(current);
+    if (parent === current) {
+      break;
+    }
+
+    if (!isPathWithinBoundary(parent, boundary)) {
+      break;
+    }
+
+    parents.push(parent);
+    if (parent === boundary) {
+      break;
+    }
+
+    current = parent;
+  }
+
+  return parents;
+}
+
+function collectFindPaths(output: string): string[] {
+  return output
+    .trim()
+    .split('\n')
+    .map((path) => path.trim())
+    .filter(Boolean);
+}
+
 export async function findXcodeStateFile(
   ctx: XcodeStateReaderContext,
 ): Promise<string | undefined> {
-  const { executor, cwd, workspacePath, projectPath } = ctx;
+  const { executor, cwd, searchRoot, workspacePath, projectPath } = ctx;
 
   // Get current username
   const userResult = await executor(['whoami'], 'Get username', false);
@@ -68,33 +134,47 @@ export async function findXcodeStateFile(
     log('debug', `[xcode-state] Configured path xcuserstate not found: ${xcuserstatePath}`);
   }
 
-  // Search for projects with increased depth (projects can be nested deeper)
-  const findResult = await executor(
-    [
-      'find',
-      cwd,
-      '-maxdepth',
-      '6',
-      '(',
-      '-name',
-      '*.xcworkspace',
-      '-o',
-      '-name',
-      '*.xcodeproj',
-      ')',
-      '-type',
-      'd',
-    ],
-    'Find Xcode project/workspace',
+  const discoveredPaths = new Set<string>();
+
+  // Search descendants from cwd with increased depth (projects can be nested deeper).
+  const descendantsResult = await executor(
+    buildFindProjectsCommand(cwd, 6),
+    'Find Xcode project/workspace in cwd descendants',
     false,
   );
+  if (descendantsResult.success && descendantsResult.output.trim()) {
+    for (const path of collectFindPaths(descendantsResult.output)) {
+      discoveredPaths.add(path);
+    }
+  }
 
-  if (!findResult.success || !findResult.output.trim()) {
-    log('debug', `[xcode-state] No Xcode project/workspace found in ${cwd}`);
+  // Also search direct children of parent directories to support nested cwd usage.
+  // Example: cwd=/repo/feature/subdir, project=/repo/App.xcodeproj
+  // Parent traversal stops at searchRoot (workspace boundary).
+  const parentSearchBoundary = searchRoot ?? cwd;
+  for (const parentDir of listParentDirectories(cwd, parentSearchBoundary)) {
+    const parentResult = await executor(
+      buildFindProjectsCommand(parentDir, 1),
+      'Find Xcode project/workspace in parent directory',
+      false,
+    );
+    if (!parentResult.success || !parentResult.output.trim()) {
+      continue;
+    }
+    for (const path of collectFindPaths(parentResult.output)) {
+      discoveredPaths.add(path);
+    }
+  }
+
+  if (discoveredPaths.size === 0) {
+    log(
+      'debug',
+      `[xcode-state] No Xcode project/workspace found in ${cwd} (boundary: ${parentSearchBoundary})`,
+    );
     return undefined;
   }
 
-  const paths = findResult.output.trim().split('\n').filter(Boolean);
+  const paths = [...discoveredPaths];
 
   // Filter out nested workspaces inside xcodeproj and sort
   const filteredPaths = paths

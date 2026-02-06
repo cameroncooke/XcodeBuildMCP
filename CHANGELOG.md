@@ -13,6 +13,9 @@
 - Added daemon idle shutdown in CLI mode: per-workspace daemons now auto-exit after 10 minutes of inactivity when no active stateful sessions exist.
 - Inverted idle activity tracking to a generic daemon activity registry so long-running tools report lifecycle activity without hardcoded daemon imports.
 
+### Fixed
+- Fix Xcode IDE state discovery fallback to check parent directories only up to the resolved workspace root boundary when started from a nested working directory without explicit `projectPath`/`workspacePath`.
+
 ## [2.0.0] - 2026-02-02
 
 ### Breaking
