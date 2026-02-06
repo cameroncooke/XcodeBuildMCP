@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { log } from '../utils/logger.ts';
 import type { CommandExecutor } from './command.ts';
 import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from './command.ts';
+import { normalizeSimctlChildEnv } from './environment.ts';
 import type { FileSystemExecutor } from './FileSystemExecutor.ts';
 import { acquireDaemonActivity } from '../daemon/activity-registry.ts';
 
@@ -71,6 +72,7 @@ export async function startLogCapture(
     bundleId: string;
     captureConsole?: boolean;
     args?: string[];
+    env?: Record<string, string>;
     subsystemFilter?: SubsystemFilter;
   },
   executor: CommandExecutor = getDefaultCommandExecutor(),
@@ -84,6 +86,7 @@ export async function startLogCapture(
     bundleId,
     captureConsole = false,
     args = [],
+    env,
     subsystemFilter = 'app',
   } = params;
   const logSessionId = uuidv4();
@@ -143,11 +146,12 @@ export async function startLogCapture(
         launchCommand.push(...args);
       }
 
+      const launchOpts = env ? { env: normalizeSimctlChildEnv(env) } : undefined;
       const stdoutLogResult = await executor(
         launchCommand,
         'Console Log Capture',
         false, // useShell
-        undefined, // env
+        launchOpts, // env
         true, // detached - don't wait for this streaming process to complete
       );
 

@@ -7,6 +7,7 @@ import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
+import { normalizeSimctlChildEnv } from '../../../utils/environment.ts';
 
 const baseSchemaObject = z.object({
   simulatorId: z
@@ -23,6 +24,12 @@ const baseSchemaObject = z.object({
     ),
   bundleId: z.string().describe('Bundle identifier of the app to launch'),
   args: z.array(z.string()).optional().describe('Optional arguments to pass to the app'),
+  env: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      'Environment variables to pass to the launched app (SIMCTL_CHILD_ prefix added automatically)',
+    ),
 });
 
 // Internal schema requires simulatorId (factory resolves simulatorName → simulatorId)
@@ -31,6 +38,12 @@ const internalSchemaObject = z.object({
   simulatorName: z.string().optional(),
   bundleId: z.string(),
   args: z.array(z.string()).optional(),
+  env: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      'Environment variables to pass to the launched app (SIMCTL_CHILD_ prefix added automatically)',
+    ),
 });
 
 export type LaunchAppSimParams = z.infer<typeof internalSchemaObject>;
@@ -90,7 +103,8 @@ export async function launch_app_simLogic(
       command.push(...params.args);
     }
 
-    const result = await executor(command, 'Launch App in Simulator', false, undefined);
+    const execOpts = params.env ? { env: normalizeSimctlChildEnv(params.env) } : undefined;
+    const result = await executor(command, 'Launch App in Simulator', false, execOpts);
 
     if (!result.success) {
       return {

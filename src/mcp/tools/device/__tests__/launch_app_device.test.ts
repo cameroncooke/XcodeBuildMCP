@@ -30,7 +30,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       const schemaObj = z.strictObject(schema);
       expect(schemaObj.safeParse({}).success).toBe(true);
       expect(schemaObj.safeParse({ bundleId: 'com.example.app' }).success).toBe(false);
-      expect(Object.keys(schema)).toEqual([]);
+      expect(Object.keys(schema).sort()).toEqual(['env']);
     });
 
     it('should validate schema with invalid inputs', () => {
@@ -133,6 +133,67 @@ describe('launch_app_device plugin (device-shared)', () => {
         '--terminate-existing',
         'com.apple.mobilesafari',
       ]);
+    });
+
+    it('should append --environment-variables flags before bundleId when env is provided', async () => {
+      const calls: any[] = [];
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'App launched successfully',
+        process: { pid: 12345 },
+      });
+
+      const trackingExecutor = async (command: string[]) => {
+        calls.push({ command });
+        return mockExecutor(command);
+      };
+
+      await launch_app_deviceLogic(
+        {
+          deviceId: 'test-device-123',
+          bundleId: 'com.example.app',
+          env: { STAGING_ENABLED: '1', DEBUG: 'true' },
+        },
+        trackingExecutor,
+        createMockFileSystemExecutor(),
+      );
+
+      expect(calls).toHaveLength(1);
+      const cmd = calls[0].command;
+      // bundleId should be the last element
+      expect(cmd[cmd.length - 1]).toBe('com.example.app');
+      // --environment-variables flags should appear before bundleId
+      const envIdx1 = cmd.indexOf('--environment-variables');
+      expect(envIdx1).toBeGreaterThan(-1);
+      expect(cmd[envIdx1 + 1]).toBe('STAGING_ENABLED=1');
+      const envIdx2 = cmd.indexOf('--environment-variables', envIdx1 + 1);
+      expect(envIdx2).toBeGreaterThan(-1);
+      expect(cmd[envIdx2 + 1]).toBe('DEBUG=true');
+    });
+
+    it('should not include --environment-variables when env is not provided', async () => {
+      const calls: any[] = [];
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'App launched successfully',
+        process: { pid: 12345 },
+      });
+
+      const trackingExecutor = async (command: string[]) => {
+        calls.push({ command });
+        return mockExecutor(command);
+      };
+
+      await launch_app_deviceLogic(
+        {
+          deviceId: 'test-device-123',
+          bundleId: 'com.example.app',
+        },
+        trackingExecutor,
+        createMockFileSystemExecutor(),
+      );
+
+      expect(calls[0].command).not.toContain('--environment-variables');
     });
   });
 
