@@ -76,7 +76,7 @@ After testing `list_sims` tool, update the report:
 ## Detailed Test Results
 
 ### Tool: list_sims ✅ PASSED
-**Command:** `npx reloaderoo@latest inspect call-tool list_sims --params '{}' -- node build/cli.js`
+**Command:** `npx reloaderoo@latest inspect call-tool list_sims --params '{}' -- node build/cli.js mcp`
 **Verification:** Command returned JSON array with 6 simulator objects
 **Validation Summary:** Successfully discovered 6 available simulators with UUIDs, names, and boot status
 **Timestamp:** 2025-01-29 14:30:15
@@ -87,8 +87,8 @@ After testing `list_sims` tool, update the report:
 ### Pre-Testing Setup
 - Always start by building the project: `npm run build`
 - Verify Reloaderoo is available: `npx reloaderoo@latest --help`
-- Check server connectivity: `npx reloaderoo@latest inspect ping -- node build/cli.js`
-- Get server information: `npx reloaderoo@latest inspect server-info -- node build/cli.js`
+- Check server connectivity: `npx reloaderoo@latest inspect ping -- node build/cli.js mcp`
+- Get server information: `npx reloaderoo@latest inspect server-info -- node build/cli.js mcp`
 
 ### Systematic Testing Workflow
 1. **Create Initial Report**: Generate test report with all checkboxes unchecked
@@ -108,7 +108,7 @@ After testing `list_sims` tool, update the report:
 
 ### Tool Testing Process
 For each tool:
-1. Execute test with `npx reloaderoo@latest inspect call-tool <tool_name> --params '<json>' -- node build/cli.js`
+1. Execute test with `npx reloaderoo@latest inspect call-tool <tool_name> --params '<json>' -- node build/cli.js mcp`
 2. Verify response format and content
 3. **IMMEDIATELY** update test report with result
 4. Check the box and add detailed verification summary
@@ -116,7 +116,7 @@ For each tool:
 
 ### Resource Testing Process
 For each resource:
-1. Execute test with `npx reloaderoo@latest inspect read-resource "<uri>" -- node build/cli.js`
+1. Execute test with `npx reloaderoo@latest inspect read-resource "<uri>" -- node build/cli.js mcp`
 2. Verify resource accessibility and content format
 3. **IMMEDIATELY** update test report with result
 4. Check the box and add detailed verification summary

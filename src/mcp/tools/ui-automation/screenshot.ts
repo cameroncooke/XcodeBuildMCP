@@ -43,14 +43,22 @@ interface SimctlDeviceList {
   devices: Record<string, SimctlDevice[]>;
 }
 
+function escapeSwiftStringLiteral(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+}
+
 /**
  * Generates Swift code to detect simulator window dimensions via CoreGraphics.
  * Filters by device name to handle multiple open simulators correctly.
  * Returns "width,height" of the matching simulator window.
  */
 function getWindowDetectionSwiftCode(deviceName: string): string {
-  // Escape the device name for use in Swift string
-  const escapedDeviceName = deviceName.replace(/"/g, '\\"');
+  const escapedDeviceName = escapeSwiftStringLiteral(deviceName);
   // Use hasPrefix + boundary check to avoid matching "iPhone 15" when looking for "iPhone 15 Pro"
   // Window titles are formatted like "iPhone 15 Pro – iOS 17.2"
   return `
