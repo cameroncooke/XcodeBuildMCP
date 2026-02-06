@@ -2,6 +2,7 @@ id: list_sims
 module: mcp/tools/simulator/list_sims
 names:
   mcp: list_sims
+  cli: list
 description: List iOS simulators.
 annotations:
   title: List Simulators

@@ -2,6 +2,7 @@ id: swipe
 module: mcp/tools/ui-automation/swipe
 names:
   mcp: swipe
+  cli: swipe
 description: Swipe between points.
 annotations:
   title: Swipe

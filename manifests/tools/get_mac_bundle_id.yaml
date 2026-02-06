@@ -2,6 +2,7 @@ id: get_mac_bundle_id
 module: mcp/tools/project-discovery/get_mac_bundle_id
 names:
   mcp: get_mac_bundle_id
+  cli: get-macos-bundle-id
 description: Extract bundle id from macOS .app.
 annotations:
   title: Get Mac Bundle ID

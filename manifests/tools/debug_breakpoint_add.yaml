@@ -2,6 +2,7 @@ id: debug_breakpoint_add
 module: mcp/tools/debugging/debug_breakpoint_add
 names:
   mcp: debug_breakpoint_add
+  cli: add-breakpoint
 description: Add breakpoint.
 routing:
   stateful: true

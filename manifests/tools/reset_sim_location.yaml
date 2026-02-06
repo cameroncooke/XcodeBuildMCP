@@ -2,6 +2,7 @@ id: reset_sim_location
 module: mcp/tools/simulator-management/reset_sim_location
 names:
   mcp: reset_sim_location
+  cli: reset-location
 description: Reset sim location.
 annotations:
   title: Reset Simulator Location

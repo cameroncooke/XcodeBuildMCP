@@ -2,6 +2,7 @@ id: sim_statusbar
 module: mcp/tools/simulator-management/sim_statusbar
 names:
   mcp: sim_statusbar
+  cli: statusbar
 description: Set sim status bar network.
 annotations:
   title: Simulator Statusbar

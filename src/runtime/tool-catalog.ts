@@ -15,16 +15,21 @@ import { log } from '../utils/logging/index.ts';
 import { getMcpBridgeAvailability } from '../integrations/xcode-tools-bridge/core.ts';
 
 export function createToolCatalog(tools: ToolDefinition[]): ToolCatalog {
-  // Build lookup maps for fast resolution
+  // Build lookup maps for fast resolution, deduplicating by mcpName so that
+  // tools shared across multiple workflows don't cause ambiguous resolution.
   const byCliName = new Map<string, ToolDefinition>();
   const byMcpName = new Map<string, ToolDefinition>();
   const byMcpKebab = new Map<string, ToolDefinition[]>();
+  const seenMcpNames = new Set<string>();
 
   for (const tool of tools) {
-    byCliName.set(tool.cliName, tool);
-    byMcpName.set(tool.mcpName.toLowerCase(), tool);
+    const mcpKey = tool.mcpName.toLowerCase();
+    if (seenMcpNames.has(mcpKey)) continue;
+    seenMcpNames.add(mcpKey);
 
-    // Also index by the kebab-case of MCP name (for aliases)
+    byCliName.set(tool.cliName, tool);
+    byMcpName.set(mcpKey, tool);
+
     const mcpKebab = toKebabCase(tool.mcpName);
     const existing = byMcpKebab.get(mcpKebab) ?? [];
     byMcpKebab.set(mcpKebab, [...existing, tool]);
@@ -130,12 +135,9 @@ export async function buildToolCatalogFromManifest(opts: {
   // Cache imported modules to avoid re-importing the same tool
   const moduleCache = new Map<string, Awaited<ReturnType<typeof importToolModule>>>();
   const tools: ToolDefinition[] = [];
-  const seenToolIds = new Set<string>();
 
   for (const workflow of filteredWorkflows) {
     for (const toolId of workflow.tools) {
-      if (seenToolIds.has(toolId)) continue;
-
       const toolManifest = manifest.tools.get(toolId);
       if (!toolManifest) continue;
 
@@ -157,7 +159,6 @@ export async function buildToolCatalogFromManifest(opts: {
         }
       }
 
-      seenToolIds.add(toolId);
       const cliName = getEffectiveCliName(toolManifest);
       tools.push({
         cliName,

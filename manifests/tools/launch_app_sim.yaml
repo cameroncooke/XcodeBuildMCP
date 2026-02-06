@@ -2,6 +2,7 @@ id: launch_app_sim
 module: mcp/tools/simulator/launch_app_sim
 names:
   mcp: launch_app_sim
+  cli: launch-app
 description: Launch app on simulator.
 annotations:
   title: Launch App Simulator

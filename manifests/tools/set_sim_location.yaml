@@ -2,6 +2,7 @@ id: set_sim_location
 module: mcp/tools/simulator-management/set_sim_location
 names:
   mcp: set_sim_location
+  cli: set-location
 description: Set sim location.
 annotations:
   title: Set Simulator Location

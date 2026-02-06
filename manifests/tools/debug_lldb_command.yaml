@@ -2,6 +2,7 @@ id: debug_lldb_command
 module: mcp/tools/debugging/debug_lldb_command
 names:
   mcp: debug_lldb_command
+  cli: lldb-command
 description: Run LLDB command.
 routing:
   stateful: true

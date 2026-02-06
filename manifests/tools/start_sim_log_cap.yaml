@@ -2,6 +2,7 @@ id: start_sim_log_cap
 module: mcp/tools/logging/start_sim_log_cap
 names:
   mcp: start_sim_log_cap
+  cli: start-simulator-log-capture
 description: Start sim log capture.
 routing:
   stateful: true

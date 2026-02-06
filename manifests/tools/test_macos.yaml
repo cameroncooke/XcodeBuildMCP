@@ -2,6 +2,7 @@ id: test_macos
 module: mcp/tools/macos/test_macos
 names:
   mcp: test_macos
+  cli: test
 description: Test macOS target.
 predicates:
   - hideWhenXcodeAgentMode

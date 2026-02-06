@@ -2,6 +2,7 @@ id: build_sim
 module: mcp/tools/simulator/build_sim
 names:
   mcp: build_sim
+  cli: build
 description: Build for iOS sim.
 predicates:
   - hideWhenXcodeAgentMode

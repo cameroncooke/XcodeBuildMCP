@@ -2,6 +2,7 @@ id: debug_stack
 module: mcp/tools/debugging/debug_stack
 names:
   mcp: debug_stack
+  cli: stack
 description: Get backtrace.
 routing:
   stateful: true

@@ -2,6 +2,7 @@ id: open_sim
 module: mcp/tools/simulator/open_sim
 names:
   mcp: open_sim
+  cli: open
 description: Open Simulator app.
 annotations:
   title: Open Simulator

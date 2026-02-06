@@ -2,6 +2,7 @@ id: xcode_tools_bridge_sync
 module: mcp/tools/xcode-ide/xcode_tools_bridge_sync
 names:
   mcp: xcode_tools_bridge_sync
+  cli: bridge-sync
 description: One-shot connect + tools/list sync (manual retry; avoids background prompt spam).
 predicates:
   - debugEnabled

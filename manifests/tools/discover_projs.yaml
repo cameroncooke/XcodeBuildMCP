@@ -2,6 +2,7 @@ id: discover_projs
 module: mcp/tools/project-discovery/discover_projs
 names:
   mcp: discover_projs
+  cli: discover-projects
 description: Scans a directory (defaults to workspace root) to find Xcode project (.xcodeproj) and workspace (.xcworkspace) files.
 annotations:
   title: Discover Projects

@@ -2,9 +2,8 @@ id: session_show_defaults
 module: mcp/tools/session-management/session_show_defaults
 names:
   mcp: session_show_defaults
+  cli: show-defaults
 description: Show session defaults.
-availability:
-  cli: false
 annotations:
   title: Show Session Defaults
   readOnlyHint: true

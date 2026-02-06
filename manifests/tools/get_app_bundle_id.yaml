@@ -2,6 +2,7 @@ id: get_app_bundle_id
 module: mcp/tools/project-discovery/get_app_bundle_id
 names:
   mcp: get_app_bundle_id
+  cli: get-app-bundle-id
 description: Extract bundle id from .app.
 annotations:
   title: Get App Bundle ID

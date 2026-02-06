@@ -2,6 +2,7 @@ id: get_mac_app_path
 module: mcp/tools/macos/get_mac_app_path
 names:
   mcp: get_mac_app_path
+  cli: get-app-path
 description: Get macOS built app path.
 annotations:
   title: Get macOS App Path

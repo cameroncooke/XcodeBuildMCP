@@ -2,6 +2,7 @@ id: list_devices
 module: mcp/tools/device/list_devices
 names:
   mcp: list_devices
+  cli: list
 description: List connected devices.
 annotations:
   title: List Devices

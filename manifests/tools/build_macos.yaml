@@ -2,6 +2,7 @@ id: build_macos
 module: mcp/tools/macos/build_macos
 names:
   mcp: build_macos
+  cli: build
 description: Build macOS app.
 predicates:
   - hideWhenXcodeAgentMode

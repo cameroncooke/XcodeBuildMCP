@@ -2,6 +2,7 @@ id: install_app_sim
 module: mcp/tools/simulator/install_app_sim
 names:
   mcp: install_app_sim
+  cli: install
 description: Install app on sim.
 annotations:
   title: Install App Simulator

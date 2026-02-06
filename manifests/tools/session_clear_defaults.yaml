@@ -2,9 +2,8 @@ id: session_clear_defaults
 module: mcp/tools/session-management/session_clear_defaults
 names:
   mcp: session_clear_defaults
+  cli: clear-defaults
 description: Clear session defaults.
-availability:
-  cli: false
 annotations:
   title: Clear Session Defaults
   destructiveHint: true

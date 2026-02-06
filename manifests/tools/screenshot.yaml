@@ -2,6 +2,7 @@ id: screenshot
 module: mcp/tools/ui-automation/screenshot
 names:
   mcp: screenshot
+  cli: screenshot
 description: Capture screenshot.
 annotations:
   title: Screenshot

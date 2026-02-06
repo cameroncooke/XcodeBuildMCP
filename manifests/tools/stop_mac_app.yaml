@@ -2,6 +2,7 @@ id: stop_mac_app
 module: mcp/tools/macos/stop_mac_app
 names:
   mcp: stop_mac_app
+  cli: stop
 description: Stop macOS app.
 annotations:
   title: Stop macOS App

@@ -2,9 +2,8 @@ id: sync_xcode_defaults
 module: mcp/tools/xcode-ide/sync_xcode_defaults
 names:
   mcp: sync_xcode_defaults
+  cli: sync-xcode-defaults
 description: Sync session defaults (scheme, simulator) from Xcode's current IDE selection.
-availability:
-  cli: false
 predicates:
   - xcodeAutoSyncDisabled
 annotations:

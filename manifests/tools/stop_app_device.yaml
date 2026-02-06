@@ -2,6 +2,7 @@ id: stop_app_device
 module: mcp/tools/device/stop_app_device
 names:
   mcp: stop_app_device
+  cli: stop
 description: Stop device app.
 annotations:
   title: Stop App Device

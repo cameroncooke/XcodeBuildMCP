@@ -2,6 +2,7 @@ id: xcode_tools_bridge_status
 module: mcp/tools/xcode-ide/xcode_tools_bridge_status
 names:
   mcp: xcode_tools_bridge_status
+  cli: bridge-status
 description: Show xcrun mcpbridge availability and proxy tool sync status.
 predicates:
   - debugEnabled

@@ -2,6 +2,7 @@ id: debug_variables
 module: mcp/tools/debugging/debug_variables
 names:
   mcp: debug_variables
+  cli: variables
 description: Get frame variables.
 routing:
   stateful: true

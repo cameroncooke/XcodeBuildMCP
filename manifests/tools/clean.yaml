@@ -2,6 +2,7 @@ id: clean
 module: mcp/tools/utilities/clean
 names:
   mcp: clean
+  cli: clean
 description: Clean build products.
 predicates:
   - hideWhenXcodeAgentMode
