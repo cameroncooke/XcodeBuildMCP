@@ -2,15 +2,9 @@ id: launch_app_logs_sim
 module: mcp/tools/simulator/launch_app_logs_sim
 names:
   mcp: launch_app_logs_sim
-description: "Launch sim app with logs."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
+description: Launch sim app with logs.
 routing:
   stateful: true
-  daemonAffinity: preferred
 annotations:
-  title: "Launch App Logs Simulator"
+  title: Launch App Logs Simulator
   destructiveHint: true

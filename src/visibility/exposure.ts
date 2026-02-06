@@ -16,6 +16,9 @@ export function isWorkflowAvailableForRuntime(
   workflow: WorkflowManifestEntry,
   runtime: RuntimeKind,
 ): boolean {
+  if (runtime === 'daemon') {
+    return true;
+  }
   return workflow.availability[runtime];
 }
 
@@ -41,6 +44,9 @@ export function isWorkflowEnabledForRuntime(
  * This checks the availability flag only, not predicates.
  */
 export function isToolAvailableForRuntime(tool: ToolManifestEntry, runtime: RuntimeKind): boolean {
+  if (runtime === 'daemon') {
+    return true;
+  }
   return tool.availability[runtime];
 }
 

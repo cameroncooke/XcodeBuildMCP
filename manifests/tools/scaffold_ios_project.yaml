@@ -2,16 +2,9 @@ id: scaffold_ios_project
 module: mcp/tools/project-scaffolding/scaffold_ios_project
 names:
   mcp: scaffold_ios_project
-description: "Scaffold iOS project."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
+description: Scaffold iOS project.
 predicates:
   - hideWhenXcodeAgentMode
-routing:
-  stateful: false
-  daemonAffinity: preferred
 annotations:
-  title: "Scaffold iOS Project"
+  title: Scaffold iOS Project
   destructiveHint: true

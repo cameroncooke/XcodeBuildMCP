@@ -10,15 +10,19 @@ import type {
   DebuggerBackendKind,
 } from './types.ts';
 import { getConfig } from '../config-store.ts';
+import { acquireDaemonActivity } from '../../daemon/activity-registry.ts';
 
 export type DebuggerBackendFactory = (kind: DebuggerBackendKind) => Promise<DebuggerBackend>;
 
+type DebugSessionEntry = {
+  info: DebugSessionInfo;
+  backend: DebuggerBackend;
+  releaseActivity: () => void;
+};
+
 export class DebuggerManager {
   private readonly backendFactory: DebuggerBackendFactory;
-  private readonly sessions = new Map<
-    string,
-    { info: DebugSessionInfo; backend: DebuggerBackend }
-  >();
+  private readonly sessions = new Map<string, DebugSessionEntry>();
   private currentSessionId: string | null = null;
 
   constructor(options: { backendFactory?: DebuggerBackendFactory } = {}) {
@@ -55,11 +59,15 @@ export class DebuggerManager {
       lastUsedAt: now,
     };
 
-    this.sessions.set(info.id, { info, backend });
+    this.sessions.set(info.id, {
+      info,
+      backend,
+      releaseActivity: acquireDaemonActivity('debug.session'),
+    });
     return info;
   }
 
-  getSession(id?: string): { info: DebugSessionInfo; backend: DebuggerBackend } | null {
+  getSession(id?: string): DebugSessionEntry | null {
     const resolvedId = id ?? this.currentSessionId;
     if (!resolvedId) return null;
     return this.sessions.get(resolvedId) ?? null;
@@ -104,6 +112,7 @@ export class DebuggerManager {
       await session.backend.detach();
     } finally {
       await session.backend.dispose();
+      session.releaseActivity();
       this.sessions.delete(session.info.id);
       if (this.currentSessionId === session.info.id) {
         this.currentSessionId = null;
@@ -120,6 +129,7 @@ export class DebuggerManager {
           // Best-effort cleanup; detach can fail if the process exited.
         } finally {
           await session.backend.dispose();
+          session.releaseActivity();
         }
       }),
     );
@@ -189,7 +199,7 @@ export class DebuggerManager {
     this.touch(session.info.id);
   }
 
-  private requireSession(id?: string): { info: DebugSessionInfo; backend: DebuggerBackend } {
+  private requireSession(id?: string): DebugSessionEntry {
     const session = this.getSession(id);
     if (!session) {
       throw new Error('No active debug session. Provide debugSessionId or attach first.');

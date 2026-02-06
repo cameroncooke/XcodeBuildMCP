@@ -2,16 +2,9 @@ id: test_device
 module: mcp/tools/device/test_device
 names:
   mcp: test_device
-description: "Test on device."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
+description: Test on device.
 predicates:
   - hideWhenXcodeAgentMode
-routing:
-  stateful: false
-  daemonAffinity: preferred
 annotations:
-  title: "Test Device"
+  title: Test Device
   destructiveHint: true

@@ -50,7 +50,7 @@ function createTool(overrides: Partial<ToolManifestEntry> = {}): ToolManifestEnt
     id: 'test_tool',
     module: 'mcp/tools/test/test_tool',
     names: { mcp: 'test_tool' },
-    availability: { mcp: true, cli: true, daemon: true },
+    availability: { mcp: true, cli: true },
     predicates: [],
     ...overrides,
   };
@@ -61,7 +61,7 @@ function createWorkflow(overrides: Partial<WorkflowManifestEntry> = {}): Workflo
     id: 'test-workflow',
     title: 'Test Workflow',
     description: 'A test workflow',
-    availability: { mcp: true, cli: true, daemon: true },
+    availability: { mcp: true, cli: true },
     predicates: [],
     tools: ['test_tool'],
     ...overrides,
@@ -71,13 +71,18 @@ function createWorkflow(overrides: Partial<WorkflowManifestEntry> = {}): Workflo
 describe('exposure', () => {
   describe('isWorkflowAvailableForRuntime', () => {
     it('should return true when workflow is available for runtime', () => {
-      const workflow = createWorkflow({ availability: { mcp: true, cli: false, daemon: false } });
+      const workflow = createWorkflow({ availability: { mcp: true, cli: false } });
       expect(isWorkflowAvailableForRuntime(workflow, 'mcp')).toBe(true);
     });
 
     it('should return false when workflow is not available for runtime', () => {
-      const workflow = createWorkflow({ availability: { mcp: true, cli: false, daemon: false } });
+      const workflow = createWorkflow({ availability: { mcp: true, cli: false } });
       expect(isWorkflowAvailableForRuntime(workflow, 'cli')).toBe(false);
+    });
+
+    it('should ignore manifest availability in daemon runtime', () => {
+      const workflow = createWorkflow({ availability: { mcp: false, cli: false } });
+      expect(isWorkflowAvailableForRuntime(workflow, 'daemon')).toBe(true);
     });
   });
 
@@ -89,7 +94,7 @@ describe('exposure', () => {
     });
 
     it('should return false when not available', () => {
-      const workflow = createWorkflow({ availability: { mcp: false, cli: true, daemon: true } });
+      const workflow = createWorkflow({ availability: { mcp: false, cli: true } });
       const ctx = createContext({ runtime: 'mcp' });
       expect(isWorkflowEnabledForRuntime(workflow, ctx)).toBe(false);
     });
@@ -106,13 +111,18 @@ describe('exposure', () => {
 
   describe('isToolAvailableForRuntime', () => {
     it('should return true when tool is available for runtime', () => {
-      const tool = createTool({ availability: { mcp: true, cli: false, daemon: false } });
+      const tool = createTool({ availability: { mcp: true, cli: false } });
       expect(isToolAvailableForRuntime(tool, 'mcp')).toBe(true);
     });
 
     it('should return false when tool is not available for runtime', () => {
-      const tool = createTool({ availability: { mcp: false, cli: true, daemon: true } });
+      const tool = createTool({ availability: { mcp: false, cli: true } });
       expect(isToolAvailableForRuntime(tool, 'mcp')).toBe(false);
+    });
+
+    it('should ignore manifest availability in daemon runtime', () => {
+      const tool = createTool({ availability: { mcp: false, cli: false } });
+      expect(isToolAvailableForRuntime(tool, 'daemon')).toBe(true);
     });
   });
 
@@ -124,7 +134,7 @@ describe('exposure', () => {
     });
 
     it('should return false when not available', () => {
-      const tool = createTool({ availability: { mcp: false, cli: true, daemon: true } });
+      const tool = createTool({ availability: { mcp: false, cli: true } });
       const ctx = createContext({ runtime: 'mcp' });
       expect(isToolExposedForRuntime(tool, ctx)).toBe(false);
     });
@@ -158,7 +168,7 @@ describe('exposure', () => {
 
     it('should return false when workflow is not enabled', () => {
       const workflow = createWorkflow({
-        availability: { mcp: false, cli: true, daemon: true },
+        availability: { mcp: false, cli: true },
       });
       const tool = createTool();
       const ctx = createContext({ runtime: 'mcp' });
@@ -167,7 +177,7 @@ describe('exposure', () => {
 
     it('should return false when tool is not exposed', () => {
       const workflow = createWorkflow();
-      const tool = createTool({ availability: { mcp: false, cli: true, daemon: true } });
+      const tool = createTool({ availability: { mcp: false, cli: true } });
       const ctx = createContext({ runtime: 'mcp' });
       expect(isToolInWorkflowExposed(tool, workflow, ctx)).toBe(false);
     });
@@ -177,7 +187,7 @@ describe('exposure', () => {
     it('should filter out tools that are not exposed', () => {
       const tools = [
         createTool({ id: 'tool1' }),
-        createTool({ id: 'tool2', availability: { mcp: false, cli: true, daemon: true } }),
+        createTool({ id: 'tool2', availability: { mcp: false, cli: true } }),
         createTool({ id: 'tool3' }),
       ];
       const ctx = createContext({ runtime: 'mcp' });
@@ -192,7 +202,7 @@ describe('exposure', () => {
     it('should filter out workflows that are not enabled', () => {
       const workflows = [
         createWorkflow({ id: 'wf1' }),
-        createWorkflow({ id: 'wf2', availability: { mcp: false, cli: true, daemon: true } }),
+        createWorkflow({ id: 'wf2', availability: { mcp: false, cli: true } }),
         createWorkflow({ id: 'wf3' }),
       ];
       const ctx = createContext({ runtime: 'mcp' });

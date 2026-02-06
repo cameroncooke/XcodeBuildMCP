@@ -2,15 +2,9 @@ id: stop_sim_log_cap
 module: mcp/tools/logging/stop_sim_log_cap
 names:
   mcp: stop_sim_log_cap
-description: "Stop sim app and return logs."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
+description: Stop sim app and return logs.
 routing:
   stateful: true
-  daemonAffinity: required
 annotations:
-  title: "Stop Simulator and Return Logs"
+  title: Stop Simulator and Return Logs
   destructiveHint: true

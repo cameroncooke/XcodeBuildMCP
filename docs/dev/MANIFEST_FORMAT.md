@@ -56,11 +56,9 @@ description: string     # Tool description (shown in tool listings)
 availability:           # Per-runtime availability flags
   mcp: boolean          # Available via MCP server (default: true)
   cli: boolean          # Available via CLI (default: true)
-  daemon: boolean       # Available via daemon (default: true)
 predicates: string[]    # Predicate names for visibility filtering (default: [])
-routing:                # Daemon routing hints
+routing:                # CLI daemon routing
   stateful: boolean     # Tool maintains state (default: false)
-  daemonAffinity: enum  # 'preferred' or 'required' (optional)
 annotations:            # MCP tool annotations (hints for clients)
   title: string         # Human-readable title (optional)
   readOnlyHint: boolean # Tool only reads data (optional)
@@ -80,11 +78,7 @@ description: "List available iOS simulators."
 availability:
   mcp: true
   cli: true
-  daemon: true
 predicates: []
-routing:
-  stateful: false
-  daemonAffinity: preferred
 annotations:
   title: "List Simulators"
   readOnlyHint: true
@@ -101,12 +95,8 @@ description: "Build for iOS sim."
 availability:
   mcp: true
   cli: true
-  daemon: true
 predicates:
   - hideWhenXcodeAgentMode  # Hidden when Xcode provides equivalent tool
-routing:
-  stateful: false
-  daemonAffinity: preferred
 ```
 
 ### Example: MCP-Only Tool
@@ -120,7 +110,6 @@ description: "Manage enabled workflows at runtime."
 availability:
   mcp: true
   cli: false                # Not available in CLI
-  daemon: false             # Not available via daemon
 predicates:
   - experimentalWorkflowDiscoveryEnabled
 ```
@@ -142,7 +131,6 @@ tools: string[]         # Array of tool IDs belonging to this workflow
 availability:           # Per-runtime availability flags
   mcp: boolean          # Available via MCP server (default: true)
   cli: boolean          # Available via CLI (default: true)
-  daemon: boolean       # Available via daemon (default: true)
 selection:              # MCP selection rules
   mcp:
     defaultEnabled: boolean  # Enabled when config.enabledWorkflows is empty (default: false)
@@ -159,7 +147,6 @@ description: "Complete iOS development workflow for simulators."
 availability:
   mcp: true
   cli: true
-  daemon: true
 selection:
   mcp:
     defaultEnabled: true   # Enabled by default
@@ -183,7 +170,6 @@ description: "Diagnostic tool for the MCP server environment."
 availability:
   mcp: true
   cli: true
-  daemon: true
 selection:
   mcp:
     defaultEnabled: false
@@ -203,7 +189,6 @@ description: "Manage enabled workflows at runtime."
 availability:
   mcp: true
   cli: false
-  daemon: false
 selection:
   mcp:
     defaultEnabled: false
@@ -227,10 +212,8 @@ tools:
 | `description` | string | No | - | Tool description |
 | `availability.mcp` | boolean | No | `true` | Available via MCP |
 | `availability.cli` | boolean | No | `true` | Available via CLI |
-| `availability.daemon` | boolean | No | `true` | Available via daemon |
 | `predicates` | string[] | No | `[]` | Visibility predicates (all must pass) |
 | `routing.stateful` | boolean | No | `false` | Tool maintains state |
-| `routing.daemonAffinity` | enum | No | - | `'preferred'` or `'required'` |
 | `annotations.title` | string | No | - | Human-readable title |
 | `annotations.readOnlyHint` | boolean | No | - | Tool only reads data |
 | `annotations.destructiveHint` | boolean | No | - | Tool may modify/delete data |
@@ -247,7 +230,6 @@ tools:
 | `tools` | string[] | Yes | - | Tool IDs in this workflow |
 | `availability.mcp` | boolean | No | `true` | Available via MCP |
 | `availability.cli` | boolean | No | `true` | Available via CLI |
-| `availability.daemon` | boolean | No | `true` | Available via daemon |
 | `selection.mcp.defaultEnabled` | boolean | No | `false` | Enabled when no workflows configured |
 | `selection.mcp.autoInclude` | boolean | No | `false` | Auto-include when predicates pass |
 | `predicates` | string[] | No | `[]` | Visibility predicates (all must pass) |
@@ -402,11 +384,11 @@ The tool is defined once in `manifests/tools/clean.yaml` but referenced by both 
 
 ## Daemon Routing
 
-The `routing` field provides hints for daemon-based execution:
+Daemon routing is intentionally simple:
 
-- **`stateful: true`**: Tool maintains state across calls (e.g., debug sessions)
-- **`daemonAffinity: 'preferred'`**: Prefer daemon execution but fall back to direct
-- **`daemonAffinity: 'required'`**: Must run via daemon (fails if daemon unavailable)
+- **`routing.stateful: true`**: CLI routes this tool through the daemon.
+- **`routing` omitted or `stateful: false`**: CLI runs the tool directly.
+- **Special-case**: dynamic `xcode-ide` bridge tools use daemon-backed routing for bridge session persistence.
 
 ## Validation
 

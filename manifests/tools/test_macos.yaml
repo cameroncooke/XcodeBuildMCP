@@ -2,16 +2,9 @@ id: test_macos
 module: mcp/tools/macos/test_macos
 names:
   mcp: test_macos
-description: "Test macOS target."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
+description: Test macOS target.
 predicates:
   - hideWhenXcodeAgentMode
-routing:
-  stateful: false
-  daemonAffinity: preferred
 annotations:
-  title: "Test macOS"
+  title: Test macOS
   destructiveHint: true

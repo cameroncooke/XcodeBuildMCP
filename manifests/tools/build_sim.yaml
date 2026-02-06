@@ -2,16 +2,9 @@ id: build_sim
 module: mcp/tools/simulator/build_sim
 names:
   mcp: build_sim
-description: "Build for iOS sim."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
+description: Build for iOS sim.
 predicates:
   - hideWhenXcodeAgentMode
-routing:
-  stateful: false
-  daemonAffinity: preferred
 annotations:
-  title: "Build Simulator"
+  title: Build Simulator
   destructiveHint: true

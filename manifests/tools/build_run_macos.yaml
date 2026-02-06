@@ -2,16 +2,9 @@ id: build_run_macos
 module: mcp/tools/macos/build_run_macos
 names:
   mcp: build_run_macos
-description: "Build and run macOS app."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
+description: Build and run macOS app.
 predicates:
   - hideWhenXcodeAgentMode
-routing:
-  stateful: false
-  daemonAffinity: preferred
 annotations:
-  title: "Build Run macOS"
+  title: Build Run macOS
   destructiveHint: true

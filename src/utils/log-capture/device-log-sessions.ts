@@ -8,6 +8,7 @@ export interface DeviceLogSession {
   bundleId: string;
   logStream?: fs.WriteStream;
   hasEnded: boolean;
+  releaseActivity?: () => void;
 }
 
 export const activeDeviceLogSessions = new Map<string, DeviceLogSession>();

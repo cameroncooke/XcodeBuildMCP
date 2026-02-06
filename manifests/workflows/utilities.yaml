@@ -1,14 +1,5 @@
 id: utilities
-title: "Build Utilities"
-description: "Utility tools for cleaning build products and managing build artifacts."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-selection:
-  mcp:
-    defaultEnabled: false
-    autoInclude: false
-predicates: []
+title: Build Utilities
+description: Utility tools for cleaning build products and managing build artifacts.
 tools:
   - clean

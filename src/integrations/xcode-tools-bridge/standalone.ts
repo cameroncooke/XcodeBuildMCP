@@ -3,35 +3,27 @@ import {
   createTextResponse,
   type ToolResponse,
 } from '../../utils/responses/index.ts';
-import { XcodeToolsBridgeClient } from './client.ts';
-import {
-  buildXcodeToolsBridgeStatus,
-  getMcpBridgeAvailability,
-  type XcodeToolsBridgeStatus,
-} from './core.ts';
+import { buildXcodeToolsBridgeStatus, type XcodeToolsBridgeStatus } from './core.ts';
+import { XcodeIdeToolService } from './tool-service.ts';
 
 export class StandaloneXcodeToolsBridge {
-  private readonly client: XcodeToolsBridgeClient;
-  private lastError: string | null = null;
+  private readonly service: XcodeIdeToolService;
 
   constructor() {
-    this.client = new XcodeToolsBridgeClient({
-      onBridgeClosed: (): void => {
-        this.lastError = this.client.getStatus().lastError ?? this.lastError;
-      },
-    });
+    this.service = new XcodeIdeToolService();
+    this.service.setWorkflowEnabled(true);
   }
 
   async shutdown(): Promise<void> {
-    await this.client.disconnect();
+    await this.service.disconnect();
   }
 
   async getStatus(): Promise<XcodeToolsBridgeStatus> {
     return buildXcodeToolsBridgeStatus({
       workflowEnabled: false,
       proxiedToolCount: 0,
-      lastError: this.lastError,
-      clientStatus: this.client.getStatus(),
+      lastError: this.service.getLastError(),
+      clientStatus: this.service.getClientStatus(),
     });
   }
 
@@ -42,15 +34,7 @@ export class StandaloneXcodeToolsBridge {
 
   async syncTool(): Promise<ToolResponse> {
     try {
-      const bridge = await getMcpBridgeAvailability();
-      if (!bridge.available) {
-        this.lastError = 'mcpbridge not available (xcrun --find mcpbridge failed)';
-        return createErrorResponse('Bridge sync failed', this.lastError);
-      }
-
-      await this.client.connectOnce();
-      const remoteTools = await this.client.listTools();
-      this.lastError = null;
+      const remoteTools = await this.service.listTools({ refresh: true });
 
       const sync = {
         added: remoteTools.length,
@@ -62,21 +46,19 @@ export class StandaloneXcodeToolsBridge {
       return createTextResponse(JSON.stringify({ sync, status }, null, 2));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.lastError = message;
       return createErrorResponse('Bridge sync failed', message);
     } finally {
-      await this.client.disconnect();
+      await this.service.disconnect();
     }
   }
 
   async disconnectTool(): Promise<ToolResponse> {
     try {
-      await this.client.disconnect();
+      await this.service.disconnect();
       const status = await this.getStatus();
       return createTextResponse(JSON.stringify(status, null, 2));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.lastError = message;
       return createErrorResponse('Bridge disconnect failed', message);
     }
   }

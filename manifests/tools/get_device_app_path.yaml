@@ -2,15 +2,7 @@ id: get_device_app_path
 module: mcp/tools/device/get_device_app_path
 names:
   mcp: get_device_app_path
-description: "Get device built app path."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
-routing:
-  stateful: false
-  daemonAffinity: preferred
+description: Get device built app path.
 annotations:
-  title: "Get Device App Path"
+  title: Get Device App Path
   readOnlyHint: true

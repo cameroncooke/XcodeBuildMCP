@@ -66,6 +66,7 @@ export async function stop_device_log_capLogic(
     }
 
     const logFilePath = session.logFilePath;
+    session.releaseActivity?.();
     activeDeviceLogSessions.delete(logSessionId);
 
     // Check file access

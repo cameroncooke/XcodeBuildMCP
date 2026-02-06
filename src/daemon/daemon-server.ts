@@ -7,10 +7,16 @@ import type {
   ToolInvokeParams,
   DaemonStatusResult,
   ToolListItem,
+  XcodeIdeListParams,
+  XcodeIdeListResult,
+  XcodeIdeInvokeParams,
+  XcodeIdeInvokeResult,
 } from './protocol.ts';
 import { DAEMON_PROTOCOL_VERSION } from './protocol.ts';
 import { DefaultToolInvoker } from '../runtime/tool-invoker.ts';
 import { log } from '../utils/logger.ts';
+import { XcodeIdeToolService } from '../integrations/xcode-tools-bridge/tool-service.ts';
+import { toLocalToolName } from '../integrations/xcode-tools-bridge/registry.ts';
 
 export interface DaemonServerContext {
   socketPath: string;
@@ -20,8 +26,13 @@ export interface DaemonServerContext {
   catalog: ToolCatalog;
   workspaceRoot: string;
   workspaceKey: string;
+  xcodeIdeWorkflowEnabled: boolean;
   /** Callback to request graceful shutdown (used instead of direct process.exit) */
   requestShutdown: () => void;
+  /** Callback invoked whenever a daemon request starts processing. */
+  onRequestStarted?: () => void;
+  /** Callback invoked after a daemon request has finished processing. */
+  onRequestFinished?: () => void;
 }
 
 /**
@@ -29,6 +40,15 @@ export interface DaemonServerContext {
  */
 export function startDaemonServer(ctx: DaemonServerContext): net.Server {
   const invoker = new DefaultToolInvoker(ctx.catalog);
+  const xcodeIdeService = new XcodeIdeToolService();
+  xcodeIdeService.setWorkflowEnabled(ctx.xcodeIdeWorkflowEnabled);
+  if (ctx.xcodeIdeWorkflowEnabled) {
+    // Warm dynamic tool cache in the background so CLI discovery can stay fast.
+    void xcodeIdeService.listTools({ refresh: true }).catch((error) => {
+      const message = error instanceof Error ? error.message : String(error);
+      log('debug', `[Daemon] Initial xcode-ide bridge prefetch failed: ${message}`);
+    });
+  }
 
   const server = net.createServer((socket) => {
     log('info', '[Daemon] Client connected');
@@ -41,6 +61,7 @@ export function startDaemonServer(ctx: DaemonServerContext): net.Server {
           id: req?.id ?? 'unknown',
         };
 
+        ctx.onRequestStarted?.();
         try {
           if (!req || typeof req !== 'object') {
             return writeFrame(socket, {
@@ -111,6 +132,72 @@ export function startDaemonServer(ctx: DaemonServerContext): net.Server {
               return writeFrame(socket, { ...base, result: { response } });
             }
 
+            case 'xcode-ide.list': {
+              if (!ctx.xcodeIdeWorkflowEnabled) {
+                return writeFrame(socket, {
+                  ...base,
+                  error: {
+                    code: 'NOT_FOUND',
+                    message:
+                      'xcode-ide workflow is not enabled for this daemon session (set XCODEBUILDMCP_ENABLED_WORKFLOWS to include xcode-ide)',
+                  },
+                });
+              }
+
+              const params = (req.params ?? {}) as XcodeIdeListParams;
+              const refresh = params.refresh === true;
+              if (params.prefetch === true && !refresh) {
+                void xcodeIdeService.listTools({ refresh: true }).catch((error) => {
+                  const message = error instanceof Error ? error.message : String(error);
+                  log('debug', `[Daemon] xcode-ide prefetch failed: ${message}`);
+                });
+              }
+              const tools = await xcodeIdeService.listTools({
+                refresh,
+              });
+              const result: XcodeIdeListResult = {
+                tools: tools.map((tool) => ({
+                  remoteName: tool.name,
+                  localName: toLocalToolName(tool.name),
+                  description: tool.description ?? '',
+                  inputSchema: tool.inputSchema,
+                  annotations: tool.annotations,
+                })),
+              };
+              return writeFrame(socket, { ...base, result });
+            }
+
+            case 'xcode-ide.invoke': {
+              if (!ctx.xcodeIdeWorkflowEnabled) {
+                return writeFrame(socket, {
+                  ...base,
+                  error: {
+                    code: 'NOT_FOUND',
+                    message:
+                      'xcode-ide workflow is not enabled for this daemon session (set XCODEBUILDMCP_ENABLED_WORKFLOWS to include xcode-ide)',
+                  },
+                });
+              }
+
+              const params = req.params as XcodeIdeInvokeParams;
+              if (!params?.remoteTool) {
+                return writeFrame(socket, {
+                  ...base,
+                  error: {
+                    code: 'BAD_REQUEST',
+                    message: 'Missing remoteTool parameter',
+                  },
+                });
+              }
+
+              const response = await xcodeIdeService.invokeTool(
+                params.remoteTool,
+                params.args ?? {},
+              );
+              const result: XcodeIdeInvokeResult = { response };
+              return writeFrame(socket, { ...base, result });
+            }
+
             default:
               return writeFrame(socket, {
                 ...base,
@@ -126,6 +213,8 @@ export function startDaemonServer(ctx: DaemonServerContext): net.Server {
               message: error instanceof Error ? error.message : String(error),
             },
           });
+        } finally {
+          ctx.onRequestFinished?.();
         }
       },
       (err) => {
@@ -144,6 +233,9 @@ export function startDaemonServer(ctx: DaemonServerContext): net.Server {
 
   server.on('error', (err) => {
     log('error', `[Daemon] Server error: ${err.message}`);
+  });
+  server.on('close', () => {
+    void xcodeIdeService.disconnect();
   });
 
   return server;

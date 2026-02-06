@@ -8,21 +8,23 @@ import { z } from 'zod';
 /**
  * Availability flags for different runtimes.
  */
-export const availabilitySchema = z.object({
-  mcp: z.boolean().default(true),
-  cli: z.boolean().default(true),
-  daemon: z.boolean().default(true),
-});
+export const availabilitySchema = z
+  .object({
+    mcp: z.boolean().default(true),
+    cli: z.boolean().default(true),
+  })
+  .strict();
 
 export type Availability = z.infer<typeof availabilitySchema>;
 
 /**
- * Routing hints for daemon affinity.
+ * Routing hints for daemon-backed CLI execution.
  */
-export const routingSchema = z.object({
-  stateful: z.boolean().default(false),
-  daemonAffinity: z.enum(['preferred', 'required']).optional(),
-});
+export const routingSchema = z
+  .object({
+    stateful: z.boolean().default(false),
+  })
+  .strict();
 
 export type Routing = z.infer<typeof routingSchema>;
 
@@ -73,7 +75,7 @@ export const toolManifestEntrySchema = z.object({
   description: z.string().optional(),
 
   /** Per-runtime availability flags */
-  availability: availabilitySchema.default({ mcp: true, cli: true, daemon: true }),
+  availability: availabilitySchema.default({ mcp: true, cli: true }),
 
   /** Predicate names for visibility filtering (all must pass) */
   predicates: z.array(z.string()).default([]),
@@ -123,7 +125,7 @@ export const workflowManifestEntrySchema = z.object({
   description: z.string(),
 
   /** Per-runtime availability flags */
-  availability: availabilitySchema.default({ mcp: true, cli: true, daemon: true }),
+  availability: availabilitySchema.default({ mcp: true, cli: true }),
 
   /** MCP selection rules */
   selection: workflowSelectionSchema.optional(),

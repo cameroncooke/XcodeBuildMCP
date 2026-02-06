@@ -11,6 +11,7 @@ import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
+import { acquireDaemonActivity } from '../../../daemon/activity-registry.ts';
 
 // Define schema as ZodObject
 const baseSchemaObject = z.object({
@@ -115,6 +116,7 @@ export async function swift_package_runLogic(
             startedAt: new Date(),
             executableName: params.executableName,
             packagePath: resolvedPath,
+            releaseActivity: acquireDaemonActivity('swift-package.background-process'),
           });
 
           return {

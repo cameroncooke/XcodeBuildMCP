@@ -9,6 +9,7 @@ import type { ChildProcess } from 'child_process';
 import { log } from './logging/index.ts';
 import { getAxePath, getBundledAxeEnvironment } from './axe-helpers.ts';
 import type { CommandExecutor } from './execution/index.ts';
+import { acquireDaemonActivity } from '../daemon/activity-registry.ts';
 
 type Session = {
   process: unknown;
@@ -16,6 +17,7 @@ type Session = {
   startedAt: number;
   buffer: string;
   ended: boolean;
+  releaseActivity?: () => void;
 };
 
 const sessions = new Map<string, Session>();
@@ -38,6 +40,7 @@ function ensureSignalHandlersAttached(): void {
       } catch {
         // ignore
       } finally {
+        sess.releaseActivity?.();
         sessions.delete(simulatorUuid);
       }
     }
@@ -62,6 +65,10 @@ function parseLastAbsoluteMp4Path(buffer: string | undefined): string | null {
 
 function createSessionId(simulatorUuid: string): string {
   return `${simulatorUuid}:${Date.now()}`;
+}
+
+export function listActiveVideoCaptureSessionIds(): string[] {
+  return Array.from(sessions.keys()).sort();
 }
 
 /**
@@ -116,6 +123,7 @@ export async function startSimulatorVideoCapture(
     startedAt: Date.now(),
     buffer: '',
     ended: false,
+    releaseActivity: acquireDaemonActivity('video.capture'),
   };
 
   try {
@@ -230,6 +238,7 @@ export async function stopSimulatorVideoCapture(
   const combinedOutput = session.buffer;
   const parsedPath = parseLastAbsoluteMp4Path(combinedOutput) ?? undefined;
 
+  session.releaseActivity?.();
   sessions.delete(simulatorUuid);
 
   log(

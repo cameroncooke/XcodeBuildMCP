@@ -13,6 +13,7 @@ export interface ProcessInfo {
   startedAt: Date;
   executableName?: string;
   packagePath?: string;
+  releaseActivity?: () => void;
 }
 
 // Global map to track active processes
@@ -24,13 +25,20 @@ export const getProcess = (pid: number): ProcessInfo | undefined => {
 };
 
 export const addProcess = (pid: number, processInfo: ProcessInfo): void => {
+  const existing = activeProcesses.get(pid);
+  existing?.releaseActivity?.();
   activeProcesses.set(pid, processInfo);
 };
 
 export const removeProcess = (pid: number): boolean => {
+  const existing = activeProcesses.get(pid);
+  existing?.releaseActivity?.();
   return activeProcesses.delete(pid);
 };
 
 export const clearAllProcesses = (): void => {
+  for (const processInfo of activeProcesses.values()) {
+    processInfo.releaseActivity?.();
+  }
   activeProcesses.clear();
 };

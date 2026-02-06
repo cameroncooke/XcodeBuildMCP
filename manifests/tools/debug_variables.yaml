@@ -2,12 +2,6 @@ id: debug_variables
 module: mcp/tools/debugging/debug_variables
 names:
   mcp: debug_variables
-description: "Get frame variables."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
+description: Get frame variables.
 routing:
   stateful: true
-  daemonAffinity: required

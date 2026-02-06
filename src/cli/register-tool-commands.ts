@@ -15,6 +15,17 @@ export interface RegisterToolCommandsOptions {
   workflowNames?: string[];
 }
 
+function buildXcodeIdeNoCommandsMessage(workflowName: string): string {
+  return (
+    `No CLI commands are currently exposed for '${workflowName}'.\n\n` +
+    `If you're expecting Xcode IDE tools here:\n` +
+    `1. Make sure Xcode MCP Tools is enabled in:\n` +
+    `   Settings > Intelligence > Xcode Tools\n\n` +
+    `If Xcode showed an authorization prompt, make sure you clicked Allow.\n\n` +
+    `Then run this command again.`
+  );
+}
+
 /**
  * Register all tool commands from the catalog with yargs, grouped by workflow.
  */
@@ -39,10 +50,7 @@ export function registerToolCommands(
       workflowDescription,
       (yargs) => {
         // Hide root-level options from workflow help
-        yargs
-          .option('no-daemon', { hidden: true })
-          .option('log-level', { hidden: true })
-          .option('style', { hidden: true });
+        yargs.option('log-level', { hidden: true }).option('style', { hidden: true });
 
         // Register each tool as a subcommand under this workflow
         for (const tool of tools) {
@@ -52,9 +60,7 @@ export function registerToolCommands(
         if (tools.length === 0) {
           const hint =
             workflowName === 'xcode-ide'
-              ? `No CLI commands are currently exposed for '${workflowName}'.\n` +
-                `Open Xcode with the target project and enable MCP Tools in Settings > Intelligence > Xcode Tools.\n` +
-                `Click Allow if prompted.`
+              ? buildXcodeIdeNoCommandsMessage(workflowName)
               : `No CLI commands are currently exposed for '${workflowName}'.`;
 
           yargs.epilogue(hint);
@@ -67,7 +73,7 @@ export function registerToolCommands(
         if (tools.length === 0) {
           console.error(
             workflowName === 'xcode-ide'
-              ? `No CLI commands are currently exposed for '${workflowName}'. Open Xcode with the target project, enable MCP Tools in Settings > Intelligence > Xcode Tools, and click Allow if prompted.`
+              ? buildXcodeIdeNoCommandsMessage(workflowName)
               : `No CLI commands are currently exposed for '${workflowName}'.`,
           );
         }
@@ -97,10 +103,7 @@ function registerToolSubcommand(
     tool.description ?? `Run the ${tool.mcpName} tool`,
     (subYargs) => {
       // Hide root-level options from tool help
-      subYargs
-        .option('no-daemon', { hidden: true })
-        .option('log-level', { hidden: true })
-        .option('style', { hidden: true });
+      subYargs.option('log-level', { hidden: true }).option('style', { hidden: true });
 
       // Register schema-derived options (tool arguments)
       const toolArgNames: string[] = [];
@@ -144,8 +147,6 @@ function registerToolSubcommand(
       const outputFormat = (argv.output as OutputFormat) ?? 'text';
       const outputStyle = (argv.style as OutputStyle) ?? 'normal';
       const socketPath = argv.socket as string;
-      const forceDaemon = argv.daemon as boolean | undefined;
-      const noDaemon = argv.noDaemon as boolean | undefined;
       const logLevel = argv['log-level'] as string | undefined;
 
       // Parse JSON args if provided
@@ -162,16 +163,7 @@ function registerToolSubcommand(
 
       // Convert CLI argv to tool params (kebab-case -> camelCase)
       // Filter out internal CLI options before converting
-      const internalKeys = new Set([
-        'json',
-        'output',
-        'style',
-        'socket',
-        'daemon',
-        'noDaemon',
-        '_',
-        '$0',
-      ]);
+      const internalKeys = new Set(['json', 'output', 'style', 'socket', '_', '$0']);
       const flagArgs: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(argv as Record<string, unknown>)) {
         if (!internalKeys.has(key)) {
@@ -187,8 +179,6 @@ function registerToolSubcommand(
       const response = await invoker.invoke(tool.cliName, args, {
         runtime: 'cli',
         cliExposedWorkflowIds,
-        forceDaemon: Boolean(forceDaemon),
-        disableDaemon: Boolean(noDaemon),
         socketPath,
         workspaceRoot: opts.workspaceRoot,
         logLevel,

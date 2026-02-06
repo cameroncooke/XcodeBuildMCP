@@ -2,12 +2,6 @@ id: debug_breakpoint_remove
 module: mcp/tools/debugging/debug_breakpoint_remove
 names:
   mcp: debug_breakpoint_remove
-description: "Remove breakpoint."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
+description: Remove breakpoint.
 routing:
   stateful: true
-  daemonAffinity: required

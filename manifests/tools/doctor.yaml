@@ -2,12 +2,7 @@ id: doctor
 module: mcp/tools/doctor/doctor
 names:
   mcp: doctor
-description: "MCP environment info."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
+description: MCP environment info.
 annotations:
-  title: "Doctor"
+  title: Doctor
   readOnlyHint: true

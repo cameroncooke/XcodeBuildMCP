@@ -34,9 +34,9 @@ export interface ToolDefinition {
   stateful: boolean;
 
   /**
-   * Daemon routing preference for CLI (optional).
+   * For daemon-backed xcode-ide dynamic tools, identifies the remote bridge tool.
    */
-  daemonAffinity?: 'preferred' | 'required';
+  xcodeIdeRemoteToolName?: string;
 
   /**
    * Shared handler (same used by MCP). No duplication.
@@ -69,12 +69,8 @@ export interface InvokeOptions {
   cliExposedWorkflowIds?: string[];
   /** @deprecated Use cliExposedWorkflowIds instead */
   enabledWorkflows?: string[];
-  /** If true, route even stateless tools to daemon */
-  forceDaemon?: boolean;
   /** Socket path override */
   socketPath?: string;
-  /** If true, disable daemon usage entirely (stateful tools will error) */
-  disableDaemon?: boolean;
   /** Timeout in ms for daemon startup when auto-starting (default: 5000) */
   daemonStartupTimeoutMs?: number;
   /** Workspace root for daemon auto-start context */

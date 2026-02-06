@@ -2,12 +2,6 @@ id: debug_detach
 module: mcp/tools/debugging/debug_detach
 names:
   mcp: debug_detach
-description: "Detach debugger."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
+description: Detach debugger.
 routing:
   stateful: true
-  daemonAffinity: required

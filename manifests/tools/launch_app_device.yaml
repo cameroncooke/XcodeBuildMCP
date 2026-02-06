@@ -2,15 +2,7 @@ id: launch_app_device
 module: mcp/tools/device/launch_app_device
 names:
   mcp: launch_app_device
-description: "Launch app on device."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
-routing:
-  stateful: false
-  daemonAffinity: preferred
+description: Launch app on device.
 annotations:
-  title: "Launch App Device"
+  title: Launch App Device
   destructiveHint: true

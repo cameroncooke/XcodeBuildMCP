@@ -2,15 +2,7 @@ id: launch_app_sim
 module: mcp/tools/simulator/launch_app_sim
 names:
   mcp: launch_app_sim
-description: "Launch app on simulator."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
-routing:
-  stateful: false
-  daemonAffinity: preferred
+description: Launch app on simulator.
 annotations:
-  title: "Launch App Simulator"
+  title: Launch App Simulator
   destructiveHint: true

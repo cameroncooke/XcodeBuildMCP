@@ -1,15 +1,9 @@
 id: simulator
-title: "iOS Simulator Development"
-description: "Complete iOS development workflow for both .xcodeproj and .xcworkspace files targeting simulators."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
+title: iOS Simulator Development
+description: Complete iOS development workflow for both .xcodeproj and .xcworkspace files targeting simulators.
 selection:
   mcp:
     defaultEnabled: true
-    autoInclude: false
-predicates: []
 tools:
   - list_sims
   - boot_sim

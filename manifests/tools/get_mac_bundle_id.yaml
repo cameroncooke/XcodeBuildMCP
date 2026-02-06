@@ -2,15 +2,7 @@ id: get_mac_bundle_id
 module: mcp/tools/project-discovery/get_mac_bundle_id
 names:
   mcp: get_mac_bundle_id
-description: "Extract bundle id from macOS .app."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
-routing:
-  stateful: false
-  daemonAffinity: preferred
+description: Extract bundle id from macOS .app.
 annotations:
-  title: "Get Mac Bundle ID"
+  title: Get Mac Bundle ID
   readOnlyHint: true

@@ -2,15 +2,9 @@ id: swift_package_stop
 module: mcp/tools/swift-package/swift_package_stop
 names:
   mcp: swift_package_stop
-description: "Stop SwiftPM run."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
+description: Stop SwiftPM run.
 routing:
   stateful: true
-  daemonAffinity: required
 annotations:
-  title: "Swift Package Stop"
+  title: Swift Package Stop
   destructiveHint: true

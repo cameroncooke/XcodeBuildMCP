@@ -25,6 +25,7 @@ import {
 } from '../../../utils/log-capture/device-log-sessions.ts';
 import type { WriteStream } from 'fs';
 import { getConfig } from '../../../utils/config-store.ts';
+import { acquireDaemonActivity } from '../../../daemon/activity-registry.ts';
 
 /**
  * Log file retention policy for device logs:
@@ -431,6 +432,7 @@ export async function startDeviceLogCapture(
 
     // For testing purposes, we'll simulate process management
     // In actual usage, the process would be managed by the executor result
+    session.releaseActivity = acquireDaemonActivity('logging.device');
     activeDeviceLogSessions.set(logSessionId, session);
 
     log('info', `Device log capture started with session ID: ${logSessionId}`);

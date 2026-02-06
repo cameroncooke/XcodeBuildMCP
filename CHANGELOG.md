@@ -7,6 +7,11 @@
 
 ### Changed
 - Hide `xcode_tools_bridge_{status,sync,disconnect}` unless `debug: true` is enabled (these are troubleshooting tools).
+- Simplified CLI daemon routing: stateless tools now always execute directly, stateful tools route through daemon with auto-start, and dynamic `xcode-ide` bridge tools remain an explicit daemon-backed special-case.
+- Removed manifest daemon routing knobs `availability.daemon` and `routing.daemonAffinity`; manifests now use `availability.{mcp,cli}` plus optional `routing.stateful`.
+- Removed hidden CLI daemon-routing flags; stateful routing is now automatic and only hidden `--socket` remains for advanced socket override workflows.
+- Added daemon idle shutdown in CLI mode: per-workspace daemons now auto-exit after 10 minutes of inactivity when no active stateful sessions exist.
+- Inverted idle activity tracking to a generic daemon activity registry so long-running tools report lifecycle activity without hardcoded daemon imports.
 
 ## [2.0.0] - 2026-02-02
 

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { existsSync } from 'node:fs';
 import { DaemonClient } from './daemon-client.ts';
 
 /**
@@ -17,10 +18,16 @@ export const DEFAULT_POLL_INTERVAL_MS = 100;
  * Get the path to the daemon executable.
  */
 export function getDaemonExecutablePath(): string {
-  // In the built output, daemon.js is in the same directory as cli.js
+  // In the built output, this file is build/cli/daemon-control.js and daemon is build/daemon.js.
   const currentFile = fileURLToPath(import.meta.url);
   const buildDir = dirname(currentFile);
-  return resolve(buildDir, 'daemon.js');
+  const candidateJs = resolve(buildDir, '..', 'daemon.js');
+  if (existsSync(candidateJs)) {
+    return candidateJs;
+  }
+
+  // Fallback for source/dev layouts.
+  return resolve(buildDir, '..', 'daemon.ts');
 }
 
 export interface StartDaemonBackgroundOptions {

@@ -39,17 +39,6 @@ export function buildYargsApp(opts: YargsAppOptions): ReturnType<typeof yargs> {
       default: opts.defaultSocketPath,
       hidden: true,
     })
-    .option('daemon', {
-      type: 'boolean',
-      describe: 'Force daemon execution even for stateless tools',
-      default: false,
-      hidden: true,
-    })
-    .option('no-daemon', {
-      type: 'boolean',
-      describe: 'Disable daemon usage and auto-start (stateful tools will fail)',
-      default: false,
-    })
     .option('log-level', {
       type: 'string',
       describe: 'Set log verbosity level',

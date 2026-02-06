@@ -15,9 +15,9 @@ describe('schema', () => {
         module: 'mcp/tools/simulator/build_sim',
         names: { mcp: 'build_sim' },
         description: 'Build iOS app for simulator',
-        availability: { mcp: true, cli: true, daemon: true },
+        availability: { mcp: true, cli: true },
         predicates: [],
-        routing: { stateful: false, daemonAffinity: 'preferred' },
+        routing: { stateful: false },
       };
 
       const result = toolManifestEntrySchema.safeParse(input);
@@ -38,7 +38,7 @@ describe('schema', () => {
       const result = toolManifestEntrySchema.safeParse(input);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.availability).toEqual({ mcp: true, cli: true, daemon: true });
+        expect(result.data.availability).toEqual({ mcp: true, cli: true });
         expect(result.data.predicates).toEqual([]);
       }
     });
@@ -67,23 +67,26 @@ describe('schema', () => {
       }
     });
 
-    it('should accept daemonAffinity values', () => {
-      const inputPreferred = {
+    it('should reject availability.daemon', () => {
+      const input = {
         id: 'tool1',
         module: 'mcp/tools/test/tool1',
         names: { mcp: 'tool1' },
-        routing: { stateful: false, daemonAffinity: 'preferred' },
+        availability: { mcp: true, cli: true, daemon: true },
       };
 
-      const inputRequired = {
+      expect(toolManifestEntrySchema.safeParse(input).success).toBe(false);
+    });
+
+    it('should reject routing.daemonAffinity', () => {
+      const input = {
         id: 'tool2',
         module: 'mcp/tools/test/tool2',
         names: { mcp: 'tool2' },
         routing: { stateful: true, daemonAffinity: 'required' },
       };
 
-      expect(toolManifestEntrySchema.safeParse(inputPreferred).success).toBe(true);
-      expect(toolManifestEntrySchema.safeParse(inputRequired).success).toBe(true);
+      expect(toolManifestEntrySchema.safeParse(input).success).toBe(false);
     });
   });
 
@@ -93,7 +96,7 @@ describe('schema', () => {
         id: 'simulator',
         title: 'iOS Simulator Development',
         description: 'Build and test iOS apps on simulators',
-        availability: { mcp: true, cli: true, daemon: true },
+        availability: { mcp: true, cli: true },
         selection: {
           mcp: {
             defaultEnabled: true,
@@ -124,7 +127,7 @@ describe('schema', () => {
       const result = workflowManifestEntrySchema.safeParse(input);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.availability).toEqual({ mcp: true, cli: true, daemon: true });
+        expect(result.data.availability).toEqual({ mcp: true, cli: true });
         expect(result.data.predicates).toEqual([]);
       }
     });
@@ -147,7 +150,7 @@ describe('schema', () => {
         id: 'session-management',
         title: 'Session Management',
         description: 'Manage session defaults',
-        availability: { mcp: true, cli: false, daemon: false },
+        availability: { mcp: true, cli: false },
         selection: {
           mcp: {
             defaultEnabled: true,
@@ -196,7 +199,7 @@ describe('schema', () => {
         id: 'build_sim',
         module: 'mcp/tools/simulator/build_sim',
         names: { mcp: 'build_sim', cli: 'build-simulator' },
-        availability: { mcp: true, cli: true, daemon: true },
+        availability: { mcp: true, cli: true },
         predicates: [],
       };
 
@@ -208,7 +211,7 @@ describe('schema', () => {
         id: 'build_sim',
         module: 'mcp/tools/simulator/build_sim',
         names: { mcp: 'build_sim' },
-        availability: { mcp: true, cli: true, daemon: true },
+        availability: { mcp: true, cli: true },
         predicates: [],
       };
 

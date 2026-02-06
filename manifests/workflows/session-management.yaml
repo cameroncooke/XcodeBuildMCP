@@ -1,15 +1,12 @@
 id: session-management
-title: "Session Management"
-description: "Manage session defaults for project/workspace paths, scheme, configuration, simulator/device settings."
+title: Session Management
+description: Manage session defaults for project/workspace paths, scheme, configuration, simulator/device settings.
 availability:
-  mcp: true
   cli: false
-  daemon: false
 selection:
   mcp:
     defaultEnabled: true
     autoInclude: true
-predicates: []
 tools:
   - session_show_defaults
   - session_set_defaults

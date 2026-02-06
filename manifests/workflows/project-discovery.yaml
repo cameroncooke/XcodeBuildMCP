@@ -1,15 +1,6 @@
 id: project-discovery
-title: "Project Discovery"
-description: "Discover and examine Xcode projects, workspaces, and Swift packages. Analyze project structure, schemes, build settings, and bundle information."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-selection:
-  mcp:
-    defaultEnabled: false
-    autoInclude: false
-predicates: []
+title: Project Discovery
+description: Discover and examine Xcode projects, workspaces, and Swift packages. Analyze project structure, schemes, build settings, and bundle information.
 tools:
   - discover_projs
   - list_schemes

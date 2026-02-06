@@ -2,12 +2,6 @@ id: debug_lldb_command
 module: mcp/tools/debugging/debug_lldb_command
 names:
   mcp: debug_lldb_command
-description: "Run LLDB command."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
+description: Run LLDB command.
 routing:
   stateful: true
-  daemonAffinity: required

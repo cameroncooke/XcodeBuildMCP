@@ -2,16 +2,9 @@ id: build_run_sim
 module: mcp/tools/simulator/build_run_sim
 names:
   mcp: build_run_sim
-description: "Build and run iOS sim."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
+description: Build and run iOS sim.
 predicates:
   - hideWhenXcodeAgentMode
-routing:
-  stateful: false
-  daemonAffinity: preferred
 annotations:
-  title: "Build Run Simulator"
+  title: Build Run Simulator
   destructiveHint: true

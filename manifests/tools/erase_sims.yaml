@@ -2,15 +2,7 @@ id: erase_sims
 module: mcp/tools/simulator-management/erase_sims
 names:
   mcp: erase_sims
-description: "Erase simulator."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
-routing:
-  stateful: false
-  daemonAffinity: preferred
+description: Erase simulator.
 annotations:
-  title: "Erase Simulators"
+  title: Erase Simulators
   destructiveHint: true

@@ -2,16 +2,9 @@ id: build_macos
 module: mcp/tools/macos/build_macos
 names:
   mcp: build_macos
-description: "Build macOS app."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
+description: Build macOS app.
 predicates:
   - hideWhenXcodeAgentMode
-routing:
-  stateful: false
-  daemonAffinity: preferred
 annotations:
-  title: "Build macOS"
+  title: Build macOS
   destructiveHint: true

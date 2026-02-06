@@ -1,15 +1,6 @@
 id: device
-title: "iOS Device Development"
-description: "Complete iOS development workflow for physical devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro)."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-selection:
-  mcp:
-    defaultEnabled: false
-    autoInclude: false
-predicates: []
+title: iOS Device Development
+description: Complete iOS development workflow for physical devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro).
 tools:
   - build_device
   - test_device

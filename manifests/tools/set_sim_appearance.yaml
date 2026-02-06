@@ -2,15 +2,7 @@ id: set_sim_appearance
 module: mcp/tools/simulator-management/set_sim_appearance
 names:
   mcp: set_sim_appearance
-description: "Set sim appearance."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
-routing:
-  stateful: false
-  daemonAffinity: preferred
+description: Set sim appearance.
 annotations:
-  title: "Set Simulator Appearance"
+  title: Set Simulator Appearance
   destructiveHint: true

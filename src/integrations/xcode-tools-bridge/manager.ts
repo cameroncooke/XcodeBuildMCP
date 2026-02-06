@@ -5,18 +5,18 @@ import {
   createTextResponse,
   type ToolResponse,
 } from '../../utils/responses/index.ts';
-import { XcodeToolsBridgeClient } from './client.ts';
 import { XcodeToolsProxyRegistry, type ProxySyncResult } from './registry.ts';
 import {
   buildXcodeToolsBridgeStatus,
   getMcpBridgeAvailability,
   type XcodeToolsBridgeStatus,
 } from './core.ts';
+import { XcodeIdeToolService } from './tool-service.ts';
 
 export class XcodeToolsBridgeManager {
   private readonly server: McpServer;
-  private readonly client: XcodeToolsBridgeClient;
   private readonly registry: XcodeToolsProxyRegistry;
+  private readonly service: XcodeIdeToolService;
 
   private workflowEnabled = false;
   private lastError: string | null = null;
@@ -25,32 +25,29 @@ export class XcodeToolsBridgeManager {
   constructor(server: McpServer) {
     this.server = server;
     this.registry = new XcodeToolsProxyRegistry(server);
-    this.client = new XcodeToolsBridgeClient({
-      onToolsListChanged: (): void => {
+    this.service = new XcodeIdeToolService({
+      onToolCatalogInvalidated: (): void => {
         void this.syncTools({ reason: 'listChanged' });
-      },
-      onBridgeClosed: (): void => {
-        this.registry.clear();
-        this.lastError = this.client.getStatus().lastError ?? this.lastError;
       },
     });
   }
 
   setWorkflowEnabled(enabled: boolean): void {
     this.workflowEnabled = enabled;
+    this.service.setWorkflowEnabled(enabled);
   }
 
   async shutdown(): Promise<void> {
     this.registry.clear();
-    await this.client.disconnect();
+    await this.service.disconnect();
   }
 
   async getStatus(): Promise<XcodeToolsBridgeStatus> {
     return buildXcodeToolsBridgeStatus({
       workflowEnabled: this.workflowEnabled,
       proxiedToolCount: this.registry.getRegisteredCount(),
-      lastError: this.lastError,
-      clientStatus: this.client.getStatus(),
+      lastError: this.lastError ?? this.service.getLastError(),
+      clientStatus: this.service.getClientStatus(),
     });
   }
 
@@ -74,11 +71,10 @@ export class XcodeToolsBridgeManager {
       }
 
       try {
-        await this.client.connectOnce();
-        const remoteTools = await this.client.listTools();
+        const remoteTools = await this.service.listTools({ refresh: true });
 
         const sync = this.registry.sync(remoteTools, async (remoteName, args) => {
-          return this.client.callTool(remoteName, args);
+          return this.service.invokeTool(remoteName, args);
         });
 
         if (opts.reason !== 'listChanged') {
@@ -111,7 +107,7 @@ export class XcodeToolsBridgeManager {
   async disconnect(): Promise<void> {
     this.registry.clear();
     this.server.sendToolListChanged();
-    await this.client.disconnect();
+    await this.service.disconnect();
   }
 
   async statusTool(): Promise<ToolResponse> {

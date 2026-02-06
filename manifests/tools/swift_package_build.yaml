@@ -2,16 +2,9 @@ id: swift_package_build
 module: mcp/tools/swift-package/swift_package_build
 names:
   mcp: swift_package_build
-description: "swift package target build."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
+description: swift package target build.
 predicates:
   - hideWhenXcodeAgentMode
-routing:
-  stateful: false
-  daemonAffinity: preferred
 annotations:
-  title: "Swift Package Build"
+  title: Swift Package Build
   destructiveHint: true

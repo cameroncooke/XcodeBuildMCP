@@ -2,15 +2,7 @@ id: swipe
 module: mcp/tools/ui-automation/swipe
 names:
   mcp: swipe
-description: "Swipe between points."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
-routing:
-  stateful: false
-  daemonAffinity: preferred
+description: Swipe between points.
 annotations:
-  title: "Swipe"
+  title: Swipe
   destructiveHint: true

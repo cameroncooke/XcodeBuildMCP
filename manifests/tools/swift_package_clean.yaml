@@ -2,15 +2,7 @@ id: swift_package_clean
 module: mcp/tools/swift-package/swift_package_clean
 names:
   mcp: swift_package_clean
-description: "swift package clean."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
-routing:
-  stateful: false
-  daemonAffinity: preferred
+description: swift package clean.
 annotations:
-  title: "Swift Package Clean"
+  title: Swift Package Clean
   destructiveHint: true

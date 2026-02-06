@@ -12,11 +12,16 @@ import {
   clearAllProcesses,
   type ProcessInfo,
 } from '../active-processes.ts';
+import {
+  clearDaemonActivityRegistry,
+  getDaemonActivitySnapshot,
+} from '../../../../daemon/activity-registry.ts';
 
 describe('active-processes module', () => {
   // Clear the map before each test
   beforeEach(() => {
     clearAllProcesses();
+    clearDaemonActivityRegistry();
   });
 
   describe('activeProcesses Map', () => {
@@ -127,6 +132,25 @@ describe('active-processes module', () => {
       expect(activeProcesses.size).toBe(0);
       expect(activeProcesses.get(54321)).toBe(undefined);
     });
+
+    it('should release daemon activity when removing process', () => {
+      let releaseCalls = 0;
+
+      addProcess(321, {
+        process: {
+          kill: () => {},
+          on: () => {},
+          pid: 321,
+        },
+        startedAt: new Date('2023-03-20T09:15:00.000Z'),
+        releaseActivity: () => {
+          releaseCalls += 1;
+        },
+      });
+
+      removeProcess(321);
+      expect(releaseCalls).toBe(1);
+    });
   });
 
   describe('clearAllProcesses function', () => {
@@ -150,6 +174,36 @@ describe('active-processes module', () => {
       clearAllProcesses();
 
       expect(activeProcesses.size).toBe(0);
+    });
+
+    it('should release daemon activity for all tracked processes', () => {
+      const calls = { first: 0, second: 0 };
+      addProcess(1111, {
+        process: {
+          kill: () => {},
+          on: () => {},
+          pid: 1111,
+        },
+        startedAt: new Date(),
+        releaseActivity: () => {
+          calls.first += 1;
+        },
+      });
+      addProcess(2222, {
+        process: {
+          kill: () => {},
+          on: () => {},
+          pid: 2222,
+        },
+        startedAt: new Date(),
+        releaseActivity: () => {
+          calls.second += 1;
+        },
+      });
+
+      clearAllProcesses();
+      expect(calls).toEqual({ first: 1, second: 1 });
+      expect(getDaemonActivitySnapshot().activeOperationCount).toBe(0);
     });
 
     it('should work on already empty map', () => {

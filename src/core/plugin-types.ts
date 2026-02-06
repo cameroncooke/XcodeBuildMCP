@@ -11,8 +11,6 @@ export interface PluginCliMeta {
   readonly schema?: ToolSchemaShape;
   /** Mark tool as requiring daemon routing */
   readonly stateful?: boolean;
-  /** Prefer daemon routing when available (without forcing auto-start) */
-  readonly daemonAffinity?: 'preferred' | 'required';
 }
 
 export interface PluginMeta {

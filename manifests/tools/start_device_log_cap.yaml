@@ -2,15 +2,9 @@ id: start_device_log_cap
 module: mcp/tools/logging/start_device_log_cap
 names:
   mcp: start_device_log_cap
-description: "Start device log capture."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
+description: Start device log capture.
 routing:
   stateful: true
-  daemonAffinity: required
 annotations:
-  title: "Start Device Log Capture"
+  title: Start Device Log Capture
   destructiveHint: true

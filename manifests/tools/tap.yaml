@@ -2,15 +2,7 @@ id: tap
 module: mcp/tools/ui-automation/tap
 names:
   mcp: tap
-description: "Tap coordinate or element."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
-routing:
-  stateful: false
-  daemonAffinity: preferred
+description: Tap coordinate or element.
 annotations:
-  title: "Tap"
+  title: Tap
   destructiveHint: true

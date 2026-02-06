@@ -2,12 +2,9 @@ id: session_set_defaults
 module: mcp/tools/session-management/session_set_defaults
 names:
   mcp: session_set_defaults
-description: "Set the session defaults, should be called at least once to set tool defaults."
+description: Set the session defaults, should be called at least once to set tool defaults.
 availability:
-  mcp: true
   cli: false
-  daemon: false
-predicates: []
 annotations:
-  title: "Set Session Defaults"
+  title: Set Session Defaults
   destructiveHint: true

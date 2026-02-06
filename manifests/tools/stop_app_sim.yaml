@@ -2,15 +2,7 @@ id: stop_app_sim
 module: mcp/tools/simulator/stop_app_sim
 names:
   mcp: stop_app_sim
-description: "Stop sim app."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
-routing:
-  stateful: false
-  daemonAffinity: preferred
+description: Stop sim app.
 annotations:
-  title: "Stop App Simulator"
+  title: Stop App Simulator
   destructiveHint: true

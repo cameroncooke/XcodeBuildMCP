@@ -2,12 +2,6 @@ id: debug_continue
 module: mcp/tools/debugging/debug_continue
 names:
   mcp: debug_continue
-description: "Continue debug session."
-availability:
-  mcp: true
-  cli: true
-  daemon: true
-predicates: []
+description: Continue debug session.
 routing:
   stateful: true
-  daemonAffinity: required
