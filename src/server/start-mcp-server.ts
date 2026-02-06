@@ -35,18 +35,45 @@ export async function startMcpServer(): Promise<void> {
 
     await startServer(server);
 
-    process.on('SIGTERM', async () => {
-      await shutdownXcodeToolsBridge();
-      await getDefaultDebuggerManager().disposeAll();
-      await server.close();
-      process.exit(0);
+    let shuttingDown = false;
+    const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
+      if (shuttingDown) return;
+      shuttingDown = true;
+
+      log('info', `Received ${signal}; shutting down MCP server`);
+
+      let exitCode = 0;
+
+      try {
+        await shutdownXcodeToolsBridge();
+      } catch (error) {
+        exitCode = 1;
+        log('error', `Failed to shutdown Xcode tools bridge: ${String(error)}`);
+      }
+
+      try {
+        await getDefaultDebuggerManager().disposeAll();
+      } catch (error) {
+        exitCode = 1;
+        log('error', `Failed to dispose debugger sessions: ${String(error)}`);
+      }
+
+      try {
+        await server.close();
+      } catch (error) {
+        exitCode = 1;
+        log('error', `Failed to close MCP server: ${String(error)}`);
+      }
+
+      process.exit(exitCode);
+    };
+
+    process.once('SIGTERM', () => {
+      void shutdown('SIGTERM');
     });
 
-    process.on('SIGINT', async () => {
-      await shutdownXcodeToolsBridge();
-      await getDefaultDebuggerManager().disposeAll();
-      await server.close();
-      process.exit(0);
+    process.once('SIGINT', () => {
+      void shutdown('SIGINT');
     });
 
     log('info', `XcodeBuildMCP server (version ${version}) started successfully`);
