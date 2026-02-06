@@ -24,7 +24,7 @@ describe('launch_app_sim tool', () => {
       expect(schemaObj.safeParse({ bundleId: 'com.example.testapp' }).success).toBe(false);
       expect(schemaObj.safeParse({ bundleId: 123 }).success).toBe(false);
 
-      expect(Object.keys(schema).sort()).toEqual(['args']);
+      expect(Object.keys(schema).sort()).toEqual(['args', 'env']);
 
       const withSimDefaults = schemaObj.safeParse({
         simulatorId: 'sim-default',
@@ -346,5 +346,92 @@ describe('launch_app_sim tool', () => {
         ],
       });
     });
+
+    it('should pass env vars with SIMCTL_CHILD_ prefix to executor opts', async () => {
+      let callCount = 0;
+      const capturedOpts: (Record<string, unknown> | undefined)[] = [];
+
+      const sequencedExecutor = async (
+        command: string[],
+        _logPrefix?: string,
+        _useShell?: boolean,
+        opts?: { env?: Record<string, string> },
+      ) => {
+        callCount++;
+        capturedOpts.push(opts);
+        if (callCount === 1) {
+          return {
+            success: true,
+            output: '/path/to/app/container',
+            error: '',
+            process: {} as any,
+          };
+        }
+        return {
+          success: true,
+          output: 'App launched successfully',
+          error: '',
+          process: {} as any,
+        };
+      };
+
+      await launch_app_simLogic(
+        {
+          simulatorId: 'test-uuid-123',
+          bundleId: 'com.example.testapp',
+          env: { STAGING_ENABLED: '1', DEBUG: 'true' },
+        },
+        sequencedExecutor,
+      );
+
+      // First call is get_app_container (no env), second is launch (with env)
+      expect(capturedOpts[1]).toEqual({
+        env: {
+          SIMCTL_CHILD_STAGING_ENABLED: '1',
+          SIMCTL_CHILD_DEBUG: 'true',
+        },
+      });
+    });
+
+    it('should not pass env opts when env is undefined', async () => {
+      let callCount = 0;
+      const capturedOpts: (Record<string, unknown> | undefined)[] = [];
+
+      const sequencedExecutor = async (
+        command: string[],
+        _logPrefix?: string,
+        _useShell?: boolean,
+        opts?: { env?: Record<string, string> },
+      ) => {
+        callCount++;
+        capturedOpts.push(opts);
+        if (callCount === 1) {
+          return {
+            success: true,
+            output: '/path/to/app/container',
+            error: '',
+            process: {} as any,
+          };
+        }
+        return {
+          success: true,
+          output: 'App launched successfully',
+          error: '',
+          process: {} as any,
+        };
+      };
+
+      await launch_app_simLogic(
+        {
+          simulatorId: 'test-uuid-123',
+          bundleId: 'com.example.testapp',
+        },
+        sequencedExecutor,
+      );
+
+      // Launch call opts should be undefined when no env provided
+      expect(capturedOpts[1]).toBeUndefined();
+    });
+
   });
 });

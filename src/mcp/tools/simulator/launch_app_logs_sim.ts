@@ -16,6 +16,7 @@ export type LogCaptureFunction = (
     bundleId: string;
     captureConsole?: boolean;
     args?: string[];
+    env?: Record<string, string>;
   },
   executor: CommandExecutor,
 ) => Promise<{ sessionId: string; logFilePath: string; processes: unknown[]; error?: string }>;
@@ -35,6 +36,12 @@ const baseSchemaObject = z.object({
     ),
   bundleId: z.string().describe('Bundle identifier of the app to launch'),
   args: z.array(z.string()).optional().describe('Optional arguments to pass to the app'),
+  env: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      'Environment variables to pass to the launched app (SIMCTL_CHILD_ prefix added automatically)',
+    ),
 });
 
 // Internal schema requires simulatorId (factory resolves simulatorName → simulatorId)
@@ -43,6 +50,12 @@ const internalSchemaObject = z.object({
   simulatorName: z.string().optional(),
   bundleId: z.string(),
   args: z.array(z.string()).optional(),
+  env: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      'Environment variables to pass to the launched app (SIMCTL_CHILD_ prefix added automatically)',
+    ),
 });
 
 type LaunchAppLogsSimParams = z.infer<typeof internalSchemaObject>;
@@ -67,6 +80,7 @@ export async function launch_app_logs_simLogic(
     bundleId: params.bundleId,
     captureConsole: true,
     ...(params.args && params.args.length > 0 ? { args: params.args } : {}),
+    ...(params.env ? { env: params.env } : {}),
   } as const;
 
   const { sessionId, error } = await logCaptureFunction(captureParams, executor);

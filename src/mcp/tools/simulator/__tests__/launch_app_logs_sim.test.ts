@@ -28,7 +28,7 @@ describe('launch_app_logs_sim tool', () => {
       expect(schemaObj.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
       expect(schemaObj.safeParse({ bundleId: 42 }).success).toBe(true);
 
-      expect(Object.keys(schema).sort()).toEqual(['args']);
+      expect(Object.keys(schema).sort()).toEqual(['args', 'env']);
 
       const withSimId = schemaObj.safeParse({
         simulatorId: 'abc123',
@@ -137,6 +137,68 @@ describe('launch_app_logs_sim tool', () => {
         bundleId: 'com.example.testapp',
         captureConsole: true,
         args: ['--debug'],
+      });
+    });
+
+    it('should pass env vars through to log capture function', async () => {
+      let capturedParams: unknown = null;
+      const logCaptureStub: LogCaptureFunction = async (params) => {
+        capturedParams = params;
+        return {
+          sessionId: 'test-session-789',
+          logFilePath: '/tmp/xcodemcp_sim_log_test-session-789.log',
+          processes: [],
+          error: undefined,
+        };
+      };
+
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+
+      await launch_app_logs_simLogic(
+        {
+          simulatorId: 'test-uuid-123',
+          bundleId: 'com.example.testapp',
+          env: { STAGING_ENABLED: '1' },
+        },
+        mockExecutor,
+        logCaptureStub,
+      );
+
+      expect(capturedParams).toEqual({
+        simulatorUuid: 'test-uuid-123',
+        bundleId: 'com.example.testapp',
+        captureConsole: true,
+        env: { STAGING_ENABLED: '1' },
+      });
+    });
+
+    it('should not include env in capture params when env is undefined', async () => {
+      let capturedParams: unknown = null;
+      const logCaptureStub: LogCaptureFunction = async (params) => {
+        capturedParams = params;
+        return {
+          sessionId: 'test-session-101',
+          logFilePath: '/tmp/xcodemcp_sim_log_test-session-101.log',
+          processes: [],
+          error: undefined,
+        };
+      };
+
+      const mockExecutor = createMockExecutor({ success: true, output: '' });
+
+      await launch_app_logs_simLogic(
+        {
+          simulatorId: 'test-uuid-123',
+          bundleId: 'com.example.testapp',
+        },
+        mockExecutor,
+        logCaptureStub,
+      );
+
+      expect(capturedParams).toEqual({
+        simulatorUuid: 'test-uuid-123',
+        bundleId: 'com.example.testapp',
+        captureConsole: true,
       });
     });
 

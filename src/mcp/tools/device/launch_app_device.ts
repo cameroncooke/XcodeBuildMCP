@@ -32,6 +32,10 @@ type LaunchDataResponse = {
 const launchAppDeviceSchema = z.object({
   deviceId: z.string().describe('UDID of the device (obtained from list_devices)'),
   bundleId: z.string(),
+  env: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe('Environment variables to pass to the launched app (as KEY=VALUE pairs)'),
 });
 
 const publicSchemaObject = launchAppDeviceSchema.omit({
@@ -55,20 +59,29 @@ export async function launch_app_deviceLogic(
     // Use JSON output to capture process ID
     const tempJsonPath = join(fileSystem.tmpdir(), `launch-${Date.now()}.json`);
 
+    const command = [
+      'xcrun',
+      'devicectl',
+      'device',
+      'process',
+      'launch',
+      '--device',
+      deviceId,
+      '--json-output',
+      tempJsonPath,
+      '--terminate-existing',
+    ];
+
+    if (params.env) {
+      for (const [key, value] of Object.entries(params.env)) {
+        command.push('--environment-variables', `${key}=${value}`);
+      }
+    }
+
+    command.push(bundleId);
+
     const result = await executor(
-      [
-        'xcrun',
-        'devicectl',
-        'device',
-        'process',
-        'launch',
-        '--device',
-        deviceId,
-        '--json-output',
-        tempJsonPath,
-        '--terminate-existing',
-        bundleId,
-      ],
+      command,
       'Launch app on device',
       false, // useShell
       undefined, // env

@@ -98,3 +98,21 @@ export function normalizeTestRunnerEnv(vars: Record<string, string>): Record<str
   }
   return normalized;
 }
+
+/**
+ * Normalizes a set of user-provided environment variables by ensuring they are
+ * prefixed with SIMCTL_CHILD_. Variables already prefixed are preserved.
+ *
+ * Example:
+ *  normalizeSimctlChildEnv({ FOO: '1', SIMCTL_CHILD_BAR: '2' })
+ *  => { SIMCTL_CHILD_FOO: '1', SIMCTL_CHILD_BAR: '2' }
+ */
+export function normalizeSimctlChildEnv(vars: Record<string, string>): Record<string, string> {
+  const normalized: Record<string, string> = {};
+  for (const [key, value] of Object.entries(vars ?? {})) {
+    if (value == null) continue;
+    const prefixedKey = key.startsWith('SIMCTL_CHILD_') ? key : `SIMCTL_CHILD_${key}`;
+    normalized[prefixedKey] = value;
+  }
+  return normalized;
+}
