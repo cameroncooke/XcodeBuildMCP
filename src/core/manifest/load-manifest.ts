@@ -13,7 +13,6 @@ import {
   type ToolManifestEntry,
   type WorkflowManifestEntry,
   type ResolvedManifest,
-  getEffectiveCliName,
 } from './schema.ts';
 
 // Re-export types for consumers
@@ -224,20 +223,6 @@ export function loadManifest(): ResolvedManifest {
       );
     }
     mcpNames.set(tool.names.mcp, toolId);
-  }
-
-  // Validate CLI name uniqueness (after derivation)
-  const cliNames = new Map<string, string>(); // cliName -> toolId
-  for (const [toolId, tool] of tools) {
-    const cliName = getEffectiveCliName(tool);
-    const existing = cliNames.get(cliName);
-    if (existing) {
-      throw new ManifestValidationError(
-        `Duplicate CLI name '${cliName}' used by tools '${existing}' and '${toolId}'. ` +
-          `Set explicit 'names.cli' in one of the tool manifests to resolve.`,
-      );
-    }
-    cliNames.set(cliName, toolId);
   }
 
   return { tools, workflows };

@@ -2,6 +2,7 @@ id: swift_package_list
 module: mcp/tools/swift-package/swift_package_list
 names:
   mcp: swift_package_list
+  cli: list
 description: List SwiftPM processes.
 routing:
   stateful: true

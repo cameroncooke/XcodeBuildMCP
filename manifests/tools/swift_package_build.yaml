@@ -2,6 +2,7 @@ id: swift_package_build
 module: mcp/tools/swift-package/swift_package_build
 names:
   mcp: swift_package_build
+  cli: build
 description: swift package target build.
 predicates:
   - hideWhenXcodeAgentMode

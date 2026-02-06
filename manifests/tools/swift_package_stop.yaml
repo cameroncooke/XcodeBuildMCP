@@ -2,6 +2,7 @@ id: swift_package_stop
 module: mcp/tools/swift-package/swift_package_stop
 names:
   mcp: swift_package_stop
+  cli: stop
 description: Stop SwiftPM run.
 routing:
   stateful: true

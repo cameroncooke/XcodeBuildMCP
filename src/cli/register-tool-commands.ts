@@ -95,8 +95,7 @@ function registerToolSubcommand(
   const yargsOptions = schemaToYargsOptions(tool.cliSchema);
   const unsupportedKeys = getUnsupportedSchemaKeys(tool.cliSchema);
 
-  // Use the base CLI name without workflow prefix since it's already scoped
-  const commandName = getBaseToolName(tool);
+  const commandName = tool.cliName;
 
   yargs.command(
     commandName,
@@ -187,16 +186,4 @@ function registerToolSubcommand(
       printToolResponse(response, { format: outputFormat, style: outputStyle });
     },
   );
-}
-
-/**
- * Get the base tool name without any workflow prefix.
- * For tools that were disambiguated with workflow prefix, strip it.
- */
-function getBaseToolName(tool: ToolDefinition): string {
-  const prefix = `${tool.workflow}-`;
-  if (tool.cliName.startsWith(prefix)) {
-    return tool.cliName.slice(prefix.length);
-  }
-  return tool.cliName;
 }
