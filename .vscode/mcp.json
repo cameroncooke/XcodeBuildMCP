@@ -20,7 +20,8 @@
       "args": [
         "--inspect=9999",
         "--trace-warnings",
-        "${workspaceFolder}/build/index.js"
+        "${workspaceFolder}/build/cli.js",
+        "mcp"
       ],
       "env": {
         "XCODEBUILDMCP_DEBUG": "true",

@@ -6,8 +6,10 @@
 
 import * as z from 'zod';
 import { startLogCapture } from '../../../utils/log-capture/index.ts';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
-import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import type { CommandExecutor } from '../../../utils/command.ts';
+import { getDefaultCommandExecutor } from '../../../utils/command.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { createTextContent } from '../../../types/common.ts';
 import type { SubsystemFilter } from '../../../utils/log_capture.ts';
 import {
   createSessionAwareTool,
@@ -91,26 +93,16 @@ const publicSchemaObject = z.strictObject(
   startSimLogCapSchema.omit({ simulatorId: true, bundleId: true } as const).shape,
 );
 
-export default {
-  name: 'start_sim_log_cap',
-  description: 'Start sim log capture.',
-  cli: {
-    stateful: true,
-  },
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: startSimLogCapSchema,
-  }),
-  annotations: {
-    title: 'Start Simulator Log Capture',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<StartSimLogCapParams>({
-    internalSchema: startSimLogCapSchema as unknown as z.ZodType<StartSimLogCapParams, unknown>,
-    logicFunction: start_sim_log_capLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['simulatorId', 'bundleId'], message: 'Provide simulatorId and bundleId' },
-    ],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: startSimLogCapSchema,
+});
+
+export const handler = createSessionAwareTool<StartSimLogCapParams>({
+  internalSchema: startSimLogCapSchema as unknown as z.ZodType<StartSimLogCapParams, unknown>,
+  logicFunction: start_sim_log_capLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['simulatorId', 'bundleId'], message: 'Provide simulatorId and bundleId' },
+  ],
+});

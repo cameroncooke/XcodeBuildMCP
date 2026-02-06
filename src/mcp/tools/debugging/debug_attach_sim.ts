@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { createErrorResponse } from '../../../utils/responses/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
@@ -181,17 +181,13 @@ const publicSchemaObject = z.strictObject(
   }).shape,
 );
 
-export default {
-  name: 'debug_attach_sim',
-  description: 'Attach LLDB to sim app.',
-  cli: {
-    stateful: true,
-  },
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  handler: createSessionAwareToolWithContext<DebugAttachSimParams, DebuggerToolContext>({
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareToolWithContext<DebugAttachSimParams, DebuggerToolContext>(
+  {
     internalSchema: debugAttachSchema as unknown as z.ZodType<DebugAttachSimParams, unknown>,
     logicFunction: debug_attach_simLogic,
     getContext: getDefaultDebuggerToolContext,
@@ -199,5 +195,5 @@ export default {
       { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
     ],
     exclusivePairs: [['simulatorId', 'simulatorName']],
-  }),
-};
+  },
+);

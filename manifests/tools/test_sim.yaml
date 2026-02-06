@@ -1,0 +1,11 @@
+id: test_sim
+module: mcp/tools/simulator/test_sim
+names:
+  mcp: test_sim
+  cli: test
+description: Test on iOS sim.
+predicates:
+  - hideWhenXcodeAgentMode
+annotations:
+  title: Test Simulator
+  destructiveHint: true

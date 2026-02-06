@@ -1,6 +1,6 @@
 import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
@@ -75,13 +75,10 @@ export async function stop_mac_appLogic(
   }
 }
 
-export default {
-  name: 'stop_mac_app',
-  description: 'Stop macOS app.',
-  schema: stopMacAppSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Stop macOS App',
-    destructiveHint: true,
-  },
-  handler: createTypedTool(stopMacAppSchema, stop_mac_appLogic, getDefaultCommandExecutor),
-};
+export const schema = stopMacAppSchema.shape;
+
+export const handler = createTypedTool(
+  stopMacAppSchema,
+  stop_mac_appLogic,
+  getDefaultCommandExecutor,
+);

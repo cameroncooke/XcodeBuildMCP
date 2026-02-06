@@ -4,7 +4,8 @@
 // Import the shared activeProcesses map from swift_package_run
 // This maintains the same behavior as the original implementation
 import * as z from 'zod';
-import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { createTextContent } from '../../../types/common.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { getDefaultCommandExecutor } from '../../../utils/command.ts';
 import { activeProcesses } from './active-processes.ts';
@@ -84,22 +85,12 @@ const swiftPackageListSchema = z.object({});
 // Use z.infer for type safety
 type SwiftPackageListParams = z.infer<typeof swiftPackageListSchema>;
 
-export default {
-  name: 'swift_package_list',
-  description: 'List SwiftPM processes.',
-  cli: {
-    stateful: true,
+export const schema = swiftPackageListSchema.shape;
+
+export const handler = createTypedTool(
+  swiftPackageListSchema,
+  (params: SwiftPackageListParams) => {
+    return swift_package_listLogic(params);
   },
-  schema: swiftPackageListSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Swift Package List',
-    readOnlyHint: true,
-  },
-  handler: createTypedTool(
-    swiftPackageListSchema,
-    (params: SwiftPackageListParams) => {
-      return swift_package_listLogic(params);
-    },
-    getDefaultCommandExecutor,
-  ),
-};
+  getDefaultCommandExecutor,
+);

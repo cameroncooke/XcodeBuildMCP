@@ -18,12 +18,13 @@ import { mkdtemp, rm } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { log } from './logger.ts';
-import { XcodePlatform } from './xcode.ts';
+import type { XcodePlatform } from './xcode.ts';
 import { executeXcodeBuildCommand } from './build/index.ts';
 import { createTextResponse, consolidateContentForClaudeCode } from './validation.ts';
 import { normalizeTestRunnerEnv } from './environment.ts';
-import { ToolResponse } from '../types/common.ts';
-import { CommandExecutor, CommandExecOptions, getDefaultCommandExecutor } from './command.ts';
+import type { ToolResponse } from '../types/common.ts';
+import type { CommandExecutor, CommandExecOptions } from './command.ts';
+import { getDefaultCommandExecutor } from './command.ts';
 
 /**
  * Type definition for test summary structure from xcresulttool

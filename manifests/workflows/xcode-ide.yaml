@@ -1,0 +1,12 @@
+id: xcode-ide
+title: Xcode IDE Integration
+description: Bridge tools for connecting to Xcode's built-in MCP server (mcpbridge) to access IDE-specific functionality.
+availability:
+  cli: false
+predicates:
+  - xcodeToolsAvailable
+  - hideWhenXcodeAgentMode
+tools:
+  - xcode_tools_bridge_status
+  - xcode_tools_bridge_sync
+  - xcode_tools_bridge_disconnect

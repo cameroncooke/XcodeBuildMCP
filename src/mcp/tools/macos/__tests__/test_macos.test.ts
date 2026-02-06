@@ -12,7 +12,8 @@ import {
   type FileSystemExecutor,
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import testMacos, { testMacosLogic } from '../test_macos.ts';
+import { schema, handler } from '../test_macos.ts';
+import { testMacosLogic } from '../test_macos.ts';
 
 const createTestFileSystemExecutor = (overrides: Partial<FileSystemExecutor> = {}) =>
   createMockFileSystemExecutor({
@@ -29,42 +30,34 @@ describe('test_macos plugin (unified)', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(testMacos.name).toBe('test_macos');
-    });
-
-    it('should have correct description', () => {
-      expect(testMacos.description).toBe('Test macOS target.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof testMacos.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
-      const schema = z.strictObject(testMacos.schema);
+      const zodSchema = z.strictObject(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(zodSchema.safeParse({}).success).toBe(true);
       expect(
-        schema.safeParse({
+        zodSchema.safeParse({
           extraArgs: ['--arg1', '--arg2'],
           testRunnerEnv: { FOO: 'BAR' },
         }).success,
       ).toBe(true);
 
-      expect(schema.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
-      expect(schema.safeParse({ extraArgs: ['--ok', 1] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
-      expect(schema.safeParse({ testRunnerEnv: { FOO: 123 } }).success).toBe(false);
+      expect(zodSchema.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
+      expect(zodSchema.safeParse({ extraArgs: ['--ok', 1] }).success).toBe(false);
+      expect(zodSchema.safeParse({ preferXcodebuild: true }).success).toBe(false);
+      expect(zodSchema.safeParse({ testRunnerEnv: { FOO: 123 } }).success).toBe(false);
 
-      const schemaKeys = Object.keys(testMacos.schema).sort();
+      const schemaKeys = Object.keys(schema).sort();
       expect(schemaKeys).toEqual(['extraArgs', 'testRunnerEnv'].sort());
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require scheme before running', async () => {
-      const result = await testMacos.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('scheme is required');
@@ -73,7 +66,7 @@ describe('test_macos plugin (unified)', () => {
     it('should require project or workspace when scheme default exists', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
-      const result = await testMacos.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Provide a project or workspace');
@@ -82,7 +75,7 @@ describe('test_macos plugin (unified)', () => {
     it('should reject when both projectPath and workspacePath provided explicitly', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
-      const result = await testMacos.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
       });
@@ -95,7 +88,7 @@ describe('test_macos plugin (unified)', () => {
   describe('XOR Parameter Validation', () => {
     it('should validate that either projectPath or workspacePath is provided', async () => {
       // Should return error response when neither is provided
-      const result = await testMacos.handler({
+      const result = await handler({
         scheme: 'MyScheme',
       });
 
@@ -105,7 +98,7 @@ describe('test_macos plugin (unified)', () => {
 
     it('should validate that both projectPath and workspacePath cannot be provided', async () => {
       // Should return error response when both are provided
-      const result = await testMacos.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',

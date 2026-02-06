@@ -4,12 +4,14 @@ import { createTextResponse, createErrorResponse } from '../../../utils/response
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { createTextContent } from '../../../types/common.ts';
 import { addProcess } from './active-processes.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
+import { acquireDaemonActivity } from '../../../daemon/activity-registry.ts';
 
 // Define schema as ZodObject
 const baseSchemaObject = z.object({
@@ -114,6 +116,7 @@ export async function swift_package_runLogic(
             startedAt: new Date(),
             executableName: params.executableName,
             packagePath: resolvedPath,
+            releaseActivity: acquireDaemonActivity('swift-package.background-process'),
           });
 
           return {
@@ -218,23 +221,13 @@ export async function swift_package_runLogic(
   }
 }
 
-export default {
-  name: 'swift_package_run',
-  description: 'swift package target run.',
-  cli: {
-    stateful: true,
-  },
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }), // MCP SDK compatibility
-  annotations: {
-    title: 'Swift Package Run',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<SwiftPackageRunParams>({
-    internalSchema: swiftPackageRunSchema,
-    logicFunction: swift_package_runLogic,
-    getExecutor: getDefaultCommandExecutor,
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<SwiftPackageRunParams>({
+  internalSchema: swiftPackageRunSchema,
+  logicFunction: swift_package_runLogic,
+  getExecutor: getDefaultCommandExecutor,
+});

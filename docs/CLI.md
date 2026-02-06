@@ -121,6 +121,7 @@ See [CONFIGURATION.md](CONFIGURATION.md) for the full schema.
 | Variable | Description |
 |----------|-------------|
 | `XCODEBUILDMCP_SOCKET` | Override socket path for all commands |
+| `XCODEBUILDMCP_DAEMON_IDLE_TIMEOUT_MS` | Daemon idle timeout in ms (default `600000`, set `0` to disable) |
 | `XCODEBUILDMCP_DISABLE_SESSION_DEFAULTS` | Disable session defaults |
 
 ## CLI vs MCP Mode
@@ -128,7 +129,7 @@ See [CONFIGURATION.md](CONFIGURATION.md) for the full schema.
 | Feature | CLI (`xcodebuildmcp <tool>`) | MCP (`xcodebuildmcp mcp`) |
 |---------|------------------------------|---------------------------|
 | Invocation | Direct terminal | MCP client (Claude, etc.) |
-| Session state | Per-workspace daemon | In-process |
+| Session state | Stateless direct + daemon for stateful tools | In-process |
 | Use case | Scripts, CI, manual | AI-assisted development |
 | Configuration | Same config.yaml | Same config.yaml |
 
@@ -136,13 +137,18 @@ Both share the same underlying tool implementations.
 
 ## Per-Workspace Daemon
 
-The CLI uses a per-workspace daemon architecture for stateful operations (log capture, video recording, debugging). Each workspace gets its own daemon instance.
+The CLI uses a per-workspace daemon architecture only when needed:
+
+- Stateless tools run directly in the CLI process.
+- Stateful tools route through the daemon (auto-started as needed).
+- Dynamic `xcode-ide` bridge tools are a special-case daemon-backed path for persistent bridge sessions.
 
 ### How It Works
 
 - **Workspace identity**: The workspace root is determined by the location of `.xcodebuildmcp/config.yaml`, or falls back to the current directory.
 - **Socket location**: Each daemon runs on a Unix socket at `~/.xcodebuildmcp/daemons/<workspace-key>/daemon.sock`
 - **Auto-start**: The daemon starts automatically when you invoke a stateful tool - no manual setup required.
+- **Auto-shutdown**: The daemon exits after 10 minutes of inactivity, but only when there are no active stateful sessions (log capture, debugging, video capture, background swift-package processes).
 
 ### Daemon Commands
 
@@ -198,16 +204,6 @@ Daemons:
 Total: 2 (1 running, 1 stale)
 ```
 
-### Opting Out of Daemon
-
-If you want to disable daemon auto-start (stateful tools will error):
-
-```bash
-xcodebuildmcp build-sim --no-daemon --scheme MyApp
-```
-
-This is useful for CI environments or when you want explicit control.
-
 ## Stateful vs Stateless Tools
 
 ### Stateless Tools (run in-process)
@@ -230,8 +226,6 @@ When you invoke a stateful tool, the daemon auto-starts if needed.
 | Option | Description |
 |--------|-------------|
 | `--socket <path>` | Override the daemon socket path (hidden) |
-| `--daemon` | Force daemon execution for stateless tools (hidden) |
-| `--no-daemon` | Disable daemon usage; stateful tools will fail |
 | `-h, --help` | Show help |
 | `-v, --version` | Show version |
 

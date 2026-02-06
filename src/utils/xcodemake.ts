@@ -14,7 +14,8 @@
  */
 
 import { log } from './logger.ts';
-import { CommandResponse, getDefaultCommandExecutor } from './command.ts';
+import type { CommandResponse } from './command.ts';
+import { getDefaultCommandExecutor } from './command.ts';
 import { existsSync, readdirSync } from 'fs';
 import * as path from 'path';
 import * as os from 'os';

@@ -60,11 +60,11 @@ Black Box Testing means testing ONLY through external interfaces without any kno
 **ABSOLUTE TESTING RULES - NO EXCEPTIONS:**
 
 1. **✅ ONLY ALLOWED: Reloaderoo Inspect Commands**
-   - `npx reloaderoo@latest inspect call-tool "TOOL_NAME" --params 'JSON' -- node build/index.js mcp`
-   - `npx reloaderoo@latest inspect list-tools -- node build/index.js mcp`
-   - `npx reloaderoo@latest inspect read-resource "URI" -- node build/index.js mcp`
-   - `npx reloaderoo@latest inspect server-info -- node build/index.js mcp`
-   - `npx reloaderoo@latest inspect ping -- node build/index.js mcp`
+   - `npx reloaderoo@latest inspect call-tool "TOOL_NAME" --params 'JSON' -- node build/cli.js mcp`
+   - `npx reloaderoo@latest inspect list-tools -- node build/cli.js mcp`
+   - `npx reloaderoo@latest inspect read-resource "URI" -- node build/cli.js mcp`
+   - `npx reloaderoo@latest inspect server-info -- node build/cli.js mcp`
+   - `npx reloaderoo@latest inspect ping -- node build/cli.js mcp`
 
 2. **❌ COMPLETELY FORBIDDEN ACTIONS:**
    - **NEVER** call `mcp__XcodeBuildMCP__tool_name()` functions directly
@@ -86,8 +86,8 @@ Black Box Testing means testing ONLY through external interfaces without any kno
    const result = await doctor();
    
    // ✅ CORRECT - Only through Reloaderoo inspect
-   npx reloaderoo@latest inspect call-tool "list_devices" --params '{}' -- node build/index.js mcp
-   npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/index.js mcp
+   npx reloaderoo@latest inspect call-tool "list_devices" --params '{}' -- node build/cli.js mcp
+   npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/cli.js mcp
    ```
 
 **WHY RELOADEROO INSPECT IS MANDATORY:**
@@ -160,7 +160,7 @@ grep "^   • " /tmp/tools_detailed.txt | sed 's/^   • //' > /tmp/tool_names.t
 For EVERY tool in the list:
 ```bash
 # Test each tool individually - NO BATCHING
-npx reloaderoo@latest inspect call-tool "TOOL_NAME" --params 'APPROPRIATE_PARAMS' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "TOOL_NAME" --params 'APPROPRIATE_PARAMS' -- node build/cli.js mcp
 
 # Mark tool as completed in TodoWrite IMMEDIATELY after testing
 # Record result (success/failure/blocked) for each tool
@@ -414,7 +414,7 @@ echo "Tool schema reference created at /tmp/tool_schemas.md"
    - Mark "completed" only after manual verification
 
 2. **Test Each Tool Individually**
-   - Execute ONLY via `npx reloaderoo@latest inspect call-tool "TOOL_NAME" --params 'JSON' -- node build/index.js mcp`
+   - Execute ONLY via `npx reloaderoo@latest inspect call-tool "TOOL_NAME" --params 'JSON' -- node build/cli.js mcp`
    - Wait for complete response before proceeding to next tool
    - Read and verify each tool's output manually
    - Record key outputs (UUIDs, paths, schemes) for dependent tools
@@ -438,16 +438,16 @@ echo "Tool schema reference created at /tmp/tool_schemas.md"
 
 ```bash
 # Test server connectivity
-npx reloaderoo@latest inspect ping -- node build/index.js mcp
+npx reloaderoo@latest inspect ping -- node build/cli.js mcp
 
 # Get server information  
-npx reloaderoo@latest inspect server-info -- node build/index.js mcp
+npx reloaderoo@latest inspect server-info -- node build/cli.js mcp
 
 # Verify tool count manually
-npx reloaderoo@latest inspect list-tools -- node build/index.js mcp 2>/dev/null | jq '.tools | length'
+npx reloaderoo@latest inspect list-tools -- node build/cli.js mcp 2>/dev/null | jq '.tools | length'
 
 # Verify resource count manually
-npx reloaderoo@latest inspect list-resources -- node build/index.js mcp 2>/dev/null | jq '.resources | length'
+npx reloaderoo@latest inspect list-resources -- node build/cli.js mcp 2>/dev/null | jq '.resources | length'
 ```
 
 #### Phase 2: Resource Testing
@@ -456,7 +456,7 @@ npx reloaderoo@latest inspect list-resources -- node build/index.js mcp 2>/dev/n
 # Test each resource systematically
 while IFS= read -r resource_uri; do
     echo "Testing resource: $resource_uri"
-    npx reloaderoo@latest inspect read-resource "$resource_uri" -- node build/index.js mcp 2>/dev/null
+    npx reloaderoo@latest inspect read-resource "$resource_uri" -- node build/cli.js mcp 2>/dev/null
     echo "---"
 done < /tmp/resource_uris.txt
 ```
@@ -470,23 +470,23 @@ echo "=== FOUNDATION TOOL TESTING & DATA COLLECTION ==="
 
 # 1. Test doctor (no dependencies)
 echo "Testing doctor..."
-npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/index.js mcp 2>/dev/null
+npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/cli.js mcp 2>/dev/null
 
 # 2. Collect device data
 echo "Collecting device UUIDs..."
-npx reloaderoo@latest inspect call-tool "list_devices" --params '{}' -- node build/index.js mcp 2>/dev/null > /tmp/devices_output.json
+npx reloaderoo@latest inspect call-tool "list_devices" --params '{}' -- node build/cli.js mcp 2>/dev/null > /tmp/devices_output.json
 DEVICE_UUIDS=$(jq -r '.content[0].text' /tmp/devices_output.json | grep -E "UDID: [A-F0-9-]+" | sed 's/.*UDID: //' | head -2)
 echo "Device UUIDs captured: $DEVICE_UUIDS"
 
 # 3. Collect simulator data  
 echo "Collecting simulator UUIDs..."
-npx reloaderoo@latest inspect call-tool "list_sims" --params '{}' -- node build/index.js mcp 2>/dev/null > /tmp/sims_output.json
+npx reloaderoo@latest inspect call-tool "list_sims" --params '{}' -- node build/cli.js mcp 2>/dev/null > /tmp/sims_output.json
 SIMULATOR_UUIDS=$(jq -r '.content[0].text' /tmp/sims_output.json | grep -E "\([A-F0-9-]+\)" | sed 's/.*(\([A-F0-9-]*\)).*/\1/' | head -3)
 echo "Simulator UUIDs captured: $SIMULATOR_UUIDS"
 
 # 4. Collect project data
 echo "Collecting project paths..."
-npx reloaderoo@latest inspect call-tool "discover_projs" --params '{"workspaceRoot": "/Volumes/Developer/XcodeBuildMCP"}' -- node build/index.js mcp 2>/dev/null > /tmp/projects_output.json
+npx reloaderoo@latest inspect call-tool "discover_projs" --params '{"workspaceRoot": "/Volumes/Developer/XcodeBuildMCP"}' -- node build/cli.js mcp 2>/dev/null > /tmp/projects_output.json
 PROJECT_PATHS=$(jq -r '.content[1].text' /tmp/projects_output.json | grep -E "\.xcodeproj$" | sed 's/.*- //' | head -3)
 WORKSPACE_PATHS=$(jq -r '.content[2].text' /tmp/projects_output.json | grep -E "\.xcworkspace$" | sed 's/.*- //' | head -2)
 echo "Project paths captured: $PROJECT_PATHS"
@@ -508,7 +508,7 @@ echo "=== DISCOVERY TOOL TESTING & METADATA COLLECTION ==="
 while IFS= read -r project_path; do
     if [ -n "$project_path" ]; then
         echo "Getting schemes for: $project_path"
-        npx reloaderoo@latest inspect call-tool "list_schems_proj" --params "{\"projectPath\": \"$project_path\"}" -- node build/index.js mcp 2>/dev/null > /tmp/schemes_$$.json
+        npx reloaderoo@latest inspect call-tool "list_schems_proj" --params "{\"projectPath\": \"$project_path\"}" -- node build/cli.js mcp 2>/dev/null > /tmp/schemes_$$.json
         SCHEMES=$(jq -r '.content[1].text' /tmp/schemes_$$.json 2>/dev/null || echo "NoScheme")
         echo "$project_path|$SCHEMES" >> /tmp/project_schemes.txt
         echo "Schemes captured for $project_path: $SCHEMES"
@@ -519,7 +519,7 @@ done < /tmp/project_paths.txt
 while IFS= read -r workspace_path; do
     if [ -n "$workspace_path" ]; then
         echo "Getting schemes for: $workspace_path"
-        npx reloaderoo@latest inspect call-tool "list_schemes" --params "{\"workspacePath\": \"$workspace_path\"}" -- node build/index.js mcp 2>/dev/null > /tmp/ws_schemes_$$.json
+        npx reloaderoo@latest inspect call-tool "list_schemes" --params "{\"workspacePath\": \"$workspace_path\"}" -- node build/cli.js mcp 2>/dev/null > /tmp/ws_schemes_$$.json
         SCHEMES=$(jq -r '.content[1].text' /tmp/ws_schemes_$$.json 2>/dev/null || echo "NoScheme")
         echo "$workspace_path|$SCHEMES" >> /tmp/workspace_schemes.txt
         echo "Schemes captured for $workspace_path: $SCHEMES"
@@ -544,29 +544,29 @@ done < /tmp/workspace_paths.txt
 ```bash
 # STEP 1: Test foundation tools (no parameters required)
 # Execute each command individually, wait for response, verify manually
-npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/cli.js mcp
 # [Wait for response, read output, mark tool complete in task list]
 
-npx reloaderoo@latest inspect call-tool "list_devices" --params '{}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "list_devices" --params '{}' -- node build/cli.js mcp
 # [Record device UUIDs from response for dependent tools]
 
-npx reloaderoo@latest inspect call-tool "list_sims" --params '{}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "list_sims" --params '{}' -- node build/cli.js mcp
 # [Record simulator UUIDs from response for dependent tools]
 
 # STEP 2: Test project discovery (use discovered project paths)
-npx reloaderoo@latest inspect call-tool "list_schems_proj" --params '{"projectPath": "/actual/path/from/discover_projs.xcodeproj"}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "list_schems_proj" --params '{"projectPath": "/actual/path/from/discover_projs.xcodeproj"}' -- node build/cli.js mcp
 # [Record scheme names from response for build tools]
 
 # STEP 3: Test workspace tools (use discovered workspace paths)  
-npx reloaderoo@latest inspect call-tool "list_schemes" --params '{"workspacePath": "/actual/path/from/discover_projs.xcworkspace"}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "list_schemes" --params '{"workspacePath": "/actual/path/from/discover_projs.xcworkspace"}' -- node build/cli.js mcp
 # [Record scheme names from response for build tools]
 
 # STEP 4: Test simulator tools (use captured simulator UUIDs from step 1)
-npx reloaderoo@latest inspect call-tool "boot_sim" --params '{"simulatorUuid": "ACTUAL_UUID_FROM_LIST_SIMS"}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "boot_sim" --params '{"simulatorUuid": "ACTUAL_UUID_FROM_LIST_SIMS"}' -- node build/cli.js mcp
 # [Verify simulator boots successfully]
 
 # STEP 5: Test build tools (requires project + scheme + simulator from previous steps)
-npx reloaderoo@latest inspect call-tool "build_sim_id_proj" --params '{"projectPath": "/actual/project.xcodeproj", "scheme": "ActualSchemeName", "simulatorId": "ACTUAL_SIMULATOR_UUID"}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "build_sim_id_proj" --params '{"projectPath": "/actual/project.xcodeproj", "scheme": "ActualSchemeName", "simulatorId": "ACTUAL_SIMULATOR_UUID"}' -- node build/cli.js mcp
 # [Verify build succeeds and record app bundle path]
 ```
 
@@ -592,7 +592,7 @@ npx reloaderoo@latest inspect call-tool "build_sim_id_proj" --params '{"projectP
    ```bash
    # ❌ IMMEDIATE TERMINATION - Using scripts to test tools
    for tool in $(cat tool_list.txt); do
-     npx reloaderoo inspect call-tool "$tool" --params '{}' -- node build/index.js mcp
+     npx reloaderoo inspect call-tool "$tool" --params '{}' -- node build/cli.js mcp
    done
    ```
 
@@ -618,19 +618,19 @@ npx reloaderoo@latest inspect call-tool "build_sim_id_proj" --params '{"projectP
 ```bash
 # ✅ CORRECT - Step-by-step manual execution via Reloaderoo
 # Tool 1: Test doctor
-npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "doctor" --params '{}' -- node build/cli.js mcp
 # [Read response, verify, mark complete in TodoWrite]
 
 # Tool 2: Test list_devices  
-npx reloaderoo@latest inspect call-tool "list_devices" --params '{}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "list_devices" --params '{}' -- node build/cli.js mcp
 # [Read response, capture UUIDs, mark complete in TodoWrite]
 
 # Tool 3: Test list_sims
-npx reloaderoo@latest inspect call-tool "list_sims" --params '{}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "list_sims" --params '{}' -- node build/cli.js mcp
 # [Read response, capture UUIDs, mark complete in TodoWrite]
 
 # Tool X: Test stateful tool (expected to fail)
-npx reloaderoo@latest inspect call-tool "swift_package_stop" --params '{"pid": 12345}' -- node build/index.js mcp
+npx reloaderoo@latest inspect call-tool "swift_package_stop" --params '{"pid": 12345}' -- node build/cli.js mcp
 # [Tool fails as expected - no in-memory state available]
 # [Mark as "false negative - stateful tool limitation" in TodoWrite]
 # [Continue to next tool without investigation]
@@ -655,15 +655,15 @@ echo "=== Error Testing ==="
 
 # Test with invalid JSON parameters
 echo "Testing invalid parameter types..."
-npx reloaderoo@latest inspect call-tool list_schems_proj --params '{"projectPath": 123}' -- node build/index.js mcp 2>/dev/null
+npx reloaderoo@latest inspect call-tool list_schems_proj --params '{"projectPath": 123}' -- node build/cli.js mcp 2>/dev/null
 
 # Test with non-existent paths
 echo "Testing non-existent paths..."
-npx reloaderoo@latest inspect call-tool list_schems_proj --params '{"projectPath": "/nonexistent/path.xcodeproj"}' -- node build/index.js mcp 2>/dev/null
+npx reloaderoo@latest inspect call-tool list_schems_proj --params '{"projectPath": "/nonexistent/path.xcodeproj"}' -- node build/cli.js mcp 2>/dev/null
 
 # Test with invalid UUIDs
 echo "Testing invalid UUIDs..."
-npx reloaderoo@latest inspect call-tool boot_sim --params '{"simulatorUuid": "invalid-uuid"}' -- node build/index.js mcp 2>/dev/null
+npx reloaderoo@latest inspect call-tool boot_sim --params '{"simulatorUuid": "invalid-uuid"}' -- node build/cli.js mcp 2>/dev/null
 ```
 
 ## Testing Report Generation
@@ -699,12 +699,12 @@ echo "Testing session template created: TESTING_SESSION_$(date +%Y-%m-%d).md"
 
 ```bash
 # Essential testing commands
-npx reloaderoo@latest inspect ping -- node build/index.js mcp
-npx reloaderoo@latest inspect server-info -- node build/index.js mcp
-npx reloaderoo@latest inspect list-tools -- node build/index.js mcp | jq '.tools | length'
-npx reloaderoo@latest inspect list-resources -- node build/index.js mcp | jq '.resources | length'
-npx reloaderoo@latest inspect call-tool TOOL_NAME --params '{}' -- node build/index.js mcp
-npx reloaderoo@latest inspect read-resource "xcodebuildmcp://RESOURCE" -- node build/index.js mcp
+npx reloaderoo@latest inspect ping -- node build/cli.js mcp
+npx reloaderoo@latest inspect server-info -- node build/cli.js mcp
+npx reloaderoo@latest inspect list-tools -- node build/cli.js mcp | jq '.tools | length'
+npx reloaderoo@latest inspect list-resources -- node build/cli.js mcp | jq '.resources | length'
+npx reloaderoo@latest inspect call-tool TOOL_NAME --params '{}' -- node build/cli.js mcp
+npx reloaderoo@latest inspect read-resource "xcodebuildmcp://RESOURCE" -- node build/cli.js mcp
 
 # Schema extraction
 jq --arg tool "TOOL_NAME" '.tools[] | select(.name == $tool) | .inputSchema' /tmp/tools.json
@@ -720,7 +720,7 @@ jq --arg tool "TOOL_NAME" '.tools[] | select(.name == $tool) | .description' /tm
 **Cause**: Server startup issues or MCP protocol communication problems
 **Resolution**: 
 - Verify server builds successfully: `npm run build`
-- Test direct server startup: `node build/index.js mcp`
+- Test direct server startup: `node build/cli.js mcp`
 - Check for TypeScript compilation errors
 
 #### 2. Tool Parameter Validation Errors
@@ -735,7 +735,7 @@ jq --arg tool "TOOL_NAME" '.tools[] | select(.name == $tool) | .description' /tm
 **Symptoms**: Reloaderoo reports tool not found
 **Cause**: Tool name mismatch or server registration issues
 **Resolution**:
-- Verify tool exists in list: `npx reloaderoo@latest inspect list-tools -- node build/index.js mcp | jq '.tools[].name'`
+- Verify tool exists in list: `npx reloaderoo@latest inspect list-tools -- node build/cli.js mcp | jq '.tools[].name'`
 - Check exact tool name spelling and case sensitivity
 - Ensure server built successfully
 

@@ -15,7 +15,8 @@ export interface YargsAppOptions {
   defaultSocketPath: string;
   workspaceRoot: string;
   workspaceKey: string;
-  enabledWorkflows: string[];
+  workflowNames: string[];
+  cliExposedWorkflowIds: string[];
 }
 
 /**
@@ -37,17 +38,6 @@ export function buildYargsApp(opts: YargsAppOptions): ReturnType<typeof yargs> {
       describe: 'Override daemon unix socket path',
       default: opts.defaultSocketPath,
       hidden: true,
-    })
-    .option('daemon', {
-      type: 'boolean',
-      describe: 'Force daemon execution even for stateless tools',
-      default: false,
-      hidden: true,
-    })
-    .option('no-daemon', {
-      type: 'boolean',
-      describe: 'Disable daemon usage and auto-start (stateful tools will fail)',
-      default: false,
     })
     .option('log-level', {
       type: 'string',
@@ -80,15 +70,17 @@ export function buildYargsApp(opts: YargsAppOptions): ReturnType<typeof yargs> {
 
   // Register command groups with workspace context
   registerMcpCommand(app);
+  registerToolsCommand(app);
+  registerToolCommands(app, opts.catalog, {
+    workspaceRoot: opts.workspaceRoot,
+    cliExposedWorkflowIds: opts.cliExposedWorkflowIds,
+    workflowNames: opts.workflowNames,
+  });
+  // Daemon management is an advanced debugging tool - register last
   registerDaemonCommands(app, {
     defaultSocketPath: opts.defaultSocketPath,
     workspaceRoot: opts.workspaceRoot,
     workspaceKey: opts.workspaceKey,
-  });
-  registerToolsCommand(app);
-  registerToolCommands(app, opts.catalog, {
-    workspaceRoot: opts.workspaceRoot,
-    enabledWorkflows: opts.enabledWorkflows,
   });
 
   return app;

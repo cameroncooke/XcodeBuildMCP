@@ -6,13 +6,10 @@
 
 import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
-import { ToolResponse } from '../../../types/common.ts';
-import {
-  CommandExecutor,
-  getDefaultFileSystemExecutor,
-  getDefaultCommandExecutor,
-} from '../../../utils/command.ts';
-import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import type { CommandExecutor } from '../../../utils/command.ts';
+import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
+import type { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 /**
@@ -124,18 +121,11 @@ export async function get_mac_bundle_idLogic(
   }
 }
 
-export default {
-  name: 'get_mac_bundle_id',
-  description: 'Extract bundle id from macOS .app.',
-  schema: getMacBundleIdSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Get Mac Bundle ID',
-    readOnlyHint: true,
-  },
-  handler: createTypedTool(
-    getMacBundleIdSchema,
-    (params: GetMacBundleIdParams) =>
-      get_mac_bundle_idLogic(params, getDefaultCommandExecutor(), getDefaultFileSystemExecutor()),
-    getDefaultCommandExecutor,
-  ),
-};
+export const schema = getMacBundleIdSchema.shape;
+
+export const handler = createTypedTool(
+  getMacBundleIdSchema,
+  (params: GetMacBundleIdParams) =>
+    get_mac_bundle_idLogic(params, getDefaultCommandExecutor(), getDefaultFileSystemExecutor()),
+  getDefaultCommandExecutor,
+);

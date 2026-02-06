@@ -1,7 +1,7 @@
 import * as z from 'zod';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
 import { getProcess, removeProcess, type ProcessInfo } from './active-processes.ts';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 
 // Define schema as ZodObject
 const swiftPackageStopSchema = z.object({
@@ -101,27 +101,16 @@ export async function swift_package_stopLogic(
   }
 }
 
-export default {
-  name: 'swift_package_stop',
-  description: 'Stop SwiftPM run.',
-  cli: {
-    stateful: true,
-  },
-  schema: swiftPackageStopSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Swift Package Stop',
-    destructiveHint: true,
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    // Validate parameters using Zod
-    const parseResult = swiftPackageStopSchema.safeParse(args);
-    if (!parseResult.success) {
-      return createErrorResponse(
-        'Parameter validation failed',
-        parseResult.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
-      );
-    }
+export const schema = swiftPackageStopSchema.shape;
 
-    return swift_package_stopLogic(parseResult.data);
-  },
-};
+export async function handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  const parseResult = swiftPackageStopSchema.safeParse(args);
+  if (!parseResult.success) {
+    return createErrorResponse(
+      'Parameter validation failed',
+      parseResult.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', '),
+    );
+  }
+
+  return swift_package_stopLogic(parseResult.data);
+}

@@ -1,0 +1,11 @@
+id: test_device
+module: mcp/tools/device/test_device
+names:
+  mcp: test_device
+  cli: test
+description: Test on device.
+predicates:
+  - hideWhenXcodeAgentMode
+annotations:
+  title: Test Device
+  destructiveHint: true

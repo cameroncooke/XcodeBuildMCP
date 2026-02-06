@@ -22,8 +22,8 @@
 
 import * as fs from 'fs';
 import { log } from './logger.ts';
-import { ToolResponse, ValidationResult } from '../types/common.ts';
-import { FileSystemExecutor } from './FileSystemExecutor.ts';
+import type { ToolResponse, ValidationResult } from '../types/common.ts';
+import type { FileSystemExecutor } from './FileSystemExecutor.ts';
 import { getDefaultEnvironmentDetector } from './environment.ts';
 
 /**
@@ -259,4 +259,4 @@ export function consolidateContentForClaudeCode(response: ToolResponse): ToolRes
 }
 
 // Export the ToolResponse type for use in other files
-export { ToolResponse, ValidationResult };
+export type { ToolResponse, ValidationResult };

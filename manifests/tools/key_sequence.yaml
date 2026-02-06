@@ -1,0 +1,9 @@
+id: key_sequence
+module: mcp/tools/ui-automation/key_sequence
+names:
+  mcp: key_sequence
+  cli: key-sequence
+description: Press a sequence of keys by their keycodes.
+annotations:
+  title: Key Sequence
+  destructiveHint: true

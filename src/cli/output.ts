@@ -53,18 +53,6 @@ function printToolResponseText(response: ToolResponse): void {
 }
 
 /**
- * Get the base tool name without workflow prefix.
- * For disambiguated tools, strips the workflow prefix.
- */
-function getBaseToolName(cliName: string, workflow: string): string {
-  const prefix = `${workflow}-`;
-  if (cliName.startsWith(prefix)) {
-    return cliName.slice(prefix.length);
-  }
-  return cliName;
-}
-
-/**
  * Format a tool list for display.
  */
 export function formatToolList(
@@ -74,7 +62,6 @@ export function formatToolList(
   const lines: string[] = [];
 
   if (options.grouped) {
-    // Group by workflow - show subcommand names
     const byWorkflow = new Map<string, typeof tools>();
     for (const tool of tools) {
       const existing = byWorkflow.get(tool.workflow) ?? [];
@@ -85,37 +72,28 @@ export function formatToolList(
     for (const workflow of sortedWorkflows) {
       lines.push(`\n${workflow}:`);
       const workflowTools = byWorkflow.get(workflow) ?? [];
-      // Sort by base name (without prefix)
-      const sortedTools = workflowTools.sort((a, b) => {
-        const aBase = getBaseToolName(a.cliName, a.workflow);
-        const bBase = getBaseToolName(b.cliName, b.workflow);
-        return aBase.localeCompare(bBase);
-      });
+      const sortedTools = workflowTools.sort((a, b) => a.cliName.localeCompare(b.cliName));
 
       for (const tool of sortedTools) {
-        // Show subcommand name (without workflow prefix)
-        const toolName = getBaseToolName(tool.cliName, tool.workflow);
         const statefulMarker = tool.stateful ? ' [stateful]' : '';
         if (options.verbose && tool.description) {
-          lines.push(`  ${toolName}${statefulMarker}`);
+          lines.push(`  ${tool.cliName}${statefulMarker}`);
           lines.push(`    ${tool.description}`);
         } else {
           const desc = tool.description ? ` - ${truncate(tool.description, 60)}` : '';
-          lines.push(`  ${toolName}${statefulMarker}${desc}`);
+          lines.push(`  ${tool.cliName}${statefulMarker}${desc}`);
         }
       }
     }
   } else {
-    // Flat list - show full workflow-scoped command
     const sortedTools = [...tools].sort((a, b) => {
-      const aFull = `${a.workflow} ${getBaseToolName(a.cliName, a.workflow)}`;
-      const bFull = `${b.workflow} ${getBaseToolName(b.cliName, b.workflow)}`;
+      const aFull = `${a.workflow} ${a.cliName}`;
+      const bFull = `${b.workflow} ${b.cliName}`;
       return aFull.localeCompare(bFull);
     });
 
     for (const tool of sortedTools) {
-      const toolName = getBaseToolName(tool.cliName, tool.workflow);
-      const fullCommand = `${tool.workflow} ${toolName}`;
+      const fullCommand = `${tool.workflow} ${tool.cliName}`;
       const statefulMarker = tool.stateful ? ' [stateful]' : '';
       if (options.verbose && tool.description) {
         lines.push(`${fullCommand}${statefulMarker}`);

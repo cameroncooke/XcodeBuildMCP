@@ -1,0 +1,9 @@
+id: swift_package_clean
+module: mcp/tools/swift-package/swift_package_clean
+names:
+  mcp: swift_package_clean
+  cli: clean
+description: swift package clean.
+annotations:
+  title: Swift Package Clean
+  destructiveHint: true

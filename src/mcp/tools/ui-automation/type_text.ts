@@ -6,7 +6,7 @@
  */
 
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
 import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
@@ -101,28 +101,18 @@ export async function type_textLogic(
   }
 }
 
-export default {
-  name: 'type_text',
-  description: 'Type text.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: typeTextSchema,
-  }),
-  annotations: {
-    title: 'Type Text',
-    destructiveHint: true,
-  },
-  cli: {
-    daemonAffinity: 'preferred',
-  },
-  handler: createSessionAwareTool<TypeTextParams>({
-    internalSchema: typeTextSchema as unknown as z.ZodType<TypeTextParams, unknown>,
-    logicFunction: (params: TypeTextParams, executor: CommandExecutor) =>
-      type_textLogic(params, executor),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }), // Safe factory
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: typeTextSchema,
+});
+
+export const handler = createSessionAwareTool<TypeTextParams>({
+  internalSchema: typeTextSchema as unknown as z.ZodType<TypeTextParams, unknown>,
+  logicFunction: (params: TypeTextParams, executor: CommandExecutor) =>
+    type_textLogic(params, executor),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(

@@ -13,12 +13,12 @@ import { spawn } from 'child_process';
 import { createWriteStream, existsSync } from 'fs';
 import { tmpdir as osTmpdir } from 'os';
 import { log } from './logger.ts';
-import { FileSystemExecutor } from './FileSystemExecutor.ts';
-import { CommandExecutor, CommandResponse, CommandExecOptions } from './CommandExecutor.ts';
+import type { FileSystemExecutor } from './FileSystemExecutor.ts';
+import type { CommandExecutor, CommandResponse, CommandExecOptions } from './CommandExecutor.ts';
 
 // Re-export types for backward compatibility
-export { CommandExecutor, CommandResponse, CommandExecOptions } from './CommandExecutor.ts';
-export { FileSystemExecutor } from './FileSystemExecutor.ts';
+export type { CommandExecutor, CommandResponse, CommandExecOptions } from './CommandExecutor.ts';
+export type { FileSystemExecutor } from './FileSystemExecutor.ts';
 
 /**
  * Default executor implementation using spawn (current production behavior)
@@ -70,7 +70,7 @@ async function defaultExecutor(
     // Log the actual command that will be executed
     const displayCommand =
       useShell && escapedCommand.length === 3 ? escapedCommand[2] : [executable, ...args].join(' ');
-    log('info', `Executing ${logPrefix ?? ''} command: ${displayCommand}`);
+    log('debug', `Executing ${logPrefix ?? ''} command: ${displayCommand}`);
 
     const spawnOpts: Parameters<typeof spawn>[2] = {
       stdio: ['ignore', 'pipe', 'pipe'], // ignore stdin, pipe stdout/stderr
@@ -78,7 +78,7 @@ async function defaultExecutor(
       cwd: opts?.cwd,
     };
 
-    log('info', `defaultExecutor PATH: ${process.env.PATH ?? ''}`);
+    log('debug', `defaultExecutor PATH: ${process.env.PATH ?? ''}`);
 
     const logSpawnError = (err: Error): void => {
       const errnoErr = err as NodeJS.ErrnoException & { spawnargs?: string[] };

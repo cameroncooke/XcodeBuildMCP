@@ -1,0 +1,9 @@
+id: type_text
+module: mcp/tools/ui-automation/type_text
+names:
+  mcp: type_text
+  cli: type-text
+description: Type text.
+annotations:
+  title: Type Text
+  destructiveHint: true

@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { createErrorResponse, createTextResponse } from '../../../utils/responses/index.ts';
 import { createTypedToolWithContext } from '../../../utils/typed-tool-factory.ts';
 import {
@@ -27,16 +27,10 @@ export async function debug_breakpoint_removeLogic(
   }
 }
 
-export default {
-  name: 'debug_breakpoint_remove',
-  description: 'Remove breakpoint.',
-  cli: {
-    stateful: true,
-  },
-  schema: debugBreakpointRemoveSchema.shape,
-  handler: createTypedToolWithContext<DebugBreakpointRemoveParams, DebuggerToolContext>(
-    debugBreakpointRemoveSchema,
-    debug_breakpoint_removeLogic,
-    getDefaultDebuggerToolContext,
-  ),
-};
+export const schema = debugBreakpointRemoveSchema.shape;
+
+export const handler = createTypedToolWithContext<DebugBreakpointRemoveParams, DebuggerToolContext>(
+  debugBreakpointRemoveSchema,
+  debug_breakpoint_removeLogic,
+  getDefaultDebuggerToolContext,
+);

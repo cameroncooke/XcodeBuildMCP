@@ -11,31 +11,23 @@ import {
   createNoopExecutor,
   createMockCommandResponse,
 } from '../../../../test-utils/mock-executors.ts';
-import swiftPackageClean, { swift_package_cleanLogic } from '../swift_package_clean.ts';
+import { schema, handler, swift_package_cleanLogic } from '../swift_package_clean.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 
 describe('swift_package_clean plugin', () => {
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(swiftPackageClean.name).toBe('swift_package_clean');
-    });
-
-    it('should have correct description', () => {
-      expect(swiftPackageClean.description).toBe('swift package clean.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof swiftPackageClean.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
       // Test required fields
-      expect(swiftPackageClean.schema.packagePath.safeParse('/test/package').success).toBe(true);
-      expect(swiftPackageClean.schema.packagePath.safeParse('').success).toBe(true);
+      expect(schema.packagePath.safeParse('/test/package').success).toBe(true);
+      expect(schema.packagePath.safeParse('').success).toBe(true);
 
       // Test invalid inputs
-      expect(swiftPackageClean.schema.packagePath.safeParse(null).success).toBe(false);
-      expect(swiftPackageClean.schema.packagePath.safeParse(undefined).success).toBe(false);
+      expect(schema.packagePath.safeParse(null).success).toBe(false);
+      expect(schema.packagePath.safeParse(undefined).success).toBe(false);
     });
   });
 

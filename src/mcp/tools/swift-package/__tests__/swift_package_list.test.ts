@@ -5,28 +5,20 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import swiftPackageList, { swift_package_listLogic } from '../swift_package_list.ts';
+import { schema, handler, swift_package_listLogic } from '../swift_package_list.ts';
 
 describe('swift_package_list plugin', () => {
   // No mocks to clear with pure dependency injection
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(swiftPackageList.name).toBe('swift_package_list');
-    });
-
-    it('should have correct description', () => {
-      expect(swiftPackageList.description).toBe('List SwiftPM processes.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof swiftPackageList.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
       // The schema is an empty object, so any input should be valid
-      expect(typeof swiftPackageList.schema).toBe('object');
-      expect(Object.keys(swiftPackageList.schema)).toEqual([]);
+      expect(typeof schema).toBe('object');
+      expect(Object.keys(schema)).toEqual([]);
     });
   });
 

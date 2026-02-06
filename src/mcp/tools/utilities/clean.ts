@@ -13,7 +13,8 @@ import {
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
-import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.ts';
+import type { ToolResponse, SharedBuildParams } from '../../../types/common.ts';
+import { XcodePlatform } from '../../../types/common.ts';
 import { createErrorResponse } from '../../../utils/responses/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
@@ -148,24 +149,17 @@ const publicSchemaObject = baseSchemaObject.omit({
   preferXcodebuild: true,
 } as const);
 
-export default {
-  name: 'clean',
-  description: 'Clean build products.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Clean',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<CleanParams>({
-    internalSchema: cleanSchema as unknown as z.ZodType<CleanParams, unknown>,
-    logicFunction: cleanLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<CleanParams>({
+  internalSchema: cleanSchema as unknown as z.ZodType<CleanParams, unknown>,
+  logicFunction: cleanLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+  ],
+  exclusivePairs: [['projectPath', 'workspacePath']],
+});

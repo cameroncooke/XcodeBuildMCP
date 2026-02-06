@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EventEmitter } from 'events';
 import * as z from 'zod';
-import plugin, { stop_device_log_capLogic } from '../stop_device_log_cap.ts';
+import { schema, handler, stop_device_log_capLogic } from '../stop_device_log_cap.ts';
 import {
   activeDeviceLogSessions,
   type DeviceLogSession,
@@ -20,34 +20,24 @@ describe('stop_device_log_cap plugin', () => {
   });
 
   describe('Plugin Structure', () => {
-    it('should export an object with required properties', () => {
-      expect(plugin).toHaveProperty('name');
-      expect(plugin).toHaveProperty('description');
-      expect(plugin).toHaveProperty('schema');
-      expect(plugin).toHaveProperty('handler');
-    });
-
-    it('should have correct tool name', () => {
-      expect(plugin.name).toBe('stop_device_log_cap');
-    });
-
-    it('should have correct description', () => {
-      expect(plugin.description).toBe('Stop device app and return logs.');
+    it('should export schema and handler', () => {
+      expect(schema).toBeDefined();
+      expect(handler).toBeDefined();
     });
 
     it('should have correct schema structure', () => {
       // Schema should be a plain object for MCP protocol compliance
-      expect(typeof plugin.schema).toBe('object');
-      expect(plugin.schema).toHaveProperty('logSessionId');
+      expect(typeof schema).toBe('object');
+      expect(schema).toHaveProperty('logSessionId');
 
       // Validate that schema fields are Zod types that can be used for validation
-      const schema = z.object(plugin.schema);
-      expect(schema.safeParse({ logSessionId: 'test-session-id' }).success).toBe(true);
-      expect(schema.safeParse({ logSessionId: 123 }).success).toBe(false);
+      const schemaObj = z.object(schema);
+      expect(schemaObj.safeParse({ logSessionId: 'test-session-id' }).success).toBe(true);
+      expect(schemaObj.safeParse({ logSessionId: 123 }).success).toBe(false);
     });
 
     it('should have handler as a function', () => {
-      expect(typeof plugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
   });
 

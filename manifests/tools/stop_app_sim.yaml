@@ -1,0 +1,9 @@
+id: stop_app_sim
+module: mcp/tools/simulator/stop_app_sim
+names:
+  mcp: stop_app_sim
+  cli: stop
+description: Stop sim app.
+annotations:
+  title: Stop App Simulator
+  destructiveHint: true

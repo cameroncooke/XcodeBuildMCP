@@ -9,7 +9,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import buildMacOS, { buildMacOSLogic } from '../build_macos.ts';
+import { schema, handler } from '../build_macos.ts';
+import { buildMacOSLogic } from '../build_macos.ts';
 
 describe('build_macos plugin', () => {
   beforeEach(() => {
@@ -17,36 +18,28 @@ describe('build_macos plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(buildMacOS.name).toBe('build_macos');
-    });
-
-    it('should have correct description', () => {
-      expect(buildMacOS.description).toBe('Build macOS app.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof buildMacOS.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
-      const schema = z.strictObject(buildMacOS.schema);
+      const zodSchema = z.strictObject(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ extraArgs: ['--arg1', '--arg2'] }).success).toBe(true);
+      expect(zodSchema.safeParse({}).success).toBe(true);
+      expect(zodSchema.safeParse({ extraArgs: ['--arg1', '--arg2'] }).success).toBe(true);
 
-      expect(schema.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
-      expect(schema.safeParse({ extraArgs: ['--ok', 1] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
+      expect(zodSchema.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
+      expect(zodSchema.safeParse({ extraArgs: ['--ok', 1] }).success).toBe(false);
+      expect(zodSchema.safeParse({ preferXcodebuild: true }).success).toBe(false);
 
-      const schemaKeys = Object.keys(buildMacOS.schema).sort();
+      const schemaKeys = Object.keys(schema).sort();
       expect(schemaKeys).toEqual(['extraArgs']);
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require scheme when no defaults provided', async () => {
-      const result = await buildMacOS.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('scheme is required');
@@ -56,7 +49,7 @@ describe('build_macos plugin', () => {
     it('should require project or workspace once scheme default exists', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
-      const result = await buildMacOS.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Provide a project or workspace');
@@ -65,7 +58,7 @@ describe('build_macos plugin', () => {
     it('should reject when both projectPath and workspacePath provided explicitly', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
-      const result = await buildMacOS.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
       });
@@ -435,13 +428,13 @@ describe('build_macos plugin', () => {
 
   describe('XOR Validation', () => {
     it('should error when neither projectPath nor workspacePath provided', async () => {
-      const result = await buildMacOS.handler({ scheme: 'MyScheme' });
+      const result = await handler({ scheme: 'MyScheme' });
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Provide a project or workspace');
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
-      const result = await buildMacOS.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',

@@ -8,7 +8,7 @@
 import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { validateFileExists } from '../../../utils/validation/index.ts';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
@@ -72,13 +72,10 @@ export async function launch_mac_appLogic(
   }
 }
 
-export default {
-  name: 'launch_mac_app',
-  description: 'Launch macOS app.',
-  schema: launchMacAppSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Launch macOS App',
-    destructiveHint: true,
-  },
-  handler: createTypedTool(launchMacAppSchema, launch_mac_appLogic, getDefaultCommandExecutor),
-};
+export const schema = launchMacAppSchema.shape;
+
+export const handler = createTypedTool(
+  launchMacAppSchema,
+  launch_mac_appLogic,
+  getDefaultCommandExecutor,
+);

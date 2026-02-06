@@ -1,0 +1,9 @@
+id: launch_app_device
+module: mcp/tools/device/launch_app_device
+names:
+  mcp: launch_app_device
+  cli: launch
+description: Launch app on device.
+annotations:
+  title: Launch App Device
+  destructiveHint: true

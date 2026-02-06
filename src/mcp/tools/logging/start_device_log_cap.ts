@@ -14,7 +14,7 @@ import {
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
 } from '../../../utils/execution/index.ts';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
@@ -25,6 +25,7 @@ import {
 } from '../../../utils/log-capture/device-log-sessions.ts';
 import type { WriteStream } from 'fs';
 import { getConfig } from '../../../utils/config-store.ts';
+import { acquireDaemonActivity } from '../../../daemon/activity-registry.ts';
 
 /**
  * Log file retention policy for device logs:
@@ -431,6 +432,7 @@ export async function startDeviceLogCapture(
 
     // For testing purposes, we'll simulate process management
     // In actual usage, the process would be managed by the executor result
+    session.releaseActivity = acquireDaemonActivity('logging.device');
     activeDeviceLogSessions.set(logSessionId, session);
 
     log('info', `Device log capture started with session ID: ${logSessionId}`);
@@ -671,27 +673,14 @@ export async function start_device_log_capLogic(
   };
 }
 
-export default {
-  name: 'start_device_log_cap',
-  description: 'Start device log capture.',
-  cli: {
-    stateful: true,
-  },
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: startDeviceLogCapSchema,
-  }),
-  annotations: {
-    title: 'Start Device Log Capture',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<StartDeviceLogCapParams>({
-    internalSchema: startDeviceLogCapSchema as unknown as z.ZodType<
-      StartDeviceLogCapParams,
-      unknown
-    >,
-    logicFunction: start_device_log_capLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['deviceId', 'bundleId'], message: 'Provide deviceId and bundleId' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: startDeviceLogCapSchema,
+});
+
+export const handler = createSessionAwareTool<StartDeviceLogCapParams>({
+  internalSchema: startDeviceLogCapSchema as unknown as z.ZodType<StartDeviceLogCapParams, unknown>,
+  logicFunction: start_device_log_capLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['deviceId', 'bundleId'], message: 'Provide deviceId and bundleId' }],
+});

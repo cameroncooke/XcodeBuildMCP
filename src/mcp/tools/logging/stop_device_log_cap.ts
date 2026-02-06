@@ -11,9 +11,9 @@ import {
   activeDeviceLogSessions,
   type DeviceLogSession,
 } from '../../../utils/log-capture/device-log-sessions.ts';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { getDefaultFileSystemExecutor, getDefaultCommandExecutor } from '../../../utils/command.ts';
-import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
+import type { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 
 // Define schema as ZodObject
@@ -66,6 +66,7 @@ export async function stop_device_log_capLogic(
     }
 
     const logFilePath = session.logFilePath;
+    session.releaseActivity?.();
     activeDeviceLogSessions.delete(logSessionId);
 
     // Check file access
@@ -326,22 +327,12 @@ export async function stopDeviceLogCapture(
   return { logContent };
 }
 
-export default {
-  name: 'stop_device_log_cap',
-  description: 'Stop device app and return logs.',
-  cli: {
-    stateful: true,
+export const schema = stopDeviceLogCapSchema.shape; // MCP SDK compatibility
+
+export const handler = createTypedTool(
+  stopDeviceLogCapSchema,
+  (params: StopDeviceLogCapParams) => {
+    return stop_device_log_capLogic(params, getDefaultFileSystemExecutor());
   },
-  schema: stopDeviceLogCapSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Stop Device and Return Logs',
-    destructiveHint: true,
-  },
-  handler: createTypedTool(
-    stopDeviceLogCapSchema,
-    (params: StopDeviceLogCapParams) => {
-      return stop_device_log_capLogic(params, getDefaultFileSystemExecutor());
-    },
-    getDefaultCommandExecutor,
-  ),
-};
+  getDefaultCommandExecutor,
+);

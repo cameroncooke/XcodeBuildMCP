@@ -7,7 +7,8 @@
 
 import * as z from 'zod';
 import { join } from 'path';
-import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
@@ -323,26 +324,19 @@ export async function testMacosLogic(
   }
 }
 
-export default {
-  name: 'test_macos',
-  description: 'Test macOS target.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Test macOS',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<TestMacosParams>({
-    internalSchema: testMacosSchema as unknown as z.ZodType<TestMacosParams, unknown>,
-    logicFunction: (params, executor) =>
-      testMacosLogic(params, executor, getDefaultFileSystemExecutor()),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<TestMacosParams>({
+  internalSchema: testMacosSchema as unknown as z.ZodType<TestMacosParams, unknown>,
+  logicFunction: (params, executor) =>
+    testMacosLogic(params, executor, getDefaultFileSystemExecutor()),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['scheme'], message: 'scheme is required' },
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+  ],
+  exclusivePairs: [['projectPath', 'workspacePath']],
+});

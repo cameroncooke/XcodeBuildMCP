@@ -1,0 +1,11 @@
+id: show_build_settings
+module: mcp/tools/project-discovery/show_build_settings
+names:
+  mcp: show_build_settings
+  cli: show-build-settings
+description: Show build settings.
+predicates:
+  - hideWhenXcodeAgentMode
+annotations:
+  title: Show Build Settings
+  readOnlyHint: true

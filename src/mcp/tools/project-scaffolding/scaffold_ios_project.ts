@@ -14,7 +14,7 @@ import {
   getDefaultCommandExecutor,
   getDefaultFileSystemExecutor,
 } from '../../../utils/execution/index.ts';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 
 // Common base schema for both iOS and macOS
 const BaseScaffoldSchema = z.object({
@@ -469,20 +469,13 @@ async function scaffoldProject(
   }
 }
 
-export default {
-  name: 'scaffold_ios_project',
-  description: 'Scaffold iOS project.',
-  schema: ScaffoldiOSProjectSchema.shape,
-  annotations: {
-    title: 'Scaffold iOS Project',
-    destructiveHint: true,
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    const params = ScaffoldiOSProjectSchema.parse(args);
-    return scaffold_ios_projectLogic(
-      params,
-      getDefaultCommandExecutor(),
-      getDefaultFileSystemExecutor(),
-    );
-  },
-};
+export const schema = ScaffoldiOSProjectSchema.shape;
+
+export async function handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  const params = ScaffoldiOSProjectSchema.parse(args);
+  return scaffold_ios_projectLogic(
+    params,
+    getDefaultCommandExecutor(),
+    getDefaultFileSystemExecutor(),
+  );
+}

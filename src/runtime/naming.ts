@@ -1,5 +1,3 @@
-import type { ToolDefinition } from './types.ts';
-
 /**
  * Convert a tool name to kebab-case for CLI usage.
  * Examples:
@@ -34,31 +32,6 @@ export function toKebabCase(name: string): string {
  */
 export function toCamelCase(kebab: string): string {
   return kebab.replace(/-([a-z])/g, (_match: string, letter: string) => letter.toUpperCase());
-}
-
-/**
- * Disambiguate CLI names when duplicates exist across workflows.
- * If multiple tools have the same kebab-case name, prefix with workflow name.
- */
-export function disambiguateCliNames(tools: ToolDefinition[]): ToolDefinition[] {
-  // Group tools by their base CLI name
-  const groups = new Map<string, ToolDefinition[]>();
-  for (const tool of tools) {
-    const existing = groups.get(tool.cliName) ?? [];
-    groups.set(tool.cliName, [...existing, tool]);
-  }
-
-  // Disambiguate tools that share the same CLI name
-  return tools.map((tool) => {
-    const sameNameTools = groups.get(tool.cliName) ?? [];
-    if (sameNameTools.length <= 1) {
-      return tool;
-    }
-
-    // Prefix with workflow name for disambiguation
-    const disambiguatedName = `${tool.workflow}-${tool.cliName}`;
-    return { ...tool, cliName: disambiguatedName };
-  });
 }
 
 /**

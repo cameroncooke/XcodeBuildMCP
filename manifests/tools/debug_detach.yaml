@@ -1,0 +1,8 @@
+id: debug_detach
+module: mcp/tools/debugging/debug_detach
+names:
+  mcp: debug_detach
+  cli: detach
+description: Detach debugger.
+routing:
+  stateful: true

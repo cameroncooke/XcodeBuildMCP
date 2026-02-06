@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import { createMockExecutor, mockProcess } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import tool, { buildRunMacOSLogic } from '../build_run_macos.ts';
+import { schema, handler } from '../build_run_macos.ts';
+import { buildRunMacOSLogic } from '../build_run_macos.ts';
 
 describe('build_run_macos', () => {
   beforeEach(() => {
@@ -10,36 +11,28 @@ describe('build_run_macos', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should export the correct name', () => {
-      expect(tool.name).toBe('build_run_macos');
-    });
-
-    it('should export the correct description', () => {
-      expect(tool.description).toBe('Build and run macOS app.');
-    });
-
     it('should export a handler function', () => {
-      expect(typeof tool.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose only non-session fields in schema', () => {
-      const schema = z.strictObject(tool.schema);
+      const zodSchema = z.strictObject(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ extraArgs: ['--verbose'] }).success).toBe(true);
+      expect(zodSchema.safeParse({}).success).toBe(true);
+      expect(zodSchema.safeParse({ extraArgs: ['--verbose'] }).success).toBe(true);
 
-      expect(schema.safeParse({ derivedDataPath: '/tmp/derived' }).success).toBe(false);
-      expect(schema.safeParse({ extraArgs: ['--ok', 2] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
+      expect(zodSchema.safeParse({ derivedDataPath: '/tmp/derived' }).success).toBe(false);
+      expect(zodSchema.safeParse({ extraArgs: ['--ok', 2] }).success).toBe(false);
+      expect(zodSchema.safeParse({ preferXcodebuild: true }).success).toBe(false);
 
-      const schemaKeys = Object.keys(tool.schema).sort();
+      const schemaKeys = Object.keys(schema).sort();
       expect(schemaKeys).toEqual(['extraArgs']);
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require scheme before executing', async () => {
-      const result = await tool.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('scheme is required');
@@ -48,7 +41,7 @@ describe('build_run_macos', () => {
     it('should require project or workspace once scheme is set', async () => {
       sessionStore.setDefaults({ scheme: 'MyApp' });
 
-      const result = await tool.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Provide a project or workspace');
@@ -57,7 +50,7 @@ describe('build_run_macos', () => {
     it('should fail when both project and workspace provided explicitly', async () => {
       sessionStore.setDefaults({ scheme: 'MyApp' });
 
-      const result = await tool.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
       });

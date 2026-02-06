@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { createErrorResponse, createTextResponse } from '../../../utils/responses/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 import { createTypedToolWithContext } from '../../../utils/typed-tool-factory.ts';
@@ -53,16 +53,10 @@ export async function debug_breakpoint_addLogic(
   }
 }
 
-export default {
-  name: 'debug_breakpoint_add',
-  description: 'Add breakpoint.',
-  cli: {
-    stateful: true,
-  },
-  schema: baseSchemaObject.shape,
-  handler: createTypedToolWithContext<DebugBreakpointAddParams, DebuggerToolContext>(
-    debugBreakpointAddSchema as unknown as z.ZodType<DebugBreakpointAddParams, unknown>,
-    debug_breakpoint_addLogic,
-    getDefaultDebuggerToolContext,
-  ),
-};
+export const schema = baseSchemaObject.shape;
+
+export const handler = createTypedToolWithContext<DebugBreakpointAddParams, DebuggerToolContext>(
+  debugBreakpointAddSchema as unknown as z.ZodType<DebugBreakpointAddParams, unknown>,
+  debug_breakpoint_addLogic,
+  getDefaultDebuggerToolContext,
+);

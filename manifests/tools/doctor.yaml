@@ -1,0 +1,9 @@
+id: doctor
+module: mcp/tools/doctor/doctor
+names:
+  mcp: doctor
+  cli: doctor
+description: MCP environment info.
+annotations:
+  title: Doctor
+  readOnlyHint: true

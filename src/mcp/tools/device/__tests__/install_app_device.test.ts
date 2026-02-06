@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
-import installAppDevice, { install_app_deviceLogic } from '../install_app_device.ts';
+import { schema, handler, install_app_deviceLogic } from '../install_app_device.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('install_app_device plugin', () => {
@@ -17,7 +17,7 @@ describe('install_app_device plugin', () => {
 
   describe('Handler Requirements', () => {
     it('should require deviceId when session defaults are missing', async () => {
-      const result = await installAppDevice.handler({
+      const result = await handler({
         appPath: '/path/to/test.app',
       });
 
@@ -27,25 +27,17 @@ describe('install_app_device plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(installAppDevice.name).toBe('install_app_device');
-    });
-
-    it('should have correct description', () => {
-      expect(installAppDevice.description).toBe('Install app on device.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof installAppDevice.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should require appPath in public schema', () => {
-      const schema = z.strictObject(installAppDevice.schema);
-      expect(schema.safeParse({ appPath: '/path/to/test.app' }).success).toBe(true);
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(schema.safeParse({ deviceId: 'test-device-123' }).success).toBe(false);
+      const schemaObj = z.strictObject(schema);
+      expect(schemaObj.safeParse({ appPath: '/path/to/test.app' }).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(false);
+      expect(schemaObj.safeParse({ deviceId: 'test-device-123' }).success).toBe(false);
 
-      expect(Object.keys(installAppDevice.schema)).toEqual(['appPath']);
+      expect(Object.keys(schema)).toEqual(['appPath']);
     });
   });
 

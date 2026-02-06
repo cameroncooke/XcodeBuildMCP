@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { createErrorResponse, createTextResponse } from '../../../utils/responses/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 import { createTypedToolWithContext } from '../../../utils/typed-tool-factory.ts';
@@ -33,16 +33,10 @@ export async function debug_lldb_commandLogic(
   }
 }
 
-export default {
-  name: 'debug_lldb_command',
-  description: 'Run LLDB command.',
-  cli: {
-    stateful: true,
-  },
-  schema: baseSchemaObject.shape,
-  handler: createTypedToolWithContext<DebugLldbCommandParams, DebuggerToolContext>(
-    debugLldbCommandSchema as unknown as z.ZodType<DebugLldbCommandParams, unknown>,
-    debug_lldb_commandLogic,
-    getDefaultDebuggerToolContext,
-  ),
-};
+export const schema = baseSchemaObject.shape;
+
+export const handler = createTypedToolWithContext<DebugLldbCommandParams, DebuggerToolContext>(
+  debugLldbCommandSchema as unknown as z.ZodType<DebugLldbCommandParams, unknown>,
+  debug_lldb_commandLogic,
+  getDefaultDebuggerToolContext,
+);

@@ -1,0 +1,11 @@
+id: start_device_log_cap
+module: mcp/tools/logging/start_device_log_cap
+names:
+  mcp: start_device_log_cap
+  cli: start-device-log-capture
+description: Start device log capture.
+routing:
+  stateful: true
+annotations:
+  title: Start Device Log Capture
+  destructiveHint: true

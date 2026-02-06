@@ -1,6 +1,15 @@
 import type { RuntimeKind } from '../../runtime/types.ts';
 import type { NextStep, OutputStyle, ToolResponse } from '../../types/common.ts';
-import { toKebabCase } from '../../runtime/naming.ts';
+
+/**
+ * Convert a string to kebab-case for CLI flag names.
+ */
+function toKebabCase(name: string): string {
+  return name
+    .replace(/_/g, '-')
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .toLowerCase();
+}
 
 /**
  * Format a single next step for CLI output.
@@ -8,7 +17,11 @@ import { toKebabCase } from '../../runtime/naming.ts';
  * Example: xcodebuildmcp simulator install-app-sim --simulator-id "ABC123" --app-path "PATH"
  */
 function formatNextStepForCli(step: NextStep): string {
-  const cliName = step.cliTool ?? toKebabCase(step.tool);
+  if (!step.cliTool) {
+    throw new Error(
+      `Next step for tool '${step.tool}' is missing cliTool - ensure enrichNextStepsForCli was called`,
+    );
+  }
   const parts = ['xcodebuildmcp'];
 
   // Include workflow as subcommand if provided
@@ -16,7 +29,7 @@ function formatNextStepForCli(step: NextStep): string {
     parts.push(step.workflow);
   }
 
-  parts.push(cliName);
+  parts.push(step.cliTool);
 
   for (const [key, value] of Object.entries(step.params)) {
     const flagName = toKebabCase(key);

@@ -1,0 +1,9 @@
+id: tap
+module: mcp/tools/ui-automation/tap
+names:
+  mcp: tap
+  cli: tap
+description: Tap coordinate or element.
+annotations:
+  title: Tap
+  destructiveHint: true

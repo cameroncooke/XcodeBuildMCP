@@ -8,7 +8,7 @@ import {
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
-import installAppSim, { install_app_simLogic } from '../install_app_sim.ts';
+import { schema, handler, install_app_simLogic } from '../install_app_sim.ts';
 
 describe('install_app_sim tool', () => {
   beforeEach(() => {
@@ -16,24 +16,16 @@ describe('install_app_sim tool', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(installAppSim.name).toBe('install_app_sim');
-    });
-
-    it('should have concise description', () => {
-      expect(installAppSim.description).toBe('Install app on sim.');
-    });
-
     it('should expose public schema with only appPath', () => {
-      const schema = z.object(installAppSim.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({ appPath: '/path/to/app.app' }).success).toBe(true);
-      expect(schema.safeParse({ appPath: 42 }).success).toBe(false);
-      expect(schema.safeParse({}).success).toBe(false);
+      expect(schemaObj.safeParse({ appPath: '/path/to/app.app' }).success).toBe(true);
+      expect(schemaObj.safeParse({ appPath: 42 }).success).toBe(false);
+      expect(schemaObj.safeParse({}).success).toBe(false);
 
-      expect(Object.keys(installAppSim.schema)).toEqual(['appPath']);
+      expect(Object.keys(schema)).toEqual(['appPath']);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObj.safeParse({
         simulatorId: 'test-uuid-123',
         appPath: '/path/app.app',
       });
@@ -44,18 +36,18 @@ describe('install_app_sim tool', () => {
 
   describe('Handler Requirements', () => {
     it('should require simulatorId when not provided', async () => {
-      const result = await installAppSim.handler({ appPath: '/path/to/app.app' });
+      const result = await handler({ appPath: '/path/to/app.app' });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
-      expect(result.content[0].text).toContain('simulatorId is required');
+      expect(result.content[0].text).toContain('Provide simulatorId or simulatorName');
       expect(result.content[0].text).toContain('session-set-defaults');
     });
 
     it('should validate appPath when simulatorId default exists', async () => {
       sessionStore.setDefaults({ simulatorId: 'SIM-UUID' });
 
-      const result = await installAppSim.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');

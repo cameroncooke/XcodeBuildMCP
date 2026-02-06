@@ -1,4 +1,4 @@
-import { ToolResponse } from '../types/common.ts';
+import type { ToolResponse } from '../types/common.ts';
 
 /**
  * Error Utilities - Type-safe error hierarchy for the application

@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { __resetConfigStoreForTests, initConfigStore } from '../../../../utils/config-store.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import { createMockFileSystemExecutor } from '../../../../test-utils/mock-executors.ts';
-import plugin, { sessionSetDefaultsLogic } from '../session_set_defaults.ts';
+import { schema, handler, sessionSetDefaultsLogic } from '../session_set_defaults.ts';
+import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 
 describe('session-set-defaults tool', () => {
   beforeEach(() => {
@@ -15,28 +16,40 @@ describe('session-set-defaults tool', () => {
   const cwd = '/repo';
   const configPath = path.join(cwd, '.xcodebuildmcp', 'config.yaml');
 
-  function createContext() {
-    return {};
+  // Mock executor that simulates successful simulator lookup
+  function createMockExecutor(): CommandExecutor {
+    return vi.fn().mockImplementation(async (command: string[]) => {
+      if (command.includes('simctl') && command.includes('list')) {
+        return {
+          success: true,
+          output: JSON.stringify({
+            devices: {
+              'com.apple.CoreSimulator.SimRuntime.iOS-18-0': [
+                { udid: 'RESOLVED-SIM-UUID', name: 'iPhone 16' },
+                { udid: 'OTHER-SIM-UUID', name: 'iPhone 15' },
+              ],
+            },
+          }),
+        };
+      }
+      return { success: true, output: '' };
+    });
   }
 
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(plugin.name).toBe('session-set-defaults');
-    });
+  function createContext() {
+    return {
+      executor: createMockExecutor(),
+    };
+  }
 
-    it('should have correct description', () => {
-      expect(plugin.description).toBe(
-        'Set the session defaults, should be called at least once to set tool defaults.',
-      );
-    });
-
+  describe('Export Field Validation', () => {
     it('should have handler function', () => {
-      expect(typeof plugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should have schema object', () => {
-      expect(plugin.schema).toBeDefined();
-      expect(typeof plugin.schema).toBe('object');
+      expect(schema).toBeDefined();
+      expect(typeof schema).toBe('object');
     });
   });
 
@@ -52,18 +65,20 @@ describe('session-set-defaults tool', () => {
         createContext(),
       );
 
-      expect(result.isError).toBe(false);
+      expect(result.isError).toBeFalsy();
       expect(result.content[0].text).toContain('Defaults updated:');
 
       const current = sessionStore.getAll();
       expect(current.scheme).toBe('MyScheme');
       expect(current.simulatorName).toBe('iPhone 16');
+      // simulatorId should be auto-resolved from simulatorName
+      expect(current.simulatorId).toBe('RESOLVED-SIM-UUID');
       expect(current.useLatestOS).toBe(true);
       expect(current.arch).toBe('arm64');
     });
 
     it('should validate parameter types via Zod', async () => {
-      const result = await plugin.handler({
+      const result = await handler({
         useLatestOS: 'yes' as unknown as boolean,
       });
 
@@ -100,26 +115,52 @@ describe('session-set-defaults tool', () => {
       );
     });
 
-    it('should clear simulatorName when simulatorId is set', async () => {
+    it('should clear simulatorName when simulatorId is explicitly set', async () => {
       sessionStore.setDefaults({ simulatorName: 'iPhone 16' });
       const result = await sessionSetDefaultsLogic({ simulatorId: 'SIM-UUID' }, createContext());
       const current = sessionStore.getAll();
       expect(current.simulatorId).toBe('SIM-UUID');
       expect(current.simulatorName).toBeUndefined();
       expect(result.content[0].text).toContain(
-        'Cleared simulatorName because simulatorId was set.',
+        'Cleared simulatorName because simulatorId was explicitly set.',
       );
     });
 
-    it('should clear simulatorId when simulatorName is set', async () => {
-      sessionStore.setDefaults({ simulatorId: 'SIM-UUID' });
+    it('should auto-resolve simulatorName to simulatorId when only simulatorName is set', async () => {
+      sessionStore.setDefaults({ simulatorId: 'OLD-SIM-UUID' });
       const result = await sessionSetDefaultsLogic({ simulatorName: 'iPhone 16' }, createContext());
       const current = sessionStore.getAll();
+      // Both should be set now - name provided, id resolved
       expect(current.simulatorName).toBe('iPhone 16');
-      expect(current.simulatorId).toBeUndefined();
-      expect(result.content[0].text).toContain(
-        'Cleared simulatorId because simulatorName was set.',
+      expect(current.simulatorId).toBe('RESOLVED-SIM-UUID');
+      expect(result.content[0].text).toContain('Resolved simulatorName');
+    });
+
+    it('should return error when simulatorName cannot be resolved', async () => {
+      const contextWithFailingExecutor = {
+        executor: vi.fn().mockImplementation(async (command: string[]) => {
+          if (command.includes('simctl') && command.includes('list')) {
+            return {
+              success: true,
+              output: JSON.stringify({
+                devices: {
+                  'com.apple.CoreSimulator.SimRuntime.iOS-18-0': [
+                    { udid: 'OTHER-SIM-UUID', name: 'iPhone 15' },
+                  ],
+                },
+              }),
+            };
+          }
+          return { success: true, output: '' };
+        }),
+      };
+
+      const result = await sessionSetDefaultsLogic(
+        { simulatorName: 'NonExistentSimulator' },
+        contextWithFailingExecutor,
       );
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Failed to resolve simulator name');
     });
 
     it('should prefer workspacePath when both projectPath and workspacePath are provided', async () => {
@@ -138,7 +179,7 @@ describe('session-set-defaults tool', () => {
       );
     });
 
-    it('should prefer simulatorId when both simulatorId and simulatorName are provided', async () => {
+    it('should keep both simulatorId and simulatorName when both are provided', async () => {
       const res = await sessionSetDefaultsLogic(
         {
           simulatorId: 'SIM-1',
@@ -147,10 +188,11 @@ describe('session-set-defaults tool', () => {
         createContext(),
       );
       const current = sessionStore.getAll();
+      // Both are kept, simulatorId takes precedence for tools
       expect(current.simulatorId).toBe('SIM-1');
-      expect(current.simulatorName).toBeUndefined();
+      expect(current.simulatorName).toBe('iPhone 16');
       expect(res.content[0].text).toContain(
-        'Both simulatorId and simulatorName were provided; keeping simulatorId and ignoring simulatorName.',
+        'Both simulatorId and simulatorName were provided; simulatorId will be used by tools.',
       );
     });
 
@@ -194,6 +236,7 @@ describe('session-set-defaults tool', () => {
       expect(parsed.sessionDefaults?.workspacePath).toBe('/new/App.xcworkspace');
       expect(parsed.sessionDefaults?.projectPath).toBeUndefined();
       expect(parsed.sessionDefaults?.simulatorId).toBe('SIM-1');
+      // simulatorName is cleared because simulatorId was explicitly set
       expect(parsed.sessionDefaults?.simulatorName).toBeUndefined();
     });
 

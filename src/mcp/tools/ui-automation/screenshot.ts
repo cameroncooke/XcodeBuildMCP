@@ -10,7 +10,8 @@ import * as path from 'path';
 import { tmpdir } from 'os';
 import * as z from 'zod';
 import { v4 as uuidv4 } from 'uuid';
-import { ToolResponse, createImageContent } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { createImageContent } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import {
   createErrorResponse,
@@ -42,16 +43,24 @@ interface SimctlDeviceList {
   devices: Record<string, SimctlDevice[]>;
 }
 
+function escapeSwiftStringLiteral(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+}
+
 /**
  * Generates Swift code to detect simulator window dimensions via CoreGraphics.
  * Filters by device name to handle multiple open simulators correctly.
  * Returns "width,height" of the matching simulator window.
  */
 function getWindowDetectionSwiftCode(deviceName: string): string {
-  // Escape the device name for use in Swift string
-  const escapedDeviceName = deviceName.replace(/"/g, '\\"');
-  // Use hasPrefix + boundary check to avoid matching "iPhone 15" when looking for "iPhone 15 Pro"
-  // Window titles are formatted like "iPhone 15 Pro – iOS 17.2"
+  const escapedDeviceName = escapeSwiftStringLiteral(deviceName);
+  // Match by title separator (en-dash) to avoid "iPhone 15" matching "iPhone 15 Pro"
+  // Window titles are formatted like "iPhone 15 Pro \u{2013} iOS 17.2"
   return `
 import Cocoa
 import CoreGraphics
@@ -62,8 +71,9 @@ if let wins = CGWindowListCopyWindowInfo(opts, kCGNullWindowID) as? [[String: An
     if let o = w[kCGWindowOwnerName as String] as? String, o == "Simulator",
        let b = w[kCGWindowBounds as String] as? [String: Any],
        let n = w[kCGWindowName as String] as? String {
-      // Check for exact match: name starts with deviceName followed by separator or end
-      let isMatch = n == deviceName || n.hasPrefix(deviceName + " ")
+      // Check for exact match: name equals deviceName or is followed by the title separator
+      // Window titles use en-dash: "iPhone 15 Pro \u{2013} iOS 17.2"
+      let isMatch = n == deviceName || n.hasPrefix(deviceName + " \\u{2013}") || n.hasPrefix(deviceName + " -")
       if isMatch {
         print("\\(b["Width"] as? Int ?? 0),\\(b["Height"] as? Int ?? 0)")
         break
@@ -326,23 +336,16 @@ export async function screenshotLogic(
   }
 }
 
-export default {
-  name: 'screenshot',
-  description: 'Capture screenshot.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: screenshotSchema,
-  }),
-  annotations: {
-    title: 'Screenshot',
-    readOnlyHint: true,
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: screenshotSchema,
+});
+
+export const handler = createSessionAwareTool<ScreenshotParams>({
+  internalSchema: screenshotSchema as unknown as z.ZodType<ScreenshotParams, unknown>,
+  logicFunction: (params: ScreenshotParams, executor: CommandExecutor) => {
+    return screenshotLogic(params, executor);
   },
-  handler: createSessionAwareTool<ScreenshotParams>({
-    internalSchema: screenshotSchema as unknown as z.ZodType<ScreenshotParams, unknown>,
-    logicFunction: (params: ScreenshotParams, executor: CommandExecutor) => {
-      return screenshotLogic(params, executor);
-    },
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});

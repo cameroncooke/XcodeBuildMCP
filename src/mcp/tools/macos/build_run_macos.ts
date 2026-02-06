@@ -9,7 +9,8 @@ import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
-import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { XcodePlatform } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import {
@@ -213,25 +214,18 @@ export async function buildRunMacOSLogic(
   }
 }
 
-export default {
-  name: 'build_run_macos',
-  description: 'Build and run macOS app.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Build Run macOS',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<BuildRunMacOSParams>({
-    internalSchema: buildRunMacOSSchema as unknown as z.ZodType<BuildRunMacOSParams, unknown>,
-    logicFunction: buildRunMacOSLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<BuildRunMacOSParams>({
+  internalSchema: buildRunMacOSSchema as unknown as z.ZodType<BuildRunMacOSParams, unknown>,
+  logicFunction: buildRunMacOSLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['scheme'], message: 'scheme is required' },
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+  ],
+  exclusivePairs: [['projectPath', 'workspacePath']],
+});

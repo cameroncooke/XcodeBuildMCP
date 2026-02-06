@@ -4,7 +4,7 @@ import { createErrorResponse } from '../../../utils/responses/index.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
@@ -79,20 +79,13 @@ export async function swift_package_buildLogic(
   }
 }
 
-export default {
-  name: 'swift_package_build',
-  description: 'swift package target build.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }), // MCP SDK compatibility
-  annotations: {
-    title: 'Swift Package Build',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<SwiftPackageBuildParams>({
-    internalSchema: swiftPackageBuildSchema,
-    logicFunction: swift_package_buildLogic,
-    getExecutor: getDefaultCommandExecutor,
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<SwiftPackageBuildParams>({
+  internalSchema: swiftPackageBuildSchema,
+  logicFunction: swift_package_buildLogic,
+  getExecutor: getDefaultCommandExecutor,
+});

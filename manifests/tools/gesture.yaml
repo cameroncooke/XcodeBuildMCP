@@ -1,0 +1,9 @@
+id: gesture
+module: mcp/tools/ui-automation/gesture
+names:
+  mcp: gesture
+  cli: gesture
+description: Simulator gesture preset.
+annotations:
+  title: Gesture
+  destructiveHint: true

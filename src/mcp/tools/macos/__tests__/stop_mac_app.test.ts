@@ -11,33 +11,26 @@
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
 
-import stopMacApp, { stop_mac_appLogic } from '../stop_mac_app.ts';
+import { schema, handler } from '../stop_mac_app.ts';
+import { stop_mac_appLogic } from '../stop_mac_app.ts';
 
 describe('stop_mac_app plugin', () => {
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(stopMacApp.name).toBe('stop_mac_app');
-    });
-
-    it('should have correct description', () => {
-      expect(stopMacApp.description).toBe('Stop macOS app.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof stopMacApp.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema correctly', () => {
       // Test optional fields
-      expect(stopMacApp.schema.appName.safeParse('Calculator').success).toBe(true);
-      expect(stopMacApp.schema.appName.safeParse(undefined).success).toBe(true);
-      expect(stopMacApp.schema.processId.safeParse(1234).success).toBe(true);
-      expect(stopMacApp.schema.processId.safeParse(undefined).success).toBe(true);
+      expect(schema.appName.safeParse('Calculator').success).toBe(true);
+      expect(schema.appName.safeParse(undefined).success).toBe(true);
+      expect(schema.processId.safeParse(1234).success).toBe(true);
+      expect(schema.processId.safeParse(undefined).success).toBe(true);
 
       // Test invalid inputs
-      expect(stopMacApp.schema.appName.safeParse(null).success).toBe(false);
-      expect(stopMacApp.schema.processId.safeParse('not-number').success).toBe(false);
-      expect(stopMacApp.schema.processId.safeParse(null).success).toBe(false);
+      expect(schema.appName.safeParse(null).success).toBe(false);
+      expect(schema.processId.safeParse('not-number').success).toBe(false);
+      expect(schema.processId.safeParse(null).success).toBe(false);
     });
   });
 

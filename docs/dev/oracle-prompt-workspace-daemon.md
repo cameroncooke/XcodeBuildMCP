@@ -1300,7 +1300,7 @@ export default defineConfig({
 ```json
 {
   "bin": {
-    "xcodebuildmcp": "build/index.js",
+    "xcodebuildmcp": "build/cli.js",
     "xcodebuildmcp-doctor": "build/doctor-cli.js",
     "xcodebuildcli": "build/cli.js"
   },

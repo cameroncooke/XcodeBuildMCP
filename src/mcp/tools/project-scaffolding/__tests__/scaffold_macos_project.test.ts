@@ -16,7 +16,7 @@ import {
   createMockExecutor,
   createMockCommandResponse,
 } from '../../../../test-utils/mock-executors.ts';
-import plugin, { scaffold_macos_projectLogic } from '../scaffold_macos_project.ts';
+import { schema, handler, scaffold_macos_projectLogic } from '../scaffold_macos_project.ts';
 import { TemplateManager } from '../../../../utils/template/index.ts';
 import {
   __resetConfigStoreForTests,
@@ -99,26 +99,18 @@ describe('scaffold_macos_project plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name field', () => {
-      expect(plugin.name).toBe('scaffold_macos_project');
-    });
-
-    it('should have correct description field', () => {
-      expect(plugin.description).toBe('Scaffold macOS project.');
-    });
-
     it('should have handler as function', () => {
-      expect(typeof plugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should have valid schema with required fields', () => {
       // Test the schema object exists
-      expect(plugin.schema).toBeDefined();
-      expect(plugin.schema.projectName).toBeDefined();
-      expect(plugin.schema.outputPath).toBeDefined();
-      expect(plugin.schema.bundleIdentifier).toBeDefined();
-      expect(plugin.schema.customizeNames).toBeDefined();
-      expect(plugin.schema.deploymentTarget).toBeDefined();
+      expect(schema).toBeDefined();
+      expect(schema.projectName).toBeDefined();
+      expect(schema.outputPath).toBeDefined();
+      expect(schema.bundleIdentifier).toBeDefined();
+      expect(schema.customizeNames).toBeDefined();
+      expect(schema.deploymentTarget).toBeDefined();
     });
   });
 

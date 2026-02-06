@@ -7,8 +7,8 @@ import {
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
-// Import the plugin and logic function
-import buildSim, { build_simLogic } from '../build_sim.ts';
+// Import the named exports and logic function
+import { schema, handler, build_simLogic } from '../build_sim.ts';
 
 describe('build_sim tool', () => {
   beforeEach(() => {
@@ -16,41 +16,33 @@ describe('build_sim tool', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(buildSim.name).toBe('build_sim');
-    });
-
-    it('should have correct description', () => {
-      expect(buildSim.description).toBe('Build for iOS sim.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof buildSim.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should have correct public schema (only non-session fields)', () => {
-      const schema = z.strictObject(buildSim.schema);
+      const schemaObj = z.strictObject(schema);
 
       // Public schema should allow empty input
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true);
 
       // Valid public inputs
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           extraArgs: ['--verbose'],
         }).success,
       ).toBe(true);
 
       // Invalid types or unknown fields on public inputs
-      expect(schema.safeParse({ derivedDataPath: '/path/to/derived' }).success).toBe(false);
-      expect(schema.safeParse({ extraArgs: [123] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: false }).success).toBe(false);
+      expect(schemaObj.safeParse({ derivedDataPath: '/path/to/derived' }).success).toBe(false);
+      expect(schemaObj.safeParse({ extraArgs: [123] }).success).toBe(false);
+      expect(schemaObj.safeParse({ preferXcodebuild: false }).success).toBe(false);
     });
   });
 
   describe('Parameter Validation', () => {
     it('should handle missing both projectPath and workspacePath', async () => {
-      const result = await buildSim.handler({
+      const result = await handler({
         scheme: 'MyScheme',
         simulatorName: 'iPhone 16',
       });
@@ -61,7 +53,7 @@ describe('build_sim tool', () => {
     });
 
     it('should handle both projectPath and workspacePath provided', async () => {
-      const result = await buildSim.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace',
         scheme: 'MyScheme',
@@ -101,7 +93,7 @@ describe('build_sim tool', () => {
     });
 
     it('should handle missing scheme parameter', async () => {
-      const result = await buildSim.handler({
+      const result = await handler({
         workspacePath: '/path/to/workspace',
         simulatorName: 'iPhone 16',
       });
@@ -137,7 +129,7 @@ describe('build_sim tool', () => {
     });
 
     it('should handle missing both simulatorId and simulatorName', async () => {
-      const result = await buildSim.handler({
+      const result = await handler({
         workspacePath: '/path/to/workspace',
         scheme: 'MyScheme',
       });
@@ -151,7 +143,7 @@ describe('build_sim tool', () => {
       const mockExecutor = createMockExecutor({ success: true, output: 'Build succeeded' });
 
       // Should fail with XOR validation
-      const result = await buildSim.handler({
+      const result = await handler({
         workspacePath: '/path/to/workspace',
         scheme: 'MyScheme',
         simulatorId: 'ABC-123',

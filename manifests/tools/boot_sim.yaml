@@ -1,0 +1,9 @@
+id: boot_sim
+module: mcp/tools/simulator/boot_sim
+names:
+  mcp: boot_sim
+  cli: boot
+description: Boot iOS simulator.
+annotations:
+  title: Boot Simulator
+  destructiveHint: true

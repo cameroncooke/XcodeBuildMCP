@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -80,13 +80,6 @@ export async function open_simLogic(
   }
 }
 
-export default {
-  name: 'open_sim',
-  description: 'Open Simulator app.',
-  schema: openSimSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Open Simulator',
-    destructiveHint: true,
-  },
-  handler: createTypedTool(openSimSchema, open_simLogic, getDefaultCommandExecutor),
-};
+export const schema = openSimSchema.shape;
+
+export const handler = createTypedTool(openSimSchema, open_simLogic, getDefaultCommandExecutor);

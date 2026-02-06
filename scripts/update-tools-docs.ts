@@ -18,6 +18,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { loadManifest as loadYamlManifest } from '../src/core/manifest/load-manifest.ts';
+import { getEffectiveCliName } from '../src/core/manifest/schema.ts';
 
 // Get project paths
 const __filename = fileURLToPath(import.meta.url);
@@ -25,7 +27,6 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const docsPath = path.join(projectRoot, 'docs', 'TOOLS.md');
 const docsCliPath = path.join(projectRoot, 'docs', 'TOOLS-CLI.md');
-const manifestPath = path.join(projectRoot, 'build', 'tools-manifest.json');
 const cliExcludedWorkflows = new Set(['session-management', 'workflow-discovery']);
 
 type ToolsManifest = {
@@ -142,14 +143,49 @@ function generateWorkflowSection(
 }
 
 function loadManifest(): ToolsManifest {
-  if (!fs.existsSync(manifestPath)) {
-    throw new Error(
-      `Missing tools manifest at ${path.relative(projectRoot, manifestPath)}. Run \"npm run build\" first.`,
-    );
+  const manifest = loadYamlManifest();
+  const workflowList = Array.from(manifest.workflows.values());
+  const firstWorkflowByToolId = new Map<string, string>();
+  const docsTools: DocumentationTool[] = [];
+
+  for (const workflow of workflowList) {
+    for (const toolId of workflow.tools) {
+      if (!firstWorkflowByToolId.has(toolId)) {
+        firstWorkflowByToolId.set(toolId, workflow.id);
+      }
+
+      const tool = manifest.tools.get(toolId);
+      if (!tool) {
+        continue;
+      }
+
+      const originWorkflow = firstWorkflowByToolId.get(toolId);
+      docsTools.push({
+        name: tool.names.mcp,
+        description: tool.description,
+        isCanonical: originWorkflow === workflow.id,
+        originWorkflow,
+        workflow: workflow.id,
+        cliName: getEffectiveCliName(tool),
+      });
+    }
   }
 
-  const raw = fs.readFileSync(manifestPath, 'utf-8');
-  return JSON.parse(raw) as ToolsManifest;
+  return {
+    generatedAt: new Date().toISOString(),
+    stats: {
+      totalTools: docsTools.length,
+      canonicalTools: manifest.tools.size,
+      reExportTools: docsTools.length - manifest.tools.size,
+      workflowCount: workflowList.length,
+    },
+    workflows: workflowList.map((workflow) => ({
+      name: workflow.id,
+      displayName: workflow.title,
+      description: workflow.description,
+    })),
+    tools: docsTools,
+  };
 }
 
 /**

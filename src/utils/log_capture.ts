@@ -4,12 +4,10 @@ import type { Writable } from 'stream';
 import { finished } from 'stream/promises';
 import { v4 as uuidv4 } from 'uuid';
 import { log } from '../utils/logger.ts';
-import {
-  CommandExecutor,
-  getDefaultCommandExecutor,
-  getDefaultFileSystemExecutor,
-} from './command.ts';
-import { FileSystemExecutor } from './FileSystemExecutor.ts';
+import type { CommandExecutor } from './command.ts';
+import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from './command.ts';
+import type { FileSystemExecutor } from './FileSystemExecutor.ts';
+import { acquireDaemonActivity } from '../daemon/activity-registry.ts';
 
 /**
  * Log file retention policy:
@@ -25,6 +23,7 @@ export interface LogSession {
   simulatorUuid: string;
   bundleId: string;
   logStream: Writable;
+  releaseActivity?: () => void;
 }
 
 /**
@@ -212,12 +211,14 @@ export async function startLogCapture(
       });
     }
 
+    const releaseActivity = acquireDaemonActivity('logging.simulator');
     activeLogSessions.set(logSessionId, {
       processes,
       logFilePath,
       simulatorUuid,
       bundleId,
       logStream,
+      releaseActivity,
     });
 
     log('info', `Log capture started with session ID: ${logSessionId}`);
@@ -253,6 +254,7 @@ export async function stopLogCapture(
     }
     logStream.end();
     await finished(logStream);
+    session.releaseActivity?.();
     activeLogSessions.delete(logSessionId);
     log(
       'info',

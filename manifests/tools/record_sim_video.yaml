@@ -1,0 +1,11 @@
+id: record_sim_video
+module: mcp/tools/simulator/record_sim_video
+names:
+  mcp: record_sim_video
+  cli: record-video
+description: Record sim video.
+routing:
+  stateful: true
+annotations:
+  title: Record Simulator Video
+  destructiveHint: true

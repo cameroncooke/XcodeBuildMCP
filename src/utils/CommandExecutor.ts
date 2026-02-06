@@ -1,5 +1,8 @@
 import { ChildProcess } from 'child_process';
 
+// Runtime marker to prevent empty output in unbundled builds
+export const _typeModule = true as const;
+
 export interface CommandExecOptions {
   env?: Record<string, string>;
   cwd?: string;

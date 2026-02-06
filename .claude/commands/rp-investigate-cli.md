@@ -1,7 +1,7 @@
 ---
 description: Deep codebase investigation and architecture research with rp-cli commands
 repoprompt_managed: true
-repoprompt_commands_version: 5
+repoprompt_skills_version: 6
 repoprompt_variant: cli
 ---
 
@@ -40,6 +40,8 @@ rp-cli -e 'select set src/ && context'
 
 Use `rp-cli -e 'describe <tool>'` for help on a specific tool, or `rp-cli --help` for CLI usage.
 
+**⚠️ TIMEOUT WARNING:** The `builder` and `chat` commands can take several minutes to complete. When invoking rp-cli, **set your command timeout to at least 2700 seconds (45 minutes)** to avoid premature termination.
+
 ---
 ## Investigation Protocol
 
@@ -48,6 +50,27 @@ Use `rp-cli -e 'describe <tool>'` for help on a specific tool, or `rp-cli --help
 2. **Document findings as you go** - create/update a report file with observations
 3. **Question everything** - if something seems off, investigate it
 4. **Use `builder` aggressively** - it's designed for deep exploration
+
+### Phase 0: Workspace Verification (REQUIRED)
+
+Before any investigation, confirm the target codebase is loaded:
+
+```bash
+# First, list available windows to find the right one
+rp-cli -e 'windows'
+
+# Then check roots in a specific window (REQUIRED - CLI cannot auto-bind)
+rp-cli -w <window_id> -e 'tree --type roots'
+```
+
+**Check the output:**
+- If your target root appears in a window → note the window ID and proceed to Phase 1
+- If not → the codebase isn't loaded in any window
+
+**CLI Window Routing (CRITICAL):**
+- CLI invocations are stateless—you MUST pass `-w <window_id>` to target the correct window
+- Use `rp-cli -e 'windows'` to list all open windows and their workspaces
+- Always include `-w <window_id>` in ALL subsequent commands
 
 ### Phase 1: Initial Assessment
 
@@ -62,7 +85,7 @@ Use `rp-cli -e 'describe <tool>'` for help on a specific tool, or `rp-cli --help
 Use `builder` with detailed instructions:
 
 ```bash
-rp-cli -e 'builder "Investigate: <specific area>
+rp-cli -w <window_id> -e 'builder "Investigate: <specific area>
 
 Symptoms observed:
 - <symptom 1>
@@ -82,10 +105,10 @@ Areas to explore:
 After `builder` returns, continue with targeted questions:
 
 ```bash
-rp-cli -t '<tab_id>' -e 'chat "<specific follow-up based on findings>" --mode plan'
+rp-cli -w <window_id> -t '<tab_id>' -e 'chat "<specific follow-up based on findings>" --mode plan'
 ```
 
-> Pass `-t <tab_id>` to target the same tab across separate CLI invocations.
+> Pass `-w <window_id>` to target the correct window and `-t <tab_id>` to target the same tab across separate CLI invocations.
 
 ### Phase 4: Evidence Gathering
 
@@ -156,12 +179,14 @@ Create a findings report as you investigate:
 ## Anti-patterns to Avoid
 
 - 🚫 **CRITICAL:** Skipping `builder` and attempting to investigate by reading files manually – you'll miss critical context
+- 🚫 Skipping Phase 0 (Workspace Verification) – you must confirm the target codebase is loaded first
 - 🚫 Doing extensive exploration (5+ tool calls) before calling `builder` – initial assessment should be brief
 - 🚫 Drawing conclusions before `builder` has built proper context
 - 🚫 Reading many full files during Phase 1 – save deep reading for after `builder`
 - 🚫 Assuming you understand the issue without systematic exploration via `builder`
 - 🚫 Using only chat follow-ups without an initial `builder` call
+- 🚫 **CLI:** Forgetting to pass `-w <window_id>` – CLI invocations are stateless and require explicit window targeting
 
 ---
 
-Now begin the investigation. Read any provided context, then **immediately** use `builder` to start systematic exploration. Do not attempt manual exploration first.
+Now begin the investigation. First run `rp-cli -e 'windows'` to find the correct window, then Read any provided context, then **immediately** use `builder` to start systematic exploration. Do not attempt manual exploration first.

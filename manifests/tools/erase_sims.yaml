@@ -1,0 +1,9 @@
+id: erase_sims
+module: mcp/tools/simulator-management/erase_sims
+names:
+  mcp: erase_sims
+  cli: erase
+description: Erase simulator.
+annotations:
+  title: Erase Simulators
+  destructiveHint: true

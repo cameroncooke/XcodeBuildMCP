@@ -8,7 +8,8 @@
 import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
-import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { XcodePlatform } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import {
@@ -95,25 +96,18 @@ export async function buildMacOSLogic(
   );
 }
 
-export default {
-  name: 'build_macos',
-  description: 'Build macOS app.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Build macOS',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<BuildMacOSParams>({
-    internalSchema: buildMacOSSchema as unknown as z.ZodType<BuildMacOSParams, unknown>,
-    logicFunction: buildMacOSLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<BuildMacOSParams>({
+  internalSchema: buildMacOSSchema as unknown as z.ZodType<BuildMacOSParams, unknown>,
+  logicFunction: buildMacOSLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['scheme'], message: 'scheme is required' },
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+  ],
+  exclusivePairs: [['projectPath', 'workspacePath']],
+});

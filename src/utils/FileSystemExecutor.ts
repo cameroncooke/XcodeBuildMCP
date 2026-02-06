@@ -4,6 +4,9 @@
 
 import type { WriteStream } from 'fs';
 
+// Runtime marker to prevent empty output in unbundled builds
+export const _typeModule = true as const;
+
 export interface FileSystemExecutor {
   mkdir(path: string, options?: { recursive?: boolean }): Promise<void>;
   readFile(path: string, encoding?: BufferEncoding): Promise<string>;

@@ -238,13 +238,6 @@ export async function list_simsLogic(
   }
 }
 
-export default {
-  name: 'list_sims',
-  description: 'List iOS simulators.',
-  schema: listSimsSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'List Simulators',
-    readOnlyHint: true,
-  },
-  handler: createTypedTool(listSimsSchema, list_simsLogic, getDefaultCommandExecutor),
-};
+export const schema = listSimsSchema.shape;
+
+export const handler = createTypedTool(listSimsSchema, list_simsLogic, getDefaultCommandExecutor);

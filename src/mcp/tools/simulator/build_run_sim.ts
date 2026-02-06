@@ -7,7 +7,8 @@
  */
 
 import * as z from 'zod';
-import { ToolResponse, SharedBuildParams, XcodePlatform } from '../../../types/common.ts';
+import type { ToolResponse, SharedBuildParams } from '../../../types/common.ts';
+import { XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import {
@@ -505,32 +506,22 @@ const publicSchemaObject = baseSchemaObject.omit({
   preferXcodebuild: true,
 } as const);
 
-export default {
-  name: 'build_run_sim',
-  description: 'Build and run iOS sim.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Build Run Simulator',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<BuildRunSimulatorParams>({
-    internalSchema: buildRunSimulatorSchema as unknown as z.ZodType<
-      BuildRunSimulatorParams,
-      unknown
-    >,
-    logicFunction: build_run_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
-    ],
-    exclusivePairs: [
-      ['projectPath', 'workspacePath'],
-      ['simulatorId', 'simulatorName'],
-    ],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<BuildRunSimulatorParams>({
+  internalSchema: buildRunSimulatorSchema as unknown as z.ZodType<BuildRunSimulatorParams, unknown>,
+  logicFunction: build_run_simLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['scheme'], message: 'scheme is required' },
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+    { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+  ],
+  exclusivePairs: [
+    ['projectPath', 'workspacePath'],
+    ['simulatorId', 'simulatorName'],
+  ],
+});

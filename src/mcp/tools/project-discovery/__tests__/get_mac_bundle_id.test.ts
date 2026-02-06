@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import plugin, { get_mac_bundle_idLogic } from '../get_mac_bundle_id.ts';
+import { schema, handler, get_mac_bundle_idLogic } from '../get_mac_bundle_id.ts';
 import {
   createMockFileSystemExecutor,
   createCommandMatchingMockExecutor,
@@ -22,30 +22,22 @@ describe('get_mac_bundle_id plugin', () => {
   };
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(plugin.name).toBe('get_mac_bundle_id');
-    });
-
-    it('should have correct description', () => {
-      expect(plugin.description).toBe('Extract bundle id from macOS .app.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof plugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema with valid inputs', () => {
-      const schema = z.object(plugin.schema);
-      expect(schema.safeParse({ appPath: '/Applications/TextEdit.app' }).success).toBe(true);
-      expect(schema.safeParse({ appPath: '/Users/dev/MyApp.app' }).success).toBe(true);
+      const schemaObj = z.object(schema);
+      expect(schemaObj.safeParse({ appPath: '/Applications/TextEdit.app' }).success).toBe(true);
+      expect(schemaObj.safeParse({ appPath: '/Users/dev/MyApp.app' }).success).toBe(true);
     });
 
     it('should validate schema with invalid inputs', () => {
-      const schema = z.object(plugin.schema);
-      expect(schema.safeParse({}).success).toBe(false);
-      expect(schema.safeParse({ appPath: 123 }).success).toBe(false);
-      expect(schema.safeParse({ appPath: null }).success).toBe(false);
-      expect(schema.safeParse({ appPath: undefined }).success).toBe(false);
+      const schemaObj = z.object(schema);
+      expect(schemaObj.safeParse({}).success).toBe(false);
+      expect(schemaObj.safeParse({ appPath: 123 }).success).toBe(false);
+      expect(schemaObj.safeParse({ appPath: null }).success).toBe(false);
+      expect(schemaObj.safeParse({ appPath: undefined }).success).toBe(false);
     });
   });
 

@@ -1,6 +1,6 @@
 import * as z from 'zod';
-import { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
-import { ToolResponse } from '../types/common.ts';
+import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolResponse } from '../types/common.ts';
 
 export type ToolSchemaShape = Record<string, z.ZodType>;
 
@@ -11,8 +11,6 @@ export interface PluginCliMeta {
   readonly schema?: ToolSchemaShape;
   /** Mark tool as requiring daemon routing */
   readonly stateful?: boolean;
-  /** Prefer daemon routing when available (without forcing auto-start) */
-  readonly daemonAffinity?: 'preferred' | 'required';
 }
 
 export interface PluginMeta {

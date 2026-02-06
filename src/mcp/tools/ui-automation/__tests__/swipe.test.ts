@@ -1,19 +1,14 @@
 /**
- * Tests for swipe tool plugin
+ * Tests for swipe tool
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
-import {
-  createMockExecutor,
-  createNoopExecutor,
-  mockProcess,
-} from '../../../../test-utils/mock-executors.ts';
-import { SystemError, DependencyError } from '../../../../utils/responses/index.ts';
+import { createMockExecutor, mockProcess } from '../../../../test-utils/mock-executors.ts';
+import { SystemError } from '../../../../utils/responses/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
-// Import the plugin module to test
-import swipePlugin, { AxeHelpers, swipeLogic, SwipeParams } from '../swipe.ts';
+import { schema, handler, type AxeHelpers, swipeLogic, type SwipeParams } from '../swipe.ts';
 
 // Helper function to create mock axe helpers
 function createMockAxeHelpers(): AxeHelpers {
@@ -49,28 +44,21 @@ function createMockAxeHelpersWithNullPath(): AxeHelpers {
   };
 }
 
-describe('Swipe Plugin', () => {
+describe('Swipe Tool', () => {
   beforeEach(() => {
     sessionStore.clear();
   });
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(swipePlugin.name).toBe('swipe');
-    });
 
-    it('should have correct description', () => {
-      expect(swipePlugin.description).toBe('Swipe between points.');
-    });
-
+  describe('Schema Validation', () => {
     it('should have handler function', () => {
-      expect(typeof swipePlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema fields with safeParse', () => {
-      const schema = z.object(swipePlugin.schema);
+      const schemaObject = z.object(schema);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x1: 100,
           y1: 200,
           x2: 300,
@@ -79,7 +67,7 @@ describe('Swipe Plugin', () => {
       ).toBe(true);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x1: 100.5,
           y1: 200,
           x2: 300,
@@ -88,7 +76,7 @@ describe('Swipe Plugin', () => {
       ).toBe(false);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x1: 100,
           y1: 200,
           x2: 300,
@@ -98,7 +86,7 @@ describe('Swipe Plugin', () => {
       ).toBe(false);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x1: 100,
           y1: 200,
           x2: 300,
@@ -110,7 +98,7 @@ describe('Swipe Plugin', () => {
         }).success,
       ).toBe(true);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObject.safeParse({
         simulatorId: '12345678-1234-4234-8234-123456789012',
         x1: 100,
         y1: 200,
@@ -317,9 +305,9 @@ describe('Swipe Plugin', () => {
     });
   });
 
-  describe('Handler Behavior (Complete Literal Returns)', () => {
+  describe('Handler Behavior', () => {
     it('should return error for missing simulatorId via handler', async () => {
-      const result = await swipePlugin.handler({ x1: 100, y1: 200, x2: 300, y2: 400 });
+      const result = await handler({ x1: 100, y1: 200, x2: 300, y2: 400 });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].type).toBe('text');
@@ -331,7 +319,7 @@ describe('Swipe Plugin', () => {
     it('should return validation error for missing x1 once simulator default exists', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await swipePlugin.handler({
+      const result = await handler({
         y1: 200,
         x2: 300,
         y2: 400,

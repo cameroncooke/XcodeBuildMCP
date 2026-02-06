@@ -1,0 +1,11 @@
+id: scaffold_ios_project
+module: mcp/tools/project-scaffolding/scaffold_ios_project
+names:
+  mcp: scaffold_ios_project
+  cli: scaffold-ios
+description: Scaffold iOS project.
+predicates:
+  - hideWhenXcodeAgentMode
+annotations:
+  title: Scaffold iOS Project
+  destructiveHint: true

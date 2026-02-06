@@ -19,7 +19,7 @@ import {
   getAxePath,
   getBundledAxeEnvironment,
 } from '../../../utils/axe-helpers.ts';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
@@ -129,27 +129,17 @@ export async function touchLogic(
   }
 }
 
-export default {
-  name: 'touch',
-  description: 'Touch down/up at coords.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: touchSchema,
-  }),
-  annotations: {
-    title: 'Touch',
-    destructiveHint: true,
-  },
-  cli: {
-    daemonAffinity: 'preferred',
-  },
-  handler: createSessionAwareTool<TouchParams>({
-    internalSchema: touchSchema as unknown as z.ZodType<TouchParams, unknown>,
-    logicFunction: (params: TouchParams, executor: CommandExecutor) => touchLogic(params, executor),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: touchSchema,
+});
+
+export const handler = createSessionAwareTool<TouchParams>({
+  internalSchema: touchSchema as unknown as z.ZodType<TouchParams, unknown>,
+  logicFunction: (params: TouchParams, executor: CommandExecutor) => touchLogic(params, executor),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(

@@ -1,5 +1,5 @@
 /**
- * Tests for key_sequence plugin
+ * Tests for key_sequence tool
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -10,50 +10,42 @@ import {
   mockProcess,
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import keySequencePlugin, { key_sequenceLogic } from '../key_sequence.ts';
+import { schema, handler, key_sequenceLogic } from '../key_sequence.ts';
 
-describe('Key Sequence Plugin', () => {
+describe('Key Sequence Tool', () => {
   beforeEach(() => {
     sessionStore.clear();
   });
 
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(keySequencePlugin.name).toBe('key_sequence');
-    });
-
-    it('should have correct description', () => {
-      expect(keySequencePlugin.description).toBe('Press a sequence of keys by their keycodes.');
-    });
-
+  describe('Schema Validation', () => {
     it('should have handler function', () => {
-      expect(typeof keySequencePlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose public schema without simulatorId field', () => {
-      const schema = z.object(keySequencePlugin.schema);
+      const schemaObj = z.object(schema);
 
-      expect(schema.safeParse({ keyCodes: [40, 42, 44] }).success).toBe(true);
-      expect(schema.safeParse({ keyCodes: [40], delay: 0.1 }).success).toBe(true);
-      expect(schema.safeParse({ keyCodes: [] }).success).toBe(false);
-      expect(schema.safeParse({ keyCodes: [-1] }).success).toBe(false);
-      expect(schema.safeParse({ keyCodes: [256] }).success).toBe(false);
-      expect(schema.safeParse({ keyCodes: [40], delay: -0.1 }).success).toBe(false);
+      expect(schemaObj.safeParse({ keyCodes: [40, 42, 44] }).success).toBe(true);
+      expect(schemaObj.safeParse({ keyCodes: [40], delay: 0.1 }).success).toBe(true);
+      expect(schemaObj.safeParse({ keyCodes: [] }).success).toBe(false);
+      expect(schemaObj.safeParse({ keyCodes: [-1] }).success).toBe(false);
+      expect(schemaObj.safeParse({ keyCodes: [256] }).success).toBe(false);
+      expect(schemaObj.safeParse({ keyCodes: [40], delay: -0.1 }).success).toBe(false);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObj.safeParse({
         simulatorId: '12345678-1234-4234-8234-123456789012',
         keyCodes: [40],
       });
       expect(withSimId.success).toBe(true);
-      expect('simulatorId' in (withSimId.data as any)).toBe(false);
+      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
 
-      expect(schema.safeParse({}).success).toBe(false);
+      expect(schemaObj.safeParse({}).success).toBe(false);
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require simulatorId session default when not provided', async () => {
-      const result = await keySequencePlugin.handler({ keyCodes: [40] });
+      const result = await handler({ keyCodes: [40] });
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;
@@ -65,7 +57,7 @@ describe('Key Sequence Plugin', () => {
     it('should surface validation errors once simulator defaults exist', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await keySequencePlugin.handler({ keyCodes: [] });
+      const result = await handler({ keyCodes: [] });
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;
@@ -264,7 +256,7 @@ describe('Key Sequence Plugin', () => {
 
   describe('Handler Behavior (Complete Literal Returns)', () => {
     it('should surface session default requirement when simulatorId is missing', async () => {
-      const result = await keySequencePlugin.handler({ keyCodes: [40] });
+      const result = await handler({ keyCodes: [40] });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');

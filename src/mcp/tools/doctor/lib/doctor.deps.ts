@@ -1,6 +1,6 @@
 import * as os from 'os';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
-import { loadWorkflowGroups } from '../../../../utils/plugin-registry/index.ts';
+import { loadManifest } from '../../../../core/manifest/load-manifest.ts';
 import type { RuntimeToolInfo } from '../../../../utils/tool-registry.ts';
 import { getRuntimeRegistration } from '../../../../utils/tool-registry.ts';
 import { areAxeToolsAvailable, resolveAxeBinary } from '../../../../utils/axe/index.ts';
@@ -217,25 +217,27 @@ export function createDoctorDependencies(executor: CommandExecutor): DoctorDepen
   const plugins: PluginInfoProvider = {
     async getPluginSystemInfo() {
       try {
-        const workflows = await loadWorkflowGroups();
+        const manifest = loadManifest();
         const pluginsByDirectory: Record<string, string[]> = {};
         let totalPlugins = 0;
 
-        for (const [dirName, wf] of workflows.entries()) {
-          const toolNames = wf.tools.map((t) => t.name).filter(Boolean) as string[];
+        for (const [workflowId, workflow] of manifest.workflows.entries()) {
+          const toolNames = workflow.tools
+            .map((toolId) => manifest.tools.get(toolId)?.names.mcp)
+            .filter((name): name is string => name !== undefined);
           totalPlugins += toolNames.length;
-          pluginsByDirectory[dirName] = toolNames;
+          pluginsByDirectory[workflowId] = toolNames;
         }
 
         return {
           totalPlugins,
-          pluginDirectories: workflows.size,
+          pluginDirectories: manifest.workflows.size,
           pluginsByDirectory,
-          systemMode: 'plugin-based',
+          systemMode: 'manifest-based',
         };
       } catch (error) {
         return {
-          error: `Failed to load plugins: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          error: `Failed to load manifest: ${error instanceof Error ? error.message : 'Unknown error'}`,
           systemMode: 'error',
         };
       }

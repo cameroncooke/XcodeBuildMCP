@@ -5,6 +5,9 @@ import { sessionStore, type SessionDefaults } from '../../../utils/session-store
 import { sessionDefaultsSchema } from '../../../utils/session-defaults-schema.ts';
 import { createTypedToolWithContext } from '../../../utils/typed-tool-factory.ts';
 import type { ToolResponse } from '../../../types/common.ts';
+import type { CommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import { resolveSimulatorNameToId } from '../../../utils/simulator-resolver.ts';
 
 const schemaObj = sessionDefaultsSchema.extend({
   persist: z
@@ -15,11 +18,13 @@ const schemaObj = sessionDefaultsSchema.extend({
 
 type Params = z.infer<typeof schemaObj>;
 
-type SessionSetDefaultsContext = Record<string, never>;
+type SessionSetDefaultsContext = {
+  executor: CommandExecutor;
+};
 
 export async function sessionSetDefaultsLogic(
   params: Params,
-  neverContext: SessionSetDefaultsContext,
+  context: SessionSetDefaultsContext,
 ): Promise<ToolResponse> {
   const notices: string[] = [];
   const current = sessionStore.getAll();
@@ -49,10 +54,29 @@ export async function sessionSetDefaultsLogic(
   }
 
   if (hasSimulatorId && hasSimulatorName) {
-    delete nextParams.simulatorName;
+    // Both provided - keep both, simulatorId takes precedence for tools
     notices.push(
-      'Both simulatorId and simulatorName were provided; keeping simulatorId and ignoring simulatorName.',
+      'Both simulatorId and simulatorName were provided; simulatorId will be used by tools.',
     );
+  } else if (hasSimulatorName && !hasSimulatorId) {
+    // Only simulatorName provided - resolve to simulatorId
+    const resolution = await resolveSimulatorNameToId(context.executor, nextParams.simulatorName!);
+    if (resolution.success) {
+      nextParams.simulatorId = resolution.simulatorId;
+      notices.push(
+        `Resolved simulatorName "${nextParams.simulatorName}" to simulatorId: ${resolution.simulatorId}`,
+      );
+    } else {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Failed to resolve simulator name: ${resolution.error}`,
+          },
+        ],
+        isError: true,
+      };
+    }
   }
 
   // Clear mutually exclusive counterparts before merging new defaults
@@ -75,22 +99,13 @@ export async function sessionSetDefaultsLogic(
       notices.push('Cleared projectPath because workspacePath was set.');
     }
   }
-  if (
-    Object.prototype.hasOwnProperty.call(nextParams, 'simulatorId') &&
-    nextParams.simulatorId !== undefined
-  ) {
+  // Note: simulatorId/simulatorName are no longer mutually exclusive.
+  // When simulatorName is provided, we auto-resolve to simulatorId and keep both.
+  // Only clear simulatorName if simulatorId was explicitly provided without simulatorName.
+  if (hasSimulatorId && !hasSimulatorName) {
     toClear.add('simulatorName');
     if (current.simulatorName !== undefined) {
-      notices.push('Cleared simulatorName because simulatorId was set.');
-    }
-  }
-  if (
-    Object.prototype.hasOwnProperty.call(nextParams, 'simulatorName') &&
-    nextParams.simulatorName !== undefined
-  ) {
-    toClear.add('simulatorId');
-    if (current.simulatorId !== undefined) {
-      notices.push('Cleared simulatorId because simulatorName was set.');
+      notices.push('Cleared simulatorName because simulatorId was explicitly set.');
     }
   }
 
@@ -127,13 +142,8 @@ export async function sessionSetDefaultsLogic(
   };
 }
 
-export default {
-  name: 'session-set-defaults',
-  description: 'Set the session defaults, should be called at least once to set tool defaults.',
-  schema: schemaObj.shape,
-  annotations: {
-    title: 'Set Session Defaults',
-    destructiveHint: true,
-  },
-  handler: createTypedToolWithContext(schemaObj, sessionSetDefaultsLogic, () => ({})),
-};
+export const schema = schemaObj.shape;
+
+export const handler = createTypedToolWithContext(schemaObj, sessionSetDefaultsLogic, () => ({
+  executor: getDefaultCommandExecutor(),
+}));

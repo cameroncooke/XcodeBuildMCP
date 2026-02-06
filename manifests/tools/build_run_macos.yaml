@@ -1,0 +1,11 @@
+id: build_run_macos
+module: mcp/tools/macos/build_run_macos
+names:
+  mcp: build_run_macos
+  cli: build-and-run
+description: Build and run macOS app.
+predicates:
+  - hideWhenXcodeAgentMode
+annotations:
+  title: Build Run macOS
+  destructiveHint: true

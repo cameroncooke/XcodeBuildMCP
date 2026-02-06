@@ -1,0 +1,11 @@
+id: swift_package_run
+module: mcp/tools/swift-package/swift_package_run
+names:
+  mcp: swift_package_run
+  cli: run
+description: swift package target run.
+routing:
+  stateful: true
+annotations:
+  title: Swift Package Run
+  destructiveHint: true

@@ -1,5 +1,6 @@
 import * as z from 'zod';
-import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { createTextContent } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { startLogCapture } from '../../../utils/log-capture/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
@@ -19,17 +20,37 @@ export type LogCaptureFunction = (
   executor: CommandExecutor,
 ) => Promise<{ sessionId: string; logFilePath: string; processes: unknown[]; error?: string }>;
 
-const launchAppLogsSimSchemaObject = z.object({
-  simulatorId: z.string().describe('UUID of the simulator to use (obtained from list_sims)'),
+const baseSchemaObject = z.object({
+  simulatorId: z
+    .string()
+    .optional()
+    .describe(
+      'UUID of the simulator to use (obtained from list_sims). Provide EITHER this OR simulatorName, not both',
+    ),
+  simulatorName: z
+    .string()
+    .optional()
+    .describe(
+      "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
+    ),
+  bundleId: z.string().describe('Bundle identifier of the app to launch'),
+  args: z.array(z.string()).optional().describe('Optional arguments to pass to the app'),
+});
+
+// Internal schema requires simulatorId (factory resolves simulatorName → simulatorId)
+const internalSchemaObject = z.object({
+  simulatorId: z.string(),
+  simulatorName: z.string().optional(),
   bundleId: z.string(),
   args: z.array(z.string()).optional(),
 });
 
-type LaunchAppLogsSimParams = z.infer<typeof launchAppLogsSimSchemaObject>;
+type LaunchAppLogsSimParams = z.infer<typeof internalSchemaObject>;
 
 const publicSchemaObject = z.strictObject(
-  launchAppLogsSimSchemaObject.omit({
+  baseSchemaObject.omit({
     simulatorId: true,
+    simulatorName: true,
     bundleId: true,
   } as const).shape,
 );
@@ -74,29 +95,18 @@ export async function launch_app_logs_simLogic(
   };
 }
 
-export default {
-  name: 'launch_app_logs_sim',
-  description: 'Launch sim app with logs.',
-  cli: {
-    stateful: true,
-  },
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: launchAppLogsSimSchemaObject,
-  }),
-  annotations: {
-    title: 'Launch App Logs Simulator',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<LaunchAppLogsSimParams>({
-    internalSchema: launchAppLogsSimSchemaObject as unknown as z.ZodType<
-      LaunchAppLogsSimParams,
-      unknown
-    >,
-    logicFunction: launch_app_logs_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['simulatorId', 'bundleId'], message: 'Provide simulatorId and bundleId' },
-    ],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<LaunchAppLogsSimParams>({
+  internalSchema: internalSchemaObject as unknown as z.ZodType<LaunchAppLogsSimParams, unknown>,
+  logicFunction: launch_app_logs_simLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+    { allOf: ['bundleId'], message: 'bundleId is required' },
+  ],
+  exclusivePairs: [['simulatorId', 'simulatorName']],
+});

@@ -1,0 +1,9 @@
+id: key_press
+module: mcp/tools/ui-automation/key_press
+names:
+  mcp: key_press
+  cli: key-press
+description: Press key by keycode.
+annotations:
+  title: Key Press
+  destructiveHint: true

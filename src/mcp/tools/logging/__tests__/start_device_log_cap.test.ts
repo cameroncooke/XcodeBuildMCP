@@ -11,7 +11,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import plugin, { start_device_log_capLogic } from '../start_device_log_cap.ts';
+import { schema, handler, start_device_log_capLogic } from '../start_device_log_cap.ts';
 import { activeDeviceLogSessions } from '../../../../utils/log-capture/device-log-sessions.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import {
@@ -54,40 +54,30 @@ describe('start_device_log_cap plugin', () => {
   });
 
   describe('Plugin Structure', () => {
-    it('should export an object with required properties', () => {
-      expect(plugin).toHaveProperty('name');
-      expect(plugin).toHaveProperty('description');
-      expect(plugin).toHaveProperty('schema');
-      expect(plugin).toHaveProperty('handler');
-    });
-
-    it('should have correct tool name', () => {
-      expect(plugin.name).toBe('start_device_log_cap');
-    });
-
-    it('should have correct description', () => {
-      expect(plugin.description).toBe('Start device log capture.');
+    it('should export schema and handler', () => {
+      expect(schema).toBeDefined();
+      expect(handler).toBeDefined();
     });
 
     it('should have correct schema structure', () => {
       // Schema should be a plain object for MCP protocol compliance
-      expect(typeof plugin.schema).toBe('object');
-      expect(Object.keys(plugin.schema)).toEqual([]);
+      expect(typeof schema).toBe('object');
+      expect(Object.keys(schema)).toEqual([]);
 
       // Validate that schema fields are Zod types that can be used for validation
-      const schema = z.strictObject(plugin.schema);
-      expect(schema.safeParse({ bundleId: 'com.test.app' }).success).toBe(false);
-      expect(schema.safeParse({}).success).toBe(true);
+      const schemaObj = z.strictObject(schema);
+      expect(schemaObj.safeParse({ bundleId: 'com.test.app' }).success).toBe(false);
+      expect(schemaObj.safeParse({}).success).toBe(true);
     });
 
     it('should have handler as a function', () => {
-      expect(typeof plugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require deviceId and bundleId when not provided', async () => {
-      const result = await plugin.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');

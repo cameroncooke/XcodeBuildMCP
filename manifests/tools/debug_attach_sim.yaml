@@ -1,0 +1,8 @@
+id: debug_attach_sim
+module: mcp/tools/debugging/debug_attach_sim
+names:
+  mcp: debug_attach_sim
+  cli: attach
+description: Attach LLDB to sim app.
+routing:
+  stateful: true

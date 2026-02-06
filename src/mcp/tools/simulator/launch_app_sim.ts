@@ -1,9 +1,8 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
@@ -22,91 +21,28 @@ const baseSchemaObject = z.object({
     .describe(
       "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
     ),
+  bundleId: z.string().describe('Bundle identifier of the app to launch'),
+  args: z.array(z.string()).optional().describe('Optional arguments to pass to the app'),
+});
+
+// Internal schema requires simulatorId (factory resolves simulatorName → simulatorId)
+const internalSchemaObject = z.object({
+  simulatorId: z.string(),
+  simulatorName: z.string().optional(),
   bundleId: z.string(),
   args: z.array(z.string()).optional(),
 });
 
-const launchAppSimSchema = z.preprocess(
-  nullifyEmptyStrings,
-  baseSchemaObject
-    .refine((val) => val.simulatorId !== undefined || val.simulatorName !== undefined, {
-      message: 'Either simulatorId or simulatorName is required.',
-    })
-    .refine((val) => !(val.simulatorId !== undefined && val.simulatorName !== undefined), {
-      message: 'simulatorId and simulatorName are mutually exclusive. Provide only one.',
-    }),
-);
-
-export type LaunchAppSimParams = z.infer<typeof launchAppSimSchema>;
+export type LaunchAppSimParams = z.infer<typeof internalSchemaObject>;
 
 export async function launch_app_simLogic(
   params: LaunchAppSimParams,
   executor: CommandExecutor,
 ): Promise<ToolResponse> {
-  let simulatorId = params.simulatorId;
-  let simulatorDisplayName = simulatorId ?? '';
-
-  if (params.simulatorName && !simulatorId) {
-    log('info', `Looking up simulator by name: ${params.simulatorName}`);
-
-    const simulatorListResult = await executor(
-      ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
-      'List Simulators',
-      false,
-    );
-    if (!simulatorListResult.success) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Failed to list simulators: ${simulatorListResult.error}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    const simulatorsData = JSON.parse(simulatorListResult.output) as {
-      devices: Record<string, Array<{ udid: string; name: string }>>;
-    };
-
-    let foundSimulator: { udid: string; name: string } | null = null;
-    for (const runtime in simulatorsData.devices) {
-      const devices = simulatorsData.devices[runtime];
-      const simulator = devices.find((device) => device.name === params.simulatorName);
-      if (simulator) {
-        foundSimulator = simulator;
-        break;
-      }
-    }
-
-    if (!foundSimulator) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Simulator named "${params.simulatorName}" not found. Use list_sims to see available simulators.`,
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    simulatorId = foundSimulator.udid;
-    simulatorDisplayName = `"${params.simulatorName}" (${foundSimulator.udid})`;
-  }
-
-  if (!simulatorId) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: 'No simulator identifier provided',
-        },
-      ],
-      isError: true,
-    };
-  }
+  const simulatorId = params.simulatorId;
+  const simulatorDisplayName = params.simulatorName
+    ? `"${params.simulatorName}" (${simulatorId})`
+    : simulatorId;
 
   log('info', `Starting xcrun simctl launch request for simulator ${simulatorId}`);
 
@@ -171,7 +107,7 @@ export async function launch_app_simLogic(
       content: [
         {
           type: 'text',
-          text: `App launched successfully in simulator ${simulatorDisplayName || simulatorId}.`,
+          text: `App launched successfully in simulator ${simulatorDisplayName}.`,
         },
       ],
       nextSteps: [
@@ -217,25 +153,18 @@ const publicSchemaObject = z.strictObject(
   } as const).shape,
 );
 
-export default {
-  name: 'launch_app_sim',
-  description: 'Launch app on simulator.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Launch App Simulator',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<LaunchAppSimParams>({
-    internalSchema: launchAppSimSchema as unknown as z.ZodType<LaunchAppSimParams, unknown>,
-    logicFunction: launch_app_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
-      { allOf: ['bundleId'], message: 'bundleId is required' },
-    ],
-    exclusivePairs: [['simulatorId', 'simulatorName']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<LaunchAppSimParams>({
+  internalSchema: internalSchemaObject as unknown as z.ZodType<LaunchAppSimParams, unknown>,
+  logicFunction: launch_app_simLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+    { allOf: ['bundleId'], message: 'bundleId is required' },
+  ],
+  exclusivePairs: [['simulatorId', 'simulatorName']],
+});

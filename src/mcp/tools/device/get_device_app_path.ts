@@ -6,7 +6,8 @@
  */
 
 import * as z from 'zod';
-import { ToolResponse, XcodePlatform } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
@@ -164,25 +165,18 @@ export async function get_device_app_pathLogic(
   }
 }
 
-export default {
-  name: 'get_device_app_path',
-  description: 'Get device built app path.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: baseSchemaObject,
-  }),
-  annotations: {
-    title: 'Get Device App Path',
-    readOnlyHint: true,
-  },
-  handler: createSessionAwareTool<GetDeviceAppPathParams>({
-    internalSchema: getDeviceAppPathSchema as unknown as z.ZodType<GetDeviceAppPathParams, unknown>,
-    logicFunction: get_device_app_pathLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [
-      { allOf: ['scheme'], message: 'scheme is required' },
-      { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
-    ],
-    exclusivePairs: [['projectPath', 'workspacePath']],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<GetDeviceAppPathParams>({
+  internalSchema: getDeviceAppPathSchema as unknown as z.ZodType<GetDeviceAppPathParams, unknown>,
+  logicFunction: get_device_app_pathLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { allOf: ['scheme'], message: 'scheme is required' },
+    { oneOf: ['projectPath', 'workspacePath'], message: 'Provide a project or workspace' },
+  ],
+  exclusivePairs: [['projectPath', 'workspacePath']],
+});

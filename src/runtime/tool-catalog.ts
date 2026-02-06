@@ -1,55 +1,34 @@
-import { loadWorkflowGroups } from '../core/plugin-registry.ts';
-import { resolveSelectedWorkflows } from '../utils/workflow-selection.ts';
 import type { ToolCatalog, ToolDefinition, ToolResolution } from './types.ts';
-import { toKebabCase, disambiguateCliNames } from './naming.ts';
+import { toKebabCase } from './naming.ts';
+import { loadManifest, type WorkflowManifestEntry } from '../core/manifest/load-manifest.ts';
+import { getEffectiveCliName } from '../core/manifest/schema.ts';
+import { importToolModule } from '../core/manifest/import-tool-module.ts';
+import type { PredicateContext, RuntimeKind } from '../visibility/predicate-types.ts';
+import {
+  isWorkflowAvailableForRuntime,
+  isToolAvailableForRuntime,
+  isWorkflowEnabledForRuntime,
+  isToolExposedForRuntime,
+} from '../visibility/exposure.ts';
+import { getConfig } from '../utils/config-store.ts';
+import { log } from '../utils/logging/index.ts';
 
-export async function buildToolCatalog(opts: {
-  enabledWorkflows: string[];
-  excludeWorkflows?: string[];
-}): Promise<ToolCatalog> {
-  const workflowGroups = await loadWorkflowGroups();
-  const selection = resolveSelectedWorkflows(opts.enabledWorkflows, workflowGroups);
-
-  const excludeSet = new Set(opts.excludeWorkflows?.map((w) => w.toLowerCase()) ?? []);
-  const tools: ToolDefinition[] = [];
-
-  for (const wf of selection.selectedWorkflows) {
-    if (excludeSet.has(wf.directoryName.toLowerCase())) {
-      continue;
-    }
-    for (const tool of wf.tools) {
-      const baseCliName = tool.cli?.name ?? toKebabCase(tool.name);
-      tools.push({
-        cliName: baseCliName, // Will be disambiguated below
-        mcpName: tool.name,
-        workflow: wf.directoryName,
-        description: tool.description,
-        annotations: tool.annotations,
-        mcpSchema: tool.schema,
-        cliSchema: tool.cli?.schema ?? tool.schema,
-        stateful: Boolean(tool.cli?.stateful),
-        daemonAffinity: tool.cli?.daemonAffinity,
-        handler: tool.handler,
-      });
-    }
-  }
-
-  const disambiguated = disambiguateCliNames(tools);
-
-  return createCatalog(disambiguated);
-}
-
-function createCatalog(tools: ToolDefinition[]): ToolCatalog {
-  // Build lookup maps for fast resolution
+export function createToolCatalog(tools: ToolDefinition[]): ToolCatalog {
+  // Build lookup maps for fast resolution, deduplicating by mcpName so that
+  // tools shared across multiple workflows don't cause ambiguous resolution.
   const byCliName = new Map<string, ToolDefinition>();
   const byMcpName = new Map<string, ToolDefinition>();
   const byMcpKebab = new Map<string, ToolDefinition[]>();
+  const seenMcpNames = new Set<string>();
 
   for (const tool of tools) {
-    byCliName.set(tool.cliName, tool);
-    byMcpName.set(tool.mcpName.toLowerCase(), tool);
+    const mcpKey = tool.mcpName.toLowerCase();
+    if (seenMcpNames.has(mcpKey)) continue;
+    seenMcpNames.add(mcpKey);
 
-    // Also index by the kebab-case of MCP name (for aliases)
+    byCliName.set(tool.cliName, tool);
+    byMcpName.set(mcpKey, tool);
+
     const mcpKebab = toKebabCase(tool.mcpName);
     const existing = byMcpKebab.get(mcpKebab) ?? [];
     byMcpKebab.set(mcpKebab, [...existing, tool]);
@@ -115,4 +94,151 @@ export function groupToolsByWorkflow(catalog: ToolCatalog): Map<string, ToolDefi
   }
 
   return groups;
+}
+
+/**
+ * Build a tool catalog from the YAML manifest system.
+ */
+export async function buildToolCatalogFromManifest(opts: {
+  runtime: RuntimeKind;
+  ctx: PredicateContext;
+  enabledWorkflows?: string[];
+  excludeWorkflows?: string[];
+}): Promise<ToolCatalog> {
+  const manifest = loadManifest();
+  const excludeSet = new Set(opts.excludeWorkflows?.map((w) => w.toLowerCase()) ?? []);
+
+  // Get workflows to include
+  let workflowsToInclude: WorkflowManifestEntry[];
+  if (opts.enabledWorkflows && opts.enabledWorkflows.length > 0) {
+    // Use specified workflows
+    workflowsToInclude = opts.enabledWorkflows
+      .map((id) => manifest.workflows.get(id))
+      .filter((wf): wf is WorkflowManifestEntry => wf !== undefined);
+  } else {
+    // Use all workflows available for the runtime
+    workflowsToInclude = Array.from(manifest.workflows.values());
+  }
+
+  // Filter workflows
+  const filteredWorkflows = workflowsToInclude.filter((wf) => {
+    // Check exclusion list
+    if (excludeSet.has(wf.id.toLowerCase())) return false;
+    // Check runtime availability
+    if (!isWorkflowAvailableForRuntime(wf, opts.runtime)) return false;
+    // Check predicates
+    if (!isWorkflowEnabledForRuntime(wf, opts.ctx)) return false;
+    return true;
+  });
+
+  // Cache imported modules to avoid re-importing the same tool
+  const moduleCache = new Map<string, Awaited<ReturnType<typeof importToolModule>>>();
+  const tools: ToolDefinition[] = [];
+
+  for (const workflow of filteredWorkflows) {
+    for (const toolId of workflow.tools) {
+      const toolManifest = manifest.tools.get(toolId);
+      if (!toolManifest) continue;
+
+      // Check tool availability for runtime
+      if (!isToolAvailableForRuntime(toolManifest, opts.runtime)) continue;
+
+      // Check tool predicates
+      if (!isToolExposedForRuntime(toolManifest, opts.ctx)) continue;
+
+      // Import the tool module (cached)
+      let toolModule = moduleCache.get(toolId);
+      if (!toolModule) {
+        try {
+          toolModule = await importToolModule(toolManifest.module);
+          moduleCache.set(toolId, toolModule);
+        } catch (err) {
+          log('warning', `Failed to import tool module ${toolManifest.module}: ${err}`);
+          continue;
+        }
+      }
+
+      const cliName = getEffectiveCliName(toolManifest);
+      tools.push({
+        cliName,
+        mcpName: toolManifest.names.mcp,
+        workflow: workflow.id,
+        description: toolManifest.description,
+        annotations: toolManifest.annotations,
+        mcpSchema: toolModule.schema,
+        cliSchema: toolModule.schema,
+        stateful: toolManifest.routing?.stateful ?? false,
+        handler: toolModule.handler as ToolDefinition['handler'],
+      });
+    }
+  }
+
+  return createToolCatalog(tools);
+}
+
+/**
+ * Build a CLI tool catalog from the manifest system.
+ * CLI visibility is determined by manifest availability and predicates.
+ */
+export async function buildCliToolCatalogFromManifest(opts?: {
+  excludeWorkflows?: string[];
+}): Promise<ToolCatalog> {
+  const ctx = await buildCliPredicateContext();
+  return buildToolCatalogFromManifest({
+    runtime: 'cli',
+    ctx,
+    excludeWorkflows: opts?.excludeWorkflows,
+  });
+}
+
+export async function listCliWorkflowIdsFromManifest(opts?: {
+  excludeWorkflows?: string[];
+}): Promise<string[]> {
+  const manifest = loadManifest();
+  const excludeSet = new Set(opts?.excludeWorkflows?.map((name) => name.toLowerCase()) ?? []);
+  const ctx = await buildCliPredicateContext();
+
+  return Array.from(manifest.workflows.values())
+    .filter((workflow) => !excludeSet.has(workflow.id.toLowerCase()))
+    .filter((workflow) => isWorkflowEnabledForRuntime(workflow, ctx))
+    .map((workflow) => workflow.id)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Build a daemon tool catalog from the manifest system.
+ * Daemon visibility is determined by manifest availability and predicates.
+ */
+export async function buildDaemonToolCatalogFromManifest(opts?: {
+  excludeWorkflows?: string[];
+}): Promise<ToolCatalog> {
+  const excludeWorkflows = opts?.excludeWorkflows ?? [];
+
+  // Daemon context: not running under Xcode, no Xcode tools active
+  const ctx: PredicateContext = {
+    runtime: 'daemon',
+    config: getConfig(),
+    runningUnderXcode: false,
+    xcodeToolsActive: false,
+    xcodeToolsAvailable: false,
+  };
+
+  return buildToolCatalogFromManifest({
+    runtime: 'daemon',
+    ctx,
+    excludeWorkflows,
+  });
+}
+
+async function buildCliPredicateContext(): Promise<PredicateContext> {
+  // Skip bridge availability check in CLI mode — xcode-ide workflow has
+  // availability.cli: false so the bridge result is unused, and the
+  // xcrun --find mcpbridge call triggers an unwanted Xcode auth prompt.
+  return {
+    runtime: 'cli',
+    config: getConfig(),
+    runningUnderXcode: false,
+    xcodeToolsActive: false,
+    xcodeToolsAvailable: false,
+  };
 }

@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import { createMockExecutor, mockProcess } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import longPressPlugin, { long_pressLogic } from '../long_press.ts';
+import { schema, handler, long_pressLogic } from '../long_press.ts';
 
 describe('Long Press Plugin', () => {
   beforeEach(() => {
@@ -14,23 +14,15 @@ describe('Long Press Plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(longPressPlugin.name).toBe('long_press');
-    });
-
-    it('should have correct description', () => {
-      expect(longPressPlugin.description).toBe('Long press at coords.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof longPressPlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema fields with safeParse', () => {
-      const schema = z.object(longPressPlugin.schema);
+      const schemaObject = z.object(schema);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x: 100,
           y: 200,
           duration: 1500,
@@ -38,7 +30,7 @@ describe('Long Press Plugin', () => {
       ).toBe(true);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x: 100.5,
           y: 200,
           duration: 1500,
@@ -46,7 +38,7 @@ describe('Long Press Plugin', () => {
       ).toBe(false);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x: 100,
           y: 200.5,
           duration: 1500,
@@ -54,7 +46,7 @@ describe('Long Press Plugin', () => {
       ).toBe(false);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x: 100,
           y: 200,
           duration: 0,
@@ -62,14 +54,14 @@ describe('Long Press Plugin', () => {
       ).toBe(false);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           x: 100,
           y: 200,
           duration: -100,
         }).success,
       ).toBe(false);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObject.safeParse({
         simulatorId: '12345678-1234-4234-8234-123456789012',
         x: 100,
         y: 200,
@@ -82,7 +74,7 @@ describe('Long Press Plugin', () => {
 
   describe('Handler Requirements', () => {
     it('should require simulatorId session default', async () => {
-      const result = await longPressPlugin.handler({ x: 100, y: 200, duration: 1500 });
+      const result = await handler({ x: 100, y: 200, duration: 1500 });
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;
@@ -94,7 +86,7 @@ describe('Long Press Plugin', () => {
     it('should surface validation errors once simulator default exists', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await longPressPlugin.handler({ x: 100, y: 200, duration: 0 });
+      const result = await handler({ x: 100, y: 200, duration: 0 });
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;

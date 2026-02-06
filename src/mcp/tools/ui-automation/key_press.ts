@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import {
   createTextResponse,
@@ -110,32 +110,22 @@ const publicSchemaObject = z.strictObject(
   keyPressSchema.omit({ simulatorId: true } as const).shape,
 );
 
-export default {
-  name: 'key_press',
-  description: 'Press key by keycode.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: keyPressSchema,
-  }),
-  annotations: {
-    title: 'Key Press',
-    destructiveHint: true,
-  },
-  cli: {
-    daemonAffinity: 'preferred',
-  },
-  handler: createSessionAwareTool<KeyPressParams>({
-    internalSchema: keyPressSchema as unknown as z.ZodType<KeyPressParams, unknown>,
-    logicFunction: (params: KeyPressParams, executor: CommandExecutor) =>
-      key_pressLogic(params, executor, {
-        getAxePath,
-        getBundledAxeEnvironment,
-        createAxeNotAvailableResponse,
-      }),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: keyPressSchema,
+});
+
+export const handler = createSessionAwareTool<KeyPressParams>({
+  internalSchema: keyPressSchema as unknown as z.ZodType<KeyPressParams, unknown>,
+  logicFunction: (params: KeyPressParams, executor: CommandExecutor) =>
+    key_pressLogic(params, executor, {
+      getAxePath,
+      getBundledAxeEnvironment,
+      createAxeNotAvailableResponse,
+    }),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(

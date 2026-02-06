@@ -3,62 +3,52 @@
  */
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
-import plugin, { start_sim_log_capLogic } from '../start_sim_log_cap.ts';
+import { schema, handler, start_sim_log_capLogic } from '../start_sim_log_cap.ts';
 import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 
 describe('start_sim_log_cap plugin', () => {
   // Reset any test state if needed
 
   describe('Export Field Validation (Literal)', () => {
-    it('should export an object with required properties', () => {
-      expect(plugin).toHaveProperty('name');
-      expect(plugin).toHaveProperty('description');
-      expect(plugin).toHaveProperty('schema');
-      expect(plugin).toHaveProperty('handler');
-    });
-
-    it('should have correct tool name', () => {
-      expect(plugin.name).toBe('start_sim_log_cap');
-    });
-
-    it('should have correct description', () => {
-      expect(plugin.description).toBe('Start sim log capture.');
+    it('should export schema and handler', () => {
+      expect(schema).toBeDefined();
+      expect(handler).toBeDefined();
     });
 
     it('should have handler as a function', () => {
-      expect(typeof plugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema with valid parameters', () => {
-      const schema = z.object(plugin.schema);
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ captureConsole: true }).success).toBe(true);
-      expect(schema.safeParse({ captureConsole: false }).success).toBe(true);
+      const schemaObj = z.object(schema);
+      expect(schemaObj.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({ captureConsole: true }).success).toBe(true);
+      expect(schemaObj.safeParse({ captureConsole: false }).success).toBe(true);
     });
 
     it('should validate schema with subsystemFilter parameter', () => {
-      const schema = z.object(plugin.schema);
+      const schemaObj = z.object(schema);
       // Valid enum values
-      expect(schema.safeParse({ subsystemFilter: 'app' }).success).toBe(true);
-      expect(schema.safeParse({ subsystemFilter: 'all' }).success).toBe(true);
-      expect(schema.safeParse({ subsystemFilter: 'swiftui' }).success).toBe(true);
+      expect(schemaObj.safeParse({ subsystemFilter: 'app' }).success).toBe(true);
+      expect(schemaObj.safeParse({ subsystemFilter: 'all' }).success).toBe(true);
+      expect(schemaObj.safeParse({ subsystemFilter: 'swiftui' }).success).toBe(true);
       // Valid array of subsystems
-      expect(schema.safeParse({ subsystemFilter: ['com.apple.UIKit'] }).success).toBe(true);
+      expect(schemaObj.safeParse({ subsystemFilter: ['com.apple.UIKit'] }).success).toBe(true);
       expect(
-        schema.safeParse({ subsystemFilter: ['com.apple.UIKit', 'com.apple.CoreData'] }).success,
+        schemaObj.safeParse({ subsystemFilter: ['com.apple.UIKit', 'com.apple.CoreData'] }).success,
       ).toBe(true);
       // Invalid values
-      expect(schema.safeParse({ subsystemFilter: [] }).success).toBe(false);
-      expect(schema.safeParse({ subsystemFilter: 'invalid' }).success).toBe(false);
-      expect(schema.safeParse({ subsystemFilter: 123 }).success).toBe(false);
+      expect(schemaObj.safeParse({ subsystemFilter: [] }).success).toBe(false);
+      expect(schemaObj.safeParse({ subsystemFilter: 'invalid' }).success).toBe(false);
+      expect(schemaObj.safeParse({ subsystemFilter: 123 }).success).toBe(false);
     });
 
     it('should reject invalid schema parameters', () => {
-      const schema = z.object(plugin.schema);
-      expect(schema.safeParse({ captureConsole: 'yes' }).success).toBe(false);
-      expect(schema.safeParse({ captureConsole: 123 }).success).toBe(false);
+      const schemaObj = z.object(schema);
+      expect(schemaObj.safeParse({ captureConsole: 'yes' }).success).toBe(false);
+      expect(schemaObj.safeParse({ captureConsole: 123 }).success).toBe(false);
 
-      const withSimId = schema.safeParse({ simulatorId: 'test-uuid' });
+      const withSimId = schemaObj.safeParse({ simulatorId: 'test-uuid' });
       expect(withSimId.success).toBe(true);
       expect('simulatorId' in (withSimId.data as any)).toBe(false);
     });

@@ -4,8 +4,11 @@ import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { getDefaultCommandExecutor, type CommandExecutor } from '../../../utils/execution/index.ts';
 import { createTextResponse } from '../../../utils/responses/index.ts';
 import type { ToolResponse } from '../../../types/common.ts';
-import { applyWorkflowSelection, getRegisteredWorkflows } from '../../../utils/tool-registry.ts';
-import { listWorkflowDirectoryNames } from '../../../core/plugin-registry.ts';
+import {
+  applyWorkflowSelectionFromManifest,
+  getRegisteredWorkflows,
+  getMcpPredicateContext,
+} from '../../../utils/tool-registry.ts';
 
 const baseSchemaObject = z.object({
   workflowNames: z.array(z.string()).describe('Workflow directory name(s).'),
@@ -31,21 +34,18 @@ export async function manage_workflowsLogic(
   } else {
     nextWorkflows = [...new Set([...currentWorkflows, ...workflowNames])];
   }
-  const registryState = await applyWorkflowSelection(nextWorkflows);
+
+  const ctx = getMcpPredicateContext();
+
+  const registryState = await applyWorkflowSelectionFromManifest(nextWorkflows, ctx);
 
   return createTextResponse(`Workflows enabled: ${registryState.enabledWorkflows.join(', ')}`);
 }
 
-const workflowNames = listWorkflowDirectoryNames();
-const availableWorkflows =
-  workflowNames.length > 0 ? workflowNames.join(', ') : 'none (no workflows discovered)';
+export const schema = baseSchemaObject.shape;
 
-export default {
-  name: 'manage-workflows',
-  description: `Workflows are groups of tools exposed by XcodeBuildMCP.
-By default, not all workflows (and therefore tools) are enabled; only simulator tools are enabled by default.
-Some workflows are mandatory and can't be disabled.
-Available workflows: ${availableWorkflows}`,
-  schema: baseSchemaObject.shape,
-  handler: createTypedTool(manageWorkflowsSchema, manage_workflowsLogic, getDefaultCommandExecutor),
-};
+export const handler = createTypedTool(
+  manageWorkflowsSchema,
+  manage_workflowsLogic,
+  getDefaultCommandExecutor,
+);

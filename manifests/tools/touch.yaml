@@ -1,0 +1,9 @@
+id: touch
+module: mcp/tools/ui-automation/touch
+names:
+  mcp: touch
+  cli: touch
+description: Touch down/up at coords.
+annotations:
+  title: Touch
+  destructiveHint: true

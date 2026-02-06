@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
 import { createTypedTool } from '../typed-tool-factory.ts';
 import { createMockExecutor } from '../../test-utils/mock-executors.ts';
-import { ToolResponse } from '../../types/common.ts';
+import type { ToolResponse } from '../../types/common.ts';
 
 // Test schema and types
 const testSchema = z.object({

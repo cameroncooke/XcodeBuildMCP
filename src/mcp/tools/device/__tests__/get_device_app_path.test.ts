@@ -10,7 +10,7 @@ import {
   createMockCommandResponse,
   createMockExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import getDeviceAppPath, { get_device_app_pathLogic } from '../get_device_app_path.ts';
+import { schema, handler, get_device_app_pathLogic } from '../get_device_app_path.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('get_device_app_path plugin', () => {
@@ -19,32 +19,26 @@ describe('get_device_app_path plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(getDeviceAppPath.name).toBe('get_device_app_path');
-    });
-
-    it('should have correct description', () => {
-      expect(getDeviceAppPath.description).toBe('Get device built app path.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof getDeviceAppPath.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose empty public schema', () => {
-      const schema = z.strictObject(getDeviceAppPath.schema);
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ platform: 'iOS' }).success).toBe(false);
-      expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(false);
+      const schemaObj = z.strictObject(schema);
+      expect(schemaObj.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({ platform: 'iOS' }).success).toBe(false);
+      expect(schemaObj.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(
+        false,
+      );
 
-      const schemaKeys = Object.keys(getDeviceAppPath.schema).sort();
+      const schemaKeys = Object.keys(schema).sort();
       expect(schemaKeys).toEqual([]);
     });
   });
 
   describe('XOR Validation', () => {
     it('should error when neither projectPath nor workspacePath provided', async () => {
-      const result = await getDeviceAppPath.handler({
+      const result = await handler({
         scheme: 'MyScheme',
       });
       expect(result.isError).toBe(true);
@@ -53,7 +47,7 @@ describe('get_device_app_path plugin', () => {
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
-      const result = await getDeviceAppPath.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
         scheme: 'MyScheme',
@@ -66,7 +60,7 @@ describe('get_device_app_path plugin', () => {
 
   describe('Handler Requirements', () => {
     it('should require scheme when missing', async () => {
-      const result = await getDeviceAppPath.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
       });
       expect(result.isError).toBe(true);
@@ -77,7 +71,7 @@ describe('get_device_app_path plugin', () => {
     it('should require project or workspace when scheme default exists', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
-      const result = await getDeviceAppPath.handler({});
+      const result = await handler({});
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Provide a project or workspace');
     });

@@ -1,0 +1,14 @@
+id: session-management
+title: Session Management
+description: Manage session defaults for project/workspace paths, scheme, configuration, simulator/device settings.
+availability:
+  cli: false
+selection:
+  mcp:
+    defaultEnabled: true
+    autoInclude: true
+tools:
+  - session_show_defaults
+  - session_set_defaults
+  - session_clear_defaults
+  - sync_xcode_defaults

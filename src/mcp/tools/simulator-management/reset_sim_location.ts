@@ -1,7 +1,8 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
-import { CommandExecutor, getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
+import type { CommandExecutor } from '../../../utils/execution/index.ts';
+import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
@@ -89,24 +90,17 @@ const publicSchemaObject = z.strictObject(
   resetSimulatorLocationSchema.omit({ simulatorId: true } as const).shape,
 );
 
-export default {
-  name: 'reset_sim_location',
-  description: 'Reset sim location.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: resetSimulatorLocationSchema,
-  }),
-  annotations: {
-    title: 'Reset Simulator Location',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<ResetSimulatorLocationParams>({
-    internalSchema: resetSimulatorLocationSchema as unknown as z.ZodType<
-      ResetSimulatorLocationParams,
-      unknown
-    >,
-    logicFunction: reset_sim_locationLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: resetSimulatorLocationSchema,
+});
+
+export const handler = createSessionAwareTool<ResetSimulatorLocationParams>({
+  internalSchema: resetSimulatorLocationSchema as unknown as z.ZodType<
+    ResetSimulatorLocationParams,
+    unknown
+  >,
+  logicFunction: reset_sim_locationLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});

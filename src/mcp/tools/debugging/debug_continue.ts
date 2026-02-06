@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { createErrorResponse, createTextResponse } from '../../../utils/responses/index.ts';
 import { createTypedToolWithContext } from '../../../utils/typed-tool-factory.ts';
 import {
@@ -28,16 +28,10 @@ export async function debug_continueLogic(
   }
 }
 
-export default {
-  name: 'debug_continue',
-  description: 'Continue debug session.',
-  cli: {
-    stateful: true,
-  },
-  schema: debugContinueSchema.shape,
-  handler: createTypedToolWithContext<DebugContinueParams, DebuggerToolContext>(
-    debugContinueSchema,
-    debug_continueLogic,
-    getDefaultDebuggerToolContext,
-  ),
-};
+export const schema = debugContinueSchema.shape;
+
+export const handler = createTypedToolWithContext<DebugContinueParams, DebuggerToolContext>(
+  debugContinueSchema,
+  debug_continueLogic,
+  getDefaultDebuggerToolContext,
+);

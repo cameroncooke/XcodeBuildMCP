@@ -8,12 +8,13 @@
  */
 
 import { createServer, startServer } from './server.ts';
-import { log } from '../utils/logger.ts';
+import { log, setLogLevel } from '../utils/logger.ts';
 import { initSentry } from '../utils/sentry.ts';
 import { getDefaultDebuggerManager } from '../utils/debugger/index.ts';
 import { version } from '../version.ts';
 import process from 'node:process';
 import { bootstrapServer } from './bootstrap.ts';
+import { shutdownXcodeToolsBridge } from '../integrations/xcode-tools-bridge/index.ts';
 
 /**
  * Start the MCP server.
@@ -22,6 +23,10 @@ import { bootstrapServer } from './bootstrap.ts';
  */
 export async function startMcpServer(): Promise<void> {
   try {
+    // MCP mode defaults to info level logging
+    // Clients can override via logging/setLevel MCP request
+    setLogLevel('info');
+
     initSentry();
 
     const server = createServer();
@@ -30,16 +35,45 @@ export async function startMcpServer(): Promise<void> {
 
     await startServer(server);
 
-    process.on('SIGTERM', async () => {
-      await getDefaultDebuggerManager().disposeAll();
-      await server.close();
-      process.exit(0);
+    let shuttingDown = false;
+    const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
+      if (shuttingDown) return;
+      shuttingDown = true;
+
+      log('info', `Received ${signal}; shutting down MCP server`);
+
+      let exitCode = 0;
+
+      try {
+        await shutdownXcodeToolsBridge();
+      } catch (error) {
+        exitCode = 1;
+        log('error', `Failed to shutdown Xcode tools bridge: ${String(error)}`);
+      }
+
+      try {
+        await getDefaultDebuggerManager().disposeAll();
+      } catch (error) {
+        exitCode = 1;
+        log('error', `Failed to dispose debugger sessions: ${String(error)}`);
+      }
+
+      try {
+        await server.close();
+      } catch (error) {
+        exitCode = 1;
+        log('error', `Failed to close MCP server: ${String(error)}`);
+      }
+
+      process.exit(exitCode);
+    };
+
+    process.once('SIGTERM', () => {
+      void shutdown('SIGTERM');
     });
 
-    process.on('SIGINT', async () => {
-      await getDefaultDebuggerManager().disposeAll();
-      await server.close();
-      process.exit(0);
+    process.once('SIGINT', () => {
+      void shutdown('SIGINT');
     });
 
     log('info', `XcodeBuildMCP server (version ${version}) started successfully`);

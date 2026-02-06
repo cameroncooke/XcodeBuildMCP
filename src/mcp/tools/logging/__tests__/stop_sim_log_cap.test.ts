@@ -13,7 +13,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
-import stopSimLogCap, { stop_sim_log_capLogic } from '../stop_sim_log_cap.ts';
+import { schema, handler, stop_sim_log_capLogic } from '../stop_sim_log_cap.ts';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
@@ -24,38 +24,33 @@ describe('stop_sim_log_cap plugin', () => {
   const mockFileSystem = createMockFileSystemExecutor();
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct plugin structure', () => {
-      expect(stopSimLogCap).toHaveProperty('name');
-      expect(stopSimLogCap).toHaveProperty('description');
-      expect(stopSimLogCap).toHaveProperty('schema');
-      expect(stopSimLogCap).toHaveProperty('handler');
-
-      expect(stopSimLogCap.name).toBe('stop_sim_log_cap');
-      expect(stopSimLogCap.description).toBe('Stop sim app and return logs.');
-      expect(typeof stopSimLogCap.handler).toBe('function');
-      expect(typeof stopSimLogCap.schema).toBe('object');
+    it('should export schema and handler', () => {
+      expect(schema).toBeDefined();
+      expect(handler).toBeDefined();
+      expect(typeof handler).toBe('function');
+      expect(typeof schema).toBe('object');
     });
 
     it('should have correct schema structure', () => {
       // Schema should be a plain object for MCP protocol compliance
-      expect(typeof stopSimLogCap.schema).toBe('object');
-      expect(stopSimLogCap.schema).toHaveProperty('logSessionId');
+      expect(typeof schema).toBe('object');
+      expect(schema).toHaveProperty('logSessionId');
 
       // Validate that schema fields are Zod types that can be used for validation
-      const schema = z.object(stopSimLogCap.schema);
-      expect(schema.safeParse({ logSessionId: 'test-session-id' }).success).toBe(true);
-      expect(schema.safeParse({ logSessionId: 123 }).success).toBe(false);
+      const schemaObj = z.object(schema);
+      expect(schemaObj.safeParse({ logSessionId: 'test-session-id' }).success).toBe(true);
+      expect(schemaObj.safeParse({ logSessionId: 123 }).success).toBe(false);
     });
 
     it('should validate schema with valid parameters', () => {
-      expect(stopSimLogCap.schema.logSessionId.safeParse('test-session-id').success).toBe(true);
+      expect(schema.logSessionId.safeParse('test-session-id').success).toBe(true);
     });
 
     it('should reject invalid schema parameters', () => {
-      expect(stopSimLogCap.schema.logSessionId.safeParse(null).success).toBe(false);
-      expect(stopSimLogCap.schema.logSessionId.safeParse(undefined).success).toBe(false);
-      expect(stopSimLogCap.schema.logSessionId.safeParse(123).success).toBe(false);
-      expect(stopSimLogCap.schema.logSessionId.safeParse(true).success).toBe(false);
+      expect(schema.logSessionId.safeParse(null).success).toBe(false);
+      expect(schema.logSessionId.safeParse(undefined).success).toBe(false);
+      expect(schema.logSessionId.safeParse(123).success).toBe(false);
+      expect(schema.logSessionId.safeParse(true).success).toBe(false);
     });
   });
 

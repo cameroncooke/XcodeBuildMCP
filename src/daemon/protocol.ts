@@ -1,6 +1,15 @@
+import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolResponse } from '../types/common.ts';
+
 export const DAEMON_PROTOCOL_VERSION = 1 as const;
 
-export type DaemonMethod = 'daemon.status' | 'daemon.stop' | 'tool.list' | 'tool.invoke';
+export type DaemonMethod =
+  | 'daemon.status'
+  | 'daemon.stop'
+  | 'tool.list'
+  | 'tool.invoke'
+  | 'xcode-ide.list'
+  | 'xcode-ide.invoke';
 
 export interface DaemonRequest<TParams = unknown> {
   v: typeof DAEMON_PROTOCOL_VERSION;
@@ -35,7 +44,7 @@ export interface ToolInvokeParams {
 }
 
 export interface ToolInvokeResult {
-  response: unknown;
+  response: ToolResponse;
 }
 
 export interface DaemonStatusResult {
@@ -56,4 +65,31 @@ export interface ToolListItem {
   workflow: string;
   description: string;
   stateful: boolean;
+}
+
+export interface XcodeIdeListParams {
+  refresh?: boolean;
+  /** Trigger a background refresh while still returning cached tools immediately. */
+  prefetch?: boolean;
+}
+
+export interface XcodeIdeToolListItem {
+  remoteName: string;
+  localName: string;
+  description: string;
+  inputSchema?: unknown;
+  annotations?: ToolAnnotations;
+}
+
+export interface XcodeIdeListResult {
+  tools: XcodeIdeToolListItem[];
+}
+
+export interface XcodeIdeInvokeParams {
+  remoteTool: string;
+  args: Record<string, unknown>;
+}
+
+export interface XcodeIdeInvokeResult {
+  response: unknown;
 }

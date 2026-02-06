@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as z from 'zod';
-import setSimAppearancePlugin, { set_sim_appearanceLogic } from '../set_sim_appearance.ts';
+import { schema, handler, set_sim_appearanceLogic } from '../set_sim_appearance.ts';
 import {
   createMockCommandResponse,
   createMockExecutor,
@@ -8,28 +8,20 @@ import {
 
 describe('set_sim_appearance plugin', () => {
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name field', () => {
-      expect(setSimAppearancePlugin.name).toBe('set_sim_appearance');
-    });
-
-    it('should have correct description field', () => {
-      expect(setSimAppearancePlugin.description).toBe('Set sim appearance.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof setSimAppearancePlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose public schema without simulatorId field', () => {
-      const schema = z.object(setSimAppearancePlugin.schema);
+      const schemaObject = z.object(schema);
 
-      expect(schema.safeParse({ mode: 'dark' }).success).toBe(true);
-      expect(schema.safeParse({ mode: 'light' }).success).toBe(true);
-      expect(schema.safeParse({ mode: 'invalid' }).success).toBe(false);
+      expect(schemaObject.safeParse({ mode: 'dark' }).success).toBe(true);
+      expect(schemaObject.safeParse({ mode: 'light' }).success).toBe(true);
+      expect(schemaObject.safeParse({ mode: 'invalid' }).success).toBe(false);
 
-      const withSimId = schema.safeParse({ simulatorId: 'abc123', mode: 'dark' });
+      const withSimId = schemaObject.safeParse({ simulatorId: 'abc123', mode: 'dark' });
       expect(withSimId.success).toBe(true);
-      expect('simulatorId' in (withSimId.data as any)).toBe(false);
+      expect('simulatorId' in (withSimId.data as object)).toBe(false);
     });
   });
 
@@ -84,7 +76,7 @@ describe('set_sim_appearance plugin', () => {
     });
 
     it('should surface session default requirement when simulatorId is missing', async () => {
-      const result = await setSimAppearancePlugin.handler({ mode: 'dark' });
+      const result = await handler({ mode: 'dark' });
 
       const message = result.content?.[0]?.text ?? '';
       expect(message).toContain('Error: Missing required session defaults');

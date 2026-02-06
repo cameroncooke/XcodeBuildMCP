@@ -1,4 +1,4 @@
-import type { ToolCatalog, ToolInvoker, InvokeOptions } from './types.ts';
+import type { ToolCatalog, ToolDefinition, ToolInvoker, InvokeOptions } from './types.ts';
 import type { ToolResponse } from '../types/common.ts';
 import { createErrorResponse } from '../utils/responses/index.ts';
 import { DaemonClient } from '../cli/daemon-client.ts';
@@ -24,10 +24,20 @@ function enrichNextStepsForCli(response: ToolResponse, catalog: ToolCatalog): To
       return {
         ...step,
         workflow: target.workflow,
-        cliTool: target.cliName,
+        cliTool: target.cliName, // Canonical CLI name from manifest
       };
     }),
   };
+}
+
+function buildDaemonEnvOverrides(opts: InvokeOptions): Record<string, string> | undefined {
+  const envOverrides: Record<string, string> = {};
+
+  if (opts.logLevel) {
+    envOverrides.XCODEBUILDMCP_DAEMON_LOG_LEVEL = opts.logLevel;
+  }
+
+  return Object.keys(envOverrides).length > 0 ? envOverrides : undefined;
 }
 
 export class DefaultToolInvoker implements ToolInvoker {
@@ -54,33 +64,77 @@ export class DefaultToolInvoker implements ToolInvoker {
       );
     }
 
-    const tool = resolved.tool;
+    return this.executeTool(resolved.tool, args, opts);
+  }
 
-    const daemonAffinity = tool.daemonAffinity;
-    const mustUseDaemon =
-      tool.stateful || daemonAffinity === 'required' || Boolean(opts.forceDaemon);
-    const prefersDaemon = daemonAffinity === 'preferred';
+  /**
+   * Invoke a tool directly, bypassing catalog resolution.
+   * Used by CLI where the correct ToolDefinition is already known
+   * from workflow-scoped yargs routing.
+   */
+  async invokeDirect(
+    tool: ToolDefinition,
+    args: Record<string, unknown>,
+    opts: InvokeOptions,
+  ): Promise<ToolResponse> {
+    return this.executeTool(tool, args, opts);
+  }
 
-    if (opts.runtime === 'cli') {
-      // Check for conflicting options
-      if (opts.disableDaemon && opts.forceDaemon) {
+  private async executeTool(
+    tool: ToolDefinition,
+    args: Record<string, unknown>,
+    opts: InvokeOptions,
+  ): Promise<ToolResponse> {
+    const xcodeIdeRemoteToolName = tool.xcodeIdeRemoteToolName;
+    const isDynamicXcodeIdeTool =
+      tool.workflow === 'xcode-ide' && typeof xcodeIdeRemoteToolName === 'string';
+
+    if (opts.runtime === 'cli' && isDynamicXcodeIdeTool) {
+      const socketPath = opts.socketPath;
+      if (!socketPath) {
         return createErrorResponse(
-          'Conflicting options',
-          `Cannot use both --daemon and --no-daemon flags together.`,
+          'Socket path required',
+          `No socket path configured for daemon communication.`,
         );
       }
 
-      if (mustUseDaemon) {
-        // Check if daemon is disabled
-        if (opts.disableDaemon) {
+      const envOverrideValue = buildDaemonEnvOverrides(opts);
+      const client = new DaemonClient({ socketPath });
+
+      const isRunning = await client.isRunning();
+      if (!isRunning) {
+        try {
+          await ensureDaemonRunning({
+            socketPath,
+            workspaceRoot: opts.workspaceRoot,
+            startupTimeoutMs: opts.daemonStartupTimeoutMs ?? DEFAULT_DAEMON_STARTUP_TIMEOUT_MS,
+            env: envOverrideValue,
+          });
+        } catch (error) {
           return createErrorResponse(
-            'Daemon required',
-            `Tool '${tool.cliName}' is stateful and requires the daemon.\n` +
-              `Remove the --no-daemon flag, or start the daemon manually:\n` +
+            'Daemon auto-start failed',
+            (error instanceof Error ? error.message : String(error)) +
+              `\n\nYou can try starting the daemon manually:\n` +
               `  xcodebuildmcp daemon start`,
           );
         }
+      }
 
+      try {
+        const response = await client.invokeXcodeIdeTool(xcodeIdeRemoteToolName, args);
+        return enrichNextStepsForCli(response, this.catalog);
+      } catch (error) {
+        return createErrorResponse(
+          'Xcode IDE invocation failed',
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    }
+
+    const mustUseDaemon = tool.stateful;
+
+    if (opts.runtime === 'cli') {
+      if (mustUseDaemon) {
         // Route through daemon with auto-start
         const socketPath = opts.socketPath;
         if (!socketPath) {
@@ -91,15 +145,7 @@ export class DefaultToolInvoker implements ToolInvoker {
         }
 
         const client = new DaemonClient({ socketPath });
-        const enabledWorkflows = opts.enabledWorkflows;
-        const envOverrides: Record<string, string> = {};
-        if (enabledWorkflows && enabledWorkflows.length > 0) {
-          envOverrides.XCODEBUILDMCP_ENABLED_WORKFLOWS = enabledWorkflows.join(',');
-        }
-        if (opts.logLevel) {
-          envOverrides.XCODEBUILDMCP_DAEMON_LOG_LEVEL = opts.logLevel;
-        }
-        const envOverrideValue = Object.keys(envOverrides).length > 0 ? envOverrides : undefined;
+        const envOverrideValue = buildDaemonEnvOverrides(opts);
 
         // Check if daemon is running; auto-start if not
         const isRunning = await client.isRunning();
@@ -122,32 +168,13 @@ export class DefaultToolInvoker implements ToolInvoker {
         }
 
         try {
-          const response = await client.invokeTool(tool.cliName, args);
+          const response = await client.invokeTool(tool.mcpName, args);
           return opts.runtime === 'cli' ? enrichNextStepsForCli(response, this.catalog) : response;
         } catch (error) {
           return createErrorResponse(
             'Daemon invocation failed',
             error instanceof Error ? error.message : String(error),
           );
-        }
-      }
-
-      if (prefersDaemon && !opts.disableDaemon && opts.socketPath) {
-        const client = new DaemonClient({ socketPath: opts.socketPath, timeout: 1000 });
-        try {
-          const isRunning = await client.isRunning();
-          if (isRunning) {
-            const tools = await client.listTools();
-            const hasTool = tools.some((item) => item.name === tool.cliName);
-            if (hasTool) {
-              const response = await client.invokeTool(tool.cliName, args);
-              return opts.runtime === 'cli'
-                ? enrichNextStepsForCli(response, this.catalog)
-                : response;
-            }
-          }
-        } catch {
-          // Fall back to direct invocation
         }
       }
     }

@@ -9,10 +9,13 @@ import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { version } from '../../../utils/version/index.ts';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import { getConfig } from '../../../utils/config-store.ts';
+import { detectXcodeRuntime } from '../../../utils/xcode-process.ts';
 import { type DoctorDependencies, createDoctorDependencies } from './lib/doctor.deps.ts';
+import { peekXcodeToolsBridgeManager } from '../../../integrations/xcode-tools-bridge/index.ts';
+import { getMcpBridgeAvailability } from '../../../integrations/xcode-tools-bridge/core.ts';
 
 // Constants
 const LOG_PREFIX = '[Doctor]';
@@ -31,6 +34,61 @@ async function checkLldbDapAvailability(executor: CommandExecutor): Promise<bool
     return result.success && result.output.trim().length > 0;
   } catch {
     return false;
+  }
+}
+
+type XcodeToolsBridgeDoctorInfo =
+  | {
+      available: true;
+      workflowEnabled: boolean;
+      bridgePath: string | null;
+      xcodeRunning: boolean | null;
+      connected: boolean;
+      bridgePid: number | null;
+      proxiedToolCount: number;
+      lastError: string | null;
+    }
+  | { available: false; reason: string };
+
+async function getXcodeToolsBridgeDoctorInfo(
+  executor: CommandExecutor,
+  workflowEnabled: boolean,
+): Promise<XcodeToolsBridgeDoctorInfo> {
+  try {
+    const manager = peekXcodeToolsBridgeManager();
+    if (manager) {
+      const status = await manager.getStatus();
+      return {
+        available: true,
+        workflowEnabled: status.workflowEnabled,
+        bridgePath: status.bridgePath,
+        xcodeRunning: status.xcodeRunning,
+        connected: status.connected,
+        bridgePid: status.bridgePid,
+        proxiedToolCount: status.proxiedToolCount,
+        lastError: status.lastError,
+      };
+    }
+
+    const bridgeInfo = await getMcpBridgeAvailability();
+    const bridgePath = bridgeInfo.available ? bridgeInfo.path : null;
+    const xcodeRunningResult = await executor(['pgrep', '-x', 'Xcode'], 'Check Xcode process');
+    const xcodeRunning = xcodeRunningResult.success
+      ? xcodeRunningResult.output.trim().length > 0
+      : null;
+    return {
+      available: true,
+      workflowEnabled,
+      bridgePath,
+      xcodeRunning,
+      connected: false,
+      bridgePid: null,
+      proxiedToolCount: 0,
+      lastError: null,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { available: false, reason: message };
   }
 }
 
@@ -56,6 +114,7 @@ export async function runDoctor(
   const envVars = deps.env.getEnvironmentVariables();
   const systemInfo = deps.env.getSystemInfo();
   const nodeInfo = deps.env.getNodeInfo();
+  const xcodeRuntime = await detectXcodeRuntime(deps.commandExecutor);
   const axeAvailable = deps.features.areAxeToolsAvailable();
   const pluginSystemInfo = await deps.plugins.getPluginSystemInfo();
   const runtimeInfo = await deps.runtime.getRuntimeToolInfo();
@@ -63,6 +122,7 @@ export async function runDoctor(
     enabledWorkflows: [],
     registeredToolCount: 0,
   };
+  const xcodeIdeWorkflowEnabled = runtimeRegistration.enabledWorkflows.includes('xcode-ide');
   const runtimeNote = runtimeInfo ? null : 'Runtime registry unavailable.';
   const xcodemakeEnabled = deps.features.isXcodemakeEnabled();
   const xcodemakeAvailable = await deps.features.isXcodemakeAvailable();
@@ -70,12 +130,19 @@ export async function runDoctor(
   const lldbDapAvailable = await checkLldbDapAvailability(deps.commandExecutor);
   const selectedDebuggerBackend = getConfig().debuggerBackend;
   const dapSelected = selectedDebuggerBackend === 'dap';
+  const xcodeToolsBridge = await getXcodeToolsBridgeDoctorInfo(
+    deps.commandExecutor,
+    xcodeIdeWorkflowEnabled,
+  );
 
   const doctorInfo = {
     serverVersion: version,
     timestamp: new Date().toISOString(),
     system: systemInfo,
     node: nodeInfo,
+    processTree: xcodeRuntime.processTree,
+    processTreeError: xcodeRuntime.error,
+    runningUnderXcode: xcodeRuntime.runningUnderXcode,
     xcode: xcodeInfo,
     dependencies: binaryStatus,
     environmentVariables: envVars,
@@ -185,6 +252,18 @@ export async function runDoctor(
     `\n## Node.js Information`,
     ...Object.entries(doctorInfo.node).map(([key, value]) => `- ${key}: ${value}`),
 
+    `\n## Process Tree`,
+    `- Running under Xcode: ${doctorInfo.runningUnderXcode ? '✅ Yes' : '❌ No'}`,
+    ...(doctorInfo.processTree.length > 0
+      ? doctorInfo.processTree.map(
+          (entry) =>
+            `- ${entry.pid} (ppid ${entry.ppid}): ${entry.name}${
+              entry.command ? ` — ${entry.command}` : ''
+            }`,
+        )
+      : ['- (unavailable)']),
+    ...(doctorInfo.processTreeError ? [`- Error: ${doctorInfo.processTreeError}`] : []),
+
     `\n## Xcode Information`,
     ...('error' in doctorInfo.xcode
       ? [`- Error: ${doctorInfo.xcode.error}`]
@@ -247,6 +326,20 @@ export async function runDoctor(
       ? [`- Workflows: ${runtimeRegistration.enabledWorkflows.join(', ')}`]
       : []),
 
+    `\n### Xcode IDE Bridge (mcpbridge)`,
+    ...(xcodeToolsBridge.available
+      ? [
+          `- Workflow enabled: ${xcodeToolsBridge.workflowEnabled ? '✅ Yes' : '❌ No'}`,
+          `- mcpbridge path: ${xcodeToolsBridge.bridgePath ?? '(not found)'}`,
+          `- Xcode running: ${xcodeToolsBridge.xcodeRunning ?? '(unknown)'}`,
+          `- Connected: ${xcodeToolsBridge.connected ? '✅ Yes' : '❌ No'}`,
+          `- Bridge PID: ${xcodeToolsBridge.bridgePid ?? '(none)'}`,
+          `- Proxied tools: ${xcodeToolsBridge.proxiedToolCount}`,
+          `- Last error: ${xcodeToolsBridge.lastError ?? '(none)'}`,
+          `- Note: Bridge debug tools (status/sync/disconnect) are only registered when debug: true`,
+        ]
+      : [`- Unavailable: ${xcodeToolsBridge.reason}`]),
+
     `\n## Tool Availability Summary`,
     `- Build Tools: ${!('error' in doctorInfo.xcode) ? '\u2705 Available' : '\u274c Not available'}`,
     `- UI Automation Tools: ${doctorInfo.features.axe.uiAutomationSupported ? '\u2705 Available' : '\u274c Not available'}`,
@@ -296,15 +389,8 @@ async function doctorMcpHandler(
   return doctorLogic(params, executor, false); // Always false for MCP
 }
 
-export default {
-  name: 'doctor',
-  description: 'MCP environment info.',
-  schema: doctorSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Doctor',
-    readOnlyHint: true,
-  },
-  handler: createTypedTool(doctorSchema, doctorMcpHandler, getDefaultCommandExecutor),
-};
+export const schema = doctorSchema.shape; // MCP SDK compatibility
+
+export const handler = createTypedTool(doctorSchema, doctorMcpHandler, getDefaultCommandExecutor);
 
 export type { DoctorDependencies } from './lib/doctor.deps.ts';

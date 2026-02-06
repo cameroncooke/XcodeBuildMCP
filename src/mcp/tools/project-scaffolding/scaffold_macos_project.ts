@@ -9,13 +9,10 @@ import { join, dirname, basename } from 'path';
 import { log } from '../../../utils/logging/index.ts';
 import { ValidationError } from '../../../utils/responses/index.ts';
 import { TemplateManager } from '../../../utils/template/index.ts';
-import { ToolResponse } from '../../../types/common.ts';
-import {
-  CommandExecutor,
-  getDefaultCommandExecutor,
-  getDefaultFileSystemExecutor,
-} from '../../../utils/command.ts';
-import { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import type { CommandExecutor } from '../../../utils/command.ts';
+import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from '../../../utils/command.ts';
+import type { FileSystemExecutor } from '../../../utils/FileSystemExecutor.ts';
 
 // Common base schema for both iOS and macOS
 const BaseScaffoldSchema = z.object({
@@ -380,21 +377,13 @@ export async function scaffold_macos_projectLogic(
   }
 }
 
-export default {
-  name: 'scaffold_macos_project',
-  description: 'Scaffold macOS project.',
-  schema: ScaffoldmacOSProjectSchema.shape,
-  annotations: {
-    title: 'Scaffold macOS Project',
-    destructiveHint: true,
-  },
-  async handler(args: Record<string, unknown>): Promise<ToolResponse> {
-    // Validate the arguments against the schema before processing
-    const validatedArgs = ScaffoldmacOSProjectSchema.parse(args);
-    return scaffold_macos_projectLogic(
-      validatedArgs,
-      getDefaultCommandExecutor(),
-      getDefaultFileSystemExecutor(),
-    );
-  },
-};
+export const schema = ScaffoldmacOSProjectSchema.shape;
+
+export async function handler(args: Record<string, unknown>): Promise<ToolResponse> {
+  const validatedArgs = ScaffoldmacOSProjectSchema.parse(args);
+  return scaffold_macos_projectLogic(
+    validatedArgs,
+    getDefaultCommandExecutor(),
+    getDefaultFileSystemExecutor(),
+  );
+}

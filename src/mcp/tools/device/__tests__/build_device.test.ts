@@ -11,7 +11,7 @@ import {
   createMockExecutor,
   createNoopExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import buildDevice, { buildDeviceLogic } from '../build_device.ts';
+import { schema, handler, buildDeviceLogic } from '../build_device.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('build_device plugin', () => {
@@ -20,34 +20,28 @@ describe('build_device plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(buildDevice.name).toBe('build_device');
-    });
-
-    it('should have correct description', () => {
-      expect(buildDevice.description).toBe('Build for device.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof buildDevice.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose only optional build-tuning fields in public schema', () => {
-      const schema = z.strictObject(buildDevice.schema);
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ extraArgs: [] }).success).toBe(true);
-      expect(schema.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
-      expect(schema.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(false);
+      const schemaObj = z.strictObject(schema);
+      expect(schemaObj.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({ extraArgs: [] }).success).toBe(true);
+      expect(schemaObj.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
+      expect(schemaObj.safeParse({ preferXcodebuild: true }).success).toBe(false);
+      expect(schemaObj.safeParse({ projectPath: '/path/to/MyProject.xcodeproj' }).success).toBe(
+        false,
+      );
 
-      const schemaKeys = Object.keys(buildDevice.schema).sort();
+      const schemaKeys = Object.keys(schema).sort();
       expect(schemaKeys).toEqual(['extraArgs']);
     });
   });
 
   describe('XOR Validation', () => {
     it('should error when neither projectPath nor workspacePath provided', async () => {
-      const result = await buildDevice.handler({
+      const result = await handler({
         scheme: 'MyScheme',
       });
 
@@ -57,7 +51,7 @@ describe('build_device plugin', () => {
     });
 
     it('should error when both projectPath and workspacePath provided', async () => {
-      const result = await buildDevice.handler({
+      const result = await handler({
         projectPath: '/path/to/MyProject.xcodeproj',
         workspacePath: '/path/to/MyProject.xcworkspace',
         scheme: 'MyScheme',
@@ -71,7 +65,7 @@ describe('build_device plugin', () => {
 
   describe('Parameter Validation (via Handler)', () => {
     it('should return Zod validation error for missing scheme', async () => {
-      const result = await buildDevice.handler({
+      const result = await handler({
         projectPath: '/path/to/MyProject.xcodeproj',
       });
 
@@ -81,7 +75,7 @@ describe('build_device plugin', () => {
     });
 
     it('should return Zod validation error for invalid parameter types', async () => {
-      const result = await buildDevice.handler({
+      const result = await handler({
         projectPath: 123, // Should be string
         scheme: 'MyScheme',
       });

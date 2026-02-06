@@ -12,7 +12,7 @@ import {
   createMockExecutor,
   createMockFileSystemExecutor,
 } from '../../../../test-utils/mock-executors.ts';
-import testDevice, { testDeviceLogic } from '../test_device.ts';
+import { schema, handler, testDeviceLogic } from '../test_device.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
 describe('test_device plugin', () => {
@@ -21,33 +21,27 @@ describe('test_device plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(testDevice.name).toBe('test_device');
-    });
-
-    it('should have correct description', () => {
-      expect(testDevice.description).toBe('Test on device.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof testDevice.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose only session-free fields in public schema', () => {
-      const schema = z.strictObject(testDevice.schema);
+      const schemaObj = z.strictObject(schema);
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           extraArgs: ['--arg1'],
           testRunnerEnv: { FOO: 'bar' },
         }).success,
       ).toBe(true);
-      expect(schema.safeParse({}).success).toBe(true);
-      expect(schema.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
-      expect(schema.safeParse({ platform: 'iOS' }).success).toBe(false);
-      expect(schema.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(false);
+      expect(schemaObj.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({ derivedDataPath: '/path/to/derived-data' }).success).toBe(false);
+      expect(schemaObj.safeParse({ preferXcodebuild: true }).success).toBe(false);
+      expect(schemaObj.safeParse({ platform: 'iOS' }).success).toBe(false);
+      expect(schemaObj.safeParse({ projectPath: '/path/to/project.xcodeproj' }).success).toBe(
+        false,
+      );
 
-      const schemaKeys = Object.keys(testDevice.schema).sort();
+      const schemaKeys = Object.keys(schema).sort();
       expect(schemaKeys).toEqual(['extraArgs', 'testRunnerEnv']);
     });
 
@@ -105,7 +99,7 @@ describe('test_device plugin', () => {
 
   describe('Handler Requirements', () => {
     it('should require scheme and device defaults', async () => {
-      const result = await testDevice.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
@@ -115,7 +109,7 @@ describe('test_device plugin', () => {
     it('should require project or workspace when defaults provide scheme and device', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme', deviceId: 'test-device-123' });
 
-      const result = await testDevice.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Provide a project or workspace');
@@ -124,7 +118,7 @@ describe('test_device plugin', () => {
     it('should reject mutually exclusive project inputs when defaults satisfy requirements', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme', deviceId: 'test-device-123' });
 
-      const result = await testDevice.handler({
+      const result = await handler({
         projectPath: '/path/to/project.xcodeproj',
         workspacePath: '/path/to/workspace.xcworkspace',
       });

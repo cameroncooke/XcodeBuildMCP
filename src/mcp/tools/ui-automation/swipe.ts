@@ -5,7 +5,7 @@
  */
 
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { createTextResponse, createErrorResponse } from '../../../utils/responses/index.ts';
 import { DependencyError, AxeError, SystemError } from '../../../utils/errors.ts';
@@ -147,32 +147,22 @@ export async function swipeLogic(
   }
 }
 
-export default {
-  name: 'swipe',
-  description: 'Swipe between points.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: swipeSchema,
-  }),
-  annotations: {
-    title: 'Swipe',
-    destructiveHint: true,
-  },
-  cli: {
-    daemonAffinity: 'preferred',
-  },
-  handler: createSessionAwareTool<SwipeParams>({
-    internalSchema: swipeSchema as unknown as z.ZodType<SwipeParams>,
-    logicFunction: (params: SwipeParams, executor: CommandExecutor) =>
-      swipeLogic(params, executor, {
-        getAxePath,
-        getBundledAxeEnvironment,
-        createAxeNotAvailableResponse,
-      }),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: swipeSchema,
+});
+
+export const handler = createSessionAwareTool<SwipeParams>({
+  internalSchema: swipeSchema as unknown as z.ZodType<SwipeParams>,
+  logicFunction: (params: SwipeParams, executor: CommandExecutor) =>
+    swipeLogic(params, executor, {
+      getAxePath,
+      getBundledAxeEnvironment,
+      createAxeNotAvailableResponse,
+    }),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(

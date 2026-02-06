@@ -1,0 +1,9 @@
+id: long_press
+module: mcp/tools/ui-automation/long_press
+names:
+  mcp: long_press
+  cli: long-press
+description: Long press at coords.
+annotations:
+  title: Long Press
+  destructiveHint: true

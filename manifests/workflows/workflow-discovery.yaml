@@ -1,0 +1,12 @@
+id: workflow-discovery
+title: Workflow Discovery
+description: Manage enabled workflows at runtime.
+availability:
+  cli: false
+selection:
+  mcp:
+    autoInclude: true
+predicates:
+  - experimentalWorkflowDiscoveryEnabled
+tools:
+  - manage_workflows

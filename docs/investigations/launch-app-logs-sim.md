@@ -4,7 +4,7 @@
 The CLI remains alive because `launch_app_logs_sim` starts long-running log capture processes and keeps open streams in the same Node process, and the tool is not marked `cli.stateful` so it does not route through the daemon.
 
 ## Symptoms
-- `node build/index.js simulator launch-app-logs-sim --simulator-id B38FE93D-578B-454B-BE9A-C6FA0CE5F096 --bundle-id com.example.calculatorapp` keeps the CLI process running while the app is running.
+- `node build/cli.js simulator launch-app-logs-sim --simulator-id B38FE93D-578B-454B-BE9A-C6FA0CE5F096 --bundle-id com.example.calculatorapp` keeps the CLI process running while the app is running.
 
 ## Investigation Log
 

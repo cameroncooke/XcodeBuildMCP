@@ -1,0 +1,8 @@
+id: debug_continue
+module: mcp/tools/debugging/debug_continue
+names:
+  mcp: debug_continue
+  cli: continue
+description: Continue debug session.
+routing:
+  stateful: true

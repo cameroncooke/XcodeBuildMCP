@@ -6,7 +6,8 @@
 
 import * as z from 'zod';
 import { stopLogCapture as _stopLogCapture } from '../../../utils/log-capture/index.ts';
-import { ToolResponse, createTextContent } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
+import { createTextContent } from '../../../types/common.ts';
 import { createTypedTool } from '../../../utils/typed-tool-factory.ts';
 import type { CommandExecutor } from '../../../utils/command.ts';
 import { getDefaultCommandExecutor, getDefaultFileSystemExecutor } from '../../../utils/command.ts';
@@ -52,21 +53,11 @@ export async function stop_sim_log_capLogic(
   };
 }
 
-export default {
-  name: 'stop_sim_log_cap',
-  description: 'Stop sim app and return logs.',
-  cli: {
-    stateful: true,
-  },
-  schema: stopSimLogCapSchema.shape, // MCP SDK compatibility
-  annotations: {
-    title: 'Stop Simulator and Return Logs',
-    destructiveHint: true,
-  },
-  handler: createTypedTool(
-    stopSimLogCapSchema,
-    (params: StopSimLogCapParams, executor: CommandExecutor) =>
-      stop_sim_log_capLogic(params, executor),
-    getDefaultCommandExecutor,
-  ),
-};
+export const schema = stopSimLogCapSchema.shape; // MCP SDK compatibility
+
+export const handler = createTypedTool(
+  stopSimLogCapSchema,
+  (params: StopSimLogCapParams, executor: CommandExecutor) =>
+    stop_sim_log_capLogic(params, executor),
+  getDefaultCommandExecutor,
+);

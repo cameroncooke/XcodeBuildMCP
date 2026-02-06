@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import testSim from '../test_sim.ts';
+import { schema, handler, test_simLogic } from '../test_sim.ts';
 
 describe('test_sim tool', () => {
   beforeEach(() => {
@@ -14,42 +14,34 @@ describe('test_sim tool', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(testSim.name).toBe('test_sim');
-    });
-
-    it('should have concise description', () => {
-      expect(testSim.description).toBe('Test on iOS sim.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof testSim.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should expose only non-session fields in public schema', () => {
-      const schema = z.strictObject(testSim.schema);
+      const schemaObj = z.strictObject(schema);
 
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true);
       expect(
-        schema.safeParse({
+        schemaObj.safeParse({
           extraArgs: ['--quiet'],
           testRunnerEnv: { FOO: 'BAR' },
         }).success,
       ).toBe(true);
 
-      expect(schema.safeParse({ derivedDataPath: 123 }).success).toBe(false);
-      expect(schema.safeParse({ extraArgs: ['--ok', 42] }).success).toBe(false);
-      expect(schema.safeParse({ preferXcodebuild: true }).success).toBe(false);
-      expect(schema.safeParse({ testRunnerEnv: { FOO: 123 } }).success).toBe(false);
+      expect(schemaObj.safeParse({ derivedDataPath: 123 }).success).toBe(false);
+      expect(schemaObj.safeParse({ extraArgs: ['--ok', 42] }).success).toBe(false);
+      expect(schemaObj.safeParse({ preferXcodebuild: true }).success).toBe(false);
+      expect(schemaObj.safeParse({ testRunnerEnv: { FOO: 123 } }).success).toBe(false);
 
-      const schemaKeys = Object.keys(testSim.schema).sort();
+      const schemaKeys = Object.keys(schema).sort();
       expect(schemaKeys).toEqual(['extraArgs', 'testRunnerEnv'].sort());
     });
   });
 
   describe('Handler Requirements', () => {
     it('should require scheme when not provided', async () => {
-      const result = await testSim.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('scheme is required');
@@ -58,7 +50,7 @@ describe('test_sim tool', () => {
     it('should require project or workspace when scheme default exists', async () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
-      const result = await testSim.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Provide a project or workspace');
@@ -70,7 +62,7 @@ describe('test_sim tool', () => {
         projectPath: '/path/to/project.xcodeproj',
       });
 
-      const result = await testSim.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Provide simulatorId or simulatorName');
@@ -82,7 +74,7 @@ describe('test_sim tool', () => {
         workspacePath: '/path/to/workspace.xcworkspace',
       });
 
-      const result = await testSim.handler({
+      const result = await handler({
         simulatorId: 'SIM-UUID',
         simulatorName: 'iPhone 16',
       });

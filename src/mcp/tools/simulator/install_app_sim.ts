@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import { validateFileExists } from '../../../utils/validation/index.ts';
 import type { CommandExecutor, FileSystemExecutor } from '../../../utils/execution/index.ts';
@@ -9,16 +9,35 @@ import {
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
 
-const installAppSimSchemaObject = z.object({
-  simulatorId: z.string().describe('UUID of the simulator to use (obtained from list_sims)'),
+const baseSchemaObject = z.object({
+  simulatorId: z
+    .string()
+    .optional()
+    .describe(
+      'UUID of the simulator to use (obtained from list_sims). Provide EITHER this OR simulatorName, not both',
+    ),
+  simulatorName: z
+    .string()
+    .optional()
+    .describe(
+      "Name of the simulator (e.g., 'iPhone 16'). Provide EITHER this OR simulatorId, not both",
+    ),
+  appPath: z.string().describe('Path to the .app bundle to install'),
+});
+
+// Internal schema requires simulatorId (factory resolves simulatorName → simulatorId)
+const internalSchemaObject = z.object({
+  simulatorId: z.string(),
+  simulatorName: z.string().optional(),
   appPath: z.string(),
 });
 
-type InstallAppSimParams = z.infer<typeof installAppSimSchemaObject>;
+type InstallAppSimParams = z.infer<typeof internalSchemaObject>;
 
 const publicSchemaObject = z.strictObject(
-  installAppSimSchemaObject.omit({
+  baseSchemaObject.omit({
     simulatorId: true,
+    simulatorName: true,
   } as const).shape,
 );
 
@@ -103,21 +122,17 @@ export async function install_app_simLogic(
   }
 }
 
-export default {
-  name: 'install_app_sim',
-  description: 'Install app on sim.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: installAppSimSchemaObject,
-  }),
-  annotations: {
-    title: 'Install App Simulator',
-    destructiveHint: true,
-  },
-  handler: createSessionAwareTool<InstallAppSimParams>({
-    internalSchema: installAppSimSchemaObject as unknown as z.ZodType<InstallAppSimParams, unknown>,
-    logicFunction: install_app_simLogic,
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: baseSchemaObject,
+});
+
+export const handler = createSessionAwareTool<InstallAppSimParams>({
+  internalSchema: internalSchemaObject as unknown as z.ZodType<InstallAppSimParams, unknown>,
+  logicFunction: install_app_simLogic,
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [
+    { oneOf: ['simulatorId', 'simulatorName'], message: 'Provide simulatorId or simulatorName' },
+  ],
+  exclusivePairs: [['simulatorId', 'simulatorName']],
+});

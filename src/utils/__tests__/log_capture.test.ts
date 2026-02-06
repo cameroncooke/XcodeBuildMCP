@@ -7,8 +7,8 @@ import {
   stopLogCapture,
   type SubsystemFilter,
 } from '../log_capture.ts';
-import { CommandExecutor } from '../CommandExecutor.ts';
-import { FileSystemExecutor } from '../FileSystemExecutor.ts';
+import type { CommandExecutor } from '../CommandExecutor.ts';
+import type { FileSystemExecutor } from '../FileSystemExecutor.ts';
 
 type CallHistoryEntry = {
   command: string[];

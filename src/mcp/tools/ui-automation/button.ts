@@ -100,32 +100,22 @@ export async function buttonLogic(
 
 const publicSchemaObject = z.strictObject(buttonSchema.omit({ simulatorId: true } as const).shape);
 
-export default {
-  name: 'button',
-  description: 'Press simulator hardware button.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: buttonSchema,
-  }),
-  annotations: {
-    title: 'Hardware Button',
-    destructiveHint: true,
-  },
-  cli: {
-    daemonAffinity: 'preferred',
-  },
-  handler: createSessionAwareTool<ButtonParams>({
-    internalSchema: buttonSchema as unknown as z.ZodType<ButtonParams, unknown>,
-    logicFunction: (params: ButtonParams, executor: CommandExecutor) =>
-      buttonLogic(params, executor, {
-        getAxePath,
-        getBundledAxeEnvironment,
-        createAxeNotAvailableResponse,
-      }),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: buttonSchema,
+});
+
+export const handler = createSessionAwareTool<ButtonParams>({
+  internalSchema: buttonSchema as unknown as z.ZodType<ButtonParams, unknown>,
+  logicFunction: (params: ButtonParams, executor: CommandExecutor) =>
+    buttonLogic(params, executor, {
+      getAxePath,
+      getBundledAxeEnvironment,
+      createAxeNotAvailableResponse,
+    }),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(

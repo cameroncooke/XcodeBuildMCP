@@ -1,0 +1,28 @@
+id: simulator
+title: iOS Simulator Development
+description: Complete iOS development workflow for both .xcodeproj and .xcworkspace files targeting simulators.
+selection:
+  mcp:
+    defaultEnabled: true
+tools:
+  - list_sims
+  - boot_sim
+  - open_sim
+  - build_sim
+  - build_run_sim
+  - test_sim
+  - get_sim_app_path
+  - install_app_sim
+  - launch_app_sim
+  - launch_app_logs_sim
+  - stop_app_sim
+  - record_sim_video
+  - clean
+  - discover_projs
+  - list_schemes
+  - show_build_settings
+  - get_app_bundle_id
+  - screenshot
+  - snapshot_ui
+  - stop_sim_log_cap
+  - start_sim_log_cap

@@ -1,0 +1,9 @@
+id: install_app_device
+module: mcp/tools/device/install_app_device
+names:
+  mcp: install_app_device
+  cli: install
+description: Install app on device.
+annotations:
+  title: Install App Device
+  destructiveHint: true

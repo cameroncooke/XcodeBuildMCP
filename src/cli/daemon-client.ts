@@ -7,8 +7,14 @@ import {
   type DaemonResponse,
   type DaemonMethod,
   type ToolInvokeParams,
+  type ToolInvokeResult,
   type DaemonStatusResult,
   type ToolListItem,
+  type XcodeIdeListParams,
+  type XcodeIdeListResult,
+  type XcodeIdeToolListItem,
+  type XcodeIdeInvokeParams,
+  type XcodeIdeInvokeResult,
 } from '../daemon/protocol.ts';
 import type { ToolResponse } from '../types/common.ts';
 import { getSocketPath } from '../daemon/socket-path.ts';
@@ -119,11 +125,33 @@ export class DaemonClient {
    * Invoke a tool.
    */
   async invokeTool(tool: string, args: Record<string, unknown>): Promise<ToolResponse> {
-    const result = await this.request<{ response: ToolResponse }>('tool.invoke', {
+    const result = await this.request<ToolInvokeResult>('tool.invoke', {
       tool,
       args,
     } satisfies ToolInvokeParams);
     return result.response;
+  }
+
+  /**
+   * List dynamic xcode-ide bridge tools from the daemon-managed bridge session.
+   */
+  async listXcodeIdeTools(params?: XcodeIdeListParams): Promise<XcodeIdeToolListItem[]> {
+    const result = await this.request<XcodeIdeListResult>('xcode-ide.list', params);
+    return result.tools;
+  }
+
+  /**
+   * Invoke a dynamic xcode-ide bridge tool through the daemon-managed bridge session.
+   */
+  async invokeXcodeIdeTool(
+    remoteTool: string,
+    args: Record<string, unknown>,
+  ): Promise<ToolResponse> {
+    const result = await this.request<XcodeIdeInvokeResult>('xcode-ide.invoke', {
+      remoteTool,
+      args,
+    } satisfies XcodeIdeInvokeParams);
+    return result.response as ToolResponse;
   }
 
   /**

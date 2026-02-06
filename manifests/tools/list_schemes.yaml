@@ -1,0 +1,9 @@
+id: list_schemes
+module: mcp/tools/project-discovery/list_schemes
+names:
+  mcp: list_schemes
+  cli: list-schemes
+description: List Xcode schemes.
+annotations:
+  title: List Schemes
+  readOnlyHint: true

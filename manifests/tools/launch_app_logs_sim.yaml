@@ -1,0 +1,11 @@
+id: launch_app_logs_sim
+module: mcp/tools/simulator/launch_app_logs_sim
+names:
+  mcp: launch_app_logs_sim
+  cli: launch-app-with-logs
+description: Launch sim app with logs.
+routing:
+  stateful: true
+annotations:
+  title: Launch App Logs Simulator
+  destructiveHint: true

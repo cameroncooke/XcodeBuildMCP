@@ -1,17 +1,16 @@
 /**
- * Tests for type_text plugin
+ * Tests for type_text tool
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as z from 'zod';
 import {
   createMockExecutor,
-  createMockFileSystemExecutor,
   createNoopExecutor,
   mockProcess,
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import typeTextPlugin, { type_textLogic } from '../type_text.ts';
+import { schema, handler, type_textLogic } from '../type_text.ts';
 
 // Mock axe helpers for dependency injection
 function createMockAxeHelpers(
@@ -43,48 +42,40 @@ function createRejectingExecutor(error: any) {
   };
 }
 
-describe('Type Text Plugin', () => {
+describe('Type Text Tool', () => {
   beforeEach(() => {
     sessionStore.clear();
   });
 
-  describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(typeTextPlugin.name).toBe('type_text');
-    });
-
-    it('should have correct description', () => {
-      expect(typeTextPlugin.description).toBe('Type text.');
-    });
-
+  describe('Schema Validation', () => {
     it('should have handler function', () => {
-      expect(typeof typeTextPlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema fields with safeParse', () => {
-      const schema = z.object(typeTextPlugin.schema);
+      const schemaObject = z.object(schema);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           text: 'Hello World',
         }).success,
       ).toBe(true);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           text: '',
         }).success,
       ).toBe(false);
 
       expect(
-        schema.safeParse({
+        schemaObject.safeParse({
           text: 123,
         }).success,
       ).toBe(false);
 
-      expect(schema.safeParse({}).success).toBe(false);
+      expect(schemaObject.safeParse({}).success).toBe(false);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObject.safeParse({
         simulatorId: '12345678-1234-4234-8234-123456789012',
         text: 'Hello World',
       });
@@ -95,7 +86,7 @@ describe('Type Text Plugin', () => {
 
   describe('Handler Requirements', () => {
     it('should require simulatorId session default', async () => {
-      const result = await typeTextPlugin.handler({ text: 'Hello' });
+      const result = await handler({ text: 'Hello' });
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;
@@ -107,7 +98,7 @@ describe('Type Text Plugin', () => {
     it('should surface validation errors when defaults exist', async () => {
       sessionStore.setDefaults({ simulatorId: '12345678-1234-4234-8234-123456789012' });
 
-      const result = await typeTextPlugin.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;

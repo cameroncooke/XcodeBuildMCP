@@ -3,8 +3,8 @@ import net from 'node:net';
 import { dirname } from 'node:path';
 import { existsSync, mkdirSync, renameSync, statSync } from 'node:fs';
 import { bootstrapRuntime } from './runtime/bootstrap-runtime.ts';
-import { listWorkflowDirectoryNames } from './core/plugin-registry.ts';
-import { buildToolCatalog } from './runtime/tool-catalog.ts';
+import { buildDaemonToolCatalogFromManifest } from './runtime/tool-catalog.ts';
+import { loadManifest } from './core/manifest/load-manifest.ts';
 import {
   ensureSocketDir,
   removeStaleSocket,
@@ -21,6 +21,13 @@ import {
 } from './daemon/daemon-registry.ts';
 import { log, setLogFile, setLogLevel, type LogLevel } from './utils/logger.ts';
 import { version } from './version.ts';
+import {
+  DAEMON_IDLE_TIMEOUT_ENV_KEY,
+  DEFAULT_DAEMON_IDLE_CHECK_INTERVAL_MS,
+  resolveDaemonIdleTimeoutMs,
+  getDaemonRuntimeActivitySnapshot,
+  hasActiveRuntimeSessions,
+} from './daemon/idle-shutdown.ts';
 
 async function checkExistingDaemon(socketPath: string): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
@@ -167,22 +174,71 @@ async function main(): Promise<void> {
   // Remove stale socket file
   removeStaleSocket(socketPath);
 
-  const excludedWorkflows = new Set(['session-management', 'workflow-discovery']);
-  const allWorkflows = listWorkflowDirectoryNames();
-  const daemonWorkflows = allWorkflows.filter((workflow) => !excludedWorkflows.has(workflow));
+  const excludedWorkflows = ['session-management', 'workflow-discovery'];
 
-  // Build tool catalog (CLI daemon always loads all workflows except MCP-only ones)
-  const catalog = await buildToolCatalog({
-    enabledWorkflows: allWorkflows,
-    excludeWorkflows: [...excludedWorkflows],
+  // Daemon runtime serves CLI routing and should not be filtered by enabledWorkflows.
+  // CLI exposure is controlled at CLI catalog/command registration time.
+  // Get all workflows from manifest (for reporting purposes and filtering).
+  const manifest = loadManifest();
+  const allWorkflowIds = Array.from(manifest.workflows.keys());
+  const daemonWorkflows = allWorkflowIds.filter((workflowId) => {
+    if (excludedWorkflows.includes(workflowId)) {
+      return false;
+    }
+    return true;
+  });
+  const xcodeIdeWorkflowEnabled = daemonWorkflows.includes('xcode-ide');
+
+  // Build tool catalog using manifest system
+  const catalog = await buildDaemonToolCatalogFromManifest({
+    excludeWorkflows: excludedWorkflows,
   });
 
   log('info', `[Daemon] Loaded ${catalog.tools.length} tools`);
 
   const startedAt = new Date().toISOString();
+  const idleTimeoutMs = resolveDaemonIdleTimeoutMs();
+  const configuredIdleTimeout = process.env[DAEMON_IDLE_TIMEOUT_ENV_KEY]?.trim();
+  if (configuredIdleTimeout) {
+    const parsedIdleTimeout = Number(configuredIdleTimeout);
+    if (!Number.isFinite(parsedIdleTimeout) || parsedIdleTimeout < 0) {
+      log(
+        'warn',
+        `[Daemon] Invalid ${DAEMON_IDLE_TIMEOUT_ENV_KEY}=${configuredIdleTimeout}; using default ${idleTimeoutMs}ms`,
+      );
+    }
+  }
+
+  if (idleTimeoutMs === 0) {
+    log('info', '[Daemon] Idle shutdown disabled');
+  } else {
+    log(
+      'info',
+      `[Daemon] Idle shutdown enabled: timeout=${idleTimeoutMs}ms interval=${DEFAULT_DAEMON_IDLE_CHECK_INTERVAL_MS}ms`,
+    );
+  }
+
+  let isShuttingDown = false;
+  let inFlightRequests = 0;
+  let lastActivityAt = Date.now();
+  let idleCheckTimer: NodeJS.Timeout | null = null;
+
+  const markActivity = (): void => {
+    lastActivityAt = Date.now();
+  };
 
   // Unified shutdown handler
   const shutdown = (): void => {
+    if (isShuttingDown) {
+      return;
+    }
+    isShuttingDown = true;
+
+    if (idleCheckTimer) {
+      clearInterval(idleCheckTimer);
+      idleCheckTimer = null;
+    }
+
     log('info', '[Daemon] Shutting down...');
 
     // Close the server
@@ -214,8 +270,46 @@ async function main(): Promise<void> {
     catalog,
     workspaceRoot,
     workspaceKey,
+    xcodeIdeWorkflowEnabled,
     requestShutdown: shutdown,
+    onRequestStarted: () => {
+      inFlightRequests += 1;
+      markActivity();
+    },
+    onRequestFinished: () => {
+      inFlightRequests = Math.max(0, inFlightRequests - 1);
+      markActivity();
+    },
   });
+
+  if (idleTimeoutMs > 0) {
+    idleCheckTimer = setInterval(() => {
+      if (isShuttingDown) {
+        return;
+      }
+
+      const idleForMs = Date.now() - lastActivityAt;
+      if (idleForMs < idleTimeoutMs) {
+        return;
+      }
+
+      if (inFlightRequests > 0) {
+        return;
+      }
+
+      const sessionSnapshot = getDaemonRuntimeActivitySnapshot();
+      if (hasActiveRuntimeSessions(sessionSnapshot)) {
+        return;
+      }
+
+      log(
+        'info',
+        `[Daemon] Idle timeout reached (${idleForMs}ms >= ${idleTimeoutMs}ms); shutting down`,
+      );
+      shutdown();
+    }, DEFAULT_DAEMON_IDLE_CHECK_INTERVAL_MS);
+    idleCheckTimer.unref?.();
+  }
 
   server.listen(socketPath, () => {
     log('info', `[Daemon] Listening on ${socketPath}`);

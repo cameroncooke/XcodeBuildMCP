@@ -7,12 +7,13 @@ import * as z from 'zod';
 import {
   createMockExecutor,
   createMockFileSystemExecutor,
-  createNoopExecutor,
   mockProcess,
 } from '../../../../test-utils/mock-executors.ts';
 import { SystemError } from '../../../../utils/responses/index.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
-import screenshotPlugin, {
+import {
+  schema,
+  handler,
   screenshotLogic,
   detectLandscapeMode,
   rotateImage,
@@ -24,25 +25,17 @@ describe('Screenshot Plugin', () => {
   });
 
   describe('Export Field Validation (Literal)', () => {
-    it('should have correct name', () => {
-      expect(screenshotPlugin.name).toBe('screenshot');
-    });
-
-    it('should have correct description', () => {
-      expect(screenshotPlugin.description).toBe('Capture screenshot.');
-    });
-
     it('should have handler function', () => {
-      expect(typeof screenshotPlugin.handler).toBe('function');
+      expect(typeof handler).toBe('function');
     });
 
     it('should validate schema fields with safeParse', () => {
-      const schema = z.object(screenshotPlugin.schema);
+      const schemaObj = z.object(schema);
 
       // Public schema is empty; ensure extra fields are stripped
-      expect(schema.safeParse({}).success).toBe(true);
+      expect(schemaObj.safeParse({}).success).toBe(true);
 
-      const withSimId = schema.safeParse({
+      const withSimId = schemaObj.safeParse({
         simulatorId: '12345678-1234-4234-8234-123456789012',
       });
       expect(withSimId.success).toBe(true);
@@ -52,7 +45,7 @@ describe('Screenshot Plugin', () => {
 
   describe('Plugin Handler Validation', () => {
     it('should require simulatorId session default when not provided', async () => {
-      const result = await screenshotPlugin.handler({});
+      const result = await handler({});
 
       expect(result.isError).toBe(true);
       const message = result.content[0].text;
@@ -62,7 +55,7 @@ describe('Screenshot Plugin', () => {
     });
 
     it('should validate inline simulatorId overrides', async () => {
-      const result = await screenshotPlugin.handler({
+      const result = await handler({
         simulatorId: 'invalid-uuid',
       });
 

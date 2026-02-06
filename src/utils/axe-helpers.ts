@@ -8,7 +8,7 @@
 import { accessSync, constants, existsSync } from 'fs';
 import { dirname, join, resolve, delimiter } from 'path';
 import { createTextResponse } from './validation.ts';
-import { ToolResponse } from '../types/common.ts';
+import type { ToolResponse } from '../types/common.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { getDefaultCommandExecutor } from './execution/index.ts';
 import { getConfig } from './config-store.ts';

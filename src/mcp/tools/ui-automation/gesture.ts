@@ -6,7 +6,7 @@
  */
 
 import * as z from 'zod';
-import { ToolResponse } from '../../../types/common.ts';
+import type { ToolResponse } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import {
   createTextResponse,
@@ -169,32 +169,22 @@ export async function gestureLogic(
 
 const publicSchemaObject = z.strictObject(gestureSchema.omit({ simulatorId: true } as const).shape);
 
-export default {
-  name: 'gesture',
-  description: 'Simulator gesture preset.',
-  schema: getSessionAwareToolSchemaShape({
-    sessionAware: publicSchemaObject,
-    legacy: gestureSchema,
-  }),
-  annotations: {
-    title: 'Gesture',
-    destructiveHint: true,
-  },
-  cli: {
-    daemonAffinity: 'preferred',
-  },
-  handler: createSessionAwareTool<GestureParams>({
-    internalSchema: gestureSchema as unknown as z.ZodType<GestureParams, unknown>,
-    logicFunction: (params: GestureParams, executor: CommandExecutor) =>
-      gestureLogic(params, executor, {
-        getAxePath,
-        getBundledAxeEnvironment,
-        createAxeNotAvailableResponse,
-      }),
-    getExecutor: getDefaultCommandExecutor,
-    requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
-  }),
-};
+export const schema = getSessionAwareToolSchemaShape({
+  sessionAware: publicSchemaObject,
+  legacy: gestureSchema,
+});
+
+export const handler = createSessionAwareTool<GestureParams>({
+  internalSchema: gestureSchema as unknown as z.ZodType<GestureParams, unknown>,
+  logicFunction: (params: GestureParams, executor: CommandExecutor) =>
+    gestureLogic(params, executor, {
+      getAxePath,
+      getBundledAxeEnvironment,
+      createAxeNotAvailableResponse,
+    }),
+  getExecutor: getDefaultCommandExecutor,
+  requirements: [{ allOf: ['simulatorId'], message: 'simulatorId is required' }],
+});
 
 // Helper function for executing axe commands (inlined from src/tools/axe/index.ts)
 async function executeAxeCommand(

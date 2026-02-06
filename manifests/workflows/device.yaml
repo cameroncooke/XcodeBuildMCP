@@ -1,0 +1,18 @@
+id: device
+title: iOS Device Development
+description: Complete iOS development workflow for physical devices (iPhone, iPad, Apple Watch, Apple TV, Apple Vision Pro).
+tools:
+  - build_device
+  - test_device
+  - list_devices
+  - install_app_device
+  - launch_app_device
+  - stop_app_device
+  - get_device_app_path
+  - clean
+  - discover_projs
+  - list_schemes
+  - show_build_settings
+  - get_app_bundle_id
+  - start_device_log_cap
+  - stop_device_log_cap

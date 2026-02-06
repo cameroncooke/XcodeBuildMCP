@@ -27,7 +27,8 @@
       "type": "node",
       "request": "launch",
       "name": "Launch MCP Server Dev",
-      "program": "${workspaceFolder}/build/index.js",
+      "program": "${workspaceFolder}/build/cli.js",
+      "args": ["mcp"],
       "cwd": "${workspaceFolder}",
       "runtimeArgs": [
         "--inspect=9999"
