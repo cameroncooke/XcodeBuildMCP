@@ -12,7 +12,6 @@ import {
 } from '../visibility/exposure.ts';
 import { getConfig } from '../utils/config-store.ts';
 import { log } from '../utils/logging/index.ts';
-import { getMcpBridgeAvailability } from '../integrations/xcode-tools-bridge/core.ts';
 
 export function createToolCatalog(tools: ToolDefinition[]): ToolCatalog {
   // Build lookup maps for fast resolution, deduplicating by mcpName so that
@@ -232,12 +231,14 @@ export async function buildDaemonToolCatalogFromManifest(opts?: {
 }
 
 async function buildCliPredicateContext(): Promise<PredicateContext> {
-  const bridge = await getMcpBridgeAvailability();
+  // Skip bridge availability check in CLI mode — xcode-ide workflow has
+  // availability.cli: false so the bridge result is unused, and the
+  // xcrun --find mcpbridge call triggers an unwanted Xcode auth prompt.
   return {
     runtime: 'cli',
     config: getConfig(),
     runningUnderXcode: false,
     xcodeToolsActive: false,
-    xcodeToolsAvailable: bridge.available,
+    xcodeToolsAvailable: false,
   };
 }

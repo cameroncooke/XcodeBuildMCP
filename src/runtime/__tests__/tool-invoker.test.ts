@@ -115,7 +115,7 @@ describe('DefaultToolInvoker CLI routing', () => {
         env: undefined,
       }),
     );
-    expect(daemonClientMock.invokeTool).toHaveBeenCalledWith('start-sim-log-cap', {
+    expect(daemonClientMock.invokeTool).toHaveBeenCalledWith('start_sim_log_cap', {
       value: 'hello',
     });
     expect(directHandler).not.toHaveBeenCalled();

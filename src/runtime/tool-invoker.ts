@@ -1,4 +1,4 @@
-import type { ToolCatalog, ToolInvoker, InvokeOptions } from './types.ts';
+import type { ToolCatalog, ToolDefinition, ToolInvoker, InvokeOptions } from './types.ts';
 import type { ToolResponse } from '../types/common.ts';
 import { createErrorResponse } from '../utils/responses/index.ts';
 import { DaemonClient } from '../cli/daemon-client.ts';
@@ -64,8 +64,27 @@ export class DefaultToolInvoker implements ToolInvoker {
       );
     }
 
-    const tool = resolved.tool;
+    return this.executeTool(resolved.tool, args, opts);
+  }
 
+  /**
+   * Invoke a tool directly, bypassing catalog resolution.
+   * Used by CLI where the correct ToolDefinition is already known
+   * from workflow-scoped yargs routing.
+   */
+  async invokeDirect(
+    tool: ToolDefinition,
+    args: Record<string, unknown>,
+    opts: InvokeOptions,
+  ): Promise<ToolResponse> {
+    return this.executeTool(tool, args, opts);
+  }
+
+  private async executeTool(
+    tool: ToolDefinition,
+    args: Record<string, unknown>,
+    opts: InvokeOptions,
+  ): Promise<ToolResponse> {
     const xcodeIdeRemoteToolName = tool.xcodeIdeRemoteToolName;
     const isDynamicXcodeIdeTool =
       tool.workflow === 'xcode-ide' && typeof xcodeIdeRemoteToolName === 'string';
@@ -149,7 +168,7 @@ export class DefaultToolInvoker implements ToolInvoker {
         }
 
         try {
-          const response = await client.invokeTool(tool.cliName, args);
+          const response = await client.invokeTool(tool.mcpName, args);
           return opts.runtime === 'cli' ? enrichNextStepsForCli(response, this.catalog) : response;
         } catch (error) {
           return createErrorResponse(

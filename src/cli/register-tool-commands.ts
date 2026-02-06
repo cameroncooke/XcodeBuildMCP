@@ -175,7 +175,7 @@ function registerToolSubcommand(
       const args = { ...toolParams, ...jsonArgs };
 
       // Invoke the tool
-      const response = await invoker.invoke(tool.cliName, args, {
+      const response = await invoker.invokeDirect(tool, args, {
         runtime: 'cli',
         cliExposedWorkflowIds,
         socketPath,
