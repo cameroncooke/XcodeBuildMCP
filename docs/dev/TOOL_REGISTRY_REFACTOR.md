@@ -311,9 +311,10 @@ type PredicateContext = {
 
 - `debugEnabled`: true if config debug mode is enabled
 - `experimentalWorkflowDiscoveryEnabled`: true if experimental workflow discovery is enabled
-- `hideWhenXcodeAgentMode`: hides tool/workflow when:
-  - running under Xcode agent, AND
-  - Xcode Tools bridge is active (proxied tools are available)
+- `hideWhenXcodeAgentMode`: hides tool/workflow when running inside Xcode's coding agent.
+  Xcode provides native equivalents for these tools, so XcodeBuildMCP hides its versions
+  to avoid conflicts. This is independent of the Xcode Tools bridge (which is for external
+  agents connecting to Xcode's MCP server).
 
 This predicate powers the policy described in `XCODE_IDE_TOOL_CONFLICTS.md`.
 
@@ -345,12 +346,9 @@ These tools:
 - can trigger `tools/listChanged` updates
 
 ### How dynamic tools influence static tool visibility
-When dynamic tools are active (`xcodeToolsActive`), conflict-tagged XcodeBuildMCP tools are hidden via `hideWhenXcodeAgentMode`.
+When running inside Xcode's coding agent (`runningUnderXcode`), conflict-tagged XcodeBuildMCP tools are hidden via `hideWhenXcodeAgentMode` because Xcode provides native equivalents.
 
-This behavior is:
-- scoped to MCP runtime
-- driven by bridge status
-- re-applied whenever bridge status changes
+This is distinct from the Xcode Tools bridge, which allows external agents (Cursor, Claude Code, etc.) to access Xcode capabilities via its MCP server.
 
 ---
 
@@ -437,8 +435,8 @@ At runtime the loader imports:
 
 ### Phase 4: migrate MCP registration to manifest-driven
 - Replace generated loader usage with manifest selection + import-based registration
-- Wire in Xcode bridge status → `xcodeToolsActive` updates
-- Apply conflict filtering via `hideWhenXcodeAgentMode`
+- Wire in Xcode bridge status → `xcodeToolsActive` updates for bridge-dependent predicates
+- Apply Xcode agent conflict filtering via `hideWhenXcodeAgentMode` (based on `runningUnderXcode`)
 
 ### Phase 5: migrate daemon to manifest-driven
 - Daemon builds catalog from manifest
@@ -478,9 +476,7 @@ routing:
   daemonAffinity: preferred
 ```
 
-When:
-- runningUnderXcode=true AND xcodeToolsActive=true
-then `hideWhenXcodeAgentMode` fails and tool is not registered/listed in MCP (but remains in CLI outside Xcode).
+When `runningUnderXcode=true`, `hideWhenXcodeAgentMode` fails and the tool is not registered/listed in MCP (but remains in CLI outside Xcode). This check is independent of `xcodeToolsActive` — Xcode's coding agent always provides native equivalents for these tools.
 
 ---
 
@@ -657,8 +653,9 @@ export const PREDICATES: Record<string, PredicateFn> = {
   debugEnabled: (ctx) => ctx.config.debug,
   experimentalWorkflowDiscoveryEnabled: (ctx) => ctx.config.experimentalWorkflowDiscovery,
 
-  // Key for XCODE_IDE_TOOL_CONFLICTS.md
-  hideWhenXcodeAgentMode: (ctx) => !(ctx.runningUnderXcode && ctx.xcodeToolsActive),
+  // Key for XCODE_IDE_TOOL_CONFLICTS.md — hides tools when running inside Xcode's
+  // coding agent, where Xcode provides native equivalents.
+  hideWhenXcodeAgentMode: (ctx) => !ctx.runningUnderXcode,
 };
 
 export function evalPredicates(names: string[] | undefined, ctx: PredicateContext): boolean {
@@ -780,11 +777,9 @@ In MCP bootstrap, set `ctx.xcodeToolsActive` based on bridge status:
 - `workflowEnabled && bridgeAvailable && connected && proxiedToolCount > 0`
 
 ### 6.2 Re-apply static tool registration when bridge becomes active/inactive
-When the bridge syncs tools / disconnects, `xcodeToolsActive` can flip. If it flips, you must re-run the static registration pass so `hideWhenXcodeAgentMode` takes effect immediately.
+When the bridge syncs tools / disconnects, `xcodeToolsActive` can flip. If it flips, re-run the static registration pass so predicates that depend on `xcodeToolsActive` (e.g. `requiresXcodeTools`) take effect immediately.
 
-This requires a small wiring change:
-- add an event/callback in `XcodeToolsBridgeManager` (or expose status polling after sync)
-- call `updateWorkflows(...)` (or a new `applyManifestSelection(...)`) when status changes
+Note: `hideWhenXcodeAgentMode` depends only on `runningUnderXcode`, not bridge status — Xcode's coding agent always provides native equivalents regardless of bridge state.
 
 ---
 

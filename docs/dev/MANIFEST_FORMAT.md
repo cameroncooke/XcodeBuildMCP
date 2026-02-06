@@ -301,7 +301,7 @@ Predicates control visibility based on runtime context. All predicates in the ar
 | `experimentalWorkflowDiscoveryEnabled` | Show only when experimental workflow discovery is enabled |
 | `runningUnderXcodeAgent` | Show only when running under Xcode's coding agent |
 | `requiresXcodeTools` | Show only when Xcode Tools bridge is active |
-| `hideWhenXcodeAgentMode` | Hide when running under Xcode agent AND Xcode Tools bridge is active |
+| `hideWhenXcodeAgentMode` | Hide when running inside Xcode's coding agent (tools conflict with Xcode's native equivalents) |
 | `always` | Always visible (explicit documentation) |
 | `never` | Never visible (temporarily disable) |
 
