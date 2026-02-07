@@ -263,6 +263,54 @@ describe('startLogCapture', () => {
     expect(callHistory[1].useShell).toBe(false);
     expect(callHistory[1].detached).toBe(true);
   });
+
+  it('passes SIMCTL_CHILD_-prefixed env to console launch executor when env is provided', async () => {
+    const callHistory: CallHistoryEntry[] = [];
+    const executor = createMockExecutorWithCalls(callHistory);
+    const fileSystem = createInMemoryFileSystemExecutor();
+
+    const result = await startLogCapture(
+      {
+        simulatorUuid: 'sim-uuid',
+        bundleId: 'com.example.app',
+        captureConsole: true,
+        env: { STAGING_ENABLED: '1', DEBUG: 'true' },
+      },
+      executor,
+      fileSystem,
+    );
+
+    expect(result.error).toBeUndefined();
+    expect(callHistory).toHaveLength(2);
+    // Console launch call should have prefixed env
+    expect(callHistory[0].opts).toEqual({
+      env: {
+        SIMCTL_CHILD_STAGING_ENABLED: '1',
+        SIMCTL_CHILD_DEBUG: 'true',
+      },
+    });
+    // OS log stream call should not have env
+    expect(callHistory[1].opts).toBeUndefined();
+  });
+
+  it('does not pass env opts to executor when env is not provided', async () => {
+    const callHistory: CallHistoryEntry[] = [];
+    const executor = createMockExecutorWithCalls(callHistory);
+    const fileSystem = createInMemoryFileSystemExecutor();
+
+    const result = await startLogCapture(
+      {
+        simulatorUuid: 'sim-uuid',
+        bundleId: 'com.example.app',
+        captureConsole: true,
+      },
+      executor,
+      fileSystem,
+    );
+
+    expect(result.error).toBeUndefined();
+    expect(callHistory[0].opts).toBeUndefined();
+  });
 });
 
 describe('stopLogCapture', () => {
