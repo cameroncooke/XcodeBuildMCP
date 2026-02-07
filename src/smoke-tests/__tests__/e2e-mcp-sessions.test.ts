@@ -73,7 +73,7 @@ describe('MCP Session Management (e2e)', () => {
     // Set defaults
     await harness.client.callTool({
       name: 'session_set_defaults',
-      arguments: { scheme: 'App', projectPath: '/proj' },
+      arguments: { scheme: 'ClearMeScheme', projectPath: '/clear-me-proj' },
     });
 
     // Clear all
@@ -90,8 +90,8 @@ describe('MCP Session Management (e2e)', () => {
 
     const text = extractText(result);
     // Should not contain the previously set values
-    expect(text).not.toContain('App');
-    expect(text).not.toContain('/proj');
+    expect(text).not.toContain('ClearMeScheme');
+    expect(text).not.toContain('/clear-me-proj');
   });
 
   it('session_clear_defaults clears specific keys', async () => {

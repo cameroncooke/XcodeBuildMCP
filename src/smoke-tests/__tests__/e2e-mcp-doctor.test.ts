@@ -13,7 +13,7 @@ beforeAll(async () => {
 }, 30_000);
 
 afterAll(async () => {
-  await harness.cleanup();
+  await harness?.cleanup();
 });
 
 describe('MCP Doctor Tool (e2e)', () => {

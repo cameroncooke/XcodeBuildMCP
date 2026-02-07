@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { resolve } from 'path';
 
 const CLI = resolve(__dirname, '../../../build/cli.js');
@@ -11,7 +11,8 @@ const cliEnv = (() => {
   return env;
 })();
 const run = (args: string): string => {
-  return execSync(`node ${CLI} ${args}`, {
+  const argv = args.trim() ? args.trim().split(/\s+/) : [];
+  return execFileSync('node', [CLI, ...argv], {
     encoding: 'utf8',
     timeout: 15_000,
     env: cliEnv,
@@ -108,12 +109,14 @@ describe('CLI Surface (e2e)', () => {
       // list_sims is a good candidate -- it will fail to run xcrun but should
       // return structured JSON output even on error
       const result = runMayFail('simulator list-sims --output json');
-      // Even if the tool fails (no xcrun), the output format should be JSON
+      const output = result.stdout.trim();
+      expect(output.length).toBeGreaterThan(0);
+      // Even if the tool fails (no xcrun), a successful run should be JSON
       if (result.status === 0) {
-        const parsed = JSON.parse(result.stdout);
+        const parsed = JSON.parse(output);
         expect(parsed).toBeDefined();
       }
-      // If it fails, that's also acceptable on non-macOS platforms
+      // If it fails, that's acceptable on non-macOS platforms as long as output is present
     });
 
     it('missing required args produces user-friendly error', () => {
