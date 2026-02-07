@@ -17,7 +17,7 @@ afterAll(async () => {
 
 describe('MCP Doctor Tool (e2e)', () => {
   it('doctor returns diagnostic content', async () => {
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'doctor',
       arguments: {},

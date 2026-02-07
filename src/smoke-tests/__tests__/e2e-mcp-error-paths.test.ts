@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
+import { extractText, isErrorResponse } from '../test-helpers.ts';
 
 let harness: McpTestHarness;
 
@@ -32,24 +33,6 @@ beforeEach(async () => {
     arguments: { all: true },
   });
 });
-
-function extractText(result: unknown): string {
-  const r = result as { content?: Array<{ text?: string }> };
-  if (!r.content || !Array.isArray(r.content)) return '';
-  return r.content.map((c) => c.text ?? '').join('\n');
-}
-
-function isErrorResponse(result: unknown): boolean {
-  const r = result as { isError?: boolean; content?: Array<{ text?: string }> };
-  if (r.isError) return true;
-  const text = extractText(result).toLowerCase();
-  return (
-    text.includes('error') ||
-    text.includes('fail') ||
-    text.includes('missing') ||
-    text.includes('required')
-  );
-}
 
 describe('MCP Error Paths (e2e)', () => {
   describe('missing session defaults', () => {

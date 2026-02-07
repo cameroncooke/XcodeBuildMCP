@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
+import { isErrorResponse } from '../test-helpers.ts';
 
 let harness: McpTestHarness;
 
@@ -34,7 +35,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'build_device',
         arguments: {},
@@ -59,7 +60,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'test_device',
         arguments: {},
@@ -83,7 +84,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'launch_app_device',
         arguments: {},
@@ -106,7 +107,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'stop_app_device',
         arguments: { processId: 12345 },
@@ -131,7 +132,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'install_app_device',
         arguments: { appPath: '/path/to/MyApp.app' },
@@ -155,7 +156,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'get_device_app_path',
         arguments: {},
@@ -173,7 +174,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
     });
 
     it('list_devices captures devicectl or xctrace command', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'list_devices',
         arguments: {},
@@ -190,7 +191,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
 
   describe('project discovery tools', () => {
     it('discover_projs responds with content', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'discover_projs',
         arguments: { workspaceRoot: '/path/to/workspace' },
@@ -203,7 +204,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
     });
 
     it('get_app_bundle_id responds with content', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'get_app_bundle_id',
         arguments: { appPath: '/path/to/MyApp.app' },
@@ -216,7 +217,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
     });
 
     it('get_mac_bundle_id responds with content', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'get_mac_bundle_id',
         arguments: { appPath: '/path/to/MyApp.app' },
@@ -239,7 +240,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'build_macos',
         arguments: {},
@@ -265,7 +266,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'build_run_macos',
         arguments: {},
@@ -289,7 +290,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'test_macos',
         arguments: {},
@@ -305,7 +306,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
     });
 
     it('launch_mac_app responds with content', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'launch_mac_app',
         arguments: { appPath: '/path/to/MyMacApp.app' },
@@ -318,7 +319,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
     });
 
     it('stop_mac_app captures kill command with processId', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'stop_mac_app',
         arguments: { processId: 54321 },
@@ -334,7 +335,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
     });
 
     it('stop_mac_app captures pkill command with appName', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'stop_mac_app',
         arguments: { appName: 'MyMacApp' },
@@ -358,7 +359,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'get_mac_app_path',
         arguments: {},
@@ -388,20 +389,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      const content = 'content' in result ? result.content : [];
-      const isError = 'isError' in result ? result.isError : false;
-      const hasErrorText =
-        Array.isArray(content) &&
-        content.some(
-          (c) =>
-            'text' in c &&
-            typeof c.text === 'string' &&
-            (c.text.toLowerCase().includes('error') ||
-              c.text.toLowerCase().includes('required') ||
-              c.text.toLowerCase().includes('must provide') ||
-              c.text.toLowerCase().includes('provide')),
-        );
-      expect(isError || hasErrorText).toBe(true);
+      expect(isErrorResponse(result)).toBe(true);
     });
 
     it('build_macos returns error when session defaults missing', async () => {
@@ -415,20 +403,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      const content = 'content' in result ? result.content : [];
-      const isError = 'isError' in result ? result.isError : false;
-      const hasErrorText =
-        Array.isArray(content) &&
-        content.some(
-          (c) =>
-            'text' in c &&
-            typeof c.text === 'string' &&
-            (c.text.toLowerCase().includes('error') ||
-              c.text.toLowerCase().includes('required') ||
-              c.text.toLowerCase().includes('must provide') ||
-              c.text.toLowerCase().includes('provide')),
-        );
-      expect(isError || hasErrorText).toBe(true);
+      expect(isErrorResponse(result)).toBe(true);
     });
 
     it('stop_mac_app returns error when no appName or processId provided', async () => {
@@ -437,19 +412,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      const content = 'content' in result ? result.content : [];
-      const isError = 'isError' in result ? result.isError : false;
-      const hasErrorText =
-        Array.isArray(content) &&
-        content.some(
-          (c) =>
-            'text' in c &&
-            typeof c.text === 'string' &&
-            (c.text.toLowerCase().includes('either') ||
-              c.text.toLowerCase().includes('error') ||
-              c.text.toLowerCase().includes('must be provided')),
-        );
-      expect(isError || hasErrorText).toBe(true);
+      expect(isErrorResponse(result)).toBe(true);
     });
   });
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
+import { extractText, isErrorResponse, getContent } from '../test-helpers.ts';
 
 const SIM_ID = 'AAAAAAAA-1111-2222-3333-444444444444';
 
@@ -46,32 +47,6 @@ afterAll(async () => {
   await harness.cleanup();
 });
 
-function extractText(result: unknown): string {
-  const r = result as { content?: Array<{ text?: string }> };
-  if (!r.content || !Array.isArray(r.content)) return '';
-  return r.content.map((c) => c.text ?? '').join('\n');
-}
-
-function isErrorResponse(result: unknown): boolean {
-  const r = result as { isError?: boolean; content?: Array<{ text?: string }> };
-  if (r.isError) return true;
-  if (!r.content || !Array.isArray(r.content)) return false;
-  return r.content.some(
-    (c) =>
-      typeof c.text === 'string' &&
-      (c.text.toLowerCase().includes('error') ||
-        c.text.toLowerCase().includes('required') ||
-        c.text.toLowerCase().includes('missing') ||
-        c.text.toLowerCase().includes('must provide') ||
-        c.text.toLowerCase().includes('provide')),
-  );
-}
-
-function getContent(result: unknown): Array<{ type?: string; text?: string }> {
-  const r = result as { content?: Array<{ type?: string; text?: string }> };
-  return Array.isArray(r.content) ? r.content : [];
-}
-
 async function setSimulatorDefaults(): Promise<void> {
   await harness.client.callTool({
     name: 'session_set_defaults',
@@ -90,7 +65,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
   describe('tap', () => {
     it('responds via MCP with coordinate tap', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'tap',
@@ -103,7 +78,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('responds via MCP with element id tap', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'tap',
@@ -116,7 +91,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('responds via MCP with element label tap', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'tap',
@@ -131,7 +106,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
   describe('swipe', () => {
     it('responds via MCP with swipe coordinates', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'swipe',
@@ -144,7 +119,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('responds via MCP with optional duration and delta', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'swipe',
@@ -159,7 +134,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
   describe('button', () => {
     it('responds via MCP with home button press', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'button',
@@ -172,7 +147,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('responds via MCP with lock button press', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'button',
@@ -187,7 +162,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
   describe('gesture', () => {
     it('responds via MCP with scroll-down gesture', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'gesture',
@@ -200,7 +175,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('responds via MCP with swipe-from-left-edge gesture', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'gesture',
@@ -215,7 +190,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
   describe('key_press', () => {
     it('responds via MCP with key press', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'key_press',
@@ -230,7 +205,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
   describe('key_sequence', () => {
     it('responds via MCP with key sequence', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'key_sequence',
@@ -245,7 +220,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
   describe('long_press', () => {
     it('responds via MCP with long press', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'long_press',
@@ -260,7 +235,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
   describe('screenshot', () => {
     it('responds via MCP with screenshot capture', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'screenshot',
@@ -273,7 +248,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('responds via MCP with path return format', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'screenshot',
@@ -288,7 +263,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
   describe('snapshot_ui', () => {
     it('responds via MCP with UI hierarchy', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'snapshot_ui',
@@ -303,7 +278,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
   describe('touch', () => {
     it('responds via MCP with touch down+up', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'touch',
@@ -316,7 +291,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('responds via MCP with touch down only', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'touch',
@@ -331,7 +306,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
   describe('type_text', () => {
     it('responds via MCP with text typing', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'type_text',
@@ -359,7 +334,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('returns error for touch with neither down nor up', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'touch',
@@ -371,7 +346,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('returns error for tap with no target specified', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'tap',
@@ -383,7 +358,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('returns error for type_text with empty text', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'type_text',
@@ -395,7 +370,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('returns error for key_sequence with empty keyCodes array', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'key_sequence',
@@ -407,7 +382,7 @@ describe('MCP UI Automation Tools (e2e)', () => {
 
     it('returns error for swipe with missing coordinates', async () => {
       await setSimulatorDefaults();
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
 
       const result = await harness.client.callTool({
         name: 'swipe',
