@@ -11,7 +11,7 @@ beforeAll(async () => {
 }, 30_000);
 
 afterAll(async () => {
-  await harness.cleanup();
+  await harness?.cleanup();
 });
 
 describe('MCP Project Scaffolding Tools (e2e)', () => {
