@@ -33,7 +33,7 @@
     "docs:update": "npx tsx scripts/update-tools-docs.ts",
     "docs:update:dry-run": "npx tsx scripts/update-tools-docs.ts --dry-run --verbose",
     "test": "vitest run",
-    "test:smoke": "vitest run --config vitest.smoke.config.ts",
+    "test:smoke": "npm run build && vitest run --config vitest.smoke.config.ts",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage"

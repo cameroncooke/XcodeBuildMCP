@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
+import { expectContent } from '../test-helpers.ts';
 
 const SIM_UUID = 'AAAAAAAA-1111-4222-A333-444444444444';
 
@@ -94,10 +95,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('xcodebuild'))).toBe(true);
@@ -112,10 +110,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('xcodebuild'))).toBe(true);
@@ -130,10 +125,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('simctl') && c.includes('launch'))).toBe(true);
@@ -148,10 +140,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('simctl') && c.includes('terminate'))).toBe(true);
@@ -168,10 +157,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
     });
 
     it('open_sim captures open command', async () => {
@@ -181,10 +167,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('open') && c.includes('Simulator'))).toBe(true);
@@ -201,10 +184,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
     });
 
     it('get_sim_app_path captures xcodebuild -showBuildSettings command', async () => {
@@ -218,10 +198,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(
@@ -240,10 +217,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(
@@ -264,10 +238,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('simctl') && c.includes('erase'))).toBe(true);
@@ -284,10 +255,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(
@@ -307,10 +275,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(
@@ -329,10 +294,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(
@@ -353,10 +315,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
         },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(

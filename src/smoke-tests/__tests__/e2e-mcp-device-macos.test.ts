@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
-import { isErrorResponse } from '../test-helpers.ts';
+import { isErrorResponse, expectContent } from '../test-helpers.ts';
 
 let harness: McpTestHarness;
 
@@ -41,10 +41,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('xcodebuild') && c.includes('MyApp'))).toBe(true);
@@ -66,10 +63,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('xcodebuild') && c.includes('test'))).toBe(true);
@@ -90,10 +84,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('devicectl') && c.includes('launch'))).toBe(true);
@@ -113,10 +104,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: { processId: 12345 },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('devicectl') && c.includes('terminate'))).toBe(
@@ -138,10 +126,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: { appPath: '/path/to/MyApp.app' },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('devicectl') && c.includes('install'))).toBe(true);
@@ -162,10 +147,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(
@@ -180,10 +162,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       expect(harness.capturedCommands.length).toBeGreaterThan(0);
     });
@@ -197,10 +176,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: { workspaceRoot: '/path/to/workspace' },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
     });
 
     it('get_app_bundle_id responds with content', async () => {
@@ -210,10 +186,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: { appPath: '/path/to/MyApp.app' },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
     });
 
     it('get_mac_bundle_id responds with content', async () => {
@@ -223,10 +196,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: { appPath: '/path/to/MyApp.app' },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
     });
   });
 
@@ -246,10 +216,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('xcodebuild') && c.includes('MyMacApp'))).toBe(
@@ -272,10 +239,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('xcodebuild'))).toBe(true);
@@ -296,10 +260,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('xcodebuild') && c.includes('test'))).toBe(true);
@@ -312,10 +273,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: { appPath: '/path/to/MyMacApp.app' },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
     });
 
     it('stop_mac_app captures kill command with processId', async () => {
@@ -325,10 +283,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: { processId: 54321 },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('kill') && c.includes('54321'))).toBe(true);
@@ -341,10 +296,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: { appName: 'MyMacApp' },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('MyMacApp'))).toBe(true);
@@ -365,10 +317,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(

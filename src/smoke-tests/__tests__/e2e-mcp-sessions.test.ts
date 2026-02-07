@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
-import { extractText } from '../test-helpers.ts';
+import { extractText, expectContent } from '../test-helpers.ts';
 
 let harness: McpTestHarness;
 
@@ -136,10 +136,7 @@ describe('MCP Session Management (e2e)', () => {
       arguments: {},
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
+    expectContent(result);
 
     // The captured commands should include the session default scheme
     const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));

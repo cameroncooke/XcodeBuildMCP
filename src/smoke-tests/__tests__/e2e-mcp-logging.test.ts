@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
+import { isErrorResponse, expectContent } from '../test-helpers.ts';
 
 let harness: McpTestHarness;
 
@@ -34,10 +35,7 @@ describe('MCP Logging Tools (e2e)', () => {
       arguments: {},
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
+    expectContent(result);
   });
 
   it('stop_sim_log_cap returns error for unknown session', async () => {
@@ -49,23 +47,8 @@ describe('MCP Logging Tools (e2e)', () => {
       },
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
-
-    const isError = 'isError' in result ? result.isError : false;
-    const hasErrorText =
-      Array.isArray(content) &&
-      content.some(
-        (c) =>
-          'text' in c &&
-          typeof c.text === 'string' &&
-          (c.text.toLowerCase().includes('error') ||
-            c.text.toLowerCase().includes('not found') ||
-            c.text.toLowerCase().includes('invalid')),
-      );
-    expect(isError || hasErrorText).toBe(true);
+    expectContent(result);
+    expect(isErrorResponse(result)).toBe(true);
   });
 
   it('start_device_log_cap requires deviceId and bundleId via session', async () => {
@@ -83,10 +66,7 @@ describe('MCP Logging Tools (e2e)', () => {
       arguments: {},
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
+    expectContent(result);
   });
 
   it('stop_device_log_cap returns error for unknown session', async () => {
@@ -98,22 +78,7 @@ describe('MCP Logging Tools (e2e)', () => {
       },
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
-
-    const isError = 'isError' in result ? result.isError : false;
-    const hasErrorText =
-      Array.isArray(content) &&
-      content.some(
-        (c) =>
-          'text' in c &&
-          typeof c.text === 'string' &&
-          (c.text.toLowerCase().includes('error') ||
-            c.text.toLowerCase().includes('not found') ||
-            c.text.toLowerCase().includes('failed')),
-      );
-    expect(isError || hasErrorText).toBe(true);
+    expectContent(result);
+    expect(isErrorResponse(result)).toBe(true);
   });
 });

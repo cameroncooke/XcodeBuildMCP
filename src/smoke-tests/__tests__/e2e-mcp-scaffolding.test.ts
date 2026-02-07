@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
+import { expectContent } from '../test-helpers.ts';
 
 let harness: McpTestHarness;
 
@@ -24,10 +25,7 @@ describe('MCP Project Scaffolding Tools (e2e)', () => {
       },
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
+    expectContent(result);
   });
 
   it('scaffold_macos_project returns content with valid args', async () => {
@@ -40,9 +38,6 @@ describe('MCP Project Scaffolding Tools (e2e)', () => {
       },
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
+    expectContent(result);
   });
 });
