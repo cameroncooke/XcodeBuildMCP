@@ -1,91 +1,59 @@
 # Changelog
 
-## [Unreleased]
+## [2.0.0]
 
-### Added
-- Added optional `xcode-ide` workflow to proxy Xcode IDE MCP tools via `xcrun mcpbridge`.
+### New! CLI
 
-### Changed
-- Hide `xcode_tools_bridge_{status,sync,disconnect}` unless `debug: true` is enabled (these are troubleshooting tools).
-- Simplified CLI daemon routing: stateless tools now always execute directly, stateful tools route through daemon with auto-start, and dynamic `xcode-ide` bridge tools remain an explicit daemon-backed special-case.
-- Removed manifest daemon routing knobs `availability.daemon` and `routing.daemonAffinity`; manifests now use `availability.{mcp,cli}` plus optional `routing.stateful`.
-- Removed hidden CLI daemon-routing flags; stateful routing is now automatic and only hidden `--socket` remains for advanced socket override workflows.
-- Added daemon idle shutdown in CLI mode: per-workspace daemons now auto-exit after 10 minutes of inactivity when no active stateful sessions exist.
-- Inverted idle activity tracking to a generic daemon activity registry so long-running tools report lifecycle activity without hardcoded daemon imports.
+XcodeBuildMCP now includes a first-class CLI for direct terminal usage, scripting, and CI workflows. All the same tools available via MCP are accessible from the command line.
 
-### Fixed
-- Fix Xcode IDE state discovery fallback to check parent directories only up to the resolved workspace root boundary when started from a nested working directory without explicit `projectPath`/`workspacePath`.
-
-## [2.0.0] - 2026-02-02
-
-### Breaking
-
-#### Workflow selection
-
-- By default when the `enabledWorkflows` configuration option or `XCODEBUILDMCP_ENABLED_WORKFLOWS` environment variable is not set or empty, XcodeBuildMCP will default to loading only the `simulator` workflow. This is a change in behaviour; previously it would load all workflows and therefore tools by default.
-
-This change reduces the number of tools loaded by default and requires the user to opt in to enable additional sets of tools based on their project or workflow requirements.
-
-The simulator workflow is the default because it is the most common use case based on opt-in analytics data.
-
-For more information see the [CONFIGURATION.md](docs/CONFIGURATION.md) documentation.
-
-- Tool names and descriptions have been made more concise to reduce token consumption. Tool argument names that are self-explanatory have had their descriptions removed entirely.
-
-#### XcodeBuildMCP is now a first-class CLI
-
-- XcodeBuildMCP now has a first class CLI interface. This allows you or your agent to invoke tools directly from the terminal which can help reduce the upfront context costs of MCP.
-
-- When calling `xcodebuildmcp` without any arguments it will default to CLI mode, this is a **breaking** change, you must update your mcp client's configuration to pass the `mcp` argument:
-
-From:
-```json
-"XcodeBuildMCP": {
-  "command": "npx",
-  "args": [
-    "-y",
-    "xcodebuildmcp@latest"
-  ]
-}
+```bash
+npm install -g xcodebuildmcp@beta
+xcodebuildmcp tools # List available tools
+xcodebuildmcp simulator build-and-run --scheme MyApp --project-path ./MyApp.xcodeproj
 ```
 
-To:
-```json
-"XcodeBuildMCP": {
-  "command": "npx",
-  "args": [
-    "-y",
-    "xcodebuildmcp@latest",
-    "mcp" // <--- add this argument
-  ]
-}
+Stateful operations (log capture, debugging, video recording) are backed by a per-workspace background process that starts automatically and shuts down after idle. See [docs/CLI.md](docs/CLI.md) for full documentation.
+
+### New! Configuration File
+
+Project-level configuration via `.xcodebuildmcp/config.yaml` replaces the need for environment variables. Set your project path, scheme, simulator, enabled workflows, debug settings, and more in one place. Environment variables still work but the config file takes precedence.
+
+```yaml
+schemaVersion: 1
+enabledWorkflows:
+  - simulator
+  - ui-automation
+  - debugging
+sessionDefaults:
+  scheme: MyApp
+  projectPath: ./MyApp.xcodeproj
+  simulatorName: iPhone 16
 ```
 
-To lean more about the CLI interface see the [CLI.md](docs/CLI.md) documentation.
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for the full reference.
 
-### New!
-- Add DAP-based debugger backend and simulator debugging toolset (attach, breakpoints, stack, variables, LLDB command).
-- XcodeBuildMCP uses a new project config file at `.xcodebuildmcp/config.yaml` for runtime configuration, this is a more flexible and powerful way to configure XcodeBuildMCP than environment variables.
+### New! Xcode IDE Integration
+
+XcodeBuildMCP can now proxy tools from Xcode 26.3's built-in MCP bridge, giving your agent access to Xcode IDE capabilities like Preview rendering, the Issue Navigator, and documentation search. Enable the `xcode-ide` workflow to use this. Setup instructions for both Codex Agent and Claude Code Agent in Xcode are included. See [docs/XCODE_IDE_MCPBRIDGE.md](docs/XCODE_IDE_MCPBRIDGE.md) for details.
 
 ### Added
-- Add session-status MCP resource with session identifiers.
-- Add UI automation guard that blocks UI tools when the debugger is paused.
-- Add `manage-workflows` tool to allow agents to change the workflows enable/disabling tools at runtime. This requires clients to support tools changed notifications. (opt-in only)
-- Add XcodeBuildMCP skill to improve MCP client tool use/discovery, this needs to be installed see [README.md](README.md) for more information.
-- Added support for session-aware defaults that are persisted between sessions in the config file.
+
+- **LLDB Debugging**: Attach a debugger to simulator apps, set breakpoints, inspect variables, view the call stack, and run LLDB commands — all through your agent. Supports both DAP and LLDB-CLI backends. See [docs/TOOLS.md](docs/TOOLS.md) for the debugging tools.
+- **Session default persistence**: Session defaults can now be saved to the config file with `persist: true`, so your preferred project, scheme, and simulator are remembered across sessions.
+- **Log subsystem filtering**: Filter simulator log capture by subsystem — choose `app` (default), `all`, `swiftui` (for `Self._printChanges()` output), or a custom list of subsystems.
+- **Agent skills**: Optional skill files that prime your agent with usage instructions for the MCP server or CLI. Install via the provided shell script or manually. See [docs/SKILLS.md](docs/SKILLS.md).
+- **MCP tool annotations**: All tools now include MCP-standard annotations (read-only vs. destructive, idempotent, etc.) for clients that support them.
+- **Simulator name resolution**: Session defaults now accept a simulator name and automatically resolve it to a device ID.
 
 ### Changed
-- Migrate to Zod v4.
-- Remove dynamic tool discovery (`discover_tools`) and `XCODEBUILDMCP_DYNAMIC_TOOLS`. Use `XCODEBUILDMCP_ENABLED_WORKFLOWS` to limit startup tool registration.
-- Add MCP tool annotations to all tools.
+
+- Simulator tools are now the default workflow. Previously all workflows loaded by default, increasing context usage.
+- Bundled AXe updated to 1.3.0.
+- Landscape screenshots now orient correctly.
 
 ### Fixed
-- Update UI automation guard guidance to point at `debug_continue` when paused.
-- Fix tool loading bugs in static tool registration.
-- Fix xcodemake command argument corruption when project directory path appears as substring in non-path arguments.
-- Fix snapshot_ui warning state being isolated per UI automation tool, causing false warnings.
-- Fixed screenshot tool capturing rotated images when simulator is in landscape orientation by detecting window dimensions and applying +90° rotation to correct the framebuffer capture. ([`#186`](https://github.com/cameroncooke/XcodeBuildMCP/pull/186) by [`@VincentStark`](https://github.com/VincentStark))
-- Fixed Sentry ESM compatibility by upgrading `@sentry/node` from 10.5.0 to 10.37.0 and `@sentry/cli` from 2.43.1 to 3.1.0 (Fixes XCODEBUILD-MCP-13SX)
+
+- Fixed incremental builds corrupting arguments when strings contained substrings matching build flags.
 
 ## [1.15.1] - 2025-12-20
 
