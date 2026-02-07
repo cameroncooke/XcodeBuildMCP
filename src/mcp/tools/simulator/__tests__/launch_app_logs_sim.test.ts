@@ -21,20 +21,19 @@ describe('launch_app_logs_sim tool', () => {
 
   describe('Export Field Validation (Literal)', () => {
     it('should expose only non-session fields in public schema', () => {
-      const schemaObj = z.object(schema);
+      const schemaObj = z.strictObject(schema);
 
       expect(schemaObj.safeParse({}).success).toBe(true);
       expect(schemaObj.safeParse({ args: ['--debug'] }).success).toBe(true);
-      expect(schemaObj.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
-      expect(schemaObj.safeParse({ bundleId: 42 }).success).toBe(true);
+      expect(schemaObj.safeParse({ bundleId: 'com.example.app' }).success).toBe(false);
+      expect(schemaObj.safeParse({ bundleId: 42 }).success).toBe(false);
 
       expect(Object.keys(schema).sort()).toEqual(['args', 'env']);
 
       const withSimId = schemaObj.safeParse({
         simulatorId: 'abc123',
       });
-      expect(withSimId.success).toBe(true);
-      expect('simulatorId' in (withSimId.data as Record<string, unknown>)).toBe(false);
+      expect(withSimId.success).toBe(false);
     });
   });
 
@@ -225,7 +224,7 @@ describe('launch_app_logs_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: 'App was launched but log capture failed: Failed to start log capture',
+            text: 'Failed to launch app with log capture: Failed to start log capture',
           },
         ],
         isError: true,

@@ -86,7 +86,7 @@ export async function launch_app_logs_simLogic(
   const { sessionId, error } = await logCaptureFunction(captureParams, executor);
   if (error) {
     return {
-      content: [createTextContent(`App was launched but log capture failed: ${error}`)],
+      content: [createTextContent(`Failed to launch app with log capture: ${error}`)],
       isError: true,
     };
   }
