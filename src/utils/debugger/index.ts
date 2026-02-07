@@ -8,7 +8,11 @@ export function getDefaultDebuggerManager(): DebuggerManager {
 }
 
 export { DebuggerManager } from './debugger-manager.ts';
-export { getDefaultDebuggerToolContext } from './tool-context.ts';
+export {
+  getDefaultDebuggerToolContext,
+  __setTestDebuggerToolContextOverride,
+  __clearTestDebuggerToolContextOverride,
+} from './tool-context.ts';
 export { resolveSimulatorAppPid } from './simctl.ts';
 export { guardUiAutomationAgainstStoppedDebugger } from './ui-automation-guard.ts';
 export type {

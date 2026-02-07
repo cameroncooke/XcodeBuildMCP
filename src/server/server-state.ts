@@ -10,4 +10,8 @@ export function setServer(server: McpServer): void {
   serverInstance = server;
 }
 
+export function __resetServerStateForTests(): void {
+  serverInstance = undefined;
+}
+
 export { serverInstance as server };

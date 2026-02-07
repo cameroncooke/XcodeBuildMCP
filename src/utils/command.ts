@@ -221,12 +221,29 @@ const defaultFileSystemExecutor: FileSystemExecutor = {
   },
 };
 
+let _testCommandExecutorOverride: CommandExecutor | null = null;
+let _testFileSystemExecutorOverride: FileSystemExecutor | null = null;
+
+export function __setTestCommandExecutorOverride(executor: CommandExecutor | null): void {
+  _testCommandExecutorOverride = executor;
+}
+
+export function __setTestFileSystemExecutorOverride(executor: FileSystemExecutor | null): void {
+  _testFileSystemExecutorOverride = executor;
+}
+
+export function __clearTestExecutorOverrides(): void {
+  _testCommandExecutorOverride = null;
+  _testFileSystemExecutorOverride = null;
+}
+
 /**
  * Get default command executor with test safety
  * Throws error if used in test environment to ensure proper mocking
  */
 export function getDefaultCommandExecutor(): CommandExecutor {
   if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
+    if (_testCommandExecutorOverride) return _testCommandExecutorOverride;
     throw new Error(
       `🚨 REAL SYSTEM EXECUTOR DETECTED IN TEST! 🚨\n` +
         `This test is trying to use the default command executor instead of a mock.\n` +
@@ -244,6 +261,7 @@ export function getDefaultCommandExecutor(): CommandExecutor {
  */
 export function getDefaultFileSystemExecutor(): FileSystemExecutor {
   if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
+    if (_testFileSystemExecutorOverride) return _testFileSystemExecutorOverride;
     throw new Error(
       `🚨 REAL FILESYSTEM EXECUTOR DETECTED IN TEST! 🚨\n` +
         `This test is trying to use the default filesystem executor instead of a mock.\n` +
