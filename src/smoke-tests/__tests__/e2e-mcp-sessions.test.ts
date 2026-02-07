@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
+import { extractText } from '../test-helpers.ts';
 
 let harness: McpTestHarness;
 
@@ -37,12 +38,6 @@ beforeEach(async () => {
     arguments: { all: true },
   });
 });
-
-function extractText(result: unknown): string {
-  const r = result as { content?: Array<{ text?: string }> };
-  if (!r.content || !Array.isArray(r.content)) return '';
-  return r.content.map((c) => c.text ?? '').join('\n');
-}
 
 describe('MCP Session Management (e2e)', () => {
   it('session_set_defaults stores scheme', async () => {
@@ -135,7 +130,7 @@ describe('MCP Session Management (e2e)', () => {
     });
 
     // Invoke build_sim without explicit scheme/project (should use session defaults)
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'build_sim',
       arguments: {},
@@ -173,7 +168,7 @@ describe('MCP Session Management (e2e)', () => {
     });
 
     // Invoke build_sim - should use the updated scheme
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'build_sim',
       arguments: {},

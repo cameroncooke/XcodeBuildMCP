@@ -70,7 +70,7 @@ describe('MCP Tool Invocation (e2e)', () => {
 
   describe('representative tools with valid args', () => {
     it('list_sims captures simctl command', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'list_sims',
         arguments: {},
@@ -96,7 +96,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'build_sim',
         arguments: {},
@@ -120,7 +120,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'clean',
         arguments: {},
@@ -136,7 +136,7 @@ describe('MCP Tool Invocation (e2e)', () => {
     });
 
     it('swift_package_build captures swift build command', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'swift_package_build',
         arguments: {
@@ -161,7 +161,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'boot_sim',
         arguments: {},
@@ -184,7 +184,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'list_schemes',
         arguments: {},
@@ -199,7 +199,7 @@ describe('MCP Tool Invocation (e2e)', () => {
     });
 
     it('list_devices responds with content', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'list_devices',
         arguments: {},
@@ -214,7 +214,7 @@ describe('MCP Tool Invocation (e2e)', () => {
     });
 
     it('session_set_defaults works without external commands', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'session_set_defaults',
         arguments: {
@@ -249,7 +249,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         },
       });
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'show_build_settings',
         arguments: {},

@@ -28,7 +28,7 @@ describe('MCP Logging Tools (e2e)', () => {
       },
     });
 
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'start_sim_log_cap',
       arguments: {},
@@ -41,7 +41,7 @@ describe('MCP Logging Tools (e2e)', () => {
   });
 
   it('stop_sim_log_cap returns error for unknown session', async () => {
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'stop_sim_log_cap',
       arguments: {
@@ -77,7 +77,7 @@ describe('MCP Logging Tools (e2e)', () => {
       },
     });
 
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'start_device_log_cap',
       arguments: {},
@@ -90,7 +90,7 @@ describe('MCP Logging Tools (e2e)', () => {
   });
 
   it('stop_device_log_cap returns error for unknown session', async () => {
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'stop_device_log_cap',
       arguments: {

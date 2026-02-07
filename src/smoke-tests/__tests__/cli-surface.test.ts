@@ -23,7 +23,11 @@ const runMayFail = (args: string): { stdout: string; status: number } => {
     const stdout = run(args);
     return { stdout, status: 0 };
   } catch (err: unknown) {
-    const error = err as { stdout?: string; stderr?: string; status?: number };
+    const error = err as NodeJS.ErrnoException & {
+      stdout?: string;
+      stderr?: string;
+      status?: number;
+    };
     return {
       stdout: (error.stdout ?? '') + (error.stderr ?? ''),
       status: error.status ?? 1,

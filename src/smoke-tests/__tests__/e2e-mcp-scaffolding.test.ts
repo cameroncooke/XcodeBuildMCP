@@ -15,7 +15,7 @@ afterAll(async () => {
 
 describe('MCP Project Scaffolding Tools (e2e)', () => {
   it('scaffold_ios_project returns content with valid args', async () => {
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'scaffold_ios_project',
       arguments: {
@@ -31,7 +31,7 @@ describe('MCP Project Scaffolding Tools (e2e)', () => {
   });
 
   it('scaffold_macos_project returns content with valid args', async () => {
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'scaffold_macos_project',
       arguments: {

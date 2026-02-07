@@ -21,7 +21,7 @@ afterAll(async () => {
 
 describe('MCP Swift Package Tools (e2e)', () => {
   it('swift_package_clean captures swift package clean command', async () => {
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'swift_package_clean',
       arguments: {
@@ -39,7 +39,7 @@ describe('MCP Swift Package Tools (e2e)', () => {
   });
 
   it('swift_package_test captures swift test command', async () => {
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'swift_package_test',
       arguments: {
@@ -57,7 +57,7 @@ describe('MCP Swift Package Tools (e2e)', () => {
   });
 
   it('swift_package_run captures swift run command', async () => {
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'swift_package_run',
       arguments: {
@@ -75,7 +75,7 @@ describe('MCP Swift Package Tools (e2e)', () => {
   });
 
   it('swift_package_stop returns content for unknown PID', async () => {
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'swift_package_stop',
       arguments: {
@@ -95,7 +95,7 @@ describe('MCP Swift Package Tools (e2e)', () => {
   });
 
   it('swift_package_list returns content listing processes', async () => {
-    harness.capturedCommands.length = 0;
+    harness.resetCapturedCommands();
     const result = await harness.client.callTool({
       name: 'swift_package_list',
       arguments: {},

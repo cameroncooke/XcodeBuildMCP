@@ -88,7 +88,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('build_run_sim captures xcodebuild and simctl commands', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'build_run_sim',
         arguments: {},
@@ -106,7 +106,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('test_sim captures xcodebuild test command', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'test_sim',
         arguments: {},
@@ -124,7 +124,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('launch_app_sim captures simctl launch command', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'launch_app_sim',
         arguments: {},
@@ -142,7 +142,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('stop_app_sim captures simctl terminate command', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'stop_app_sim',
         arguments: {},
@@ -160,7 +160,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('install_app_sim responds with content', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'install_app_sim',
         arguments: {
@@ -175,7 +175,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     });
 
     it('open_sim captures open command', async () => {
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'open_sim',
         arguments: {},
@@ -193,7 +193,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('record_sim_video responds with content', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'record_sim_video',
         arguments: {
@@ -210,7 +210,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('get_sim_app_path captures xcodebuild -showBuildSettings command', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'get_sim_app_path',
         arguments: {
@@ -232,7 +232,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('screenshot captures simctl io screenshot command', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'screenshot',
         arguments: {
@@ -258,7 +258,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('erase_sims captures simctl erase command', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'erase_sims',
         arguments: {},
@@ -276,7 +276,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('set_sim_appearance captures simctl ui command', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'set_sim_appearance',
         arguments: {
@@ -298,7 +298,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('set_sim_location captures simctl location set command', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'set_sim_location',
         arguments: {
@@ -323,7 +323,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('reset_sim_location captures simctl location clear command', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'reset_sim_location',
         arguments: {},
@@ -345,7 +345,7 @@ describe('MCP Simulator Tool Invocation (e2e)', () => {
     it('sim_statusbar captures simctl status_bar command', async () => {
       await setSimulatorSessionDefaults();
 
-      harness.capturedCommands.length = 0;
+      harness.resetCapturedCommands();
       const result = await harness.client.callTool({
         name: 'sim_statusbar',
         arguments: {

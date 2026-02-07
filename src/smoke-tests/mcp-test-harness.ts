@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { ChildProcess } from 'node:child_process';
@@ -39,6 +40,7 @@ export interface CapturedCommand {
 export interface McpTestHarness {
   client: Client;
   capturedCommands: CapturedCommand[];
+  resetCapturedCommands(): void;
   cleanup(): Promise<void>;
 }
 
@@ -94,6 +96,13 @@ export async function createMcpTestHarness(opts?: McpTestHarnessOptions): Promis
 
   // Also set overrides on the built module instances (used by dynamically imported tool handlers)
   const buildRoot = resolve(getPackageRoot(), 'build');
+  if (!existsSync(buildRoot)) {
+    throw new Error(
+      `Build directory not found at ${buildRoot}. Run "npm run build" before running smoke tests.`,
+    );
+  }
+
+  // Dynamic imports required: built modules are separate JS instances that must be patched independently of vitest-resolved source modules.
   const builtCommandModule = (await import(
     pathToFileURL(resolve(buildRoot, 'utils/command.js')).href
   )) as {
@@ -196,6 +205,9 @@ export async function createMcpTestHarness(opts?: McpTestHarnessOptions): Promis
   return {
     client,
     capturedCommands,
+    resetCapturedCommands(): void {
+      capturedCommands.length = 0;
+    },
     async cleanup(): Promise<void> {
       await client.close();
       await server.close();
