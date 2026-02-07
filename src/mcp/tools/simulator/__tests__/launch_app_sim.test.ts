@@ -432,6 +432,5 @@ describe('launch_app_sim tool', () => {
       // Launch call opts should be undefined when no env provided
       expect(capturedOpts[1]).toBeUndefined();
     });
-
   });
 });

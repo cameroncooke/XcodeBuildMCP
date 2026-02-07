@@ -35,7 +35,7 @@ const launchAppDeviceSchema = z.object({
   env: z
     .record(z.string(), z.string())
     .optional()
-    .describe('Environment variables to pass to the launched app (as KEY=VALUE pairs)'),
+    .describe('Environment variables to pass to the launched app (as key-value dictionary)'),
 });
 
 const publicSchemaObject = launchAppDeviceSchema.omit({
@@ -72,10 +72,8 @@ export async function launch_app_deviceLogic(
       '--terminate-existing',
     ];
 
-    if (params.env) {
-      for (const [key, value] of Object.entries(params.env)) {
-        command.push('--environment-variables', `${key}=${value}`);
-      }
+    if (params.env && Object.keys(params.env).length > 0) {
+      command.push('--environment-variables', JSON.stringify(params.env));
     }
 
     command.push(bundleId);
@@ -121,11 +119,10 @@ export async function launch_app_deviceLogic(
         const launchData = parsedData as LaunchDataResponse;
         processId = launchData.result?.process?.processIdentifier;
       }
-
-      // Clean up temp file
-      await fileSystem.rm(tempJsonPath, { force: true }).catch(() => {});
     } catch (error) {
       log('warn', `Failed to parse launch JSON output: ${error}`);
+    } finally {
+      await fileSystem.rm(tempJsonPath, { force: true }).catch(() => {});
     }
 
     let responseText = `✅ App launched successfully\n\n${result.output}`;

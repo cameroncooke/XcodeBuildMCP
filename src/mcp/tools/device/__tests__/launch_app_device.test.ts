@@ -135,7 +135,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       ]);
     });
 
-    it('should append --environment-variables flags before bundleId when env is provided', async () => {
+    it('should append a JSON --environment-variables payload before bundleId when env is provided', async () => {
       const calls: any[] = [];
       const mockExecutor = createMockExecutor({
         success: true,
@@ -162,13 +162,13 @@ describe('launch_app_device plugin (device-shared)', () => {
       const cmd = calls[0].command;
       // bundleId should be the last element
       expect(cmd[cmd.length - 1]).toBe('com.example.app');
-      // --environment-variables flags should appear before bundleId
-      const envIdx1 = cmd.indexOf('--environment-variables');
-      expect(envIdx1).toBeGreaterThan(-1);
-      expect(cmd[envIdx1 + 1]).toBe('STAGING_ENABLED=1');
-      const envIdx2 = cmd.indexOf('--environment-variables', envIdx1 + 1);
-      expect(envIdx2).toBeGreaterThan(-1);
-      expect(cmd[envIdx2 + 1]).toBe('DEBUG=true');
+      // --environment-variables should be provided exactly once as JSON
+      const envFlagIndices = cmd
+        .map((part: string, index: number) => (part === '--environment-variables' ? index : -1))
+        .filter((index: number) => index >= 0);
+      expect(envFlagIndices).toHaveLength(1);
+      const envIdx = envFlagIndices[0];
+      expect(JSON.parse(cmd[envIdx + 1])).toEqual({ STAGING_ENABLED: '1', DEBUG: 'true' });
     });
 
     it('should not include --environment-variables when env is not provided', async () => {
