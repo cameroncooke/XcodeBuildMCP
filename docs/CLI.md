@@ -32,20 +32,20 @@ xcodebuildmcp <workflow> <tool> --help
 Each tool supports `--help` for detailed options:
 
 ```bash
-xcodebuildmcp simulator build-sim --help
+xcodebuildmcp simulator build --help
 ```
 
 Common patterns:
 
 ```bash
 # Pass options as flags
-xcodebuildmcp simulator build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
+xcodebuildmcp simulator build --scheme MyApp --project-path ./MyApp.xcodeproj
 
 # Pass complex options as JSON
-xcodebuildmcp simulator build-sim --json '{"scheme": "MyApp", "projectPath": "./MyApp.xcodeproj"}'
+xcodebuildmcp simulator build --json '{"scheme": "MyApp", "projectPath": "./MyApp.xcodeproj"}'
 
 # Control output format
-xcodebuildmcp simulator list-sims --output json
+xcodebuildmcp simulator list --output json
 ```
 
 ## Examples
@@ -54,46 +54,46 @@ xcodebuildmcp simulator list-sims --output json
 
 ```bash
 # Discover projects
-xcodebuildmcp simulator discover-projs
+xcodebuildmcp simulator discover-projects
 
 # List schemes
 xcodebuildmcp simulator list-schemes --project-path ./MyApp.xcodeproj
 
 # Build
-xcodebuildmcp simulator build-sim --scheme MyApp --project-path ./MyApp.xcodeproj
+xcodebuildmcp simulator build --scheme MyApp --project-path ./MyApp.xcodeproj
 
 # Boot simulator
-xcodebuildmcp simulator boot-sim --simulator-name "iPhone 17 Pro"
+xcodebuildmcp simulator boot --simulator-name "iPhone 17 Pro"
 
 # Install and launch
-xcodebuildmcp simulator install-app-sim --simulator-id <UDID> --app-path ./build/MyApp.app
+xcodebuildmcp simulator install --simulator-id <UDID> --app-path ./build/MyApp.app
 
-xcodebuildmcp simulator launch-app-sim --simulator-id <UDID> --bundle-id com.example.MyApp
+xcodebuildmcp simulator launch-app --simulator-id <UDID> --bundle-id com.example.MyApp
 
 # Or... build and run in a single command
-xcodebuildmcp simulator build-run-sim --scheme MyApp --project-path ./MyApp.xcodeproj
+xcodebuildmcp simulator build-and-run --scheme MyApp --project-path ./MyApp.xcodeproj
 ```
 
 ### Log Capture Workflow
 
 ```bash
 # Start log capture
-xcodebuildmcp logging start-sim-log-cap --simulator-id <UDID> --bundle-id com.example.MyApp
+xcodebuildmcp logging start-simulator-log-capture --simulator-id <UDID> --bundle-id com.example.MyApp
 
 > Log capture started successfully. Session ID: 51e2142a-1a99-442a-af01-0586540043df.
 
 # Stop and retrieve logs
-xcodebuildmcp logging stop-sim-log-cap --session-id <SESSION_ID>
+xcodebuildmcp logging stop-simulator-log-capture --session-id <SESSION_ID>
 ```
 
 ### Testing
 
 ```bash
 # Run all tests
-xcodebuildmcp simulator test-sim --scheme MyAppTests --project-path ./MyApp.xcodeproj
+xcodebuildmcp simulator test --scheme MyAppTests --project-path ./MyApp.xcodeproj
 
 # Run with specific simulator
-xcodebuildmcp simulator test-sim --scheme MyAppTests --simulator-name "iPhone 17 Pro"
+xcodebuildmcp simulator test --scheme MyAppTests --simulator-name "iPhone 17 Pro"
 ```
 
 For a full list of workflows and tools, see [TOOLS-CLI.md](TOOLS-CLI.md).
@@ -208,16 +208,16 @@ Total: 2 (1 running, 1 stale)
 
 ### Stateless Tools (run in-process)
 Most tools run directly without the daemon:
-- `build-sim`, `test-sim`, `clean`
-- `list-sims`, `list-schemes`, `discover-projs`
-- `boot-sim`, `install-app-sim`, `launch-app-sim` etc.
+- `build`, `test`, `clean`
+- `list`, `list-schemes`, `discover-projects`
+- `boot`, `install`, `launch-app` etc.
 
 ### Stateful Tools (require daemon)
 Some tools maintain state and route through the daemon:
-- Log capture: `start-sim-log-cap`, `stop-sim-log-cap`
-- Video recording: `record-sim-video`
-- Debugging: `debug-attach-sim`, `debug-continue`, etc.
-- Background processes: `swift-package-run`, `swift-package-stop`
+- Log capture: `start-simulator-log-capture`, `stop-simulator-log-capture`
+- Video recording: `record-video`
+- Debugging: `attach`, `continue`, etc.
+- Background processes: `run`, `stop`
 
 When you invoke a stateful tool, the daemon auto-starts if needed.
 
