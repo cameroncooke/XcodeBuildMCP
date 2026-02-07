@@ -1,7 +1,7 @@
 /**
  * Platform Detection Utility
  *
- * Detects the target platform for a scheme by querying xcodebuild build settings.
+ * Detects the simulator platform for a scheme by querying xcodebuild build settings.
  * This allows build tools to automatically select the correct simulator type
  * (iOS vs watchOS vs tvOS vs visionOS) based on what the scheme actually targets.
  */
@@ -11,37 +11,36 @@ import { log } from './logging/index.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { getDefaultCommandExecutor } from './execution/index.ts';
 
+export type SimulatorPlatform =
+  | XcodePlatform.iOSSimulator
+  | XcodePlatform.watchOSSimulator
+  | XcodePlatform.tvOSSimulator
+  | XcodePlatform.visionOSSimulator;
+
 export interface PlatformDetectionResult {
-  platform: XcodePlatform | null;
+  platform: SimulatorPlatform | null;
   sdkroot: string | null;
   supportedPlatforms: string[];
   error?: string;
 }
 
 /**
- * Maps SDKROOT values to XcodePlatform enum values for simulator builds.
+ * Maps SDKROOT values to simulator platform enum values.
  */
-function sdkrootToSimulatorPlatform(sdkroot: string): XcodePlatform | null {
+function sdkrootToSimulatorPlatform(sdkroot: string): SimulatorPlatform | null {
   const sdkLower = sdkroot.toLowerCase();
 
-  if (sdkLower.includes('watchsimulator') || sdkLower.includes('watchos')) {
+  if (sdkLower.startsWith('watchsimulator')) {
     return XcodePlatform.watchOSSimulator;
   }
-  if (sdkLower.includes('appletvsimulator') || sdkLower.includes('tvos')) {
+  if (sdkLower.startsWith('appletvsimulator')) {
     return XcodePlatform.tvOSSimulator;
   }
-  if (sdkLower.includes('xrsimulator') || sdkLower.includes('visionos')) {
+  if (sdkLower.startsWith('xrsimulator')) {
     return XcodePlatform.visionOSSimulator;
   }
-  if (
-    sdkLower.includes('iphonesimulator') ||
-    sdkLower.includes('iphoneos') ||
-    sdkLower.includes('ios')
-  ) {
+  if (sdkLower.startsWith('iphonesimulator')) {
     return XcodePlatform.iOSSimulator;
-  }
-  if (sdkLower.includes('macos') || sdkLower.includes('macosx')) {
-    return XcodePlatform.macOS;
   }
 
   return null;
@@ -50,43 +49,44 @@ function sdkrootToSimulatorPlatform(sdkroot: string): XcodePlatform | null {
 /**
  * Maps SUPPORTED_PLATFORMS values to determine the primary simulator platform.
  */
-function supportedPlatformsToSimulatorPlatform(platforms: string[]): XcodePlatform | null {
-  // Check in order of specificity
-  for (const platform of platforms) {
-    const platformLower = platform.toLowerCase();
+function supportedPlatformsToSimulatorPlatform(platforms: string[]): SimulatorPlatform | null {
+  const normalizedPlatforms = new Set(platforms.map((platform) => platform.toLowerCase()));
 
-    if (platformLower.includes('watchsimulator') || platformLower.includes('watchos')) {
-      return XcodePlatform.watchOSSimulator;
-    }
-    if (platformLower.includes('appletvsimulator') || platformLower.includes('tvos')) {
-      return XcodePlatform.tvOSSimulator;
-    }
-    if (platformLower.includes('xrsimulator') || platformLower.includes('visionos')) {
-      return XcodePlatform.visionOSSimulator;
-    }
+  // Check in order of specificity
+  if (normalizedPlatforms.has('watchsimulator')) {
+    return XcodePlatform.watchOSSimulator;
+  }
+  if (normalizedPlatforms.has('appletvsimulator')) {
+    return XcodePlatform.tvOSSimulator;
+  }
+  if (normalizedPlatforms.has('xrsimulator')) {
+    return XcodePlatform.visionOSSimulator;
   }
 
   // Check for iOS after more specific platforms
-  for (const platform of platforms) {
-    const platformLower = platform.toLowerCase();
-    if (platformLower.includes('iphonesimulator') || platformLower.includes('iphoneos')) {
-      return XcodePlatform.iOSSimulator;
-    }
-  }
-
-  // Check for macOS
-  for (const platform of platforms) {
-    const platformLower = platform.toLowerCase();
-    if (platformLower.includes('macos') || platformLower.includes('macosx')) {
-      return XcodePlatform.macOS;
-    }
+  if (normalizedPlatforms.has('iphonesimulator')) {
+    return XcodePlatform.iOSSimulator;
   }
 
   return null;
 }
 
+function extractBuildSettingValues(output: string, settingName: string): string[] {
+  const regex = new RegExp(`^\\s*${settingName}\\s*=\\s*(.+)$`, 'gm');
+  const values: string[] = [];
+
+  for (const match of output.matchAll(regex)) {
+    const value = match[1]?.trim();
+    if (value) {
+      values.push(value);
+    }
+  }
+
+  return values;
+}
+
 /**
- * Detects the target platform for a given scheme by querying xcodebuild.
+ * Detects the simulator platform for a given scheme by querying xcodebuild.
  *
  * @param projectPath - Path to the .xcodeproj file (mutually exclusive with workspacePath)
  * @param workspacePath - Path to the .xcworkspace file (mutually exclusive with projectPath)
@@ -101,6 +101,15 @@ export async function detectPlatformFromScheme(
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<PlatformDetectionResult> {
   const command = ['xcodebuild', '-showBuildSettings', '-scheme', scheme];
+
+  if (projectPath && workspacePath) {
+    return {
+      platform: null,
+      sdkroot: null,
+      supportedPlatforms: [],
+      error: 'projectPath and workspacePath are mutually exclusive for platform detection',
+    };
+  }
 
   if (projectPath) {
     command.push('-project', projectPath);
@@ -120,35 +129,45 @@ export async function detectPlatformFromScheme(
     const result = await executor(command, 'Platform Detection', true);
 
     if (!result.success) {
+      const errorMessage = result.error ?? 'xcodebuild -showBuildSettings failed';
       log('warning', `[Platform Detection] Failed to query build settings: ${result.error}`);
       return {
         platform: null,
         sdkroot: null,
         supportedPlatforms: [],
-        error: result.error,
+        error: errorMessage,
       };
     }
 
     const output = result.output || '';
 
-    // Parse SDKROOT
-    const sdkrootMatch = output.match(/^\s*SDKROOT\s*=\s*(.+)$/m);
-    const sdkroot = sdkrootMatch ? sdkrootMatch[1].trim() : null;
+    // Parse all SDKROOT values and prefer the first simulator-compatible one
+    const sdkroots = extractBuildSettingValues(output, 'SDKROOT');
+    let sdkroot: string | null = null;
 
-    // Parse SUPPORTED_PLATFORMS
-    const supportedPlatformsMatch = output.match(/^\s*SUPPORTED_PLATFORMS\s*=\s*(.+)$/m);
-    const supportedPlatforms = supportedPlatformsMatch
-      ? supportedPlatformsMatch[1].trim().split(/\s+/)
-      : [];
+    // Parse all SUPPORTED_PLATFORMS values and flatten into one list
+    const supportedPlatforms = extractBuildSettingValues(output, 'SUPPORTED_PLATFORMS').flatMap(
+      (value) => value.split(/\s+/),
+    );
 
     // Determine platform from SDKROOT first, then fall back to SUPPORTED_PLATFORMS
-    let platform: XcodePlatform | null = null;
+    let platform: SimulatorPlatform | null = null;
 
-    if (sdkroot) {
-      platform = sdkrootToSimulatorPlatform(sdkroot);
-      if (platform) {
-        log('info', `[Platform Detection] Detected platform from SDKROOT: ${platform}`);
+    for (const sdkrootValue of sdkroots) {
+      const detectedPlatform = sdkrootToSimulatorPlatform(sdkrootValue);
+      if (detectedPlatform) {
+        platform = detectedPlatform;
+        sdkroot = sdkrootValue;
+        break;
       }
+    }
+
+    if (!sdkroot && sdkroots.length > 0) {
+      sdkroot = sdkroots[0];
+    }
+
+    if (platform) {
+      log('info', `[Platform Detection] Detected platform from SDKROOT: ${platform}`);
     }
 
     if (!platform && supportedPlatforms.length > 0) {
@@ -176,31 +195,5 @@ export async function detectPlatformFromScheme(
       supportedPlatforms: [],
       error: errorMessage,
     };
-  }
-}
-
-/**
- * Returns true if the platform requires a watchOS simulator.
- */
-export function isWatchOSPlatform(platform: XcodePlatform): boolean {
-  return platform === XcodePlatform.watchOS || platform === XcodePlatform.watchOSSimulator;
-}
-
-/**
- * Returns the simulator platform variant for a given platform.
- * E.g., watchOS -> watchOS Simulator, iOS -> iOS Simulator
- */
-export function getSimulatorPlatform(platform: XcodePlatform): XcodePlatform {
-  switch (platform) {
-    case XcodePlatform.iOS:
-      return XcodePlatform.iOSSimulator;
-    case XcodePlatform.watchOS:
-      return XcodePlatform.watchOSSimulator;
-    case XcodePlatform.tvOS:
-      return XcodePlatform.tvOSSimulator;
-    case XcodePlatform.visionOS:
-      return XcodePlatform.visionOSSimulator;
-    default:
-      return platform; // Already a simulator or macOS
   }
 }
