@@ -4,7 +4,7 @@ import { resolve } from 'path';
 
 const CLI = resolve(__dirname, '../../../build/cli.js');
 const cliEnv = (() => {
-  const env = { ...process.env, NO_COLOR: '1' };
+  const env: Record<string, string | undefined> = { ...process.env, NO_COLOR: '1' };
   // Remove test environment markers so the CLI binary runs in production mode
   delete env.VITEST;
   delete env.NODE_ENV;
