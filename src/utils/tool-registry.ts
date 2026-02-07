@@ -168,3 +168,12 @@ export async function updateWorkflowsFromManifest(
 ): Promise<void> {
   await registerWorkflowsFromManifest(workflowNames, ctx);
 }
+
+export function __resetToolRegistryForTests(): void {
+  for (const tool of registryState.tools.values()) {
+    tool.remove();
+  }
+  registryState.tools.clear();
+  registryState.enabledWorkflows.clear();
+  registryState.currentContext = null;
+}
