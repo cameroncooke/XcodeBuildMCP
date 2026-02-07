@@ -71,11 +71,13 @@ export async function createMcpTestHarness(opts?: McpTestHarnessOptions): Promis
 
     if (opts?.commandResponses) {
       const commandStr = command.join(' ');
-      for (const [pattern, response] of Object.entries(opts.commandResponses)) {
+      const sorted = Object.entries(opts.commandResponses).sort(([a], [b]) => b.length - a.length);
+      for (const [pattern, response] of sorted) {
         if (commandStr.includes(pattern)) {
           return {
             ...defaultCommandResponse,
             ...response,
+            exitCode: response.success ? 0 : 1,
           };
         }
       }
@@ -90,9 +92,11 @@ export async function createMcpTestHarness(opts?: McpTestHarnessOptions): Promis
   __resetToolRegistryForTests();
   sessionStore.clear();
 
+  const mockFs = createMockFileSystemExecutor();
+
   // Set executor overrides on the vitest-resolved source modules
   __setTestCommandExecutorOverride(capturingExecutor);
-  __setTestFileSystemExecutorOverride(createMockFileSystemExecutor());
+  __setTestFileSystemExecutorOverride(mockFs);
 
   // Also set overrides on the built module instances (used by dynamically imported tool handlers)
   const buildRoot = resolve(getPackageRoot(), 'build');
@@ -111,7 +115,7 @@ export async function createMcpTestHarness(opts?: McpTestHarnessOptions): Promis
     __clearTestExecutorOverrides: typeof __clearTestExecutorOverrides;
   };
   builtCommandModule.__setTestCommandExecutorOverride(capturingExecutor);
-  builtCommandModule.__setTestFileSystemExecutorOverride(createMockFileSystemExecutor());
+  builtCommandModule.__setTestFileSystemExecutorOverride(mockFs);
 
   // Set debugger tool context override (source module)
   __setTestDebuggerToolContextOverride({
@@ -141,7 +145,6 @@ export async function createMcpTestHarness(opts?: McpTestHarnessOptions): Promis
     initConfigStore: typeof initConfigStore;
   };
   builtConfigStoreModule.__resetConfigStoreForTests();
-  const mockFs = createMockFileSystemExecutor();
   await builtConfigStoreModule.initConfigStore({
     cwd: '/test',
     fs: mockFs,
@@ -189,7 +192,7 @@ export async function createMcpTestHarness(opts?: McpTestHarnessOptions): Promis
       debug: true,
       disableXcodeAutoSync: true,
     },
-    fileSystemExecutor: createMockFileSystemExecutor(),
+    fileSystemExecutor: mockFs,
   });
 
   // Create InMemoryTransport linked pair

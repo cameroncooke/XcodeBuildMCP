@@ -15,7 +15,6 @@ export function isErrorResponse(result: unknown): boolean {
         c.text.toLowerCase().includes('required') ||
         c.text.toLowerCase().includes('missing') ||
         c.text.toLowerCase().includes('must provide') ||
-        c.text.toLowerCase().includes('provide') ||
         c.text.toLowerCase().includes('fail')),
   );
 }
@@ -23,4 +22,12 @@ export function isErrorResponse(result: unknown): boolean {
 export function getContent(result: unknown): Array<{ type?: string; text?: string }> {
   const r = result as { content?: Array<{ type?: string; text?: string }> };
   return Array.isArray(r.content) ? r.content : [];
+}
+
+export function expectContent(result: unknown): Array<{ type?: string; text?: string }> {
+  const content = getContent(result);
+  if (content.length === 0) {
+    throw new Error('Expected result to have non-empty content');
+  }
+  return content;
 }

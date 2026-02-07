@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
+import { getContent } from '../test-helpers.ts';
 
 let harness: McpTestHarness;
 
@@ -23,16 +24,12 @@ describe('MCP Doctor Tool (e2e)', () => {
       arguments: {},
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
+    const content = getContent(result);
     expect(content.length).toBeGreaterThan(0);
 
-    const hasText =
-      Array.isArray(content) &&
-      content.some(
-        (c) => 'text' in c && typeof c.text === 'string' && c.text.includes('XcodeBuildMCP Doctor'),
-      );
+    const hasText = content.some(
+      (c) => typeof c.text === 'string' && c.text.includes('XcodeBuildMCP Doctor'),
+    );
     expect(hasText).toBe(true);
   });
 });

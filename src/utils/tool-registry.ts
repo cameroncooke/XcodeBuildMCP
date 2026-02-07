@@ -171,7 +171,11 @@ export async function updateWorkflowsFromManifest(
 
 export function __resetToolRegistryForTests(): void {
   for (const tool of registryState.tools.values()) {
-    tool.remove();
+    try {
+      tool.remove();
+    } catch {
+      // Safe to ignore: server may already be closed during cleanup
+    }
   }
   registryState.tools.clear();
   registryState.enabledWorkflows.clear();

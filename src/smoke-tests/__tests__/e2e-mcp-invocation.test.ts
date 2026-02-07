@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
+import { isErrorResponse, expectContent } from '../test-helpers.ts';
 
 let harness: McpTestHarness;
 
@@ -76,10 +77,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('simctl') && c.includes('list'))).toBe(true);
@@ -102,10 +100,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('xcodebuild') && c.includes('MyApp'))).toBe(true);
@@ -126,10 +121,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('xcodebuild') && c.includes('clean'))).toBe(true);
@@ -144,10 +136,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('swift') && c.includes('build'))).toBe(true);
@@ -167,10 +156,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
       expect(commandStrs.some((c) => c.includes('simctl') && c.includes('boot'))).toBe(true);
@@ -190,10 +176,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       expect(harness.capturedCommands.length).toBeGreaterThan(0);
     });
@@ -205,10 +188,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
 
       expect(harness.capturedCommands.length).toBeGreaterThan(0);
     });
@@ -222,10 +202,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         },
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
     });
 
     it('session_show_defaults returns current defaults', async () => {
@@ -234,10 +211,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
     });
 
     it('show_build_settings responds with content', async () => {
@@ -255,10 +229,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      expect(result).toBeDefined();
-      const content = 'content' in result ? result.content : [];
-      expect(Array.isArray(content)).toBe(true);
-      expect(content.length).toBeGreaterThan(0);
+      expectContent(result);
     });
   });
 
@@ -276,22 +247,7 @@ describe('MCP Tool Invocation (e2e)', () => {
         arguments: {},
       });
 
-      const content = 'content' in result ? result.content : [];
-      const isError = 'isError' in result ? result.isError : false;
-      const hasErrorText =
-        Array.isArray(content) &&
-        content.some(
-          (c) =>
-            'text' in c &&
-            typeof c.text === 'string' &&
-            (c.text.toLowerCase().includes('error') ||
-              c.text.toLowerCase().includes('required') ||
-              c.text.toLowerCase().includes('must provide') ||
-              c.text.toLowerCase().includes('invalid') ||
-              c.text.toLowerCase().includes('missing') ||
-              c.text.toLowerCase().includes('provide')),
-        );
-      expect(isError || hasErrorText).toBe(true);
+      expect(isErrorResponse(result)).toBe(true);
     });
 
     it('returns error response for non-existent tool', async () => {
@@ -304,16 +260,7 @@ describe('MCP Tool Invocation (e2e)', () => {
           name: 'this_tool_does_not_exist',
           arguments: {},
         });
-        // If it didn't throw, check for error in the response
-        const isError = 'isError' in result ? result.isError : false;
-        const content = 'content' in result ? result.content : [];
-        const hasError =
-          Array.isArray(content) &&
-          content.some(
-            (c) =>
-              'text' in c && typeof c.text === 'string' && c.text.toLowerCase().includes('error'),
-          );
-        expect(isError || hasError).toBe(true);
+        expect(isErrorResponse(result)).toBe(true);
       } catch (err: unknown) {
         threw = true;
         errorMessage = (err as Error).message;

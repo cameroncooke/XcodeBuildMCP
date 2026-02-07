@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createMcpTestHarness, type McpTestHarness } from '../mcp-test-harness.ts';
+import { expectContent } from '../test-helpers.ts';
 
 let harness: McpTestHarness;
 
@@ -29,10 +30,7 @@ describe('MCP Swift Package Tools (e2e)', () => {
       },
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
+    expectContent(result);
 
     const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
     expect(commandStrs.some((c) => c.includes('swift') && c.includes('clean'))).toBe(true);
@@ -47,10 +45,7 @@ describe('MCP Swift Package Tools (e2e)', () => {
       },
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
+    expectContent(result);
 
     const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
     expect(commandStrs.some((c) => c.includes('swift') && c.includes('test'))).toBe(true);
@@ -65,10 +60,7 @@ describe('MCP Swift Package Tools (e2e)', () => {
       },
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
+    expectContent(result);
 
     const commandStrs = harness.capturedCommands.map((c) => c.command.join(' '));
     expect(commandStrs.some((c) => c.includes('swift') && c.includes('run'))).toBe(true);
@@ -83,15 +75,8 @@ describe('MCP Swift Package Tools (e2e)', () => {
       },
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
-
-    const hasText =
-      Array.isArray(content) &&
-      content.some((c) => 'text' in c && typeof c.text === 'string' && c.text.length > 0);
-    expect(hasText).toBe(true);
+    const content1 = expectContent(result);
+    expect(content1.some((c) => typeof c.text === 'string' && c.text.length > 0)).toBe(true);
   });
 
   it('swift_package_list returns content listing processes', async () => {
@@ -101,14 +86,7 @@ describe('MCP Swift Package Tools (e2e)', () => {
       arguments: {},
     });
 
-    expect(result).toBeDefined();
-    const content = 'content' in result ? result.content : [];
-    expect(Array.isArray(content)).toBe(true);
-    expect(content.length).toBeGreaterThan(0);
-
-    const hasText =
-      Array.isArray(content) &&
-      content.some((c) => 'text' in c && typeof c.text === 'string' && c.text.length > 0);
-    expect(hasText).toBe(true);
+    const content2 = expectContent(result);
+    expect(content2.some((c) => typeof c.text === 'string' && c.text.length > 0)).toBe(true);
   });
 });
