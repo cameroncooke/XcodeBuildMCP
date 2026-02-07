@@ -58,11 +58,16 @@ brew install axe
    ```
    npm install
    ```
-3. Build the project:
+3. Install repository-managed git hooks:
+   ```
+   npm run hooks:install
+   ```
+   This configures `core.hooksPath` to `.githooks` so the shared pre-commit hook runs for this repository.
+4. Build the project:
    ```
    npm run build
    ```
-4. Start the server:
+5. Start the server:
    ```
    node build/cli.js mcp
    ```
@@ -267,17 +272,26 @@ npm run lint:fix
 # 2. Run typechecker (must pass with 0 errors)
 npm run typecheck
 
-# 2. Run formatting (must format all files)
+# 3. Run formatting (must format all files)
 npm run format
 
-# 3. Run build (must compile successfully)
+# 4. Run build (must compile successfully)
 npm run build
 
-# 4. Run tests (all tests must pass)
+# 5. Validate docs CLI command references (requires built CLI artifact)
+npm run docs:check
+
+# 6. Run tests (all tests must pass)
 npm test
 ```
 
 **NO EXCEPTIONS**: Code that fails any of these commands cannot be committed.
+
+The shared pre-commit hook installed via `npm run hooks:install` runs:
+- `npm run format:check`
+- `npm run lint`
+- `npm run build`
+- `npm run docs:check`
 
 ## Making changes
 

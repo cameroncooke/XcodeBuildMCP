@@ -1,0 +1,37 @@
+#!/bin/sh
+set -eu
+
+echo "Running pre-commit checks..."
+
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo "Checking formatting..."
+npm run format:check
+if [ $? -ne 0 ]; then
+  echo "${RED}Formatting check failed. Aborting commit.${NC}"
+  exit 1
+fi
+
+echo "Running linter..."
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "${RED}Linting failed. Aborting commit.${NC}"
+  exit 1
+fi
+
+echo "Building project..."
+npm run build
+if [ $? -ne 0 ]; then
+  echo "${RED}Build failed. Aborting commit.${NC}"
+  exit 1
+fi
+
+echo "Validating CLI command references in consumer docs..."
+npm run docs:check
+if [ $? -ne 0 ]; then
+  echo "${RED}Docs command validation failed. Aborting commit.${NC}"
+  exit 1
+fi
+
+echo "Pre-commit checks passed."

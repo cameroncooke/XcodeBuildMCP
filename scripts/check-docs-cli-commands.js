@@ -1,0 +1,145 @@
+#!/usr/bin/env node
+
+import { spawnSync } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(scriptDir, '..');
+const cliPath = path.join(repoRoot, 'build', 'cli.js');
+
+function fail(message, detail) {
+  console.error(`\n❌ ${message}`);
+  if (detail) {
+    console.error(detail);
+  }
+  process.exit(1);
+}
+
+function loadToolCatalog() {
+  if (!existsSync(cliPath)) {
+    fail(
+      'Missing build artifact: build/cli.js',
+      'Run `npm run build:tsup` before `npm run docs:check`.',
+    );
+  }
+
+  const result = spawnSync(process.execPath, [cliPath, 'tools', '--json'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+
+  if (result.status !== 0) {
+    fail('Failed to load CLI tool catalog from build artifact.', result.stderr || result.stdout);
+  }
+
+  try {
+    return JSON.parse(result.stdout);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown JSON parse error';
+    fail('Could not parse JSON from `node build/cli.js tools --json`.', message);
+  }
+}
+
+function getConsumerDocs() {
+  const docsDir = path.join(repoRoot, 'docs');
+  const docsFiles = readdirSync(docsDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+    .map((entry) => path.join(docsDir, entry.name))
+    .sort();
+
+  return [path.join(repoRoot, 'README.md'), path.join(repoRoot, 'CHANGELOG.md'), ...docsFiles];
+}
+
+function buildValidationSets(catalog) {
+  const validPairs = new Set();
+  const validWorkflows = new Set();
+
+  if (!Array.isArray(catalog.workflows)) {
+    fail('Tool catalog does not contain a workflows array.');
+  }
+
+  for (const workflow of catalog.workflows) {
+    if (!workflow || typeof workflow.workflow !== 'string') {
+      continue;
+    }
+
+    validWorkflows.add(workflow.workflow);
+
+    if (!Array.isArray(workflow.tools)) {
+      continue;
+    }
+
+    for (const tool of workflow.tools) {
+      if (tool && typeof tool.name === 'string') {
+        validPairs.add(`${workflow.workflow} ${tool.name}`);
+      }
+    }
+  }
+
+  return { validPairs, validWorkflows };
+}
+
+function findInvalidCommands(files, validPairs, validWorkflows) {
+  const validTopLevel = new Set(['mcp', 'tools', 'daemon']);
+  const validDaemonActions = new Set(['status', 'start', 'stop', 'restart', 'list']);
+  const findings = [];
+
+  const commandRegex =
+    /(?:^|[^a-z0-9-])xcodebuildmcp(?!-)\s+([a-z][a-z0-9-]*)(?:\s+([a-z][a-z0-9-]*))?/g;
+
+  for (const absoluteFilePath of files) {
+    const relativePath = path.relative(repoRoot, absoluteFilePath) || absoluteFilePath;
+    const content = readFileSync(absoluteFilePath, 'utf8');
+    const lines = content.split(/\r?\n/u);
+
+    for (let lineNumber = 1; lineNumber <= lines.length; lineNumber += 1) {
+      const line = lines[lineNumber - 1];
+      commandRegex.lastIndex = 0;
+      let match = commandRegex.exec(line);
+
+      while (match) {
+        const first = match[1];
+        const second = match[2];
+        const command = second ? `${first} ${second}` : first;
+
+        let valid = false;
+
+        if (!second) {
+          valid = validTopLevel.has(first) || validWorkflows.has(first);
+        } else if (first === 'daemon') {
+          valid = validDaemonActions.has(second);
+        } else {
+          valid = validPairs.has(command);
+        }
+
+        if (!valid) {
+          findings.push(`${relativePath}:${lineNumber}: ${command}`);
+        }
+
+        match = commandRegex.exec(line);
+      }
+    }
+  }
+
+  return findings;
+}
+
+function main() {
+  const catalog = loadToolCatalog();
+  const files = getConsumerDocs();
+  const { validPairs, validWorkflows } = buildValidationSets(catalog);
+  const findings = findInvalidCommands(files, validPairs, validWorkflows);
+
+  if (findings.length > 0) {
+    fail(
+      'Found invalid CLI command references in consumer docs.',
+      `${findings.join('\n')}\n\nRun \`node build/cli.js tools\` to inspect valid commands.`,
+    );
+  }
+
+  console.log('✅ Docs CLI command check passed (README.md + CHANGELOG.md + docs/*.md).');
+}
+
+main();

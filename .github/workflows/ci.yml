@@ -32,6 +32,9 @@ jobs:
     - name: Build (Smithery)
       run: npm run build
 
+    - name: Validate docs CLI command references
+      run: npm run docs:check
+
     - name: Verify Smithery bundle
       run: npm run verify:smithery-bundle
 

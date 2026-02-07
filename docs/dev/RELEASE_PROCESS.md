@@ -171,43 +171,25 @@ Every PR must include these sections in order:
 ### CI/CD Pipeline
 Our GitHub Actions CI pipeline automatically enforces these quality checks:
 1. `npm run build` - Compilation check
-2. `npm run lint` - ESLint validation  
-3. `npm run format:check` - Prettier formatting check
-4. `npm run typecheck` - **TypeScript error validation**
-5. `npm run test` - Test suite execution
+2. `npm run docs:check` - Validate CLI command references in consumer docs
+3. `npm run lint` - ESLint validation  
+4. `npm run format:check` - Prettier formatting check
+5. `npm run typecheck` - **TypeScript error validation**
+6. `npm run test` - Test suite execution
 
 **All checks must pass before PR merge is allowed.**
 
 ### Optional: Pre-commit Hook Setup
-To catch TypeScript errors before committing locally:
+To install the repository-managed pre-commit hook:
 
 ```bash
-# Create pre-commit hook
-cat > .git/hooks/pre-commit << 'EOF'
-#!/bin/sh
-echo "🔍 Running pre-commit checks..."
-
-# Run TypeScript type checking
-echo "📝 Checking TypeScript..."
-npm run typecheck
-if [ $? -ne 0 ]; then
-  echo "❌ TypeScript errors found. Please fix before committing."
-  exit 1
-fi
-
-# Run linting
-echo "🧹 Running linter..."
-npm run lint
-if [ $? -ne 0 ]; then
-  echo "❌ Linting errors found. Please fix before committing."
-  exit 1
-fi
-
-echo "✅ Pre-commit checks passed!"
-EOF
-
-# Make it executable  
-chmod +x .git/hooks/pre-commit
+npm run hooks:install
 ```
 
-This hook will automatically run `typecheck` and `lint` before every commit, preventing TypeScript errors from being committed.
+This installs `.githooks/pre-commit` and configures `core.hooksPath` for this repository.
+
+The shared pre-commit hook runs:
+- `npm run format:check`
+- `npm run lint`
+- `npm run build`
+- `npm run docs:check`
