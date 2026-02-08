@@ -1,0 +1,62 @@
+import { beforeEach, describe, expect, it } from 'vitest';
+import path from 'node:path';
+import { bootstrapRuntime, type RuntimeKind } from '../bootstrap-runtime.ts';
+import { __resetConfigStoreForTests } from '../../utils/config-store.ts';
+import { sessionStore } from '../../utils/session-store.ts';
+import { createMockFileSystemExecutor } from '../../test-utils/mock-executors.ts';
+
+const cwd = '/repo';
+const configPath = path.join(cwd, '.xcodebuildmcp', 'config.yaml');
+
+function createFsWithSessionDefaults() {
+  const yaml = [
+    'schemaVersion: 1',
+    'sessionDefaults:',
+    '  scheme: "AppScheme"',
+    '  simulatorId: "SIM-UUID"',
+    '  simulatorName: "iPhone 16"',
+    '',
+  ].join('\n');
+
+  return createMockFileSystemExecutor({
+    existsSync: (targetPath: string) => targetPath === configPath,
+    readFile: async (targetPath: string) => {
+      if (targetPath !== configPath) {
+        throw new Error(`Unexpected readFile path: ${targetPath}`);
+      }
+      return yaml;
+    },
+  });
+}
+
+describe('bootstrapRuntime', () => {
+  beforeEach(() => {
+    __resetConfigStoreForTests();
+    sessionStore.clear();
+  });
+
+  it('hydrates session defaults for mcp runtime', async () => {
+    const result = await bootstrapRuntime({
+      runtime: 'mcp',
+      cwd,
+      fs: createFsWithSessionDefaults(),
+    });
+
+    expect(result.runtime.config.sessionDefaults?.scheme).toBe('AppScheme');
+    expect(sessionStore.getAll()).toMatchObject({
+      scheme: 'AppScheme',
+      simulatorId: 'SIM-UUID',
+      simulatorName: 'iPhone 16',
+    });
+  });
+
+  it.each(['cli', 'daemon'] as const)(
+    'does not hydrate session defaults for %s runtime',
+    async (runtime: RuntimeKind) => {
+      const result = await bootstrapRuntime({ runtime, cwd, fs: createFsWithSessionDefaults() });
+
+      expect(result.runtime.config.sessionDefaults?.scheme).toBe('AppScheme');
+      expect(sessionStore.getAll()).toEqual({});
+    },
+  );
+});

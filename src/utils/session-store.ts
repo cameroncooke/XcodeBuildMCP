@@ -7,6 +7,11 @@ export type SessionDefaults = {
   configuration?: string;
   simulatorName?: string;
   simulatorId?: string;
+  simulatorPlatform?:
+    | 'iOS Simulator'
+    | 'watchOS Simulator'
+    | 'tvOS Simulator'
+    | 'visionOS Simulator';
   deviceId?: string;
   useLatestOS?: boolean;
   arch?: 'arm64' | 'x86_64';
@@ -19,15 +24,18 @@ export type SessionDefaults = {
 
 class SessionStore {
   private defaults: SessionDefaults = {};
+  private revision = 0;
 
   setDefaults(partial: Partial<SessionDefaults>): void {
     this.defaults = { ...this.defaults, ...partial };
+    this.revision += 1;
     log('info', `[Session] Defaults updated: ${Object.keys(partial).join(', ')}`);
   }
 
   clear(keys?: (keyof SessionDefaults)[]): void {
     if (keys == null) {
       this.defaults = {};
+      this.revision += 1;
       log('info', '[Session] All defaults cleared');
       return;
     }
@@ -37,6 +45,7 @@ class SessionStore {
       return;
     }
     for (const k of keys) delete this.defaults[k];
+    this.revision += 1;
     log('info', `[Session] Defaults cleared: ${keys.join(', ')}`);
   }
 
@@ -46,6 +55,18 @@ class SessionStore {
 
   getAll(): SessionDefaults {
     return { ...this.defaults };
+  }
+
+  getRevision(): number {
+    return this.revision;
+  }
+
+  setDefaultsIfRevision(partial: Partial<SessionDefaults>, expectedRevision: number): boolean {
+    if (this.revision !== expectedRevision) {
+      return false;
+    }
+    this.setDefaults(partial);
+    return true;
   }
 }
 

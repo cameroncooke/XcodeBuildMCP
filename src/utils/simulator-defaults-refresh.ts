@@ -1,0 +1,110 @@
+import { persistSessionDefaultsPatch } from './config-store.ts';
+import { getDefaultCommandExecutor, type CommandExecutor } from './execution/index.ts';
+import { inferPlatform } from './infer-platform.ts';
+import { log } from './logger.ts';
+import { resolveSimulatorIdToName, resolveSimulatorNameToId } from './simulator-resolver.ts';
+import { sessionStore, type SessionDefaults } from './session-store.ts';
+
+type RefreshReason = 'startup-hydration' | 'session-set-defaults';
+
+export interface ScheduleSimulatorDefaultsRefreshOptions {
+  executor?: CommandExecutor;
+  expectedRevision: number;
+  reason: RefreshReason;
+  persist?: boolean;
+  simulatorId?: string;
+  simulatorName?: string;
+  recomputePlatform?: boolean;
+}
+
+function shouldSkipBackgroundRefresh(): boolean {
+  return process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
+}
+
+export function scheduleSimulatorDefaultsRefresh(
+  options: ScheduleSimulatorDefaultsRefreshOptions,
+): void {
+  const hasSelector = options.simulatorId != null || options.simulatorName != null;
+  if (!hasSelector) {
+    return;
+  }
+
+  if (shouldSkipBackgroundRefresh()) {
+    return;
+  }
+
+  setTimeout(() => {
+    void refreshSimulatorDefaults(options);
+  }, 0);
+}
+
+async function refreshSimulatorDefaults(
+  options: ScheduleSimulatorDefaultsRefreshOptions,
+): Promise<void> {
+  let simulatorId = options.simulatorId;
+  let simulatorName = options.simulatorName;
+  const patch: Partial<SessionDefaults> = {};
+  const executor = options.executor ?? getDefaultCommandExecutor();
+
+  try {
+    if (!simulatorId && simulatorName) {
+      const resolution = await resolveSimulatorNameToId(executor, simulatorName);
+      if (resolution.success) {
+        simulatorId = resolution.simulatorId;
+        patch.simulatorId = resolution.simulatorId;
+      }
+    }
+
+    if (!simulatorName && simulatorId) {
+      const resolution = await resolveSimulatorIdToName(executor, simulatorId);
+      if (resolution.success) {
+        simulatorName = resolution.simulatorName;
+        patch.simulatorName = resolution.simulatorName;
+      }
+    }
+
+    const shouldRecomputePlatform = options.recomputePlatform ?? true;
+    if (shouldRecomputePlatform && (simulatorId || simulatorName)) {
+      const inferred = await inferPlatform(
+        {
+          simulatorId,
+          simulatorName,
+          sessionDefaults: {
+            ...sessionStore.getAll(),
+            ...patch,
+            simulatorId,
+            simulatorName,
+            simulatorPlatform: undefined,
+          },
+        },
+        executor,
+      );
+
+      if (inferred.source !== 'default') {
+        patch.simulatorPlatform = inferred.platform;
+      }
+    }
+
+    if (Object.keys(patch).length === 0) {
+      return;
+    }
+
+    const applied = sessionStore.setDefaultsIfRevision(patch, options.expectedRevision);
+    if (!applied) {
+      log(
+        'info',
+        `[Session] Skipped background simulator defaults refresh (${options.reason}) because defaults changed during refresh.`,
+      );
+      return;
+    }
+
+    if (options.persist) {
+      await persistSessionDefaultsPatch({ patch });
+    }
+  } catch (error) {
+    log(
+      'warning',
+      `[Session] Background simulator defaults refresh failed (${options.reason}): ${String(error)}`,
+    );
+  }
+}

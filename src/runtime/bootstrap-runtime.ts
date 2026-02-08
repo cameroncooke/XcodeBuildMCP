@@ -5,12 +5,11 @@ import {
   type RuntimeConfigOverrides,
   type ResolvedRuntimeConfig,
 } from '../utils/config-store.ts';
-import { sessionStore } from '../utils/session-store.ts';
+import { sessionStore, type SessionDefaults } from '../utils/session-store.ts';
 import { getDefaultFileSystemExecutor } from '../utils/command.ts';
-import { getDefaultCommandExecutor } from '../utils/execution/index.ts';
 import { log } from '../utils/logger.ts';
 import type { FileSystemExecutor } from '../utils/FileSystemExecutor.ts';
-import { resolveSimulatorNameToId } from '../utils/simulator-resolver.ts';
+import { scheduleSimulatorDefaultsRefresh } from '../utils/simulator-defaults-refresh.ts';
 
 export type RuntimeKind = 'cli' | 'daemon' | 'mcp';
 
@@ -34,6 +33,24 @@ export interface BootstrapRuntimeResult {
   notices: string[];
 }
 
+function hydrateSessionDefaultsForMcp(defaults: Partial<SessionDefaults> | undefined): void {
+  const hydratedDefaults = { ...(defaults ?? {}) };
+  if (Object.keys(hydratedDefaults).length === 0) {
+    return;
+  }
+
+  sessionStore.setDefaults(hydratedDefaults);
+  const revision = sessionStore.getRevision();
+  scheduleSimulatorDefaultsRefresh({
+    expectedRevision: revision,
+    reason: 'startup-hydration',
+    persist: true,
+    simulatorId: hydratedDefaults.simulatorId,
+    simulatorName: hydratedDefaults.simulatorName,
+    recomputePlatform: true,
+  });
+}
+
 export async function bootstrapRuntime(
   opts: BootstrapRuntimeOptions,
 ): Promise<BootstrapRuntimeResult> {
@@ -55,26 +72,9 @@ export async function bootstrapRuntime(
 
   const config = getConfig();
 
-  const defaults = { ...(config.sessionDefaults ?? {}) };
-  if (Object.keys(defaults).length > 0) {
-    // Auto-resolve simulatorName to simulatorId if only name is provided
-    if (defaults.simulatorName && !defaults.simulatorId) {
-      const executor = getDefaultCommandExecutor();
-      const resolution = await resolveSimulatorNameToId(executor, defaults.simulatorName);
-      if (resolution.success) {
-        defaults.simulatorId = resolution.simulatorId;
-        log(
-          'info',
-          `Resolved simulatorName "${defaults.simulatorName}" to simulatorId: ${resolution.simulatorId}`,
-        );
-      } else {
-        log(
-          'warning',
-          `Failed to resolve simulatorName "${defaults.simulatorName}": ${resolution.error}`,
-        );
-      }
-    }
-    sessionStore.setDefaults(defaults);
+  if (opts.runtime === 'mcp') {
+    hydrateSessionDefaultsForMcp(config.sessionDefaults);
+    log('info', '[Session] Hydrated MCP session defaults; simulator metadata refresh scheduled.');
   }
 
   return {

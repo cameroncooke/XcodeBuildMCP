@@ -66,6 +66,61 @@ export async function resolveSimulatorNameToId(
 }
 
 /**
+ * Resolves a simulator UUID to its name by querying simctl.
+ *
+ * @param executor - Command executor for running simctl
+ * @param simulatorId - The simulator UUID
+ * @returns Resolution result with simulatorName on success, or error message on failure
+ */
+export async function resolveSimulatorIdToName(
+  executor: CommandExecutor,
+  simulatorId: string,
+): Promise<SimulatorResolutionResult> {
+  log('info', `Looking up simulator by UUID: ${simulatorId}`);
+
+  const result = await executor(
+    ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'],
+    'List Simulators',
+    false,
+  );
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: `Failed to list simulators: ${result.error}`,
+    };
+  }
+
+  let simulatorsData: { devices: Record<string, Array<{ udid: string; name: string }>> };
+  try {
+    simulatorsData = JSON.parse(result.output) as typeof simulatorsData;
+  } catch (parseError) {
+    return {
+      success: false,
+      error: `Failed to parse simulator list: ${parseError}`,
+    };
+  }
+
+  for (const runtime in simulatorsData.devices) {
+    const devices = simulatorsData.devices[runtime];
+    const simulator = devices.find((device) => device.udid === simulatorId);
+    if (simulator) {
+      log('info', `Resolved simulator UUID "${simulatorId}" to name: ${simulator.name}`);
+      return {
+        success: true,
+        simulatorId: simulator.udid,
+        simulatorName: simulator.name,
+      };
+    }
+  }
+
+  return {
+    success: false,
+    error: `Simulator UUID "${simulatorId}" not found. Use list_sims to see available simulators.`,
+  };
+}
+
+/**
  * Helper to resolve simulatorId from either simulatorId or simulatorName.
  * If simulatorId is provided, returns it directly.
  * If only simulatorName is provided, resolves it to simulatorId.

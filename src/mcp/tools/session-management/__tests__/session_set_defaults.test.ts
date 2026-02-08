@@ -71,8 +71,8 @@ describe('session-set-defaults tool', () => {
       const current = sessionStore.getAll();
       expect(current.scheme).toBe('MyScheme');
       expect(current.simulatorName).toBe('iPhone 16');
-      // simulatorId should be auto-resolved from simulatorName
-      expect(current.simulatorId).toBe('RESOLVED-SIM-UUID');
+      // simulatorId resolution happens in background; immediate update keeps explicit inputs only
+      expect(current.simulatorId).toBeUndefined();
       expect(current.useLatestOS).toBe(true);
       expect(current.arch).toBe('arm64');
     });
@@ -115,28 +115,33 @@ describe('session-set-defaults tool', () => {
       );
     });
 
-    it('should clear simulatorName when simulatorId is explicitly set', async () => {
-      sessionStore.setDefaults({ simulatorName: 'iPhone 16' });
-      const result = await sessionSetDefaultsLogic({ simulatorId: 'SIM-UUID' }, createContext());
+    it('should clear stale simulatorName when simulatorId is explicitly set', async () => {
+      sessionStore.setDefaults({ simulatorName: 'Old Name' });
+      const result = await sessionSetDefaultsLogic(
+        { simulatorId: 'RESOLVED-SIM-UUID' },
+        createContext(),
+      );
       const current = sessionStore.getAll();
-      expect(current.simulatorId).toBe('SIM-UUID');
+      expect(current.simulatorId).toBe('RESOLVED-SIM-UUID');
       expect(current.simulatorName).toBeUndefined();
       expect(result.content[0].text).toContain(
-        'Cleared simulatorName because simulatorId was explicitly set.',
+        'Cleared simulatorName because simulatorId changed; background resolution will repopulate it.',
       );
     });
 
-    it('should auto-resolve simulatorName to simulatorId when only simulatorName is set', async () => {
+    it('should clear stale simulatorId when only simulatorName is set', async () => {
       sessionStore.setDefaults({ simulatorId: 'OLD-SIM-UUID' });
       const result = await sessionSetDefaultsLogic({ simulatorName: 'iPhone 16' }, createContext());
       const current = sessionStore.getAll();
-      // Both should be set now - name provided, id resolved
+      // simulatorId resolution happens in background; stale id is cleared immediately
       expect(current.simulatorName).toBe('iPhone 16');
-      expect(current.simulatorId).toBe('RESOLVED-SIM-UUID');
-      expect(result.content[0].text).toContain('Resolved simulatorName');
+      expect(current.simulatorId).toBeUndefined();
+      expect(result.content[0].text).toContain(
+        'Cleared simulatorId because simulatorName changed; background resolution will repopulate it.',
+      );
     });
 
-    it('should return error when simulatorName cannot be resolved', async () => {
+    it('should not fail when simulatorName cannot be resolved immediately', async () => {
       const contextWithFailingExecutor = {
         executor: vi.fn().mockImplementation(async (command: string[]) => {
           if (command.includes('simctl') && command.includes('list')) {
@@ -159,8 +164,8 @@ describe('session-set-defaults tool', () => {
         { simulatorName: 'NonExistentSimulator' },
         contextWithFailingExecutor,
       );
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Failed to resolve simulator name');
+      expect(result.isError).toBe(false);
+      expect(sessionStore.getAll().simulatorName).toBe('NonExistentSimulator');
     });
 
     it('should prefer workspacePath when both projectPath and workspacePath are provided', async () => {
@@ -222,7 +227,11 @@ describe('session-set-defaults tool', () => {
       await initConfigStore({ cwd, fs });
 
       const result = await sessionSetDefaultsLogic(
-        { workspacePath: '/new/App.xcworkspace', simulatorId: 'SIM-1', persist: true },
+        {
+          workspacePath: '/new/App.xcworkspace',
+          simulatorId: 'RESOLVED-SIM-UUID',
+          persist: true,
+        },
         createContext(),
       );
 
@@ -235,8 +244,7 @@ describe('session-set-defaults tool', () => {
       };
       expect(parsed.sessionDefaults?.workspacePath).toBe('/new/App.xcworkspace');
       expect(parsed.sessionDefaults?.projectPath).toBeUndefined();
-      expect(parsed.sessionDefaults?.simulatorId).toBe('SIM-1');
-      // simulatorName is cleared because simulatorId was explicitly set
+      expect(parsed.sessionDefaults?.simulatorId).toBe('RESOLVED-SIM-UUID');
       expect(parsed.sessionDefaults?.simulatorName).toBeUndefined();
     });
 

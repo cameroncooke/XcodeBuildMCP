@@ -79,7 +79,7 @@ describe('project-config', () => {
       expect(defaults.workspacePath).toBe(path.join(cwd, 'App.xcworkspace'));
       expect(defaults.projectPath).toBeUndefined();
       expect(defaults.simulatorId).toBe('SIM-1');
-      expect(defaults.simulatorName).toBeUndefined();
+      expect(defaults.simulatorName).toBe('iPhone 16');
       expect(defaults.derivedDataPath).toBe(path.join(cwd, '.derivedData'));
       expect(result.notices.length).toBeGreaterThan(0);
     });

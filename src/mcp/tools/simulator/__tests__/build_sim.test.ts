@@ -182,115 +182,96 @@ describe('build_sim tool', () => {
   });
 
   describe('Command Generation', () => {
-    it('should generate correct build command with minimal parameters (workspace)', async () => {
-      const callHistory: Array<{
-        command: string[];
-        logPrefix?: string;
-        useShell?: boolean;
-        opts?: { env?: Record<string, string>; cwd?: string };
-      }> = [];
+    const SIMCTL_LIST_COMMAND = ['xcrun', 'simctl', 'list', 'devices', 'available', '--json'];
 
-      // Create tracking executor
-      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
-        callHistory.push({ command, logPrefix, useShell, opts });
+    function createTrackingExecutor(callHistory: Array<{ command: string[]; logPrefix?: string }>) {
+      return async (command: string[], logPrefix?: string) => {
+        callHistory.push({ command, logPrefix });
         return createMockCommandResponse({
           success: false,
           output: '',
           error: 'Test error to stop execution early',
         });
       };
+    }
 
-      const result = await build_simLogic(
+    function expectRuntimeLookupThenBuild(
+      callHistory: Array<{ command: string[]; logPrefix?: string }>,
+      expectedBuildCommand: string[],
+      expectedLogPrefix: string,
+    ) {
+      expect(callHistory).toHaveLength(2);
+      expect(callHistory[0].command).toEqual(SIMCTL_LIST_COMMAND);
+      expect(callHistory[1].command).toEqual(expectedBuildCommand);
+      expect(callHistory[1].logPrefix).toBe(expectedLogPrefix);
+    }
+
+    it('should generate correct build command with minimal parameters (workspace)', async () => {
+      const callHistory: Array<{ command: string[]; logPrefix?: string }> = [];
+
+      await build_simLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
-        trackingExecutor,
+        createTrackingExecutor(callHistory),
       );
 
-      // Should generate one build command
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
-        'xcodebuild',
-        '-workspace',
-        '/path/to/MyProject.xcworkspace',
-        '-scheme',
-        'MyScheme',
-        '-configuration',
-        'Debug',
-        '-skipMacroValidation',
-        '-destination',
-        'platform=iOS Simulator,name=iPhone 16,OS=latest',
-        'build',
-      ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expectRuntimeLookupThenBuild(
+        callHistory,
+        [
+          'xcodebuild',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=iOS Simulator,name=iPhone 16,OS=latest',
+          'build',
+        ],
+        'iOS Simulator Build',
+      );
     });
 
     it('should generate correct build command with minimal parameters (project)', async () => {
-      const callHistory: Array<{
-        command: string[];
-        logPrefix?: string;
-        useShell?: boolean;
-        opts?: { env?: Record<string, string>; cwd?: string };
-      }> = [];
+      const callHistory: Array<{ command: string[]; logPrefix?: string }> = [];
 
-      // Create tracking executor
-      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
-        callHistory.push({ command, logPrefix, useShell, opts });
-        return createMockCommandResponse({
-          success: false,
-          output: '',
-          error: 'Test error to stop execution early',
-        });
-      };
-
-      const result = await build_simLogic(
+      await build_simLogic(
         {
           projectPath: '/path/to/MyProject.xcodeproj',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
         },
-        trackingExecutor,
+        createTrackingExecutor(callHistory),
       );
 
-      // Should generate one build command
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
-        'xcodebuild',
-        '-project',
-        '/path/to/MyProject.xcodeproj',
-        '-scheme',
-        'MyScheme',
-        '-configuration',
-        'Debug',
-        '-skipMacroValidation',
-        '-destination',
-        'platform=iOS Simulator,name=iPhone 16,OS=latest',
-        'build',
-      ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expectRuntimeLookupThenBuild(
+        callHistory,
+        [
+          'xcodebuild',
+          '-project',
+          '/path/to/MyProject.xcodeproj',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=iOS Simulator,name=iPhone 16,OS=latest',
+          'build',
+        ],
+        'iOS Simulator Build',
+      );
     });
 
     it('should generate correct build command with all optional parameters', async () => {
-      const callHistory: Array<{
-        command: string[];
-        logPrefix?: string;
-        useShell?: boolean;
-        opts?: { env?: Record<string, string>; cwd?: string };
-      }> = [];
+      const callHistory: Array<{ command: string[]; logPrefix?: string }> = [];
 
-      // Create tracking executor
-      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
-        callHistory.push({ command, logPrefix, useShell, opts });
-        return createMockCommandResponse({
-          success: false,
-          output: '',
-          error: 'Test error to stop execution early',
-        });
-      };
-
-      const result = await build_simLogic(
+      await build_simLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
@@ -300,137 +281,96 @@ describe('build_sim tool', () => {
           extraArgs: ['--verbose'],
           useLatestOS: false,
         },
-        trackingExecutor,
+        createTrackingExecutor(callHistory),
       );
 
-      // Should generate one build command with all parameters
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
-        'xcodebuild',
-        '-workspace',
-        '/path/to/MyProject.xcworkspace',
-        '-scheme',
-        'MyScheme',
-        '-configuration',
-        'Release',
-        '-skipMacroValidation',
-        '-destination',
-        'platform=iOS Simulator,name=iPhone 16',
-        '-derivedDataPath',
-        '/custom/derived/path',
-        '--verbose',
-        'build',
-      ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expectRuntimeLookupThenBuild(
+        callHistory,
+        [
+          'xcodebuild',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Release',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=iOS Simulator,name=iPhone 16',
+          '-derivedDataPath',
+          '/custom/derived/path',
+          '--verbose',
+          'build',
+        ],
+        'iOS Simulator Build',
+      );
     });
 
     it('should handle paths with spaces in command generation', async () => {
-      const callHistory: Array<{
-        command: string[];
-        logPrefix?: string;
-        useShell?: boolean;
-        opts?: { env?: Record<string, string>; cwd?: string };
-      }> = [];
+      const callHistory: Array<{ command: string[]; logPrefix?: string }> = [];
 
-      // Create tracking executor
-      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
-        callHistory.push({ command, logPrefix, useShell, opts });
-        return createMockCommandResponse({
-          success: false,
-          output: '',
-          error: 'Test error to stop execution early',
-        });
-      };
-
-      const result = await build_simLogic(
+      await build_simLogic(
         {
           workspacePath: '/Users/dev/My Project/MyProject.xcworkspace',
           scheme: 'My Scheme',
           simulatorName: 'iPhone 16 Pro',
         },
-        trackingExecutor,
+        createTrackingExecutor(callHistory),
       );
 
-      // Should generate one build command with paths containing spaces
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
-        'xcodebuild',
-        '-workspace',
-        '/Users/dev/My Project/MyProject.xcworkspace',
-        '-scheme',
-        'My Scheme',
-        '-configuration',
-        'Debug',
-        '-skipMacroValidation',
-        '-destination',
-        'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest',
-        'build',
-      ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expectRuntimeLookupThenBuild(
+        callHistory,
+        [
+          'xcodebuild',
+          '-workspace',
+          '/Users/dev/My Project/MyProject.xcworkspace',
+          '-scheme',
+          'My Scheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest',
+          'build',
+        ],
+        'iOS Simulator Build',
+      );
     });
 
     it('should generate correct build command with useLatestOS set to true', async () => {
-      const callHistory: Array<{
-        command: string[];
-        logPrefix?: string;
-        useShell?: boolean;
-        opts?: { env?: Record<string, string>; cwd?: string };
-      }> = [];
+      const callHistory: Array<{ command: string[]; logPrefix?: string }> = [];
 
-      // Create tracking executor
-      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
-        callHistory.push({ command, logPrefix, useShell, opts });
-        return createMockCommandResponse({
-          success: false,
-          output: '',
-          error: 'Test error to stop execution early',
-        });
-      };
-
-      const result = await build_simLogic(
+      await build_simLogic(
         {
           workspacePath: '/path/to/MyProject.xcworkspace',
           scheme: 'MyScheme',
           simulatorName: 'iPhone 16',
           useLatestOS: true,
         },
-        trackingExecutor,
+        createTrackingExecutor(callHistory),
       );
 
-      // Should generate one build command with OS=latest
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
-        'xcodebuild',
-        '-workspace',
-        '/path/to/MyProject.xcworkspace',
-        '-scheme',
-        'MyScheme',
-        '-configuration',
-        'Debug',
-        '-skipMacroValidation',
-        '-destination',
-        'platform=iOS Simulator,name=iPhone 16,OS=latest',
-        'build',
-      ]);
-      expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
+      expectRuntimeLookupThenBuild(
+        callHistory,
+        [
+          'xcodebuild',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=iOS Simulator,name=iPhone 16,OS=latest',
+          'build',
+        ],
+        'iOS Simulator Build',
+      );
     });
 
     it('should infer watchOS platform from simulator name', async () => {
-      const callHistory: Array<{
-        command: string[];
-        logPrefix?: string;
-        useShell?: boolean;
-        opts?: { env?: Record<string, string>; cwd?: string };
-      }> = [];
-
-      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
-        callHistory.push({ command, logPrefix, useShell, opts });
-        return createMockCommandResponse({
-          success: false,
-          output: '',
-          error: 'Test error to stop execution early',
-        });
-      };
+      const callHistory: Array<{ command: string[]; logPrefix?: string }> = [];
 
       await build_simLogic(
         {
@@ -438,24 +378,26 @@ describe('build_sim tool', () => {
           scheme: 'MyWatchScheme',
           simulatorName: 'Apple Watch Ultra 2',
         },
-        trackingExecutor,
+        createTrackingExecutor(callHistory),
       );
 
-      expect(callHistory).toHaveLength(1);
-      expect(callHistory[0].command).toEqual([
-        'xcodebuild',
-        '-workspace',
-        '/path/to/MyProject.xcworkspace',
-        '-scheme',
-        'MyWatchScheme',
-        '-configuration',
-        'Debug',
-        '-skipMacroValidation',
-        '-destination',
-        'platform=watchOS Simulator,name=Apple Watch Ultra 2,OS=latest',
-        'build',
-      ]);
-      expect(callHistory[0].logPrefix).toBe('watchOS Simulator Build');
+      expectRuntimeLookupThenBuild(
+        callHistory,
+        [
+          'xcodebuild',
+          '-workspace',
+          '/path/to/MyProject.xcworkspace',
+          '-scheme',
+          'MyWatchScheme',
+          '-configuration',
+          'Debug',
+          '-skipMacroValidation',
+          '-destination',
+          'platform=watchOS Simulator,name=Apple Watch Ultra 2,OS=latest',
+          'build',
+        ],
+        'watchOS Simulator Build',
+      );
     });
   });
 
