@@ -195,6 +195,45 @@ describe('inferPlatform', () => {
     ]);
   });
 
+  it('prefers workspace defaults when both projectPath and workspacePath are present in session defaults', async () => {
+    sessionStore.setDefaults({
+      projectPath: '/tmp/Test.xcodeproj',
+      workspacePath: '/tmp/Test.xcworkspace',
+      scheme: 'WatchScheme',
+    });
+
+    const callHistory: string[][] = [];
+    const mockExecutor: CommandExecutor = async (command) => {
+      callHistory.push(command);
+
+      if (command[0] === 'xcrun') {
+        return createMockCommandResponse({
+          success: true,
+          output: JSON.stringify({ devices: {} }),
+        });
+      }
+
+      return createMockCommandResponse({
+        success: true,
+        output: 'SDKROOT = watchsimulator',
+      });
+    };
+
+    const result = await inferPlatform({ simulatorId: 'SIM-UUID' }, mockExecutor);
+
+    expect(result.platform).toBe(XcodePlatform.watchOSSimulator);
+    expect(result.source).toBe('build-settings');
+    expect(callHistory).toHaveLength(2);
+    expect(callHistory[1]).toEqual([
+      'xcodebuild',
+      '-showBuildSettings',
+      '-scheme',
+      'WatchScheme',
+      '-workspace',
+      '/tmp/Test.xcworkspace',
+    ]);
+  });
+
   it('defaults to iOS when simulator and build-settings inference both fail', async () => {
     const mockExecutor: CommandExecutor = async (command) => {
       if (command[0] === 'xcrun') {

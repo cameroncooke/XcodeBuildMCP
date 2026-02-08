@@ -75,6 +75,10 @@ export async function sessionSetDefaultsLogic(
   }
 
   const selectorProvided = hasSimulatorId || hasSimulatorName;
+  const simulatorIdChanged = hasSimulatorId && nextParams.simulatorId !== current.simulatorId;
+  const simulatorNameChanged =
+    hasSimulatorName && nextParams.simulatorName !== current.simulatorName;
+
   if (hasSimulatorId && hasSimulatorName) {
     // Both provided - keep both, simulatorId takes precedence for tools
     notices.push(
@@ -82,26 +86,32 @@ export async function sessionSetDefaultsLogic(
     );
   } else if (hasSimulatorId && !hasSimulatorName) {
     toClear.add('simulatorName');
-    notices.push(
-      'Cleared simulatorName because simulatorId changed; background resolution will repopulate it.',
-    );
-    notices.push(
-      `Set simulatorId to "${nextParams.simulatorId}". Simulator name and platform refresh scheduled in background.`,
-    );
+    if (current.simulatorName !== undefined) {
+      notices.push(
+        'Cleared simulatorName because simulatorId was set; background resolution will repopulate it.',
+      );
+    }
+    if (simulatorIdChanged) {
+      notices.push(
+        `Set simulatorId to "${nextParams.simulatorId}". Simulator name and platform refresh scheduled in background.`,
+      );
+    }
   } else if (hasSimulatorName && !hasSimulatorId) {
     toClear.add('simulatorId');
-    notices.push(
-      'Cleared simulatorId because simulatorName changed; background resolution will repopulate it.',
-    );
-    notices.push(
-      `Set simulatorName to "${nextParams.simulatorName}". Simulator ID and platform refresh scheduled in background.`,
-    );
+    if (current.simulatorId !== undefined) {
+      notices.push(
+        'Cleared simulatorId because simulatorName was set; background resolution will repopulate it.',
+      );
+    }
+    if (simulatorNameChanged) {
+      notices.push(
+        `Set simulatorName to "${nextParams.simulatorName}". Simulator ID and platform refresh scheduled in background.`,
+      );
+    }
   }
 
   if (selectorProvided) {
-    const selectorChanged =
-      (hasSimulatorId && nextParams.simulatorId !== current.simulatorId) ||
-      (hasSimulatorName && nextParams.simulatorName !== current.simulatorName);
+    const selectorChanged = simulatorIdChanged || simulatorNameChanged;
     if (selectorChanged) {
       toClear.add('simulatorPlatform');
       notices.push('Cleared simulatorPlatform because simulator selector changed.');

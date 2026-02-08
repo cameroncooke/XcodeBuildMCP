@@ -23,19 +23,21 @@ function shouldSkipBackgroundRefresh(): boolean {
 
 export function scheduleSimulatorDefaultsRefresh(
   options: ScheduleSimulatorDefaultsRefreshOptions,
-): void {
+): boolean {
   const hasSelector = options.simulatorId != null || options.simulatorName != null;
   if (!hasSelector) {
-    return;
+    return false;
   }
 
   if (shouldSkipBackgroundRefresh()) {
-    return;
+    return false;
   }
 
   setTimeout(() => {
     void refreshSimulatorDefaults(options);
   }, 0);
+
+  return true;
 }
 
 async function refreshSimulatorDefaults(

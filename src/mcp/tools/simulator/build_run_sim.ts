@@ -468,7 +468,7 @@ export async function build_run_simLogic(
     }
 
     // --- Success ---
-    log('info', `✅ ${platformName} simulator build & run succeeded.`);
+    log('info', `${platformName} simulator build & run succeeded.`);
 
     const target = params.simulatorId
       ? `simulator UUID '${params.simulatorId}'`
@@ -480,7 +480,7 @@ export async function build_run_simLogic(
       content: [
         {
           type: 'text',
-          text: `✅ ${platformName} simulator build and run succeeded for scheme ${params.scheme} from ${sourceType} ${sourcePath} targeting ${target}.\n\nThe app (${bundleId}) is now running in the ${platformName} Simulator.\nIf you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.`,
+          text: `${platformName} simulator build and run succeeded for scheme ${params.scheme} from ${sourceType} ${sourcePath} targeting ${target}.\n\nThe app (${bundleId}) is now running in the ${platformName} Simulator.\nIf you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.`,
         },
       ],
       nextSteps: [

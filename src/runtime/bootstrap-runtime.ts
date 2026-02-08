@@ -33,15 +33,18 @@ export interface BootstrapRuntimeResult {
   notices: string[];
 }
 
-function hydrateSessionDefaultsForMcp(defaults: Partial<SessionDefaults> | undefined): void {
+/**
+ * Returns true when defaults were hydrated and a background simulator refresh was scheduled.
+ */
+function hydrateSessionDefaultsForMcp(defaults: Partial<SessionDefaults> | undefined): boolean {
   const hydratedDefaults = { ...(defaults ?? {}) };
   if (Object.keys(hydratedDefaults).length === 0) {
-    return;
+    return false;
   }
 
   sessionStore.setDefaults(hydratedDefaults);
   const revision = sessionStore.getRevision();
-  scheduleSimulatorDefaultsRefresh({
+  return scheduleSimulatorDefaultsRefresh({
     expectedRevision: revision,
     reason: 'startup-hydration',
     persist: true,
@@ -72,8 +75,7 @@ export async function bootstrapRuntime(
 
   const config = getConfig();
 
-  if (opts.runtime === 'mcp') {
-    hydrateSessionDefaultsForMcp(config.sessionDefaults);
+  if (opts.runtime === 'mcp' && hydrateSessionDefaultsForMcp(config.sessionDefaults)) {
     log('info', '[Session] Hydrated MCP session defaults; simulator metadata refresh scheduled.');
   }
 

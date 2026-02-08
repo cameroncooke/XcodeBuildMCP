@@ -125,7 +125,7 @@ describe('session-set-defaults tool', () => {
       expect(current.simulatorId).toBe('RESOLVED-SIM-UUID');
       expect(current.simulatorName).toBeUndefined();
       expect(result.content[0].text).toContain(
-        'Cleared simulatorName because simulatorId changed; background resolution will repopulate it.',
+        'Cleared simulatorName because simulatorId was set; background resolution will repopulate it.',
       );
     });
 
@@ -137,8 +137,18 @@ describe('session-set-defaults tool', () => {
       expect(current.simulatorName).toBe('iPhone 16');
       expect(current.simulatorId).toBeUndefined();
       expect(result.content[0].text).toContain(
-        'Cleared simulatorId because simulatorName changed; background resolution will repopulate it.',
+        'Cleared simulatorId because simulatorName was set; background resolution will repopulate it.',
       );
+    });
+
+    it('does not claim simulatorName was cleared when none existed', async () => {
+      sessionStore.setDefaults({ simulatorId: 'RESOLVED-SIM-UUID' });
+      const result = await sessionSetDefaultsLogic(
+        { simulatorId: 'RESOLVED-SIM-UUID' },
+        createContext(),
+      );
+
+      expect(result.content[0].text).not.toContain('Cleared simulatorName');
     });
 
     it('should not fail when simulatorName cannot be resolved immediately', async () => {
