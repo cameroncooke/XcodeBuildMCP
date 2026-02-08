@@ -60,7 +60,7 @@ describe('sync_xcode_defaults tool', () => {
         const simctlOutput = JSON.stringify({
           devices: {
             'com.apple.CoreSimulator.SimRuntime.iOS-18-0': [
-              { udid: 'E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443', name: 'iPhone 16 Pro' },
+              { udid: 'CE3C0D03-8F60-497A-A3B9-6A80BA997FC2', name: 'Apple Vision Pro' },
             ],
           },
         });
@@ -82,15 +82,15 @@ describe('sync_xcode_defaults tool', () => {
         expect(result.content[0].text).toContain('Synced session defaults from Xcode IDE');
         expect(result.content[0].text).toContain('Scheme: MCPTest');
         expect(result.content[0].text).toContain(
-          'Simulator ID: E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443',
+          'Simulator ID: CE3C0D03-8F60-497A-A3B9-6A80BA997FC2',
         );
-        expect(result.content[0].text).toContain('Simulator Name: iPhone 16 Pro');
+        expect(result.content[0].text).toContain('Simulator Name: Apple Vision Pro');
         expect(result.content[0].text).toContain('Bundle ID: com.example.MCPTest');
 
         const defaults = sessionStore.getAll();
         expect(defaults.scheme).toBe('MCPTest');
-        expect(defaults.simulatorId).toBe('E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443');
-        expect(defaults.simulatorName).toBe('iPhone 16 Pro');
+        expect(defaults.simulatorId).toBe('CE3C0D03-8F60-497A-A3B9-6A80BA997FC2');
+        expect(defaults.simulatorName).toBe('Apple Vision Pro');
         expect(defaults.bundleId).toBe('com.example.MCPTest');
       },
     );
@@ -99,7 +99,7 @@ describe('sync_xcode_defaults tool', () => {
       const simctlOutput = JSON.stringify({
         devices: {
           'com.apple.CoreSimulator.SimRuntime.iOS-18-0': [
-            { udid: 'E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443', name: 'iPhone 16 Pro' },
+            { udid: 'CE3C0D03-8F60-497A-A3B9-6A80BA997FC2', name: 'Apple Vision Pro' },
           ],
         },
       });
@@ -125,7 +125,7 @@ describe('sync_xcode_defaults tool', () => {
 
       const defaults = sessionStore.getAll();
       expect(defaults.scheme).toBe('MCPTest');
-      expect(defaults.simulatorId).toBe('E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443');
+      expect(defaults.simulatorId).toBe('CE3C0D03-8F60-497A-A3B9-6A80BA997FC2');
       expect(defaults.bundleId).toBe('com.example.MCPTest');
     });
 
@@ -140,7 +140,7 @@ describe('sync_xcode_defaults tool', () => {
       const simctlOutput = JSON.stringify({
         devices: {
           'com.apple.CoreSimulator.SimRuntime.iOS-18-0': [
-            { udid: 'E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443', name: 'iPhone 16 Pro' },
+            { udid: 'CE3C0D03-8F60-497A-A3B9-6A80BA997FC2', name: 'Apple Vision Pro' },
           ],
         },
       });
@@ -162,8 +162,8 @@ describe('sync_xcode_defaults tool', () => {
 
       const defaults = sessionStore.getAll();
       expect(defaults.scheme).toBe('MCPTest');
-      expect(defaults.simulatorId).toBe('E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443');
-      expect(defaults.simulatorName).toBe('iPhone 16 Pro');
+      expect(defaults.simulatorId).toBe('CE3C0D03-8F60-497A-A3B9-6A80BA997FC2');
+      expect(defaults.simulatorName).toBe('Apple Vision Pro');
       expect(defaults.bundleId).toBe('com.example.MCPTest');
       // Original projectPath should be preserved
       expect(defaults.projectPath).toBe('/some/project.xcodeproj');

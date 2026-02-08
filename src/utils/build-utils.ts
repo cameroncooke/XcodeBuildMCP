@@ -33,6 +33,13 @@ import {
 import { sessionStore } from './session-store.ts';
 import path from 'path';
 
+function resolvePathFromCwd(pathValue: string): string {
+  if (path.isAbsolute(pathValue)) {
+    return pathValue;
+  }
+  return path.resolve(process.cwd(), pathValue);
+}
+
 /**
  * Common function to execute an Xcode build command across platforms
  * @param params Common build parameters
@@ -98,14 +105,21 @@ export async function executeXcodeBuildCommand(
 
   try {
     const command = ['xcodebuild'];
+    const workspacePath = params.workspacePath
+      ? resolvePathFromCwd(params.workspacePath)
+      : undefined;
+    const projectPath = params.projectPath ? resolvePathFromCwd(params.projectPath) : undefined;
+    const derivedDataPath = params.derivedDataPath
+      ? resolvePathFromCwd(params.derivedDataPath)
+      : undefined;
 
     let projectDir = '';
-    if (params.workspacePath) {
-      projectDir = path.dirname(params.workspacePath);
-      command.push('-workspace', params.workspacePath);
-    } else if (params.projectPath) {
-      projectDir = path.dirname(params.projectPath);
-      command.push('-project', params.projectPath);
+    if (workspacePath) {
+      projectDir = path.dirname(workspacePath);
+      command.push('-workspace', workspacePath);
+    } else if (projectPath) {
+      projectDir = path.dirname(projectPath);
+      command.push('-project', projectPath);
     }
 
     command.push('-scheme', params.scheme);
@@ -179,8 +193,8 @@ export async function executeXcodeBuildCommand(
 
     command.push('-destination', destinationString);
 
-    if (params.derivedDataPath) {
-      command.push('-derivedDataPath', params.derivedDataPath);
+    if (derivedDataPath) {
+      command.push('-derivedDataPath', derivedDataPath);
     }
 
     if (params.extraArgs && params.extraArgs.length > 0) {
