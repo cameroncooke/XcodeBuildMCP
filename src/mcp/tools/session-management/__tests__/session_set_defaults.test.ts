@@ -87,6 +87,18 @@ describe('session-set-defaults tool', () => {
       expect(result.content[0].text).toContain('useLatestOS');
     });
 
+    it('should reject env values that are not strings', async () => {
+      const result = await handler({
+        env: {
+          STAGING_ENABLED: 1 as unknown as string,
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('env');
+    });
+
     it('should clear workspacePath when projectPath is set', async () => {
       sessionStore.setDefaults({ workspacePath: '/old/App.xcworkspace' });
       const result = await sessionSetDefaultsLogic(
@@ -356,6 +368,48 @@ describe('session-set-defaults tool', () => {
       expect(parsed.sessionDefaultsProfiles?.ios?.scheme).toBe('NewIOS');
       expect(parsed.sessionDefaultsProfiles?.ios?.simulatorName).toBe('iPhone 16');
       expect(parsed.activeSessionDefaultsProfile).toBe('ios');
+    });
+
+    it('should store env as a Record<string, string> default', async () => {
+      const envVars = { STAGING_ENABLED: '1', DEBUG: 'true' };
+      const result = await sessionSetDefaultsLogic({ env: envVars }, createContext());
+
+      expect(result.isError).toBe(false);
+      expect(sessionStore.getAll().env).toEqual(envVars);
+    });
+
+    it('should persist env to config when persist is true', async () => {
+      const yaml = ['schemaVersion: 1', 'sessionDefaults: {}', ''].join('\n');
+
+      const writes: { path: string; content: string }[] = [];
+      const fs = createMockFileSystemExecutor({
+        existsSync: (targetPath: string) => targetPath === configPath,
+        readFile: async (targetPath: string) => {
+          if (targetPath !== configPath) {
+            throw new Error(`Unexpected readFile path: ${targetPath}`);
+          }
+          return yaml;
+        },
+        writeFile: async (targetPath: string, content: string) => {
+          writes.push({ path: targetPath, content });
+        },
+      });
+
+      await initConfigStore({ cwd, fs });
+
+      const envVars = { API_URL: 'https://staging.example.com' };
+      const result = await sessionSetDefaultsLogic(
+        { env: envVars, persist: true },
+        createContext(),
+      );
+
+      expect(result.content[0].text).toContain('Persisted defaults to');
+      expect(writes.length).toBe(1);
+
+      const parsed = parseYaml(writes[0].content) as {
+        sessionDefaults?: Record<string, unknown>;
+      };
+      expect(parsed.sessionDefaults?.env).toEqual(envVars);
     });
 
     it('should not persist when persist is true but no defaults were provided', async () => {
