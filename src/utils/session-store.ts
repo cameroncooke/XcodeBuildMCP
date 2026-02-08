@@ -20,6 +20,7 @@ export type SessionDefaults = {
   preferXcodebuild?: boolean;
   platform?: string;
   bundleId?: string;
+  env?: Record<string, string>;
 };
 
 class SessionStore {
