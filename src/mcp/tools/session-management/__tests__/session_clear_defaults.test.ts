@@ -49,6 +49,19 @@ describe('session-clear-defaults tool', () => {
       expect(current.arch).toBe('arm64');
     });
 
+    it('should clear env when keys includes env', async () => {
+      sessionStore.setDefaults({ env: { API_URL: 'https://staging.example.com', DEBUG: 'true' } });
+
+      const result = await sessionClearDefaultsLogic({ keys: ['env'] });
+
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('Session defaults cleared');
+
+      const current = sessionStore.getAll();
+      expect(current.env).toBeUndefined();
+      expect(current.scheme).toBe('MyScheme');
+    });
+
     it('should clear all profiles only when all=true', async () => {
       sessionStore.setActiveProfile('ios');
       sessionStore.setDefaults({ scheme: 'IOS' });

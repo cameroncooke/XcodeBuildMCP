@@ -16,6 +16,7 @@ export const sessionDefaultKeys = [
   'preferXcodebuild',
   'platform',
   'bundleId',
+  'env',
 ] as const;
 
 export type SessionDefaultKey = (typeof sessionDefaultKeys)[number];
@@ -54,4 +55,8 @@ export const sessionDefaultsSchema = z.object({
     .string()
     .optional()
     .describe('Default bundle ID for launch/stop/log tools when working on a single app.'),
+  env: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe('Default environment variables to pass to launched apps.'),
 });
