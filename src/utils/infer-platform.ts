@@ -87,7 +87,7 @@ function isSimulatorPlatform(value: unknown): value is SimulatorPlatform {
   return SIMULATOR_PLATFORMS.includes(value as SimulatorPlatform);
 }
 
-export function inferSimulatorSelectorForTool(params: {
+function inferSimulatorSelectorForTool(params: {
   simulatorId?: string;
   simulatorName?: string;
   sessionDefaults?: Partial<SessionDefaults>;
@@ -155,10 +155,20 @@ function resolveProjectFromSession(params: InferPlatformParams): {
   scheme?: string;
 } {
   const defaults = params.sessionDefaults ?? sessionStore.getAll();
+  const hasExplicitProjectPath = params.projectPath !== undefined;
+  const hasExplicitWorkspacePath = params.workspacePath !== undefined;
   const projectPath =
     params.projectPath ?? (params.workspacePath ? undefined : defaults.projectPath);
   const workspacePath =
     params.workspacePath ?? (params.projectPath ? undefined : defaults.workspacePath);
+
+  if (projectPath && workspacePath && !hasExplicitProjectPath && !hasExplicitWorkspacePath) {
+    return {
+      projectPath: undefined,
+      workspacePath,
+      scheme: params.scheme ?? defaults.scheme,
+    };
+  }
 
   return {
     projectPath,
