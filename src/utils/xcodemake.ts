@@ -206,9 +206,6 @@ export async function executeXcodemakeCommand(
   buildArgs: string[],
   logPrefix: string,
 ): Promise<CommandResponse> {
-  // Change directory to project directory, this is needed for xcodemake to work
-  process.chdir(projectDir);
-
   const xcodemakeCommand = [getXcodemakeCommand(), ...buildArgs];
 
   // Remove projectDir from arguments if present at the start
@@ -220,7 +217,7 @@ export async function executeXcodemakeCommand(
     return arg;
   });
 
-  return getDefaultCommandExecutor()(command, logPrefix);
+  return getDefaultCommandExecutor()(command, logPrefix, false, { cwd: projectDir });
 }
 
 /**
