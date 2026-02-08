@@ -29,7 +29,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
   <summary>Cursor</summary>
   <br />
 
-  Add to `~/.cursor/mcp.json`:
+  Recommended (project-scoped): add `.cursor/mcp.json` in your workspace root:
   ```json
   {
     "mcpServers": {
@@ -41,9 +41,24 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
   }
   ```
 
+  For global Cursor config (`~/.cursor/mcp.json`), use this variant so startup is aligned with the active workspace:
+  ```json
+  {
+    "mcpServers": {
+      "XcodeBuildMCP": {
+        "command": "/bin/zsh",
+        "args": [
+          "-lc",
+          "cd \"${workspaceFolder}\" && exec npx -y xcodebuildmcp@beta mcp"
+        ]
+      }
+    }
+  }
+  ```
+
   Or use the quick install link:
 
-[![Install MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/en-US/install-mcp?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoibnB4IC15IHhjb2RlYnVpbGRtY3BAYmV0YSBtY3AifQ%3D%3D)
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-light.svg)](https://cursor.com/en-US/install-mcp?name=XcodeBuildMCP&config=eyJjb21tYW5kIjoiL2Jpbi96c2giLCJhcmdzIjpbIi1sYyIsImNkIFwiJHt3b3Jrc3BhY2VGb2xkZXJ9XCIgJiYgZXhlYyBucHggLXkgeGNvZGVidWlsZG1jcEBiZXRhIG1jcCJdfQ%3D%3D)
   <br />
 </details>
 

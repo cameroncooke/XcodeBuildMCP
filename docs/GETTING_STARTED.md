@@ -63,6 +63,36 @@ See [CONFIGURATION.md](CONFIGURATION.md) for the full schema and examples.
 
 ## Client-specific configuration
 
+### Cursor
+Recommended (project-scoped): create `.cursor/mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "XcodeBuildMCP": {
+      "command": "npx",
+      "args": ["-y", "xcodebuildmcp@beta", "mcp"]
+    }
+  }
+}
+```
+
+If you use a global Cursor config at `~/.cursor/mcp.json`, use this variant to align startup with the active workspace:
+
+```json
+{
+  "mcpServers": {
+    "XcodeBuildMCP": {
+      "command": "/bin/zsh",
+      "args": [
+        "-lc",
+        "cd \"${workspaceFolder}\" && exec npx -y xcodebuildmcp@beta mcp"
+      ]
+    }
+  }
+}
+```
+
 ### OpenAI Codex CLI
 Codex uses TOML for MCP configuration. Add this to `~/.codex/config.toml`:
 
