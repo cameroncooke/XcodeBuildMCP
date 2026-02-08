@@ -72,6 +72,13 @@ jobs:
             # For tag-based releases, package.json was already updated by release script
           fi
 
+      - name: Generate GitHub release notes (production releases only)
+        if: github.event_name == 'push'
+        run: |
+          node scripts/generate-github-release-notes.mjs \
+            --version "${{ steps.get_version.outputs.VERSION }}" \
+            --out github-release-body.md
+
       - name: Create package
         run: npm pack
 
@@ -122,20 +129,7 @@ jobs:
         with:
           tag_name: v${{ steps.get_version.outputs.VERSION }}
           name: Release v${{ steps.get_version.outputs.VERSION }}
-          body: |
-            ## Release v${{ steps.get_version.outputs.VERSION }}
-
-            ### Installation
-            ```bash
-            npm install -g xcodebuildmcp@${{ steps.get_version.outputs.VERSION }}
-            ```
-
-            Or use with npx:
-            ```bash
-            npx xcodebuildmcp@${{ steps.get_version.outputs.VERSION }}
-            ```
-
-            📦 **NPM Package**: https://www.npmjs.com/package/xcodebuildmcp/v/${{ steps.get_version.outputs.VERSION }}
+          body_path: github-release-body.md
           files: |
             xcodebuildmcp-${{ steps.get_version.outputs.VERSION }}.tgz
           draft: false

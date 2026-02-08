@@ -1,5 +1,22 @@
 # Release Process
 
+## GitHub Release Notes Source of Truth
+
+GitHub release descriptions are generated from the matching version section in `CHANGELOG.md`. The release process now enforces this in both local and CI flows:
+
+- `scripts/release.sh` validates release notes generation before tagging and pushing
+- `.github/workflows/release.yml` generates the final GitHub release body from `CHANGELOG.md`
+
+If the changelog section for the target version is missing or empty, release execution fails with a clear error.
+
+If the latest changelog section is `## [Unreleased]` and no matching version heading exists yet, `scripts/release.sh` automatically renames that heading to `## [<version>]` for the release. In `--dry-run`, this rename is performed only in a temporary file and does not modify `CHANGELOG.md`.
+
+Preview release notes locally:
+
+```bash
+node scripts/generate-github-release-notes.mjs --version 2.0.0-beta.1
+```
+
 ## Step-by-Step Development Workflow
 
 ### 1. Starting New Work

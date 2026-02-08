@@ -270,6 +270,57 @@ sed_inplace() {
   fi
 }
 
+prepare_changelog_for_release_notes() {
+  local source_path="$1"
+  local destination_path="$2"
+  local target_version="$3"
+
+  node - "$source_path" "$destination_path" "$target_version" <<'NODE'
+const fs = require('fs');
+
+const [sourcePath, destinationPath, targetVersion] = process.argv.slice(2);
+const versionHeadingRegex = /^##\s+\[([^\]]+)\](?:\s+-\s+.*)?\s*$/;
+const normalizeVersion = (value) => value.trim().replace(/^v/, '');
+
+try {
+  const changelog = fs.readFileSync(sourcePath, 'utf8');
+  const lines = changelog.split(/\r?\n/);
+  const normalizedTargetVersion = normalizeVersion(targetVersion);
+  let firstHeadingIndex = -1;
+  let firstHeadingLabel = '';
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index].match(versionHeadingRegex);
+    if (!match) {
+      continue;
+    }
+
+    const label = match[1].trim();
+    if (normalizeVersion(label) === normalizedTargetVersion) {
+      process.exit(3);
+    }
+
+    if (firstHeadingIndex === -1) {
+      firstHeadingIndex = index;
+      firstHeadingLabel = label;
+    }
+  }
+
+  if (firstHeadingIndex === -1 || firstHeadingLabel !== 'Unreleased') {
+    process.exit(3);
+  }
+
+  lines[firstHeadingIndex] = lines[firstHeadingIndex].replace('[Unreleased]', `[${targetVersion}]`);
+  fs.writeFileSync(destinationPath, `${lines.join('\n')}\n`, 'utf8');
+  process.exit(0);
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`❌ Failed to prepare changelog for release notes: ${message}`);
+  process.exit(1);
+}
+NODE
+}
+
 # Ensure we're in the project root (parent of scripts directory)
 cd "$(dirname "$0")/.."
 
@@ -285,6 +336,48 @@ else
     echo "⚠️  Dry-run: working directory is not clean (continuing)."
   fi
 fi
+
+CHANGELOG_PATH="CHANGELOG.md"
+CHANGELOG_FOR_VALIDATION="$CHANGELOG_PATH"
+CHANGELOG_VALIDATION_TEMP=""
+CHANGELOG_RENAMED_ON_DISK=false
+
+if $DRY_RUN; then
+  CHANGELOG_VALIDATION_TEMP=$(mktemp "${TMPDIR:-/tmp}/xcodebuildmcp-changelog-validation.XXXXXX")
+  if prepare_changelog_for_release_notes "$CHANGELOG_PATH" "$CHANGELOG_VALIDATION_TEMP" "$VERSION"; then
+    CHANGELOG_FOR_VALIDATION="$CHANGELOG_VALIDATION_TEMP"
+    echo "ℹ️  Dry-run: prepared release changelog from [Unreleased] in a temp file."
+  else
+    PREPARE_STATUS=$?
+    if [[ $PREPARE_STATUS -eq 3 ]]; then
+      rm "$CHANGELOG_VALIDATION_TEMP"
+      CHANGELOG_VALIDATION_TEMP=""
+    else
+      rm "$CHANGELOG_VALIDATION_TEMP"
+      exit $PREPARE_STATUS
+    fi
+  fi
+else
+  if prepare_changelog_for_release_notes "$CHANGELOG_PATH" "$CHANGELOG_PATH" "$VERSION"; then
+    CHANGELOG_RENAMED_ON_DISK=true
+    echo "📝 Renamed CHANGELOG heading [Unreleased] -> [$VERSION]"
+  else
+    PREPARE_STATUS=$?
+    if [[ $PREPARE_STATUS -ne 3 ]]; then
+      exit $PREPARE_STATUS
+    fi
+  fi
+fi
+
+echo ""
+echo "🧾 Validating CHANGELOG release notes for v$VERSION..."
+RELEASE_NOTES_TMP=$(mktemp "${TMPDIR:-/tmp}/xcodebuildmcp-release-notes.XXXXXX")
+node scripts/generate-github-release-notes.mjs --version "$VERSION" --changelog "$CHANGELOG_FOR_VALIDATION" --out "$RELEASE_NOTES_TMP"
+rm "$RELEASE_NOTES_TMP"
+if [[ -n "$CHANGELOG_VALIDATION_TEMP" ]]; then
+  rm "$CHANGELOG_VALIDATION_TEMP"
+fi
+echo "✅ CHANGELOG entry found and release notes generated."
 
 # Check if package.json already has this version (from previous attempt)
 CURRENT_PACKAGE_VERSION=$(node -p "require('./package.json').version")
@@ -351,9 +444,9 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
   echo ""
   echo "📦 Committing version changes..."
   if [[ -f server.json ]]; then
-    run git add package.json package-lock.json README.md docs/SKILLS.md server.json
+    run git add package.json package-lock.json README.md docs/SKILLS.md CHANGELOG.md server.json
   else
-    run git add package.json package-lock.json README.md docs/SKILLS.md
+    run git add package.json package-lock.json README.md docs/SKILLS.md CHANGELOG.md
   fi
   run git commit -m "Release v$VERSION"
 else
@@ -367,6 +460,12 @@ else
       run git add server.json
       run git commit -m "Align server.json for v$VERSION"
     fi
+  fi
+
+  if $CHANGELOG_RENAMED_ON_DISK; then
+    echo "📝 Committing changelog release heading update..."
+    run git add CHANGELOG.md
+    run git commit -m "Finalize changelog for v$VERSION"
   fi
 fi
 
