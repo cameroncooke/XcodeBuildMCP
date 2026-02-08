@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import path from 'node:path';
 import { createMockExecutor } from '../../test-utils/mock-executors.ts';
 import { executeXcodeBuildCommand } from '../build-utils.ts';
 import { XcodePlatform } from '../xcode.ts';
@@ -343,6 +344,48 @@ describe('build-utils Sentry Classification', () => {
       expect(capturedOptions).toBeDefined();
       expect(capturedOptions.cwd).toBe('/path/to/project');
       expect(capturedOptions.env).toEqual({ CUSTOM_VAR: 'value' });
+    });
+
+    it('should resolve relative project and derived data paths before execution', async () => {
+      let capturedOptions: unknown;
+      let capturedCommand: string[] | undefined;
+      const mockExecutor = createMockExecutor({
+        success: true,
+        output: 'BUILD SUCCEEDED',
+        exitCode: 0,
+        onExecute: (command, _logPrefix, _useShell, opts) => {
+          capturedCommand = command;
+          capturedOptions = opts;
+        },
+      });
+
+      const relativeProjectPath = 'example_projects/iOS/MCPTest.xcodeproj';
+      const relativeDerivedDataPath = '.derivedData/e2e';
+      const expectedProjectPath = path.resolve(relativeProjectPath);
+      const expectedDerivedDataPath = path.resolve(relativeDerivedDataPath);
+
+      await executeXcodeBuildCommand(
+        {
+          scheme: 'TestScheme',
+          configuration: 'Debug',
+          projectPath: relativeProjectPath,
+          derivedDataPath: relativeDerivedDataPath,
+        },
+        {
+          platform: XcodePlatform.iOSSimulator,
+          simulatorName: 'iPhone 17 Pro',
+          useLatestOS: true,
+          logPrefix: 'iOS Simulator Build',
+        },
+        false,
+        'build',
+        mockExecutor,
+      );
+
+      expect(capturedCommand).toBeDefined();
+      expect(capturedCommand).toContain(expectedProjectPath);
+      expect(capturedCommand).toContain(expectedDerivedDataPath);
+      expect(capturedOptions).toEqual({ cwd: path.dirname(expectedProjectPath) });
     });
   });
 });

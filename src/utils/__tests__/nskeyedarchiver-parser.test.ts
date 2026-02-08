@@ -18,7 +18,7 @@ const EXAMPLE_PROJECT_XCUSERSTATE = join(
 // Expected values for the MCPTest example project
 const EXPECTED_MCPTEST = {
   scheme: 'MCPTest',
-  simulatorId: 'E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443',
+  simulatorId: 'CE3C0D03-8F60-497A-A3B9-6A80BA997FC2',
   simulatorPlatform: 'iphonesimulator',
 };
 

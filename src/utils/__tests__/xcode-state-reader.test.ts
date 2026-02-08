@@ -244,8 +244,8 @@ describe('readXcodeIdeState integration', () => {
             devices: {
               'com.apple.CoreSimulator.SimRuntime.iOS-18-0': [
                 {
-                  udid: 'E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443',
-                  name: 'iPhone 16 Pro',
+                  udid: 'CE3C0D03-8F60-497A-A3B9-6A80BA997FC2',
+                  name: 'Apple Vision Pro',
                 },
               ],
             },
@@ -260,8 +260,8 @@ describe('readXcodeIdeState integration', () => {
 
       expect(result.error).toBeUndefined();
       expect(result.scheme).toBe('MCPTest');
-      expect(result.simulatorId).toBe('E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443');
-      expect(result.simulatorName).toBe('iPhone 16 Pro');
+      expect(result.simulatorId).toBe('CE3C0D03-8F60-497A-A3B9-6A80BA997FC2');
+      expect(result.simulatorName).toBe('Apple Vision Pro');
     },
   );
 
@@ -276,8 +276,8 @@ describe('readXcodeIdeState integration', () => {
             devices: {
               'com.apple.CoreSimulator.SimRuntime.iOS-18-0': [
                 {
-                  udid: 'E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443',
-                  name: 'iPhone 16 Pro',
+                  udid: 'CE3C0D03-8F60-497A-A3B9-6A80BA997FC2',
+                  name: 'Apple Vision Pro',
                 },
               ],
             },
@@ -293,7 +293,7 @@ describe('readXcodeIdeState integration', () => {
 
       expect(result.error).toBeUndefined();
       expect(result.scheme).toBe('MCPTest');
-      expect(result.simulatorId).toBe('E395B9FD-5A4A-4BE5-B61B-E48D1F5AE443');
+      expect(result.simulatorId).toBe('CE3C0D03-8F60-497A-A3B9-6A80BA997FC2');
     },
   );
 });
