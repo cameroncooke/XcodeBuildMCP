@@ -414,6 +414,49 @@ describe('build_sim tool', () => {
       ]);
       expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
     });
+
+    it('should infer watchOS platform from simulator name', async () => {
+      const callHistory: Array<{
+        command: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        opts?: { env?: Record<string, string>; cwd?: string };
+      }> = [];
+
+      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return createMockCommandResponse({
+          success: false,
+          output: '',
+          error: 'Test error to stop execution early',
+        });
+      };
+
+      await build_simLogic(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyWatchScheme',
+          simulatorName: 'Apple Watch Ultra 2',
+        },
+        trackingExecutor,
+      );
+
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0].command).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyWatchScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=watchOS Simulator,name=Apple Watch Ultra 2,OS=latest',
+        'build',
+      ]);
+      expect(callHistory[0].logPrefix).toBe('watchOS Simulator Build');
+    });
   });
 
   describe('Response Processing', () => {

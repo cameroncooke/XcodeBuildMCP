@@ -10,7 +10,6 @@ import * as z from 'zod';
 import { handleTestLogic } from '../../../utils/test/index.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { ToolResponse } from '../../../types/common.ts';
-import { XcodePlatform } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
@@ -18,6 +17,7 @@ import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
+import { inferPlatform } from '../../../utils/infer-platform.ts';
 
 // Define base schema object with all fields
 const baseSchemaObject = z.object({
@@ -91,6 +91,21 @@ export async function test_simLogic(
     );
   }
 
+  const inferred = await inferPlatform(
+    {
+      projectPath: params.projectPath,
+      workspacePath: params.workspacePath,
+      scheme: params.scheme,
+      simulatorId: params.simulatorId,
+      simulatorName: params.simulatorName,
+    },
+    executor,
+  );
+  log(
+    'info',
+    `Inferred simulator platform for tests: ${inferred.platform} (source: ${inferred.source})`,
+  );
+
   return handleTestLogic(
     {
       projectPath: params.projectPath,
@@ -103,7 +118,7 @@ export async function test_simLogic(
       extraArgs: params.extraArgs,
       useLatestOS: params.simulatorId ? false : (params.useLatestOS ?? false),
       preferXcodebuild: params.preferXcodebuild ?? false,
-      platform: XcodePlatform.iOSSimulator,
+      platform: inferred.platform,
       testRunnerEnv: params.testRunnerEnv,
     },
     executor,
