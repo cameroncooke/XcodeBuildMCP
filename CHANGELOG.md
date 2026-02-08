@@ -44,16 +44,21 @@ XcodeBuildMCP can now proxy tools from Xcode 26.3's built-in MCP bridge, giving 
 - **Agent skills**: Optional skill files that prime your agent with usage instructions for the MCP server or CLI. Install via the provided shell script or manually. See [docs/SKILLS.md](docs/SKILLS.md).
 - **MCP tool annotations**: All tools now include MCP-standard annotations (read-only vs. destructive, idempotent, etc.) for clients that support them.
 - **Simulator name resolution**: Session defaults now accept a simulator name and automatically resolve it to a device ID.
+- **Launch environment variables**: Launch tools now accept an optional `env` object so you can pass runtime environment variables when starting apps on simulator or device.
 
 ### Changed
 
 - Simulator tools are now the default workflow. Previously all workflows loaded by default, increasing context usage.
 - Bundled AXe updated to 1.3.0.
 - Landscape screenshots now orient correctly.
+- Simulator platform detection and default refresh behavior are more reliable, so simulator commands stay aligned with your current defaults as they change.
 
 ### Fixed
 
 - Fixed incremental builds corrupting arguments when strings contained substrings matching build flags.
+- Fixed build path handling so relative project, workspace, and derived data paths resolve correctly even when commands run from different working directories.
+- Fixed working-directory leakage in incremental build setup that could affect concurrent requests.
+- Fixed simulator screenshot matching for similarly named devices (for example, `iPhone 15` and `iPhone 15 Pro`).
 
 ## [1.15.1] - 2025-12-20
 
