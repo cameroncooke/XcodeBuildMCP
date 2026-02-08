@@ -33,18 +33,25 @@ export interface BootstrapRuntimeResult {
   notices: string[];
 }
 
+interface MCPSessionHydrationResult {
+  hydrated: boolean;
+  refreshScheduled: boolean;
+}
+
 /**
- * Returns true when defaults were hydrated and a background simulator refresh was scheduled.
+ * Hydrates MCP session defaults and reports whether a background simulator refresh was scheduled.
  */
-function hydrateSessionDefaultsForMcp(defaults: Partial<SessionDefaults> | undefined): boolean {
+function hydrateSessionDefaultsForMcp(
+  defaults: Partial<SessionDefaults> | undefined,
+): MCPSessionHydrationResult {
   const hydratedDefaults = { ...(defaults ?? {}) };
   if (Object.keys(hydratedDefaults).length === 0) {
-    return false;
+    return { hydrated: false, refreshScheduled: false };
   }
 
   sessionStore.setDefaults(hydratedDefaults);
   const revision = sessionStore.getRevision();
-  return scheduleSimulatorDefaultsRefresh({
+  const refreshScheduled = scheduleSimulatorDefaultsRefresh({
     expectedRevision: revision,
     reason: 'startup-hydration',
     persist: true,
@@ -52,6 +59,8 @@ function hydrateSessionDefaultsForMcp(defaults: Partial<SessionDefaults> | undef
     simulatorName: hydratedDefaults.simulatorName,
     recomputePlatform: true,
   });
+
+  return { hydrated: true, refreshScheduled };
 }
 
 export async function bootstrapRuntime(
@@ -75,8 +84,16 @@ export async function bootstrapRuntime(
 
   const config = getConfig();
 
-  if (opts.runtime === 'mcp' && hydrateSessionDefaultsForMcp(config.sessionDefaults)) {
-    log('info', '[Session] Hydrated MCP session defaults; simulator metadata refresh scheduled.');
+  if (opts.runtime === 'mcp') {
+    const hydration = hydrateSessionDefaultsForMcp(config.sessionDefaults);
+    if (hydration.hydrated && hydration.refreshScheduled) {
+      log('info', '[Session] Hydrated MCP session defaults; simulator metadata refresh scheduled.');
+    } else if (hydration.hydrated) {
+      log(
+        'info',
+        '[Session] Hydrated MCP session defaults; simulator metadata refresh not scheduled.',
+      );
+    }
   }
 
   return {

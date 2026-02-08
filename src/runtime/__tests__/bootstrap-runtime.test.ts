@@ -29,6 +29,20 @@ function createFsWithSessionDefaults() {
   });
 }
 
+function createFsWithSchemeOnlySessionDefaults() {
+  const yaml = ['schemaVersion: 1', 'sessionDefaults:', '  scheme: "AppScheme"', ''].join('\n');
+
+  return createMockFileSystemExecutor({
+    existsSync: (targetPath: string) => targetPath === configPath,
+    readFile: async (targetPath: string) => {
+      if (targetPath !== configPath) {
+        throw new Error(`Unexpected readFile path: ${targetPath}`);
+      }
+      return yaml;
+    },
+  });
+}
+
 describe('bootstrapRuntime', () => {
   beforeEach(() => {
     __resetConfigStoreForTests();
@@ -48,6 +62,21 @@ describe('bootstrapRuntime', () => {
       simulatorId: 'SIM-UUID',
       simulatorName: 'iPhone 16',
     });
+  });
+
+  it('hydrates non-simulator session defaults for mcp runtime', async () => {
+    const result = await bootstrapRuntime({
+      runtime: 'mcp',
+      cwd,
+      fs: createFsWithSchemeOnlySessionDefaults(),
+    });
+
+    expect(result.runtime.config.sessionDefaults?.scheme).toBe('AppScheme');
+    expect(sessionStore.getAll()).toMatchObject({
+      scheme: 'AppScheme',
+    });
+    expect(sessionStore.getAll().simulatorId).toBeUndefined();
+    expect(sessionStore.getAll().simulatorName).toBeUndefined();
   });
 
   it.each(['cli', 'daemon'] as const)(
