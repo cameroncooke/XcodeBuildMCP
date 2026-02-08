@@ -7,6 +7,7 @@ export const sessionDefaultKeys = [
   'configuration',
   'simulatorName',
   'simulatorId',
+  'simulatorPlatform',
   'deviceId',
   'useLatestOS',
   'arch',
@@ -29,6 +30,10 @@ export const sessionDefaultsSchema = z.object({
     .describe("Build configuration for Xcode and SwiftPM tools (e.g. 'Debug' or 'Release')."),
   simulatorName: z.string().optional(),
   simulatorId: z.string().optional(),
+  simulatorPlatform: z
+    .enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator'])
+    .optional()
+    .describe('Cached inferred simulator platform.'),
   deviceId: z.string().optional(),
   useLatestOS: z.boolean().optional(),
   arch: z.enum(['arm64', 'x86_64']).optional(),

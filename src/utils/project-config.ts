@@ -68,8 +68,9 @@ function normalizeMutualExclusivity(defaults: Partial<SessionDefaults>): {
   }
 
   if (hasValue(normalized, 'simulatorId') && hasValue(normalized, 'simulatorName')) {
-    delete normalized.simulatorName;
-    notices.push('Both simulatorId and simulatorName were provided; keeping simulatorId.');
+    notices.push(
+      'Both simulatorId and simulatorName were provided; storing both and preferring simulatorId when disambiguating.',
+    );
   }
 
   return { normalized, notices };

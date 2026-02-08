@@ -1,13 +1,13 @@
 import * as z from 'zod';
 import { persistSessionDefaultsPatch } from '../../../utils/config-store.ts';
 import { removeUndefined } from '../../../utils/remove-undefined.ts';
+import { scheduleSimulatorDefaultsRefresh } from '../../../utils/simulator-defaults-refresh.ts';
 import { sessionStore, type SessionDefaults } from '../../../utils/session-store.ts';
 import { sessionDefaultsSchema } from '../../../utils/session-defaults-schema.ts';
 import { createTypedToolWithContext } from '../../../utils/typed-tool-factory.ts';
 import type { ToolResponse } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
-import { resolveSimulatorNameToId } from '../../../utils/simulator-resolver.ts';
 
 const schemaObj = sessionDefaultsSchema.extend({
   persist: z
@@ -53,32 +53,6 @@ export async function sessionSetDefaultsLogic(
     );
   }
 
-  if (hasSimulatorId && hasSimulatorName) {
-    // Both provided - keep both, simulatorId takes precedence for tools
-    notices.push(
-      'Both simulatorId and simulatorName were provided; simulatorId will be used by tools.',
-    );
-  } else if (hasSimulatorName && !hasSimulatorId) {
-    // Only simulatorName provided - resolve to simulatorId
-    const resolution = await resolveSimulatorNameToId(context.executor, nextParams.simulatorName!);
-    if (resolution.success) {
-      nextParams.simulatorId = resolution.simulatorId;
-      notices.push(
-        `Resolved simulatorName "${nextParams.simulatorName}" to simulatorId: ${resolution.simulatorId}`,
-      );
-    } else {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Failed to resolve simulator name: ${resolution.error}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-  }
-
   // Clear mutually exclusive counterparts before merging new defaults
   const toClear = new Set<keyof SessionDefaults>();
   if (
@@ -99,13 +73,38 @@ export async function sessionSetDefaultsLogic(
       notices.push('Cleared projectPath because workspacePath was set.');
     }
   }
-  // Note: simulatorId/simulatorName are no longer mutually exclusive.
-  // When simulatorName is provided, we auto-resolve to simulatorId and keep both.
-  // Only clear simulatorName if simulatorId was explicitly provided without simulatorName.
-  if (hasSimulatorId && !hasSimulatorName) {
+
+  const selectorProvided = hasSimulatorId || hasSimulatorName;
+  if (hasSimulatorId && hasSimulatorName) {
+    // Both provided - keep both, simulatorId takes precedence for tools
+    notices.push(
+      'Both simulatorId and simulatorName were provided; simulatorId will be used by tools.',
+    );
+  } else if (hasSimulatorId && !hasSimulatorName) {
     toClear.add('simulatorName');
-    if (current.simulatorName !== undefined) {
-      notices.push('Cleared simulatorName because simulatorId was explicitly set.');
+    notices.push(
+      'Cleared simulatorName because simulatorId changed; background resolution will repopulate it.',
+    );
+    notices.push(
+      `Set simulatorId to "${nextParams.simulatorId}". Simulator name and platform refresh scheduled in background.`,
+    );
+  } else if (hasSimulatorName && !hasSimulatorId) {
+    toClear.add('simulatorId');
+    notices.push(
+      'Cleared simulatorId because simulatorName changed; background resolution will repopulate it.',
+    );
+    notices.push(
+      `Set simulatorName to "${nextParams.simulatorName}". Simulator ID and platform refresh scheduled in background.`,
+    );
+  }
+
+  if (selectorProvided) {
+    const selectorChanged =
+      (hasSimulatorId && nextParams.simulatorId !== current.simulatorId) ||
+      (hasSimulatorName && nextParams.simulatorName !== current.simulatorName);
+    if (selectorChanged) {
+      toClear.add('simulatorPlatform');
+      notices.push('Cleared simulatorPlatform because simulator selector changed.');
     }
   }
 
@@ -127,6 +126,20 @@ export async function sessionSetDefaultsLogic(
       });
       notices.push(`Persisted defaults to ${path}`);
     }
+  }
+
+  const revision = sessionStore.getRevision();
+  if (selectorProvided) {
+    const defaultsForRefresh = sessionStore.getAll();
+    scheduleSimulatorDefaultsRefresh({
+      executor: context.executor,
+      expectedRevision: revision,
+      reason: 'session-set-defaults',
+      persist: Boolean(persist),
+      simulatorId: defaultsForRefresh.simulatorId,
+      simulatorName: defaultsForRefresh.simulatorName,
+      recomputePlatform: true,
+    });
   }
 
   const updated = sessionStore.getAll();

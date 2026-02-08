@@ -6,6 +6,7 @@ import { detectPlatformFromScheme, type SimulatorPlatform } from './platform-det
 import { sessionStore, type SessionDefaults } from './session-store.ts';
 
 type PlatformInferenceSource =
+  | 'simulator-platform-cache'
   | 'simulator-name'
   | 'simulator-runtime'
   | 'build-settings'
@@ -24,6 +25,13 @@ export interface InferPlatformResult {
   platform: SimulatorPlatform;
   source: PlatformInferenceSource;
 }
+
+const SIMULATOR_PLATFORMS: readonly SimulatorPlatform[] = [
+  XcodePlatform.iOSSimulator,
+  XcodePlatform.watchOSSimulator,
+  XcodePlatform.tvOSSimulator,
+  XcodePlatform.visionOSSimulator,
+] as const;
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -75,14 +83,70 @@ function inferPlatformFromRuntime(runtime: string): SimulatorPlatform | null {
   return null;
 }
 
+function isSimulatorPlatform(value: unknown): value is SimulatorPlatform {
+  return SIMULATOR_PLATFORMS.includes(value as SimulatorPlatform);
+}
+
+export function inferSimulatorSelectorForTool(params: {
+  simulatorId?: string;
+  simulatorName?: string;
+  sessionDefaults?: Partial<SessionDefaults>;
+}): { simulatorId?: string; simulatorName?: string } {
+  const defaults = params.sessionDefaults ?? sessionStore.getAll();
+
+  if (params.simulatorId) {
+    return { simulatorId: params.simulatorId };
+  }
+  if (params.simulatorName) {
+    return { simulatorName: params.simulatorName };
+  }
+  if (defaults.simulatorId) {
+    return { simulatorId: defaults.simulatorId };
+  }
+  if (defaults.simulatorName) {
+    return { simulatorName: defaults.simulatorName };
+  }
+
+  return {};
+}
+
 function resolveSimulatorsFromSession(params: InferPlatformParams): {
   simulatorId?: string;
   simulatorName?: string;
 } {
+  return inferSimulatorSelectorForTool({
+    simulatorId: params.simulatorId,
+    simulatorName: params.simulatorName,
+    sessionDefaults: params.sessionDefaults,
+  });
+}
+
+function resolveCachedPlatform(params: InferPlatformParams): SimulatorPlatform | null {
   const defaults = params.sessionDefaults ?? sessionStore.getAll();
-  const simulatorId = params.simulatorId ?? defaults.simulatorId;
-  const simulatorName = params.simulatorName ?? defaults.simulatorName;
-  return { simulatorId, simulatorName };
+  if (!isSimulatorPlatform(defaults.simulatorPlatform)) {
+    return null;
+  }
+
+  const hasExplicitId = Boolean(params.simulatorId);
+  const hasExplicitName = Boolean(params.simulatorName);
+
+  if (!hasExplicitId && !hasExplicitName) {
+    return defaults.simulatorPlatform;
+  }
+
+  if (hasExplicitId && defaults.simulatorId && params.simulatorId === defaults.simulatorId) {
+    return defaults.simulatorPlatform;
+  }
+
+  if (
+    hasExplicitName &&
+    defaults.simulatorName &&
+    params.simulatorName === defaults.simulatorName
+  ) {
+    return defaults.simulatorPlatform;
+  }
+
+  return null;
 }
 
 function resolveProjectFromSession(params: InferPlatformParams): {
@@ -91,9 +155,14 @@ function resolveProjectFromSession(params: InferPlatformParams): {
   scheme?: string;
 } {
   const defaults = params.sessionDefaults ?? sessionStore.getAll();
+  const projectPath =
+    params.projectPath ?? (params.workspacePath ? undefined : defaults.projectPath);
+  const workspacePath =
+    params.workspacePath ?? (params.projectPath ? undefined : defaults.workspacePath);
+
   return {
-    projectPath: params.projectPath ?? defaults.projectPath,
-    workspacePath: params.workspacePath ?? defaults.workspacePath,
+    projectPath,
+    workspacePath,
     scheme: params.scheme ?? defaults.scheme,
   };
 }
@@ -142,9 +211,13 @@ async function inferPlatformFromSimctl(
         isAvailable?: unknown;
       };
 
-      const matchesId = typeof current.udid === 'string' && current.udid === simulatorId;
-      const matchesName = typeof current.name === 'string' && current.name === simulatorName;
-      if (!matchesId && !matchesName) continue;
+      if (simulatorId) {
+        const matchesId = typeof current.udid === 'string' && current.udid === simulatorId;
+        if (!matchesId) continue;
+      } else {
+        const matchesName = typeof current.name === 'string' && current.name === simulatorName;
+        if (!matchesName) continue;
+      }
       if (typeof current.isAvailable === 'boolean' && !current.isAvailable) continue;
 
       return inferPlatformFromRuntime(runtime);
@@ -158,14 +231,12 @@ export async function inferPlatform(
   params: InferPlatformParams,
   executor: CommandExecutor = getDefaultCommandExecutor(),
 ): Promise<InferPlatformResult> {
-  const { simulatorId, simulatorName } = resolveSimulatorsFromSession(params);
-
-  if (simulatorName) {
-    const inferredFromName = inferPlatformFromSimulatorName(simulatorName);
-    if (inferredFromName) {
-      return { platform: inferredFromName, source: 'simulator-name' };
-    }
+  const cachedPlatform = resolveCachedPlatform(params);
+  if (cachedPlatform) {
+    return { platform: cachedPlatform, source: 'simulator-platform-cache' };
   }
+
+  const { simulatorId, simulatorName } = resolveSimulatorsFromSession(params);
 
   let simulatorIdForLookup = simulatorId;
   let simulatorNameForLookup = simulatorName;
@@ -181,6 +252,13 @@ export async function inferPlatform(
   );
   if (inferredFromRuntime) {
     return { platform: inferredFromRuntime, source: 'simulator-runtime' };
+  }
+
+  if (simulatorNameForLookup) {
+    const inferredFromName = inferPlatformFromSimulatorName(simulatorNameForLookup);
+    if (inferredFromName) {
+      return { platform: inferredFromName, source: 'simulator-name' };
+    }
   }
 
   const { projectPath, workspacePath, scheme } = resolveProjectFromSession(params);
