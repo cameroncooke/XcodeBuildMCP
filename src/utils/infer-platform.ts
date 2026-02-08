@@ -110,17 +110,6 @@ function inferSimulatorSelectorForTool(params: {
   return {};
 }
 
-function resolveSimulatorsFromSession(params: InferPlatformParams): {
-  simulatorId?: string;
-  simulatorName?: string;
-} {
-  return inferSimulatorSelectorForTool({
-    simulatorId: params.simulatorId,
-    simulatorName: params.simulatorName,
-    sessionDefaults: params.sessionDefaults,
-  });
-}
-
 function resolveCachedPlatform(params: InferPlatformParams): SimulatorPlatform | null {
   const defaults = params.sessionDefaults ?? sessionStore.getAll();
   if (!isSimulatorPlatform(defaults.simulatorPlatform)) {
@@ -246,7 +235,11 @@ export async function inferPlatform(
     return { platform: cachedPlatform, source: 'simulator-platform-cache' };
   }
 
-  const { simulatorId, simulatorName } = resolveSimulatorsFromSession(params);
+  const { simulatorId, simulatorName } = inferSimulatorSelectorForTool({
+    simulatorId: params.simulatorId,
+    simulatorName: params.simulatorName,
+    sessionDefaults: params.sessionDefaults,
+  });
 
   let simulatorIdForLookup = simulatorId;
   let simulatorNameForLookup = simulatorName;
