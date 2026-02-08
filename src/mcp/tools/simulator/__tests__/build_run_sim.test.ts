@@ -491,6 +491,49 @@ describe('build_run_sim tool', () => {
       ]);
       expect(callHistory[0].logPrefix).toBe('iOS Simulator Build');
     });
+
+    it('should infer tvOS platform from simulator name for build command', async () => {
+      const callHistory: Array<{
+        command: string[];
+        logPrefix?: string;
+        useShell?: boolean;
+        opts?: { env?: Record<string, string>; cwd?: string };
+      }> = [];
+
+      const trackingExecutor: CommandExecutor = async (command, logPrefix, useShell, opts) => {
+        callHistory.push({ command, logPrefix, useShell, opts });
+        return createMockCommandResponse({
+          success: false,
+          output: '',
+          error: 'Test error to stop execution early',
+        });
+      };
+
+      await build_run_simLogic(
+        {
+          workspacePath: '/path/to/MyProject.xcworkspace',
+          scheme: 'MyTVScheme',
+          simulatorName: 'Apple TV 4K',
+        },
+        trackingExecutor,
+      );
+
+      expect(callHistory).toHaveLength(1);
+      expect(callHistory[0].command).toEqual([
+        'xcodebuild',
+        '-workspace',
+        '/path/to/MyProject.xcworkspace',
+        '-scheme',
+        'MyTVScheme',
+        '-configuration',
+        'Debug',
+        '-skipMacroValidation',
+        '-destination',
+        'platform=tvOS Simulator,name=Apple TV 4K,OS=latest',
+        'build',
+      ]);
+      expect(callHistory[0].logPrefix).toBe('tvOS Simulator Build');
+    });
   });
 
   describe('XOR Validation', () => {

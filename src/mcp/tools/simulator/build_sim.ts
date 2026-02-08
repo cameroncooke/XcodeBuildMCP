@@ -10,7 +10,6 @@ import * as z from 'zod';
 import { log } from '../../../utils/logging/index.ts';
 import { executeXcodeBuildCommand } from '../../../utils/build/index.ts';
 import type { ToolResponse } from '../../../types/common.ts';
-import { XcodePlatform } from '../../../types/common.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import {
@@ -18,6 +17,7 @@ import {
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
+import { inferPlatform } from '../../../utils/infer-platform.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
 const baseOptions = {
@@ -91,10 +91,22 @@ async function _handleSimulatorBuildLogic(
     );
   }
 
-  log(
-    'info',
-    `Starting iOS Simulator build for scheme ${params.scheme} from ${projectType}: ${filePath}`,
+  const inferred = await inferPlatform(
+    {
+      projectPath: params.projectPath,
+      workspacePath: params.workspacePath,
+      scheme: params.scheme,
+      simulatorId: params.simulatorId,
+      simulatorName: params.simulatorName,
+    },
+    executor,
   );
+  const detectedPlatform = inferred.platform;
+  const platformName = detectedPlatform.replace(' Simulator', '');
+  const logPrefix = `${platformName} Simulator Build`;
+
+  log('info', `Starting ${logPrefix} for scheme ${params.scheme} from ${projectType}: ${filePath}`);
+  log('info', `Inferred simulator platform: ${detectedPlatform} (source: ${inferred.source})`);
 
   // Ensure configuration has a default value for SharedBuildParams compatibility
   const sharedBuildParams = {
@@ -106,11 +118,11 @@ async function _handleSimulatorBuildLogic(
   return executeXcodeBuildCommand(
     sharedBuildParams,
     {
-      platform: XcodePlatform.iOSSimulator,
+      platform: detectedPlatform,
       simulatorName: params.simulatorName,
       simulatorId: params.simulatorId,
       useLatestOS: params.simulatorId ? false : params.useLatestOS, // Ignore useLatestOS with ID
-      logPrefix: 'iOS Simulator Build',
+      logPrefix,
     },
     params.preferXcodebuild ?? false,
     'build',
