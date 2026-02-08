@@ -17,7 +17,9 @@ struct ContentView: View {
                 .imageScale(.large)
                 .foregroundStyle(.tint)
             TextField("Enter text", text: $text)
+                #if !os(watchOS) && !os(tvOS)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                #endif
                 .padding(.horizontal)
             Text(text)
 
