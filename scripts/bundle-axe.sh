@@ -8,7 +8,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BUNDLED_DIR="$PROJECT_ROOT/bundled"
-AXE_LOCAL_DIR="/Volumes/Developer/AXe"
+AXE_LOCAL_DIR="${AXE_LOCAL_DIR:-/Users/cameroncooke/Developer/AXe}"
 AXE_TEMP_DIR="/tmp/axe-download-$$"
 
 echo "🔨 Preparing AXe artifacts for bundling..."
@@ -31,7 +31,7 @@ echo "📌 Using AXe version: $PINNED_AXE_VERSION"
 # Clean up any existing bundled directory
 if [ -d "$BUNDLED_DIR" ]; then
     echo "🧹 Cleaning existing bundled directory..."
-    rm -rf "$BUNDLED_DIR"
+    rm -r "$BUNDLED_DIR"
 fi
 
 # Create bundled directory
@@ -147,6 +147,25 @@ ls -la "$BUNDLED_DIR/Frameworks/"
 # Verify binary can run with bundled frameworks (macOS only)
 OS_NAME="$(uname -s)"
 if [ "$OS_NAME" = "Darwin" ]; then
+    echo "🔏 Verifying AXe signatures..."
+    if ! codesign --verify --deep --strict "$BUNDLED_DIR/axe"; then
+        echo "❌ Signature verification failed for bundled AXe binary"
+        exit 1
+    fi
+
+    while IFS= read -r framework_path; do
+        if ! codesign --verify --deep --strict "$framework_path"; then
+            echo "❌ Signature verification failed for framework: $framework_path"
+            exit 1
+        fi
+    done < <(find "$BUNDLED_DIR/Frameworks" -name "*.framework" -type d)
+
+    echo "🛡️ Assessing AXe with Gatekeeper..."
+    if ! spctl --assess --type execute "$BUNDLED_DIR/axe"; then
+        echo "❌ Gatekeeper assessment failed for bundled AXe binary"
+        exit 1
+    fi
+
     echo "🧪 Testing bundled AXe binary..."
     if DYLD_FRAMEWORK_PATH="$BUNDLED_DIR/Frameworks" "$BUNDLED_DIR/axe" --version > /dev/null 2>&1; then
         echo "✅ Bundled AXe binary test passed"
@@ -166,7 +185,7 @@ echo "📋 AXe version: $AXE_VERSION"
 # Clean up temp directory if it was used
 if [ -d "$AXE_TEMP_DIR" ]; then
     echo "🧹 Cleaning up temporary files..."
-    rm -rf "$AXE_TEMP_DIR"
+    rm -r "$AXE_TEMP_DIR"
 fi
 
 # Show final bundle size
