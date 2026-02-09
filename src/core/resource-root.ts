@@ -21,7 +21,10 @@ function findPackageRootFrom(startDir: string): string | null {
 
 export function getPackageRoot(): string {
   const candidates: string[] = [];
-  candidates.push(path.dirname(fileURLToPath(import.meta.url)));
+  const importMetaUrl = typeof import.meta.url === 'string' ? import.meta.url : null;
+  if (importMetaUrl) {
+    candidates.push(path.dirname(fileURLToPath(importMetaUrl)));
+  }
   candidates.push(process.cwd());
   const entry = process.argv[1];
   if (entry) {
