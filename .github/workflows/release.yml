@@ -19,6 +19,8 @@ jobs:
   release:
     runs-on: macos-latest
     environment: production
+    outputs:
+      version: ${{ steps.get_version.outputs.VERSION }}
 
     steps:
       - name: Checkout code
@@ -214,3 +216,126 @@ jobs:
             delay=$((delay*2))
           done
           echo "✅ MCP Registry publish succeeded."
+
+  build_and_package_macos:
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-14
+          - arch: x64
+            runner: macos-13
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Package portable artifact
+        run: |
+          npm run package:macos -- --arch "${{ matrix.arch }}" --version "${{ needs.release.outputs.version }}"
+
+      - name: Verify portable artifact
+        run: |
+          npm run verify:portable -- --archive "dist/portable/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-${{ matrix.arch }}.tar.gz"
+
+      - name: Upload arch artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-${{ matrix.arch }}
+          path: |
+            dist/portable/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-${{ matrix.arch }}
+            dist/portable/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-${{ matrix.arch }}.tar.gz
+            dist/portable/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-${{ matrix.arch }}.tar.gz.sha256
+
+  build_universal_and_verify:
+    needs: [release, build_and_package_macos]
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: portable-arm64
+          path: dist/portable/arm64
+
+      - name: Download x64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: portable-x64
+          path: dist/portable/x64
+
+      - name: Build universal portable artifact
+        run: |
+          npm run package:macos:universal -- \
+            --version "${{ needs.release.outputs.version }}" \
+            --arm64-root "dist/portable/arm64/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-arm64" \
+            --x64-root "dist/portable/x64/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-x64"
+
+      - name: Verify universal portable artifact
+        run: |
+          npm run verify:portable -- --archive "dist/portable/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-universal.tar.gz"
+
+      - name: Upload universal artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-universal
+          path: |
+            dist/portable/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-universal
+            dist/portable/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-universal.tar.gz
+            dist/portable/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-universal.tar.gz.sha256
+
+  publish_portable_assets:
+    if: github.event_name == 'push'
+    needs: [release, build_universal_and_verify]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: portable-arm64
+          path: dist/portable/arm64
+
+      - name: Download x64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: portable-x64
+          path: dist/portable/x64
+
+      - name: Download universal artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: portable-universal
+          path: dist/portable/universal
+
+      - name: Upload portable assets to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "v${{ needs.release.outputs.version }}" \
+            dist/portable/arm64/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-arm64.tar.gz \
+            dist/portable/arm64/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-arm64.tar.gz.sha256 \
+            dist/portable/x64/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-x64.tar.gz \
+            dist/portable/x64/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-x64.tar.gz.sha256 \
+            dist/portable/universal/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-universal.tar.gz \
+            dist/portable/universal/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-universal.tar.gz.sha256 \
+            --clobber
