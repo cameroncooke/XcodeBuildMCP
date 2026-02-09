@@ -344,6 +344,8 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: [release, build_and_package_macos]
     runs-on: ubuntu-latest
+    env:
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -366,11 +368,11 @@ jobs:
           path: dist/portable/x64
 
       - name: Skip when tap token is unavailable
-        if: secrets.HOMEBREW_TAP_TOKEN == ''
+        if: env.HOMEBREW_TAP_TOKEN == ''
         run: echo "HOMEBREW_TAP_TOKEN is not set; skipping Homebrew tap update."
 
       - name: Generate formula
-        if: secrets.HOMEBREW_TAP_TOKEN != ''
+        if: env.HOMEBREW_TAP_TOKEN != ''
         run: |
           VERSION="${{ needs.release.outputs.version }}"
           ARM64_SHA="$(awk '{print $1}' dist/portable/arm64/xcodebuildmcp-${VERSION}-darwin-arm64.tar.gz.sha256)"
@@ -382,9 +384,9 @@ jobs:
             --out dist/homebrew/Formula/xcodebuildmcp.rb
 
       - name: Create pull request in tap repo
-        if: secrets.HOMEBREW_TAP_TOKEN != ''
+        if: env.HOMEBREW_TAP_TOKEN != ''
         env:
-          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          GH_TOKEN: ${{ env.HOMEBREW_TAP_TOKEN }}
         run: |
           VERSION="${{ needs.release.outputs.version }}"
           BRANCH="xcodebuildmcp-v${VERSION}"
