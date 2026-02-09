@@ -290,12 +290,29 @@ jobs:
           name: portable-x64
           path: dist/portable/x64
 
+      - name: Resolve extracted arch roots
+        id: resolve_roots
+        run: |
+          VERSION="${{ needs.release.outputs.version }}"
+          ARM64_ROOT="$(find dist/portable/arm64 -type d -name "xcodebuildmcp-${VERSION}-darwin-arm64" -print -quit)"
+          X64_ROOT="$(find dist/portable/x64 -type d -name "xcodebuildmcp-${VERSION}-darwin-x64" -print -quit)"
+          if [ -z "$ARM64_ROOT" ] || [ -z "$X64_ROOT" ]; then
+            echo "Failed to resolve extracted arch roots."
+            echo "arm64 root: ${ARM64_ROOT:-<missing>}"
+            echo "x64 root: ${X64_ROOT:-<missing>}"
+            echo "--- dist/portable tree (depth 4) ---"
+            find dist/portable -maxdepth 4 -print
+            exit 1
+          fi
+          echo "ARM64_ROOT=$ARM64_ROOT" >> "$GITHUB_OUTPUT"
+          echo "X64_ROOT=$X64_ROOT" >> "$GITHUB_OUTPUT"
+
       - name: Build universal portable artifact
         run: |
           npm run package:macos:universal -- \
             --version "${{ needs.release.outputs.version }}" \
-            --arm64-root "dist/portable/arm64/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-arm64" \
-            --x64-root "dist/portable/x64/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-x64"
+            --arm64-root "${{ steps.resolve_roots.outputs.ARM64_ROOT }}" \
+            --x64-root "${{ steps.resolve_roots.outputs.X64_ROOT }}"
 
       - name: Verify universal portable artifact
         run: |
@@ -396,22 +413,36 @@ jobs:
         run: |
           VERSION="${{ needs.release.outputs.version }}"
           BRANCH="xcodebuildmcp-v${VERSION}"
+          DEFAULT_BRANCH="main"
           git clone "https://x-access-token:${GH_TOKEN}@github.com/cameroncooke/homebrew-xcodebuildmcp.git" tap-repo
+          mkdir -p tap-repo/Formula
           cp dist/homebrew/Formula/xcodebuildmcp.rb tap-repo/Formula/xcodebuildmcp.rb
           cd tap-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+            echo "Tap repo has no commits; bootstrapping ${DEFAULT_BRANCH}."
+            git checkout -b "$DEFAULT_BRANCH"
+            git add Formula/xcodebuildmcp.rb
+            git commit -m "Initialize xcodebuildmcp formula ${VERSION}"
+            git push origin "$DEFAULT_BRANCH"
+            exit 0
+          fi
+          DETECTED_BRANCH="$(gh repo view cameroncooke/homebrew-xcodebuildmcp --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || true)"
+          if [ -n "$DETECTED_BRANCH" ]; then
+            DEFAULT_BRANCH="$DETECTED_BRANCH"
+          fi
           if git diff --quiet Formula/xcodebuildmcp.rb; then
             echo "Formula already up to date; skipping PR."
             exit 0
           fi
-          git checkout -b "$BRANCH"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
           git add Formula/xcodebuildmcp.rb
           git commit -m "xcodebuildmcp ${VERSION}"
-          git push origin "$BRANCH"
+          git push --set-upstream origin "$BRANCH"
           gh pr create \
             --repo cameroncooke/homebrew-xcodebuildmcp \
             --title "Update xcodebuildmcp to ${VERSION}" \
             --body "Automated formula update for xcodebuildmcp ${VERSION}." \
-            --base main \
+            --base "$DEFAULT_BRANCH" \
             --head "$BRANCH"
