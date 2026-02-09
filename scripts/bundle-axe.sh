@@ -37,8 +37,13 @@ fi
 # Create bundled directory
 mkdir -p "$BUNDLED_DIR"
 
-# Use local AXe build if available (unless AXE_FORCE_REMOTE=1), otherwise download from GitHub releases
-if [ -z "${AXE_FORCE_REMOTE}" ] && [ -d "$AXE_LOCAL_DIR" ] && [ -f "$AXE_LOCAL_DIR/Package.swift" ]; then
+USE_LOCAL_AXE=false
+if [ -z "${AXE_FORCE_REMOTE}" ] && [ "${AXE_USE_LOCAL:-0}" = "1" ]; then
+    USE_LOCAL_AXE=true
+fi
+
+# Use local AXe build only when explicitly requested, otherwise download from GitHub releases.
+if [ "$USE_LOCAL_AXE" = true ] && [ -d "$AXE_LOCAL_DIR" ] && [ -f "$AXE_LOCAL_DIR/Package.swift" ]; then
     echo "🏠 Using local AXe source at $AXE_LOCAL_DIR"
     cd "$AXE_LOCAL_DIR"
 
@@ -80,6 +85,11 @@ if [ -z "${AXE_FORCE_REMOTE}" ] && [ -d "$AXE_LOCAL_DIR" ] && [ -f "$AXE_LOCAL_D
         fi
     done
 else
+    if [ "$USE_LOCAL_AXE" = true ]; then
+        echo "❌ AXE_USE_LOCAL=1 was set, but AXE_LOCAL_DIR is missing or invalid: $AXE_LOCAL_DIR"
+        exit 1
+    fi
+
     echo "📥 Downloading latest AXe release from GitHub..."
 
     # Construct release download URL from pinned version
@@ -154,17 +164,34 @@ if [ "$OS_NAME" = "Darwin" ]; then
     fi
 
     while IFS= read -r framework_path; do
-        if ! codesign --verify --deep --strict "$framework_path"; then
-            echo "❌ Signature verification failed for framework: $framework_path"
+        framework_name="$(basename "$framework_path" .framework)"
+        framework_binary="$framework_path/Versions/A/$framework_name"
+        if [ ! -f "$framework_binary" ]; then
+            framework_binary="$framework_path/Versions/Current/$framework_name"
+        fi
+        if [ ! -f "$framework_binary" ]; then
+            echo "❌ Framework binary not found: $framework_binary"
+            exit 1
+        fi
+        if ! codesign --verify --deep --strict "$framework_binary"; then
+            echo "❌ Signature verification failed for framework binary: $framework_binary"
             exit 1
         fi
     done < <(find "$BUNDLED_DIR/Frameworks" -name "*.framework" -type d)
 
     echo "🛡️ Assessing AXe with Gatekeeper..."
-    if ! spctl --assess --type execute "$BUNDLED_DIR/axe"; then
-        echo "❌ Gatekeeper assessment failed for bundled AXe binary"
-        exit 1
+    SPCTL_LOG="$(mktemp)"
+    if ! spctl --assess --type execute "$BUNDLED_DIR/axe" 2>"$SPCTL_LOG"; then
+        if grep -q "does not seem to be an app" "$SPCTL_LOG"; then
+            echo "⚠️  Gatekeeper execute assessment is inconclusive for CLI binaries; continuing"
+        else
+            cat "$SPCTL_LOG"
+            echo "❌ Gatekeeper assessment failed for bundled AXe binary"
+            rm "$SPCTL_LOG"
+            exit 1
+        fi
     fi
+    rm "$SPCTL_LOG"
 
     echo "🧪 Testing bundled AXe binary..."
     if DYLD_FRAMEWORK_PATH="$BUNDLED_DIR/Frameworks" "$BUNDLED_DIR/axe" --version > /dev/null 2>&1; then

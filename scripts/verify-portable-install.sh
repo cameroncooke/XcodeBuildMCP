@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ARCHIVE_PATH=""
+PORTABLE_ROOT=""
+TEMP_DIR=""
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/verify-portable-install.sh --archive <path/to/tar.gz>
+  scripts/verify-portable-install.sh --root <path/to/portable-root>
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --archive)
+      ARCHIVE_PATH="${2:-}"
+      shift 2
+      ;;
+    --root)
+      PORTABLE_ROOT="${2:-}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "$ARCHIVE_PATH" && -z "$PORTABLE_ROOT" ]]; then
+  usage
+  exit 1
+fi
+
+if [[ -n "$ARCHIVE_PATH" ]]; then
+  TEMP_DIR="$(mktemp -d)"
+  tar -xzf "$ARCHIVE_PATH" -C "$TEMP_DIR"
+  extracted_count="$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
+  if [[ "$extracted_count" -ne 1 ]]; then
+    echo "Expected archive to contain exactly one top-level directory"
+    exit 1
+  fi
+  PORTABLE_ROOT="$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -type d | head -1)"
+fi
+
+cleanup() {
+  if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" ]]; then
+    rm -r "$TEMP_DIR"
+  fi
+}
+trap cleanup EXIT
+
+if [[ ! -d "$PORTABLE_ROOT/bin" || ! -d "$PORTABLE_ROOT/libexec" ]]; then
+  echo "Portable layout missing bin/ or libexec/: $PORTABLE_ROOT"
+  exit 1
+fi
+if [[ ! -x "$PORTABLE_ROOT/bin/xcodebuildmcp" ]]; then
+  echo "Missing executable wrapper: $PORTABLE_ROOT/bin/xcodebuildmcp"
+  exit 1
+fi
+if [[ ! -x "$PORTABLE_ROOT/bin/xcodebuildmcp-doctor" ]]; then
+  echo "Missing executable wrapper: $PORTABLE_ROOT/bin/xcodebuildmcp-doctor"
+  exit 1
+fi
+if [[ ! -x "$PORTABLE_ROOT/libexec/xcodebuildmcp" ]]; then
+  echo "Missing executable binary: $PORTABLE_ROOT/libexec/xcodebuildmcp"
+  exit 1
+fi
+if [[ ! -d "$PORTABLE_ROOT/libexec/manifests" ]]; then
+  echo "Missing manifests directory under libexec"
+  exit 1
+fi
+if [[ ! -x "$PORTABLE_ROOT/libexec/bundled/axe" ]]; then
+  echo "Missing bundled axe binary under libexec"
+  exit 1
+fi
+if [[ ! -d "$PORTABLE_ROOT/libexec/bundled/Frameworks" ]]; then
+  echo "Missing bundled Frameworks under libexec"
+  exit 1
+fi
+
+"$PORTABLE_ROOT/bin/xcodebuildmcp" --help >/dev/null
+"$PORTABLE_ROOT/bin/xcodebuildmcp-doctor" --help >/dev/null
+
+echo "Portable install verification passed for: $PORTABLE_ROOT"
+
