@@ -5,7 +5,6 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
 import {
   toolManifestEntrySchema,
@@ -14,78 +13,12 @@ import {
   type WorkflowManifestEntry,
   type ResolvedManifest,
 } from './schema.ts';
+import { getManifestsDir, getPackageRoot } from '../resource-root.ts';
 
 // Re-export types for consumers
 export type { ResolvedManifest, ToolManifestEntry, WorkflowManifestEntry };
 import { isValidPredicate } from '../../visibility/predicate-registry.ts';
-
-// Capture import.meta.url at module load time (before any CJS bundling issues)
-// This works because the value is captured when the module is first evaluated
-const importMetaUrl: string | undefined = ((): string | undefined => {
-  try {
-    // This will be undefined in CJS bundles but valid in ESM
-    return import.meta.url;
-  } catch {
-    return undefined;
-  }
-})();
-
-/**
- * Get the current file path, handling both ESM and CJS contexts.
- * Smithery bundles to CJS where import.meta.url is undefined.
- */
-function getCurrentFilePath(): string {
-  // ESM context - use captured import.meta.url
-  if (importMetaUrl) {
-    return fileURLToPath(importMetaUrl);
-  }
-
-  // CJS context (Smithery bundle) - __filename is shimmed by esbuild
-  if (typeof __filename !== 'undefined' && __filename) {
-    return __filename as string;
-  }
-
-  // Fallback: try to resolve from cwd
-  const cwd = process.cwd();
-  const possiblePaths = [
-    path.join(cwd, 'build', 'core', 'manifest', 'load-manifest.ts'),
-    path.join(cwd, 'src', 'core', 'manifest', 'load-manifest.ts'),
-  ];
-  for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
-      return p;
-    }
-  }
-
-  throw new Error('Cannot determine current file path in this runtime context');
-}
-
-/**
- * Get the package root directory.
- * Works correctly for both development and npx/npm installs.
- */
-export function getPackageRoot(): string {
-  // Start from this file's directory and go up to find package.json
-  const currentFile = getCurrentFilePath();
-  let dir = path.dirname(currentFile);
-
-  // Walk up until we find package.json
-  while (dir !== path.dirname(dir)) {
-    if (fs.existsSync(path.join(dir, 'package.json'))) {
-      return dir;
-    }
-    dir = path.dirname(dir);
-  }
-
-  throw new Error('Could not find package root (no package.json found in parent directories)');
-}
-
-/**
- * Get the manifests directory path.
- */
-export function getManifestsDir(): string {
-  return path.join(getPackageRoot(), 'manifests');
-}
+export { getManifestsDir, getPackageRoot } from '../resource-root.ts';
 
 /**
  * Load all YAML files from a directory.

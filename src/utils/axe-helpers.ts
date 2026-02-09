@@ -6,12 +6,13 @@
  */
 
 import { accessSync, constants, existsSync } from 'fs';
-import { dirname, join, resolve, delimiter } from 'path';
+import { delimiter, join, resolve } from 'path';
 import { createTextResponse } from './validation.ts';
 import type { ToolResponse } from '../types/common.ts';
 import type { CommandExecutor } from './execution/index.ts';
 import { getDefaultCommandExecutor } from './execution/index.ts';
 import { getConfig } from './config-store.ts';
+import { getBundledAxePath, getBundledFrameworksDir } from '../core/resource-root.ts';
 
 export type AxeBinarySource = 'env' | 'bundled' | 'path';
 
@@ -19,19 +20,6 @@ export type AxeBinary = {
   path: string;
   source: AxeBinarySource;
 };
-
-function getPackageRoot(): string {
-  const entry = process.argv[1];
-  if (entry) {
-    const entryDir = dirname(entry);
-    return dirname(entryDir);
-  }
-  return process.cwd();
-}
-
-// In the npm package, build/index.js is at the same level as bundled/
-// So we go up one level from build/ to get to the package root
-const bundledAxePath = join(getPackageRoot(), 'bundled', 'axe');
 
 function isExecutable(path: string): boolean {
   try {
@@ -50,14 +38,8 @@ function resolveAxePathFromConfig(): string | null {
 }
 
 function resolveBundledAxePath(): string | null {
-  const entry = process.argv[1];
   const candidates = new Set<string>();
-  if (entry) {
-    const entryDir = dirname(entry);
-    candidates.add(join(dirname(entryDir), 'bundled', 'axe'));
-    candidates.add(join(entryDir, 'bundled', 'axe'));
-  }
-  candidates.add(bundledAxePath);
+  candidates.add(getBundledAxePath());
   candidates.add(join(process.cwd(), 'bundled', 'axe'));
 
   for (const candidate of candidates) {
@@ -110,9 +92,22 @@ export function getAxePath(): string | null {
  * Get environment variables needed for bundled AXe to run
  */
 export function getBundledAxeEnvironment(): Record<string, string> {
-  // No special environment variables needed - bundled AXe binary
-  // has proper @rpath configuration to find frameworks
-  return {};
+  const resolved = resolveAxeBinary();
+  if (resolved?.source !== 'bundled') {
+    return {};
+  }
+
+  const frameworksDir = getBundledFrameworksDir();
+  if (!existsSync(frameworksDir)) {
+    return {};
+  }
+
+  const currentFrameworkPath = process.env.DYLD_FRAMEWORK_PATH;
+  const frameworkPath = currentFrameworkPath
+    ? `${frameworksDir}${delimiter}${currentFrameworkPath}`
+    : frameworksDir;
+
+  return { DYLD_FRAMEWORK_PATH: frameworkPath };
 }
 
 /**
