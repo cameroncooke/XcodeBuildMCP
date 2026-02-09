@@ -258,4 +258,35 @@ describe('createSessionAwareTool', () => {
     expect(parsed.simulatorId).toBe('SIM-123');
     expect(parsed.simulatorName).toBeUndefined();
   });
+
+  it('deep-merges env so user-provided env vars are additive with session defaults', async () => {
+    const envSchema = z.object({
+      scheme: z.string(),
+      projectPath: z.string().optional(),
+      env: z.record(z.string(), z.string()).optional(),
+    });
+
+    const envHandler = createSessionAwareTool<z.infer<typeof envSchema>>({
+      internalSchema: envSchema,
+      logicFunction: async (params) => ({
+        content: [{ type: 'text', text: JSON.stringify(params.env) }],
+        isError: false,
+      }),
+      getExecutor: () => createMockExecutor({ success: true }),
+      requirements: [{ allOf: ['scheme'] }],
+    });
+
+    sessionStore.setDefaults({
+      scheme: 'App',
+      projectPath: '/a.xcodeproj',
+      env: { API_KEY: 'abc123', VERBOSE: '1' },
+    });
+
+    // User provides additional env var; session default env vars should be preserved
+    const result = await envHandler({ env: { DEBUG: 'true', VERBOSE: '0' } });
+    expect(result.isError).toBe(false);
+
+    const parsed = JSON.parse(result.content[0].text);
+    expect(parsed).toEqual({ API_KEY: 'abc123', DEBUG: 'true', VERBOSE: '0' });
+  });
 });
