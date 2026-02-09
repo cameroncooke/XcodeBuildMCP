@@ -290,20 +290,17 @@ jobs:
           name: portable-x64
           path: dist/portable/x64
 
-      - name: Resolve extracted arch roots
-        id: resolve_roots
+      - name: Expand per-arch archives
+        id: expand_archives
         run: |
           VERSION="${{ needs.release.outputs.version }}"
-          ARM64_ROOT="$(find dist/portable/arm64 -type d -name "xcodebuildmcp-${VERSION}-darwin-arm64" -print -quit)"
-          X64_ROOT="$(find dist/portable/x64 -type d -name "xcodebuildmcp-${VERSION}-darwin-x64" -print -quit)"
-          if [ -z "$ARM64_ROOT" ] || [ -z "$X64_ROOT" ]; then
-            echo "Failed to resolve extracted arch roots."
-            echo "arm64 root: ${ARM64_ROOT:-<missing>}"
-            echo "x64 root: ${X64_ROOT:-<missing>}"
-            echo "--- dist/portable tree (depth 4) ---"
-            find dist/portable -maxdepth 4 -print
-            exit 1
-          fi
+          ARM64_TGZ="dist/portable/arm64/xcodebuildmcp-${VERSION}-darwin-arm64.tar.gz"
+          X64_TGZ="dist/portable/x64/xcodebuildmcp-${VERSION}-darwin-x64.tar.gz"
+          ARM64_ROOT="dist/portable/unpacked/arm64/xcodebuildmcp-${VERSION}-darwin-arm64"
+          X64_ROOT="dist/portable/unpacked/x64/xcodebuildmcp-${VERSION}-darwin-x64"
+          mkdir -p dist/portable/unpacked/arm64 dist/portable/unpacked/x64
+          tar -xzf "$ARM64_TGZ" -C dist/portable/unpacked/arm64
+          tar -xzf "$X64_TGZ" -C dist/portable/unpacked/x64
           echo "ARM64_ROOT=$ARM64_ROOT" >> "$GITHUB_OUTPUT"
           echo "X64_ROOT=$X64_ROOT" >> "$GITHUB_OUTPUT"
 
@@ -311,8 +308,8 @@ jobs:
         run: |
           npm run package:macos:universal -- \
             --version "${{ needs.release.outputs.version }}" \
-            --arm64-root "${{ steps.resolve_roots.outputs.ARM64_ROOT }}" \
-            --x64-root "${{ steps.resolve_roots.outputs.X64_ROOT }}"
+            --arm64-root "${{ steps.expand_archives.outputs.ARM64_ROOT }}" \
+            --x64-root "${{ steps.expand_archives.outputs.X64_ROOT }}"
 
       - name: Verify universal portable artifact
         run: |
