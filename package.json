@@ -26,6 +26,7 @@
     "package:macos": "scripts/package-macos-portable.sh",
     "package:macos:universal": "scripts/package-macos-portable.sh --universal",
     "verify:portable": "scripts/verify-portable-install.sh",
+    "homebrew:formula": "scripts/create-homebrew-formula.sh",
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
     "format": "prettier --write 'src/**/*.{js,ts}'",
