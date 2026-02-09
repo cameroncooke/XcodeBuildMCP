@@ -81,6 +81,49 @@ function buildValidationSets(catalog) {
   return { validPairs, validWorkflows };
 }
 
+function extractCommandCandidates(content) {
+  const lines = content.split(/\r?\n/u);
+  const candidates = [];
+  const inlineCodeRegex = /`([^`\n]+)`/g;
+  const fenceHeaderRegex = /^\s*```([a-z0-9_-]*)\s*$/iu;
+  const codeFenceLanguages = new Set(['', 'bash', 'sh', 'zsh', 'shell', 'console']);
+
+  let inFence = false;
+  let shouldScanFence = false;
+
+  for (let lineNumber = 1; lineNumber <= lines.length; lineNumber += 1) {
+    const line = lines[lineNumber - 1];
+    const fenceMatch = line.match(fenceHeaderRegex);
+
+    if (fenceMatch) {
+      if (!inFence) {
+        inFence = true;
+        shouldScanFence = codeFenceLanguages.has(fenceMatch[1].toLowerCase());
+      } else {
+        inFence = false;
+        shouldScanFence = false;
+      }
+      continue;
+    }
+
+    if (inFence) {
+      if (shouldScanFence) {
+        candidates.push({ lineNumber, text: line });
+      }
+      continue;
+    }
+
+    inlineCodeRegex.lastIndex = 0;
+    let inlineMatch = inlineCodeRegex.exec(line);
+    while (inlineMatch) {
+      candidates.push({ lineNumber, text: inlineMatch[1] });
+      inlineMatch = inlineCodeRegex.exec(line);
+    }
+  }
+
+  return candidates;
+}
+
 function findInvalidCommands(files, validPairs, validWorkflows) {
   const validTopLevel = new Set(['mcp', 'tools', 'daemon']);
   const validDaemonActions = new Set(['status', 'start', 'stop', 'restart', 'list']);
@@ -92,12 +135,12 @@ function findInvalidCommands(files, validPairs, validWorkflows) {
   for (const absoluteFilePath of files) {
     const relativePath = path.relative(repoRoot, absoluteFilePath) || absoluteFilePath;
     const content = readFileSync(absoluteFilePath, 'utf8');
-    const lines = content.split(/\r?\n/u);
+    const candidates = extractCommandCandidates(content);
 
-    for (let lineNumber = 1; lineNumber <= lines.length; lineNumber += 1) {
-      const line = lines[lineNumber - 1];
+    for (const candidate of candidates) {
+      const { lineNumber, text } = candidate;
       commandRegex.lastIndex = 0;
-      let match = commandRegex.exec(line);
+      let match = commandRegex.exec(text);
 
       while (match) {
         const first = match[1];
@@ -118,7 +161,7 @@ function findInvalidCommands(files, validPairs, validWorkflows) {
           findings.push(`${relativePath}:${lineNumber}: ${command}`);
         }
 
-        match = commandRegex.exec(line);
+        match = commandRegex.exec(text);
       }
     }
   }
