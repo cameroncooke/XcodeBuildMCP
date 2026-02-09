@@ -67,9 +67,7 @@ class Xcodebuildmcp < Formula
   end
 
   def install
-    libexec.install Dir["*"]
-    bin.install_symlink libexec/"bin/xcodebuildmcp"
-    bin.install_symlink libexec/"bin/xcodebuildmcp-doctor"
+    prefix.install Dir["*"]
   end
 
   test do
@@ -85,4 +83,3 @@ if [[ -n "$OUT_PATH" ]]; then
 else
   printf "%s\n" "$FORMULA_CONTENT"
 fi
-

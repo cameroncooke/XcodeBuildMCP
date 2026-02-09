@@ -115,6 +115,45 @@ verify_axe_assets() {
   fi
 }
 
+install_node_runtime_for_arch() {
+  local target_arch="$1"
+  local output_path="$2"
+  local node_version="${NODE_RUNTIME_VERSION:-$(node -p "process.versions.node")}"
+  local node_arch=""
+
+  case "$target_arch" in
+    arm64)
+      node_arch="arm64"
+      ;;
+    x64)
+      node_arch="x64"
+      ;;
+    *)
+      echo "Unsupported target arch for Node runtime: $target_arch"
+      exit 1
+      ;;
+  esac
+
+  local archive_name="node-v${node_version}-darwin-${node_arch}.tar.gz"
+  local download_url="https://nodejs.org/dist/v${node_version}/${archive_name}"
+  local temp_dir
+  temp_dir="$(mktemp -d)"
+
+  curl -fLsS "$download_url" -o "$temp_dir/$archive_name"
+  tar -xzf "$temp_dir/$archive_name" -C "$temp_dir"
+
+  local extracted_node="$temp_dir/node-v${node_version}-darwin-${node_arch}/bin/node"
+  if [[ ! -x "$extracted_node" ]]; then
+    echo "Failed to locate extracted Node runtime at $extracted_node"
+    rm -r "$temp_dir"
+    exit 1
+  fi
+
+  cp "$extracted_node" "$output_path"
+  chmod +x "$output_path"
+  rm -r "$temp_dir"
+}
+
 write_wrapper_scripts() {
   local root="$1"
   local bin_dir="$root/bin"
@@ -223,8 +262,7 @@ if [[ -d "$PORTABLE_ROOT" ]]; then
 fi
 mkdir -p "$PORTABLE_ROOT/bin" "$PORTABLE_ROOT/libexec"
 
-cp "$(command -v node)" "$PORTABLE_ROOT/libexec/node-runtime"
-chmod +x "$PORTABLE_ROOT/libexec/node-runtime"
+install_node_runtime_for_arch "$ARCH" "$PORTABLE_ROOT/libexec/node-runtime"
 
 cp -R "$PROJECT_ROOT/build" "$PORTABLE_ROOT/libexec/"
 cp -R "$PROJECT_ROOT/manifests" "$PORTABLE_ROOT/libexec/"
