@@ -187,7 +187,7 @@ For full details on configuration options see [CONFIGURATION.md](CONFIGURATION.m
 
 ## 3. CLI and skills
 
-### xcodebuildmcp is now a CLI
+### CLI mode for xcodebuildmcp
 
 The `xcodebuildmcp` command can now be used directly in the terminal without an MCP client:
 
