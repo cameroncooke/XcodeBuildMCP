@@ -341,8 +341,8 @@ jobs:
             --clobber
 
   update_homebrew_tap:
-    if: github.event_name == 'push'
-    needs: [release, publish_portable_assets]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: [release, build_and_package_macos]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
