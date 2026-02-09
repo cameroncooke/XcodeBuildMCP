@@ -163,7 +163,14 @@ function createSessionAwareHandler<TParams, TContext>(opts: {
       }
 
       // Start with session defaults merged with explicit args (args override session)
-      const merged: Record<string, unknown> = { ...sessionStore.getAll(), ...sanitizedArgs };
+      const sessionDefaults = sessionStore.getAll();
+      const merged: Record<string, unknown> = { ...sessionDefaults, ...sanitizedArgs };
+
+      // Deep-merge env: combine session-default env vars with user-provided ones
+      // (user-provided keys take precedence on conflict)
+      if (sessionDefaults.env && typeof sanitizedArgs.env === 'object' && sanitizedArgs.env) {
+        merged.env = { ...sessionDefaults.env, ...(sanitizedArgs.env as Record<string, string>) };
+      }
 
       // Apply exclusive pair pruning: only when caller provided a concrete (non-null/undefined) value
       // for any key in the pair. When activated, drop other keys in the pair coming from session defaults.
