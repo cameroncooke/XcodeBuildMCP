@@ -339,3 +339,71 @@ jobs:
             dist/portable/universal/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-universal.tar.gz \
             dist/portable/universal/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-universal.tar.gz.sha256 \
             --clobber
+
+  update_homebrew_tap:
+    if: github.event_name == 'push'
+    needs: [release, publish_portable_assets]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: portable-arm64
+          path: dist/portable/arm64
+
+      - name: Download x64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: portable-x64
+          path: dist/portable/x64
+
+      - name: Skip when tap token is unavailable
+        if: secrets.HOMEBREW_TAP_TOKEN == ''
+        run: echo "HOMEBREW_TAP_TOKEN is not set; skipping Homebrew tap update."
+
+      - name: Generate formula
+        if: secrets.HOMEBREW_TAP_TOKEN != ''
+        run: |
+          VERSION="${{ needs.release.outputs.version }}"
+          ARM64_SHA="$(awk '{print $1}' dist/portable/arm64/xcodebuildmcp-${VERSION}-darwin-arm64.tar.gz.sha256)"
+          X64_SHA="$(awk '{print $1}' dist/portable/x64/xcodebuildmcp-${VERSION}-darwin-x64.tar.gz.sha256)"
+          npm run homebrew:formula -- \
+            --version "$VERSION" \
+            --arm64-sha "$ARM64_SHA" \
+            --x64-sha "$X64_SHA" \
+            --out dist/homebrew/Formula/xcodebuildmcp.rb
+
+      - name: Create pull request in tap repo
+        if: secrets.HOMEBREW_TAP_TOKEN != ''
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          VERSION="${{ needs.release.outputs.version }}"
+          BRANCH="xcodebuildmcp-v${VERSION}"
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/cameroncooke/homebrew-xcodebuildmcp.git" tap-repo
+          cp dist/homebrew/Formula/xcodebuildmcp.rb tap-repo/Formula/xcodebuildmcp.rb
+          cd tap-repo
+          if git diff --quiet Formula/xcodebuildmcp.rb; then
+            echo "Formula already up to date; skipping PR."
+            exit 0
+          fi
+          git checkout -b "$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/xcodebuildmcp.rb
+          git commit -m "xcodebuildmcp ${VERSION}"
+          git push origin "$BRANCH"
+          gh pr create \
+            --repo cameroncooke/homebrew-xcodebuildmcp \
+            --title "Update xcodebuildmcp to ${VERSION}" \
+            --body "Automated formula update for xcodebuildmcp ${VERSION}." \
+            --base main \
+            --head "$BRANCH"
