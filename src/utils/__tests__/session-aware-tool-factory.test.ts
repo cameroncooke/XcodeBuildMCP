@@ -286,7 +286,8 @@ describe('createSessionAwareTool', () => {
     const result = await envHandler({ env: { DEBUG: 'true', VERBOSE: '0' } });
     expect(result.isError).toBe(false);
 
-    const parsed = JSON.parse(result.content[0].text);
+    const envContent = result.content[0] as { type: 'text'; text: string };
+    const parsed = JSON.parse(envContent.text);
     expect(parsed).toEqual({ API_KEY: 'abc123', DEBUG: 'true', VERBOSE: '0' });
   });
 });
