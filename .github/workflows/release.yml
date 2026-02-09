@@ -88,7 +88,13 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           echo "🧪 Testing package creation (dry run)"
-          npm publish --dry-run --access public
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          if [[ "$VERSION" == *"-"* ]]; then
+            NPM_TAG="next"
+          else
+            NPM_TAG="latest"
+          fi
+          npm publish --dry-run --access public --tag "$NPM_TAG"
 
       - name: Publish to NPM (production releases only)
         if: github.event_name == 'push'
