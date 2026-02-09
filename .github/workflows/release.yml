@@ -232,7 +232,7 @@ jobs:
           - arch: arm64
             runner: macos-14
           - arch: x64
-            runner: macos-13
+            runner: macos-14
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout code
