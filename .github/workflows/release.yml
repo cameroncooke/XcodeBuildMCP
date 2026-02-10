@@ -395,12 +395,17 @@ jobs:
         if: env.HOMEBREW_TAP_TOKEN != ''
         run: |
           VERSION="${{ needs.release.outputs.version }}"
+          FORMULA_BASE_URL="https://github.com/cameroncooke/XcodeBuildMCP/releases/download/v${VERSION}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            FORMULA_BASE_URL="https://raw.githubusercontent.com/cameroncooke/homebrew-xcodebuildmcp/main/artifacts/${VERSION}"
+          fi
           ARM64_SHA="$(awk '{print $1}' dist/portable/arm64/xcodebuildmcp-${VERSION}-darwin-arm64.tar.gz.sha256)"
           X64_SHA="$(awk '{print $1}' dist/portable/x64/xcodebuildmcp-${VERSION}-darwin-x64.tar.gz.sha256)"
           npm run homebrew:formula -- \
             --version "$VERSION" \
             --arm64-sha "$ARM64_SHA" \
             --x64-sha "$X64_SHA" \
+            --base-url "$FORMULA_BASE_URL" \
             --out dist/homebrew/Formula/xcodebuildmcp.rb
 
       - name: Create pull request in tap repo
@@ -411,8 +416,19 @@ jobs:
           VERSION="${{ needs.release.outputs.version }}"
           BRANCH="xcodebuildmcp-v${VERSION}"
           DEFAULT_BRANCH="main"
+          ADD_TAP_ARTIFACTS="false"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ADD_TAP_ARTIFACTS="true"
+          fi
           git clone "https://x-access-token:${GH_TOKEN}@github.com/cameroncooke/homebrew-xcodebuildmcp.git" tap-repo
           mkdir -p tap-repo/Formula
+          if [ "$ADD_TAP_ARTIFACTS" = "true" ]; then
+            mkdir -p "tap-repo/artifacts/${VERSION}"
+            cp "dist/portable/arm64/xcodebuildmcp-${VERSION}-darwin-arm64.tar.gz" "tap-repo/artifacts/${VERSION}/"
+            cp "dist/portable/arm64/xcodebuildmcp-${VERSION}-darwin-arm64.tar.gz.sha256" "tap-repo/artifacts/${VERSION}/"
+            cp "dist/portable/x64/xcodebuildmcp-${VERSION}-darwin-x64.tar.gz" "tap-repo/artifacts/${VERSION}/"
+            cp "dist/portable/x64/xcodebuildmcp-${VERSION}-darwin-x64.tar.gz.sha256" "tap-repo/artifacts/${VERSION}/"
+          fi
           cp dist/homebrew/Formula/xcodebuildmcp.rb tap-repo/Formula/xcodebuildmcp.rb
           cd tap-repo
           git config user.name "github-actions[bot]"
@@ -421,6 +437,9 @@ jobs:
             echo "Tap repo has no commits; bootstrapping ${DEFAULT_BRANCH}."
             git checkout -b "$DEFAULT_BRANCH"
             git add Formula/xcodebuildmcp.rb
+            if [ "$ADD_TAP_ARTIFACTS" = "true" ]; then
+              git add "artifacts/${VERSION}"
+            fi
             git commit -m "Initialize xcodebuildmcp formula ${VERSION}"
             git push origin "$DEFAULT_BRANCH"
             exit 0
@@ -435,6 +454,9 @@ jobs:
           fi
           git checkout -B "$BRANCH"
           git add Formula/xcodebuildmcp.rb
+          if [ "$ADD_TAP_ARTIFACTS" = "true" ]; then
+            git add "artifacts/${VERSION}"
+          fi
           git commit -m "xcodebuildmcp ${VERSION}"
           git push --set-upstream origin "$BRANCH"
           gh pr create \
