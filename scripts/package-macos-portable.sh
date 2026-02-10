@@ -169,7 +169,14 @@ EOF
   cat > "$bin_dir/xcodebuildmcp" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-RESOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../libexec" && pwd)"
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "$SOURCE" ]]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+RESOURCE_ROOT="$(cd "$SCRIPT_DIR/../libexec" && pwd)"
 export XCODEBUILDMCP_RESOURCE_ROOT="$RESOURCE_ROOT"
 export DYLD_FRAMEWORK_PATH="$RESOURCE_ROOT/bundled/Frameworks${DYLD_FRAMEWORK_PATH:+:$DYLD_FRAMEWORK_PATH}"
 exec "$RESOURCE_ROOT/xcodebuildmcp" "$@"
@@ -178,7 +185,14 @@ EOF
   cat > "$bin_dir/xcodebuildmcp-doctor" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-RESOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../libexec" && pwd)"
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "$SOURCE" ]]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+RESOURCE_ROOT="$(cd "$SCRIPT_DIR/../libexec" && pwd)"
 export XCODEBUILDMCP_RESOURCE_ROOT="$RESOURCE_ROOT"
 export DYLD_FRAMEWORK_PATH="$RESOURCE_ROOT/bundled/Frameworks${DYLD_FRAMEWORK_PATH:+:$DYLD_FRAMEWORK_PATH}"
 exec "$RESOURCE_ROOT/xcodebuildmcp" doctor "$@"
