@@ -11,7 +11,7 @@ import { getConfig } from './config-store.ts';
  * Template manager for downloading and managing project templates
  */
 export class TemplateManager {
-  private static readonly GITHUB_ORG = 'cameroncooke';
+  private static readonly GITHUB_ORG = 'getsentry';
   private static readonly IOS_TEMPLATE_REPO = 'XcodeBuildMCP-iOS-Template';
   private static readonly MACOS_TEMPLATE_REPO = 'XcodeBuildMCP-macOS-Template';
 
@@ -86,7 +86,6 @@ export class TemplateManager {
       log('info', `Downloading ${platform} template ${version} from GitHub...`);
       log('info', `Download URL: ${downloadUrl}`);
 
-      // Download the release artifact
       const curlResult = await commandExecutor(
         ['curl', '-L', '-f', '-o', zipPath, downloadUrl],
         'Download Template',
