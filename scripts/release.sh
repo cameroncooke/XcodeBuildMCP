@@ -508,11 +508,16 @@ echo ""
 echo "⏳ Monitoring GitHub Actions workflow..."
 echo "This may take a few minutes..."
 
-# Wait for workflow to start
-sleep 5
-
-# Get the workflow run ID for this tag
-RUN_ID=$(gh run list --workflow=release.yml --limit=1 --json databaseId --jq '.[0].databaseId')
+# Poll for the workflow run triggered by this tag (may take a few seconds to appear)
+RUN_ID=""
+for i in $(seq 1 12); do
+  RUN_ID=$(gh run list --workflow=release.yml --branch="v$VERSION" --limit=1 --json databaseId --jq '.[0].databaseId')
+  if [[ -n "$RUN_ID" ]]; then
+    break
+  fi
+  echo "  Waiting for workflow to appear... (attempt $i/12)"
+  sleep 5
+done
 
 if [[ -n "$RUN_ID" ]]; then
   echo "📊 Workflow run ID: $RUN_ID"
