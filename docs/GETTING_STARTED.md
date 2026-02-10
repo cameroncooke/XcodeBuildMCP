@@ -3,7 +3,7 @@
 ## Prerequisites
 - macOS 14.5 or later
 - Xcode 16.x or later
-- Node.js 18.x or later
+- Node.js 18.x or later (not required for Homebrew installation)
 
 ## Choose Your Interface
 
@@ -16,39 +16,49 @@ XcodeBuildMCP provides a unified CLI with two modes:
 
 Both share the same tools and configuration.
 
-## MCP Server Installation
+## Installation
 
-Most MCP clients use JSON configuration. Add the following server entry to your client's MCP config:
+Both methods give you the CLI and the MCP server.
 
+### Option A — Homebrew (no Node.js required)
+
+```bash
+brew tap cameroncooke/xcodebuildmcp
+brew install xcodebuildmcp
+```
+
+Use the CLI:
+```bash
+xcodebuildmcp --help
+```
+
+MCP client config:
 ```json
 "XcodeBuildMCP": {
-  "command": "npx",
-  "args": [
-    "-y",
-    "xcodebuildmcp@beta",
-    "mcp"
-  ]
+  "command": "xcodebuildmcp",
+  "args": ["mcp"]
 }
 ```
 
-## CLI Installation
+Upgrade later with `brew update && brew upgrade xcodebuildmcp`.
 
+### Option B — npm / npx (Node.js 18+)
+
+**For CLI use**, install globally:
 ```bash
-# Install globally
-npm install -g xcodebuildmcp@beta
-
-# Verify installation
-xcodebuildmcp --version
-
-# List available tools
-xcodebuildmcp tools
-
-# View CLI help
+npm install -g xcodebuildmcp@latest
 xcodebuildmcp --help
-
-# View tool help
-xcodebuildmcp <workflow> <tool> --help
 ```
+
+**For MCP server only**, no global install needed — add directly to your client config:
+```json
+"XcodeBuildMCP": {
+  "command": "npx",
+  "args": ["-y", "xcodebuildmcp@latest", "mcp"]
+}
+```
+
+Using `@latest` ensures clients resolve the newest version on each run.
 
 See [CLI.md](CLI.md) for full CLI documentation.
 
@@ -63,6 +73,8 @@ See [CONFIGURATION.md](CONFIGURATION.md) for the full schema and examples.
 
 ## Client-specific configuration
 
+The examples below use npx (Option B). If you installed via Homebrew, replace the command with `"command": "xcodebuildmcp", "args": ["mcp"]` instead.
+
 ### Cursor
 Recommended (project-scoped): create `.cursor/mcp.json` in your project root:
 
@@ -71,7 +83,7 @@ Recommended (project-scoped): create `.cursor/mcp.json` in your project root:
   "mcpServers": {
     "XcodeBuildMCP": {
       "command": "npx",
-      "args": ["-y", "xcodebuildmcp@beta", "mcp"]
+      "args": ["-y", "xcodebuildmcp@latest", "mcp"]
     }
   }
 }
@@ -86,7 +98,7 @@ If you use a global Cursor config at `~/.cursor/mcp.json`, use this variant to a
       "command": "/bin/zsh",
       "args": [
         "-lc",
-        "cd \"${workspaceFolder}\" && exec npx -y xcodebuildmcp@beta mcp"
+        "cd \"${workspaceFolder}\" && exec npx -y xcodebuildmcp@latest mcp"
       ]
     }
   }
@@ -99,7 +111,7 @@ Codex uses TOML for MCP configuration. Add this to `~/.codex/config.toml`:
 ```toml
 [mcp_servers.XcodeBuildMCP]
 command = "npx"
-args = ["-y", "xcodebuildmcp@beta", "mcp"]
+args = ["-y", "xcodebuildmcp@latest", "mcp"]
 env = { "XCODEBUILDMCP_SENTRY_DISABLED" = "false" }
 ```
 
@@ -115,10 +127,10 @@ https://github.com/openai/codex/blob/main/docs/config.md#connecting-to-mcp-serve
 ### Claude Code CLI
 ```bash
 # Add XcodeBuildMCP server to Claude Code
-claude mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@beta mcp
+claude mcp add XcodeBuildMCP -- npx -y xcodebuildmcp@latest mcp
 
 # Or with environment variables
-claude mcp add XcodeBuildMCP -e XCODEBUILDMCP_SENTRY_DISABLED=false -- npx -y xcodebuildmcp@beta mcp
+claude mcp add XcodeBuildMCP -e XCODEBUILDMCP_SENTRY_DISABLED=false -- npx -y xcodebuildmcp@latest mcp
 ```
 
 Note: XcodeBuildMCP requests xcodebuild to skip macro validation to avoid Swift Macro build errors.

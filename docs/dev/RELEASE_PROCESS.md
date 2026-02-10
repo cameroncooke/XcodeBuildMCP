@@ -14,8 +14,34 @@ If the latest changelog section is `## [Unreleased]` and no matching version hea
 Preview release notes locally:
 
 ```bash
-node scripts/generate-github-release-notes.mjs --version 2.0.0-beta.1
+node scripts/generate-github-release-notes.mjs --version 2.0.0
 ```
+
+## Release Workflow Modes
+
+The release workflow (`.github/workflows/release.yml`) has two execution modes:
+
+### Tag push (`push` on `v*`)
+
+Production release behavior:
+- Publishes package to npm.
+- Creates GitHub release and uploads npm tarball.
+- Builds and verifies portable macOS artifacts (`arm64`, `x64`, `universal`).
+- Uploads portable artifacts to GitHub release assets.
+- Updates the Homebrew tap repository (`cameroncooke/homebrew-xcodebuildmcp`) directly when `HOMEBREW_TAP_TOKEN` is configured.
+- Attempts Smithery and MCP Registry publishes (best effort based on configured secrets).
+
+### Manual dispatch (`workflow_dispatch`)
+
+Validation behavior only (no production deployment):
+- Runs formatting/build/tests and packaging checks.
+- Runs npm publish in `--dry-run` mode.
+- Builds and verifies portable artifacts for release-pipeline validation.
+- Does **not** publish to npm.
+- Does **not** create GitHub release.
+- Does **not** upload portable assets to a release.
+- Does **not** update Homebrew tap.
+- Does **not** run Smithery or MCP Registry publish jobs.
 
 ## Step-by-Step Development Workflow
 

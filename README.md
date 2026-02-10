@@ -7,23 +7,51 @@ A Model Context Protocol (MCP) server and CLI that provides tools for agent use 
 
 ## Installation
 
-### CLI Installation
+XcodeBuildMCP ships as a single package with two modes: a **CLI** for direct terminal use and an **MCP server** for AI coding agents. Both installation methods give you both modes.
 
+### Option A — Homebrew
+
+```bash
+brew tap cameroncooke/xcodebuildmcp
+brew install xcodebuildmcp
+```
+
+Use the CLI:
+```bash
+xcodebuildmcp --help
+```
+
+MCP client config:
+```json
+"XcodeBuildMCP": {
+  "command": "xcodebuildmcp",
+  "args": ["mcp"]
+}
+```
+
+Upgrade later with `brew update && brew upgrade xcodebuildmcp`.
+
+### Option B — npm / npx (Node.js 18+)
+
+**For CLI use**, install globally:
 ```bash
 npm install -g xcodebuildmcp@latest
 xcodebuildmcp --help
 ```
 
-### MCP Server Installation
-
-Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON configuration with the following server entry:
-
+**For MCP server only**, no global install needed — add directly to your client config:
 ```json
 "XcodeBuildMCP": {
   "command": "npx",
   "args": ["-y", "xcodebuildmcp@latest", "mcp"]
 }
 ```
+
+To pin a specific version, replace `@latest` with an exact version (e.g. `xcodebuildmcp@2.0.0`).
+
+### Client-specific setup
+
+The examples below use npx (Option B). If you installed via Homebrew, replace the command with `"command": "xcodebuildmcp", "args": ["mcp"]` instead.
 
 <details>
   <summary>Cursor</summary>
@@ -188,7 +216,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
   tool_timeout_sec = 10000
   ```
 
-  > **NOTE**: 
+  > **NOTE**:
   > Codex Agent when running in Xcode has a limited PATH by default. The above example should work for most users but if you find the server doesn't start or is not available, it's likely because npx is not found so you might have to adjust the above configuration accordingly.
 
   <br />
@@ -217,7 +245,7 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
   }
   ```
 
-  > **NOTE**: 
+  > **NOTE**:
   > Claude Code Agent when running in Xcode has a limited PATH by default. The above example should work for most users but if you find the server doesn't start or is not available, it's likely because npx is not found so you might have to adjust the above configuration accordingly.
 
   <br />
@@ -225,15 +253,13 @@ Add XcodeBuildMCP to your MCP client configuration. Most clients use JSON config
 
 <br />
 
-For other installation options see [Getting Started](docs/GETTING_STARTED.md)
-
-When configuring a client manually, ensure the command includes the `mcp` subcommand (for example, `npx -y xcodebuildmcp@latest mcp`).
+For other installation options see [Getting Started](docs/GETTING_STARTED.md).
 
 ## Requirements
 
 - macOS 14.5 or later
 - Xcode 16.x or later
-- Node.js 18.x or later
+- Node.js 18.x or later (not required for Homebrew installation)
 
 ## Skills
 
