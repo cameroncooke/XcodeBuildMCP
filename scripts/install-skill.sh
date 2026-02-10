@@ -236,7 +236,7 @@ esac
 skill_dir="${destination}/${skill_dir_name}"
 alt_dir="${destination}/${alt_dir_name}"
 skill_path="skills/${skill_dir_name}/SKILL.md"
-skill_base_url="https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP"
+skill_base_url="https://raw.githubusercontent.com/getsentry/XcodeBuildMCP"
 skill_ref="main"
 
 if [[ -n "${skill_ref_override}" ]]; then
