@@ -10,6 +10,7 @@ dist/
 *.tsbuildinfo
 
 # Auto-generated files
+src/version.ts
 
 # IDE and editor files
 .idea/
