@@ -439,13 +439,13 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
 
   # Update skill installer URL and versioned ref in README.md
   echo "📝 Updating skill installer URL in README.md..."
-  README_SKILL_INSTALL_URL_REGEX='https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/[^/]+/scripts/install-skill.sh'
-  run sed_inplace "s#${README_SKILL_INSTALL_URL_REGEX}#https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v${VERSION}/scripts/install-skill.sh#g" README.md
+  README_SKILL_INSTALL_URL_REGEX='https://raw.githubusercontent.com/getsentry/XcodeBuildMCP/[^/]+/scripts/install-skill.sh'
+  run sed_inplace "s#${README_SKILL_INSTALL_URL_REGEX}#https://raw.githubusercontent.com/getsentry/XcodeBuildMCP/v${VERSION}/scripts/install-skill.sh#g" README.md
 
   # Update skill installer URL in docs/SKILLS.md
   if [[ -f docs/SKILLS.md ]]; then
     echo "📝 Updating skill installer URL in docs/SKILLS.md..."
-    run sed_inplace "s#${README_SKILL_INSTALL_URL_REGEX}#https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v${VERSION}/scripts/install-skill.sh#g" docs/SKILLS.md
+    run sed_inplace "s#${README_SKILL_INSTALL_URL_REGEX}#https://raw.githubusercontent.com/getsentry/XcodeBuildMCP/v${VERSION}/scripts/install-skill.sh#g" docs/SKILLS.md
   else
     echo "⚠️  docs/SKILLS.md not found; skipping update"
   fi
@@ -525,7 +525,7 @@ if [[ -n "$RUN_ID" ]]; then
     echo ""
     echo "✅ Release v$VERSION completed successfully!"
     echo "📦 View on NPM: https://www.npmjs.com/package/xcodebuildmcp/v/$VERSION"
-    echo "🎉 View release: https://github.com/cameroncooke/XcodeBuildMCP/releases/tag/v$VERSION"
+    echo "🎉 View release: https://github.com/getsentry/XcodeBuildMCP/releases/tag/v$VERSION"
     # MCP Registry verification link
     echo "🔎 Verify MCP Registry: https://registry.modelcontextprotocol.io/v0/servers?search=com.xcodebuildmcp/XcodeBuildMCP&version=latest"
   else
@@ -566,5 +566,5 @@ if [[ -n "$RUN_ID" ]]; then
   fi
 else
   echo "⚠️  Could not find workflow run. Please check manually:"
-  echo "https://github.com/cameroncooke/XcodeBuildMCP/actions"
+  echo "https://github.com/getsentry/XcodeBuildMCP/actions"
 fi

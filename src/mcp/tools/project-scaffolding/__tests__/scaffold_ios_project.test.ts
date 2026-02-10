@@ -177,7 +177,7 @@ describe('scaffold_ios_project plugin', () => {
         '-o',
         expect.stringMatching(/template\.zip$/),
         expect.stringMatching(
-          /https:\/\/github\.com\/cameroncooke\/XcodeBuildMCP-iOS-Template\/releases\/download\/v\d+\.\d+\.\d+\/XcodeBuildMCP-iOS-Template-\d+\.\d+\.\d+\.zip/,
+          /https:\/\/github\.com\/getsentry\/XcodeBuildMCP-iOS-Template\/releases\/download\/v\d+\.\d+\.\d+\/XcodeBuildMCP-iOS-Template-\d+\.\d+\.\d+\.zip/,
         ),
       ]);
 
@@ -273,7 +273,7 @@ describe('scaffold_ios_project plugin', () => {
         '-f',
         '-o',
         expect.stringMatching(/template\.zip$/),
-        'https://github.com/cameroncooke/XcodeBuildMCP-iOS-Template/releases/download/v2.0.0/XcodeBuildMCP-iOS-Template-2.0.0.zip',
+        'https://github.com/getsentry/XcodeBuildMCP-iOS-Template/releases/download/v2.0.0/XcodeBuildMCP-iOS-Template-2.0.0.zip',
       ]);
 
       await initConfigStoreForTest({ iosTemplatePath: '/mock/template/path' });
