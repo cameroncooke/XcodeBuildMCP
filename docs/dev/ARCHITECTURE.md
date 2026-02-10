@@ -486,10 +486,6 @@ describe('Tool Name', () => {
    └── *.js.map         # Source maps
    ```
 
-### Smithery entrypoint
-
-Smithery deployments build from source using the Smithery CLI. The CLI discovers the TypeScript entrypoint from `package.json#module`, so this repository intentionally points `module` to `src/smithery.ts`. The npm runtime entrypoint is defined by `exports` and targets the compiled `build/` output.
-
 ### npm Package
 
 - **Name**: `xcodebuildmcp`

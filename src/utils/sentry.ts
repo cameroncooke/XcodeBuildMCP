@@ -2,7 +2,7 @@
  * Sentry instrumentation for XcodeBuildMCP
  *
  * This file initializes Sentry when explicitly called to avoid side effects
- * during module import (needed for Smithery's module-based entry).
+ * during module import.
  */
 
 import * as Sentry from '@sentry/node';

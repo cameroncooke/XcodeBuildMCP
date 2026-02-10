@@ -1,5 +1,0 @@
-runtime: typescript
-target: local
-build:
-  assets:
-    - "bundled/**"

@@ -50,7 +50,7 @@ jobs:
       - name: Bundle AXe artifacts
         run: npm run bundle:axe
 
-      - name: Build Smithery bundle
+      - name: Build package
         run: npm run build
 
       - name: Run tests
@@ -118,18 +118,6 @@ jobs:
           fi
           echo "📦 Publishing to NPM with tag: $NPM_TAG"
           npm publish --access public --tag "$NPM_TAG"
-
-      - name: Deploy to Smithery (production releases only)
-        if: github.event_name == 'push'
-        continue-on-error: true
-        env:
-          SMITHERY_TOKEN: ${{ secrets.SMITHERY_TOKEN }}
-        run: |
-          if [ -z "$SMITHERY_TOKEN" ]; then
-            echo "Missing SMITHERY_TOKEN secret for Smithery deploy."
-            exit 1
-          fi
-          npx smithery deploy --transport stdio
 
       - name: Create GitHub Release (production releases only)
         if: github.event_name == 'push'

@@ -62,7 +62,7 @@ Notes:
 
 ## Precedence (Operational)
 Runtime config precedence for all non-session defaults:
-1. Programmatic overrides (e.g., Smithery config)
+1. Programmatic overrides
 2. Config file (`.xcodebuildmcp/config.yaml`)
 3. Environment variables
 4. Hardcoded defaults
@@ -117,9 +117,9 @@ Responsibilities:
 - Persist session defaults through config store API.
 - Keep `deleteKeys` for mutual exclusivity.
 
-### 7) Smithery overrides
-**File:** `src/smithery.ts`
-- Pass overrides into bootstrap/config store, so Smithery has highest precedence.
+### 7) Runtime overrides
+**File:** runtime entrypoints
+- Pass overrides into bootstrap/config store, so explicit runtime overrides have highest precedence.
 
 ### 8) Documentation updates
 - Update `docs/CONFIGURATION.md`, `docs/GETTING_STARTED.md`, `docs/SESSION_DEFAULTS.md`.

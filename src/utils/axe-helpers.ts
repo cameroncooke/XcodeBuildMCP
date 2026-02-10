@@ -121,7 +121,7 @@ export function createAxeNotAvailableResponse(): ToolResponse {
   return createTextResponse(
     'AXe tool not found. UI automation features are not available.\n\n' +
       'Install AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\n' +
-      'If you installed via Smithery, ensure bundled artifacts are included or PATH is configured.',
+      'Ensure bundled artifacts are included or PATH is configured.',
     true,
   );
 }
