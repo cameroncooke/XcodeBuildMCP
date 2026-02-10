@@ -88,8 +88,40 @@ if [[ ! -d "$PORTABLE_ROOT/libexec/bundled/Frameworks" ]]; then
   exit 1
 fi
 
-"$PORTABLE_ROOT/bin/xcodebuildmcp" --help >/dev/null
-"$PORTABLE_ROOT/bin/xcodebuildmcp-doctor" --help >/dev/null
+HOST_ARCH="$(uname -m)"
+NODE_RUNTIME="$PORTABLE_ROOT/libexec/node-runtime"
+if [[ ! -x "$NODE_RUNTIME" ]]; then
+  echo "Missing executable Node runtime under libexec"
+  exit 1
+fi
+
+RUNTIME_ARCHS="$(lipo -archs "$NODE_RUNTIME" 2>/dev/null || true)"
+if [[ -z "$RUNTIME_ARCHS" ]]; then
+  if file "$NODE_RUNTIME" | grep -q "x86_64"; then
+    RUNTIME_ARCHS="x86_64"
+  elif file "$NODE_RUNTIME" | grep -q "arm64"; then
+    RUNTIME_ARCHS="arm64"
+  fi
+fi
+
+NORMALIZED_HOST_ARCH="$HOST_ARCH"
+if [[ "$HOST_ARCH" == "x86_64" ]]; then
+  NORMALIZED_HOST_ARCH="x86_64"
+fi
+
+CAN_EXECUTE="false"
+for runtime_arch in $RUNTIME_ARCHS; do
+  if [[ "$runtime_arch" == "$NORMALIZED_HOST_ARCH" ]]; then
+    CAN_EXECUTE="true"
+    break
+  fi
+done
+
+if [[ "$CAN_EXECUTE" == "true" ]]; then
+  "$PORTABLE_ROOT/bin/xcodebuildmcp" --help >/dev/null
+  "$PORTABLE_ROOT/bin/xcodebuildmcp-doctor" --help >/dev/null
+else
+  echo "Skipping binary execution checks: host arch ($HOST_ARCH) not in runtime archs ($RUNTIME_ARCHS)"
+fi
 
 echo "Portable install verification passed for: $PORTABLE_ROOT"
-
