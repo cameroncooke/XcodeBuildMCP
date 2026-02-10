@@ -25,7 +25,7 @@ describe('launch_app_logs_sim tool', () => {
 
       expect(schemaObj.safeParse({}).success).toBe(true);
       expect(schemaObj.safeParse({ args: ['--debug'] }).success).toBe(true);
-      expect(schemaObj.safeParse({ bundleId: 'com.example.app' }).success).toBe(false);
+      expect(schemaObj.safeParse({ bundleId: 'io.sentry.app' }).success).toBe(false);
       expect(schemaObj.safeParse({ bundleId: 42 }).success).toBe(false);
 
       expect(Object.keys(schema).sort()).toEqual(['args', 'env']);
@@ -76,7 +76,7 @@ describe('launch_app_logs_sim tool', () => {
       const result = await launch_app_logs_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
         },
         mockExecutor,
         logCaptureStub,
@@ -102,7 +102,7 @@ describe('launch_app_logs_sim tool', () => {
 
       expect(capturedParams).toEqual({
         simulatorUuid: 'test-uuid-123',
-        bundleId: 'com.example.testapp',
+        bundleId: 'io.sentry.testapp',
         captureConsole: true,
       });
     });
@@ -124,7 +124,7 @@ describe('launch_app_logs_sim tool', () => {
       await launch_app_logs_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
           args: ['--debug'],
         },
         mockExecutor,
@@ -133,7 +133,7 @@ describe('launch_app_logs_sim tool', () => {
 
       expect(capturedParams).toEqual({
         simulatorUuid: 'test-uuid-123',
-        bundleId: 'com.example.testapp',
+        bundleId: 'io.sentry.testapp',
         captureConsole: true,
         args: ['--debug'],
       });
@@ -156,7 +156,7 @@ describe('launch_app_logs_sim tool', () => {
       await launch_app_logs_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
           env: { STAGING_ENABLED: '1' },
         },
         mockExecutor,
@@ -165,7 +165,7 @@ describe('launch_app_logs_sim tool', () => {
 
       expect(capturedParams).toEqual({
         simulatorUuid: 'test-uuid-123',
-        bundleId: 'com.example.testapp',
+        bundleId: 'io.sentry.testapp',
         captureConsole: true,
         env: { STAGING_ENABLED: '1' },
       });
@@ -188,7 +188,7 @@ describe('launch_app_logs_sim tool', () => {
       await launch_app_logs_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
         },
         mockExecutor,
         logCaptureStub,
@@ -196,7 +196,7 @@ describe('launch_app_logs_sim tool', () => {
 
       expect(capturedParams).toEqual({
         simulatorUuid: 'test-uuid-123',
-        bundleId: 'com.example.testapp',
+        bundleId: 'io.sentry.testapp',
         captureConsole: true,
       });
     });
@@ -214,7 +214,7 @@ describe('launch_app_logs_sim tool', () => {
       const result = await launch_app_logs_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
         },
         mockExecutor,
         logCaptureStub,

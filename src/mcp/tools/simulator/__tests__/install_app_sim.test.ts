@@ -251,7 +251,7 @@ describe('install_app_sim tool', () => {
         return Promise.resolve(
           createMockCommandResponse({
             success: true,
-            output: 'com.example.myapp',
+            output: 'io.sentry.myapp',
             error: undefined,
           }),
         );
@@ -287,7 +287,7 @@ describe('install_app_sim tool', () => {
           {
             tool: 'launch_app_sim',
             label: 'Launch the app',
-            params: { simulatorId: 'test-uuid-123', bundleId: 'com.example.myapp' },
+            params: { simulatorId: 'test-uuid-123', bundleId: 'io.sentry.myapp' },
             priority: 2,
           },
         ],

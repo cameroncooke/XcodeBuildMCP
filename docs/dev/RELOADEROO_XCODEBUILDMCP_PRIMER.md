@@ -57,7 +57,7 @@ Use jq to parse the output to get just the content response:
   ```
 - **`launch_app_device`**: Launches an app on a physical device.
   ```bash
-  npx reloaderoo@latest inspect call-tool launch_app_device --params '{"deviceId": "DEVICE_UDID", "bundleId": "com.example.MyApp"}' -q -- npx xcodebuildmcp@latest
+  npx reloaderoo@latest inspect call-tool launch_app_device --params '{"deviceId": "DEVICE_UDID", "bundleId": "io.sentry.MyApp"}' -q -- npx xcodebuildmcp@latest
   ```
 - **`list_devices`**: Lists connected physical devices.
   ```bash
@@ -96,11 +96,11 @@ Use jq to parse the output to get just the content response:
   ```
 - **`launch_app_logs_sim`**: Launches an app on a simulator with log capture.
   ```bash
-  npx reloaderoo@latest inspect call-tool launch_app_logs_sim --params '{"simulatorUuid": "SIMULATOR_UUID", "bundleId": "com.example.MyApp"}' -q -- npx xcodebuildmcp@latest
+  npx reloaderoo@latest inspect call-tool launch_app_logs_sim --params '{"simulatorUuid": "SIMULATOR_UUID", "bundleId": "io.sentry.MyApp"}' -q -- npx xcodebuildmcp@latest
   ```
 - **`launch_app_sim`**: Launches an app on a simulator.
   ```bash
-  npx reloaderoo@latest inspect call-tool launch_app_sim --params '{"simulatorName": "iPhone 16", "bundleId": "com.example.MyApp"}' -q -- npx xcodebuildmcp@latest
+  npx reloaderoo@latest inspect call-tool launch_app_sim --params '{"simulatorName": "iPhone 16", "bundleId": "io.sentry.MyApp"}' -q -- npx xcodebuildmcp@latest
   ```
 - **`list_sims`**: Lists available simulators.
   ```bash
@@ -112,7 +112,7 @@ Use jq to parse the output to get just the content response:
   ```
 - **`stop_app_sim`**: Stops an app on a simulator.
   ```bash
-  npx reloaderoo@latest inspect call-tool stop_app_sim --params '{"simulatorName": "iPhone 16", "bundleId": "com.example.MyApp"}' -q -- npx xcodebuildmcp@latest
+  npx reloaderoo@latest inspect call-tool stop_app_sim --params '{"simulatorName": "iPhone 16", "bundleId": "io.sentry.MyApp"}' -q -- npx xcodebuildmcp@latest
   ```
 - **`test_sim`**: Runs tests on a simulator.
   ```bash
@@ -123,11 +123,11 @@ Use jq to parse the output to get just the content response:
 
 - **`start_device_log_cap`**: Starts log capture for a physical device.
   ```bash
-  npx reloaderoo@latest inspect call-tool start_device_log_cap --params '{"deviceId": "DEVICE_UDID", "bundleId": "com.example.MyApp"}' -q -- npx xcodebuildmcp@latest
+  npx reloaderoo@latest inspect call-tool start_device_log_cap --params '{"deviceId": "DEVICE_UDID", "bundleId": "io.sentry.MyApp"}' -q -- npx xcodebuildmcp@latest
   ```
 - **`start_sim_log_cap`**: Starts log capture for a simulator.
   ```bash
-  npx reloaderoo@latest inspect call-tool start_sim_log_cap --params '{"simulatorUuid": "SIMULATOR_UUID", "bundleId": "com.example.MyApp"}' -q -- npx xcodebuildmcp@latest
+  npx reloaderoo@latest inspect call-tool start_sim_log_cap --params '{"simulatorUuid": "SIMULATOR_UUID", "bundleId": "io.sentry.MyApp"}' -q -- npx xcodebuildmcp@latest
   ```
 - **`stop_device_log_cap`**: Stops log capture for a physical device.
   ```bash

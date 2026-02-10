@@ -42,7 +42,7 @@ struct ContentView: View {
 // OS Log Extension
 extension Logger {
     static let myApp = Logger(
-        subsystem: "com.cameroncooke.MCPTest", 
+        subsystem: "io.sentry.MCPTest", 
         category: "default"
     )
 }

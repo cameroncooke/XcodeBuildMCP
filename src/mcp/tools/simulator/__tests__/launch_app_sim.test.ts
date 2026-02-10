@@ -21,7 +21,7 @@ describe('launch_app_sim tool', () => {
         }).success,
       ).toBe(true);
 
-      expect(schemaObj.safeParse({ bundleId: 'com.example.testapp' }).success).toBe(false);
+      expect(schemaObj.safeParse({ bundleId: 'io.sentry.testapp' }).success).toBe(false);
       expect(schemaObj.safeParse({ bundleId: 123 }).success).toBe(false);
 
       expect(Object.keys(schema).sort()).toEqual(['args', 'env']);
@@ -36,7 +36,7 @@ describe('launch_app_sim tool', () => {
 
   describe('Handler Requirements', () => {
     it('should require simulator identifier when not provided', async () => {
-      const result = await handler({ bundleId: 'com.example.testapp' });
+      const result = await handler({ bundleId: 'io.sentry.testapp' });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
@@ -58,7 +58,7 @@ describe('launch_app_sim tool', () => {
       const result = await handler({
         simulatorId: 'SIM-UUID',
         simulatorName: 'iPhone 16',
-        bundleId: 'com.example.testapp',
+        bundleId: 'io.sentry.testapp',
       });
 
       expect(result.isError).toBe(true);
@@ -92,7 +92,7 @@ describe('launch_app_sim tool', () => {
       const result = await launch_app_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
         },
         sequencedExecutor,
       );
@@ -114,7 +114,7 @@ describe('launch_app_sim tool', () => {
           {
             tool: 'start_sim_log_cap',
             label: 'Capture structured logs (app continues running)',
-            params: { simulatorId: 'test-uuid-123', bundleId: 'com.example.testapp' },
+            params: { simulatorId: 'test-uuid-123', bundleId: 'io.sentry.testapp' },
             priority: 2,
           },
           {
@@ -122,7 +122,7 @@ describe('launch_app_sim tool', () => {
             label: 'Capture console + structured logs (app restarts)',
             params: {
               simulatorId: 'test-uuid-123',
-              bundleId: 'com.example.testapp',
+              bundleId: 'io.sentry.testapp',
               captureConsole: true,
             },
             priority: 3,
@@ -157,20 +157,20 @@ describe('launch_app_sim tool', () => {
       await launch_app_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
           args: ['--debug', '--verbose'],
         },
         sequencedExecutor,
       );
 
       expect(commands).toEqual([
-        ['xcrun', 'simctl', 'get_app_container', 'test-uuid-123', 'com.example.testapp', 'app'],
+        ['xcrun', 'simctl', 'get_app_container', 'test-uuid-123', 'io.sentry.testapp', 'app'],
         [
           'xcrun',
           'simctl',
           'launch',
           'test-uuid-123',
-          'com.example.testapp',
+          'io.sentry.testapp',
           '--debug',
           '--verbose',
         ],
@@ -201,7 +201,7 @@ describe('launch_app_sim tool', () => {
         {
           simulatorId: 'resolved-uuid',
           simulatorName: 'iPhone 16',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
         },
         sequencedExecutor,
       );
@@ -223,7 +223,7 @@ describe('launch_app_sim tool', () => {
           {
             tool: 'start_sim_log_cap',
             label: 'Capture structured logs (app continues running)',
-            params: { simulatorId: 'resolved-uuid', bundleId: 'com.example.testapp' },
+            params: { simulatorId: 'resolved-uuid', bundleId: 'io.sentry.testapp' },
             priority: 2,
           },
           {
@@ -231,7 +231,7 @@ describe('launch_app_sim tool', () => {
             label: 'Capture console + structured logs (app restarts)',
             params: {
               simulatorId: 'resolved-uuid',
-              bundleId: 'com.example.testapp',
+              bundleId: 'io.sentry.testapp',
               captureConsole: true,
             },
             priority: 3,
@@ -261,7 +261,7 @@ describe('launch_app_sim tool', () => {
       const result = await launch_app_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
         },
         mockExecutor,
       );
@@ -293,7 +293,7 @@ describe('launch_app_sim tool', () => {
       const result = await launch_app_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
         },
         mockExecutor,
       );
@@ -332,7 +332,7 @@ describe('launch_app_sim tool', () => {
       const result = await launch_app_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
         },
         mockExecutor,
       );
@@ -378,7 +378,7 @@ describe('launch_app_sim tool', () => {
       await launch_app_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
           env: { STAGING_ENABLED: '1', DEBUG: 'true' },
         },
         sequencedExecutor,
@@ -424,7 +424,7 @@ describe('launch_app_sim tool', () => {
       await launch_app_simLogic(
         {
           simulatorId: 'test-uuid-123',
-          bundleId: 'com.example.testapp',
+          bundleId: 'io.sentry.testapp',
         },
         sequencedExecutor,
       );

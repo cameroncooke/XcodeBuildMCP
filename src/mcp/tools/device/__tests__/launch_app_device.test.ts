@@ -29,7 +29,7 @@ describe('launch_app_device plugin (device-shared)', () => {
     it('should validate schema with valid inputs', () => {
       const schemaObj = z.strictObject(schema);
       expect(schemaObj.safeParse({}).success).toBe(true);
-      expect(schemaObj.safeParse({ bundleId: 'com.example.app' }).success).toBe(false);
+      expect(schemaObj.safeParse({ bundleId: 'io.sentry.app' }).success).toBe(false);
       expect(Object.keys(schema).sort()).toEqual(['env']);
     });
 
@@ -73,7 +73,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
         },
         trackingExecutor,
         createMockFileSystemExecutor(),
@@ -91,7 +91,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         '--json-output',
         expect.stringMatching(/^\/.*\/launch-\d+\.json$/),
         '--terminate-existing',
-        'com.example.app',
+        'io.sentry.app',
       ]);
       expect(calls[0].logPrefix).toBe('Launch app on device');
       expect(calls[0].useShell).toBe(false);
@@ -151,7 +151,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
           env: { STAGING_ENABLED: '1', DEBUG: 'true' },
         },
         trackingExecutor,
@@ -161,7 +161,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       expect(calls).toHaveLength(1);
       const cmd = calls[0].command;
       // bundleId should be the last element
-      expect(cmd[cmd.length - 1]).toBe('com.example.app');
+      expect(cmd[cmd.length - 1]).toBe('io.sentry.app');
       // --environment-variables should be provided exactly once as JSON
       const envFlagIndices = cmd
         .map((part: string, index: number) => (part === '--environment-variables' ? index : -1))
@@ -187,7 +187,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
         },
         trackingExecutor,
         createMockFileSystemExecutor(),
@@ -207,7 +207,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -233,7 +233,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -271,7 +271,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
         },
         mockExecutor,
         mockFileSystem,
@@ -298,13 +298,13 @@ describe('launch_app_device plugin (device-shared)', () => {
     it('should handle successful launch with command output', async () => {
       const mockExecutor = createMockExecutor({
         success: true,
-        output: 'App "com.example.app" launched on device "test-device-123"',
+        output: 'App "io.sentry.app" launched on device "test-device-123"',
       });
 
       const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -314,7 +314,7 @@ describe('launch_app_device plugin (device-shared)', () => {
         content: [
           {
             type: 'text',
-            text: '✅ App launched successfully\n\nApp "com.example.app" launched on device "test-device-123"',
+            text: '✅ App launched successfully\n\nApp "io.sentry.app" launched on device "test-device-123"',
           },
         ],
         nextSteps: [],
@@ -358,7 +358,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-invalid',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -381,7 +381,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
         },
         mockExecutor,
         createMockFileSystemExecutor(),
@@ -404,7 +404,7 @@ describe('launch_app_device plugin (device-shared)', () => {
       const result = await launch_app_deviceLogic(
         {
           deviceId: 'test-device-123',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
         },
         mockExecutor,
         createMockFileSystemExecutor(),

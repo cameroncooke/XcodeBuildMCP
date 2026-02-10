@@ -75,13 +75,13 @@ describe('stop_device_log_cap plugin', () => {
 
       const result = await stop_device_log_capLogic(
         {
-          logSessionId: 'device-log-00008110-001A2C3D4E5F-com.example.MyApp',
+          logSessionId: 'device-log-00008110-001A2C3D4E5F-io.sentry.MyApp',
         },
         mockFileSystem,
       );
 
       expect(result.content[0].text).toBe(
-        'Failed to stop device log capture session device-log-00008110-001A2C3D4E5F-com.example.MyApp: Device log capture session not found: device-log-00008110-001A2C3D4E5F-com.example.MyApp',
+        'Failed to stop device log capture session device-log-00008110-001A2C3D4E5F-io.sentry.MyApp: Device log capture session not found: device-log-00008110-001A2C3D4E5F-io.sentry.MyApp',
       );
       expect(result.isError).toBe(true);
     });
@@ -101,7 +101,7 @@ describe('stop_device_log_cap plugin', () => {
         process: testProcess as unknown as DeviceLogSession['process'],
         logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
-        bundleId: 'com.example.MyApp',
+        bundleId: 'io.sentry.MyApp',
         hasEnded: false,
       });
 
@@ -146,7 +146,7 @@ describe('stop_device_log_cap plugin', () => {
         process: testProcess as unknown as DeviceLogSession['process'],
         logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
-        bundleId: 'com.example.MyApp',
+        bundleId: 'io.sentry.MyApp',
         hasEnded: false,
       });
 
@@ -188,7 +188,7 @@ describe('stop_device_log_cap plugin', () => {
         process: testProcess as unknown as DeviceLogSession['process'],
         logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
-        bundleId: 'com.example.MyApp',
+        bundleId: 'io.sentry.MyApp',
         hasEnded: false,
       });
 
@@ -230,7 +230,7 @@ describe('stop_device_log_cap plugin', () => {
         process: testProcess as unknown as DeviceLogSession['process'],
         logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
-        bundleId: 'com.example.MyApp',
+        bundleId: 'io.sentry.MyApp',
         hasEnded: false,
       });
 
@@ -274,7 +274,7 @@ describe('stop_device_log_cap plugin', () => {
         process: testProcess as unknown as DeviceLogSession['process'],
         logFilePath: testLogFilePath,
         deviceUuid: '00008110-001A2C3D4E5F',
-        bundleId: 'com.example.MyApp',
+        bundleId: 'io.sentry.MyApp',
         hasEnded: false,
       });
 

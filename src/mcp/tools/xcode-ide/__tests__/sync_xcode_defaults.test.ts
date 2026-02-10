@@ -70,7 +70,7 @@ describe('sync_xcode_defaults tool', () => {
           find: { output: `${EXAMPLE_PROJECT_PATH}\n` },
           stat: { output: '1704067200\n' },
           'xcrun simctl': { output: simctlOutput },
-          xcodebuild: { output: '    PRODUCT_BUNDLE_IDENTIFIER = com.example.MCPTest\n' },
+          xcodebuild: { output: '    PRODUCT_BUNDLE_IDENTIFIER = io.sentry.MCPTest\n' },
         });
 
         const result = await syncXcodeDefaultsLogic(
@@ -85,13 +85,13 @@ describe('sync_xcode_defaults tool', () => {
           'Simulator ID: B38FE93D-578B-454B-BE9A-C6FA0CE5F096',
         );
         expect(result.content[0].text).toContain('Simulator Name: Apple Vision Pro');
-        expect(result.content[0].text).toContain('Bundle ID: com.example.MCPTest');
+        expect(result.content[0].text).toContain('Bundle ID: io.sentry.MCPTest');
 
         const defaults = sessionStore.getAll();
         expect(defaults.scheme).toBe('MCPTest');
         expect(defaults.simulatorId).toBe('B38FE93D-578B-454B-BE9A-C6FA0CE5F096');
         expect(defaults.simulatorName).toBe('Apple Vision Pro');
-        expect(defaults.bundleId).toBe('com.example.MCPTest');
+        expect(defaults.bundleId).toBe('io.sentry.MCPTest');
       },
     );
 
@@ -108,7 +108,7 @@ describe('sync_xcode_defaults tool', () => {
         whoami: { output: 'johndoe\n' },
         'test -f': { success: true },
         'xcrun simctl': { output: simctlOutput },
-        xcodebuild: { output: '    PRODUCT_BUNDLE_IDENTIFIER = com.example.MCPTest\n' },
+        xcodebuild: { output: '    PRODUCT_BUNDLE_IDENTIFIER = io.sentry.MCPTest\n' },
       });
 
       const result = await syncXcodeDefaultsLogic(
@@ -126,7 +126,7 @@ describe('sync_xcode_defaults tool', () => {
       const defaults = sessionStore.getAll();
       expect(defaults.scheme).toBe('MCPTest');
       expect(defaults.simulatorId).toBe('B38FE93D-578B-454B-BE9A-C6FA0CE5F096');
-      expect(defaults.bundleId).toBe('com.example.MCPTest');
+      expect(defaults.bundleId).toBe('io.sentry.MCPTest');
     });
 
     it.skipIf(!existsSync(EXAMPLE_XCUSERSTATE))('updates existing session defaults', async () => {
@@ -150,7 +150,7 @@ describe('sync_xcode_defaults tool', () => {
         find: { output: `${EXAMPLE_PROJECT_PATH}\n` },
         stat: { output: '1704067200\n' },
         'xcrun simctl': { output: simctlOutput },
-        xcodebuild: { output: '    PRODUCT_BUNDLE_IDENTIFIER = com.example.MCPTest\n' },
+        xcodebuild: { output: '    PRODUCT_BUNDLE_IDENTIFIER = io.sentry.MCPTest\n' },
       });
 
       const result = await syncXcodeDefaultsLogic(
@@ -164,7 +164,7 @@ describe('sync_xcode_defaults tool', () => {
       expect(defaults.scheme).toBe('MCPTest');
       expect(defaults.simulatorId).toBe('B38FE93D-578B-454B-BE9A-C6FA0CE5F096');
       expect(defaults.simulatorName).toBe('Apple Vision Pro');
-      expect(defaults.bundleId).toBe('com.example.MCPTest');
+      expect(defaults.bundleId).toBe('io.sentry.MCPTest');
       // Original projectPath should be preserved
       expect(defaults.projectPath).toBe('/some/project.xcodeproj');
     });

@@ -34,7 +34,7 @@ npx reloaderoo@latest --help
   ```
 - **`launch_app_device`**: Launches an app on a physical device.
   ```bash
-  npx reloaderoo@latest inspect call-tool launch_app_device --params '{"deviceId": "DEVICE_UDID", "bundleId": "com.example.MyApp"}' -- node build/cli.js mcp
+  npx reloaderoo@latest inspect call-tool launch_app_device --params '{"deviceId": "DEVICE_UDID", "bundleId": "io.sentry.MyApp"}' -- node build/cli.js mcp
   ```
 - **`list_devices`**: Lists connected physical devices.
   ```bash
@@ -73,11 +73,11 @@ npx reloaderoo@latest --help
   ```
 - **`launch_app_logs_sim`**: Launches an app on a simulator with log capture.
   ```bash
-  npx reloaderoo@latest inspect call-tool launch_app_logs_sim --params '{"simulatorId": "SIMULATOR_UUID", "bundleId": "com.example.MyApp"}' -- node build/cli.js mcp
+  npx reloaderoo@latest inspect call-tool launch_app_logs_sim --params '{"simulatorId": "SIMULATOR_UUID", "bundleId": "io.sentry.MyApp"}' -- node build/cli.js mcp
   ```
 - **`launch_app_sim`**: Launches an app on a simulator.
   ```bash
-  npx reloaderoo@latest inspect call-tool launch_app_sim --params '{"simulatorName": "iPhone 16", "bundleId": "com.example.MyApp"}' -- node build/cli.js mcp
+  npx reloaderoo@latest inspect call-tool launch_app_sim --params '{"simulatorName": "iPhone 16", "bundleId": "io.sentry.MyApp"}' -- node build/cli.js mcp
   ```
 - **`list_sims`**: Lists available simulators.
   ```bash
@@ -89,7 +89,7 @@ npx reloaderoo@latest --help
   ```
 - **`stop_app_sim`**: Stops an app on a simulator.
   ```bash
-  npx reloaderoo@latest inspect call-tool stop_app_sim --params '{"simulatorName": "iPhone 16", "bundleId": "com.example.MyApp"}' -- node build/cli.js mcp
+  npx reloaderoo@latest inspect call-tool stop_app_sim --params '{"simulatorName": "iPhone 16", "bundleId": "io.sentry.MyApp"}' -- node build/cli.js mcp
   ```
 - **`test_sim`**: Runs tests on a simulator.
   ```bash
@@ -100,11 +100,11 @@ npx reloaderoo@latest --help
 
 - **`start_device_log_cap`**: Starts log capture for a physical device.
   ```bash
-  npx reloaderoo@latest inspect call-tool start_device_log_cap --params '{"deviceId": "DEVICE_UDID", "bundleId": "com.example.MyApp"}' -- node build/cli.js mcp
+  npx reloaderoo@latest inspect call-tool start_device_log_cap --params '{"deviceId": "DEVICE_UDID", "bundleId": "io.sentry.MyApp"}' -- node build/cli.js mcp
   ```
 - **`start_sim_log_cap`**: Starts log capture for a simulator.
   ```bash
-  npx reloaderoo@latest inspect call-tool start_sim_log_cap --params '{"simulatorUuid": "SIMULATOR_UUID", "bundleId": "com.example.MyApp"}' -- node build/cli.js mcp
+  npx reloaderoo@latest inspect call-tool start_sim_log_cap --params '{"simulatorUuid": "SIMULATOR_UUID", "bundleId": "io.sentry.MyApp"}' -- node build/cli.js mcp
   ```
 - **`stop_device_log_cap`**: Stops log capture for a physical device.
   ```bash

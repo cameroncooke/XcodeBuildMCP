@@ -6,4 +6,4 @@ sessionDefaults:
   simulatorId: B38FE93D-578B-454B-BE9A-C6FA0CE5F096
   useLatestOS: true
   platform: iOS Simulator
-  bundleId: com.cameroncooke.MCPTest
+  bundleId: io.sentry.MCPTest

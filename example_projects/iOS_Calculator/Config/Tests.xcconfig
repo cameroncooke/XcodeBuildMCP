@@ -7,6 +7,6 @@
 // ==========================================
 // Test Target Settings (Customizable by scaffold tool)
 // ==========================================
-PRODUCT_BUNDLE_IDENTIFIER = com.example.calculatorapp
+PRODUCT_BUNDLE_IDENTIFIER = io.sentry.calculatorapp
 TEST_TARGET_NAME = CalculatorApp
 DEFINES_MODULE = NO

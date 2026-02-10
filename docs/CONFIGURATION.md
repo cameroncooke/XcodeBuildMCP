@@ -54,7 +54,7 @@ sessionDefaults:
   suppressWarnings: true
   derivedDataPath: "./.derivedData"
   preferXcodebuild: false
-  bundleId: "com.example.myapp"
+  bundleId: "io.sentry.myapp"
 
 # Build settings
 incrementalBuildsEnabled: false
