@@ -3,7 +3,7 @@
   "name": "com.xcodebuildmcp/XcodeBuildMCP",
   "description": "XcodeBuildMCP provides tools for Xcode project management, simulator management, and app utilities.",
   "repository": {
-    "url": "https://github.com/cameroncooke/XcodeBuildMCP",
+    "url": "https://github.com/getsentry/XcodeBuildMCP",
     "source": "github",
     "id": "945551361"
   },

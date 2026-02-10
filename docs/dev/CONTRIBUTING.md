@@ -342,8 +342,8 @@ XcodeBuildMCP uses external template repositories for the iOS and macOS project 
 
 #### Template Repositories
 
-- **iOS Template**: [XcodeBuildMCP-iOS-Template](https://github.com/cameroncooke/XcodeBuildMCP-iOS-Template)
-- **macOS Template**: [XcodeBuildMCP-macOS-Template](https://github.com/cameroncooke/XcodeBuildMCP-macOS-Template)
+- **iOS Template**: [XcodeBuildMCP-iOS-Template](https://github.com/getsentry/XcodeBuildMCP-iOS-Template)
+- **macOS Template**: [XcodeBuildMCP-macOS-Template](https://github.com/getsentry/XcodeBuildMCP-macOS-Template)
 
 #### Local Template Development
 
@@ -351,8 +351,8 @@ When developing or testing changes to the templates:
 
 1. Clone the template repository you want to work on:
    ```bash
-   git clone https://github.com/cameroncooke/XcodeBuildMCP-iOS-Template.git
-   git clone https://github.com/cameroncooke/XcodeBuildMCP-macOS-Template.git
+   git clone https://github.com/getsentry/XcodeBuildMCP-iOS-Template.git
+   git clone https://github.com/getsentry/XcodeBuildMCP-macOS-Template.git
    ```
 
 2. Set the appropriate environment variable to use your local template:

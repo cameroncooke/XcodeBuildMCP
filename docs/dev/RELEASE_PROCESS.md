@@ -28,7 +28,7 @@ Production release behavior:
 - Creates GitHub release and uploads npm tarball.
 - Builds and verifies portable macOS artifacts (`arm64`, `x64`, `universal`).
 - Uploads portable artifacts to GitHub release assets.
-- Updates the Homebrew tap repository (`cameroncooke/homebrew-xcodebuildmcp`) directly when `HOMEBREW_TAP_TOKEN` is configured.
+- Updates the Homebrew tap repository (`getsentry/homebrew-xcodebuildmcp`) directly when `HOMEBREW_TAP_TOKEN` is configured.
 - Attempts MCP Registry publish (best effort based on configured secrets).
 
 ### Manual dispatch (`workflow_dispatch`)

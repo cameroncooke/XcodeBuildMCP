@@ -119,7 +119,7 @@ describe('scaffold_macos_project plugin', () => {
       // This test validates that the curl command would be generated correctly
       // by verifying the URL construction logic
       const expectedUrl =
-        'https://github.com/cameroncooke/XcodeBuildMCP-macOS-Template/releases/download/';
+        'https://github.com/getsentry/XcodeBuildMCP-macOS-Template/releases/download/';
 
       // The curl command should be structured correctly for macOS template
       expect(expectedUrl).toContain('XcodeBuildMCP-macOS-Template');
@@ -156,7 +156,7 @@ describe('scaffold_macos_project plugin', () => {
     it('should generate correct commands for template with version', async () => {
       // This test validates that the curl command would be generated correctly with version
       const testVersion = 'v1.0.0';
-      const expectedUrlWithVersion = `https://github.com/cameroncooke/XcodeBuildMCP-macOS-Template/releases/download/${testVersion}/`;
+      const expectedUrlWithVersion = `https://github.com/getsentry/XcodeBuildMCP-macOS-Template/releases/download/${testVersion}/`;
 
       // The URL should contain the specific version
       expect(expectedUrlWithVersion).toContain(testVersion);
@@ -168,7 +168,7 @@ describe('scaffold_macos_project plugin', () => {
 
       // The full URL should be correctly constructed
       expect(expectedUrlWithVersion).toBe(
-        `https://github.com/cameroncooke/XcodeBuildMCP-macOS-Template/releases/download/${testVersion}/`,
+        `https://github.com/getsentry/XcodeBuildMCP-macOS-Template/releases/download/${testVersion}/`,
       );
     });
 
