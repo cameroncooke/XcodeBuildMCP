@@ -11,6 +11,7 @@ import {
 } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import { schema, handler, gestureLogic } from '../gesture.ts';
+import { AXE_NOT_AVAILABLE_MESSAGE } from '../../../../utils/axe-helpers.ts';
 
 describe('Gesture Plugin', () => {
   beforeEach(() => {
@@ -342,7 +343,7 @@ describe('Gesture Plugin', () => {
           content: [
             {
               type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+              text: AXE_NOT_AVAILABLE_MESSAGE,
             },
           ],
           isError: true,
@@ -362,7 +363,7 @@ describe('Gesture Plugin', () => {
         content: [
           {
             type: 'text' as const,
-            text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+            text: AXE_NOT_AVAILABLE_MESSAGE,
           },
         ],
         isError: true,

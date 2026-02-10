@@ -7,6 +7,7 @@ import * as z from 'zod';
 import { createMockExecutor, mockProcess } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import { schema, handler, long_pressLogic } from '../long_press.ts';
+import { AXE_NOT_AVAILABLE_MESSAGE } from '../../../../utils/axe-helpers.ts';
 
 describe('Long Press Plugin', () => {
   beforeEach(() => {
@@ -343,7 +344,7 @@ describe('Long Press Plugin', () => {
           content: [
             {
               type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+              text: AXE_NOT_AVAILABLE_MESSAGE,
             },
           ],
           isError: true,
@@ -365,7 +366,7 @@ describe('Long Press Plugin', () => {
         content: [
           {
             type: 'text' as const,
-            text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+            text: AXE_NOT_AVAILABLE_MESSAGE,
           },
         ],
         isError: true,

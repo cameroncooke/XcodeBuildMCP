@@ -117,13 +117,13 @@ export function areAxeToolsAvailable(): boolean {
   return getAxePath() !== null;
 }
 
+export const AXE_NOT_AVAILABLE_MESSAGE =
+  'AXe tool not found. UI automation features are not available.\n\n' +
+  'Install AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\n' +
+  'Ensure bundled artifacts are included or PATH is configured.';
+
 export function createAxeNotAvailableResponse(): ToolResponse {
-  return createTextResponse(
-    'AXe tool not found. UI automation features are not available.\n\n' +
-      'Install AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\n' +
-      'Ensure bundled artifacts are included or PATH is configured.',
-    true,
-  );
+  return createTextResponse(AXE_NOT_AVAILABLE_MESSAGE, true);
 }
 
 /**

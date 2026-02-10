@@ -8,6 +8,7 @@ import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 
 import { schema, handler, type AxeHelpers, tapLogic } from '../tap.ts';
+import { AXE_NOT_AVAILABLE_MESSAGE } from '../../../../utils/axe-helpers.ts';
 
 // Helper function to create mock axe helpers
 function createMockAxeHelpers(): AxeHelpers {
@@ -18,7 +19,7 @@ function createMockAxeHelpers(): AxeHelpers {
       content: [
         {
           type: 'text',
-          text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+          text: AXE_NOT_AVAILABLE_MESSAGE,
         },
       ],
       isError: true,
@@ -35,7 +36,7 @@ function createMockAxeHelpersWithNullPath(): AxeHelpers {
       content: [
         {
           type: 'text',
-          text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+          text: AXE_NOT_AVAILABLE_MESSAGE,
         },
       ],
       isError: true,
@@ -803,7 +804,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+            text: AXE_NOT_AVAILABLE_MESSAGE,
           },
         ],
         isError: true,
@@ -833,7 +834,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+            text: AXE_NOT_AVAILABLE_MESSAGE,
           },
         ],
         isError: true,
@@ -863,7 +864,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+            text: AXE_NOT_AVAILABLE_MESSAGE,
           },
         ],
         isError: true,
@@ -891,7 +892,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+            text: AXE_NOT_AVAILABLE_MESSAGE,
           },
         ],
         isError: true,
@@ -919,7 +920,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+            text: AXE_NOT_AVAILABLE_MESSAGE,
           },
         ],
         isError: true,
@@ -947,7 +948,7 @@ describe('Tap Plugin', () => {
         content: [
           {
             type: 'text',
-            text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+            text: AXE_NOT_AVAILABLE_MESSAGE,
           },
         ],
         isError: true,
