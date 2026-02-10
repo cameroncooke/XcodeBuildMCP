@@ -1,7 +1,7 @@
 import XCTest
 
 /// Reproduction tests for TEST_RUNNER_ environment variable passthrough.
-/// GitHub Issue: https://github.com/cameroncooke/XcodeBuildMCP/issues/101
+/// GitHub Issue: https://github.com/getsentry/XcodeBuildMCP/issues/101
 ///
 /// Expected behavior:
 /// - When invoking xcodebuild test with TEST_RUNNER_USE_DEV_MODE=YES,
