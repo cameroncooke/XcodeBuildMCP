@@ -354,7 +354,7 @@ jobs:
     needs: [release, build_and_package_macos, publish_portable_assets]
     runs-on: ubuntu-latest
     env:
-      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      HOMEBREW_TAP_DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -376,12 +376,12 @@ jobs:
           name: portable-x64
           path: dist/portable/x64
 
-      - name: Skip when tap token is unavailable
-        if: env.HOMEBREW_TAP_TOKEN == ''
-        run: echo "HOMEBREW_TAP_TOKEN is not set; skipping Homebrew tap update."
+      - name: Skip when deploy key is unavailable
+        if: env.HOMEBREW_TAP_DEPLOY_KEY == ''
+        run: echo "HOMEBREW_TAP_DEPLOY_KEY is not set; skipping Homebrew tap update."
 
       - name: Generate formula
-        if: env.HOMEBREW_TAP_TOKEN != ''
+        if: env.HOMEBREW_TAP_DEPLOY_KEY != ''
         run: |
           VERSION="${{ needs.release.outputs.version }}"
           FORMULA_BASE_URL="https://github.com/${{ github.repository }}/releases/download/v${VERSION}"
@@ -394,24 +394,23 @@ jobs:
             --base-url "$FORMULA_BASE_URL" \
             --out dist/homebrew/Formula/xcodebuildmcp.rb
 
+      - name: Configure SSH for tap repository
+        if: env.HOMEBREW_TAP_DEPLOY_KEY != ''
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
+
       - name: Update tap repository
-        if: env.HOMEBREW_TAP_TOKEN != ''
-        env:
-          GH_TOKEN: ${{ env.HOMEBREW_TAP_TOKEN }}
+        if: env.HOMEBREW_TAP_DEPLOY_KEY != ''
         run: |
           VERSION="${{ needs.release.outputs.version }}"
-          DEFAULT_BRANCH="main"
-          gh repo clone ${{ github.repository_owner }}/homebrew-xcodebuildmcp tap-repo
+          git clone git@github.com:${{ github.repository_owner }}/homebrew-xcodebuildmcp.git tap-repo
           mkdir -p tap-repo/Formula
           cp dist/homebrew/Formula/xcodebuildmcp.rb tap-repo/Formula/xcodebuildmcp.rb
           cd tap-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${{ github.repository_owner }}/homebrew-xcodebuildmcp.git"
-          DETECTED_BRANCH="$(gh repo view ${{ github.repository_owner }}/homebrew-xcodebuildmcp --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || true)"
-          if [ -n "$DETECTED_BRANCH" ]; then
-            DEFAULT_BRANCH="$DETECTED_BRANCH"
-          fi
+          DEFAULT_BRANCH="$(git symbolic-ref refs/remotes/origin/HEAD | sed 's|refs/remotes/origin/||')"
           if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
             echo "Tap repo has no commits; bootstrapping ${DEFAULT_BRANCH}."
             git checkout -b "$DEFAULT_BRANCH"
