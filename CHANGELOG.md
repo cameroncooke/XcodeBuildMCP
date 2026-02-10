@@ -1,10 +1,16 @@
 # Changelog
 
+## [2.0.6]
+
+### Changed
+
+- XcodeBuildMCP has moved to the [getsentry](https://github.com/getsentry) GitHub organization. Homebrew users should switch to the new tap: `brew untap cameroncooke/xcodebuildmcp && brew tap getsentry/xcodebuildmcp`. npm and npx users are unaffected.
+
 ## [2.0.5] - 2026-02-10
 
 ### Added
 
-- Homebrew installation (`brew tap cameroncooke/xcodebuildmcp && brew install xcodebuildmcp`) — installs a self-contained binary with no Node.js dependency.
+- Homebrew installation (`brew tap getsentry/xcodebuildmcp && brew install xcodebuildmcp`) — installs a self-contained binary with no Node.js dependency.
 
 ### Removed
 
@@ -266,4 +272,5 @@ Please note that the UI automation features are an early preview and currently i
 ## [v1.0.1] - 2025-04-02
 - Initial release of XcodeBuildMCP
 - Basic support for building iOS and macOS applications
+
 
