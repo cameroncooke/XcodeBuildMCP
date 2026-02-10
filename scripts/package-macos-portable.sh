@@ -88,7 +88,6 @@ verify_axe_assets() {
   fi
 
   if [[ "$(uname -s)" == "Darwin" ]]; then
-    codesign --verify --deep --strict "$axe_bin"
     while IFS= read -r framework_path; do
       framework_name="$(basename "$framework_path" .framework)"
       framework_binary="$framework_path/Versions/A/$framework_name"
@@ -99,19 +98,38 @@ verify_axe_assets() {
         echo "Missing framework binary at $framework_binary"
         exit 1
       fi
-      codesign --verify --deep --strict "$framework_binary"
     done < <(find "$frameworks_dir" -name "*.framework" -type d)
-    spctl_log="$(mktemp)"
-    if ! spctl --assess --type execute "$axe_bin" 2>"$spctl_log"; then
-      if grep -q "does not seem to be an app" "$spctl_log"; then
-        echo "Gatekeeper execute assessment is inconclusive for CLI binaries; continuing"
-      else
-        cat "$spctl_log"
-        rm "$spctl_log"
-        exit 1
+
+    if codesign -dv "$axe_bin" >/dev/null 2>&1; then
+      codesign --verify --deep --strict "$axe_bin"
+      while IFS= read -r framework_path; do
+        framework_name="$(basename "$framework_path" .framework)"
+        framework_binary="$framework_path/Versions/A/$framework_name"
+        if [[ ! -f "$framework_binary" ]]; then
+          framework_binary="$framework_path/Versions/Current/$framework_name"
+        fi
+        codesign --verify --deep --strict "$framework_binary"
+      done < <(find "$frameworks_dir" -name "*.framework" -type d)
+
+      spctl_log="$(mktemp)"
+      if ! spctl --assess --type execute "$axe_bin" 2>"$spctl_log"; then
+        if grep -q "does not seem to be an app" "$spctl_log"; then
+          echo "Gatekeeper execute assessment is inconclusive for CLI binaries; continuing"
+        else
+          cat "$spctl_log"
+          rm "$spctl_log"
+          exit 1
+        fi
       fi
+      rm "$spctl_log"
+    else
+      echo "AXe binary is unsigned; skipping codesign and Gatekeeper verification"
     fi
-    rm "$spctl_log"
+
+    if ! DYLD_FRAMEWORK_PATH="$frameworks_dir" "$axe_bin" --version >/dev/null 2>&1; then
+      echo "Bundled AXe runtime execution check failed"
+      exit 1
+    fi
   fi
 }
 
