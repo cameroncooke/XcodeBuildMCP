@@ -9,7 +9,7 @@ import { schema, syncXcodeDefaultsLogic } from '../sync_xcode_defaults.ts';
 const EXAMPLE_PROJECT_PATH = join(process.cwd(), 'example_projects/iOS/MCPTest.xcodeproj');
 const EXAMPLE_XCUSERSTATE = join(
   EXAMPLE_PROJECT_PATH,
-  'project.xcworkspace/xcuserdata/cameroncooke.xcuserdatad/UserInterfaceState.xcuserstate',
+  'project.xcworkspace/xcuserdata/johndoe.xcuserdatad/UserInterfaceState.xcuserstate',
 );
 
 describe('sync_xcode_defaults tool', () => {
@@ -59,14 +59,14 @@ describe('sync_xcode_defaults tool', () => {
       async () => {
         const simctlOutput = JSON.stringify({
           devices: {
-            'com.apple.CoreSimulator.SimRuntime.iOS-18-0': [
-              { udid: 'CE3C0D03-8F60-497A-A3B9-6A80BA997FC2', name: 'Apple Vision Pro' },
+            'com.apple.CoreSimulator.SimRuntime.xrOS-2-0': [
+              { udid: 'B38FE93D-578B-454B-BE9A-C6FA0CE5F096', name: 'Apple Vision Pro' },
             ],
           },
         });
 
         const executor = createCommandMatchingMockExecutor({
-          whoami: { output: 'cameroncooke\n' },
+          whoami: { output: 'johndoe\n' },
           find: { output: `${EXAMPLE_PROJECT_PATH}\n` },
           stat: { output: '1704067200\n' },
           'xcrun simctl': { output: simctlOutput },
@@ -82,14 +82,14 @@ describe('sync_xcode_defaults tool', () => {
         expect(result.content[0].text).toContain('Synced session defaults from Xcode IDE');
         expect(result.content[0].text).toContain('Scheme: MCPTest');
         expect(result.content[0].text).toContain(
-          'Simulator ID: CE3C0D03-8F60-497A-A3B9-6A80BA997FC2',
+          'Simulator ID: B38FE93D-578B-454B-BE9A-C6FA0CE5F096',
         );
         expect(result.content[0].text).toContain('Simulator Name: Apple Vision Pro');
         expect(result.content[0].text).toContain('Bundle ID: com.example.MCPTest');
 
         const defaults = sessionStore.getAll();
         expect(defaults.scheme).toBe('MCPTest');
-        expect(defaults.simulatorId).toBe('CE3C0D03-8F60-497A-A3B9-6A80BA997FC2');
+        expect(defaults.simulatorId).toBe('B38FE93D-578B-454B-BE9A-C6FA0CE5F096');
         expect(defaults.simulatorName).toBe('Apple Vision Pro');
         expect(defaults.bundleId).toBe('com.example.MCPTest');
       },
@@ -98,14 +98,14 @@ describe('sync_xcode_defaults tool', () => {
     it.skipIf(!existsSync(EXAMPLE_XCUSERSTATE))('syncs using configured projectPath', async () => {
       const simctlOutput = JSON.stringify({
         devices: {
-          'com.apple.CoreSimulator.SimRuntime.iOS-18-0': [
-            { udid: 'CE3C0D03-8F60-497A-A3B9-6A80BA997FC2', name: 'Apple Vision Pro' },
+          'com.apple.CoreSimulator.SimRuntime.xrOS-2-0': [
+            { udid: 'B38FE93D-578B-454B-BE9A-C6FA0CE5F096', name: 'Apple Vision Pro' },
           ],
         },
       });
 
       const executor = createCommandMatchingMockExecutor({
-        whoami: { output: 'cameroncooke\n' },
+        whoami: { output: 'johndoe\n' },
         'test -f': { success: true },
         'xcrun simctl': { output: simctlOutput },
         xcodebuild: { output: '    PRODUCT_BUNDLE_IDENTIFIER = com.example.MCPTest\n' },
@@ -125,7 +125,7 @@ describe('sync_xcode_defaults tool', () => {
 
       const defaults = sessionStore.getAll();
       expect(defaults.scheme).toBe('MCPTest');
-      expect(defaults.simulatorId).toBe('CE3C0D03-8F60-497A-A3B9-6A80BA997FC2');
+      expect(defaults.simulatorId).toBe('B38FE93D-578B-454B-BE9A-C6FA0CE5F096');
       expect(defaults.bundleId).toBe('com.example.MCPTest');
     });
 
@@ -139,14 +139,14 @@ describe('sync_xcode_defaults tool', () => {
 
       const simctlOutput = JSON.stringify({
         devices: {
-          'com.apple.CoreSimulator.SimRuntime.iOS-18-0': [
-            { udid: 'CE3C0D03-8F60-497A-A3B9-6A80BA997FC2', name: 'Apple Vision Pro' },
+          'com.apple.CoreSimulator.SimRuntime.xrOS-2-0': [
+            { udid: 'B38FE93D-578B-454B-BE9A-C6FA0CE5F096', name: 'Apple Vision Pro' },
           ],
         },
       });
 
       const executor = createCommandMatchingMockExecutor({
-        whoami: { output: 'cameroncooke\n' },
+        whoami: { output: 'johndoe\n' },
         find: { output: `${EXAMPLE_PROJECT_PATH}\n` },
         stat: { output: '1704067200\n' },
         'xcrun simctl': { output: simctlOutput },
@@ -162,7 +162,7 @@ describe('sync_xcode_defaults tool', () => {
 
       const defaults = sessionStore.getAll();
       expect(defaults.scheme).toBe('MCPTest');
-      expect(defaults.simulatorId).toBe('CE3C0D03-8F60-497A-A3B9-6A80BA997FC2');
+      expect(defaults.simulatorId).toBe('B38FE93D-578B-454B-BE9A-C6FA0CE5F096');
       expect(defaults.simulatorName).toBe('Apple Vision Pro');
       expect(defaults.bundleId).toBe('com.example.MCPTest');
       // Original projectPath should be preserved
