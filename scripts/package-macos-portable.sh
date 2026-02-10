@@ -241,7 +241,13 @@ EOF
   cat > "$bin_dir/xcodebuildmcp" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "$SOURCE" ]]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 source "$SCRIPT_DIR/../libexec/_resolve-resource-root.sh"
 exec "$RESOURCE_ROOT/xcodebuildmcp" "$@"
 EOF
@@ -249,7 +255,13 @@ EOF
   cat > "$bin_dir/xcodebuildmcp-doctor" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "$SOURCE" ]]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 source "$SCRIPT_DIR/../libexec/_resolve-resource-root.sh"
 exec "$RESOURCE_ROOT/xcodebuildmcp" doctor "$@"
 EOF
