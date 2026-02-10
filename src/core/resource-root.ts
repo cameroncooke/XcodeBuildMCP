@@ -3,6 +3,13 @@ import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const RESOURCE_ROOT_ENV_VAR = 'XCODEBUILDMCP_RESOURCE_ROOT';
+let cachedPackageRoot: string | null = null;
+let cachedResourceRoot: string | null = null;
+
+export function resetResourceRootCacheForTests(): void {
+  cachedPackageRoot = null;
+  cachedResourceRoot = null;
+}
 
 function hasResourceLayout(root: string): boolean {
   return fs.existsSync(path.join(root, 'manifests')) || fs.existsSync(path.join(root, 'bundled'));
@@ -20,6 +27,10 @@ function findPackageRootFrom(startDir: string): string | null {
 }
 
 export function getPackageRoot(): string {
+  if (cachedPackageRoot) {
+    return cachedPackageRoot;
+  }
+
   const candidates: string[] = [];
   const importMetaUrl = typeof import.meta.url === 'string' ? import.meta.url : null;
   if (importMetaUrl) {
@@ -34,6 +45,7 @@ export function getPackageRoot(): string {
   for (const candidate of candidates) {
     const found = findPackageRootFrom(candidate);
     if (found) {
+      cachedPackageRoot = found;
       return found;
     }
   }
@@ -43,10 +55,6 @@ export function getPackageRoot(): string {
 
 function getExecutableResourceRoot(): string | null {
   const execPath = process.execPath;
-  if (!execPath) {
-    return null;
-  }
-
   const candidateDirs = [path.dirname(execPath), path.dirname(path.dirname(execPath))];
   for (const candidate of candidateDirs) {
     if (hasResourceLayout(candidate)) {
@@ -58,17 +66,24 @@ function getExecutableResourceRoot(): string | null {
 }
 
 export function getResourceRoot(): string {
+  if (cachedResourceRoot) {
+    return cachedResourceRoot;
+  }
+
   const explicitRoot = process.env[RESOURCE_ROOT_ENV_VAR];
   if (explicitRoot) {
-    return path.resolve(explicitRoot);
+    cachedResourceRoot = path.resolve(explicitRoot);
+    return cachedResourceRoot;
   }
 
   const executableRoot = getExecutableResourceRoot();
   if (executableRoot) {
-    return executableRoot;
+    cachedResourceRoot = executableRoot;
+    return cachedResourceRoot;
   }
 
-  return getPackageRoot();
+  cachedResourceRoot = getPackageRoot();
+  return cachedResourceRoot;
 }
 
 export function getManifestsDir(): string {
