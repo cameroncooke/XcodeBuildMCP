@@ -194,19 +194,23 @@ if [ "$OS_NAME" = "Darwin" ]; then
         done < <(find "$BUNDLED_DIR/Frameworks" -name "*.framework" -type d)
     fi
 
-    echo "🛡️ Assessing AXe with Gatekeeper..."
-    SPCTL_LOG="$(mktemp)"
-    if ! spctl --assess --type execute "$BUNDLED_DIR/axe" 2>"$SPCTL_LOG"; then
-        if grep -q "does not seem to be an app" "$SPCTL_LOG"; then
-            echo "⚠️  Gatekeeper execute assessment is inconclusive for CLI binaries; continuing"
-        else
-            cat "$SPCTL_LOG"
-            echo "❌ Gatekeeper assessment failed for bundled AXe binary"
-            rm "$SPCTL_LOG"
-            exit 1
+    if [ "$AXE_ARCHIVE_FLAVOR" = "homebrew-unsigned" ]; then
+        echo "ℹ️ Skipping Gatekeeper assessment for unsigned AXe Homebrew archive"
+    else
+        echo "🛡️ Assessing AXe with Gatekeeper..."
+        SPCTL_LOG="$(mktemp)"
+        if ! spctl --assess --type execute "$BUNDLED_DIR/axe" 2>"$SPCTL_LOG"; then
+            if grep -q "does not seem to be an app" "$SPCTL_LOG"; then
+                echo "⚠️  Gatekeeper execute assessment is inconclusive for CLI binaries; continuing"
+            else
+                cat "$SPCTL_LOG"
+                echo "❌ Gatekeeper assessment failed for bundled AXe binary"
+                rm "$SPCTL_LOG"
+                exit 1
+            fi
         fi
+        rm "$SPCTL_LOG"
     fi
-    rm "$SPCTL_LOG"
 
     echo "🧪 Testing bundled AXe binary..."
     if DYLD_FRAMEWORK_PATH="$BUNDLED_DIR/Frameworks" "$BUNDLED_DIR/axe" --version > /dev/null 2>&1; then
