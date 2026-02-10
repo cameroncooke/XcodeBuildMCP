@@ -134,7 +134,7 @@ function buildInstallAndSetupSection(version, packageName) {
     '',
     'Install:',
     '```bash',
-    `brew tap cameroncooke/${packageName}`,
+    `brew tap getsentry/${packageName}`,
     `brew install ${packageName}`,
     '```',
     '',
