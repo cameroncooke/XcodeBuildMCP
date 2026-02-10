@@ -346,7 +346,8 @@ jobs:
             dist/portable/x64/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-x64.tar.gz.sha256 \
             dist/portable/universal/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-universal.tar.gz \
             dist/portable/universal/xcodebuildmcp-${{ needs.release.outputs.version }}-darwin-universal.tar.gz.sha256 \
-            --clobber
+            --clobber \
+            --repo "${{ github.repository }}"
 
   update_homebrew_tap:
     if: github.event_name == 'push'
