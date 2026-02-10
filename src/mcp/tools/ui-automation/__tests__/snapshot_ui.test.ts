@@ -7,6 +7,7 @@ import * as z from 'zod';
 import { createMockExecutor, createNoopExecutor } from '../../../../test-utils/mock-executors.ts';
 import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 import { schema, handler, snapshot_uiLogic } from '../snapshot_ui.ts';
+import { AXE_NOT_AVAILABLE_MESSAGE } from '../../../../utils/axe-helpers.ts';
 
 describe('Snapshot UI Plugin', () => {
   describe('Export Field Validation (Literal)', () => {
@@ -133,7 +134,7 @@ describe('Snapshot UI Plugin', () => {
           content: [
             {
               type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+              text: AXE_NOT_AVAILABLE_MESSAGE,
             },
           ],
           isError: true,
@@ -152,7 +153,7 @@ describe('Snapshot UI Plugin', () => {
         content: [
           {
             type: 'text' as const,
-            text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
+            text: AXE_NOT_AVAILABLE_MESSAGE,
           },
         ],
         isError: true,
