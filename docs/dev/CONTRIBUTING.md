@@ -51,6 +51,22 @@ brew tap cameroncooke/axe
 brew install axe
 ```
 
+#### Optional: Using a Local AXe Checkout for Bundling
+
+`npm run bundle:axe` defaults to downloading pinned AXe release artifacts from GitHub.
+
+To bundle from a local AXe source checkout instead:
+
+```bash
+AXE_USE_LOCAL=1 AXE_LOCAL_DIR=/absolute/path/to/AXe npm run bundle:axe
+```
+
+Rules:
+- Local mode is enabled only when `AXE_USE_LOCAL=1`.
+- `AXE_LOCAL_DIR` must point to a valid AXe repository (must contain `Package.swift`).
+- If `AXE_USE_LOCAL=1` and `AXE_LOCAL_DIR` is missing/invalid, bundling fails fast.
+- `AXE_FORCE_REMOTE=1` overrides local mode and forces remote artifact download.
+
 ### Installation
 
 1. Clone the repository
