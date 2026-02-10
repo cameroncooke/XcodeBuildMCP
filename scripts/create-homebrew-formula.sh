@@ -70,13 +70,13 @@ if [[ -z "$VERSION" || -z "$ARM64_SHA" || -z "$X64_SHA" ]]; then
 fi
 
 if [[ -z "$BASE_URL" ]]; then
-  BASE_URL="https://github.com/cameroncooke/XcodeBuildMCP/releases/download/v$VERSION"
+  BASE_URL="https://github.com/getsentry/XcodeBuildMCP/releases/download/v$VERSION"
 fi
 
 FORMULA_CONTENT="$(cat <<EOF
 class Xcodebuildmcp < Formula
   desc "Model Context Protocol server for Xcode project workflows"
-  homepage "https://github.com/cameroncooke/XcodeBuildMCP"
+  homepage "https://github.com/getsentry/XcodeBuildMCP"
   license "MIT"
   version "$VERSION"
 
