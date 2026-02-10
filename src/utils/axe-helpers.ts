@@ -43,7 +43,7 @@ function resolveBundledAxePath(): string | null {
   candidates.add(join(process.cwd(), 'bundled', 'axe'));
 
   for (const candidate of candidates) {
-    if (existsSync(candidate)) {
+    if (existsSync(candidate) && isExecutable(candidate)) {
       return candidate;
     }
   }

@@ -85,7 +85,7 @@ function extractCommandCandidates(content) {
   const lines = content.split(/\r?\n/u);
   const candidates = [];
   const inlineCodeRegex = /`([^`\n]+)`/g;
-  const fenceHeaderRegex = /^\s*```([a-z0-9_-]*)\s*$/iu;
+  const fenceHeaderRegex = /^\s*(?:```|~~~)([a-z0-9_-]*)\s*$/iu;
   const codeFenceLanguages = new Set(['', 'bash', 'sh', 'zsh', 'shell', 'console']);
 
   let inFence = false;

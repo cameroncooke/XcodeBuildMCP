@@ -74,6 +74,22 @@ jobs:
             # For tag-based releases, package.json was already updated by release script
           fi
 
+      - name: Resolve npm tag from version
+        id: resolve_npm_tag
+        run: |
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          if [[ "$VERSION" == *"-beta"* ]]; then
+            NPM_TAG="beta"
+          elif [[ "$VERSION" == *"-alpha"* ]]; then
+            NPM_TAG="alpha"
+          elif [[ "$VERSION" == *"-rc"* ]]; then
+            NPM_TAG="rc"
+          else
+            NPM_TAG="latest"
+          fi
+          echo "NPM_TAG=$NPM_TAG" >> "$GITHUB_OUTPUT"
+          echo "Resolved npm tag: $NPM_TAG"
+
       - name: Generate GitHub release notes (production releases only)
         if: github.event_name == 'push'
         run: |
@@ -88,13 +104,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           echo "🧪 Testing package creation (dry run)"
-          VERSION="${{ steps.get_version.outputs.VERSION }}"
-          if [[ "$VERSION" == *"-"* ]]; then
-            NPM_TAG="next"
-          else
-            NPM_TAG="latest"
-          fi
-          npm publish --dry-run --access public --tag "$NPM_TAG"
+          npm publish --dry-run --access public --tag "${{ steps.resolve_npm_tag.outputs.NPM_TAG }}"
 
       - name: Publish to NPM (production releases only)
         if: github.event_name == 'push'
@@ -105,17 +115,7 @@ jobs:
             echo "✅ xcodebuildmcp@$VERSION already on NPM. Skipping publish."
             exit 0
           fi
-          # Determine the appropriate npm tag based on version
-          if [[ "$VERSION" == *"-beta"* ]]; then
-            NPM_TAG="beta"
-          elif [[ "$VERSION" == *"-alpha"* ]]; then
-            NPM_TAG="alpha"
-          elif [[ "$VERSION" == *"-rc"* ]]; then
-            NPM_TAG="rc"
-          else
-            # For stable releases, explicitly use latest tag
-            NPM_TAG="latest"
-          fi
+          NPM_TAG="${{ steps.resolve_npm_tag.outputs.NPM_TAG }}"
           echo "📦 Publishing to NPM with tag: $NPM_TAG"
           npm publish --access public --tag "$NPM_TAG"
 
@@ -314,7 +314,7 @@ jobs:
 
   publish_portable_assets:
     if: github.event_name == 'push'
-    needs: [release, build_universal_and_verify]
+    needs: [release, build_and_package_macos, build_universal_and_verify]
     runs-on: ubuntu-latest
     steps:
       - name: Download arm64 artifact
@@ -350,7 +350,7 @@ jobs:
 
   update_homebrew_tap:
     if: github.event_name == 'push'
-    needs: [release, build_and_package_macos]
+    needs: [release, build_and_package_macos, publish_portable_assets]
     runs-on: ubuntu-latest
     env:
       HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -400,7 +400,7 @@ jobs:
         run: |
           VERSION="${{ needs.release.outputs.version }}"
           DEFAULT_BRANCH="main"
-          git clone "https://x-access-token:${GH_TOKEN}@github.com/cameroncooke/homebrew-xcodebuildmcp.git" tap-repo
+          gh repo clone cameroncooke/homebrew-xcodebuildmcp tap-repo
           mkdir -p tap-repo/Formula
           cp dist/homebrew/Formula/xcodebuildmcp.rb tap-repo/Formula/xcodebuildmcp.rb
           cd tap-repo

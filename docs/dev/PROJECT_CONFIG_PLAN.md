@@ -119,7 +119,7 @@ Responsibilities:
 
 ### 7) Runtime overrides
 **File:** runtime entrypoints
-- Pass overrides into bootstrap/config store, so explicit runtime overrides have highest precedence.
+- Pass overrides into bootstrap/config store, so explicit runtime overrides have the highest precedence.
 
 ### 8) Documentation updates
 - Update `docs/CONFIGURATION.md`, `docs/GETTING_STARTED.md`, `docs/SESSION_DEFAULTS.md`.

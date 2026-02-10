@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { getBundledAxeEnvironment } from '../axe-helpers.ts';
+import { resetResourceRootCacheForTests } from '../../core/resource-root.ts';
 
 describe('axe-helpers', () => {
   let originalResourceRoot: string | undefined;
@@ -13,6 +14,7 @@ describe('axe-helpers', () => {
     originalResourceRoot = process.env.XCODEBUILDMCP_RESOURCE_ROOT;
     originalDyldFrameworkPath = process.env.DYLD_FRAMEWORK_PATH;
     tempDir = mkdtempSync(join(tmpdir(), 'xbmcp-axe-helpers-'));
+    resetResourceRootCacheForTests();
   });
 
   afterEach(() => {
@@ -29,6 +31,7 @@ describe('axe-helpers', () => {
     }
 
     rmSync(tempDir, { recursive: true, force: true });
+    resetResourceRootCacheForTests();
   });
 
   it('returns DYLD_FRAMEWORK_PATH when bundled axe is resolved from resource root', () => {
@@ -37,6 +40,7 @@ describe('axe-helpers', () => {
     const frameworksDir = join(resourceRoot, 'bundled', 'Frameworks');
     mkdirSync(frameworksDir, { recursive: true });
     writeFileSync(axePath, '');
+    chmodSync(axePath, 0o755);
     process.env.XCODEBUILDMCP_RESOURCE_ROOT = resourceRoot;
     delete process.env.DYLD_FRAMEWORK_PATH;
 
@@ -52,6 +56,7 @@ describe('axe-helpers', () => {
     const frameworksDir = join(resourceRoot, 'bundled', 'Frameworks');
     mkdirSync(frameworksDir, { recursive: true });
     writeFileSync(axePath, '');
+    chmodSync(axePath, 0o755);
     process.env.XCODEBUILDMCP_RESOURCE_ROOT = resourceRoot;
     process.env.DYLD_FRAMEWORK_PATH = '/existing/frameworks';
 

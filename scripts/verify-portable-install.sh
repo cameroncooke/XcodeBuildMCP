@@ -36,6 +36,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+cleanup() {
+  if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" ]]; then
+    rm -r "$TEMP_DIR"
+  fi
+}
+
 if [[ -z "$ARCHIVE_PATH" && -z "$PORTABLE_ROOT" ]]; then
   usage
   exit 1
@@ -43,6 +49,7 @@ fi
 
 if [[ -n "$ARCHIVE_PATH" ]]; then
   TEMP_DIR="$(mktemp -d)"
+  trap cleanup EXIT
   tar -xzf "$ARCHIVE_PATH" -C "$TEMP_DIR"
   extracted_count="$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
   if [[ "$extracted_count" -ne 1 ]]; then
@@ -51,13 +58,6 @@ if [[ -n "$ARCHIVE_PATH" ]]; then
   fi
   PORTABLE_ROOT="$(find "$TEMP_DIR" -mindepth 1 -maxdepth 1 -type d | head -1)"
 fi
-
-cleanup() {
-  if [[ -n "$TEMP_DIR" && -d "$TEMP_DIR" ]]; then
-    rm -r "$TEMP_DIR"
-  fi
-}
-trap cleanup EXIT
 
 if [[ ! -d "$PORTABLE_ROOT/bin" || ! -d "$PORTABLE_ROOT/libexec" ]]; then
   echo "Portable layout missing bin/ or libexec/: $PORTABLE_ROOT"
@@ -105,8 +105,8 @@ if [[ -z "$RUNTIME_ARCHS" ]]; then
 fi
 
 NORMALIZED_HOST_ARCH="$HOST_ARCH"
-if [[ "$HOST_ARCH" == "x86_64" ]]; then
-  NORMALIZED_HOST_ARCH="x86_64"
+if [[ "$HOST_ARCH" == "aarch64" ]]; then
+  NORMALIZED_HOST_ARCH="arm64"
 fi
 
 CAN_EXECUTE="false"

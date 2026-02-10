@@ -25,10 +25,21 @@ Notes:
 EOF
 }
 
+require_arg_value() {
+  local flag_name="$1"
+  local value="${2:-}"
+  if [[ -z "$value" || "$value" == -* ]]; then
+    echo "Missing value for $flag_name"
+    usage
+    exit 1
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --arch)
-      ARCH="${2:-}"
+      require_arg_value "--arch" "${2:-}"
+      ARCH="$2"
       shift 2
       ;;
     --universal)
@@ -36,19 +47,23 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --arm64-root)
-      ARM64_ROOT="${2:-}"
+      require_arg_value "--arm64-root" "${2:-}"
+      ARM64_ROOT="$2"
       shift 2
       ;;
     --x64-root)
-      X64_ROOT="${2:-}"
+      require_arg_value "--x64-root" "${2:-}"
+      X64_ROOT="$2"
       shift 2
       ;;
     --dist-dir)
-      DIST_DIR="${2:-}"
+      require_arg_value "--dist-dir" "${2:-}"
+      DIST_DIR="$2"
       shift 2
       ;;
     --version)
-      VERSION="${2:-}"
+      require_arg_value "--version" "${2:-}"
+      VERSION="$2"
       shift 2
       ;;
     -h|--help)
@@ -153,29 +168,68 @@ install_node_runtime_for_arch() {
   esac
 
   local archive_name="node-v${node_version}-darwin-${node_arch}.tar.gz"
+  local checksums_name="SHASUMS256.txt"
   local download_url="https://nodejs.org/dist/v${node_version}/${archive_name}"
+  local checksums_url="https://nodejs.org/dist/v${node_version}/${checksums_name}"
   local temp_dir
   temp_dir="$(mktemp -d)"
+  cleanup_temp_dir() {
+    if [[ -d "$temp_dir" ]]; then
+      rm -r "$temp_dir"
+    fi
+  }
+  trap cleanup_temp_dir RETURN
 
   curl -fLsS "$download_url" -o "$temp_dir/$archive_name"
+  curl -fLsS "$checksums_url" -o "$temp_dir/$checksums_name"
+
+  local expected_sha
+  expected_sha="$(awk -v target="$archive_name" '$2 == target {print $1}' "$temp_dir/$checksums_name")"
+  if [[ -z "$expected_sha" ]]; then
+    echo "Unable to find checksum for $archive_name in ${checksums_name}"
+    exit 1
+  fi
+
+  local actual_sha
+  actual_sha="$(shasum -a 256 "$temp_dir/$archive_name" | awk '{print $1}')"
+  if [[ "$actual_sha" != "$expected_sha" ]]; then
+    echo "Node runtime checksum mismatch for $archive_name"
+    echo "Expected: $expected_sha"
+    echo "Actual:   $actual_sha"
+    exit 1
+  fi
+
   tar -xzf "$temp_dir/$archive_name" -C "$temp_dir"
 
   local extracted_node="$temp_dir/node-v${node_version}-darwin-${node_arch}/bin/node"
   if [[ ! -x "$extracted_node" ]]; then
     echo "Failed to locate extracted Node runtime at $extracted_node"
-    rm -r "$temp_dir"
     exit 1
   fi
 
   cp "$extracted_node" "$output_path"
   chmod +x "$output_path"
-  rm -r "$temp_dir"
 }
 
 write_wrapper_scripts() {
   local root="$1"
   local bin_dir="$root/bin"
   local libexec_dir="$root/libexec"
+
+  cat > "$libexec_dir/_resolve-resource-root.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "$SOURCE" ]]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+RESOURCE_ROOT="$(cd "$SCRIPT_DIR" && pwd)"
+export XCODEBUILDMCP_RESOURCE_ROOT="$RESOURCE_ROOT"
+export DYLD_FRAMEWORK_PATH="$RESOURCE_ROOT/bundled/Frameworks${DYLD_FRAMEWORK_PATH:+:$DYLD_FRAMEWORK_PATH}"
+EOF
 
   cat > "$libexec_dir/xcodebuildmcp" <<'EOF'
 #!/usr/bin/env bash
@@ -187,36 +241,24 @@ EOF
   cat > "$bin_dir/xcodebuildmcp" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-SOURCE="${BASH_SOURCE[0]}"
-while [[ -L "$SOURCE" ]]; do
-  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
-  SOURCE="$(readlink "$SOURCE")"
-  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
-done
-SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
-RESOURCE_ROOT="$(cd "$SCRIPT_DIR/../libexec" && pwd)"
-export XCODEBUILDMCP_RESOURCE_ROOT="$RESOURCE_ROOT"
-export DYLD_FRAMEWORK_PATH="$RESOURCE_ROOT/bundled/Frameworks${DYLD_FRAMEWORK_PATH:+:$DYLD_FRAMEWORK_PATH}"
+SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../libexec/_resolve-resource-root.sh"
 exec "$RESOURCE_ROOT/xcodebuildmcp" "$@"
 EOF
 
   cat > "$bin_dir/xcodebuildmcp-doctor" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-SOURCE="${BASH_SOURCE[0]}"
-while [[ -L "$SOURCE" ]]; do
-  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
-  SOURCE="$(readlink "$SOURCE")"
-  [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
-done
-SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
-RESOURCE_ROOT="$(cd "$SCRIPT_DIR/../libexec" && pwd)"
-export XCODEBUILDMCP_RESOURCE_ROOT="$RESOURCE_ROOT"
-export DYLD_FRAMEWORK_PATH="$RESOURCE_ROOT/bundled/Frameworks${DYLD_FRAMEWORK_PATH:+:$DYLD_FRAMEWORK_PATH}"
+SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../libexec/_resolve-resource-root.sh"
 exec "$RESOURCE_ROOT/xcodebuildmcp" doctor "$@"
 EOF
 
-  chmod +x "$libexec_dir/xcodebuildmcp" "$bin_dir/xcodebuildmcp" "$bin_dir/xcodebuildmcp-doctor"
+  chmod +x \
+    "$libexec_dir/_resolve-resource-root.sh" \
+    "$libexec_dir/xcodebuildmcp" \
+    "$bin_dir/xcodebuildmcp" \
+    "$bin_dir/xcodebuildmcp-doctor"
 }
 
 create_tarball_and_checksum() {
@@ -229,7 +271,7 @@ create_tarball_and_checksum() {
     cd "$(dirname "$portable_root")"
     tar -czf "$tarball_path" "$(basename "$portable_root")"
   )
-  shasum -a 256 "$tarball_path" > "$checksum_path"
+  shasum -a 256 "$tarball_path" | awk '{print $1}' > "$checksum_path"
   echo "Created artifact: $tarball_path"
   echo "Created checksum: $checksum_path"
 }

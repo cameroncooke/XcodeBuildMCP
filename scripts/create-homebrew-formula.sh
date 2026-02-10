@@ -15,26 +15,41 @@ Usage:
 EOF
 }
 
+require_arg_value() {
+  local flag_name="$1"
+  local value="${2:-}"
+  if [[ -z "$value" || "$value" == -* ]]; then
+    echo "Error: $flag_name requires a value"
+    usage
+    exit 1
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --version)
-      VERSION="${2:-}"
+      require_arg_value "--version" "${2:-}"
+      VERSION="$2"
       shift 2
       ;;
     --arm64-sha)
-      ARM64_SHA="${2:-}"
+      require_arg_value "--arm64-sha" "${2:-}"
+      ARM64_SHA="$2"
       shift 2
       ;;
     --x64-sha)
-      X64_SHA="${2:-}"
+      require_arg_value "--x64-sha" "${2:-}"
+      X64_SHA="$2"
       shift 2
       ;;
     --base-url)
-      BASE_URL="${2:-}"
+      require_arg_value "--base-url" "${2:-}"
+      BASE_URL="$2"
       shift 2
       ;;
     --out)
-      OUT_PATH="${2:-}"
+      require_arg_value "--out" "${2:-}"
+      OUT_PATH="$2"
       shift 2
       ;;
     -h|--help)

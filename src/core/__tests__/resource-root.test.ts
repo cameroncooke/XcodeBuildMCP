@@ -7,6 +7,7 @@ import {
   getBundledFrameworksDir,
   getManifestsDir,
   getResourceRoot,
+  resetResourceRootCacheForTests,
 } from '../resource-root.ts';
 
 describe('resource-root', () => {
@@ -18,6 +19,7 @@ describe('resource-root', () => {
     originalExecPath = process.execPath;
     originalResourceRoot = process.env.XCODEBUILDMCP_RESOURCE_ROOT;
     tempDir = mkdtempSync(join(tmpdir(), 'xbmcp-resource-root-'));
+    resetResourceRootCacheForTests();
   });
 
   afterEach(() => {
@@ -28,6 +30,7 @@ describe('resource-root', () => {
       process.env.XCODEBUILDMCP_RESOURCE_ROOT = originalResourceRoot;
     }
     rmSync(tempDir, { recursive: true, force: true });
+    resetResourceRootCacheForTests();
   });
 
   it('uses XCODEBUILDMCP_RESOURCE_ROOT when set', () => {

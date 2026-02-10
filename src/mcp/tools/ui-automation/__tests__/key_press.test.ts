@@ -13,6 +13,22 @@ import {
 import { sessionStore } from '../../../../utils/session-store.ts';
 import { schema, handler, key_pressLogic } from '../key_press.ts';
 
+function createDefaultMockAxeHelpers() {
+  return {
+    getAxePath: () => '/usr/local/bin/axe',
+    getBundledAxeEnvironment: () => ({}),
+    createAxeNotAvailableResponse: () => ({
+      content: [
+        {
+          type: 'text' as const,
+          text: 'AXe tool not found. UI automation features are not available.\\n\\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\\nEnsure bundled artifacts are included or PATH is configured.',
+        },
+      ],
+      isError: true,
+    }),
+  };
+}
+
 describe('Key Press Tool', () => {
   beforeEach(() => {
     sessionStore.clear();
@@ -79,19 +95,7 @@ describe('Key Press Tool', () => {
         });
       };
 
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
-            },
-          ],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createDefaultMockAxeHelpers();
 
       await key_pressLogic(
         {
@@ -123,19 +127,7 @@ describe('Key Press Tool', () => {
         });
       };
 
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
-            },
-          ],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createDefaultMockAxeHelpers();
 
       await key_pressLogic(
         {
@@ -170,19 +162,7 @@ describe('Key Press Tool', () => {
         });
       };
 
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
-            },
-          ],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createDefaultMockAxeHelpers();
 
       await key_pressLogic(
         {
@@ -258,19 +238,7 @@ describe('Key Press Tool', () => {
         error: '',
       });
 
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
-            },
-          ],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createDefaultMockAxeHelpers();
 
       const result = await key_pressLogic(
         {
@@ -294,19 +262,7 @@ describe('Key Press Tool', () => {
         error: '',
       });
 
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
-            },
-          ],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createDefaultMockAxeHelpers();
 
       const result = await key_pressLogic(
         {
@@ -366,19 +322,7 @@ describe('Key Press Tool', () => {
         error: 'axe command failed',
       });
 
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
-            },
-          ],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createDefaultMockAxeHelpers();
 
       const result = await key_pressLogic(
         {
@@ -405,19 +349,7 @@ describe('Key Press Tool', () => {
         throw new Error('System error occurred');
       };
 
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
-            },
-          ],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createDefaultMockAxeHelpers();
 
       const result = await key_pressLogic(
         {
@@ -439,19 +371,7 @@ describe('Key Press Tool', () => {
         throw new Error('Unexpected error');
       };
 
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
-            },
-          ],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createDefaultMockAxeHelpers();
 
       const result = await key_pressLogic(
         {
@@ -473,19 +393,7 @@ describe('Key Press Tool', () => {
         throw 'String error';
       };
 
-      const mockAxeHelpers = {
-        getAxePath: () => '/usr/local/bin/axe',
-        getBundledAxeEnvironment: () => ({}),
-        createAxeNotAvailableResponse: () => ({
-          content: [
-            {
-              type: 'text' as const,
-              text: 'AXe tool not found. UI automation features are not available.\n\nInstall AXe (brew tap cameroncooke/axe && brew install axe) or set XCODEBUILDMCP_AXE_PATH.\nEnsure bundled artifacts are included or PATH is configured.',
-            },
-          ],
-          isError: true,
-        }),
-      };
+      const mockAxeHelpers = createDefaultMockAxeHelpers();
 
       const result = await key_pressLogic(
         {
