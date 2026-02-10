@@ -47,7 +47,7 @@ xcodebuildmcp --help
 }
 ```
 
-To pin a specific version, replace `@latest` with an exact version (e.g. `xcodebuildmcp@2.0.0`).
+To pin a specific version, replace `@latest` with an exact version (e.g. `xcodebuildmcp@latest`).
 
 ### Client-specific setup
 
@@ -273,7 +273,7 @@ XcodeBuildMCP now includes two optional agent skills:
 To install, copy and paste the command below into a terminal and follow the on-screen instructions.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.0/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh
+curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.1/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh
 ```
 
 For further information on how to install the skill, see: [docs/SKILLS.md](docs/SKILLS.md)

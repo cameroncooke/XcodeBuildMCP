@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.1]
+
+### Added
+
+- Homebrew installation (`brew tap cameroncooke/xcodebuildmcp && brew install xcodebuildmcp`) — installs a self-contained binary with no Node.js dependency.
+
+### Removed
+
+- Smithery distribution channel.
+
 ## [2.0.0]
 
 ### New! CLI
@@ -256,3 +266,4 @@ Please note that the UI automation features are an early preview and currently i
 ## [v1.0.1] - 2025-04-02
 - Initial release of XcodeBuildMCP
 - Basic support for building iOS and macOS applications
+
