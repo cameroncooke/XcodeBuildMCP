@@ -7,13 +7,13 @@
     "source": "github",
     "id": "945551361"
   },
-  "version": "2.0.6",
+  "version": "2.0.7",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "xcodebuildmcp",
-      "version": "2.0.6",
+      "version": "2.0.7",
       "transport": {
         "type": "stdio"
       },
