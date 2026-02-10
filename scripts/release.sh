@@ -530,7 +530,9 @@ if [[ -n "$RUN_ID" ]]; then
     echo "🔎 Verify MCP Registry: https://registry.modelcontextprotocol.io/v0/servers?search=com.xcodebuildmcp/XcodeBuildMCP&version=latest"
   else
     echo ""
-    echo "❌ CI workflow failed!"
+    echo "❌ CI workflow monitoring failed!"
+    echo "ℹ️  This may be a transient API error. The workflow may still be running."
+    echo "   Check manually: gh run view $RUN_ID"
     echo ""
     # Prefer job state: if the primary 'release' job succeeded, treat as success.
     RELEASE_JOB_CONCLUSION=$(gh run view "$RUN_ID" --json jobs --jq '.jobs[] | select(.name=="release") | .conclusion')
