@@ -12,13 +12,13 @@ import {
 // Path to the example project's xcuserstate (used as test fixture)
 const EXAMPLE_PROJECT_XCUSERSTATE = join(
   process.cwd(),
-  'example_projects/iOS/MCPTest.xcodeproj/project.xcworkspace/xcuserdata/cameroncooke.xcuserdatad/UserInterfaceState.xcuserstate',
+  'example_projects/iOS/MCPTest.xcodeproj/project.xcworkspace/xcuserdata/johndoe.xcuserdatad/UserInterfaceState.xcuserstate',
 );
 
 // Expected values for the MCPTest example project
 const EXPECTED_MCPTEST = {
   scheme: 'MCPTest',
-  simulatorId: 'CE3C0D03-8F60-497A-A3B9-6A80BA997FC2',
+  simulatorId: 'B38FE93D-578B-454B-BE9A-C6FA0CE5F096',
   simulatorPlatform: 'iphonesimulator',
 };
 
