@@ -384,7 +384,7 @@ jobs:
         if: env.HOMEBREW_TAP_TOKEN != ''
         run: |
           VERSION="${{ needs.release.outputs.version }}"
-          FORMULA_BASE_URL="https://github.com/cameroncooke/XcodeBuildMCP/releases/download/v${VERSION}"
+          FORMULA_BASE_URL="https://github.com/${{ github.repository }}/releases/download/v${VERSION}"
           ARM64_SHA="$(awk '{print $1}' dist/portable/arm64/xcodebuildmcp-${VERSION}-darwin-arm64.tar.gz.sha256)"
           X64_SHA="$(awk '{print $1}' dist/portable/x64/xcodebuildmcp-${VERSION}-darwin-x64.tar.gz.sha256)"
           npm run homebrew:formula -- \
@@ -401,14 +401,14 @@ jobs:
         run: |
           VERSION="${{ needs.release.outputs.version }}"
           DEFAULT_BRANCH="main"
-          gh repo clone cameroncooke/homebrew-xcodebuildmcp tap-repo
+          gh repo clone ${{ github.repository_owner }}/homebrew-xcodebuildmcp tap-repo
           mkdir -p tap-repo/Formula
           cp dist/homebrew/Formula/xcodebuildmcp.rb tap-repo/Formula/xcodebuildmcp.rb
           cd tap-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/cameroncooke/homebrew-xcodebuildmcp.git"
-          DETECTED_BRANCH="$(gh repo view cameroncooke/homebrew-xcodebuildmcp --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || true)"
+          git remote set-url origin "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${{ github.repository_owner }}/homebrew-xcodebuildmcp.git"
+          DETECTED_BRANCH="$(gh repo view ${{ github.repository_owner }}/homebrew-xcodebuildmcp --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || true)"
           if [ -n "$DETECTED_BRANCH" ]; then
             DEFAULT_BRANCH="$DETECTED_BRANCH"
           fi
