@@ -232,7 +232,7 @@ v2.0.0 introduces optional skill files that prime your coding agent with usage i
 Install via the interactive installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.0/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh
+curl -fsSL https://raw.githubusercontent.com/getsentry/XcodeBuildMCP/v2.0.0/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh
 ```
 
 See [SKILLS.md](SKILLS.md) for more details.
