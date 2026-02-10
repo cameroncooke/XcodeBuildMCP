@@ -5,7 +5,6 @@
   "iOSTemplateVersion": "v1.0.8",
   "macOSTemplateVersion": "v1.0.5",
   "type": "module",
-  "module": "src/smithery.ts",
   "exports": {
     ".": "./build/cli.js",
     "./package.json": "./package.json"
@@ -15,8 +14,8 @@
     "xcodebuildmcp-doctor": "build/doctor-cli.js"
   },
   "scripts": {
-    "build": "npm run build:tsup && npx smithery build --transport stdio",
-    "dev": "npm run generate:version && npx smithery dev",
+    "build": "npm run build:tsup",
+    "dev": "npm run build:tsup && node build/cli.js mcp",
     "build:tsup": "npm run generate:version && tsup",
     "dev:tsup": "npm run build:tsup && tsup --watch",
     "prepare": "node scripts/install-git-hooks.js",
@@ -33,7 +32,6 @@
     "format:check": "prettier --check 'src/**/*.{js,ts}'",
     "typecheck": "npx tsc --noEmit && npx tsc -p tsconfig.test.json",
     "typecheck:tests": "npx tsc -p tsconfig.test.json",
-    "verify:smithery-bundle": "bash scripts/verify-smithery-bundle.sh",
     "inspect": "npx @modelcontextprotocol/inspector node build/cli.js mcp",
     "doctor": "node build/doctor-cli.js",
     "docs:update": "npx tsx scripts/update-tools-docs.ts",
@@ -86,7 +84,6 @@
     "@bacons/xcode": "^1.0.0-alpha.24",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.23.0",
-    "@smithery/cli": "^3.7.0",
     "@types/chokidar": "^1.7.5",
     "@types/node": "^22.13.6",
     "@types/yargs": "^17.0.33",

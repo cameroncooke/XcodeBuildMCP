@@ -887,7 +887,7 @@ xcodebuildcli build-sim --help
 ## Invariants
 
 1. **MCP unchanged**: `xcodebuildmcp` continues to work exactly as before
-2. **Smithery unchanged**: `src/smithery.ts` continues to work
+2. **Build/runtime separation unchanged**: MCP and CLI continue to use shared tool handlers
 3. **No code duplication**: CLI invokes same `PluginMeta.handler` functions
 4. **Session defaults identical**: All runtimes use `bootstrapRuntime()` → `sessionStore`
 5. **Tool logic shared**: `src/mcp/tools/*` remains single source of truth

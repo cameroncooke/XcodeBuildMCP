@@ -9,7 +9,6 @@
 ## Build and tooling
 - [ESLint and type safety](ESLINT_TYPE_SAFETY.md)
 - [Node.js and runtime notes](NODEJS_2025.md)
-- [Smithery integration notes](SMITHERY.md)
 
 ## Release and maintenance
 - [Release process](RELEASE_PROCESS.md)

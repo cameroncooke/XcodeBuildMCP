@@ -29,7 +29,7 @@ Production release behavior:
 - Builds and verifies portable macOS artifacts (`arm64`, `x64`, `universal`).
 - Uploads portable artifacts to GitHub release assets.
 - Updates the Homebrew tap repository (`cameroncooke/homebrew-xcodebuildmcp`) directly when `HOMEBREW_TAP_TOKEN` is configured.
-- Attempts Smithery and MCP Registry publishes (best effort based on configured secrets).
+- Attempts MCP Registry publish (best effort based on configured secrets).
 
 ### Manual dispatch (`workflow_dispatch`)
 
@@ -41,7 +41,7 @@ Validation behavior only (no production deployment):
 - Does **not** create GitHub release.
 - Does **not** upload portable assets to a release.
 - Does **not** update Homebrew tap.
-- Does **not** run Smithery or MCP Registry publish jobs.
+- Does **not** run MCP Registry publish job.
 
 ## Step-by-Step Development Workflow
 
