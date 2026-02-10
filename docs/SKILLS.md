@@ -11,7 +11,7 @@ XcodeBuildMCP now includes two optional agent skills:
 Install via the interactive installer and follow the on-screen instructions.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.3/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh
+curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.4/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh
 ```
 
 ## Automated installation
@@ -21,19 +21,19 @@ Useful for CI/CD pipelines or for agentic installation. `--skill` should be set 
 ### Install (Claude Code)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.3/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh --claude --remove-conflict --skill <mcp|cli>
+curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.4/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh --claude --remove-conflict --skill <mcp|cli>
 ```
 
 ### Install (Cursor)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.3/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh --cursor --remove-conflict --skill <mcp|cli>
+curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.4/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh --cursor --remove-conflict --skill <mcp|cli>
 ```
 
 ### Install (Codex CLI)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.3/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh --codex --remove-conflict --skill <mcp|cli>
+curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.4/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh --codex --remove-conflict --skill <mcp|cli>
 ```
 
 ### Install (Other Clients)
@@ -41,7 +41,7 @@ curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.3/s
 For other clients if you know the path to the skills directory you can pass the `--dest` flag.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.3/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh --dest /path/to/skills --remove-conflict --skill <mcp|cli>
+curl -fsSL https://raw.githubusercontent.com/cameroncooke/XcodeBuildMCP/v2.0.4/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh --dest /path/to/skills --remove-conflict --skill <mcp|cli>
 ```
 
 ## Unsupporting Clients
