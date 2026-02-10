@@ -8,7 +8,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BUNDLED_DIR="$PROJECT_ROOT/bundled"
-AXE_LOCAL_DIR="${AXE_LOCAL_DIR:-/Users/cameroncooke/Developer/AXe}"
+AXE_LOCAL_DIR="${AXE_LOCAL_DIR:-}"
 AXE_TEMP_DIR="/tmp/axe-download-$$"
 
 echo "🔨 Preparing AXe artifacts for bundling..."
@@ -87,7 +87,8 @@ if [ "$USE_LOCAL_AXE" = true ] && [ -d "$AXE_LOCAL_DIR" ] && [ -f "$AXE_LOCAL_DI
     done
 else
     if [ "$USE_LOCAL_AXE" = true ]; then
-        echo "❌ AXE_USE_LOCAL=1 was set, but AXE_LOCAL_DIR is missing or invalid: $AXE_LOCAL_DIR"
+        echo "❌ AXE_USE_LOCAL=1 requires AXE_LOCAL_DIR to point to a valid AXe checkout"
+        echo "   Received AXE_LOCAL_DIR: ${AXE_LOCAL_DIR:-<unset>}"
         exit 1
     fi
 
