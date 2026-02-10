@@ -407,6 +407,7 @@ jobs:
           cd tap-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/cameroncooke/homebrew-xcodebuildmcp.git"
           DETECTED_BRANCH="$(gh repo view cameroncooke/homebrew-xcodebuildmcp --json defaultBranchRef -q .defaultBranchRef.name 2>/dev/null || true)"
           if [ -n "$DETECTED_BRANCH" ]; then
             DEFAULT_BRANCH="$DETECTED_BRANCH"
