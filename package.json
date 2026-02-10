@@ -58,16 +58,15 @@
     "macos",
     "simulator"
   ],
-  "author": "Cameron Cooke",
   "license": "MIT",
-  "description": "XcodeBuildMCP is a ModelContextProtocol server that provides tools for Xcode project management, simulator management, and app utilities.",
+  "description": "XcodeBuildMCP is a Model Context Protocol server that provides tools for Xcode project management, simulator management, and app utilities.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cameroncooke/XcodeBuildMCP.git"
+    "url": "git+https://github.com/getsentry/XcodeBuildMCP.git"
   },
-  "homepage": "https://www.async-let.com/blog/xcodebuild-mcp/",
+  "homepage": "https://www.xcodebuildmcp.com",
   "bugs": {
-    "url": "https://github.com/cameroncooke/XcodeBuildMCP/issues"
+    "url": "https://github.com/getsentry/XcodeBuildMCP/issues"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
