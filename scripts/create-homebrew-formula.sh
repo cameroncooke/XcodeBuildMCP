@@ -6,11 +6,12 @@ VERSION=""
 ARM64_SHA=""
 X64_SHA=""
 OUT_PATH=""
+BASE_URL=""
 
 usage() {
   cat <<'EOF'
 Usage:
-  scripts/create-homebrew-formula.sh --version <semver> --arm64-sha <sha256> --x64-sha <sha256> [--out <path>]
+  scripts/create-homebrew-formula.sh --version <semver> --arm64-sha <sha256> --x64-sha <sha256> [--base-url <url>] [--out <path>]
 EOF
 }
 
@@ -26,6 +27,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --x64-sha)
       X64_SHA="${2:-}"
+      shift 2
+      ;;
+    --base-url)
+      BASE_URL="${2:-}"
       shift 2
       ;;
     --out)
@@ -49,6 +54,10 @@ if [[ -z "$VERSION" || -z "$ARM64_SHA" || -z "$X64_SHA" ]]; then
   exit 1
 fi
 
+if [[ -z "$BASE_URL" ]]; then
+  BASE_URL="https://github.com/cameroncooke/XcodeBuildMCP/releases/download/v$VERSION"
+fi
+
 FORMULA_CONTENT="$(cat <<EOF
 class Xcodebuildmcp < Formula
   desc "Model Context Protocol server for Xcode project workflows"
@@ -57,12 +66,12 @@ class Xcodebuildmcp < Formula
   version "$VERSION"
 
   on_arm do
-    url "https://github.com/cameroncooke/XcodeBuildMCP/releases/download/v$VERSION/xcodebuildmcp-$VERSION-darwin-arm64.tar.gz"
+    url "$BASE_URL/xcodebuildmcp-$VERSION-darwin-arm64.tar.gz"
     sha256 "$ARM64_SHA"
   end
 
   on_intel do
-    url "https://github.com/cameroncooke/XcodeBuildMCP/releases/download/v$VERSION/xcodebuildmcp-$VERSION-darwin-x64.tar.gz"
+    url "$BASE_URL/xcodebuildmcp-$VERSION-darwin-x64.tar.gz"
     sha256 "$X64_SHA"
   end
 
