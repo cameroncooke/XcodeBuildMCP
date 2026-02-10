@@ -166,11 +166,34 @@ echo "📦 Copied $FRAMEWORK_COUNT frameworks"
 echo "🔍 Bundled frameworks:"
 ls -la "$BUNDLED_DIR/Frameworks/"
 
+ad_hoc_sign_bundled_axe_assets() {
+    echo "🔏 Applying ad-hoc signatures to bundled AXe assets..."
+
+    while IFS= read -r framework_path; do
+        framework_name="$(basename "$framework_path" .framework)"
+        framework_binary="$framework_path/Versions/A/$framework_name"
+        if [ ! -f "$framework_binary" ]; then
+            framework_binary="$framework_path/Versions/Current/$framework_name"
+        fi
+        if [ ! -f "$framework_binary" ]; then
+            echo "❌ Framework binary not found: $framework_binary"
+            exit 1
+        fi
+        codesign --force --deep --sign - "$framework_binary"
+    done < <(find "$BUNDLED_DIR/Frameworks" -name "*.framework" -type d)
+
+    codesign --force --deep --sign - "$BUNDLED_DIR/axe"
+}
+
 # Verify binary can run with bundled frameworks (macOS only)
 OS_NAME="$(uname -s)"
 if [ "$OS_NAME" = "Darwin" ]; then
+    if ! codesign -dv "$BUNDLED_DIR/axe" >/dev/null 2>&1; then
+        ad_hoc_sign_bundled_axe_assets
+    fi
+
     if [ "$AXE_ARCHIVE_FLAVOR" = "homebrew-unsigned" ]; then
-        echo "ℹ️ Skipping strict codesign verification for unsigned AXe Homebrew archive"
+        echo "ℹ️ Homebrew AXe archive detected; using ad-hoc signatures for local runtime compatibility"
     else
         echo "🔏 Verifying AXe signatures..."
         if ! codesign --verify --deep --strict "$BUNDLED_DIR/axe"; then
