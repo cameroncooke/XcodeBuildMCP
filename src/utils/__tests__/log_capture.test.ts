@@ -135,7 +135,7 @@ describe('startLogCapture', () => {
     const fileSystem = createInMemoryFileSystemExecutor();
 
     const result = await startLogCapture(
-      { simulatorUuid: 'sim-uuid', bundleId: 'com.example.app' },
+      { simulatorUuid: 'sim-uuid', bundleId: 'io.sentry.app' },
       executor,
       fileSystem,
     );
@@ -151,7 +151,7 @@ describe('startLogCapture', () => {
       'stream',
       '--level=debug',
       '--predicate',
-      'subsystem == "com.example.app"',
+      'subsystem == "io.sentry.app"',
     ]);
     expect(callHistory[0].logPrefix).toBe('OS Log Capture');
     expect(callHistory[0].useShell).toBe(false);
@@ -166,7 +166,7 @@ describe('startLogCapture', () => {
     const result = await startLogCapture(
       {
         simulatorUuid: 'sim-uuid',
-        bundleId: 'com.example.app',
+        bundleId: 'io.sentry.app',
         subsystemFilter: 'all',
       },
       executor,
@@ -194,7 +194,7 @@ describe('startLogCapture', () => {
     const result = await startLogCapture(
       {
         simulatorUuid: 'sim-uuid',
-        bundleId: 'com.example.app',
+        bundleId: 'io.sentry.app',
         subsystemFilter: 'swiftui',
       },
       executor,
@@ -203,7 +203,7 @@ describe('startLogCapture', () => {
 
     expect(result.error).toBeUndefined();
     expect(callHistory).toHaveLength(1);
-    expectPredicate(callHistory[0], 'com.example.app', 'swiftui');
+    expectPredicate(callHistory[0], 'io.sentry.app', 'swiftui');
   });
 
   it('creates log stream command with custom subsystem predicate', async () => {
@@ -214,7 +214,7 @@ describe('startLogCapture', () => {
     const result = await startLogCapture(
       {
         simulatorUuid: 'sim-uuid',
-        bundleId: 'com.example.app',
+        bundleId: 'io.sentry.app',
         subsystemFilter: ['com.apple.UIKit', 'com.apple.CoreData'],
       },
       executor,
@@ -223,7 +223,7 @@ describe('startLogCapture', () => {
 
     expect(result.error).toBeUndefined();
     expect(callHistory).toHaveLength(1);
-    expectPredicate(callHistory[0], 'com.example.app', ['com.apple.UIKit', 'com.apple.CoreData']);
+    expectPredicate(callHistory[0], 'io.sentry.app', ['com.apple.UIKit', 'com.apple.CoreData']);
   });
 
   it('creates console capture and log stream commands when captureConsole is true', async () => {
@@ -234,7 +234,7 @@ describe('startLogCapture', () => {
     const result = await startLogCapture(
       {
         simulatorUuid: 'sim-uuid',
-        bundleId: 'com.example.app',
+        bundleId: 'io.sentry.app',
         captureConsole: true,
         args: ['--flag', 'value'],
       },
@@ -251,7 +251,7 @@ describe('startLogCapture', () => {
       '--console-pty',
       '--terminate-running-process',
       'sim-uuid',
-      'com.example.app',
+      'io.sentry.app',
       '--flag',
       'value',
     ]);
@@ -272,7 +272,7 @@ describe('startLogCapture', () => {
     const result = await startLogCapture(
       {
         simulatorUuid: 'sim-uuid',
-        bundleId: 'com.example.app',
+        bundleId: 'io.sentry.app',
         captureConsole: true,
         env: { STAGING_ENABLED: '1', DEBUG: 'true' },
       },
@@ -301,7 +301,7 @@ describe('startLogCapture', () => {
     const result = await startLogCapture(
       {
         simulatorUuid: 'sim-uuid',
-        bundleId: 'com.example.app',
+        bundleId: 'io.sentry.app',
         captureConsole: true,
       },
       executor,
@@ -349,7 +349,7 @@ describe('stopLogCapture', () => {
       processes: [runningProcess, finishedProcess],
       logFilePath,
       simulatorUuid: 'sim-uuid',
-      bundleId: 'com.example.app',
+      bundleId: 'io.sentry.app',
       logStream,
     });
 

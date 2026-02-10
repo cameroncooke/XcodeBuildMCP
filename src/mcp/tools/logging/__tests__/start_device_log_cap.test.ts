@@ -105,7 +105,7 @@ describe('start_device_log_cap plugin', () => {
       const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
-          bundleId: 'com.example.MyApp',
+          bundleId: 'io.sentry.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -135,7 +135,7 @@ describe('start_device_log_cap plugin', () => {
       const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
-          bundleId: 'com.example.MyApp',
+          bundleId: 'io.sentry.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -365,7 +365,7 @@ describe('start_device_log_cap plugin', () => {
       const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
-          bundleId: 'com.example.MyApp',
+          bundleId: 'io.sentry.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -396,7 +396,7 @@ describe('start_device_log_cap plugin', () => {
       const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
-          bundleId: 'com.example.MyApp',
+          bundleId: 'io.sentry.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -434,7 +434,7 @@ describe('start_device_log_cap plugin', () => {
       const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
-          bundleId: 'com.example.MyApp',
+          bundleId: 'io.sentry.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -467,7 +467,7 @@ describe('start_device_log_cap plugin', () => {
       const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
-          bundleId: 'com.example.MyApp',
+          bundleId: 'io.sentry.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,
@@ -500,7 +500,7 @@ describe('start_device_log_cap plugin', () => {
       const result = await start_device_log_capLogic(
         {
           deviceId: '00008110-001A2C3D4E5F',
-          bundleId: 'com.example.MyApp',
+          bundleId: 'io.sentry.MyApp',
         },
         mockExecutor,
         mockFileSystemExecutor,

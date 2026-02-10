@@ -25,7 +25,7 @@ describe('MCP Logging Tools (e2e)', () => {
       name: 'session_set_defaults',
       arguments: {
         simulatorId: 'AAAAAAAA-1111-2222-3333-444444444444',
-        bundleId: 'com.example.TestApp',
+        bundleId: 'io.sentry.TestApp',
       },
     });
 
@@ -56,7 +56,7 @@ describe('MCP Logging Tools (e2e)', () => {
       name: 'session_set_defaults',
       arguments: {
         deviceId: 'BBBBBBBB-1111-2222-3333-444444444444',
-        bundleId: 'com.example.TestApp',
+        bundleId: 'io.sentry.TestApp',
       },
     });
 

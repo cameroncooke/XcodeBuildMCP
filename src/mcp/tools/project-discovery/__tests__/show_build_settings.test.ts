@@ -60,7 +60,7 @@ describe('show_build_settings plugin', () => {
     BUILD_DIR = /Users/dev/Build/Products
     CONFIGURATION = Debug
     DEVELOPMENT_TEAM = ABC123DEF4
-    PRODUCT_BUNDLE_IDENTIFIER = com.example.MyApp
+    PRODUCT_BUNDLE_IDENTIFIER = io.sentry.MyApp
     PRODUCT_NAME = MyApp
     SUPPORTED_PLATFORMS = iphoneos iphonesimulator`,
         error: undefined,
@@ -108,7 +108,7 @@ describe('show_build_settings plugin', () => {
     BUILD_DIR = /Users/dev/Build/Products
     CONFIGURATION = Debug
     DEVELOPMENT_TEAM = ABC123DEF4
-    PRODUCT_BUNDLE_IDENTIFIER = com.example.MyApp
+    PRODUCT_BUNDLE_IDENTIFIER = io.sentry.MyApp
     PRODUCT_NAME = MyApp
     SUPPORTED_PLATFORMS = iphoneos iphonesimulator`,
           },
@@ -268,7 +268,7 @@ describe('show_build_settings plugin', () => {
     BUILD_DIR = /Users/dev/Build/Products
     CONFIGURATION = Debug
     DEVELOPMENT_TEAM = ABC123DEF4
-    PRODUCT_BUNDLE_IDENTIFIER = com.example.MyApp
+    PRODUCT_BUNDLE_IDENTIFIER = io.sentry.MyApp
     PRODUCT_NAME = MyApp
     SUPPORTED_PLATFORMS = iphoneos iphonesimulator`,
         error: undefined,
@@ -316,7 +316,7 @@ describe('show_build_settings plugin', () => {
     BUILD_DIR = /Users/dev/Build/Products
     CONFIGURATION = Debug
     DEVELOPMENT_TEAM = ABC123DEF4
-    PRODUCT_BUNDLE_IDENTIFIER = com.example.MyApp
+    PRODUCT_BUNDLE_IDENTIFIER = io.sentry.MyApp
     PRODUCT_NAME = MyApp
     SUPPORTED_PLATFORMS = iphoneos iphonesimulator`,
           },

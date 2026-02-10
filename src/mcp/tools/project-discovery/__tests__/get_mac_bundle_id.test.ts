@@ -71,7 +71,7 @@ describe('get_mac_bundle_id plugin', () => {
     it('should return success with bundle ID using defaults read', async () => {
       const mockExecutor = createMockExecutorForCommands({
         'defaults read "/Applications/MyApp.app/Contents/Info" CFBundleIdentifier':
-          'com.example.MyMacApp',
+          'io.sentry.MyMacApp',
       });
       const mockFileSystemExecutor = createMockFileSystemExecutor({
         existsSync: () => true,
@@ -87,7 +87,7 @@ describe('get_mac_bundle_id plugin', () => {
         content: [
           {
             type: 'text',
-            text: '✅ Bundle ID: com.example.MyMacApp',
+            text: '✅ Bundle ID: io.sentry.MyMacApp',
           },
         ],
         nextSteps: [
@@ -114,7 +114,7 @@ describe('get_mac_bundle_id plugin', () => {
           'defaults read failed',
         ),
         '/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/Applications/MyApp.app/Contents/Info.plist"':
-          'com.example.MyMacApp',
+          'io.sentry.MyMacApp',
       });
       const mockFileSystemExecutor = createMockFileSystemExecutor({
         existsSync: () => true,
@@ -130,7 +130,7 @@ describe('get_mac_bundle_id plugin', () => {
         content: [
           {
             type: 'text',
-            text: '✅ Bundle ID: com.example.MyMacApp',
+            text: '✅ Bundle ID: io.sentry.MyMacApp',
           },
         ],
         nextSteps: [

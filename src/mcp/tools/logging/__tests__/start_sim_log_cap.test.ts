@@ -72,7 +72,7 @@ describe('start_sim_log_cap plugin', () => {
       const result = await start_sim_log_capLogic(
         {
           simulatorId: 'test-uuid',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
           subsystemFilter: 'app',
         },
         mockExecutor,
@@ -97,7 +97,7 @@ describe('start_sim_log_cap plugin', () => {
       const result = await start_sim_log_capLogic(
         {
           simulatorId: 'test-uuid',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
           subsystemFilter: 'app',
         },
         mockExecutor,
@@ -132,7 +132,7 @@ describe('start_sim_log_cap plugin', () => {
       const result = await start_sim_log_capLogic(
         {
           simulatorId: 'test-uuid',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
           subsystemFilter: 'swiftui',
         },
         mockExecutor,
@@ -158,7 +158,7 @@ describe('start_sim_log_cap plugin', () => {
       const result = await start_sim_log_capLogic(
         {
           simulatorId: 'test-uuid',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
           subsystemFilter: 'all',
         },
         mockExecutor,
@@ -183,7 +183,7 @@ describe('start_sim_log_cap plugin', () => {
       const result = await start_sim_log_capLogic(
         {
           simulatorId: 'test-uuid',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
           subsystemFilter: ['com.apple.UIKit', 'com.apple.CoreData'],
         },
         mockExecutor,
@@ -209,7 +209,7 @@ describe('start_sim_log_cap plugin', () => {
       const result = await start_sim_log_capLogic(
         {
           simulatorId: 'test-uuid',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
           captureConsole: true,
           subsystemFilter: 'app',
         },
@@ -269,7 +269,7 @@ describe('start_sim_log_cap plugin', () => {
       await start_sim_log_capLogic(
         {
           simulatorId: 'test-uuid',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
           captureConsole: true,
           subsystemFilter: 'app',
         },
@@ -287,7 +287,7 @@ describe('start_sim_log_cap plugin', () => {
           '--console-pty',
           '--terminate-running-process',
           'test-uuid',
-          'com.example.app',
+          'io.sentry.app',
         ],
       });
       expect(spawnCalls[1]).toEqual({
@@ -300,7 +300,7 @@ describe('start_sim_log_cap plugin', () => {
           'stream',
           '--level=debug',
           '--predicate',
-          'subsystem == "com.example.app"',
+          'subsystem == "io.sentry.app"',
         ],
       });
     });
@@ -339,7 +339,7 @@ describe('start_sim_log_cap plugin', () => {
       await start_sim_log_capLogic(
         {
           simulatorId: 'test-uuid',
-          bundleId: 'com.example.app',
+          bundleId: 'io.sentry.app',
           captureConsole: false,
           subsystemFilter: 'app',
         },
@@ -359,7 +359,7 @@ describe('start_sim_log_cap plugin', () => {
           'stream',
           '--level=debug',
           '--predicate',
-          'subsystem == "com.example.app"',
+          'subsystem == "io.sentry.app"',
         ],
       });
     });

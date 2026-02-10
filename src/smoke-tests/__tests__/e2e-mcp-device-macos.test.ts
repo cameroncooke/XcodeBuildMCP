@@ -13,8 +13,8 @@ beforeAll(async () => {
       open: { success: true, output: '' },
       kill: { success: true, output: '' },
       pkill: { success: true, output: '' },
-      'defaults read': { success: true, output: 'com.example.MyApp' },
-      PlistBuddy: { success: true, output: 'com.example.MyApp' },
+      'defaults read': { success: true, output: 'io.sentry.MyApp' },
+      PlistBuddy: { success: true, output: 'io.sentry.MyApp' },
       xcresulttool: { success: true, output: '{}' },
     },
   });
@@ -74,7 +74,7 @@ describe('MCP Device and macOS Tool Invocation (e2e)', () => {
         name: 'session_set_defaults',
         arguments: {
           deviceId: 'AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE',
-          bundleId: 'com.example.MyApp',
+          bundleId: 'io.sentry.MyApp',
         },
       });
 

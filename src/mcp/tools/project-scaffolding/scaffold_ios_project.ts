@@ -129,7 +129,7 @@ function updateXCConfigFile(content: string, params: Record<string, unknown>): s
   );
   result = result.replace(
     /PRODUCT_BUNDLE_IDENTIFIER = .+/g,
-    `PRODUCT_BUNDLE_IDENTIFIER = ${bundleIdentifier ?? `com.example.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`}`,
+    `PRODUCT_BUNDLE_IDENTIFIER = ${bundleIdentifier ?? `io.sentry.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`}`,
   );
   result = result.replace(
     /MARKETING_VERSION = .+/g,
@@ -291,7 +291,7 @@ async function processFile(
       // Use standard placeholder replacement
       const bundleIdentifier =
         bundleIdentifierParam ??
-        `com.example.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+        `io.sentry.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
       processedContent = replacePlaceholders(content, projectName, bundleIdentifier);
     }
 

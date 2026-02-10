@@ -68,7 +68,7 @@ xcodebuildmcp simulator boot --simulator-name "iPhone 17 Pro"
 # Install and launch
 xcodebuildmcp simulator install --simulator-id <UDID> --app-path ./build/MyApp.app
 
-xcodebuildmcp simulator launch-app --simulator-id <UDID> --bundle-id com.example.MyApp
+xcodebuildmcp simulator launch-app --simulator-id <UDID> --bundle-id io.sentry.MyApp
 
 # Or... build and run in a single command
 xcodebuildmcp simulator build-and-run --scheme MyApp --project-path ./MyApp.xcodeproj
@@ -78,7 +78,7 @@ xcodebuildmcp simulator build-and-run --scheme MyApp --project-path ./MyApp.xcod
 
 ```bash
 # Start log capture
-xcodebuildmcp logging start-simulator-log-capture --simulator-id <UDID> --bundle-id com.example.MyApp
+xcodebuildmcp logging start-simulator-log-capture --simulator-id <UDID> --bundle-id io.sentry.MyApp
 
 > Log capture started successfully. Session ID: 51e2142a-1a99-442a-af01-0586540043df.
 

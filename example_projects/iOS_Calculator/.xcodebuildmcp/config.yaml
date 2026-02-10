@@ -13,6 +13,6 @@ sessionDefaults:
   suppressWarnings: false
   derivedDataPath: ./iOS_Calculator/.derivedData
   preferXcodebuild: true
-  bundleId: com.example.calculatorapp
+  bundleId: io.sentry.calculatorapp
   simulatorId: B38FE93D-578B-454B-BE9A-C6FA0CE5F096
   simulatorPlatform: iOS Simulator

@@ -52,7 +52,7 @@ sessionDefaults:
   derivedDataPath: "./.derivedData"
   preferXcodebuild: false
   platform: "iOS"
-  bundleId: "com.example.myapp"
+  bundleId: "io.sentry.myapp"
 ```
 
 Notes:

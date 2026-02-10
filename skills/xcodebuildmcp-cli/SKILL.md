@@ -72,13 +72,13 @@ xcodebuildmcp device build-device --scheme MyApp --project-path ./MyApp.xcodepro
 xcodebuildmcp device get-device-app-path --scheme MyApp --project-path ./MyApp.xcodeproj
 xcodebuildmcp device get-app-bundle-id --app-path /path/to/MyApp.app
 xcodebuildmcp device install-app-device --device-id DEVICE_UDID --app-path /path/to/MyApp.app
-xcodebuildmcp device launch-app-device --device-id DEVICE_UDID --bundle-id com.example.MyApp --app-path /path/to/MyApp.app
+xcodebuildmcp device launch-app-device --device-id DEVICE_UDID --bundle-id io.sentry.MyApp --app-path /path/to/MyApp.app
 ```
 
 ### Capture Logs On Simulator
 
 ```bash
-xcodebuildmcp logging start-sim-log-cap --simulator-id SIMULATOR_UDID --bundle-id com.example.MyApp
+xcodebuildmcp logging start-sim-log-cap --simulator-id SIMULATOR_UDID --bundle-id io.sentry.MyApp
 xcodebuildmcp logging stop-sim-log-cap --log-session-id LOG_SESSION_ID
 ```
 
@@ -89,7 +89,7 @@ xcodebuildmcp logging stop-sim-log-cap --log-session-id LOG_SESSION_ID
 
 Launch if not already running:
 ```bash
-xcodebuildmcp simulator launch-app-sim --bundle-id com.example.MyApp --simulator-id SIMULATOR_UDID
+xcodebuildmcp simulator launch-app-sim --bundle-id io.sentry.MyApp --simulator-id SIMULATOR_UDID
 ```
 
 Attach the debugger:
@@ -97,7 +97,7 @@ Attach the debugger:
 It's generally a good idea to wait for 1-2s for the app to fully launch before attaching the debugger.
 
 ```bash
-xcodebuildmcp debugging debug-attach-sim --bundle-id com.example.MyApp --simulator-id SIMULATOR_UDID
+xcodebuildmcp debugging debug-attach-sim --bundle-id io.sentry.MyApp --simulator-id SIMULATOR_UDID
 ```
 
 To add/remove breakpoints, inspect stack/variables, and issue arbitrary LLDB commands, view debugging help:

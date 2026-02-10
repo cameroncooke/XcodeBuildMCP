@@ -92,7 +92,7 @@ describe('get_app_bundle_id plugin', () => {
 
     it('should return success with bundle ID using defaults read', async () => {
       const mockExecutor = createMockExecutorForCommands({
-        'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': 'com.example.MyApp',
+        'defaults read "/path/to/MyApp.app/Info" CFBundleIdentifier': 'io.sentry.MyApp',
       });
       const mockFileSystemExecutor = createMockFileSystemExecutor({
         existsSync: () => true,
@@ -108,7 +108,7 @@ describe('get_app_bundle_id plugin', () => {
         content: [
           {
             type: 'text',
-            text: '✅ Bundle ID: com.example.MyApp',
+            text: '✅ Bundle ID: io.sentry.MyApp',
           },
         ],
         nextSteps: [
@@ -121,7 +121,7 @@ describe('get_app_bundle_id plugin', () => {
           {
             tool: 'launch_app_sim',
             label: 'Launch on simulator',
-            params: { simulatorId: 'SIMULATOR_UUID', bundleId: 'com.example.MyApp' },
+            params: { simulatorId: 'SIMULATOR_UUID', bundleId: 'io.sentry.MyApp' },
             priority: 2,
           },
           {
@@ -133,7 +133,7 @@ describe('get_app_bundle_id plugin', () => {
           {
             tool: 'launch_app_device',
             label: 'Launch on device',
-            params: { deviceId: 'DEVICE_UDID', bundleId: 'com.example.MyApp' },
+            params: { deviceId: 'DEVICE_UDID', bundleId: 'io.sentry.MyApp' },
             priority: 4,
           },
         ],
@@ -147,7 +147,7 @@ describe('get_app_bundle_id plugin', () => {
           'defaults read failed',
         ),
         '/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "/path/to/MyApp.app/Info.plist"':
-          'com.example.MyApp',
+          'io.sentry.MyApp',
       });
       const mockFileSystemExecutor = createMockFileSystemExecutor({
         existsSync: () => true,
@@ -163,7 +163,7 @@ describe('get_app_bundle_id plugin', () => {
         content: [
           {
             type: 'text',
-            text: '✅ Bundle ID: com.example.MyApp',
+            text: '✅ Bundle ID: io.sentry.MyApp',
           },
         ],
         nextSteps: [
@@ -176,7 +176,7 @@ describe('get_app_bundle_id plugin', () => {
           {
             tool: 'launch_app_sim',
             label: 'Launch on simulator',
-            params: { simulatorId: 'SIMULATOR_UUID', bundleId: 'com.example.MyApp' },
+            params: { simulatorId: 'SIMULATOR_UUID', bundleId: 'io.sentry.MyApp' },
             priority: 2,
           },
           {
@@ -188,7 +188,7 @@ describe('get_app_bundle_id plugin', () => {
           {
             tool: 'launch_app_device',
             label: 'Launch on device',
-            params: { deviceId: 'DEVICE_UDID', bundleId: 'com.example.MyApp' },
+            params: { deviceId: 'DEVICE_UDID', bundleId: 'io.sentry.MyApp' },
             priority: 4,
           },
         ],

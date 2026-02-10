@@ -168,7 +168,7 @@ describe('build_run_sim tool', () => {
           // Bundle ID extraction
           return createMockCommandResponse({
             success: true,
-            output: 'com.example.MyApp',
+            output: 'io.sentry.MyApp',
           });
         } else {
           // All other commands (boot, open, install, launch) succeed

@@ -18,7 +18,7 @@ describe('stop_app_sim tool', () => {
       const schemaObj = z.object(schema);
 
       expect(schemaObj.safeParse({}).success).toBe(true);
-      expect(schemaObj.safeParse({ bundleId: 'com.example.app' }).success).toBe(true);
+      expect(schemaObj.safeParse({ bundleId: 'io.sentry.app' }).success).toBe(true);
       expect(schemaObj.safeParse({ bundleId: 42 }).success).toBe(true);
       expect(Object.keys(schema)).toEqual([]);
 
@@ -35,7 +35,7 @@ describe('stop_app_sim tool', () => {
 
   describe('Handler Requirements', () => {
     it('should require simulator identifier when not provided', async () => {
-      const result = await handler({ bundleId: 'com.example.app' });
+      const result = await handler({ bundleId: 'io.sentry.app' });
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Missing required session defaults');
@@ -57,7 +57,7 @@ describe('stop_app_sim tool', () => {
       const result = await handler({
         simulatorId: 'SIM-UUID',
         simulatorName: 'iPhone 16',
-        bundleId: 'com.example.app',
+        bundleId: 'io.sentry.app',
       });
 
       expect(result.isError).toBe(true);
@@ -74,7 +74,7 @@ describe('stop_app_sim tool', () => {
       const result = await stop_app_simLogic(
         {
           simulatorId: 'test-uuid',
-          bundleId: 'com.example.App',
+          bundleId: 'io.sentry.App',
         },
         mockExecutor,
       );
@@ -83,7 +83,7 @@ describe('stop_app_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: 'App com.example.App stopped successfully in simulator test-uuid',
+            text: 'App io.sentry.App stopped successfully in simulator test-uuid',
           },
         ],
       });
@@ -96,7 +96,7 @@ describe('stop_app_sim tool', () => {
         {
           simulatorId: 'resolved-uuid',
           simulatorName: 'iPhone 16',
-          bundleId: 'com.example.App',
+          bundleId: 'io.sentry.App',
         },
         mockExecutor,
       );
@@ -105,7 +105,7 @@ describe('stop_app_sim tool', () => {
         content: [
           {
             type: 'text',
-            text: 'App com.example.App stopped successfully in simulator "iPhone 16" (resolved-uuid)',
+            text: 'App io.sentry.App stopped successfully in simulator "iPhone 16" (resolved-uuid)',
           },
         ],
       });
@@ -121,7 +121,7 @@ describe('stop_app_sim tool', () => {
       const result = await stop_app_simLogic(
         {
           simulatorId: 'invalid-uuid',
-          bundleId: 'com.example.App',
+          bundleId: 'io.sentry.App',
         },
         terminateExecutor,
       );
@@ -145,7 +145,7 @@ describe('stop_app_sim tool', () => {
       const result = await stop_app_simLogic(
         {
           simulatorId: 'test-uuid',
-          bundleId: 'com.example.App',
+          bundleId: 'io.sentry.App',
         },
         throwingExecutor,
       );
@@ -188,14 +188,14 @@ describe('stop_app_sim tool', () => {
       await stop_app_simLogic(
         {
           simulatorId: 'test-uuid',
-          bundleId: 'com.example.App',
+          bundleId: 'io.sentry.App',
         },
         trackingExecutor,
       );
 
       expect(calls).toEqual([
         {
-          command: ['xcrun', 'simctl', 'terminate', 'test-uuid', 'com.example.App'],
+          command: ['xcrun', 'simctl', 'terminate', 'test-uuid', 'io.sentry.App'],
           logPrefix: 'Stop App in Simulator',
           useShell: false,
           opts: undefined,

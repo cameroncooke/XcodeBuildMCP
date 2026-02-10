@@ -6,13 +6,13 @@ describe('resolveSimulatorAppPid', () => {
   it('returns PID when bundle id is found', async () => {
     const mockExecutor = createMockExecutor({
       success: true,
-      output: '1234 0 com.example.MyApp\n',
+      output: '1234 0 io.sentry.MyApp\n',
     });
 
     const pid = await resolveSimulatorAppPid({
       executor: mockExecutor,
       simulatorId: 'SIM-123',
-      bundleId: 'com.example.MyApp',
+      bundleId: 'io.sentry.MyApp',
     });
 
     expect(pid).toBe(1234);
@@ -28,7 +28,7 @@ describe('resolveSimulatorAppPid', () => {
       resolveSimulatorAppPid({
         executor: mockExecutor,
         simulatorId: 'SIM-123',
-        bundleId: 'com.example.MyApp',
+        bundleId: 'io.sentry.MyApp',
       }),
     ).rejects.toThrow('No running process found');
   });
@@ -36,14 +36,14 @@ describe('resolveSimulatorAppPid', () => {
   it('throws when PID is missing', async () => {
     const mockExecutor = createMockExecutor({
       success: true,
-      output: '- 0 com.example.MyApp\n',
+      output: '- 0 io.sentry.MyApp\n',
     });
 
     await expect(
       resolveSimulatorAppPid({
         executor: mockExecutor,
         simulatorId: 'SIM-123',
-        bundleId: 'com.example.MyApp',
+        bundleId: 'io.sentry.MyApp',
       }),
     ).rejects.toThrow('not running');
   });
