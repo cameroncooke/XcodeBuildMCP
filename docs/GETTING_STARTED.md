@@ -23,7 +23,7 @@ Both methods give you the CLI and the MCP server.
 ### Option A — Homebrew (no Node.js required)
 
 ```bash
-brew tap cameroncooke/xcodebuildmcp
+brew tap getsentry/xcodebuildmcp
 brew install xcodebuildmcp
 ```
 
