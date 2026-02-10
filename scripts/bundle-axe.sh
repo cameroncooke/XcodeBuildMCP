@@ -38,6 +38,7 @@ fi
 mkdir -p "$BUNDLED_DIR"
 
 USE_LOCAL_AXE=false
+AXE_ARCHIVE_FLAVOR="local-signed"
 if [ -z "${AXE_FORCE_REMOTE}" ] && [ "${AXE_USE_LOCAL:-0}" = "1" ]; then
     USE_LOCAL_AXE=true
 fi
@@ -92,16 +93,26 @@ else
 
     echo "📥 Downloading latest AXe release from GitHub..."
 
-    # Construct release download URL from pinned version
-    AXE_RELEASE_URL="https://github.com/cameroncooke/AXe/releases/download/v${PINNED_AXE_VERSION}/AXe-macOS-v${PINNED_AXE_VERSION}.tar.gz"
+    # Prefer Homebrew-specific archive (unsigned for relocation compatibility),
+    # and fall back to legacy signed archive for older AXe releases.
+    AXE_RELEASE_BASE_URL="https://github.com/cameroncooke/AXe/releases/download/v${PINNED_AXE_VERSION}"
+    AXE_HOMEBREW_URL="${AXE_RELEASE_BASE_URL}/AXe-macOS-homebrew-v${PINNED_AXE_VERSION}.tar.gz"
+    AXE_LEGACY_URL="${AXE_RELEASE_BASE_URL}/AXe-macOS-v${PINNED_AXE_VERSION}.tar.gz"
 
     # Create temp directory
     mkdir -p "$AXE_TEMP_DIR"
     cd "$AXE_TEMP_DIR"
 
     # Download and extract the release
-    echo "📥 Downloading AXe release archive ($AXE_RELEASE_URL)..."
-    curl -L -o "axe-release.tar.gz" "$AXE_RELEASE_URL"
+    echo "📥 Downloading AXe Homebrew archive ($AXE_HOMEBREW_URL)..."
+    if curl -fL -o "axe-release.tar.gz" "$AXE_HOMEBREW_URL"; then
+        AXE_ARCHIVE_FLAVOR="homebrew-unsigned"
+        echo "✅ Downloaded AXe Homebrew archive"
+    else
+        echo "⚠️  AXe Homebrew archive unavailable, falling back to legacy archive"
+        curl -fL -o "axe-release.tar.gz" "$AXE_LEGACY_URL"
+        AXE_ARCHIVE_FLAVOR="legacy-signed"
+    fi
 
     echo "📦 Extracting AXe release archive..."
     tar -xzf "axe-release.tar.gz"
@@ -157,27 +168,31 @@ ls -la "$BUNDLED_DIR/Frameworks/"
 # Verify binary can run with bundled frameworks (macOS only)
 OS_NAME="$(uname -s)"
 if [ "$OS_NAME" = "Darwin" ]; then
-    echo "🔏 Verifying AXe signatures..."
-    if ! codesign --verify --deep --strict "$BUNDLED_DIR/axe"; then
-        echo "❌ Signature verification failed for bundled AXe binary"
-        exit 1
-    fi
+    if [ "$AXE_ARCHIVE_FLAVOR" = "homebrew-unsigned" ]; then
+        echo "ℹ️ Skipping strict codesign verification for unsigned AXe Homebrew archive"
+    else
+        echo "🔏 Verifying AXe signatures..."
+        if ! codesign --verify --deep --strict "$BUNDLED_DIR/axe"; then
+            echo "❌ Signature verification failed for bundled AXe binary"
+            exit 1
+        fi
 
-    while IFS= read -r framework_path; do
-        framework_name="$(basename "$framework_path" .framework)"
-        framework_binary="$framework_path/Versions/A/$framework_name"
-        if [ ! -f "$framework_binary" ]; then
-            framework_binary="$framework_path/Versions/Current/$framework_name"
-        fi
-        if [ ! -f "$framework_binary" ]; then
-            echo "❌ Framework binary not found: $framework_binary"
-            exit 1
-        fi
-        if ! codesign --verify --deep --strict "$framework_binary"; then
-            echo "❌ Signature verification failed for framework binary: $framework_binary"
-            exit 1
-        fi
-    done < <(find "$BUNDLED_DIR/Frameworks" -name "*.framework" -type d)
+        while IFS= read -r framework_path; do
+            framework_name="$(basename "$framework_path" .framework)"
+            framework_binary="$framework_path/Versions/A/$framework_name"
+            if [ ! -f "$framework_binary" ]; then
+                framework_binary="$framework_path/Versions/Current/$framework_name"
+            fi
+            if [ ! -f "$framework_binary" ]; then
+                echo "❌ Framework binary not found: $framework_binary"
+                exit 1
+            fi
+            if ! codesign --verify --deep --strict "$framework_binary"; then
+                echo "❌ Signature verification failed for framework binary: $framework_binary"
+                exit 1
+            fi
+        done < <(find "$BUNDLED_DIR/Frameworks" -name "*.framework" -type d)
+    fi
 
     echo "🛡️ Assessing AXe with Gatekeeper..."
     SPCTL_LOG="$(mktemp)"
