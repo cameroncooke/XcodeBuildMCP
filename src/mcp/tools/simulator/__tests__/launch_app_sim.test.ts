@@ -165,15 +165,7 @@ describe('launch_app_sim tool', () => {
 
       expect(commands).toEqual([
         ['xcrun', 'simctl', 'get_app_container', 'test-uuid-123', 'io.sentry.testapp', 'app'],
-        [
-          'xcrun',
-          'simctl',
-          'launch',
-          'test-uuid-123',
-          'io.sentry.testapp',
-          '--debug',
-          '--verbose',
-        ],
+        ['xcrun', 'simctl', 'launch', 'test-uuid-123', 'io.sentry.testapp', '--debug', '--verbose'],
       ]);
     });
 

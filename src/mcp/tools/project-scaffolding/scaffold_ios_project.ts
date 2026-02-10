@@ -290,8 +290,7 @@ async function processFile(
     } else {
       // Use standard placeholder replacement
       const bundleIdentifier =
-        bundleIdentifierParam ??
-        `io.sentry.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+        bundleIdentifierParam ?? `io.sentry.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
       processedContent = replacePlaceholders(content, projectName, bundleIdentifier);
     }
 
