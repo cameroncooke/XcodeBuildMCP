@@ -324,16 +324,35 @@ NODE
 # Ensure we're in the project root (parent of scripts directory)
 cd "$(dirname "$0")/.."
 
-# Check if working directory is clean (only enforced for real runs)
+# Files this script modifies and commits as part of the release
+RELEASE_MANAGED_FILES=(
+  "CHANGELOG.md"
+  "package.json"
+  "package-lock.json"
+  "README.md"
+  "docs/SKILLS.md"
+  "docs/GETTING_STARTED.md"
+  "server.json"
+)
+
+has_unmanaged_changes() {
+  local exclude_args=()
+  for f in "${RELEASE_MANAGED_FILES[@]}"; do
+    exclude_args+=(":(exclude)$f")
+  done
+  ! git diff-index --quiet HEAD -- . "${exclude_args[@]}"
+}
+
+# Check if working directory is clean outside release-managed files
 if ! $DRY_RUN; then
-  if ! git diff-index --quiet HEAD --; then
-    echo "❌ Error: Working directory is not clean."
-    echo "Please commit or stash your changes before creating a release."
+  if has_unmanaged_changes; then
+    echo "❌ Error: Working directory has uncommitted changes outside release-managed files."
+    echo "Please commit or stash those changes before creating a release."
     exit 1
   fi
 else
-  if ! git diff-index --quiet HEAD --; then
-    echo "⚠️  Dry-run: working directory is not clean (continuing)."
+  if has_unmanaged_changes; then
+    echo "⚠️  Dry-run: working directory has unmanaged changes (continuing)."
   fi
 fi
 
@@ -444,9 +463,9 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
   echo ""
   echo "📦 Committing version changes..."
   if [[ -f server.json ]]; then
-    run git add package.json package-lock.json README.md docs/SKILLS.md CHANGELOG.md server.json
+    run git add package.json package-lock.json README.md docs/SKILLS.md docs/GETTING_STARTED.md CHANGELOG.md server.json
   else
-    run git add package.json package-lock.json README.md docs/SKILLS.md CHANGELOG.md
+    run git add package.json package-lock.json README.md docs/SKILLS.md docs/GETTING_STARTED.md CHANGELOG.md
   fi
   run git commit -m "Release v$VERSION"
 else
