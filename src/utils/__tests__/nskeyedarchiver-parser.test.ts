@@ -193,18 +193,3 @@ describe('NSKeyedArchiver Parser', () => {
     });
   });
 });
-
-describe('Integration with real xcuserstate files', () => {
-  // Additional external test file (if available)
-  const HACKERNEWS_XCUSERSTATE =
-    '/Volumes/Developer/hackernews/ios/HackerNews.xcodeproj/project.xcworkspace/xcuserdata/cameroncooke.xcuserdatad/UserInterfaceState.xcuserstate';
-
-  it.skipIf(!existsSync(HACKERNEWS_XCUSERSTATE))('parses HackerNews project xcuserstate', () => {
-    const result = parseXcuserstate(HACKERNEWS_XCUSERSTATE);
-    // Scheme can vary based on user's current Xcode selection (could be any scheme in project)
-    expect(result.scheme).toBeDefined();
-    expect(typeof result.scheme).toBe('string');
-    expect(result.simulatorId).toMatch(/^[A-F0-9-]{36}$/);
-    expect(result.simulatorPlatform).toBe('iphonesimulator');
-  });
-});
