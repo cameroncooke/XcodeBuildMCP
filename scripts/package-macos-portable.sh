@@ -116,6 +116,13 @@ verify_axe_assets() {
     done < <(find "$frameworks_dir" -name "*.framework" -type d)
 
     if codesign -dv "$axe_bin" >/dev/null 2>&1; then
+      local codesign_details
+      codesign_details="$(codesign -dv "$axe_bin" 2>&1 || true)"
+      local is_ad_hoc_signature=false
+      if grep -qi "Signature=adhoc" <<<"$codesign_details"; then
+        is_ad_hoc_signature=true
+      fi
+
       codesign --verify --deep --strict "$axe_bin"
       while IFS= read -r framework_path; do
         framework_name="$(basename "$framework_path" .framework)"
@@ -126,17 +133,21 @@ verify_axe_assets() {
         codesign --verify --deep --strict "$framework_binary"
       done < <(find "$frameworks_dir" -name "*.framework" -type d)
 
-      spctl_log="$(mktemp)"
-      if ! spctl --assess --type execute "$axe_bin" 2>"$spctl_log"; then
-        if grep -q "does not seem to be an app" "$spctl_log"; then
-          echo "Gatekeeper execute assessment is inconclusive for CLI binaries; continuing"
-        else
-          cat "$spctl_log"
-          rm "$spctl_log"
-          exit 1
+      if [[ "$is_ad_hoc_signature" == "true" ]]; then
+        echo "AXe binary uses ad-hoc signing; skipping Gatekeeper assessment"
+      else
+        spctl_log="$(mktemp)"
+        if ! spctl --assess --type execute "$axe_bin" 2>"$spctl_log"; then
+          if grep -q "does not seem to be an app" "$spctl_log"; then
+            echo "Gatekeeper execute assessment is inconclusive for CLI binaries; continuing"
+          else
+            cat "$spctl_log"
+            rm "$spctl_log"
+            exit 1
+          fi
         fi
+        rm "$spctl_log"
       fi
-      rm "$spctl_log"
     else
       echo "AXe binary is unsigned; skipping codesign and Gatekeeper verification"
     fi
