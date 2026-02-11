@@ -99,8 +99,8 @@ export async function listSchemesLogic(
           priority: 1,
         },
         {
-          tool: 'build_sim',
-          label: 'Build for iOS Simulator',
+          tool: 'build_run_sim',
+          label: 'Build and run on iOS Simulator (default for run intent)',
           params: {
             [`${projectOrWorkspace}Path`]: path!,
             scheme: firstScheme,
@@ -109,10 +109,20 @@ export async function listSchemesLogic(
           priority: 2,
         },
         {
+          tool: 'build_sim',
+          label: 'Build for iOS Simulator (compile-only)',
+          params: {
+            [`${projectOrWorkspace}Path`]: path!,
+            scheme: firstScheme,
+            simulatorName: 'iPhone 16',
+          },
+          priority: 3,
+        },
+        {
           tool: 'show_build_settings',
           label: 'Show build settings',
           params: { [`${projectOrWorkspace}Path`]: path!, scheme: firstScheme },
-          priority: 3,
+          priority: 4,
         },
       );
 

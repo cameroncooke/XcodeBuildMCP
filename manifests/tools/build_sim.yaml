@@ -3,7 +3,7 @@ module: mcp/tools/simulator/build_sim
 names:
   mcp: build_sim
   cli: build
-description: Build for iOS sim.
+description: Build for iOS sim (compile-only, no launch).
 predicates:
   - hideWhenXcodeAgentMode
 annotations:

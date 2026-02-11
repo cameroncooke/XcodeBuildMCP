@@ -79,8 +79,8 @@ describe('list_schemes plugin', () => {
             priority: 1,
           },
           {
-            tool: 'build_sim',
-            label: 'Build for iOS Simulator',
+            tool: 'build_run_sim',
+            label: 'Build and run on iOS Simulator (default for run intent)',
             params: {
               projectPath: '/path/to/MyProject.xcodeproj',
               scheme: 'MyProject',
@@ -89,10 +89,20 @@ describe('list_schemes plugin', () => {
             priority: 2,
           },
           {
+            tool: 'build_sim',
+            label: 'Build for iOS Simulator (compile-only)',
+            params: {
+              projectPath: '/path/to/MyProject.xcodeproj',
+              scheme: 'MyProject',
+              simulatorName: 'iPhone 16',
+            },
+            priority: 3,
+          },
+          {
             tool: 'show_build_settings',
             label: 'Show build settings',
             params: { projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyProject' },
-            priority: 3,
+            priority: 4,
           },
         ],
         isError: false,
@@ -317,8 +327,8 @@ describe('list_schemes plugin', () => {
             priority: 1,
           },
           {
-            tool: 'build_sim',
-            label: 'Build for iOS Simulator',
+            tool: 'build_run_sim',
+            label: 'Build and run on iOS Simulator (default for run intent)',
             params: {
               workspacePath: '/path/to/MyProject.xcworkspace',
               scheme: 'MyApp',
@@ -327,10 +337,20 @@ describe('list_schemes plugin', () => {
             priority: 2,
           },
           {
+            tool: 'build_sim',
+            label: 'Build for iOS Simulator (compile-only)',
+            params: {
+              workspacePath: '/path/to/MyProject.xcworkspace',
+              scheme: 'MyApp',
+              simulatorName: 'iPhone 16',
+            },
+            priority: 3,
+          },
+          {
             tool: 'show_build_settings',
             label: 'Show build settings',
             params: { workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyApp' },
-            priority: 3,
+            priority: 4,
           },
         ],
         isError: false,

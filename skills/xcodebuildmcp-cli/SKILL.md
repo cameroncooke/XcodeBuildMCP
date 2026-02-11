@@ -33,6 +33,9 @@ Notes:
 
 ### Build And Run On Simulator
 
+If your intent is to run the app in Simulator, use `build-and-run` directly. It already performs the build step.
+Do not run `build` first unless the user explicitly requests both commands.
+
 1. List simulators and pick a device name or UDID.
 2. Build and run.
 
@@ -50,7 +53,8 @@ xcodebuildmcp simulator build-and-run --scheme MyApp --project-path ./MyApp.xcod
 
 ### Build only
 
-When you only need to check that there are no build errors, you can build without running the app.
+Use this only when you want compile feedback and do not want to launch the app.
+For run/launch intent, use `build-and-run` instead of chaining `build` and `build-and-run`.
 
 ```bash
 xcodebuildmcp simulator build --scheme MyApp --project-path ./MyApp.xcodeproj --simulator-name "iPhone 17 Pro"
