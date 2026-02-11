@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import path from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { createMockFileSystemExecutor } from '../../test-utils/mock-executors.ts';
-import { loadProjectConfig, persistSessionDefaultsToProjectConfig } from '../project-config.ts';
+import {
+  loadProjectConfig,
+  persistActiveSessionDefaultsProfileToProjectConfig,
+  persistSessionDefaultsToProjectConfig,
+} from '../project-config.ts';
 
 const cwd = '/repo';
 const configPath = path.join(cwd, '.xcodebuildmcp', 'config.yaml');
@@ -124,6 +128,34 @@ describe('project-config', () => {
       expect(defaults.derivedDataPath).toBe('/repo/.derivedData');
     });
 
+    it('normalizes namespaced session defaults profiles and active profile', async () => {
+      const yaml = [
+        'schemaVersion: 1',
+        'activeSessionDefaultsProfile: "ios"',
+        'sessionDefaultsProfiles:',
+        '  ios:',
+        '    projectPath: "./App.xcodeproj"',
+        '    workspacePath: "./App.xcworkspace"',
+        '    simulatorName: "iPhone 16"',
+        '  watch:',
+        '    workspacePath: "./Watch.xcworkspace"',
+        '',
+      ].join('\n');
+
+      const { fs } = createFsFixture({ exists: true, readFile: yaml });
+      const result = await loadProjectConfig({ fs, cwd });
+      if (!result.found) throw new Error('expected config to be found');
+
+      expect(result.config.activeSessionDefaultsProfile).toBe('ios');
+      expect(result.config.sessionDefaultsProfiles?.ios?.workspacePath).toBe(
+        path.join(cwd, 'App.xcworkspace'),
+      );
+      expect(result.config.sessionDefaultsProfiles?.ios?.projectPath).toBeUndefined();
+      expect(result.config.sessionDefaultsProfiles?.watch?.workspacePath).toBe(
+        path.join(cwd, 'Watch.xcworkspace'),
+      );
+    });
+
     it('should return an error result when schemaVersion is unsupported', async () => {
       const yaml = ['schemaVersion: 2', 'sessionDefaults:', '  scheme: "App"', ''].join('\n');
       const { fs } = createFsFixture({ exists: true, readFile: yaml });
@@ -211,6 +243,66 @@ describe('project-config', () => {
 
       expect(parsed.schemaVersion).toBe(1);
       expect(parsed.sessionDefaults?.scheme).toBe('App');
+    });
+
+    it('persists session defaults to a named profile', async () => {
+      const yaml = [
+        'schemaVersion: 1',
+        'sessionDefaultsProfiles:',
+        '  ios:',
+        '    scheme: "Old"',
+        '',
+      ].join('\n');
+      const { fs, writes } = createFsFixture({ exists: true, readFile: yaml });
+
+      await persistSessionDefaultsToProjectConfig({
+        fs,
+        cwd,
+        profile: 'ios',
+        patch: { scheme: 'NewIOS', simulatorId: 'SIM-1' },
+      });
+
+      expect(writes.length).toBe(1);
+      const parsed = parseYaml(writes[0].content) as {
+        sessionDefaultsProfiles?: Record<string, Record<string, unknown>>;
+      };
+      expect(parsed.sessionDefaultsProfiles?.ios?.scheme).toBe('NewIOS');
+      expect(parsed.sessionDefaultsProfiles?.ios?.simulatorId).toBe('SIM-1');
+    });
+  });
+
+  describe('persistActiveSessionDefaultsProfileToProjectConfig', () => {
+    it('persists active profile name', async () => {
+      const { fs, writes } = createFsFixture({ exists: true, readFile: 'schemaVersion: 1\n' });
+
+      await persistActiveSessionDefaultsProfileToProjectConfig({
+        fs,
+        cwd,
+        profile: 'ios',
+      });
+
+      expect(writes.length).toBe(1);
+      const parsed = parseYaml(writes[0].content) as {
+        activeSessionDefaultsProfile?: string;
+      };
+      expect(parsed.activeSessionDefaultsProfile).toBe('ios');
+    });
+
+    it('removes active profile when switching to global', async () => {
+      const yaml = ['schemaVersion: 1', 'activeSessionDefaultsProfile: "watch"', ''].join('\n');
+      const { fs, writes } = createFsFixture({ exists: true, readFile: yaml });
+
+      await persistActiveSessionDefaultsProfileToProjectConfig({
+        fs,
+        cwd,
+        profile: null,
+      });
+
+      expect(writes.length).toBe(1);
+      const parsed = parseYaml(writes[0].content) as {
+        activeSessionDefaultsProfile?: string;
+      };
+      expect(parsed.activeSessionDefaultsProfile).toBeUndefined();
     });
   });
 });

@@ -75,10 +75,10 @@ export async function bootstrapServer(
   if (xcodeDetection.runningUnderXcode) {
     log('info', `[xcode] Running under Xcode agent environment`);
 
-    // Get project/workspace path from config session defaults (for monorepo disambiguation)
-    const configSessionDefaults = result.runtime.config.sessionDefaults;
-    const projectPath = configSessionDefaults?.projectPath;
-    const workspacePath = configSessionDefaults?.workspacePath;
+    // Use the active session defaults profile for monorepo disambiguation.
+    const activeSessionDefaults = sessionStore.getAll();
+    const projectPath = activeSessionDefaults.projectPath;
+    const workspacePath = activeSessionDefaults.workspacePath;
 
     // Sync session defaults from Xcode's IDE state
     const xcodeState = await readXcodeIdeState({

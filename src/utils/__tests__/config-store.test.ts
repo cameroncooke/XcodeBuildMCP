@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import path from 'node:path';
 import { createMockFileSystemExecutor } from '../../test-utils/mock-executors.ts';
-import { __resetConfigStoreForTests, getConfig, initConfigStore } from '../config-store.ts';
+import {
+  __resetConfigStoreForTests,
+  getConfig,
+  initConfigStore,
+  persistActiveSessionDefaultsProfile,
+} from '../config-store.ts';
 
 const cwd = '/repo';
 const configPath = path.join(cwd, '.xcodebuildmcp', 'config.yaml');
@@ -104,5 +109,51 @@ describe('config-store', () => {
 
     const updated = getConfig();
     expect(updated.enabledWorkflows).toEqual(['device']);
+  });
+
+  it('merges namespaced session defaults profiles from file and overrides', async () => {
+    const yaml = [
+      'schemaVersion: 1',
+      'activeSessionDefaultsProfile: "ios"',
+      'sessionDefaultsProfiles:',
+      '  ios:',
+      '    scheme: "FromFile"',
+      '    workspacePath: "./App.xcworkspace"',
+      '',
+    ].join('\n');
+
+    await initConfigStore({
+      cwd,
+      fs: createFs(yaml),
+      overrides: {
+        sessionDefaultsProfiles: {
+          ios: { simulatorName: 'iPhone 16' },
+          watch: { scheme: 'WatchScheme' },
+        },
+      },
+    });
+
+    const config = getConfig();
+    expect(config.activeSessionDefaultsProfile).toBe('ios');
+    expect(config.sessionDefaultsProfiles?.ios?.scheme).toBe('FromFile');
+    expect(config.sessionDefaultsProfiles?.ios?.simulatorName).toBe('iPhone 16');
+    expect(config.sessionDefaultsProfiles?.watch?.scheme).toBe('WatchScheme');
+  });
+
+  it('persists active profile selection and updates resolved config', async () => {
+    const writes: { path: string; content: string }[] = [];
+    const fs = createMockFileSystemExecutor({
+      existsSync: () => true,
+      readFile: async () => 'schemaVersion: 1\n',
+      writeFile: async (targetPath, content) => {
+        writes.push({ path: targetPath, content });
+      },
+    });
+
+    await initConfigStore({ cwd, fs });
+    await persistActiveSessionDefaultsProfile('ios');
+
+    expect(getConfig().activeSessionDefaultsProfile).toBe('ios');
+    expect(writes).toHaveLength(1);
   });
 });

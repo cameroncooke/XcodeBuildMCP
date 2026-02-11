@@ -21,6 +21,8 @@ export const runtimeConfigFileSchema = z
     macosTemplateVersion: z.string().optional(),
     debuggerBackend: z.enum(['dap', 'lldb-cli', 'lldb']).optional(),
     sessionDefaults: sessionDefaultsSchema.optional(),
+    sessionDefaultsProfiles: z.record(z.string(), sessionDefaultsSchema).optional(),
+    activeSessionDefaultsProfile: z.string().optional(),
   })
   .passthrough();
 

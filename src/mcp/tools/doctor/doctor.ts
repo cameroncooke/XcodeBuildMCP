@@ -136,7 +136,7 @@ export async function runDoctor(
   );
 
   const doctorInfo = {
-    serverVersion: version,
+    serverVersion: String(version),
     timestamp: new Date().toISOString(),
     system: systemInfo,
     node: nodeInfo,

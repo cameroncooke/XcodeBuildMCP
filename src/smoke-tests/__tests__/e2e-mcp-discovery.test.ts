@@ -69,6 +69,7 @@ describe('MCP Discovery (e2e)', () => {
     expect(names).toContain('session_set_defaults');
     expect(names).toContain('session_show_defaults');
     expect(names).toContain('session_clear_defaults');
+    expect(names).toContain('session_use_defaults_profile');
   });
 
   it('excludes workflow discovery when experimentalWorkflowDiscovery is disabled', async () => {

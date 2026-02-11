@@ -43,4 +43,42 @@ describe('SessionStore', () => {
     expect(all.scheme).toBe('App');
     expect(all.simulatorId).toBe('SIM-1');
   });
+
+  it('isolates defaults by active profile', () => {
+    sessionStore.setDefaults({ scheme: 'GlobalApp' });
+    sessionStore.setActiveProfile('ios');
+    sessionStore.setDefaults({ scheme: 'iOSApp', simulatorName: 'iPhone 16' });
+    sessionStore.setActiveProfile('watch');
+    sessionStore.setDefaults({ scheme: 'WatchApp' });
+
+    sessionStore.setActiveProfile('ios');
+    expect(sessionStore.getAll()).toMatchObject({ scheme: 'iOSApp', simulatorName: 'iPhone 16' });
+
+    sessionStore.setActiveProfile('watch');
+    expect(sessionStore.getAll()).toMatchObject({ scheme: 'WatchApp' });
+    expect(sessionStore.getAll().simulatorName).toBeUndefined();
+
+    sessionStore.setActiveProfile(null);
+    expect(sessionStore.getAll()).toMatchObject({ scheme: 'GlobalApp' });
+  });
+
+  it('clear(keys) only affects active profile while clear() clears all profiles', () => {
+    sessionStore.setActiveProfile('ios');
+    sessionStore.setDefaults({ scheme: 'iOSApp', simulatorId: 'SIM-1' });
+    sessionStore.setActiveProfile('watch');
+    sessionStore.setDefaults({ scheme: 'WatchApp', simulatorId: 'SIM-2' });
+
+    sessionStore.setActiveProfile('ios');
+    sessionStore.clear(['simulatorId']);
+    expect(sessionStore.getAll().scheme).toBe('iOSApp');
+    expect(sessionStore.getAll().simulatorId).toBeUndefined();
+
+    sessionStore.setActiveProfile('watch');
+    expect(sessionStore.getAll().simulatorId).toBe('SIM-2');
+
+    sessionStore.clear();
+    expect(sessionStore.getAll()).toEqual({});
+    expect(sessionStore.getActiveProfile()).toBeNull();
+    expect(sessionStore.listProfiles()).toEqual([]);
+  });
 });

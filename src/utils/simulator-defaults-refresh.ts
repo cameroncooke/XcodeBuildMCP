@@ -11,6 +11,7 @@ export interface ScheduleSimulatorDefaultsRefreshOptions {
   executor?: CommandExecutor;
   expectedRevision: number;
   reason: RefreshReason;
+  profile: string | null;
   persist?: boolean;
   simulatorId?: string;
   simulatorName?: string;
@@ -72,7 +73,7 @@ async function refreshSimulatorDefaults(
           simulatorId,
           simulatorName,
           sessionDefaults: {
-            ...sessionStore.getAll(),
+            ...sessionStore.getAllForProfile(options.profile),
             ...patch,
             simulatorId,
             simulatorName,
@@ -91,7 +92,11 @@ async function refreshSimulatorDefaults(
       return;
     }
 
-    const applied = sessionStore.setDefaultsIfRevision(patch, options.expectedRevision);
+    const applied = sessionStore.setDefaultsIfRevisionForProfile(
+      options.profile,
+      patch,
+      options.expectedRevision,
+    );
     if (!applied) {
       log(
         'info',
@@ -101,7 +106,7 @@ async function refreshSimulatorDefaults(
     }
 
     if (options.persist) {
-      await persistSessionDefaultsPatch({ patch });
+      await persistSessionDefaultsPatch({ patch, profile: options.profile });
     }
   } catch (error) {
     log(
