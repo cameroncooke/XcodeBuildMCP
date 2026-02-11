@@ -3,7 +3,7 @@ module: mcp/tools/ui-automation/tap
 names:
   mcp: tap
   cli: tap
-description: Tap coordinate or element.
+description: Tap UI element by accessibility id/label (recommended) or coordinates as fallback.
 annotations:
   title: Tap
   destructiveHint: true
