@@ -19,19 +19,23 @@ import {
 } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
+const SIMULATOR_PLATFORMS = [
+  XcodePlatform.iOSSimulator,
+  XcodePlatform.watchOSSimulator,
+  XcodePlatform.tvOSSimulator,
+  XcodePlatform.visionOSSimulator,
+] as const;
+
 function constructDestinationString(
-  platform: string,
+  platform: XcodePlatform,
   simulatorName: string,
   simulatorId: string,
   useLatest: boolean = true,
   arch?: string,
 ): string {
-  const isSimulatorPlatform = [
-    XcodePlatform.iOSSimulator,
-    XcodePlatform.watchOSSimulator,
-    XcodePlatform.tvOSSimulator,
-    XcodePlatform.visionOSSimulator,
-  ].includes(platform);
+  const isSimulatorPlatform = SIMULATOR_PLATFORMS.includes(
+    platform as (typeof SIMULATOR_PLATFORMS)[number],
+  );
 
   // If ID is provided for a simulator, it takes precedence and uniquely identifies it.
   if (isSimulatorPlatform && simulatorId) {
@@ -76,7 +80,14 @@ const baseGetSimulatorAppPathSchema = z.object({
     .optional()
     .describe('Path to .xcworkspace file. Provide EITHER this OR projectPath, not both'),
   scheme: z.string().describe('The scheme to use (Required)'),
-  platform: z.enum(['iOS Simulator', 'watchOS Simulator', 'tvOS Simulator', 'visionOS Simulator']),
+  platform: z
+    .nativeEnum(XcodePlatform)
+    .refine(
+      (platform) => SIMULATOR_PLATFORMS.includes(platform as (typeof SIMULATOR_PLATFORMS)[number]),
+      {
+        message: 'platform must be a simulator platform',
+      },
+    ),
   simulatorId: z
     .string()
     .optional()
@@ -162,12 +173,9 @@ export async function get_sim_app_pathLogic(
     command.push('-configuration', configuration);
 
     // Handle destination based on platform
-    const isSimulatorPlatform = [
-      XcodePlatform.iOSSimulator,
-      XcodePlatform.watchOSSimulator,
-      XcodePlatform.tvOSSimulator,
-      XcodePlatform.visionOSSimulator,
-    ].includes(platform);
+    const isSimulatorPlatform = SIMULATOR_PLATFORMS.includes(
+      platform as (typeof SIMULATOR_PLATFORMS)[number],
+    );
 
     let destinationString = '';
 
