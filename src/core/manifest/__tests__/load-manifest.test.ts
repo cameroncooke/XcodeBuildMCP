@@ -33,6 +33,7 @@ describe('load-manifest', () => {
       expect(manifest.tools.has('build_sim')).toBe(true);
       expect(manifest.tools.has('discover_projs')).toBe(true);
       expect(manifest.tools.has('session_show_defaults')).toBe(true);
+      expect(manifest.tools.has('session_use_defaults_profile')).toBe(true);
     });
 
     it('should validate tool references in workflows', () => {

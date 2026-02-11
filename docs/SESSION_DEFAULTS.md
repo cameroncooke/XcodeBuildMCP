@@ -25,6 +25,40 @@ The persistence is patch-only: only keys provided in that call are written (plus
 
 You can also manually create the config file to essentially seed the defaults at startup; see [CONFIGURATION.md](CONFIGURATION.md) for more information.
 
+## Namespaced profiles
+Session defaults support named profiles so one workspace can keep separate defaults for iOS/watchOS/macOS (or any custom profile names).
+
+- Use `session_use_defaults_profile` to switch the active profile.
+- Existing tools (`session_set_defaults`, `session_show_defaults`, build/test tools) use the active profile automatically.
+- Use `global: true` to switch back to the unnamed global profile.
+- Set `persist: true` on `session_use_defaults_profile` to write `activeSessionDefaultsProfile` in `.xcodebuildmcp/config.yaml`.
+
+## Recommended startup flow (monorepo / multi-target)
+Copy/paste this sequence when starting a new session:
+
+```json
+{"name":"session_use_defaults_profile","arguments":{"profile":"ios","persist":true}}
+{"name":"session_set_defaults","arguments":{
+  "workspacePath":"/repo/MyApp.xcworkspace",
+  "scheme":"MyApp-iOS",
+  "simulatorName":"iPhone 16 Pro",
+  "persist":true
+}}
+{"name":"session_show_defaults","arguments":{}}
+```
+
+Switch targets later in the same session:
+
+```json
+{"name":"session_use_defaults_profile","arguments":{"profile":"watch","persist":true}}
+{"name":"session_set_defaults","arguments":{
+  "workspacePath":"/repo/MyApp.xcworkspace",
+  "scheme":"MyApp-watchOS",
+  "simulatorName":"Apple Watch Series 10 (45mm)",
+  "persist":true
+}}
+```
+
 ## Related docs
 - Configuration options: [CONFIGURATION.md](CONFIGURATION.md)
 - Tools reference: [TOOLS.md](TOOLS.md)

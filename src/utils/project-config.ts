@@ -13,6 +13,8 @@ const CONFIG_FILE = 'config.yaml';
 export type ProjectConfig = RuntimeConfigFile & {
   schemaVersion: 1;
   sessionDefaults?: Partial<SessionDefaults>;
+  sessionDefaultsProfiles?: Record<string, Partial<SessionDefaults>>;
+  activeSessionDefaultsProfile?: string;
   enabledWorkflows?: string[];
   debuggerBackend?: 'dap' | 'lldb-cli';
   [key: string]: unknown;
@@ -33,6 +35,18 @@ export type PersistSessionDefaultsOptions = {
   cwd: string;
   patch: Partial<SessionDefaults>;
   deleteKeys?: (keyof SessionDefaults)[];
+  profile?: string | null;
+};
+
+export type PersistActiveSessionDefaultsProfileOptions = {
+  fs: FileSystemExecutor;
+  cwd: string;
+  profile?: string | null;
+};
+
+type PersistenceTargetOptions = {
+  fs: FileSystemExecutor;
+  configPath: string;
 };
 
 function getConfigDir(cwd: string): string {
@@ -152,6 +166,27 @@ function resolveRelativeTopLevelPaths(config: ProjectConfig, cwd: string): Proje
   return resolved;
 }
 
+function normalizeSessionDefaultsProfiles(
+  profiles: Record<string, Partial<SessionDefaults>>,
+  cwd: string,
+): { profiles: Record<string, Partial<SessionDefaults>>; notices: string[] } {
+  const normalizedProfiles: Record<string, Partial<SessionDefaults>> = {};
+  const notices: string[] = [];
+
+  for (const [profileName, defaults] of Object.entries(profiles)) {
+    const trimmedName = profileName.trim();
+    if (trimmedName.length === 0) {
+      notices.push('Ignored sessionDefaultsProfiles entry with an empty profile name.');
+      continue;
+    }
+    const normalized = normalizeMutualExclusivity(defaults);
+    notices.push(...normalized.notices.map((notice) => `[profile:${trimmedName}] ${notice}`));
+    normalizedProfiles[trimmedName] = resolveRelativeSessionPaths(normalized.normalized, cwd);
+  }
+
+  return { profiles: normalizedProfiles, notices };
+}
+
 function normalizeDebuggerBackend(config: RuntimeConfigFile): ProjectConfig {
   if (config.debuggerBackend === 'lldb') {
     const normalized: RuntimeConfigFile = { ...config, debuggerBackend: 'lldb-cli' };
@@ -179,6 +214,27 @@ function parseProjectConfig(rawText: string): RuntimeConfigFile {
     throw new Error('Project config must be an object');
   }
   return runtimeConfigFileSchema.parse(parsed) as RuntimeConfigFile;
+}
+
+async function readBaseConfigForPersistence(
+  options: PersistenceTargetOptions,
+): Promise<ProjectConfig> {
+  if (!options.fs.existsSync(options.configPath)) {
+    return { schemaVersion: 1 };
+  }
+
+  try {
+    const rawText = await options.fs.readFile(options.configPath, 'utf8');
+    const parsed = parseProjectConfig(rawText);
+    return { ...normalizeConfigForPersistence(parsed), schemaVersion: 1 };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    log(
+      'warning',
+      `Failed to read or parse project config at ${options.configPath}. Overwriting with new config. ${errorMessage}`,
+    );
+    return { schemaVersion: 1 };
+  }
 }
 
 export async function loadProjectConfig(
@@ -209,6 +265,15 @@ export async function loadProjectConfig(
       config = { ...config, sessionDefaults: resolved };
     }
 
+    if (config.sessionDefaultsProfiles) {
+      const normalizedProfiles = normalizeSessionDefaultsProfiles(
+        config.sessionDefaultsProfiles,
+        options.cwd,
+      );
+      notices.push(...normalizedProfiles.notices);
+      config = { ...config, sessionDefaultsProfiles: normalizedProfiles.profiles };
+    }
+
     config = resolveRelativeTopLevelPaths(config, options.cwd);
 
     return { found: true, path: configPath, config, notices };
@@ -224,39 +289,53 @@ export async function persistSessionDefaultsToProjectConfig(
   const configPath = getConfigPath(options.cwd);
 
   await options.fs.mkdir(configDir, { recursive: true });
-
-  let baseConfig: ProjectConfig = { schemaVersion: 1 };
-
-  if (options.fs.existsSync(configPath)) {
-    try {
-      const rawText = await options.fs.readFile(configPath, 'utf8');
-      const parsed = parseProjectConfig(rawText);
-      baseConfig = { ...normalizeConfigForPersistence(parsed), schemaVersion: 1 };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      log(
-        'warning',
-        `Failed to read or parse project config at ${configPath}. Overwriting with new config. ${errorMessage}`,
-      );
-      baseConfig = { schemaVersion: 1 };
-    }
-  }
+  const baseConfig = await readBaseConfigForPersistence({ fs: options.fs, configPath });
 
   const patch = removeUndefined(options.patch as Record<string, unknown>);
-  const nextSessionDefaults: Partial<SessionDefaults> = {
-    ...(baseConfig.sessionDefaults ?? {}),
-    ...patch,
-  };
-
-  for (const key of options.deleteKeys ?? []) {
-    delete nextSessionDefaults[key];
-  }
+  const targetProfile = options.profile ?? null;
+  const isGlobalProfile = targetProfile === null;
+  const baseDefaults = isGlobalProfile
+    ? (baseConfig.sessionDefaults ?? {})
+    : (baseConfig.sessionDefaultsProfiles?.[targetProfile] ?? {});
+  const nextSessionDefaults: Partial<SessionDefaults> = { ...baseDefaults, ...patch };
 
   const nextConfig: ProjectConfig = {
     ...baseConfig,
     schemaVersion: 1,
-    sessionDefaults: nextSessionDefaults,
   };
+  for (const key of options.deleteKeys ?? []) {
+    delete nextSessionDefaults[key];
+  }
+  if (isGlobalProfile) {
+    nextConfig.sessionDefaults = nextSessionDefaults;
+  } else {
+    nextConfig.sessionDefaultsProfiles = {
+      ...(nextConfig.sessionDefaultsProfiles ?? {}),
+      [targetProfile]: nextSessionDefaults,
+    };
+  }
+
+  await options.fs.writeFile(configPath, stringifyYaml(nextConfig), 'utf8');
+
+  return { path: configPath };
+}
+
+export async function persistActiveSessionDefaultsProfileToProjectConfig(
+  options: PersistActiveSessionDefaultsProfileOptions,
+): Promise<{ path: string }> {
+  const configDir = getConfigDir(options.cwd);
+  const configPath = getConfigPath(options.cwd);
+
+  await options.fs.mkdir(configDir, { recursive: true });
+  const baseConfig = await readBaseConfigForPersistence({ fs: options.fs, configPath });
+
+  const nextConfig: ProjectConfig = { ...baseConfig, schemaVersion: 1 };
+  const activeProfile = options.profile ?? null;
+  if (activeProfile === null) {
+    delete nextConfig.activeSessionDefaultsProfile;
+  } else {
+    nextConfig.activeSessionDefaultsProfile = activeProfile;
+  }
 
   await options.fs.writeFile(configPath, stringifyYaml(nextConfig), 'utf8');
 

@@ -110,7 +110,12 @@ export async function syncXcodeDefaultsLogic(
 
 export const schema = schemaObj.shape;
 
-export const handler = createTypedToolWithContext(schemaObj, syncXcodeDefaultsLogic, () => ({
-  executor: getDefaultCommandExecutor(),
-  cwd: process.cwd(),
-}));
+export const handler = createTypedToolWithContext(schemaObj, syncXcodeDefaultsLogic, () => {
+  const { projectPath, workspacePath } = sessionStore.getAll();
+  return {
+    executor: getDefaultCommandExecutor(),
+    cwd: process.cwd(),
+    projectPath,
+    workspacePath,
+  };
+});

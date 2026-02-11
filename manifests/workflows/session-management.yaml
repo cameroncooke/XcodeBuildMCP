@@ -9,6 +9,7 @@ selection:
     autoInclude: true
 tools:
   - session_show_defaults
+  - session_use_defaults_profile
   - session_set_defaults
   - session_clear_defaults
   - sync_xcode_defaults

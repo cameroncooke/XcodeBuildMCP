@@ -50,12 +50,17 @@ describe('session-clear-defaults tool', () => {
     });
 
     it('should clear all when all=true', async () => {
+      sessionStore.setActiveProfile('ios');
+      sessionStore.setDefaults({ scheme: 'IOS' });
+      sessionStore.setActiveProfile(null);
       const result = await sessionClearDefaultsLogic({ all: true });
       expect(result.isError).toBe(false);
       expect(result.content[0].text).toBe('Session defaults cleared');
 
       const current = sessionStore.getAll();
       expect(Object.keys(current).length).toBe(0);
+      expect(sessionStore.listProfiles()).toEqual([]);
+      expect(sessionStore.getActiveProfile()).toBeNull();
     });
 
     it('should clear all when no params provided', async () => {

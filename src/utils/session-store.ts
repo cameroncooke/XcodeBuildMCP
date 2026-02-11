@@ -23,38 +23,121 @@ export type SessionDefaults = {
 };
 
 class SessionStore {
-  private defaults: SessionDefaults = {};
+  private globalDefaults: SessionDefaults = {};
+  private profiles: Record<string, SessionDefaults> = {};
+  private activeProfile: string | null = null;
   private revision = 0;
 
-  setDefaults(partial: Partial<SessionDefaults>): void {
-    this.defaults = { ...this.defaults, ...partial };
+  private getProfileLabel(profile: string | null): string {
+    return profile ?? 'global';
+  }
+
+  private clearAll(): void {
+    this.globalDefaults = {};
+    this.profiles = {};
+    this.activeProfile = null;
     this.revision += 1;
-    log('info', `[Session] Defaults updated: ${Object.keys(partial).join(', ')}`);
+    log('info', '[Session] All defaults cleared');
+  }
+
+  private clearAllForProfile(profile: string | null): void {
+    if (profile === null) {
+      this.globalDefaults = {};
+      this.revision += 1;
+      log('info', '[Session] All defaults cleared (global)');
+      return;
+    }
+
+    delete this.profiles[profile];
+    this.revision += 1;
+    log('info', `[Session] All defaults cleared (${profile})`);
+  }
+
+  private setDefaultsForResolvedProfile(profile: string | null, defaults: SessionDefaults): void {
+    if (profile === null) {
+      this.globalDefaults = defaults;
+      return;
+    }
+    this.profiles[profile] = defaults;
+  }
+
+  setDefaults(partial: Partial<SessionDefaults>): void {
+    this.setDefaultsForProfile(this.activeProfile, partial);
+  }
+
+  setDefaultsForProfile(profile: string | null, partial: Partial<SessionDefaults>): void {
+    const previous = this.getAllForProfile(profile);
+    const next = { ...previous, ...partial };
+    this.setDefaultsForResolvedProfile(profile, next);
+    this.revision += 1;
+    const profileLabel = this.getProfileLabel(profile);
+    log('info', `[Session] Defaults updated (${profileLabel}): ${Object.keys(partial).join(', ')}`);
   }
 
   clear(keys?: (keyof SessionDefaults)[]): void {
     if (keys == null) {
-      this.defaults = {};
-      this.revision += 1;
-      log('info', '[Session] All defaults cleared');
+      this.clearAll();
       return;
     }
+
+    this.clearForProfile(this.activeProfile, keys);
+  }
+
+  clearForProfile(profile: string | null, keys?: (keyof SessionDefaults)[]): void {
+    if (keys == null) {
+      this.clearAllForProfile(profile);
+      return;
+    }
+
     if (keys.length === 0) {
       // No-op when an empty array is provided (e.g., empty UI selection)
       log('info', '[Session] No keys provided to clear; no changes made');
       return;
     }
-    for (const k of keys) delete this.defaults[k];
+
+    const next = this.getAllForProfile(profile);
+    for (const k of keys) delete next[k];
+
+    this.setDefaultsForResolvedProfile(profile, next);
     this.revision += 1;
-    log('info', `[Session] Defaults cleared: ${keys.join(', ')}`);
+    const profileLabel = this.getProfileLabel(profile);
+    log('info', `[Session] Defaults cleared (${profileLabel}): ${keys.join(', ')}`);
   }
 
   get<K extends keyof SessionDefaults>(key: K): SessionDefaults[K] {
-    return this.defaults[key];
+    return this.getAll()[key];
   }
 
   getAll(): SessionDefaults {
-    return { ...this.defaults };
+    return this.getAllForProfile(this.activeProfile);
+  }
+
+  getAllGlobal(): SessionDefaults {
+    return { ...this.globalDefaults };
+  }
+
+  getAllForProfile(profile: string | null): SessionDefaults {
+    if (profile === null) {
+      return { ...this.globalDefaults };
+    }
+    return { ...(this.profiles[profile] ?? {}) };
+  }
+
+  listProfiles(): string[] {
+    return Object.keys(this.profiles).sort((a, b) => a.localeCompare(b));
+  }
+
+  getActiveProfile(): string | null {
+    return this.activeProfile;
+  }
+
+  setActiveProfile(profile: string | null): void {
+    this.activeProfile = profile;
+    this.revision += 1;
+    if (profile != null && this.profiles[profile] == null) {
+      this.profiles[profile] = {};
+    }
+    log('info', `[Session] Active defaults profile: ${profile ?? 'global'}`);
   }
 
   getRevision(): number {
@@ -62,10 +145,18 @@ class SessionStore {
   }
 
   setDefaultsIfRevision(partial: Partial<SessionDefaults>, expectedRevision: number): boolean {
+    return this.setDefaultsIfRevisionForProfile(this.activeProfile, partial, expectedRevision);
+  }
+
+  setDefaultsIfRevisionForProfile(
+    profile: string | null,
+    partial: Partial<SessionDefaults>,
+    expectedRevision: number,
+  ): boolean {
     if (this.revision !== expectedRevision) {
       return false;
     }
-    this.setDefaults(partial);
+    this.setDefaultsForProfile(profile, partial);
     return true;
   }
 }

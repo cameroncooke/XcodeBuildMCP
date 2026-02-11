@@ -41,5 +41,15 @@ describe('session-show-defaults tool', () => {
       expect(parsed.scheme).toBe('MyScheme');
       expect(parsed.simulatorId).toBe('SIM-123');
     });
+
+    it('shows defaults from the active profile', async () => {
+      sessionStore.setDefaults({ scheme: 'GlobalScheme' });
+      sessionStore.setActiveProfile('ios');
+      sessionStore.setDefaults({ scheme: 'IOSScheme' });
+
+      const result = await handler();
+      const parsed = JSON.parse(result.content[0].text as string);
+      expect(parsed.scheme).toBe('IOSScheme');
+    });
   });
 });
