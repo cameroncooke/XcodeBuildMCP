@@ -12,23 +12,12 @@ import { createTextResponse } from '../../../utils/responses/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import type { ToolResponse } from '../../../types/common.ts';
+import { XcodePlatform } from '../../../types/common.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
 } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
-
-const XcodePlatform = {
-  macOS: 'macOS',
-  iOS: 'iOS',
-  iOSSimulator: 'iOS Simulator',
-  watchOS: 'watchOS',
-  watchOSSimulator: 'watchOS Simulator',
-  tvOS: 'tvOS',
-  tvOSSimulator: 'tvOS Simulator',
-  visionOS: 'visionOS',
-  visionOSSimulator: 'visionOS Simulator',
-};
 
 function constructDestinationString(
   platform: string,
@@ -54,12 +43,7 @@ function constructDestinationString(
     return `platform=${platform},name=${simulatorName}${useLatest ? ',OS=latest' : ''}`;
   }
 
-  // If it's a simulator platform but neither ID nor name is provided (should be prevented by callers now)
-  if (isSimulatorPlatform && !simulatorId && !simulatorName) {
-    log(
-      'warning',
-      `Constructing generic destination for ${platform} without name or ID. This might not be specific enough.`,
-    );
+  if (isSimulatorPlatform) {
     throw new Error(`Simulator name or ID is required for specific ${platform} operations`);
   }
 
@@ -191,7 +175,7 @@ export async function get_sim_app_pathLogic(
       if (simulatorId) {
         destinationString = `platform=${platform},id=${simulatorId}`;
       } else if (simulatorName) {
-        destinationString = `platform=${platform},name=${simulatorName}${(simulatorId ? false : useLatestOS) ? ',OS=latest' : ''}`;
+        destinationString = `platform=${platform},name=${simulatorName}${useLatestOS ? ',OS=latest' : ''}`;
       } else {
         return createTextResponse(
           `For ${platform} platform, either simulatorId or simulatorName must be provided`,
@@ -240,85 +224,12 @@ export async function get_sim_app_pathLogic(
     const fullProductName = fullProductNameMatch[1].trim();
     const appPath = `${builtProductsDir}/${fullProductName}`;
 
-    // Build nextSteps based on platform
-    let nextSteps: Array<{
-      tool: string;
-      label: string;
-      params: Record<string, string | number | boolean>;
-      priority?: number;
-    }> = [];
-
-    if (platform === XcodePlatform.macOS) {
-      nextSteps = [
-        {
-          tool: 'get_mac_bundle_id',
-          label: 'Get bundle ID',
-          params: { appPath },
-          priority: 1,
-        },
-        {
-          tool: 'launch_mac_app',
-          label: 'Launch the app',
-          params: { appPath },
-          priority: 2,
-        },
-      ];
-    } else if (isSimulatorPlatform) {
-      nextSteps = [
-        {
-          tool: 'get_app_bundle_id',
-          label: 'Get bundle ID',
-          params: { appPath },
-          priority: 1,
-        },
-        {
-          tool: 'boot_sim',
-          label: 'Boot simulator',
-          params: { simulatorId: 'SIMULATOR_UUID' },
-          priority: 2,
-        },
-        {
-          tool: 'install_app_sim',
-          label: 'Install app',
-          params: { simulatorId: 'SIMULATOR_UUID', appPath },
-          priority: 3,
-        },
-        {
-          tool: 'launch_app_sim',
-          label: 'Launch app',
-          params: { simulatorId: 'SIMULATOR_UUID', bundleId: 'BUNDLE_ID' },
-          priority: 4,
-        },
-      ];
-    } else if (
-      [
-        XcodePlatform.iOS,
-        XcodePlatform.watchOS,
-        XcodePlatform.tvOS,
-        XcodePlatform.visionOS,
-      ].includes(platform)
-    ) {
-      nextSteps = [
-        {
-          tool: 'get_app_bundle_id',
-          label: 'Get bundle ID',
-          params: { appPath },
-          priority: 1,
-        },
-        {
-          tool: 'install_app_device',
-          label: 'Install app on device',
-          params: { deviceId: 'DEVICE_UDID', appPath },
-          priority: 2,
-        },
-        {
-          tool: 'launch_app_device',
-          label: 'Launch app on device',
-          params: { deviceId: 'DEVICE_UDID', bundleId: 'BUNDLE_ID' },
-          priority: 3,
-        },
-      ];
-    }
+    const nextStepParams: Record<string, Record<string, string | number | boolean>> = {
+      get_app_bundle_id: { appPath },
+      boot_sim: { simulatorId: 'SIMULATOR_UUID' },
+      install_app_sim: { simulatorId: 'SIMULATOR_UUID', appPath },
+      launch_app_sim: { simulatorId: 'SIMULATOR_UUID', bundleId: 'BUNDLE_ID' },
+    };
 
     return {
       content: [
@@ -327,7 +238,7 @@ export async function get_sim_app_pathLogic(
           text: `✅ App path retrieved successfully: ${appPath}`,
         },
       ],
-      nextSteps,
+      nextStepParams,
       isError: false,
     };
   } catch (error) {

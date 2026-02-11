@@ -11,27 +11,34 @@ function toKebabCase(name: string): string {
     .toLowerCase();
 }
 
+function resolveLabel(step: NextStep): string {
+  if (step.label?.trim()) return step.label;
+  if (step.tool) return step.tool;
+  if (step.cliTool) return step.cliTool;
+  return 'Next action';
+}
+
 /**
  * Format a single next step for CLI output.
  * Example: xcodebuildmcp simulator open-sim
  * Example: xcodebuildmcp simulator install-app-sim --simulator-id "ABC123" --app-path "PATH"
  */
 function formatNextStepForCli(step: NextStep): string {
-  if (!step.cliTool) {
-    throw new Error(
-      `Next step for tool '${step.tool}' is missing cliTool - ensure enrichNextStepsForCli was called`,
-    );
+  if (!step.tool) {
+    return resolveLabel(step);
   }
   const parts = ['xcodebuildmcp'];
+  const cliTool = step.cliTool ?? toKebabCase(step.tool);
+  const params = step.params ?? {};
 
   // Include workflow as subcommand if provided
   if (step.workflow) {
     parts.push(step.workflow);
   }
 
-  parts.push(step.cliTool);
+  parts.push(cliTool);
 
-  for (const [key, value] of Object.entries(step.params)) {
+  for (const [key, value] of Object.entries(params)) {
     const flagName = toKebabCase(key);
     if (typeof value === 'boolean') {
       if (value) {
@@ -51,7 +58,11 @@ function formatNextStepForCli(step: NextStep): string {
  * Example: install_app_sim({ simulatorId: "ABC123", appPath: "PATH" })
  */
 function formatNextStepForMcp(step: NextStep): string {
-  const paramEntries = Object.entries(step.params);
+  if (!step.tool) {
+    return resolveLabel(step);
+  }
+
+  const paramEntries = Object.entries(step.params ?? {});
   if (paramEntries.length === 0) {
     return `${step.tool}()`;
   }
@@ -72,7 +83,13 @@ function formatNextStepForMcp(step: NextStep): string {
  * Render a single next step based on runtime.
  */
 export function renderNextStep(step: NextStep, runtime: RuntimeKind): string {
+  if (!step.tool) {
+    return resolveLabel(step);
+  }
   const formatted = runtime === 'cli' ? formatNextStepForCli(step) : formatNextStepForMcp(step);
+  if (!step.label) {
+    return formatted;
+  }
   return `${step.label}: ${formatted}`;
 }
 

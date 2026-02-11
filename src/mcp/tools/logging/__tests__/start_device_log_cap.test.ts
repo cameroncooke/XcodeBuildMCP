@@ -142,8 +142,16 @@ describe('start_device_log_cap plugin', () => {
       );
 
       expect(result.content[0].text).toContain('Interact with your app');
-      expect(result.nextSteps).toBeDefined();
-      expect(result.nextSteps![0].tool).toBe('stop_device_log_cap');
+      const responseText = String(result.content[0].text);
+      const sessionIdMatch = responseText.match(/Session ID: ([a-f0-9-]{36})/);
+      expect(sessionIdMatch).not.toBeNull();
+      const sessionId = sessionIdMatch?.[1];
+      expect(typeof sessionId).toBe('string');
+
+      expect(result.nextStepParams?.stop_device_log_cap).toBeDefined();
+      expect(result.nextStepParams?.stop_device_log_cap).toMatchObject({
+        logSessionId: sessionId,
+      });
     });
 
     it('should surface early launch failures when process exits immediately', async () => {

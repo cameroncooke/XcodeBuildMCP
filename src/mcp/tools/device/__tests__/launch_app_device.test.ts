@@ -220,7 +220,6 @@ describe('launch_app_device plugin (device-shared)', () => {
             text: '✅ App launched successfully\n\nApp launched successfully',
           },
         ],
-        nextSteps: [],
       });
     });
 
@@ -246,7 +245,6 @@ describe('launch_app_device plugin (device-shared)', () => {
             text: '✅ App launched successfully\n\nLaunch succeeded with detailed output',
           },
         ],
-        nextSteps: [],
       });
     });
 
@@ -284,14 +282,9 @@ describe('launch_app_device plugin (device-shared)', () => {
             text: '✅ App launched successfully\n\nApp launched successfully\n\nProcess ID: 12345\n\nInteract with your app on the device.',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'stop_app_device',
-            label: 'Stop the app',
-            params: { deviceId: 'test-device-123', processId: 12345 },
-            priority: 1,
-          },
-        ],
+        nextStepParams: {
+          stop_app_device: { deviceId: 'test-device-123', processId: 12345 },
+        },
       });
     });
 
@@ -317,7 +310,6 @@ describe('launch_app_device plugin (device-shared)', () => {
             text: '✅ App launched successfully\n\nApp "io.sentry.app" launched on device "test-device-123"',
           },
         ],
-        nextSteps: [],
       });
     });
   });

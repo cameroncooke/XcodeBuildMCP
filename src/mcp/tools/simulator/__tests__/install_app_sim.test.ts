@@ -213,20 +213,10 @@ describe('install_app_sim tool', () => {
             text: 'App installed successfully in simulator test-uuid-123.',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'open_sim',
-            label: 'Open the Simulator app',
-            params: {},
-            priority: 1,
-          },
-          {
-            tool: 'launch_app_sim',
-            label: 'Launch the app',
-            params: { simulatorId: 'test-uuid-123', bundleId: 'YOUR_APP_BUNDLE_ID' },
-            priority: 2,
-          },
-        ],
+        nextStepParams: {
+          open_sim: {},
+          launch_app_sim: { simulatorId: 'test-uuid-123', bundleId: 'YOUR_APP_BUNDLE_ID' },
+        },
       });
       expect(bundleIdCalls).toHaveLength(2);
     });
@@ -277,20 +267,10 @@ describe('install_app_sim tool', () => {
             text: 'App installed successfully in simulator test-uuid-123.',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'open_sim',
-            label: 'Open the Simulator app',
-            params: {},
-            priority: 1,
-          },
-          {
-            tool: 'launch_app_sim',
-            label: 'Launch the app',
-            params: { simulatorId: 'test-uuid-123', bundleId: 'io.sentry.myapp' },
-            priority: 2,
-          },
-        ],
+        nextStepParams: {
+          open_sim: {},
+          launch_app_sim: { simulatorId: 'test-uuid-123', bundleId: 'io.sentry.myapp' },
+        },
       });
       expect(bundleIdCalls).toHaveLength(2);
     });

@@ -86,10 +86,8 @@ export async function record_sim_videoLogic(
     );
   }
 
-  // using injected fs executor
-
   if (params.start) {
-    const fpsUsed = Number.isFinite(params.fps as number) ? Number(params.fps) : 30;
+    const fpsUsed = params.fps ?? 30;
     const startRes = await video.startSimulatorVideoCapture(
       { simulatorUuid: params.simulatorId, fps: fpsUsed },
       executor,
@@ -127,18 +125,13 @@ export async function record_sim_videoLogic(
             ]
           : []),
       ],
-      nextSteps: [
-        {
-          tool: 'record_sim_video',
-          label: 'Stop and save the recording',
-          params: {
-            simulatorId: params.simulatorId,
-            stop: true,
-            outputFile: '/path/to/output.mp4',
-          },
-          priority: 1,
+      nextStepParams: {
+        record_sim_video: {
+          simulatorId: params.simulatorId,
+          stop: true,
+          outputFile: '/path/to/output.mp4',
         },
-      ],
+      },
       isError: false,
     };
   }

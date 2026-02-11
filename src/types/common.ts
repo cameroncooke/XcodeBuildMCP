@@ -16,19 +16,22 @@
  * Represents a suggested next step that can be rendered for CLI or MCP.
  */
 export interface NextStep {
-  /** MCP tool name (e.g., "boot_sim") */
-  tool: string;
+  /** Optional MCP tool name (e.g., "boot_sim") */
+  tool?: string;
   /** CLI tool name (kebab-case, disambiguated) */
   cliTool?: string;
   /** Workflow name for CLI grouping (e.g., "simulator") */
   workflow?: string;
-  /** Human-readable description of the action */
-  label: string;
-  /** Parameters to pass to the tool */
-  params: Record<string, string | number | boolean>;
-  /** Lower priority values appear first (default: 0) */
+  /** Human-readable description of the action (optional when manifest template provides it) */
+  label?: string;
+  /** Optional parameters to pass to the tool */
+  params?: Record<string, string | number | boolean>;
+  /** Optional ordering hint for merged steps */
   priority?: number;
 }
+
+export type NextStepParams = Record<string, string | number | boolean>;
+export type NextStepParamsMap = Record<string, NextStepParams | NextStepParams[]>;
 
 /**
  * Output style controls verbosity of tool responses.
@@ -62,6 +65,8 @@ export interface ToolResponse {
   _meta?: Record<string, unknown>;
   /** Structured next steps that get rendered differently for CLI vs MCP */
   nextSteps?: NextStep[];
+  /** Dynamic params for manifest nextSteps keyed by toolId */
+  nextStepParams?: NextStepParamsMap;
   [key: string]: unknown; // Index signature to match CallToolResult
 }
 

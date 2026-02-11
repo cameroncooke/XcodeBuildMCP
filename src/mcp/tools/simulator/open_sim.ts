@@ -39,32 +39,14 @@ export async function open_simLogic(
           text: `Simulator app opened successfully.`,
         },
       ],
-      nextSteps: [
-        {
-          tool: 'boot_sim',
-          label: 'Boot a simulator if needed',
-          params: { simulatorId: 'UUID_FROM_LIST_SIMS' },
-          priority: 1,
-        },
-        {
-          tool: 'start_sim_log_cap',
-          label: 'Capture structured logs (app continues running)',
-          params: { simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' },
-          priority: 2,
-        },
-        {
-          tool: 'start_sim_log_cap',
-          label: 'Capture console + structured logs (app restarts)',
-          params: { simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID', captureConsole: true },
-          priority: 3,
-        },
-        {
-          tool: 'launch_app_logs_sim',
-          label: 'Launch app with logs in one step',
-          params: { simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' },
-          priority: 4,
-        },
-      ],
+      nextStepParams: {
+        boot_sim: { simulatorId: 'UUID_FROM_LIST_SIMS' },
+        start_sim_log_cap: [
+          { simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' },
+          { simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID', captureConsole: true },
+        ],
+        launch_app_logs_sim: { simulatorId: 'UUID', bundleId: 'YOUR_APP_BUNDLE_ID' },
+      },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

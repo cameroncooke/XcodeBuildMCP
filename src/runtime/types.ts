@@ -2,9 +2,19 @@ import type { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolResponse } from '../types/common.ts';
 import type { ToolSchemaShape, PluginMeta } from '../core/plugin-types.ts';
 
+export interface NextStepTemplate {
+  label: string;
+  toolId?: string;
+  params?: Record<string, string | number | boolean>;
+  priority?: number;
+}
+
 export type RuntimeKind = 'cli' | 'daemon' | 'mcp';
 
 export interface ToolDefinition {
+  /** Stable manifest tool id for static tools loaded from YAML */
+  id?: string;
+
   /** Stable CLI command name (kebab-case, disambiguated) */
   cliName: string;
 
@@ -16,6 +26,9 @@ export interface ToolDefinition {
 
   description?: string;
   annotations?: ToolAnnotations;
+
+  /** Static next-step templates declared in the manifest */
+  nextStepTemplates?: NextStepTemplate[];
 
   /**
    * Schema shape used to generate yargs flags for CLI.
@@ -59,7 +72,10 @@ export interface ToolCatalog {
   /** Exact match on MCP name */
   getByMcpName(name: string): ToolDefinition | null;
 
-  /** Resolve user input, supporting aliases + ambiguity reporting */
+  /** Exact match on stable manifest tool id */
+  getByToolId(toolId: string): ToolDefinition | null;
+
+  /** Resolve user input with ambiguity reporting */
   resolve(input: string): ToolResolution;
 }
 

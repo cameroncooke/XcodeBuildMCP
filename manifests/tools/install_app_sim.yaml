@@ -7,3 +7,10 @@ description: Install app on sim.
 annotations:
   title: Install App Simulator
   destructiveHint: true
+nextSteps:
+  - label: Open the Simulator app
+    toolId: open_sim
+    priority: 1
+  - label: Launch the app
+    toolId: launch_app_sim
+    priority: 2

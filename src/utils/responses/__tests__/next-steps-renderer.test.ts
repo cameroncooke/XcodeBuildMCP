@@ -51,16 +51,13 @@ describe('next-steps-renderer', () => {
       );
     });
 
-    it('should throw error for CLI without cliTool', () => {
+    it('should fallback to kebab-case tool name for CLI without cliTool', () => {
       const step: NextStep = {
         tool: 'open_sim',
         label: 'Open the Simulator app',
-        params: {},
       };
 
-      expect(() => renderNextStep(step, 'cli')).toThrow(
-        "Next step for tool 'open_sim' is missing cliTool - ensure enrichNextStepsForCli was called",
-      );
+      expect(renderNextStep(step, 'cli')).toBe('Open the Simulator app: xcodebuildmcp open-sim');
     });
 
     it('should format step for CLI without workflow', () => {
@@ -103,7 +100,6 @@ describe('next-steps-renderer', () => {
       const step: NextStep = {
         tool: 'open_sim',
         label: 'Open the Simulator app',
-        params: {},
       };
 
       const result = renderNextStep(step, 'mcp');
@@ -149,11 +145,19 @@ describe('next-steps-renderer', () => {
       const step: NextStep = {
         tool: 'open_sim',
         label: 'Open the Simulator app',
-        params: {},
       };
 
       const result = renderNextStep(step, 'daemon');
       expect(result).toBe('Open the Simulator app: open_sim()');
+    });
+
+    it('should render label-only step as plain text', () => {
+      const step: NextStep = {
+        label: 'Verify layout visually before continuing',
+      };
+
+      expect(renderNextStep(step, 'cli')).toBe('Verify layout visually before continuing');
+      expect(renderNextStep(step, 'mcp')).toBe('Verify layout visually before continuing');
     });
   });
 
@@ -196,28 +200,28 @@ describe('next-steps-renderer', () => {
       );
     });
 
-    it('should sort by priority', () => {
+    it('should keep declared order', () => {
       const steps: NextStep[] = [
-        { tool: 'third', label: 'Third', params: {}, priority: 3 },
-        { tool: 'first', label: 'First', params: {}, priority: 1 },
-        { tool: 'second', label: 'Second', params: {}, priority: 2 },
+        { tool: 'third', label: 'Third', params: {} },
+        { tool: 'first', label: 'First', params: {} },
+        { tool: 'second', label: 'Second', params: {} },
       ];
 
       const result = renderNextStepsSection(steps, 'mcp');
-      expect(result).toContain('1. First: first()');
-      expect(result).toContain('2. Second: second()');
-      expect(result).toContain('3. Third: third()');
+      expect(result).toContain('1. Third: third()');
+      expect(result).toContain('2. First: first()');
+      expect(result).toContain('3. Second: second()');
     });
 
-    it('should handle missing priority (defaults to 0)', () => {
+    it('should render label-only next step without command', () => {
       const steps: NextStep[] = [
-        { tool: 'later', label: 'Later', params: {}, priority: 1 },
-        { tool: 'first', label: 'First', params: {} },
+        { label: 'Take a look at the screenshot' },
+        { tool: 'open_sim', label: 'Open simulator', params: {} },
       ];
 
-      const result = renderNextStepsSection(steps, 'mcp');
-      expect(result).toContain('1. First: first()');
-      expect(result).toContain('2. Later: later()');
+      const result = renderNextStepsSection(steps, 'cli');
+      expect(result).toContain('1. Take a look at the screenshot');
+      expect(result).toContain('2. Open simulator: xcodebuildmcp open-sim');
     });
   });
 

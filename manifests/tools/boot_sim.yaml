@@ -7,3 +7,19 @@ description: Boot iOS simulator.
 annotations:
   title: Boot Simulator
   destructiveHint: true
+nextSteps:
+  - label: Open the Simulator app (makes it visible)
+    toolId: open_sim
+    priority: 1
+  - label: Install an app
+    toolId: install_app_sim
+    params:
+      simulatorId: ${simulatorId}
+      appPath: PATH_TO_YOUR_APP
+    priority: 2
+  - label: Launch an app
+    toolId: launch_app_sim
+    params:
+      simulatorId: ${simulatorId}
+      bundleId: YOUR_APP_BUNDLE_ID
+    priority: 3

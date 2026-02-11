@@ -9,3 +9,11 @@ predicates:
 annotations:
   title: Scaffold iOS Project
   destructiveHint: true
+nextSteps:
+  - label: Read the generated README in the workspace root before working on the project
+  - label: Build for simulator
+    toolId: build_sim
+    priority: 1
+  - label: Build and run on simulator
+    toolId: build_run_sim
+    priority: 2

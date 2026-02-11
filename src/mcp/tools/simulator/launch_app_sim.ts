@@ -124,26 +124,13 @@ export async function launch_app_simLogic(
           text: `App launched successfully in simulator ${simulatorDisplayName}.`,
         },
       ],
-      nextSteps: [
-        {
-          tool: 'open_sim',
-          label: 'Open Simulator app to see it',
-          params: {},
-          priority: 1,
-        },
-        {
-          tool: 'start_sim_log_cap',
-          label: 'Capture structured logs (app continues running)',
-          params: { simulatorId, bundleId: params.bundleId },
-          priority: 2,
-        },
-        {
-          tool: 'start_sim_log_cap',
-          label: 'Capture console + structured logs (app restarts)',
-          params: { simulatorId, bundleId: params.bundleId, captureConsole: true },
-          priority: 3,
-        },
-      ],
+      nextStepParams: {
+        open_sim: {},
+        start_sim_log_cap: [
+          { simulatorId, bundleId: params.bundleId },
+          { simulatorId, bundleId: params.bundleId, captureConsole: true },
+        ],
+      },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

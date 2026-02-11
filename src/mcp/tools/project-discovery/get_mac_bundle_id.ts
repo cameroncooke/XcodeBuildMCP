@@ -85,20 +85,10 @@ export async function get_mac_bundle_idLogic(
           text: `✅ Bundle ID: ${bundleId}`,
         },
       ],
-      nextSteps: [
-        {
-          tool: 'launch_mac_app',
-          label: 'Launch the app',
-          params: { appPath },
-          priority: 1,
-        },
-        {
-          tool: 'build_macos',
-          label: 'Build again',
-          params: { scheme: 'SCHEME_NAME' },
-          priority: 2,
-        },
-      ],
+      nextStepParams: {
+        launch_mac_app: { appPath },
+        build_macos: { scheme: 'SCHEME_NAME' },
+      },
       isError: false,
     };
   } catch (error) {

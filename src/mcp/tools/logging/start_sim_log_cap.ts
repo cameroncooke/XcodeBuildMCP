@@ -78,14 +78,9 @@ export async function start_sim_log_capLogic(
         `Log capture started successfully. Session ID: ${sessionId}.\n\n${captureConsole ? 'Note: Your app was relaunched to capture console output.\n' : ''}${filterDescription}\n\nInteract with your simulator and app, then stop capture to retrieve logs.`,
       ),
     ],
-    nextSteps: [
-      {
-        tool: 'stop_sim_log_cap',
-        label: 'Stop capture and retrieve logs',
-        params: { logSessionId: sessionId },
-        priority: 1,
-      },
-    ],
+    nextStepParams: {
+      stop_sim_log_cap: { logSessionId: sessionId },
+    },
   };
 }
 

@@ -377,26 +377,16 @@ FULL_PRODUCT_NAME = MyApp.app
             text: '✅ App path retrieved successfully: /Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'get_mac_bundle_id',
-            label: 'Get bundle ID',
-            params: {
-              appPath:
-                '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
-            },
-            priority: 1,
+        nextStepParams: {
+          get_mac_bundle_id: {
+            appPath:
+              '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
           },
-          {
-            tool: 'launch_mac_app',
-            label: 'Launch app',
-            params: {
-              appPath:
-                '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
-            },
-            priority: 2,
+          launch_mac_app: {
+            appPath:
+              '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
           },
-        ],
+        },
       });
     });
 
@@ -424,26 +414,16 @@ FULL_PRODUCT_NAME = MyApp.app
             text: '✅ App path retrieved successfully: /Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'get_mac_bundle_id',
-            label: 'Get bundle ID',
-            params: {
-              appPath:
-                '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
-            },
-            priority: 1,
+        nextStepParams: {
+          get_mac_bundle_id: {
+            appPath:
+              '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
           },
-          {
-            tool: 'launch_mac_app',
-            label: 'Launch app',
-            params: {
-              appPath:
-                '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
-            },
-            priority: 2,
+          launch_mac_app: {
+            appPath:
+              '/Users/test/Library/Developer/Xcode/DerivedData/MyApp-abc123/Build/Products/Debug/MyApp.app',
           },
-        ],
+        },
       });
     });
 

@@ -111,32 +111,12 @@ describe('get_app_bundle_id plugin', () => {
             text: '✅ Bundle ID: io.sentry.MyApp',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'install_app_sim',
-            label: 'Install on simulator',
-            params: { simulatorId: 'SIMULATOR_UUID', appPath: '/path/to/MyApp.app' },
-            priority: 1,
-          },
-          {
-            tool: 'launch_app_sim',
-            label: 'Launch on simulator',
-            params: { simulatorId: 'SIMULATOR_UUID', bundleId: 'io.sentry.MyApp' },
-            priority: 2,
-          },
-          {
-            tool: 'install_app_device',
-            label: 'Install on device',
-            params: { deviceId: 'DEVICE_UDID', appPath: '/path/to/MyApp.app' },
-            priority: 3,
-          },
-          {
-            tool: 'launch_app_device',
-            label: 'Launch on device',
-            params: { deviceId: 'DEVICE_UDID', bundleId: 'io.sentry.MyApp' },
-            priority: 4,
-          },
-        ],
+        nextStepParams: {
+          install_app_sim: { simulatorId: 'SIMULATOR_UUID', appPath: '/path/to/MyApp.app' },
+          launch_app_sim: { simulatorId: 'SIMULATOR_UUID', bundleId: 'io.sentry.MyApp' },
+          install_app_device: { deviceId: 'DEVICE_UDID', appPath: '/path/to/MyApp.app' },
+          launch_app_device: { deviceId: 'DEVICE_UDID', bundleId: 'io.sentry.MyApp' },
+        },
         isError: false,
       });
     });
@@ -166,32 +146,12 @@ describe('get_app_bundle_id plugin', () => {
             text: '✅ Bundle ID: io.sentry.MyApp',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'install_app_sim',
-            label: 'Install on simulator',
-            params: { simulatorId: 'SIMULATOR_UUID', appPath: '/path/to/MyApp.app' },
-            priority: 1,
-          },
-          {
-            tool: 'launch_app_sim',
-            label: 'Launch on simulator',
-            params: { simulatorId: 'SIMULATOR_UUID', bundleId: 'io.sentry.MyApp' },
-            priority: 2,
-          },
-          {
-            tool: 'install_app_device',
-            label: 'Install on device',
-            params: { deviceId: 'DEVICE_UDID', appPath: '/path/to/MyApp.app' },
-            priority: 3,
-          },
-          {
-            tool: 'launch_app_device',
-            label: 'Launch on device',
-            params: { deviceId: 'DEVICE_UDID', bundleId: 'io.sentry.MyApp' },
-            priority: 4,
-          },
-        ],
+        nextStepParams: {
+          install_app_sim: { simulatorId: 'SIMULATOR_UUID', appPath: '/path/to/MyApp.app' },
+          launch_app_sim: { simulatorId: 'SIMULATOR_UUID', bundleId: 'io.sentry.MyApp' },
+          install_app_device: { deviceId: 'DEVICE_UDID', appPath: '/path/to/MyApp.app' },
+          launch_app_device: { deviceId: 'DEVICE_UDID', bundleId: 'io.sentry.MyApp' },
+        },
         isError: false,
       });
     });

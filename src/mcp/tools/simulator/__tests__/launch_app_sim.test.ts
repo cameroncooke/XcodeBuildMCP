@@ -104,30 +104,17 @@ describe('launch_app_sim tool', () => {
             text: 'App launched successfully in simulator test-uuid-123.',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'open_sim',
-            label: 'Open Simulator app to see it',
-            params: {},
-            priority: 1,
-          },
-          {
-            tool: 'start_sim_log_cap',
-            label: 'Capture structured logs (app continues running)',
-            params: { simulatorId: 'test-uuid-123', bundleId: 'io.sentry.testapp' },
-            priority: 2,
-          },
-          {
-            tool: 'start_sim_log_cap',
-            label: 'Capture console + structured logs (app restarts)',
-            params: {
+        nextStepParams: {
+          open_sim: {},
+          start_sim_log_cap: [
+            { simulatorId: 'test-uuid-123', bundleId: 'io.sentry.testapp' },
+            {
               simulatorId: 'test-uuid-123',
               bundleId: 'io.sentry.testapp',
               captureConsole: true,
             },
-            priority: 3,
-          },
-        ],
+          ],
+        },
       });
     });
 
@@ -205,30 +192,17 @@ describe('launch_app_sim tool', () => {
             text: 'App launched successfully in simulator "iPhone 16" (resolved-uuid).',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'open_sim',
-            label: 'Open Simulator app to see it',
-            params: {},
-            priority: 1,
-          },
-          {
-            tool: 'start_sim_log_cap',
-            label: 'Capture structured logs (app continues running)',
-            params: { simulatorId: 'resolved-uuid', bundleId: 'io.sentry.testapp' },
-            priority: 2,
-          },
-          {
-            tool: 'start_sim_log_cap',
-            label: 'Capture console + structured logs (app restarts)',
-            params: {
+        nextStepParams: {
+          open_sim: {},
+          start_sim_log_cap: [
+            { simulatorId: 'resolved-uuid', bundleId: 'io.sentry.testapp' },
+            {
               simulatorId: 'resolved-uuid',
               bundleId: 'io.sentry.testapp',
               captureConsole: true,
             },
-            priority: 3,
-          },
-        ],
+          ],
+        },
       });
     });
 

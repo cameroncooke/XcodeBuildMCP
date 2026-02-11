@@ -165,7 +165,6 @@ export async function build_run_simLogic(
       return buildResult; // Return the build error
     }
 
-    const platformDestination = detectedPlatform;
     const platformName = detectedPlatform.replace(' Simulator', '');
 
     // --- Get App Path Step ---
@@ -186,12 +185,12 @@ export async function build_run_simLogic(
     // Handle destination for simulator
     let destinationString: string;
     if (params.simulatorId) {
-      destinationString = `platform=${platformDestination},id=${params.simulatorId}`;
+      destinationString = `platform=${detectedPlatform},id=${params.simulatorId}`;
     } else if (params.simulatorName) {
-      destinationString = `platform=${platformDestination},name=${params.simulatorName}${(params.useLatestOS ?? true) ? ',OS=latest' : ''}`;
+      destinationString = `platform=${detectedPlatform},name=${params.simulatorName}${(params.useLatestOS ?? true) ? ',OS=latest' : ''}`;
     } else {
       // This shouldn't happen due to validation, but handle it
-      destinationString = `platform=${platformDestination}`;
+      destinationString = `platform=${detectedPlatform}`;
     }
     command.push('-destination', destinationString);
 
@@ -483,26 +482,13 @@ export async function build_run_simLogic(
           text: `${platformName} simulator build and run succeeded for scheme ${params.scheme} from ${sourceType} ${sourcePath} targeting ${target}.\n\nThe app (${bundleId}) is now running in the ${platformName} Simulator.\nIf you don't see the simulator window, it may be hidden behind other windows. The Simulator app should be open.`,
         },
       ],
-      nextSteps: [
-        {
-          tool: 'start_sim_log_cap',
-          label: 'Capture structured logs (app continues running)',
-          params: { simulatorId, bundleId },
-          priority: 1,
-        },
-        {
-          tool: 'start_sim_log_cap',
-          label: 'Capture console + structured logs (app restarts)',
-          params: { simulatorId, bundleId, captureConsole: true },
-          priority: 2,
-        },
-        {
-          tool: 'launch_app_logs_sim',
-          label: 'Launch app with logs in one step',
-          params: { simulatorId, bundleId },
-          priority: 3,
-        },
-      ],
+      nextStepParams: {
+        start_sim_log_cap: [
+          { simulatorId, bundleId },
+          { simulatorId, bundleId, captureConsole: true },
+        ],
+        launch_app_logs_sim: { simulatorId, bundleId },
+      },
       isError: false,
     };
   } catch (error) {

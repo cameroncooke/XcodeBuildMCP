@@ -40,6 +40,7 @@ describe('schema', () => {
       if (result.success) {
         expect(result.data.availability).toEqual({ mcp: true, cli: true });
         expect(result.data.predicates).toEqual([]);
+        expect(result.data.nextSteps).toEqual([]);
       }
     });
 
@@ -201,6 +202,7 @@ describe('schema', () => {
         names: { mcp: 'build_sim', cli: 'build-simulator' },
         availability: { mcp: true, cli: true },
         predicates: [],
+        nextSteps: [],
       };
 
       expect(getEffectiveCliName(tool)).toBe('build-simulator');
@@ -213,6 +215,7 @@ describe('schema', () => {
         names: { mcp: 'build_sim' },
         availability: { mcp: true, cli: true },
         predicates: [],
+        nextSteps: [],
       };
 
       expect(getEffectiveCliName(tool)).toBe('build-sim');

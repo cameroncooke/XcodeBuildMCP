@@ -257,7 +257,7 @@ describe('debug_attach_sim', () => {
       expect(text).toContain('Failed to resolve simulator PID');
     });
 
-    it('should include nextSteps on success', async () => {
+    it('should include nextStepParams on success', async () => {
       const ctx = createTestContext();
 
       const result = await debug_attach_simLogic(
@@ -270,12 +270,24 @@ describe('debug_attach_sim', () => {
         ctx,
       );
 
-      expect(result.nextSteps).toBeDefined();
-      expect(result.nextSteps!.length).toBeGreaterThan(0);
-      const tools = result.nextSteps!.map((s) => s.tool);
-      expect(tools).toContain('debug_breakpoint_add');
-      expect(tools).toContain('debug_continue');
-      expect(tools).toContain('debug_stack');
+      expect(result.nextStepParams).toBeDefined();
+      const breakpointStep = result.nextStepParams?.debug_breakpoint_add;
+      const continueStep = result.nextStepParams?.debug_continue;
+      const stackStep = result.nextStepParams?.debug_stack;
+
+      expect(Array.isArray(breakpointStep)).toBe(false);
+      expect(Array.isArray(continueStep)).toBe(false);
+      expect(Array.isArray(stackStep)).toBe(false);
+
+      const breakpointParams = Array.isArray(breakpointStep) ? undefined : breakpointStep;
+      const continueParams = Array.isArray(continueStep) ? undefined : continueStep;
+      const stackParams = Array.isArray(stackStep) ? undefined : stackStep;
+
+      const debugSessionId = breakpointParams?.debugSessionId;
+      expect(typeof debugSessionId).toBe('string');
+      expect(breakpointParams).toMatchObject({ file: '...', line: 123 });
+      expect(continueParams?.debugSessionId).toBe(debugSessionId);
+      expect(stackParams?.debugSessionId).toBe(debugSessionId);
     });
   });
 });
