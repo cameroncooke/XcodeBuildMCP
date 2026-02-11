@@ -67,7 +67,8 @@ export class TemplateManager {
     fileSystemExecutor: FileSystemExecutor,
   ): Promise<string> {
     const repo = platform === 'iOS' ? this.IOS_TEMPLATE_REPO : this.MACOS_TEMPLATE_REPO;
-    const defaultVersion = platform === 'iOS' ? iOSTemplateVersion : macOSTemplateVersion;
+    const defaultVersion =
+      platform === 'iOS' ? String(iOSTemplateVersion) : String(macOSTemplateVersion);
     const config = getConfig();
     const version = String(
       platform === 'iOS'

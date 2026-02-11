@@ -57,7 +57,7 @@ export function buildYargsApp(opts: YargsAppOptions): ReturnType<typeof yargs> {
         setLogLevel(level);
       }
     })
-    .version(version)
+    .version(String(version))
     .help()
     .alias('h', 'help')
     .alias('v', 'version')

@@ -392,7 +392,7 @@ async function main(): Promise<void> {
       pid: process.pid,
       startedAt,
       enabledWorkflows: daemonWorkflows,
-      version,
+      version: String(version),
     });
 
     writeLine(`Daemon started (PID: ${process.pid})`);

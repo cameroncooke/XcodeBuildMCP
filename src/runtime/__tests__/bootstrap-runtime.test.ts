@@ -43,6 +43,30 @@ function createFsWithSchemeOnlySessionDefaults() {
   });
 }
 
+function createFsWithProfiles() {
+  const yaml = [
+    'schemaVersion: 1',
+    'sessionDefaults:',
+    '  scheme: "GlobalScheme"',
+    'sessionDefaultsProfiles:',
+    '  ios:',
+    '    scheme: "IOSScheme"',
+    '    simulatorName: "iPhone 16"',
+    'activeSessionDefaultsProfile: "ios"',
+    '',
+  ].join('\n');
+
+  return createMockFileSystemExecutor({
+    existsSync: (targetPath: string) => targetPath === configPath,
+    readFile: async (targetPath: string) => {
+      if (targetPath !== configPath) {
+        throw new Error(`Unexpected readFile path: ${targetPath}`);
+      }
+      return yaml;
+    },
+  });
+}
+
 describe('bootstrapRuntime', () => {
   beforeEach(() => {
     __resetConfigStoreForTests();
@@ -88,4 +112,16 @@ describe('bootstrapRuntime', () => {
       expect(sessionStore.getAll()).toEqual({});
     },
   );
+
+  it('hydrates the active session defaults profile for mcp runtime', async () => {
+    await bootstrapRuntime({
+      runtime: 'mcp',
+      cwd,
+      fs: createFsWithProfiles(),
+    });
+
+    expect(sessionStore.getActiveProfile()).toBe('ios');
+    expect(sessionStore.getAll().scheme).toBe('IOSScheme');
+    expect(sessionStore.getAll().simulatorName).toBe('iPhone 16');
+  });
 });

@@ -258,6 +258,49 @@ describe('session-set-defaults tool', () => {
       expect(parsed.sessionDefaults?.simulatorName).toBeUndefined();
     });
 
+    it('should persist into the active named profile when selected', async () => {
+      const yaml = [
+        'schemaVersion: 1',
+        'sessionDefaultsProfiles:',
+        '  ios:',
+        '    scheme: "Old"',
+        '',
+      ].join('\n');
+
+      const writes: { path: string; content: string }[] = [];
+      const fs = createMockFileSystemExecutor({
+        existsSync: (targetPath: string) => targetPath === configPath,
+        readFile: async (targetPath: string) => {
+          if (targetPath !== configPath) {
+            throw new Error(`Unexpected readFile path: ${targetPath}`);
+          }
+          return yaml;
+        },
+        writeFile: async (targetPath: string, content: string) => {
+          writes.push({ path: targetPath, content });
+        },
+      });
+
+      await initConfigStore({ cwd, fs });
+      sessionStore.setActiveProfile('ios');
+
+      await sessionSetDefaultsLogic(
+        {
+          scheme: 'NewIOS',
+          simulatorName: 'iPhone 16',
+          persist: true,
+        },
+        createContext(),
+      );
+
+      expect(writes.length).toBe(1);
+      const parsed = parseYaml(writes[0].content) as {
+        sessionDefaultsProfiles?: Record<string, Record<string, unknown>>;
+      };
+      expect(parsed.sessionDefaultsProfiles?.ios?.scheme).toBe('NewIOS');
+      expect(parsed.sessionDefaultsProfiles?.ios?.simulatorName).toBe('iPhone 16');
+    });
+
     it('should not persist when persist is true but no defaults were provided', async () => {
       const result = await sessionSetDefaultsLogic({ persist: true }, createContext());
 
