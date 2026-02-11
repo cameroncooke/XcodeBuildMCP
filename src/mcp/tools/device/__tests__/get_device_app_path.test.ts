@@ -266,26 +266,14 @@ describe('get_device_app_path plugin', () => {
             text: '✅ App path retrieved successfully: /path/to/build/Debug-iphoneos/MyApp.app',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'get_app_bundle_id',
-            label: 'Get bundle ID',
-            params: { appPath: '/path/to/build/Debug-iphoneos/MyApp.app' },
-            priority: 1,
+        nextStepParams: {
+          get_app_bundle_id: { appPath: '/path/to/build/Debug-iphoneos/MyApp.app' },
+          install_app_device: {
+            deviceId: 'DEVICE_UDID',
+            appPath: '/path/to/build/Debug-iphoneos/MyApp.app',
           },
-          {
-            tool: 'install_app_device',
-            label: 'Install app on device',
-            params: { deviceId: 'DEVICE_UDID', appPath: '/path/to/build/Debug-iphoneos/MyApp.app' },
-            priority: 2,
-          },
-          {
-            tool: 'launch_app_device',
-            label: 'Launch app on device',
-            params: { deviceId: 'DEVICE_UDID', bundleId: 'BUNDLE_ID' },
-            priority: 3,
-          },
-        ],
+          launch_app_device: { deviceId: 'DEVICE_UDID', bundleId: 'BUNDLE_ID' },
+        },
       });
     });
 

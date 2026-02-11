@@ -9,3 +9,13 @@ predicates:
 annotations:
   title: Show Build Settings
   readOnlyHint: true
+nextSteps:
+  - label: Build for macOS
+    toolId: build_macos
+    priority: 1
+  - label: Build for iOS Simulator
+    toolId: build_sim
+    priority: 2
+  - label: List schemes
+    toolId: list_schemes
+    priority: 3

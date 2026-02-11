@@ -113,30 +113,15 @@ describe('show_build_settings plugin', () => {
     SUPPORTED_PLATFORMS = iphoneos iphonesimulator`,
           },
         ],
-        nextSteps: [
-          {
-            tool: 'build_macos',
-            label: 'Build for macOS',
-            params: { projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' },
-            priority: 1,
+        nextStepParams: {
+          build_macos: { projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' },
+          build_sim: {
+            projectPath: '/path/to/MyProject.xcodeproj',
+            scheme: 'MyScheme',
+            simulatorName: 'iPhone 16',
           },
-          {
-            tool: 'build_sim',
-            label: 'Build for iOS Simulator',
-            params: {
-              projectPath: '/path/to/MyProject.xcodeproj',
-              scheme: 'MyScheme',
-              simulatorName: 'iPhone 16',
-            },
-            priority: 2,
-          },
-          {
-            tool: 'list_schemes',
-            label: 'List schemes',
-            params: { projectPath: '/path/to/MyProject.xcodeproj' },
-            priority: 3,
-          },
-        ],
+          list_schemes: { projectPath: '/path/to/MyProject.xcodeproj' },
+        },
         isError: false,
       });
     });
@@ -321,30 +306,15 @@ describe('show_build_settings plugin', () => {
     SUPPORTED_PLATFORMS = iphoneos iphonesimulator`,
           },
         ],
-        nextSteps: [
-          {
-            tool: 'build_macos',
-            label: 'Build for macOS',
-            params: { projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' },
-            priority: 1,
+        nextStepParams: {
+          build_macos: { projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyScheme' },
+          build_sim: {
+            projectPath: '/path/to/MyProject.xcodeproj',
+            scheme: 'MyScheme',
+            simulatorName: 'iPhone 16',
           },
-          {
-            tool: 'build_sim',
-            label: 'Build for iOS Simulator',
-            params: {
-              projectPath: '/path/to/MyProject.xcodeproj',
-              scheme: 'MyScheme',
-              simulatorName: 'iPhone 16',
-            },
-            priority: 2,
-          },
-          {
-            tool: 'list_schemes',
-            label: 'List schemes',
-            params: { projectPath: '/path/to/MyProject.xcodeproj' },
-            priority: 3,
-          },
-        ],
+          list_schemes: { projectPath: '/path/to/MyProject.xcodeproj' },
+        },
         isError: false,
       });
     });

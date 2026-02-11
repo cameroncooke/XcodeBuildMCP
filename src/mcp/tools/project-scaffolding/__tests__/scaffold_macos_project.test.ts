@@ -243,11 +243,6 @@ describe('scaffold_macos_project plugin', () => {
                 projectPath: '/tmp/test-projects',
                 platform: 'macOS',
                 message: 'Successfully scaffolded macOS project "TestMacApp" in /tmp/test-projects',
-                nextSteps: [
-                  'Important: Before working on the project make sure to read the README.md file in the workspace root directory.',
-                  'Build for macOS: build_macos({ workspacePath: "/tmp/test-projects/TestMacApp.xcworkspace", scheme: "TestMacApp" })',
-                  'Build & Run on macOS: build_run_macos({ workspacePath: "/tmp/test-projects/TestMacApp.xcworkspace", scheme: "TestMacApp" })',
-                ],
               },
               null,
               2,
@@ -283,11 +278,6 @@ describe('scaffold_macos_project plugin', () => {
                 projectPath: '/tmp/test-projects',
                 platform: 'macOS',
                 message: 'Successfully scaffolded macOS project "TestMacApp" in /tmp/test-projects',
-                nextSteps: [
-                  'Important: Before working on the project make sure to read the README.md file in the workspace root directory.',
-                  'Build for macOS: build_macos({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject" })',
-                  'Build & Run on macOS: build_run_macos({ workspacePath: "/tmp/test-projects/MyProject.xcworkspace", scheme: "MyProject" })',
-                ],
               },
               null,
               2,

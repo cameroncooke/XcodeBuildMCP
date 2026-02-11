@@ -337,11 +337,6 @@ export async function scaffold_macos_projectLogic(
       projectPath,
       platform: 'macOS',
       message: `Successfully scaffolded macOS project "${params.projectName}" in ${projectPath}`,
-      nextSteps: [
-        `Important: Before working on the project make sure to read the README.md file in the workspace root directory.`,
-        `Build for macOS: build_macos({ workspacePath: "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace", scheme: "${params.customizeNames ? params.projectName : 'MyProject'}" })`,
-        `Build & Run on macOS: build_run_macos({ workspacePath: "${projectPath}/${params.customizeNames ? params.projectName : 'MyProject'}.xcworkspace", scheme: "${params.customizeNames ? params.projectName : 'MyProject'}" })`,
-      ],
     };
 
     return {

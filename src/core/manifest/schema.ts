@@ -55,6 +55,20 @@ export const toolNamesSchema = z.object({
 export type ToolNames = z.infer<typeof toolNamesSchema>;
 
 /**
+ * Static next-step template declared on a tool manifest.
+ */
+export const manifestNextStepTemplateSchema = z
+  .object({
+    label: z.string(),
+    toolId: z.string().optional(),
+    params: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).default({}),
+    priority: z.number().optional(),
+  })
+  .strict();
+
+export type ManifestNextStepTemplate = z.infer<typeof manifestNextStepTemplateSchema>;
+
+/**
  * Tool manifest entry schema.
  * Describes a single tool's metadata and configuration.
  */
@@ -85,6 +99,9 @@ export const toolManifestEntrySchema = z.object({
 
   /** MCP annotations (hints for clients) */
   annotations: annotationsSchema.optional(),
+
+  /** Static next-step templates for this tool */
+  nextSteps: z.array(manifestNextStepTemplateSchema).default([]),
 });
 
 export type ToolManifestEntry = z.infer<typeof toolManifestEntrySchema>;

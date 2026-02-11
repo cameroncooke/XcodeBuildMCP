@@ -125,28 +125,9 @@ export async function launch_app_deviceLogic(
       await fileSystem.rm(tempJsonPath, { force: true }).catch(() => {});
     }
 
-    let responseText = `✅ App launched successfully\n\n${result.output}`;
-
-    if (processId) {
-      responseText += `\n\nProcess ID: ${processId}`;
-      responseText += `\n\nInteract with your app on the device.`;
-    }
-
-    const nextSteps: Array<{
-      tool: string;
-      label: string;
-      params: Record<string, string | number | boolean>;
-      priority?: number;
-    }> = [];
-
-    if (processId) {
-      nextSteps.push({
-        tool: 'stop_app_device',
-        label: 'Stop the app',
-        params: { deviceId, processId },
-        priority: 1,
-      });
-    }
+    const responseText = processId
+      ? `✅ App launched successfully\n\n${result.output}\n\nProcess ID: ${processId}\n\nInteract with your app on the device.`
+      : `✅ App launched successfully\n\n${result.output}`;
 
     return {
       content: [
@@ -155,7 +136,7 @@ export async function launch_app_deviceLogic(
           text: responseText,
         },
       ],
-      nextSteps,
+      ...(processId ? { nextStepParams: { stop_app_device: { deviceId, processId } } } : {}),
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

@@ -145,26 +145,11 @@ export async function debug_attach_simLogic(
             `${resumeText}`,
         },
       ],
-      nextSteps: [
-        {
-          tool: 'debug_breakpoint_add',
-          label: 'Add a breakpoint',
-          params: { debugSessionId: session.id, file: '...', line: 123 },
-          priority: 1,
-        },
-        {
-          tool: 'debug_continue',
-          label: 'Continue execution',
-          params: { debugSessionId: session.id },
-          priority: 2,
-        },
-        {
-          tool: 'debug_stack',
-          label: 'Show call stack',
-          params: { debugSessionId: session.id },
-          priority: 3,
-        },
-      ],
+      nextStepParams: {
+        debug_breakpoint_add: { debugSessionId: session.id, file: '...', line: 123 },
+        debug_continue: { debugSessionId: session.id },
+        debug_stack: { debugSessionId: session.id },
+      },
       isError: false,
     };
   } catch (error) {

@@ -158,6 +158,23 @@ export function loadManifest(): ResolvedManifest {
     mcpNames.set(tool.names.mcp, toolId);
   }
 
+  // Validate next step template references
+  for (const [toolId, tool] of tools.entries()) {
+    const sourceFile = toolFiles.find((raw) => {
+      const candidate = raw as { id?: string; _sourceFile?: string };
+      return candidate.id === toolId;
+    }) as { _sourceFile?: string } | undefined;
+
+    for (const nextStep of tool.nextSteps) {
+      if (nextStep.toolId && !tools.has(nextStep.toolId)) {
+        throw new ManifestValidationError(
+          `Tool '${toolId}' next step references unknown tool '${nextStep.toolId}'`,
+          sourceFile?._sourceFile,
+        );
+      }
+    }
+  }
+
   return { tools, workflows };
 }
 

@@ -7,3 +7,20 @@ description: Launch app on simulator.
 annotations:
   title: Launch App Simulator
   destructiveHint: true
+nextSteps:
+  - label: Open Simulator app to see it
+    toolId: open_sim
+    priority: 1
+  - label: Capture structured logs (app continues running)
+    toolId: start_sim_log_cap
+    params:
+      simulatorId: ${simulatorId}
+      bundleId: ${bundleId}
+    priority: 2
+  - label: Capture console + structured logs (app restarts)
+    toolId: start_sim_log_cap
+    params:
+      simulatorId: ${simulatorId}
+      bundleId: ${bundleId}
+      captureConsole: true
+    priority: 3

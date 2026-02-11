@@ -7,3 +7,13 @@ description: List connected devices.
 annotations:
   title: List Devices
   readOnlyHint: true
+nextSteps:
+  - label: Build for device
+    toolId: build_device
+    priority: 1
+  - label: Run tests on device
+    toolId: test_device
+    priority: 2
+  - label: Get app path
+    toolId: get_device_app_path
+    priority: 3

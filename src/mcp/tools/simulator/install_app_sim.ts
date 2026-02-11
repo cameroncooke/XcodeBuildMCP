@@ -90,23 +90,13 @@ export async function install_app_simLogic(
           text: `App installed successfully in simulator ${params.simulatorId}.`,
         },
       ],
-      nextSteps: [
-        {
-          tool: 'open_sim',
-          label: 'Open the Simulator app',
-          params: {},
-          priority: 1,
+      nextStepParams: {
+        open_sim: {},
+        launch_app_sim: {
+          simulatorId: params.simulatorId,
+          bundleId: bundleId || 'YOUR_APP_BUNDLE_ID',
         },
-        {
-          tool: 'launch_app_sim',
-          label: 'Launch the app',
-          params: {
-            simulatorId: params.simulatorId,
-            bundleId: bundleId || 'YOUR_APP_BUNDLE_ID',
-          },
-          priority: 2,
-        },
-      ],
+      },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

@@ -219,18 +219,16 @@ export async function list_devicesLogic(
             // Determine platform from platformIdentifier
             let platform = 'Unknown';
             const platformId = device.deviceProperties?.platformIdentifier?.toLowerCase() ?? '';
-            if (typeof platformId === 'string') {
-              if (platformId.includes('ios') || platformId.includes('iphone')) {
-                platform = 'iOS';
-              } else if (platformId.includes('ipad')) {
-                platform = 'iPadOS';
-              } else if (platformId.includes('watch')) {
-                platform = 'watchOS';
-              } else if (platformId.includes('tv') || platformId.includes('apple tv')) {
-                platform = 'tvOS';
-              } else if (platformId.includes('vision')) {
-                platform = 'visionOS';
-              }
+            if (platformId.includes('ios') || platformId.includes('iphone')) {
+              platform = 'iOS';
+            } else if (platformId.includes('ipad')) {
+              platform = 'iPadOS';
+            } else if (platformId.includes('watch')) {
+              platform = 'watchOS';
+            } else if (platformId.includes('tv') || platformId.includes('apple tv')) {
+              platform = 'tvOS';
+            } else if (platformId.includes('vision')) {
+              platform = 'visionOS';
             }
 
             // Determine connection state
@@ -238,29 +236,23 @@ export async function list_devicesLogic(
             const tunnelState = device.connectionProperties?.tunnelState ?? '';
             const transportType = device.connectionProperties?.transportType ?? '';
 
-            let state = 'Unknown';
-            // Consider a device available if it's paired, regardless of tunnel state
-            // This allows WiFi-connected devices to be used even if tunnelState isn't "connected"
-            if (pairingState === 'paired') {
-              if (tunnelState === 'connected') {
-                state = 'Available';
-              } else {
-                // Device is paired but tunnel state may be different for WiFi connections
-                // Still mark as available since devicectl commands can work with paired devices
-                state = 'Available (WiFi)';
-              }
-            } else {
+            let state: string;
+            if (pairingState !== 'paired') {
               state = 'Unpaired';
+            } else if (tunnelState === 'connected') {
+              state = 'Available';
+            } else {
+              state = 'Available (WiFi)';
             }
 
             devices.push({
               name: device.deviceProperties?.name ?? 'Unknown Device',
               identifier: device.identifier ?? 'Unknown',
-              platform: platform,
+              platform,
               model:
                 device.deviceProperties?.marketingName ?? device.hardwareProperties?.productType,
               osVersion: device.deviceProperties?.osVersionNumber,
-              state: state,
+              state,
               connectionType: transportType,
               trustState: pairingState,
               developerModeStatus: device.deviceProperties?.developerModeStatus,
@@ -388,38 +380,18 @@ export async function list_devicesLogic(
       (d) => d.state === 'Available' || d.state === 'Available (WiFi)' || d.state === 'Connected',
     );
 
-    const nextSteps: Array<{
-      tool: string;
-      label: string;
-      params: Record<string, string | number | boolean>;
-      priority?: number;
-    }> = [];
+    let nextStepParams: Record<string, Record<string, string | number | boolean>> | undefined;
 
     if (availableDevicesExist) {
       responseText += 'Note: Use the device ID/UDID from above when required by other tools.\n';
       responseText +=
         "Hint: Save a default device with session-set-defaults { deviceId: 'DEVICE_UDID' }.\n";
 
-      nextSteps.push(
-        {
-          tool: 'build_device',
-          label: 'Build for device',
-          params: { scheme: 'SCHEME', deviceId: 'DEVICE_UDID' },
-          priority: 1,
-        },
-        {
-          tool: 'test_device',
-          label: 'Run tests on device',
-          params: { scheme: 'SCHEME', deviceId: 'DEVICE_UDID' },
-          priority: 2,
-        },
-        {
-          tool: 'get_device_app_path',
-          label: 'Get app path',
-          params: { scheme: 'SCHEME' },
-          priority: 3,
-        },
-      );
+      nextStepParams = {
+        build_device: { scheme: 'SCHEME', deviceId: 'DEVICE_UDID' },
+        test_device: { scheme: 'SCHEME', deviceId: 'DEVICE_UDID' },
+        get_device_app_path: { scheme: 'SCHEME' },
+      };
     } else if (uniqueDevices.length > 0) {
       responseText +=
         'Note: No devices are currently available for testing. Make sure devices are:\n';
@@ -435,7 +407,7 @@ export async function list_devicesLogic(
           text: responseText,
         },
       ],
-      nextSteps,
+      ...(nextStepParams ? { nextStepParams } : {}),
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

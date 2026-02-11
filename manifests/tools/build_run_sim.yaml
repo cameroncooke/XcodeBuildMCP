@@ -9,3 +9,13 @@ predicates:
 annotations:
   title: Build Run Simulator
   destructiveHint: true
+nextSteps:
+  - label: Capture structured logs (app continues running)
+    toolId: start_sim_log_cap
+    priority: 1
+  - label: Capture console + structured logs (app restarts)
+    toolId: start_sim_log_cap
+    priority: 2
+  - label: Launch app with logs in one step
+    toolId: launch_app_logs_sim
+    priority: 3

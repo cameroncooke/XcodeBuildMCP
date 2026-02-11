@@ -6,3 +6,13 @@ names:
 description: Attach LLDB to sim app.
 routing:
   stateful: true
+nextSteps:
+  - label: Add a breakpoint
+    toolId: debug_breakpoint_add
+    priority: 1
+  - label: Continue execution
+    toolId: debug_continue
+    priority: 2
+  - label: Show call stack
+    toolId: debug_stack
+    priority: 3
