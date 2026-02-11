@@ -112,6 +112,9 @@ Snapshot UI accessibility tree, tap/swipe/type, and capture screenshots:
 
 ```bash
 xcodebuildmcp ui-automation snapshot-ui --simulator-id SIMULATOR_UDID
+xcodebuildmcp ui-automation tap --simulator-id SIMULATOR_UDID --label "Submit"
+xcodebuildmcp ui-automation tap --simulator-id SIMULATOR_UDID --id "SubmitButton"
+# Coordinate fallback when label/id is unavailable
 xcodebuildmcp ui-automation tap --simulator-id SIMULATOR_UDID --x 200 --y 400
 xcodebuildmcp ui-automation type-text --simulator-id SIMULATOR_UDID --text "hello"
 xcodebuildmcp ui-automation screenshot --simulator-id SIMULATOR_UDID --return-format path

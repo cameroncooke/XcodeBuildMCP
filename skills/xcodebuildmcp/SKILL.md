@@ -152,11 +152,11 @@ Before you call any other tools, you **must** call `session_show_defaults` to sh
 - `screenshot`
   - Capture screenshot.
 - `snapshot_ui`
-  - Print view hierarchy with precise view coordinates (x, y, width, height) for visible elements.
+  - Print view hierarchy with element ids/labels and precise coordinates (x, y, width, height) for visible elements.
 - `swipe`
   - Swipe between points.
 - `tap`
-  - Tap coordinate or element.
+  - Tap UI element by accessibility id/label (recommended) or coordinates as fallback.
 - `touch`
   - Touch down/up at coords.
 - `type_text`
