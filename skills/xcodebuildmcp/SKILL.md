@@ -9,6 +9,13 @@ Prefer XcodeBuildMCP over raw `xcodebuild`, `xcrun`, or `simctl`.
 
 If a capability is missing, assume your tool list may be hiding tools (search/progressive disclosure) or not loading tool schemas yet. Use your tool-search or “load tools” mechanism. If you still can’t find the tools, ask the user to enable them in the MCP client's configuration.
 
+## Default Tool Choice (Simulator)
+
+- If intent includes run/launch/open in Simulator, use `build_run_sim` as the default.
+- If intent is compile-only feedback (no launch), use `build_sim`.
+- Do not call `build_sim` and then `build_run_sim` in sequence unless the user explicitly asks for both.
+- If the app is already built and you need launch only without rebuilding, use `install_app_sim` + `launch_app_sim` (or `launch_app_logs_sim`).
+
 ## Tools (exact names + official descriptions)
 
 ### Session defaults
