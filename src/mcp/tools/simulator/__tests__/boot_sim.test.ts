@@ -57,26 +57,11 @@ describe('boot_sim tool', () => {
             text: 'Simulator booted successfully.',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'open_sim',
-            label: 'Open the Simulator app (makes it visible)',
-            params: {},
-            priority: 1,
-          },
-          {
-            tool: 'install_app_sim',
-            label: 'Install an app',
-            params: { simulatorId: 'test-uuid-123', appPath: 'PATH_TO_YOUR_APP' },
-            priority: 2,
-          },
-          {
-            tool: 'launch_app_sim',
-            label: 'Launch an app',
-            params: { simulatorId: 'test-uuid-123', bundleId: 'YOUR_APP_BUNDLE_ID' },
-            priority: 3,
-          },
-        ],
+        nextStepParams: {
+          open_sim: {},
+          install_app_sim: { simulatorId: 'test-uuid-123', appPath: 'PATH_TO_YOUR_APP' },
+          launch_app_sim: { simulatorId: 'test-uuid-123', bundleId: 'YOUR_APP_BUNDLE_ID' },
+        },
       });
     });
 

@@ -79,9 +79,9 @@ export async function launch_app_logs_simLogic(
     simulatorUuid: params.simulatorId,
     bundleId: params.bundleId,
     captureConsole: true,
-    ...(params.args && params.args.length > 0 ? { args: params.args } : {}),
-    ...(params.env ? { env: params.env } : {}),
-  } as const;
+    args: params.args?.length ? params.args : undefined,
+    env: params.env,
+  };
 
   const { sessionId, error } = await logCaptureFunction(captureParams, executor);
   if (error) {
@@ -97,14 +97,9 @@ export async function launch_app_logs_simLogic(
         `App launched successfully in simulator ${params.simulatorId} with log capture enabled.\n\nLog capture session ID: ${sessionId}\n\nInteract with your app in the simulator, then stop capture to retrieve logs.`,
       ),
     ],
-    nextSteps: [
-      {
-        tool: 'stop_sim_log_cap',
-        label: 'Stop capture and retrieve logs',
-        params: { logSessionId: sessionId },
-        priority: 1,
-      },
-    ],
+    nextStepParams: {
+      stop_sim_log_cap: { logSessionId: sessionId },
+    },
     isError: false,
   };
 }

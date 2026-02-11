@@ -7,3 +7,25 @@ description: List iOS simulators.
 annotations:
   title: List Simulators
   readOnlyHint: true
+nextSteps:
+  - label: Boot a simulator
+    toolId: boot_sim
+    params:
+      simulatorId: UUID_FROM_ABOVE
+    priority: 1
+  - label: Open the simulator UI
+    toolId: open_sim
+    priority: 2
+  - label: Build for simulator
+    toolId: build_sim
+    params:
+      scheme: YOUR_SCHEME
+      simulatorId: UUID_FROM_ABOVE
+    priority: 3
+  - label: Get app path
+    toolId: get_sim_app_path
+    params:
+      scheme: YOUR_SCHEME
+      platform: iOS Simulator
+      simulatorId: UUID_FROM_ABOVE
+    priority: 4

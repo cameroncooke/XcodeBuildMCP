@@ -108,14 +108,10 @@ describe('start_sim_log_cap plugin', () => {
       expect(result.content[0].text).toBe(
         'Log capture started successfully. Session ID: test-uuid-123.\n\nOnly structured logs from the app subsystem are being captured.\n\nInteract with your simulator and app, then stop capture to retrieve logs.',
       );
-      expect(result.nextSteps).toEqual([
-        {
-          tool: 'stop_sim_log_cap',
-          label: 'Stop capture and retrieve logs',
-          params: { logSessionId: 'test-uuid-123' },
-          priority: 1,
-        },
-      ]);
+      expect(result.nextStepParams?.stop_sim_log_cap).toBeDefined();
+      expect(result.nextStepParams?.stop_sim_log_cap).toMatchObject({
+        logSessionId: 'test-uuid-123',
+      });
     });
 
     it('should indicate swiftui capture when subsystemFilter is swiftui', async () => {

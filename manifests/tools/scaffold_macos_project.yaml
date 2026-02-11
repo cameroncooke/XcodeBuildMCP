@@ -9,3 +9,11 @@ predicates:
 annotations:
   title: Scaffold macOS Project
   destructiveHint: true
+nextSteps:
+  - label: Read the generated README in the workspace root before working on the project
+  - label: Build for macOS
+    toolId: build_macos
+    priority: 1
+  - label: Build and run on macOS
+    toolId: build_run_macos
+    priority: 2

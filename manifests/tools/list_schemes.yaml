@@ -7,3 +7,13 @@ description: List Xcode schemes.
 annotations:
   title: List Schemes
   readOnlyHint: true
+nextSteps:
+  - label: Build for macOS
+    toolId: build_macos
+    priority: 1
+  - label: Build for iOS Simulator
+    toolId: build_sim
+    priority: 2
+  - label: Show build settings
+    toolId: show_build_settings
+    priority: 3

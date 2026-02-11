@@ -90,20 +90,10 @@ describe('get_mac_bundle_id plugin', () => {
             text: '✅ Bundle ID: io.sentry.MyMacApp',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'launch_mac_app',
-            label: 'Launch the app',
-            params: { appPath: '/Applications/MyApp.app' },
-            priority: 1,
-          },
-          {
-            tool: 'build_macos',
-            label: 'Build again',
-            params: { scheme: 'SCHEME_NAME' },
-            priority: 2,
-          },
-        ],
+        nextStepParams: {
+          launch_mac_app: { appPath: '/Applications/MyApp.app' },
+          build_macos: { scheme: 'SCHEME_NAME' },
+        },
         isError: false,
       });
     });
@@ -133,20 +123,10 @@ describe('get_mac_bundle_id plugin', () => {
             text: '✅ Bundle ID: io.sentry.MyMacApp',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'launch_mac_app',
-            label: 'Launch the app',
-            params: { appPath: '/Applications/MyApp.app' },
-            priority: 1,
-          },
-          {
-            tool: 'build_macos',
-            label: 'Build again',
-            params: { scheme: 'SCHEME_NAME' },
-            priority: 2,
-          },
-        ],
+        nextStepParams: {
+          launch_mac_app: { appPath: '/Applications/MyApp.app' },
+          build_macos: { scheme: 'SCHEME_NAME' },
+        },
         isError: false,
       });
     });

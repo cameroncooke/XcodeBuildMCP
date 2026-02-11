@@ -86,26 +86,6 @@ export async function snapshot_uiLogic(
           text: `Tips:\n- Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)\n- If a debugger is attached, ensure the app is running (not stopped on breakpoints)\n- Screenshots are for visual verification only`,
         },
       ],
-      nextSteps: [
-        {
-          tool: 'snapshot_ui',
-          label: 'Refresh after layout changes',
-          params: { simulatorId },
-          priority: 1,
-        },
-        {
-          tool: 'tap_coordinate',
-          label: 'Tap on element',
-          params: { simulatorId, x: 0, y: 0 },
-          priority: 2,
-        },
-        {
-          tool: 'take_screenshot',
-          label: 'Take screenshot for verification',
-          params: { simulatorId },
-          priority: 3,
-        },
-      ],
     };
     if (guard.warningText) {
       response.content.push({ type: 'text', text: guard.warningText });
@@ -203,16 +183,11 @@ async function executeAxeCommand(
 
     return result.output.trim();
   } catch (error) {
-    if (error instanceof Error) {
-      if (error instanceof AxeError) {
-        throw error;
-      }
-
-      // Otherwise wrap it in a SystemError
-      throw new SystemError(`Failed to execute axe command: ${error.message}`, error);
+    if (error instanceof AxeError) {
+      throw error;
     }
-
-    // For any other type of error
-    throw new SystemError(`Failed to execute axe command: ${String(error)}`);
+    const message = error instanceof Error ? error.message : String(error);
+    const cause = error instanceof Error ? error : undefined;
+    throw new SystemError(`Failed to execute axe command: ${message}`, cause);
   }
 }

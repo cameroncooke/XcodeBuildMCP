@@ -50,6 +50,7 @@ function createTool(overrides: Partial<ToolManifestEntry> = {}): ToolManifestEnt
     names: { mcp: 'test_tool' },
     availability: { mcp: true, cli: true },
     predicates: [],
+    nextSteps: [],
     ...overrides,
   };
 }

@@ -465,13 +465,10 @@ function detectEarlyLaunchFailure(
   registerImmediateFailure?: (handler: (message: string) => void) => void,
 ): Promise<EarlyFailureResult | null> {
   if (process.exitCode != null) {
-    if (process.exitCode === 0) {
-      const failureFromOutput = extractFailureMessage(getBufferedOutput?.());
-      return Promise.resolve(
-        failureFromOutput ? { exitCode: process.exitCode, errorMessage: failureFromOutput } : null,
-      );
-    }
     const failureFromOutput = extractFailureMessage(getBufferedOutput?.());
+    if (process.exitCode === 0 && !failureFromOutput) {
+      return Promise.resolve(null);
+    }
     return Promise.resolve({ exitCode: process.exitCode, errorMessage: failureFromOutput });
   }
 
@@ -493,14 +490,10 @@ function detectEarlyLaunchFailure(
 
     const onClose = (code: number | null): void => {
       const failureFromOutput = extractFailureMessage(getBufferedOutput?.());
-      if (code === 0 && failureFromOutput) {
-        finalize({ exitCode: code ?? null, errorMessage: failureFromOutput });
-        return;
-      }
-      if (code === 0) {
+      if (code === 0 && !failureFromOutput) {
         finalize(null);
       } else {
-        finalize({ exitCode: code ?? null, errorMessage: failureFromOutput });
+        finalize({ exitCode: code, errorMessage: failureFromOutput });
       }
     };
 
@@ -635,10 +628,7 @@ export async function start_device_log_capLogic(
   const resolvedFileSystemExecutor = fileSystemExecutor ?? getDefaultFileSystemExecutor();
 
   const { sessionId, error } = await startDeviceLogCapture(
-    {
-      deviceUuid: deviceId,
-      bundleId: bundleId,
-    },
+    { deviceUuid: deviceId, bundleId },
     executor,
     resolvedFileSystemExecutor,
   );
@@ -662,14 +652,9 @@ export async function start_device_log_capLogic(
         text: `✅ Device log capture started successfully\n\nSession ID: ${sessionId}\n\nNote: The app has been launched on the device with console output capture enabled.\n\nInteract with your app on the device, then stop capture to retrieve logs.`,
       },
     ],
-    nextSteps: [
-      {
-        tool: 'stop_device_log_cap',
-        label: 'Stop capture and retrieve logs',
-        params: { logSessionId: sessionId },
-        priority: 1,
-      },
-    ],
+    nextStepParams: {
+      stop_device_log_cap: { logSessionId: sessionId },
+    },
   };
 }
 

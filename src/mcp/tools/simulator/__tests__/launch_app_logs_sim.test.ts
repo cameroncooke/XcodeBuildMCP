@@ -89,14 +89,9 @@ describe('launch_app_logs_sim tool', () => {
             text: 'App launched successfully in simulator test-uuid-123 with log capture enabled.\n\nLog capture session ID: test-session-123\n\nInteract with your app in the simulator, then stop capture to retrieve logs.',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'stop_sim_log_cap',
-            label: 'Stop capture and retrieve logs',
-            params: { logSessionId: 'test-session-123' },
-            priority: 1,
-          },
-        ],
+        nextStepParams: {
+          stop_sim_log_cap: { logSessionId: 'test-session-123' },
+        },
         isError: false,
       });
 

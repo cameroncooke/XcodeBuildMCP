@@ -18,6 +18,7 @@ export function createToolCatalog(tools: ToolDefinition[]): ToolCatalog {
   // tools shared across multiple workflows don't cause ambiguous resolution.
   const byCliName = new Map<string, ToolDefinition>();
   const byMcpName = new Map<string, ToolDefinition>();
+  const byToolId = new Map<string, ToolDefinition>();
   const byMcpKebab = new Map<string, ToolDefinition[]>();
   const seenMcpNames = new Set<string>();
 
@@ -28,10 +29,17 @@ export function createToolCatalog(tools: ToolDefinition[]): ToolCatalog {
 
     byCliName.set(tool.cliName, tool);
     byMcpName.set(mcpKey, tool);
+    if (tool.id) {
+      byToolId.set(tool.id, tool);
+    }
 
     const mcpKebab = toKebabCase(tool.mcpName);
-    const existing = byMcpKebab.get(mcpKebab) ?? [];
-    byMcpKebab.set(mcpKebab, [...existing, tool]);
+    let kebabGroup = byMcpKebab.get(mcpKebab);
+    if (!kebabGroup) {
+      kebabGroup = [];
+      byMcpKebab.set(mcpKebab, kebabGroup);
+    }
+    kebabGroup.push(tool);
   }
 
   return {
@@ -43,6 +51,10 @@ export function createToolCatalog(tools: ToolDefinition[]): ToolCatalog {
 
     getByMcpName(name: string): ToolDefinition | null {
       return byMcpName.get(name.toLowerCase().trim()) ?? null;
+    },
+
+    getByToolId(toolId: string): ToolDefinition | null {
+      return byToolId.get(toolId) ?? null;
     },
 
     resolve(input: string): ToolResolution {
@@ -89,8 +101,12 @@ export function groupToolsByWorkflow(catalog: ToolCatalog): Map<string, ToolDefi
   const groups = new Map<string, ToolDefinition[]>();
 
   for (const tool of catalog.tools) {
-    const existing = groups.get(tool.workflow) ?? [];
-    groups.set(tool.workflow, [...existing, tool]);
+    let group = groups.get(tool.workflow);
+    if (!group) {
+      group = [];
+      groups.set(tool.workflow, group);
+    }
+    group.push(tool);
   }
 
   return groups;
@@ -120,16 +136,12 @@ export async function buildToolCatalogFromManifest(opts: {
     workflowsToInclude = Array.from(manifest.workflows.values());
   }
 
-  // Filter workflows
-  const filteredWorkflows = workflowsToInclude.filter((wf) => {
-    // Check exclusion list
-    if (excludeSet.has(wf.id.toLowerCase())) return false;
-    // Check runtime availability
-    if (!isWorkflowAvailableForRuntime(wf, opts.runtime)) return false;
-    // Check predicates
-    if (!isWorkflowEnabledForRuntime(wf, opts.ctx)) return false;
-    return true;
-  });
+  const filteredWorkflows = workflowsToInclude.filter(
+    (wf) =>
+      !excludeSet.has(wf.id.toLowerCase()) &&
+      isWorkflowAvailableForRuntime(wf, opts.runtime) &&
+      isWorkflowEnabledForRuntime(wf, opts.ctx),
+  );
 
   // Cache imported modules to avoid re-importing the same tool
   const moduleCache = new Map<string, Awaited<ReturnType<typeof importToolModule>>>();
@@ -160,11 +172,13 @@ export async function buildToolCatalogFromManifest(opts: {
 
       const cliName = getEffectiveCliName(toolManifest);
       tools.push({
+        id: toolManifest.id,
         cliName,
         mcpName: toolManifest.names.mcp,
         workflow: workflow.id,
         description: toolManifest.description,
         annotations: toolManifest.annotations,
+        nextStepTemplates: toolManifest.nextSteps,
         mcpSchema: toolModule.schema,
         cliSchema: toolModule.schema,
         stateful: toolManifest.routing?.stateful ?? false,
