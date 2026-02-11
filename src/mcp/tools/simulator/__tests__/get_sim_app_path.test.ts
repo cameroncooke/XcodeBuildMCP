@@ -10,6 +10,7 @@ import { createMockExecutor } from '../../../../test-utils/mock-executors.ts';
 import { sessionStore } from '../../../../utils/session-store.ts';
 import { schema, handler, get_sim_app_pathLogic } from '../get_sim_app_path.ts';
 import type { CommandExecutor } from '../../../../utils/CommandExecutor.ts';
+import { XcodePlatform } from '../../../../types/common.ts';
 
 describe('get_sim_app_path tool', () => {
   beforeEach(() => {
@@ -24,7 +25,7 @@ describe('get_sim_app_path tool', () => {
     it('should expose only platform in public schema', () => {
       const schemaObj = z.object(schema);
 
-      expect(schemaObj.safeParse({ platform: 'iOS Simulator' }).success).toBe(true);
+      expect(schemaObj.safeParse({ platform: XcodePlatform.iOSSimulator }).success).toBe(true);
       expect(schemaObj.safeParse({}).success).toBe(false);
       expect(schemaObj.safeParse({ platform: 'iOS' }).success).toBe(false);
 
@@ -36,7 +37,7 @@ describe('get_sim_app_path tool', () => {
   describe('Handler Requirements', () => {
     it('should require scheme when not provided', async () => {
       const result = await handler({
-        platform: 'iOS Simulator',
+        platform: XcodePlatform.iOSSimulator,
       });
 
       expect(result.isError).toBe(true);
@@ -47,7 +48,7 @@ describe('get_sim_app_path tool', () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
       const result = await handler({
-        platform: 'iOS Simulator',
+        platform: XcodePlatform.iOSSimulator,
       });
 
       expect(result.isError).toBe(true);
@@ -61,7 +62,7 @@ describe('get_sim_app_path tool', () => {
       });
 
       const result = await handler({
-        platform: 'iOS Simulator',
+        platform: XcodePlatform.iOSSimulator,
       });
 
       expect(result.isError).toBe(true);
@@ -72,7 +73,7 @@ describe('get_sim_app_path tool', () => {
       sessionStore.setDefaults({ scheme: 'MyScheme' });
 
       const result = await handler({
-        platform: 'iOS Simulator',
+        platform: XcodePlatform.iOSSimulator,
         projectPath: '/path/project.xcodeproj',
         workspacePath: '/path/workspace.xcworkspace',
       });
@@ -90,7 +91,7 @@ describe('get_sim_app_path tool', () => {
       });
 
       const result = await handler({
-        platform: 'iOS Simulator',
+        platform: XcodePlatform.iOSSimulator,
         simulatorId: 'SIM-UUID',
         simulatorName: 'iPhone 16',
       });
@@ -134,7 +135,7 @@ describe('get_sim_app_path tool', () => {
         {
           workspacePath: '/path/to/workspace.xcworkspace',
           scheme: 'MyScheme',
-          platform: 'iOS Simulator',
+          platform: XcodePlatform.iOSSimulator,
           simulatorName: 'iPhone 16',
           useLatestOS: true,
         },
@@ -173,7 +174,7 @@ describe('get_sim_app_path tool', () => {
         {
           projectPath: '/path/to/project.xcodeproj',
           scheme: 'MyScheme',
-          platform: 'iOS Simulator',
+          platform: XcodePlatform.iOSSimulator,
           simulatorId: 'SIM-UUID',
         },
         mockExecutor,
