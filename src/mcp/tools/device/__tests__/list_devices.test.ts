@@ -224,26 +224,11 @@ describe('list_devices plugin (device-shared)', () => {
             text: "Connected Devices:\n\n✅ Available Devices:\n\n📱 Test iPhone\n   UDID: test-device-123\n   Model: iPhone15,2\n   Product Type: iPhone15,2\n   Platform: iOS 17.0\n   Connection: USB\n\nNote: Use the device ID/UDID from above when required by other tools.\nHint: Save a default device with session-set-defaults { deviceId: 'DEVICE_UDID' }.\n",
           },
         ],
-        nextSteps: [
-          {
-            tool: 'build_device',
-            label: 'Build for device',
-            params: { scheme: 'SCHEME', deviceId: 'DEVICE_UDID' },
-            priority: 1,
-          },
-          {
-            tool: 'test_device',
-            label: 'Run tests on device',
-            params: { scheme: 'SCHEME', deviceId: 'DEVICE_UDID' },
-            priority: 2,
-          },
-          {
-            tool: 'get_device_app_path',
-            label: 'Get app path',
-            params: { scheme: 'SCHEME' },
-            priority: 3,
-          },
-        ],
+        nextStepParams: {
+          build_device: { scheme: 'SCHEME', deviceId: 'DEVICE_UDID' },
+          test_device: { scheme: 'SCHEME', deviceId: 'DEVICE_UDID' },
+          get_device_app_path: { scheme: 'SCHEME' },
+        },
       });
     });
 

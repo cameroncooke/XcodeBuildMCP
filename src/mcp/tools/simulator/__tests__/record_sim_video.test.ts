@@ -79,12 +79,11 @@ describe('record_sim_video logic - start behavior', () => {
     expect(texts).toMatch(/30\s*fps/i);
     expect(texts.toLowerCase()).toContain('outputfile is ignored');
 
-    // Check nextSteps array instead of embedded text
-    expect(res.nextSteps).toBeDefined();
-    expect(res.nextSteps!.length).toBeGreaterThan(0);
-    expect(res.nextSteps![0].tool).toBe('record_sim_video');
-    expect(res.nextSteps![0].params).toHaveProperty('stop', true);
-    expect(res.nextSteps![0].params).toHaveProperty('outputFile');
+    // Check nextStepParams instead of embedded text
+    expect(res.nextStepParams).toBeDefined();
+    expect(res.nextStepParams?.record_sim_video).toBeDefined();
+    expect(res.nextStepParams?.record_sim_video).toHaveProperty('stop', true);
+    expect(res.nextStepParams?.record_sim_video).toHaveProperty('outputFile');
   });
 });
 

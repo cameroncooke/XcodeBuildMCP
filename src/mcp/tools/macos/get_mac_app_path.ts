@@ -7,6 +7,7 @@
 
 import * as z from 'zod';
 import type { ToolResponse } from '../../../types/common.ts';
+import { XcodePlatform } from '../../../types/common.ts';
 import { log } from '../../../utils/logging/index.ts';
 import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
@@ -16,7 +17,6 @@ import {
 } from '../../../utils/typed-tool-factory.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 
-// Unified schema: XOR between projectPath and workspacePath, sharing common options
 const baseOptions = {
   scheme: z.string().describe('The scheme to use'),
   configuration: z.string().optional().describe('Build configuration (Debug, Release, etc.)'),
@@ -53,20 +53,7 @@ const getMacosAppPathSchema = z.preprocess(
     }),
 );
 
-// Use z.infer for type safety
 type GetMacosAppPathParams = z.infer<typeof getMacosAppPathSchema>;
-
-const XcodePlatform = {
-  iOS: 'iOS',
-  watchOS: 'watchOS',
-  tvOS: 'tvOS',
-  visionOS: 'visionOS',
-  iOSSimulator: 'iOS Simulator',
-  watchOSSimulator: 'watchOS Simulator',
-  tvOSSimulator: 'tvOS Simulator',
-  visionOSSimulator: 'visionOS Simulator',
-  macOS: 'macOS',
-};
 
 export async function get_mac_app_pathLogic(
   params: GetMacosAppPathParams,
@@ -105,8 +92,7 @@ export async function get_mac_app_pathLogic(
       command.push('-destination', destinationString);
     }
 
-    // Add extra arguments if provided
-    if (params.extraArgs && Array.isArray(params.extraArgs)) {
+    if (params.extraArgs) {
       command.push(...params.extraArgs);
     }
 
@@ -164,20 +150,10 @@ export async function get_mac_app_pathLogic(
           text: `✅ App path retrieved successfully: ${appPath}`,
         },
       ],
-      nextSteps: [
-        {
-          tool: 'get_mac_bundle_id',
-          label: 'Get bundle ID',
-          params: { appPath },
-          priority: 1,
-        },
-        {
-          tool: 'launch_mac_app',
-          label: 'Launch app',
-          params: { appPath },
-          priority: 2,
-        },
-      ],
+      nextStepParams: {
+        get_mac_bundle_id: { appPath },
+        launch_mac_app: { appPath },
+      },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

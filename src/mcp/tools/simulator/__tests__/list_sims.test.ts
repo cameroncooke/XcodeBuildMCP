@@ -115,36 +115,16 @@ iOS 17.0:
 Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FROM_ABOVE' } (or simulatorName).`,
           },
         ],
-        nextSteps: [
-          {
-            tool: 'boot_sim',
-            label: 'Boot a simulator',
-            params: { simulatorId: 'UUID_FROM_ABOVE' },
-            priority: 1,
+        nextStepParams: {
+          boot_sim: { simulatorId: 'UUID_FROM_ABOVE' },
+          open_sim: {},
+          build_sim: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
+          get_sim_app_path: {
+            scheme: 'YOUR_SCHEME',
+            platform: 'iOS Simulator',
+            simulatorId: 'UUID_FROM_ABOVE',
           },
-          {
-            tool: 'open_sim',
-            label: 'Open the simulator UI',
-            params: {},
-            priority: 2,
-          },
-          {
-            tool: 'build_sim',
-            label: 'Build for simulator',
-            params: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
-            priority: 3,
-          },
-          {
-            tool: 'get_sim_app_path',
-            label: 'Get app path',
-            params: {
-              scheme: 'YOUR_SCHEME',
-              platform: 'iOS Simulator',
-              simulatorId: 'UUID_FROM_ABOVE',
-            },
-            priority: 4,
-          },
-        ],
+        },
       });
     });
 
@@ -195,36 +175,16 @@ iOS 17.0:
 Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FROM_ABOVE' } (or simulatorName).`,
           },
         ],
-        nextSteps: [
-          {
-            tool: 'boot_sim',
-            label: 'Boot a simulator',
-            params: { simulatorId: 'UUID_FROM_ABOVE' },
-            priority: 1,
+        nextStepParams: {
+          boot_sim: { simulatorId: 'UUID_FROM_ABOVE' },
+          open_sim: {},
+          build_sim: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
+          get_sim_app_path: {
+            scheme: 'YOUR_SCHEME',
+            platform: 'iOS Simulator',
+            simulatorId: 'UUID_FROM_ABOVE',
           },
-          {
-            tool: 'open_sim',
-            label: 'Open the simulator UI',
-            params: {},
-            priority: 2,
-          },
-          {
-            tool: 'build_sim',
-            label: 'Build for simulator',
-            params: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
-            priority: 3,
-          },
-          {
-            tool: 'get_sim_app_path',
-            label: 'Get app path',
-            params: {
-              scheme: 'YOUR_SCHEME',
-              platform: 'iOS Simulator',
-              simulatorId: 'UUID_FROM_ABOVE',
-            },
-            priority: 4,
-          },
-        ],
+        },
       });
     });
 
@@ -281,36 +241,16 @@ iOS 26.0:
 Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FROM_ABOVE' } (or simulatorName).`,
           },
         ],
-        nextSteps: [
-          {
-            tool: 'boot_sim',
-            label: 'Boot a simulator',
-            params: { simulatorId: 'UUID_FROM_ABOVE' },
-            priority: 1,
+        nextStepParams: {
+          boot_sim: { simulatorId: 'UUID_FROM_ABOVE' },
+          open_sim: {},
+          build_sim: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
+          get_sim_app_path: {
+            scheme: 'YOUR_SCHEME',
+            platform: 'iOS Simulator',
+            simulatorId: 'UUID_FROM_ABOVE',
           },
-          {
-            tool: 'open_sim',
-            label: 'Open the simulator UI',
-            params: {},
-            priority: 2,
-          },
-          {
-            tool: 'build_sim',
-            label: 'Build for simulator',
-            params: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
-            priority: 3,
-          },
-          {
-            tool: 'get_sim_app_path',
-            label: 'Get app path',
-            params: {
-              scheme: 'YOUR_SCHEME',
-              platform: 'iOS Simulator',
-              simulatorId: 'UUID_FROM_ABOVE',
-            },
-            priority: 4,
-          },
-        ],
+        },
       });
     });
 
@@ -372,36 +312,16 @@ iOS 17.0:
 Hint: Save a default simulator with session-set-defaults { simulatorId: 'UUID_FROM_ABOVE' } (or simulatorName).`,
           },
         ],
-        nextSteps: [
-          {
-            tool: 'boot_sim',
-            label: 'Boot a simulator',
-            params: { simulatorId: 'UUID_FROM_ABOVE' },
-            priority: 1,
+        nextStepParams: {
+          boot_sim: { simulatorId: 'UUID_FROM_ABOVE' },
+          open_sim: {},
+          build_sim: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
+          get_sim_app_path: {
+            scheme: 'YOUR_SCHEME',
+            platform: 'iOS Simulator',
+            simulatorId: 'UUID_FROM_ABOVE',
           },
-          {
-            tool: 'open_sim',
-            label: 'Open the simulator UI',
-            params: {},
-            priority: 2,
-          },
-          {
-            tool: 'build_sim',
-            label: 'Build for simulator',
-            params: { scheme: 'YOUR_SCHEME', simulatorId: 'UUID_FROM_ABOVE' },
-            priority: 3,
-          },
-          {
-            tool: 'get_sim_app_path',
-            label: 'Get app path',
-            params: {
-              scheme: 'YOUR_SCHEME',
-              platform: 'iOS Simulator',
-              simulatorId: 'UUID_FROM_ABOVE',
-            },
-            priority: 4,
-          },
-        ],
+        },
       });
     });
 

@@ -31,14 +31,19 @@ function textResponse(text: string): ToolResponse {
 
 function makeTool(opts: {
   cliName: string;
+  mcpName?: string;
+  id?: string;
+  nextStepTemplates?: ToolDefinition['nextStepTemplates'];
   workflow: string;
   stateful: boolean;
   handler: ToolDefinition['handler'];
   xcodeIdeRemoteToolName?: string;
 }): ToolDefinition {
   return {
+    id: opts.id,
     cliName: opts.cliName,
-    mcpName: opts.cliName.replace(/-/g, '_'),
+    mcpName: opts.mcpName ?? opts.cliName.replace(/-/g, '_'),
+    nextStepTemplates: opts.nextStepTemplates,
     workflow: opts.workflow,
     description: `${opts.cliName} tool`,
     mcpSchema: { value: z.string().optional() },
@@ -194,5 +199,241 @@ describe('DefaultToolInvoker xcode-ide dynamic routing', () => {
     expect(response.content[0].text).toContain('No socket path configured');
     expect(directHandler).not.toHaveBeenCalled();
     expect(daemonClientMock.invokeXcodeIdeTool).not.toHaveBeenCalled();
+  });
+});
+
+describe('DefaultToolInvoker next steps post-processing', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    daemonClientMock.isRunning.mockResolvedValue(true);
+  });
+
+  it('enriches canonical next-step tool names in CLI runtime', async () => {
+    const directHandler = vi.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'ok' }],
+      nextSteps: [
+        {
+          tool: 'screenshot',
+          label: 'Take screenshot',
+          params: { simulatorId: '123' },
+        },
+      ],
+    } satisfies ToolResponse);
+
+    const catalog = createToolCatalog([
+      makeTool({
+        cliName: 'snapshot-ui',
+        mcpName: 'snapshot_ui',
+        workflow: 'ui-automation',
+        stateful: false,
+        handler: directHandler,
+      }),
+      makeTool({
+        id: 'screenshot',
+        cliName: 'screenshot',
+        mcpName: 'screenshot',
+        workflow: 'ui-automation',
+        stateful: false,
+        handler: vi.fn().mockResolvedValue(textResponse('screenshot')),
+      }),
+    ]);
+
+    const invoker = new DefaultToolInvoker(catalog);
+    const response = await invoker.invoke('snapshot-ui', {}, { runtime: 'cli' });
+
+    expect(response.nextSteps).toEqual([
+      {
+        tool: 'screenshot',
+        label: 'Take screenshot',
+        params: { simulatorId: '123' },
+        workflow: 'ui-automation',
+        cliTool: 'screenshot',
+      },
+    ]);
+  });
+
+  it('injects manifest template next steps when a response omits nextSteps', async () => {
+    const directHandler = vi.fn().mockResolvedValue(textResponse('ok'));
+    const catalog = createToolCatalog([
+      makeTool({
+        id: 'snapshot_ui',
+        cliName: 'snapshot-ui',
+        mcpName: 'snapshot_ui',
+        workflow: 'ui-automation',
+        stateful: false,
+        nextStepTemplates: [
+          {
+            label: 'Refresh',
+            toolId: 'snapshot_ui',
+            params: { simulatorId: '${simulatorId}' },
+          },
+          {
+            label: 'Visually verify hierarchy output',
+          },
+          {
+            label: 'Tap on element',
+            toolId: 'tap',
+            params: { simulatorId: '${simulatorId}', x: 0, y: 0 },
+          },
+        ],
+        handler: directHandler,
+      }),
+      makeTool({
+        id: 'tap',
+        cliName: 'tap',
+        mcpName: 'tap',
+        workflow: 'ui-automation',
+        stateful: false,
+        handler: vi.fn().mockResolvedValue(textResponse('tap')),
+      }),
+    ]);
+
+    const invoker = new DefaultToolInvoker(catalog);
+    const response = await invoker.invoke(
+      'snapshot-ui',
+      { simulatorId: '12345678-1234-4234-8234-123456789012' },
+      { runtime: 'cli' },
+    );
+
+    expect(response.nextSteps).toEqual([
+      {
+        tool: 'snapshot_ui',
+        label: 'Refresh',
+        params: { simulatorId: '12345678-1234-4234-8234-123456789012' },
+        workflow: 'ui-automation',
+        cliTool: 'snapshot-ui',
+      },
+      {
+        label: 'Visually verify hierarchy output',
+      },
+      {
+        tool: 'tap',
+        label: 'Tap on element',
+        params: { simulatorId: '12345678-1234-4234-8234-123456789012', x: 0, y: 0 },
+        workflow: 'ui-automation',
+        cliTool: 'tap',
+      },
+    ]);
+  });
+
+  it('prefers manifest templates over tool-provided next-step labels and tools', async () => {
+    const directHandler = vi.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'ok' }],
+      nextSteps: [
+        {
+          tool: 'legacy_stop_sim_log_cap',
+          label: 'Old label',
+          params: { logSessionId: 'session-123' },
+          priority: 99,
+        },
+      ],
+    } satisfies ToolResponse);
+
+    const catalog = createToolCatalog([
+      makeTool({
+        id: 'start_sim_log_cap',
+        cliName: 'start-simulator-log-capture',
+        mcpName: 'start_sim_log_cap',
+        workflow: 'logging',
+        stateful: false,
+        nextStepTemplates: [
+          {
+            label: 'Stop capture and retrieve logs',
+            toolId: 'stop_sim_log_cap',
+            priority: 1,
+          },
+        ],
+        handler: directHandler,
+      }),
+      makeTool({
+        id: 'stop_sim_log_cap',
+        cliName: 'stop-simulator-log-capture',
+        mcpName: 'stop_sim_log_cap',
+        workflow: 'logging',
+        stateful: true,
+        handler: vi.fn().mockResolvedValue(textResponse('stop')),
+      }),
+    ]);
+
+    const invoker = new DefaultToolInvoker(catalog);
+    const response = await invoker.invoke('start-simulator-log-capture', {}, { runtime: 'cli' });
+
+    expect(response.nextSteps).toEqual([
+      {
+        tool: 'stop_sim_log_cap',
+        label: 'Stop capture and retrieve logs',
+        params: { logSessionId: 'session-123' },
+        priority: 1,
+        workflow: 'logging',
+        cliTool: 'stop-simulator-log-capture',
+      },
+    ]);
+  });
+
+  it('keeps tool-provided next steps when template count does not match', async () => {
+    const directHandler = vi.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'ok' }],
+      nextSteps: [
+        {
+          tool: 'launch_app_sim',
+          label: 'Launch app (platform-specific)',
+          params: { simulatorId: '123', bundleId: 'com.example.app' },
+          priority: 1,
+        },
+      ],
+    } satisfies ToolResponse);
+
+    const catalog = createToolCatalog([
+      makeTool({
+        id: 'get_sim_app_path',
+        cliName: 'get-app-path',
+        mcpName: 'get_sim_app_path',
+        workflow: 'simulator',
+        stateful: false,
+        nextStepTemplates: [
+          { label: 'Get bundle ID', toolId: 'get_app_bundle_id', priority: 1 },
+          { label: 'Boot simulator', toolId: 'boot_sim', priority: 2 },
+        ],
+        handler: directHandler,
+      }),
+      makeTool({
+        id: 'launch_app_sim',
+        cliName: 'launch-app',
+        mcpName: 'launch_app_sim',
+        workflow: 'simulator',
+        stateful: false,
+        handler: vi.fn().mockResolvedValue(textResponse('launch')),
+      }),
+      makeTool({
+        id: 'get_app_bundle_id',
+        cliName: 'get-app-bundle-id',
+        mcpName: 'get_app_bundle_id',
+        workflow: 'project-discovery',
+        stateful: false,
+        handler: vi.fn().mockResolvedValue(textResponse('bundle')),
+      }),
+      makeTool({
+        id: 'boot_sim',
+        cliName: 'boot',
+        mcpName: 'boot_sim',
+        workflow: 'simulator',
+        stateful: false,
+        handler: vi.fn().mockResolvedValue(textResponse('boot')),
+      }),
+    ]);
+
+    const invoker = new DefaultToolInvoker(catalog);
+    const response = await invoker.invoke('get-app-path', {}, { runtime: 'cli' });
+
+    expect(response.nextSteps).toEqual([
+      {
+        tool: 'launch_app_sim',
+        label: 'Launch app (platform-specific)',
+        params: { simulatorId: '123', bundleId: 'com.example.app' },
+        priority: 1,
+        workflow: 'simulator',
+        cliTool: 'launch-app',
+      },
+    ]);
   });
 });

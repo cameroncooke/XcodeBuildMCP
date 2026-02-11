@@ -84,41 +84,21 @@ export async function showBuildSettingsLogic(
       },
     ];
 
-    // Build next steps
-    const nextSteps: Array<{
-      tool: string;
-      label: string;
-      params: Record<string, string | number | boolean>;
-      priority?: number;
-    }> = [];
+    // Build next step params
+    let nextStepParams: Record<string, Record<string, string | number | boolean>> | undefined;
 
     if (path) {
       const pathKey = hasProjectPath ? 'projectPath' : 'workspacePath';
-      nextSteps.push(
-        {
-          tool: 'build_macos',
-          label: 'Build for macOS',
-          params: { [pathKey]: path, scheme: params.scheme },
-          priority: 1,
-        },
-        {
-          tool: 'build_sim',
-          label: 'Build for iOS Simulator',
-          params: { [pathKey]: path, scheme: params.scheme, simulatorName: 'iPhone 16' },
-          priority: 2,
-        },
-        {
-          tool: 'list_schemes',
-          label: 'List schemes',
-          params: { [pathKey]: path },
-          priority: 3,
-        },
-      );
+      nextStepParams = {
+        build_macos: { [pathKey]: path, scheme: params.scheme },
+        build_sim: { [pathKey]: path, scheme: params.scheme, simulatorName: 'iPhone 16' },
+        list_schemes: { [pathKey]: path },
+      };
     }
 
     return {
       content,
-      nextSteps,
+      ...(nextStepParams ? { nextStepParams } : {}),
       isError: false,
     };
   } catch (error) {

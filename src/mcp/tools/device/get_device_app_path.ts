@@ -87,18 +87,16 @@ export async function get_device_app_pathLogic(
     command.push('-scheme', params.scheme);
     command.push('-configuration', configuration);
 
-    // Handle destination based on platform
-    let destinationString = '';
+    // Map platform to destination string
+    const destinationMap: Record<string, string> = {
+      [XcodePlatform.iOS]: 'generic/platform=iOS',
+      [XcodePlatform.watchOS]: 'generic/platform=watchOS',
+      [XcodePlatform.tvOS]: 'generic/platform=tvOS',
+      [XcodePlatform.visionOS]: 'generic/platform=visionOS',
+    };
 
-    if (platform === XcodePlatform.iOS) {
-      destinationString = 'generic/platform=iOS';
-    } else if (platform === XcodePlatform.watchOS) {
-      destinationString = 'generic/platform=watchOS';
-    } else if (platform === XcodePlatform.tvOS) {
-      destinationString = 'generic/platform=tvOS';
-    } else if (platform === XcodePlatform.visionOS) {
-      destinationString = 'generic/platform=visionOS';
-    } else {
+    const destinationString = destinationMap[platform];
+    if (!destinationString) {
       return createTextResponse(`Unsupported platform: ${platform}`, true);
     }
 
@@ -137,26 +135,11 @@ export async function get_device_app_pathLogic(
           text: `✅ App path retrieved successfully: ${appPath}`,
         },
       ],
-      nextSteps: [
-        {
-          tool: 'get_app_bundle_id',
-          label: 'Get bundle ID',
-          params: { appPath },
-          priority: 1,
-        },
-        {
-          tool: 'install_app_device',
-          label: 'Install app on device',
-          params: { deviceId: 'DEVICE_UDID', appPath },
-          priority: 2,
-        },
-        {
-          tool: 'launch_app_device',
-          label: 'Launch app on device',
-          params: { deviceId: 'DEVICE_UDID', bundleId: 'BUNDLE_ID' },
-          priority: 3,
-        },
-      ],
+      nextStepParams: {
+        get_app_bundle_id: { appPath },
+        install_app_device: { deviceId: 'DEVICE_UDID', appPath },
+        launch_app_device: { deviceId: 'DEVICE_UDID', bundleId: 'BUNDLE_ID' },
+      },
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
