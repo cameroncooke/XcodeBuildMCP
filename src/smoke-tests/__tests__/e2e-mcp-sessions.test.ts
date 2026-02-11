@@ -177,4 +177,41 @@ describe('MCP Session Management (e2e)', () => {
     expect(buildCommand).toBeDefined();
     expect(buildCommand).toContain('UpdatedScheme');
   });
+
+  it('supports namespaced defaults by switching active profile', async () => {
+    await harness.client.callTool({
+      name: 'session_use_defaults_profile',
+      arguments: { profile: 'ios' },
+    });
+    await harness.client.callTool({
+      name: 'session_set_defaults',
+      arguments: { scheme: 'IOSScheme', projectPath: '/ios/project.xcodeproj' },
+    });
+
+    await harness.client.callTool({
+      name: 'session_use_defaults_profile',
+      arguments: { profile: 'watch' },
+    });
+    await harness.client.callTool({
+      name: 'session_set_defaults',
+      arguments: { scheme: 'WatchScheme', projectPath: '/watch/project.xcodeproj' },
+    });
+
+    const activeWatch = await harness.client.callTool({
+      name: 'session_show_defaults',
+      arguments: {},
+    });
+    expect(extractText(activeWatch)).toContain('WatchScheme');
+    expect(extractText(activeWatch)).not.toContain('IOSScheme');
+
+    await harness.client.callTool({
+      name: 'session_use_defaults_profile',
+      arguments: { profile: 'ios' },
+    });
+    const activeIos = await harness.client.callTool({
+      name: 'session_show_defaults',
+      arguments: {},
+    });
+    expect(extractText(activeIos)).toContain('IOSScheme');
+  });
 });

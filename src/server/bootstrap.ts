@@ -110,9 +110,7 @@ export async function bootstrapServer(
 
       log('info', `[xcode] Running under Xcode agent environment`);
 
-      const configSessionDefaults = result.runtime.config.sessionDefaults;
-      const projectPath = configSessionDefaults?.projectPath;
-      const workspacePath = configSessionDefaults?.workspacePath;
+      const { projectPath, workspacePath } = sessionStore.getAll();
 
       let deferredStageStartMs = getStartupProfileNowMs();
       const xcodeState = await readXcodeIdeState({

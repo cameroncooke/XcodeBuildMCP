@@ -3,6 +3,7 @@ import type { SessionDefaults } from './session-store.ts';
 import { log } from './logger.ts';
 import {
   loadProjectConfig,
+  persistActiveSessionDefaultsProfileToProjectConfig,
   persistSessionDefaultsToProjectConfig,
   type ProjectConfig,
 } from './project-config.ts';
@@ -27,6 +28,8 @@ export type RuntimeConfigOverrides = Partial<{
   macosTemplateVersion: string;
   debuggerBackend: DebuggerBackendKind;
   sessionDefaults: Partial<SessionDefaults>;
+  sessionDefaultsProfiles: Record<string, Partial<SessionDefaults>>;
+  activeSessionDefaultsProfile: string;
 }>;
 
 export type ResolvedRuntimeConfig = {
@@ -47,6 +50,8 @@ export type ResolvedRuntimeConfig = {
   macosTemplateVersion?: string;
   debuggerBackend: DebuggerBackendKind;
   sessionDefaults?: Partial<SessionDefaults>;
+  sessionDefaultsProfiles?: Record<string, Partial<SessionDefaults>>;
+  activeSessionDefaultsProfile?: string;
 };
 
 type ConfigStoreState = {
@@ -76,6 +81,13 @@ const storeState: ConfigStoreState = {
   initialized: false,
   resolved: { ...DEFAULT_CONFIG },
 };
+
+function refreshResolvedConfig(): void {
+  storeState.resolved = resolveConfig({
+    fileConfig: storeState.fileConfig,
+    overrides: storeState.overrides,
+  });
+}
 
 function hasOwnProperty<T extends object, K extends PropertyKey>(
   obj: T | undefined,
@@ -264,6 +276,70 @@ function resolveSessionDefaults(opts: {
   return { ...(fileDefaults ?? {}), ...(overrideDefaults ?? {}) };
 }
 
+function resolveSessionDefaultsProfiles(opts: {
+  overrides?: RuntimeConfigOverrides;
+  fileConfig?: ProjectConfig;
+}): Record<string, Partial<SessionDefaults>> | undefined {
+  const overrideProfiles = opts.overrides?.sessionDefaultsProfiles;
+  const fileProfiles = opts.fileConfig?.sessionDefaultsProfiles;
+  if (!overrideProfiles && !fileProfiles) return undefined;
+
+  const merged: Record<string, Partial<SessionDefaults>> = {};
+  for (const [name, defaults] of Object.entries(fileProfiles ?? {})) {
+    merged[name] = { ...defaults };
+  }
+  for (const [name, defaults] of Object.entries(overrideProfiles ?? {})) {
+    merged[name] = { ...(merged[name] ?? {}), ...defaults };
+  }
+  return merged;
+}
+
+function getCurrentFileConfig(): ProjectConfig {
+  return storeState.fileConfig ?? { schemaVersion: 1 };
+}
+
+function applySessionDefaultsPatchToFileConfig(opts: {
+  fileConfig: ProjectConfig;
+  profile: string | null;
+  patch: Partial<SessionDefaults>;
+  deleteKeys?: (keyof SessionDefaults)[];
+}): ProjectConfig {
+  const nextFileConfig: ProjectConfig = { ...opts.fileConfig };
+  const baseDefaults =
+    opts.profile === null
+      ? (nextFileConfig.sessionDefaults ?? {})
+      : (nextFileConfig.sessionDefaultsProfiles?.[opts.profile] ?? {});
+
+  const nextSessionDefaults: Partial<SessionDefaults> = { ...baseDefaults, ...opts.patch };
+  for (const key of opts.deleteKeys ?? []) {
+    delete nextSessionDefaults[key];
+  }
+
+  if (opts.profile === null) {
+    nextFileConfig.sessionDefaults = nextSessionDefaults;
+    return nextFileConfig;
+  }
+
+  nextFileConfig.sessionDefaultsProfiles = {
+    ...(nextFileConfig.sessionDefaultsProfiles ?? {}),
+    [opts.profile]: nextSessionDefaults,
+  };
+  return nextFileConfig;
+}
+
+function applyActiveProfileToFileConfig(opts: {
+  fileConfig: ProjectConfig;
+  profile: string | null;
+}): ProjectConfig {
+  const nextFileConfig: ProjectConfig = { ...opts.fileConfig };
+  if (opts.profile === null) {
+    delete nextFileConfig.activeSessionDefaultsProfile;
+  } else {
+    nextFileConfig.activeSessionDefaultsProfile = opts.profile;
+  }
+  return nextFileConfig;
+}
+
 function resolveConfig(opts: {
   fileConfig?: ProjectConfig;
   overrides?: RuntimeConfigOverrides;
@@ -383,6 +459,16 @@ function resolveConfig(opts: {
       overrides: opts.overrides,
       fileConfig: opts.fileConfig,
     }),
+    sessionDefaultsProfiles: resolveSessionDefaultsProfiles({
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+    }),
+    activeSessionDefaultsProfile: resolveFromLayers<string>({
+      key: 'activeSessionDefaultsProfile',
+      overrides: opts.overrides,
+      fileConfig: opts.fileConfig,
+      envConfig,
+    }),
   };
 }
 
@@ -422,11 +508,7 @@ export async function initConfigStore(opts: {
   }
 
   storeState.fileConfig = fileConfig;
-  storeState.resolved = resolveConfig({
-    fileConfig,
-    overrides: opts.overrides,
-    env: opts.env,
-  });
+  storeState.resolved = resolveConfig({ fileConfig, overrides: opts.overrides, env: opts.env });
   storeState.initialized = true;
   return { found, path, notices };
 }
@@ -442,6 +524,7 @@ export function getConfig(): ResolvedRuntimeConfig {
 export async function persistSessionDefaultsPatch(opts: {
   patch: Partial<SessionDefaults>;
   deleteKeys?: (keyof SessionDefaults)[];
+  profile?: string | null;
 }): Promise<{ path: string }> {
   if (!storeState.initialized || !storeState.fs || !storeState.cwd) {
     throw new Error('Config store has not been initialized.');
@@ -452,26 +535,38 @@ export async function persistSessionDefaultsPatch(opts: {
     cwd: storeState.cwd,
     patch: opts.patch,
     deleteKeys: opts.deleteKeys,
+    profile: opts.profile,
   });
 
-  const nextSessionDefaults: Partial<SessionDefaults> = {
-    ...(storeState.fileConfig?.sessionDefaults ?? {}),
-    ...opts.patch,
-  };
+  storeState.fileConfig = applySessionDefaultsPatchToFileConfig({
+    fileConfig: getCurrentFileConfig(),
+    profile: opts.profile ?? null,
+    patch: opts.patch,
+    deleteKeys: opts.deleteKeys,
+  });
+  refreshResolvedConfig();
 
-  for (const key of opts.deleteKeys ?? []) {
-    delete nextSessionDefaults[key];
+  return result;
+}
+
+export async function persistActiveSessionDefaultsProfile(
+  profile: string | null,
+): Promise<{ path: string }> {
+  if (!storeState.initialized || !storeState.fs || !storeState.cwd) {
+    throw new Error('Config store has not been initialized.');
   }
 
-  storeState.fileConfig = {
-    ...(storeState.fileConfig ?? { schemaVersion: 1 }),
-    sessionDefaults: nextSessionDefaults,
-  };
-
-  storeState.resolved = resolveConfig({
-    fileConfig: storeState.fileConfig,
-    overrides: storeState.overrides,
+  const result = await persistActiveSessionDefaultsProfileToProjectConfig({
+    fs: storeState.fs,
+    cwd: storeState.cwd,
+    profile,
   });
+
+  storeState.fileConfig = applyActiveProfileToFileConfig({
+    fileConfig: getCurrentFileConfig(),
+    profile,
+  });
+  refreshResolvedConfig();
 
   return result;
 }

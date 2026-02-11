@@ -43,24 +43,56 @@ interface MCPSessionHydrationResult {
  */
 function hydrateSessionDefaultsForMcp(
   defaults: Partial<SessionDefaults> | undefined,
+  profiles: Record<string, Partial<SessionDefaults>> | undefined,
+  activeProfile: string | undefined,
 ): MCPSessionHydrationResult {
   const hydratedDefaults = { ...(defaults ?? {}) };
-  if (Object.keys(hydratedDefaults).length === 0) {
+  const hydratedProfiles = profiles ?? {};
+  const hasHydratedDefaults = Object.keys(hydratedDefaults).length > 0;
+  const hydratedProfileEntries = Object.entries(hydratedProfiles);
+  if (!hasHydratedDefaults && hydratedProfileEntries.length === 0) {
     return { hydrated: false, refreshScheduled: false };
   }
 
-  sessionStore.setDefaults(hydratedDefaults);
+  if (hasHydratedDefaults) {
+    sessionStore.setDefaultsForProfile(null, hydratedDefaults);
+  }
+  for (const [profileName, profileDefaults] of hydratedProfileEntries) {
+    const trimmedName = profileName.trim();
+    if (!trimmedName) continue;
+    sessionStore.setDefaultsForProfile(trimmedName, profileDefaults);
+  }
+  const normalizedActiveProfile = activeProfile?.trim();
+  if (normalizedActiveProfile) {
+    sessionStore.setActiveProfile(normalizedActiveProfile);
+  }
+
+  const activeDefaults = sessionStore.getAll();
   const revision = sessionStore.getRevision();
   const refreshScheduled = scheduleSimulatorDefaultsRefresh({
     expectedRevision: revision,
     reason: 'startup-hydration',
+    profile: sessionStore.getActiveProfile(),
     persist: true,
-    simulatorId: hydratedDefaults.simulatorId,
-    simulatorName: hydratedDefaults.simulatorName,
+    simulatorId: activeDefaults.simulatorId,
+    simulatorName: activeDefaults.simulatorName,
     recomputePlatform: true,
   });
 
   return { hydrated: true, refreshScheduled };
+}
+
+function logHydrationResult(hydration: MCPSessionHydrationResult): void {
+  if (!hydration.hydrated) {
+    return;
+  }
+
+  if (hydration.refreshScheduled) {
+    log('info', '[Session] Hydrated MCP session defaults; simulator metadata refresh scheduled.');
+    return;
+  }
+
+  log('info', '[Session] Hydrated MCP session defaults; simulator metadata refresh not scheduled.');
 }
 
 export async function bootstrapRuntime(
@@ -85,15 +117,12 @@ export async function bootstrapRuntime(
   const config = getConfig();
 
   if (opts.runtime === 'mcp') {
-    const hydration = hydrateSessionDefaultsForMcp(config.sessionDefaults);
-    if (hydration.hydrated && hydration.refreshScheduled) {
-      log('info', '[Session] Hydrated MCP session defaults; simulator metadata refresh scheduled.');
-    } else if (hydration.hydrated) {
-      log(
-        'info',
-        '[Session] Hydrated MCP session defaults; simulator metadata refresh not scheduled.',
-      );
-    }
+    const hydration = hydrateSessionDefaultsForMcp(
+      config.sessionDefaults,
+      config.sessionDefaultsProfiles,
+      config.activeSessionDefaultsProfile,
+    );
+    logHydrationResult(hydration);
   }
 
   return {

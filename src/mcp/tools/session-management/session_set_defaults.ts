@@ -27,6 +27,7 @@ export async function sessionSetDefaultsLogic(
   context: SessionSetDefaultsContext,
 ): Promise<ToolResponse> {
   const notices: string[] = [];
+  const activeProfile = sessionStore.getActiveProfile();
   const current = sessionStore.getAll();
   const { persist, ...rawParams } = params;
   const nextParams = removeUndefined(
@@ -133,6 +134,7 @@ export async function sessionSetDefaultsLogic(
       const { path } = await persistSessionDefaultsPatch({
         patch: nextParams,
         deleteKeys: Array.from(toClear),
+        profile: activeProfile,
       });
       notices.push(`Persisted defaults to ${path}`);
     }
@@ -145,6 +147,7 @@ export async function sessionSetDefaultsLogic(
       executor: context.executor,
       expectedRevision: revision,
       reason: 'session-set-defaults',
+      profile: activeProfile,
       persist: Boolean(persist),
       simulatorId: defaultsForRefresh.simulatorId,
       simulatorName: defaultsForRefresh.simulatorName,

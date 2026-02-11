@@ -23,7 +23,7 @@ function createBaseServerInstance(): McpServer {
   return new McpServer(
     {
       name: 'xcodebuildmcp',
-      version,
+      version: String(version),
     },
     {
       instructions: `XcodeBuildMCP provides comprehensive tooling for Apple platform development (iOS, macOS, watchOS, tvOS, visionOS).
