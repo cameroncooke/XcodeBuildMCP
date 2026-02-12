@@ -168,7 +168,12 @@ function createSessionAwareHandler<TParams, TContext>(opts: {
 
       // Deep-merge env: combine session-default env vars with user-provided ones
       // (user-provided keys take precedence on conflict)
-      if (sessionDefaults.env && typeof sanitizedArgs.env === 'object' && sanitizedArgs.env) {
+      if (
+        sessionDefaults.env &&
+        typeof sanitizedArgs.env === 'object' &&
+        sanitizedArgs.env &&
+        !Array.isArray(sanitizedArgs.env)
+      ) {
         merged.env = { ...sessionDefaults.env, ...(sanitizedArgs.env as Record<string, string>) };
       }
 
