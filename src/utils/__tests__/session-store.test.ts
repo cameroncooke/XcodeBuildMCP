@@ -94,4 +94,15 @@ describe('SessionStore', () => {
     expect(sessionStore.getActiveProfile()).toBeNull();
     expect(sessionStore.listProfiles()).toEqual([]);
   });
+
+  it('getAll returns a detached copy of env so mutations do not affect stored defaults', () => {
+    sessionStore.setDefaults({ env: { API_KEY: 'secret' } });
+
+    const copy = sessionStore.getAll();
+    copy.env!.API_KEY = 'tampered';
+    copy.env!.EXTRA = 'injected';
+
+    const stored = sessionStore.getAll();
+    expect(stored.env).toEqual({ API_KEY: 'secret' });
+  });
 });

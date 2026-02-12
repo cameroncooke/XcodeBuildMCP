@@ -290,4 +290,33 @@ describe('createSessionAwareTool', () => {
     const parsed = JSON.parse(envContent.text);
     expect(parsed).toEqual({ API_KEY: 'abc123', DEBUG: 'true', VERBOSE: '0' });
   });
+
+  it('rejects array passed as env instead of deep-merging it', async () => {
+    const envSchema = z.object({
+      scheme: z.string(),
+      projectPath: z.string().optional(),
+      env: z.record(z.string(), z.string()).optional(),
+    });
+
+    const envHandler = createSessionAwareTool<z.infer<typeof envSchema>>({
+      internalSchema: envSchema,
+      logicFunction: async (params) => ({
+        content: [{ type: 'text', text: JSON.stringify(params.env) }],
+        isError: false,
+      }),
+      getExecutor: () => createMockExecutor({ success: true }),
+      requirements: [{ allOf: ['scheme'] }],
+    });
+
+    sessionStore.setDefaults({
+      scheme: 'App',
+      projectPath: '/a.xcodeproj',
+      env: { API_KEY: 'abc123' },
+    });
+
+    // Array should not be deep-merged; Zod validation should reject it
+    const result = await envHandler({ env: ['not', 'a', 'record'] as unknown });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('Parameter validation failed');
+  });
 });

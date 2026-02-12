@@ -114,10 +114,12 @@ class SessionStore {
   }
 
   getAllForProfile(profile: string | null): SessionDefaults {
-    if (profile === null) {
-      return { ...this.globalDefaults };
+    const defaults = profile === null ? this.globalDefaults : (this.profiles[profile] ?? {});
+    const copy = { ...defaults };
+    if (copy.env) {
+      copy.env = { ...copy.env };
     }
-    return { ...(this.profiles[profile] ?? {}) };
+    return copy;
   }
 
   listProfiles(): string[] {
