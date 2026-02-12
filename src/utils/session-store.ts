@@ -20,6 +20,7 @@ export type SessionDefaults = {
   preferXcodebuild?: boolean;
   platform?: string;
   bundleId?: string;
+  env?: Record<string, string>;
 };
 
 class SessionStore {
@@ -54,7 +55,11 @@ class SessionStore {
   }
 
   getAll(): SessionDefaults {
-    return { ...this.defaults };
+    const copy = { ...this.defaults };
+    if (copy.env) {
+      copy.env = { ...copy.env };
+    }
+    return copy;
   }
 
   getRevision(): number {
