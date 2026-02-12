@@ -55,7 +55,11 @@ class SessionStore {
   }
 
   getAll(): SessionDefaults {
-    return { ...this.defaults };
+    const copy = { ...this.defaults };
+    if (copy.env) {
+      copy.env = { ...copy.env };
+    }
+    return copy;
   }
 
   getRevision(): number {
