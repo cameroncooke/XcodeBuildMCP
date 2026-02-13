@@ -3,6 +3,14 @@ import type { ToolResponse } from '../types/common.ts';
 import { createErrorResponse } from '../utils/responses/index.ts';
 import { DaemonClient } from '../cli/daemon-client.ts';
 import { ensureDaemonRunning, DEFAULT_DAEMON_STARTUP_TIMEOUT_MS } from '../cli/daemon-control.ts';
+import { log } from '../utils/logger.ts';
+import {
+  recordInternalErrorMetric,
+  recordToolInvocationMetric,
+  type SentryToolInvocationOutcome,
+  type SentryToolRuntime,
+  type SentryToolTransport,
+} from '../utils/sentry.ts';
 
 /**
  * Enrich nextSteps for CLI rendering.
@@ -38,6 +46,23 @@ function buildDaemonEnvOverrides(opts: InvokeOptions): Record<string, string> | 
   }
 
   return Object.keys(envOverrides).length > 0 ? envOverrides : undefined;
+}
+
+function getErrorKind(error: unknown): string {
+  if (error instanceof Error) {
+    return error.name || 'Error';
+  }
+  return typeof error;
+}
+
+function mapRuntimeToSentryToolRuntime(runtime: InvokeOptions['runtime']): SentryToolRuntime {
+  if (runtime === 'daemon') {
+    return 'daemon';
+  }
+  if (runtime === 'mcp') {
+    return 'mcp';
+  }
+  return 'cli';
 }
 
 export class DefaultToolInvoker implements ToolInvoker {
@@ -85,13 +110,38 @@ export class DefaultToolInvoker implements ToolInvoker {
     args: Record<string, unknown>,
     opts: InvokeOptions,
   ): Promise<ToolResponse> {
+    const startedAt = Date.now();
+    const runtime = mapRuntimeToSentryToolRuntime(opts.runtime);
+    let transport: SentryToolTransport = 'direct';
+
+    const captureInvocationMetric = (outcome: SentryToolInvocationOutcome): void => {
+      recordToolInvocationMetric({
+        toolName: tool.mcpName,
+        runtime,
+        transport,
+        outcome,
+        durationMs: Date.now() - startedAt,
+      });
+    };
+
+    const captureInfraErrorMetric = (error: unknown): void => {
+      recordInternalErrorMetric({
+        component: 'tool-invoker',
+        runtime,
+        errorKind: getErrorKind(error),
+      });
+    };
+
     const xcodeIdeRemoteToolName = tool.xcodeIdeRemoteToolName;
     const isDynamicXcodeIdeTool =
       tool.workflow === 'xcode-ide' && typeof xcodeIdeRemoteToolName === 'string';
 
     if (opts.runtime === 'cli' && isDynamicXcodeIdeTool) {
+      transport = 'xcode-ide-daemon';
       const socketPath = opts.socketPath;
       if (!socketPath) {
+        captureInfraErrorMetric(new Error('SocketPathMissing'));
+        captureInvocationMetric('infra_error');
         return createErrorResponse(
           'Socket path required',
           `No socket path configured for daemon communication.`,
@@ -111,6 +161,13 @@ export class DefaultToolInvoker implements ToolInvoker {
             env: envOverrideValue,
           });
         } catch (error) {
+          log(
+            'error',
+            `[infra/tool-invoker] xcode-ide daemon auto-start failed (${getErrorKind(error)})`,
+            { sentry: true },
+          );
+          captureInfraErrorMetric(error);
+          captureInvocationMetric('infra_error');
           return createErrorResponse(
             'Daemon auto-start failed',
             (error instanceof Error ? error.message : String(error)) +
@@ -122,8 +179,16 @@ export class DefaultToolInvoker implements ToolInvoker {
 
       try {
         const response = await client.invokeXcodeIdeTool(xcodeIdeRemoteToolName, args);
+        captureInvocationMetric('completed');
         return enrichNextStepsForCli(response, this.catalog);
       } catch (error) {
+        log(
+          'error',
+          `[infra/tool-invoker] xcode-ide tool invocation transport failed (${getErrorKind(error)})`,
+          { sentry: true },
+        );
+        captureInfraErrorMetric(error);
+        captureInvocationMetric('infra_error');
         return createErrorResponse(
           'Xcode IDE invocation failed',
           error instanceof Error ? error.message : String(error),
@@ -135,9 +200,12 @@ export class DefaultToolInvoker implements ToolInvoker {
 
     if (opts.runtime === 'cli') {
       if (mustUseDaemon) {
+        transport = 'daemon';
         // Route through daemon with auto-start
         const socketPath = opts.socketPath;
         if (!socketPath) {
+          captureInfraErrorMetric(new Error('SocketPathMissing'));
+          captureInvocationMetric('infra_error');
           return createErrorResponse(
             'Socket path required',
             `No socket path configured for daemon communication.`,
@@ -158,6 +226,11 @@ export class DefaultToolInvoker implements ToolInvoker {
               env: envOverrideValue,
             });
           } catch (error) {
+            log('error', `[infra/tool-invoker] daemon auto-start failed (${getErrorKind(error)})`, {
+              sentry: true,
+            });
+            captureInfraErrorMetric(error);
+            captureInvocationMetric('infra_error');
             return createErrorResponse(
               'Daemon auto-start failed',
               (error instanceof Error ? error.message : String(error)) +
@@ -169,8 +242,16 @@ export class DefaultToolInvoker implements ToolInvoker {
 
         try {
           const response = await client.invokeTool(tool.mcpName, args);
+          captureInvocationMetric('completed');
           return opts.runtime === 'cli' ? enrichNextStepsForCli(response, this.catalog) : response;
         } catch (error) {
+          log(
+            'error',
+            `[infra/tool-invoker] daemon transport invocation failed for ${tool.mcpName} (${getErrorKind(error)})`,
+            { sentry: true },
+          );
+          captureInfraErrorMetric(error);
+          captureInvocationMetric('infra_error');
           return createErrorResponse(
             'Daemon invocation failed',
             error instanceof Error ? error.message : String(error),
@@ -182,8 +263,16 @@ export class DefaultToolInvoker implements ToolInvoker {
     // Direct invocation (CLI stateless or daemon internal)
     try {
       const response = await tool.handler(args);
+      captureInvocationMetric('completed');
       return opts.runtime === 'cli' ? enrichNextStepsForCli(response, this.catalog) : response;
     } catch (error) {
+      log(
+        'error',
+        `[infra/tool-invoker] direct tool handler failed for ${tool.mcpName} (${getErrorKind(error)})`,
+        { sentry: true },
+      );
+      captureInfraErrorMetric(error);
+      captureInvocationMetric('infra_error');
       const message = error instanceof Error ? error.message : String(error);
       return createErrorResponse('Tool execution failed', message);
     }

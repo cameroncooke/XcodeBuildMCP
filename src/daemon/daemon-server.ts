@@ -205,12 +205,13 @@ export function startDaemonServer(ctx: DaemonServerContext): net.Server {
               });
           }
         } catch (error) {
-          log('error', `[Daemon] Error handling request: ${error}`);
+          const message = error instanceof Error ? error.message : String(error);
+          log('error', `[Daemon] Internal error handling request: ${message}`, { sentry: true });
           return writeFrame(socket, {
             ...base,
             error: {
               code: 'INTERNAL',
-              message: error instanceof Error ? error.message : String(error),
+              message,
             },
           });
         } finally {
@@ -218,7 +219,7 @@ export function startDaemonServer(ctx: DaemonServerContext): net.Server {
         }
       },
       (err) => {
-        log('error', `[Daemon] Frame parse error: ${err.message}`);
+        log('warning', `[Daemon] Frame parse error: ${err.message}`);
       },
     );
 
@@ -227,12 +228,12 @@ export function startDaemonServer(ctx: DaemonServerContext): net.Server {
       log('info', '[Daemon] Client disconnected');
     });
     socket.on('error', (err) => {
-      log('error', `[Daemon] Socket error: ${err.message}`);
+      log('warning', `[Daemon] Socket error: ${err.message}`);
     });
   });
 
   server.on('error', (err) => {
-    log('error', `[Daemon] Server error: ${err.message}`);
+    log('warning', `[Daemon] Server error: ${err.message}`);
   });
   server.on('close', () => {
     void xcodeIdeService.disconnect();

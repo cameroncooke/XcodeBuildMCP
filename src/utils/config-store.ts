@@ -134,6 +134,13 @@ function parseDebuggerBackend(value: string | undefined): DebuggerBackendKind | 
   return undefined;
 }
 
+function getErrorKind(error: unknown): string {
+  if (error instanceof Error) {
+    return error.name || 'Error';
+  }
+  return typeof error;
+}
+
 function setIfDefined<K extends keyof RuntimeConfigOverrides>(
   config: RuntimeConfigOverrides,
   key: K,
@@ -405,9 +412,13 @@ export async function initConfigStore(opts: {
       const errorMessage =
         result.error instanceof Error ? result.error.message : String(result.error);
       log('warning', `Failed to read or parse project config at ${result.path}. ${errorMessage}`);
+      log('warning', '[infra/config-store] project config read/parse failed', { sentry: true });
     }
   } catch (error) {
     log('warning', `Failed to load project config from ${opts.cwd}. ${error}`);
+    log('warning', `[infra/config-store] project config load threw (${getErrorKind(error)})`, {
+      sentry: true,
+    });
   }
 
   storeState.fileConfig = fileConfig;

@@ -15,6 +15,15 @@ import { sessionStore } from '../utils/session-store.ts';
 import { startXcodeStateWatcher, lookupBundleId } from '../utils/xcode-state-watcher.ts';
 import { getDefaultCommandExecutor } from '../utils/command.ts';
 import type { PredicateContext } from '../visibility/predicate-types.ts';
+import { resolveAxeBinary } from '../utils/axe/index.ts';
+import { isXcodemakeBinaryAvailable, isXcodemakeEnabled } from '../utils/xcodemake/index.ts';
+import {
+  getAxeVersionMetadata,
+  getXcodeVersionMetadata,
+  recordBootstrapDurationMetric,
+  recordXcodeBridgeSyncDurationMetric,
+  setSentryRuntimeContext,
+} from '../utils/sentry.ts';
 
 export interface BootstrapOptions {
   enabledWorkflows?: string[];
@@ -27,6 +36,7 @@ export async function bootstrapServer(
   server: McpServer,
   options: BootstrapOptions = {},
 ): Promise<void> {
+  const bootstrapStartedAt = Date.now();
   server.server.setRequestHandler(SetLevelRequestSchema, async (request) => {
     const { level } = request.params;
     setLogLevel(level as LogLevel);
@@ -160,8 +170,13 @@ export async function bootstrapServer(
   const xcodeToolsBridge = xcodeToolsAvailable ? getXcodeToolsBridgeManager(server) : null;
   xcodeToolsBridge?.setWorkflowEnabled(xcodeIdeEnabled);
   if (xcodeIdeEnabled && xcodeToolsBridge) {
+    const syncStartedAt = Date.now();
     try {
       const syncResult = await xcodeToolsBridge.syncTools({ reason: 'startup' });
+      recordXcodeBridgeSyncDurationMetric(
+        Date.now() - syncStartedAt,
+        syncResult.total > 0 ? 'success' : 'empty',
+      );
       // After sync, if Xcode tools are active, re-register with updated context
       if (syncResult.total > 0 && xcodeDetection.runningUnderXcode) {
         log('info', `[xcode-ide] Xcode tools active - applying conflict filtering`);
@@ -169,12 +184,54 @@ export async function bootstrapServer(
         await registerWorkflowsFromManifest(enabledWorkflows, ctx);
       }
     } catch (error) {
+      recordXcodeBridgeSyncDurationMetric(Date.now() - syncStartedAt, 'error');
       log(
         'warning',
         `[xcode-ide] Startup sync failed: ${error instanceof Error ? error.message : String(error)}`,
       );
+      log('warning', '[infra/bootstrap] xcode-ide startup sync failed', { sentry: true });
     }
   }
 
+  const xcodeVersion = await getXcodeVersionMetadata(async (command) => {
+    const commandResult = await executor(command, 'Get Xcode Version');
+    return { success: commandResult.success, output: commandResult.output ?? '' };
+  });
+  const xcodeAvailable = [
+    xcodeVersion.version,
+    xcodeVersion.buildVersion,
+    xcodeVersion.developerDir,
+    xcodeVersion.xcodebuildPath,
+  ].some((value) => Boolean(value));
+  const axeBinary = resolveAxeBinary();
+  const axeAvailable = axeBinary !== null;
+  const axeSource = axeBinary?.source ?? 'unavailable';
+  const xcodemakeAvailable = isXcodemakeBinaryAvailable();
+  const axeVersion = await getAxeVersionMetadata(async (command) => {
+    const commandResult = await executor(command, 'Get AXe Version');
+    return { success: commandResult.success, output: commandResult.output ?? '' };
+  }, axeBinary?.path);
+  setSentryRuntimeContext({
+    mode: 'mcp',
+    xcodeAvailable,
+    enabledWorkflows: resolvedWorkflows,
+    disableSessionDefaults: result.runtime.config.disableSessionDefaults,
+    disableXcodeAutoSync: result.runtime.config.disableXcodeAutoSync,
+    incrementalBuildsEnabled: result.runtime.config.incrementalBuildsEnabled,
+    debugEnabled: result.runtime.config.debug,
+    uiDebuggerGuardMode: result.runtime.config.uiDebuggerGuardMode,
+    xcodeIdeWorkflowEnabled: xcodeIdeEnabled,
+    axeAvailable,
+    axeSource,
+    axeVersion,
+    xcodeDeveloperDir: xcodeVersion.developerDir,
+    xcodebuildPath: xcodeVersion.xcodebuildPath,
+    xcodemakeAvailable,
+    xcodemakeEnabled: isXcodemakeEnabled(),
+    xcodeVersion: xcodeVersion.version,
+    xcodeBuildVersion: xcodeVersion.buildVersion,
+  });
+
   await registerResources(server);
+  recordBootstrapDurationMetric('mcp', Date.now() - bootstrapStartedAt);
 }

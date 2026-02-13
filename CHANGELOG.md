@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Fixed Sentry telemetry scope to capture only internal XcodeBuildMCP runtime failures, removing broad MCP wrapping, PII-heavy tags, and default per-error log capture ([#204](https://github.com/getsentry/XcodeBuildMCP/issues/204))
+
 ## [2.0.7]
 
 ### Changed
@@ -272,5 +278,4 @@ Please note that the UI automation features are an early preview and currently i
 ## [v1.0.1] - 2025-04-02
 - Initial release of XcodeBuildMCP
 - Basic support for building iOS and macOS applications
-
 

@@ -14,21 +14,13 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import * as Sentry from '@sentry/node';
 import { log } from '../utils/logger.ts';
 import { version } from '../version.ts';
-import * as Sentry from '@sentry/node';
 import { getServer, setServer } from './server-state.ts';
 
-/**
- * Create and configure the MCP server
- * @returns Configured MCP server instance
- */
-export function createServer(): McpServer {
-  if (getServer()) {
-    throw new Error('MCP server already initialized.');
-  }
-  // Create server instance
-  const baseServer = new McpServer(
+function createBaseServerInstance(): McpServer {
+  return new McpServer(
     {
       name: 'xcodebuildmcp',
       version,
@@ -64,16 +56,30 @@ Always start by calling session_show_defaults to see current configuration, then
         logging: {},
       },
     },
-  );
+  ) as unknown as McpServer;
+}
 
-  // Wrap server with Sentry for MCP instrumentation
-  const wrappedServer = Sentry.wrapMcpServerWithSentry(baseServer);
-  setServer(wrappedServer);
+/**
+ * Create and configure the MCP server
+ * @returns Configured MCP server instance
+ */
+export function createServer(): McpServer {
+  if (getServer()) {
+    throw new Error('MCP server already initialized.');
+  }
+  // Create server instance
+  const baseServer = createBaseServerInstance();
+  const server = Sentry.wrapMcpServerWithSentry(baseServer, {
+    recordInputs: false,
+    recordOutputs: false,
+  });
+
+  setServer(server);
 
   // Log server initialization
-  log('info', `Server initialized with Sentry MCP instrumentation (version ${version})`);
+  log('info', `Server initialized (version ${version})`);
 
-  return wrappedServer;
+  return server;
 }
 
 /**

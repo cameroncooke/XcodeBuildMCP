@@ -8,6 +8,7 @@ import { importToolModule } from '../core/manifest/import-tool-module.ts';
 import type { PredicateContext } from '../visibility/predicate-types.ts';
 import { selectWorkflowsForMcp, isToolExposedForRuntime } from '../visibility/exposure.ts';
 import { getConfig } from './config-store.ts';
+import { recordInternalErrorMetric, recordToolInvocationMetric } from './sentry.ts';
 
 export interface RuntimeToolInfo {
   enabledWorkflows: string[];
@@ -114,8 +115,32 @@ export async function applyWorkflowSelectionFromManifest(
             annotations: toolManifest.annotations,
           },
           async (args: unknown): Promise<ToolResponse> => {
-            const response = await toolModule.handler(args as Record<string, unknown>);
-            return processToolResponse(response as ToolResponse, 'mcp', 'normal');
+            const startedAt = Date.now();
+            try {
+              const response = await toolModule.handler(args as Record<string, unknown>);
+              recordToolInvocationMetric({
+                toolName,
+                runtime: 'mcp',
+                transport: 'direct',
+                outcome: 'completed',
+                durationMs: Date.now() - startedAt,
+              });
+              return processToolResponse(response as ToolResponse, 'mcp', 'normal');
+            } catch (error) {
+              recordInternalErrorMetric({
+                component: 'mcp-tool-registry',
+                runtime: 'mcp',
+                errorKind: error instanceof Error ? error.name || 'Error' : typeof error,
+              });
+              recordToolInvocationMetric({
+                toolName,
+                runtime: 'mcp',
+                transport: 'direct',
+                outcome: 'infra_error',
+                durationMs: Date.now() - startedAt,
+              });
+              throw error;
+            }
           },
         );
         registryState.tools.set(toolName, registeredTool);

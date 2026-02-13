@@ -52,6 +52,10 @@ export interface LogContext {
   sentry?: boolean;
 }
 
+export function __shouldCaptureToSentryForTests(context?: LogContext): boolean {
+  return context?.sentry === true;
+}
+
 // Client-requested log level ("none" means no output unless explicitly enabled)
 let clientLogLevel: LogLevel = 'none';
 
@@ -67,6 +71,7 @@ function isTestEnv(): boolean {
 }
 
 type SentryModule = typeof import('@sentry/node');
+type SentryLogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
 const require = createRequire(
   typeof __filename === 'string' ? __filename : resolve(process.cwd(), 'package.json'),
@@ -93,6 +98,30 @@ function withSentry(cb: (s: SentryModule) => void): void {
   } catch {
     // no-op: avoid throwing inside logger
   }
+}
+
+function mapLogLevelToSentry(level: string): SentryLogLevel {
+  switch (level.toLowerCase()) {
+    case 'emergency':
+    case 'alert':
+      return 'fatal';
+    case 'critical':
+    case 'error':
+      return 'error';
+    case 'warning':
+      return 'warn';
+    case 'debug':
+      return 'debug';
+    case 'notice':
+    case 'info':
+      return 'info';
+    default:
+      return 'info';
+  }
+}
+
+export function __mapLogLevelToSentryForTests(level: string): SentryLogLevel {
+  return mapLogLevelToSentry(level);
 }
 
 /**
@@ -193,12 +222,19 @@ export function log(level: string, message: string, context?: LogContext): void 
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
 
-  // Default: error level goes to Sentry
-  // But respect explicit override from context
-  const captureToSentry = sentryEnabled && (context?.sentry ?? level === 'error');
+  // Sentry capture is explicit opt-in only.
+  const captureToSentry = sentryEnabled && __shouldCaptureToSentryForTests(context);
 
   if (captureToSentry) {
-    withSentry((s) => s.captureMessage(logMessage));
+    withSentry((s) => {
+      const sentryLevel = mapLogLevelToSentry(level);
+      const loggerMethod = s.logger?.[sentryLevel];
+      if (typeof loggerMethod === 'function') {
+        loggerMethod(message);
+        return;
+      }
+      s.captureMessage(logMessage);
+    });
   }
 
   if (logFileStream && clientLogLevel !== 'none') {

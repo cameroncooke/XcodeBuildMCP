@@ -54,6 +54,9 @@ export async function loadResources(): Promise<Map<string, ResourceMeta>> {
   for (const resource of RESOURCES) {
     if (!resource.uri || !resource.handler || typeof resource.handler !== 'function') {
       log('error', `Invalid resource structure for ${resource.name ?? 'unknown'}`);
+      log('error', '[infra/resources] invalid resource structure detected during registration', {
+        sentry: true,
+      });
       continue;
     }
 
