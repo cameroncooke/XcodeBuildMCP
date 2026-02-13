@@ -40,16 +40,7 @@ export function getRegisteredWorkflows(): string[] {
   return [...registryState.enabledWorkflows];
 }
 
-/**
- * Get the current MCP predicate context.
- * Returns the context used for the most recent workflow registration,
- * or a default context if not yet initialized.
- */
-export function getMcpPredicateContext(): PredicateContext {
-  if (registryState.currentContext) {
-    return registryState.currentContext;
-  }
-  // Default context when not yet initialized
+function defaultPredicateContext(): PredicateContext {
   return {
     runtime: 'mcp',
     config: getConfig(),
@@ -57,6 +48,15 @@ export function getMcpPredicateContext(): PredicateContext {
     xcodeToolsActive: false,
     xcodeToolsAvailable: false,
   };
+}
+
+/**
+ * Get the current MCP predicate context.
+ * Returns the context used for the most recent workflow registration,
+ * or a default context if not yet initialized.
+ */
+export function getMcpPredicateContext(): PredicateContext {
+  return registryState.currentContext ?? defaultPredicateContext();
 }
 
 /**
@@ -103,7 +103,7 @@ export async function applyWorkflowSelectionFromManifest(
         try {
           toolModule = await importToolModule(toolManifest.module);
         } catch (err) {
-          log('warn', `Failed to import tool module ${toolManifest.module}: ${err}`);
+          log('warning', `Failed to import tool module ${toolManifest.module}: ${err}`);
           continue;
         }
 
@@ -174,14 +174,7 @@ export async function registerWorkflowsFromManifest(
   workflowNames?: string[],
   ctx?: PredicateContext,
 ): Promise<void> {
-  const effectiveCtx: PredicateContext = ctx ?? {
-    runtime: 'mcp',
-    config: getConfig(),
-    runningUnderXcode: false,
-    xcodeToolsActive: false,
-    xcodeToolsAvailable: false,
-  };
-  await applyWorkflowSelectionFromManifest(workflowNames, effectiveCtx);
+  await applyWorkflowSelectionFromManifest(workflowNames, ctx ?? defaultPredicateContext());
 }
 
 /**

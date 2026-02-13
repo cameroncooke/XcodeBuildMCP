@@ -153,16 +153,15 @@ export async function isXcodemakeAvailable(): Promise<boolean> {
       return true;
     }
 
-    // If not found, download and install it
     log('info', 'xcodemake not found in PATH, attempting to download...');
     const installed = await installXcodemake();
-    if (installed) {
-      log('info', 'xcodemake installed successfully');
-      return true;
-    } else {
-      log('warn', 'xcodemake installation failed');
+    if (!installed) {
+      log('warning', 'xcodemake installation failed');
       return false;
     }
+
+    log('info', 'xcodemake installed successfully');
+    return true;
   } catch (error) {
     log(
       'error',

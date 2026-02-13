@@ -103,4 +103,3 @@ function applyCatalogChange() {
 registerInitialTools();
 
 await server.connect(new StdioServerTransport());
-

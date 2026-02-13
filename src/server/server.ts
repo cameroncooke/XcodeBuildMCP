@@ -67,7 +67,6 @@ export function createServer(): McpServer {
   if (getServer()) {
     throw new Error('MCP server already initialized.');
   }
-  // Create server instance
   const baseServer = createBaseServerInstance();
   const server = Sentry.wrapMcpServerWithSentry(baseServer, {
     recordInputs: false,
@@ -76,7 +75,6 @@ export function createServer(): McpServer {
 
   setServer(server);
 
-  // Log server initialization
   log('info', `Server initialized (version ${version})`);
 
   return server;

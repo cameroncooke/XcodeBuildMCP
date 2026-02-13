@@ -13,11 +13,7 @@ const __dirname = dirname(__filename);
 const projectRoot = join(__dirname, '..');
 
 // Set executable permissions for entry points
-const executables = [
-  'build/cli.js',
-  'build/doctor-cli.js',
-  'build/daemon.js'
-];
+const executables = ['build/cli.js', 'build/doctor-cli.js', 'build/daemon.js'];
 
 for (const file of executables) {
   const fullPath = join(projectRoot, file);

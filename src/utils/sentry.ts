@@ -133,7 +133,7 @@ export function __redactLogForTests(log: Sentry.Log): Sentry.Log | null {
   return redactLog(clone);
 }
 
-export function __parseXcodeVersionForTests(output: string): {
+function parseXcodeVersionOutput(output: string): {
   version?: string;
   buildVersion?: string;
 } {
@@ -143,6 +143,13 @@ export function __parseXcodeVersionForTests(output: string): {
     version: versionMatch?.[1]?.trim(),
     buildVersion: buildMatch?.[1]?.trim(),
   };
+}
+
+export function __parseXcodeVersionForTests(output: string): {
+  version?: string;
+  buildVersion?: string;
+} {
+  return parseXcodeVersionOutput(output);
 }
 
 let initialized = false;
@@ -191,7 +198,7 @@ function boolToTag(value: boolean | undefined): string | undefined {
   if (value === undefined) {
     return undefined;
   }
-  return value ? 'true' : 'false';
+  return String(value);
 }
 
 function setTagIfDefined(key: string, value: string | undefined): void {
@@ -233,25 +240,22 @@ export function setSentryRuntimeContext(context: SentryRuntimeContext): void {
   }
 }
 
-export async function getXcodeVersionMetadata(
-  runCommand: (command: string[]) => Promise<{ success: boolean; output: string }>,
-): Promise<{
+interface XcodeVersionMetadata {
   version?: string;
   buildVersion?: string;
   developerDir?: string;
   xcodebuildPath?: string;
-}> {
-  const metadata: {
-    version?: string;
-    buildVersion?: string;
-    developerDir?: string;
-    xcodebuildPath?: string;
-  } = {};
+}
+
+export async function getXcodeVersionMetadata(
+  runCommand: (command: string[]) => Promise<{ success: boolean; output: string }>,
+): Promise<XcodeVersionMetadata> {
+  const metadata: XcodeVersionMetadata = {};
 
   try {
     const result = await runCommand(['xcodebuild', '-version']);
     if (result.success) {
-      const parsed = __parseXcodeVersionForTests(result.output);
+      const parsed = parseXcodeVersionOutput(result.output);
       metadata.version = parsed.version;
       metadata.buildVersion = parsed.buildVersion;
     }

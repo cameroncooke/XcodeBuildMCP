@@ -128,7 +128,6 @@ function resolveLogLevel(): LogLevel | null {
 
 async function main(): Promise<void> {
   const daemonBootstrapStart = Date.now();
-  // Bootstrap runtime first to get config and workspace info
   const result = await bootstrapRuntime({
     runtime: 'daemon',
     configOverrides: {
@@ -136,7 +135,6 @@ async function main(): Promise<void> {
     },
   });
 
-  // Compute workspace context
   const workspaceRoot = resolveWorkspaceRoot({
     cwd: result.runtime.cwd,
     projectConfigPath: result.configPath,
@@ -153,12 +151,7 @@ async function main(): Promise<void> {
     rotateLogIfNeeded(logPath);
     setLogFile(logPath);
 
-    const requestedLogLevel = resolveLogLevel();
-    if (requestedLogLevel) {
-      setLogLevel(requestedLogLevel);
-    } else {
-      setLogLevel('info');
-    }
+    setLogLevel(resolveLogLevel() ?? 'info');
   }
 
   initSentry({ mode: 'cli-daemon' });
@@ -166,7 +159,6 @@ async function main(): Promise<void> {
 
   log('info', `[Daemon] xcodebuildmcp daemon ${version} starting...`);
 
-  // Get socket path (env override or workspace-derived)
   const socketPath = getSocketPath({
     cwd: result.runtime.cwd,
     projectConfigPath: result.configPath,
@@ -180,7 +172,6 @@ async function main(): Promise<void> {
 
   ensureSocketDir(socketPath);
 
-  // Check if daemon is already running
   const isRunning = await checkExistingDaemon(socketPath);
   if (isRunning) {
     log('error', '[Daemon] Another daemon is already running for this workspace');
@@ -189,7 +180,6 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // Remove stale socket file
   removeStaleSocket(socketPath);
 
   const excludedWorkflows = ['session-management', 'workflow-discovery'];
@@ -199,31 +189,28 @@ async function main(): Promise<void> {
   // Get all workflows from manifest (for reporting purposes and filtering).
   const manifest = loadManifest();
   const allWorkflowIds = Array.from(manifest.workflows.keys());
-  const daemonWorkflows = allWorkflowIds.filter((workflowId) => {
-    if (excludedWorkflows.includes(workflowId)) {
-      return false;
-    }
-    return true;
-  });
+  const daemonWorkflows = allWorkflowIds.filter(
+    (workflowId) => !excludedWorkflows.includes(workflowId),
+  );
   const xcodeIdeWorkflowEnabled = daemonWorkflows.includes('xcode-ide');
   const commandExecutor = getDefaultCommandExecutor();
   const xcodeVersion = await getXcodeVersionMetadata(async (command) => {
     const result = await commandExecutor(command, 'Get Xcode Version');
-    return { success: result.success, output: result.output ?? '' };
+    return { success: result.success, output: result.output };
   });
-  const xcodeAvailable = [
-    xcodeVersion.version,
-    xcodeVersion.buildVersion,
-    xcodeVersion.developerDir,
-    xcodeVersion.xcodebuildPath,
-  ].some((value) => Boolean(value));
+  const xcodeAvailable = Boolean(
+    xcodeVersion.version ||
+      xcodeVersion.buildVersion ||
+      xcodeVersion.developerDir ||
+      xcodeVersion.xcodebuildPath,
+  );
   const axeBinary = resolveAxeBinary();
   const axeAvailable = axeBinary !== null;
   const axeSource = axeBinary?.source ?? 'unavailable';
   const xcodemakeAvailable = isXcodemakeBinaryAvailable();
   const axeVersion = await getAxeVersionMetadata(async (command) => {
     const result = await commandExecutor(command, 'Get AXe Version');
-    return { success: result.success, output: result.output ?? '' };
+    return { success: result.success, output: result.output };
   }, axeBinary?.path);
   setSentryRuntimeContext({
     mode: 'cli-daemon',
@@ -246,7 +233,6 @@ async function main(): Promise<void> {
     xcodeBuildVersion: xcodeVersion.buildVersion,
   });
 
-  // Build tool catalog using manifest system
   const catalog = await buildDaemonToolCatalogFromManifest({
     excludeWorkflows: excludedWorkflows,
   });
@@ -316,7 +302,7 @@ async function main(): Promise<void> {
 
     // Force exit if server doesn't close in time
     setTimeout(() => {
-      log('warn', '[Daemon] Forced shutdown after timeout');
+      log('warning', '[Daemon] Forced shutdown after timeout');
       cleanupWorkspaceDaemonFiles(workspaceKey);
       void flushAndCloseSentry(1000).finally(() => {
         process.exit(1);
@@ -324,7 +310,14 @@ async function main(): Promise<void> {
     }, 5000);
   };
 
-  // Start server
+  const emitRequestGauges = (): void => {
+    recordDaemonGaugeMetric('inflight_requests', inFlightRequests);
+    recordDaemonGaugeMetric(
+      'active_sessions',
+      getDaemonRuntimeActivitySnapshot().activeOperationCount,
+    );
+  };
+
   const server = startDaemonServer({
     socketPath,
     logPath: logPath ?? undefined,
@@ -338,23 +331,15 @@ async function main(): Promise<void> {
     onRequestStarted: () => {
       inFlightRequests += 1;
       markActivity();
-      recordDaemonGaugeMetric('inflight_requests', inFlightRequests);
-      const sessionSnapshot = getDaemonRuntimeActivitySnapshot();
-      recordDaemonGaugeMetric('active_sessions', sessionSnapshot.activeOperationCount);
+      emitRequestGauges();
     },
     onRequestFinished: () => {
       inFlightRequests = Math.max(0, inFlightRequests - 1);
       markActivity();
-      recordDaemonGaugeMetric('inflight_requests', inFlightRequests);
-      const sessionSnapshot = getDaemonRuntimeActivitySnapshot();
-      recordDaemonGaugeMetric('active_sessions', sessionSnapshot.activeOperationCount);
+      emitRequestGauges();
     },
   });
-  recordDaemonGaugeMetric('inflight_requests', inFlightRequests);
-  recordDaemonGaugeMetric(
-    'active_sessions',
-    getDaemonRuntimeActivitySnapshot().activeOperationCount,
-  );
+  emitRequestGauges();
 
   if (idleTimeoutMs > 0) {
     idleCheckTimer = setInterval(() => {
@@ -362,9 +347,7 @@ async function main(): Promise<void> {
         return;
       }
 
-      const sessionSnapshot = getDaemonRuntimeActivitySnapshot();
-      recordDaemonGaugeMetric('inflight_requests', inFlightRequests);
-      recordDaemonGaugeMetric('active_sessions', sessionSnapshot.activeOperationCount);
+      emitRequestGauges();
 
       const idleForMs = Date.now() - lastActivityAt;
       if (idleForMs < idleTimeoutMs) {
@@ -375,7 +358,7 @@ async function main(): Promise<void> {
         return;
       }
 
-      if (hasActiveRuntimeSessions(sessionSnapshot)) {
+      if (hasActiveRuntimeSessions(getDaemonRuntimeActivitySnapshot())) {
         return;
       }
 
@@ -410,21 +393,14 @@ async function main(): Promise<void> {
     recordBootstrapDurationMetric('cli-daemon', Date.now() - daemonBootstrapStart);
   });
 
-  // Handle graceful shutdown
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 }
 
 main().catch(async (err) => {
   recordDaemonLifecycleMetric('crash');
-  let message = 'Unknown daemon error';
-  if (err instanceof Error) {
-    message = err.message;
-  } else if (typeof err === 'string') {
-    message = err;
-  } else if (err !== null && err !== undefined) {
-    message = String(err);
-  }
+  const message =
+    err == null ? 'Unknown daemon error' : err instanceof Error ? err.message : String(err);
 
   log('error', `Daemon error: ${message}`, { sentry: true });
   console.error('Daemon error:', message);

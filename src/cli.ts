@@ -78,15 +78,13 @@ async function main(): Promise<void> {
     discoveryMode,
   });
 
-  const workflowNames = cliExposedWorkflowIds;
-
   const yargsApp = buildYargsApp({
     catalog,
     runtimeConfig: result.runtime.config,
     defaultSocketPath,
     workspaceRoot,
     workspaceKey,
-    workflowNames,
+    workflowNames: cliExposedWorkflowIds,
     cliExposedWorkflowIds,
   });
 

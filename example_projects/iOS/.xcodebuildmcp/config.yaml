@@ -1,5 +1,5 @@
 schemaVersion: 1
-enabledWorkflows: ["simulator", "ui-automation", "debugging", "logging"]
+enabledWorkflows: ['simulator', 'ui-automation', 'debugging', 'logging']
 sessionDefaults:
   projectPath: ./MCPTest.xcodeproj
   scheme: MCPTest

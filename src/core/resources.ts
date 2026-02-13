@@ -53,10 +53,11 @@ export async function loadResources(): Promise<Map<string, ResourceMeta>> {
 
   for (const resource of RESOURCES) {
     if (!resource.uri || !resource.handler || typeof resource.handler !== 'function') {
-      log('error', `Invalid resource structure for ${resource.name ?? 'unknown'}`);
-      log('error', '[infra/resources] invalid resource structure detected during registration', {
-        sentry: true,
-      });
+      log(
+        'error',
+        `[infra/resources] invalid resource structure for ${resource.name ?? 'unknown'}`,
+        { sentry: true },
+      );
       continue;
     }
 
@@ -75,7 +76,7 @@ export async function loadResources(): Promise<Map<string, ResourceMeta>> {
 export async function registerResources(server: McpServer): Promise<boolean> {
   const resources = await loadResources();
 
-  for (const [uri, resource] of Array.from(resources)) {
+  for (const [uri, resource] of resources) {
     const readCallback = async (resourceUri: URL): Promise<ReadResourceResult> => {
       const result = await resource.handler(resourceUri);
       return {
