@@ -161,6 +161,36 @@ The examples below use npx (Option B). If you installed via Homebrew, replace th
 </details>
 
 <details>
+  <summary>Kiro / Kiro CLI</summary>
+  <br />
+
+  **Workspace-level** (applies only to the current workspace): add `.kiro/settings/mcp.json` in your project root:
+  ```json
+  {
+    "mcpServers": {
+      "XcodeBuildMCP": {
+        "command": "npx",
+        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
+      }
+    }
+  }
+  ```
+
+  **User-level** (applies globally across all workspaces): add to `~/.kiro/settings/mcp.json`:
+  ```json
+  {
+    "mcpServers": {
+      "XcodeBuildMCP": {
+        "command": "npx",
+        "args": ["-y", "xcodebuildmcp@latest", "mcp"]
+      }
+    }
+  }
+  ```
+  <br />
+</details>
+
+<details>
   <summary>Windsurf</summary>
   <br />
 
