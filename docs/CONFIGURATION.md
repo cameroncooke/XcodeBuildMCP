@@ -259,7 +259,7 @@ Default templates:
 
 ## Telemetry
 
-By default, error logs are sent to Sentry. To disable:
+By default, only internal XcodeBuildMCP runtime failures are sent to Sentry. User-domain errors (such as project build/test/config failures) are not sent. To disable telemetry entirely:
 
 ```yaml
 # Environment variable only (no config.yaml option)
@@ -267,6 +267,11 @@ By default, error logs are sent to Sentry. To disable:
 ```
 
 See [PRIVACY.md](PRIVACY.md) for more information.
+
+Notes:
+- Sentry SDK logging is enabled for internal observability.
+- Only explicitly opted-in internal logs are forwarded to Sentry; standard console logs are not auto-forwarded.
+- Tool arguments and tool outputs are not captured by MCP wrapper telemetry (`recordInputs: false`, `recordOutputs: false`).
 
 ---
 

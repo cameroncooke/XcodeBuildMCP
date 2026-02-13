@@ -1,1 +1,6 @@
-export { isXcodemakeEnabled, isXcodemakeAvailable, doesMakefileExist } from '../xcodemake.ts';
+export {
+  isXcodemakeEnabled,
+  isXcodemakeAvailable,
+  isXcodemakeBinaryAvailable,
+  doesMakefileExist,
+} from '../xcodemake.ts';

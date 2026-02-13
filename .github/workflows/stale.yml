@@ -1,8 +1,8 @@
-name: "Stale Issues and PRs"
+name: 'Stale Issues and PRs'
 
 on:
   schedule:
-    - cron: "30 3 * * *"
+    - cron: '30 3 * * *'
   workflow_dispatch: {}
 
 permissions:
@@ -21,12 +21,12 @@ jobs:
           days-before-issue-close: 7
           days-before-pr-stale: 21
           days-before-pr-close: 7
-          stale-issue-label: "stale"
-          stale-pr-label: "stale-pr"
+          stale-issue-label: 'stale'
+          stale-pr-label: 'stale-pr'
           exempt-issue-assignees: true
           exempt-pr-assignees: true
-          exempt-issue-labels: "no-stale,security,pinned"
-          exempt-pr-labels: "no-stale,security,pinned"
+          exempt-issue-labels: 'no-stale,security,pinned'
+          exempt-pr-labels: 'no-stale,security,pinned'
           stale-issue-message: >
             This issue has been inactive for 30 days. It will be closed in 7 days
             if no further activity occurs. Add a comment to keep it open, or apply

@@ -9,7 +9,7 @@
 
 import { createServer, startServer } from './server.ts';
 import { log, setLogLevel } from '../utils/logger.ts';
-import { initSentry } from '../utils/sentry.ts';
+import { flushAndCloseSentry, initSentry } from '../utils/sentry.ts';
 import { getDefaultDebuggerManager } from '../utils/debugger/index.ts';
 import { version } from '../version.ts';
 import process from 'node:process';
@@ -27,7 +27,7 @@ export async function startMcpServer(): Promise<void> {
     // Clients can override via logging/setLevel MCP request
     setLogLevel('info');
 
-    initSentry();
+    initSentry({ mode: 'mcp' });
 
     const server = createServer();
 
@@ -48,23 +48,24 @@ export async function startMcpServer(): Promise<void> {
         await shutdownXcodeToolsBridge();
       } catch (error) {
         exitCode = 1;
-        log('error', `Failed to shutdown Xcode tools bridge: ${String(error)}`);
+        log('error', `Failed to shutdown Xcode tools bridge: ${String(error)}`, { sentry: true });
       }
 
       try {
         await getDefaultDebuggerManager().disposeAll();
       } catch (error) {
         exitCode = 1;
-        log('error', `Failed to dispose debugger sessions: ${String(error)}`);
+        log('error', `Failed to dispose debugger sessions: ${String(error)}`, { sentry: true });
       }
 
       try {
         await server.close();
       } catch (error) {
         exitCode = 1;
-        log('error', `Failed to close MCP server: ${String(error)}`);
+        log('error', `Failed to close MCP server: ${String(error)}`, { sentry: true });
       }
 
+      await flushAndCloseSentry(2000);
       process.exit(exitCode);
     };
 
@@ -78,7 +79,9 @@ export async function startMcpServer(): Promise<void> {
 
     log('info', `XcodeBuildMCP server (version ${version}) started successfully`);
   } catch (error) {
+    log('error', `Fatal error in startMcpServer(): ${String(error)}`, { sentry: true });
     console.error('Fatal error in startMcpServer():', error);
+    await flushAndCloseSentry(2000);
     process.exit(1);
   }
 }

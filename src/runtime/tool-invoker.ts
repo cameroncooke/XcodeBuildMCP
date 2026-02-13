@@ -3,6 +3,14 @@ import type { ToolResponse } from '../types/common.ts';
 import { createErrorResponse } from '../utils/responses/index.ts';
 import { DaemonClient } from '../cli/daemon-client.ts';
 import { ensureDaemonRunning, DEFAULT_DAEMON_STARTUP_TIMEOUT_MS } from '../cli/daemon-control.ts';
+import { log } from '../utils/logger.ts';
+import {
+  recordInternalErrorMetric,
+  recordToolInvocationMetric,
+  type SentryToolInvocationOutcome,
+  type SentryToolRuntime,
+  type SentryToolTransport,
+} from '../utils/sentry.ts';
 
 /**
  * Enrich nextSteps for CLI rendering.
@@ -38,6 +46,23 @@ function buildDaemonEnvOverrides(opts: InvokeOptions): Record<string, string> | 
   }
 
   return Object.keys(envOverrides).length > 0 ? envOverrides : undefined;
+}
+
+function getErrorKind(error: unknown): string {
+  if (error instanceof Error) {
+    return error.name || 'Error';
+  }
+  return typeof error;
+}
+
+function mapRuntimeToSentryToolRuntime(runtime: InvokeOptions['runtime']): SentryToolRuntime {
+  switch (runtime) {
+    case 'daemon':
+    case 'mcp':
+      return runtime;
+    default:
+      return 'cli';
+  }
 }
 
 export class DefaultToolInvoker implements ToolInvoker {
@@ -80,110 +105,149 @@ export class DefaultToolInvoker implements ToolInvoker {
     return this.executeTool(tool, args, opts);
   }
 
+  /**
+   * Route a tool invocation through the daemon, auto-starting it if needed.
+   */
+  private async invokeViaDaemon(
+    opts: InvokeOptions,
+    args: Record<string, unknown>,
+    invoke: (client: DaemonClient) => Promise<ToolResponse>,
+    context: {
+      label: string;
+      errorTitle: string;
+      captureInfraErrorMetric: (error: unknown) => void;
+      captureInvocationMetric: (outcome: SentryToolInvocationOutcome) => void;
+    },
+  ): Promise<ToolResponse> {
+    const socketPath = opts.socketPath;
+    if (!socketPath) {
+      context.captureInfraErrorMetric(new Error('SocketPathMissing'));
+      context.captureInvocationMetric('infra_error');
+      return createErrorResponse(
+        'Socket path required',
+        'No socket path configured for daemon communication.',
+      );
+    }
+
+    const client = new DaemonClient({ socketPath });
+    const envOverrides = buildDaemonEnvOverrides(opts);
+
+    const isRunning = await client.isRunning();
+    if (!isRunning) {
+      try {
+        await ensureDaemonRunning({
+          socketPath,
+          workspaceRoot: opts.workspaceRoot,
+          startupTimeoutMs: opts.daemonStartupTimeoutMs ?? DEFAULT_DAEMON_STARTUP_TIMEOUT_MS,
+          env: envOverrides,
+        });
+      } catch (error) {
+        log(
+          'error',
+          `[infra/tool-invoker] ${context.label} daemon auto-start failed (${getErrorKind(error)})`,
+          { sentry: true },
+        );
+        context.captureInfraErrorMetric(error);
+        context.captureInvocationMetric('infra_error');
+        return createErrorResponse(
+          'Daemon auto-start failed',
+          (error instanceof Error ? error.message : String(error)) +
+            '\n\nYou can try starting the daemon manually:\n' +
+            '  xcodebuildmcp daemon start',
+        );
+      }
+    }
+
+    try {
+      const response = await invoke(client);
+      context.captureInvocationMetric('completed');
+      return enrichNextStepsForCli(response, this.catalog);
+    } catch (error) {
+      log(
+        'error',
+        `[infra/tool-invoker] ${context.label} transport failed (${getErrorKind(error)})`,
+        { sentry: true },
+      );
+      context.captureInfraErrorMetric(error);
+      context.captureInvocationMetric('infra_error');
+      return createErrorResponse(
+        context.errorTitle,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
+
   private async executeTool(
     tool: ToolDefinition,
     args: Record<string, unknown>,
     opts: InvokeOptions,
   ): Promise<ToolResponse> {
-    const xcodeIdeRemoteToolName = tool.xcodeIdeRemoteToolName;
-    const isDynamicXcodeIdeTool =
-      tool.workflow === 'xcode-ide' && typeof xcodeIdeRemoteToolName === 'string';
+    const startedAt = Date.now();
+    const runtime = mapRuntimeToSentryToolRuntime(opts.runtime);
+    let transport: SentryToolTransport = 'direct';
 
-    if (opts.runtime === 'cli' && isDynamicXcodeIdeTool) {
-      const socketPath = opts.socketPath;
-      if (!socketPath) {
-        return createErrorResponse(
-          'Socket path required',
-          `No socket path configured for daemon communication.`,
-        );
-      }
+    const captureInvocationMetric = (outcome: SentryToolInvocationOutcome): void => {
+      recordToolInvocationMetric({
+        toolName: tool.mcpName,
+        runtime,
+        transport,
+        outcome,
+        durationMs: Date.now() - startedAt,
+      });
+    };
 
-      const envOverrideValue = buildDaemonEnvOverrides(opts);
-      const client = new DaemonClient({ socketPath });
+    const captureInfraErrorMetric = (error: unknown): void => {
+      recordInternalErrorMetric({
+        component: 'tool-invoker',
+        runtime,
+        errorKind: getErrorKind(error),
+      });
+    };
 
-      const isRunning = await client.isRunning();
-      if (!isRunning) {
-        try {
-          await ensureDaemonRunning({
-            socketPath,
-            workspaceRoot: opts.workspaceRoot,
-            startupTimeoutMs: opts.daemonStartupTimeoutMs ?? DEFAULT_DAEMON_STARTUP_TIMEOUT_MS,
-            env: envOverrideValue,
-          });
-        } catch (error) {
-          return createErrorResponse(
-            'Daemon auto-start failed',
-            (error instanceof Error ? error.message : String(error)) +
-              `\n\nYou can try starting the daemon manually:\n` +
-              `  xcodebuildmcp daemon start`,
-          );
-        }
-      }
-
-      try {
-        const response = await client.invokeXcodeIdeTool(xcodeIdeRemoteToolName, args);
-        return enrichNextStepsForCli(response, this.catalog);
-      } catch (error) {
-        return createErrorResponse(
-          'Xcode IDE invocation failed',
-          error instanceof Error ? error.message : String(error),
-        );
-      }
-    }
-
-    const mustUseDaemon = tool.stateful;
+    const metricContext = { captureInfraErrorMetric, captureInvocationMetric };
 
     if (opts.runtime === 'cli') {
-      if (mustUseDaemon) {
-        // Route through daemon with auto-start
-        const socketPath = opts.socketPath;
-        if (!socketPath) {
-          return createErrorResponse(
-            'Socket path required',
-            `No socket path configured for daemon communication.`,
-          );
-        }
+      const xcodeIdeRemoteToolName = tool.xcodeIdeRemoteToolName;
+      const isDynamicXcodeIdeTool =
+        tool.workflow === 'xcode-ide' && typeof xcodeIdeRemoteToolName === 'string';
 
-        const client = new DaemonClient({ socketPath });
-        const envOverrideValue = buildDaemonEnvOverrides(opts);
+      if (isDynamicXcodeIdeTool) {
+        transport = 'xcode-ide-daemon';
+        return this.invokeViaDaemon(
+          opts,
+          args,
+          (client) => client.invokeXcodeIdeTool(xcodeIdeRemoteToolName, args),
+          {
+            ...metricContext,
+            label: 'xcode-ide',
+            errorTitle: 'Xcode IDE invocation failed',
+          },
+        );
+      }
 
-        // Check if daemon is running; auto-start if not
-        const isRunning = await client.isRunning();
-        if (!isRunning) {
-          try {
-            await ensureDaemonRunning({
-              socketPath,
-              workspaceRoot: opts.workspaceRoot,
-              startupTimeoutMs: opts.daemonStartupTimeoutMs ?? DEFAULT_DAEMON_STARTUP_TIMEOUT_MS,
-              env: envOverrideValue,
-            });
-          } catch (error) {
-            return createErrorResponse(
-              'Daemon auto-start failed',
-              (error instanceof Error ? error.message : String(error)) +
-                `\n\nYou can try starting the daemon manually:\n` +
-                `  xcodebuildmcp daemon start`,
-            );
-          }
-        }
-
-        try {
-          const response = await client.invokeTool(tool.mcpName, args);
-          return opts.runtime === 'cli' ? enrichNextStepsForCli(response, this.catalog) : response;
-        } catch (error) {
-          return createErrorResponse(
-            'Daemon invocation failed',
-            error instanceof Error ? error.message : String(error),
-          );
-        }
+      if (tool.stateful) {
+        transport = 'daemon';
+        return this.invokeViaDaemon(opts, args, (client) => client.invokeTool(tool.mcpName, args), {
+          ...metricContext,
+          label: `daemon/${tool.mcpName}`,
+          errorTitle: 'Daemon invocation failed',
+        });
       }
     }
 
     // Direct invocation (CLI stateless or daemon internal)
     try {
       const response = await tool.handler(args);
+      captureInvocationMetric('completed');
       return opts.runtime === 'cli' ? enrichNextStepsForCli(response, this.catalog) : response;
     } catch (error) {
+      log(
+        'error',
+        `[infra/tool-invoker] direct tool handler failed for ${tool.mcpName} (${getErrorKind(error)})`,
+        { sentry: true },
+      );
+      captureInfraErrorMetric(error);
+      captureInvocationMetric('infra_error');
       const message = error instanceof Error ? error.message : String(error);
       return createErrorResponse('Tool execution failed', message);
     }

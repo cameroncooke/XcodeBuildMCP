@@ -19,7 +19,7 @@ function rewriteTsImportsInDir(dir: string): void {
       // Also handles: export ... from "./path.ts"
       const rewritten = content.replace(
         /((?:import|export)[^'"]*['"])([^'"]+)(\.ts)(['"])/g,
-        '$1$2.js$4'
+        '$1$2.js$4',
       );
       if (rewritten !== content) {
         writeFileSync(fullPath, rewritten, 'utf-8');

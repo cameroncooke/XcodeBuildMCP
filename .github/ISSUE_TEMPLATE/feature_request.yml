@@ -1,13 +1,13 @@
 name: Feature Request
 description: Suggest a new feature for XcodeBuildMCP
-title: "[Feature]: "
-labels: ["enhancement"]
+title: '[Feature]: '
+labels: ['enhancement']
 body:
   - type: markdown
     attributes:
       value: |
         Thanks for suggesting a new feature for XcodeBuildMCP!
-        
+
   - type: textarea
     id: feature-description
     attributes:
@@ -16,7 +16,7 @@ body:
       placeholder: I would like the AI assistant to be able to...
     validations:
       required: true
-      
+
   - type: textarea
     id: use-cases
     attributes:
@@ -28,7 +28,7 @@ body:
         - Automating complex Xcode workflows
     validations:
       required: false
-      
+
   - type: textarea
     id: example-interactions
     attributes:

@@ -64,7 +64,10 @@ async function main(): Promise<void> {
 
   const toolsResult = await client.listTools(undefined, { timeout: 15_000 });
   console.log(`tools: ${toolsResult.tools.length}`);
-  console.log('first tools:', toolsResult.tools.slice(0, limit).map((t) => t.name));
+  console.log(
+    'first tools:',
+    toolsResult.tools.slice(0, limit).map((t) => t.name),
+  );
 
   if (callWindows) {
     const windows = await client.request(
