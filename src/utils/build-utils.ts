@@ -60,11 +60,16 @@ export async function executeXcodeBuildCommand(
   // Collect warnings, errors, and stderr messages from the build output
   const buildMessages: { type: 'text'; text: string }[] = [];
   function grepWarningsAndErrors(text: string): { type: 'warning' | 'error'; content: string }[] {
+    // Require "error:"/"warning:" at line start (with optional tool prefix like "ld: ")
+    // or after a file:line:col location prefix, to avoid false positives from source
+    // code like "var authError: Error?" echoed during compilation.
     return text
       .split('\n')
       .map((content) => {
-        if (/warning:/i.test(content)) return { type: 'warning', content };
-        if (/error:/i.test(content)) return { type: 'error', content };
+        if (/(?:^(?:[\w-]+:\s+)?|:\d+:\s+)warning:\s/i.test(content))
+          return { type: 'warning', content };
+        if (/(?:^(?:[\w-]+:\s+)?|:\d+:\s+)(?:fatal )?error:\s/i.test(content))
+          return { type: 'error', content };
         return null;
       })
       .filter(Boolean) as { type: 'warning' | 'error'; content: string }[];
