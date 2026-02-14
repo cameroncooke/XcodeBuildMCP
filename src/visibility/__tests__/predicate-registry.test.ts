@@ -108,6 +108,18 @@ describe('predicate-registry', () => {
       });
     });
 
+    describe('mcpRuntimeOnly', () => {
+      it('should return true for MCP runtime', () => {
+        const ctx = createContext({ runtime: 'mcp' });
+        expect(PREDICATES.mcpRuntimeOnly(ctx)).toBe(true);
+      });
+
+      it('should return false for CLI runtime', () => {
+        const ctx = createContext({ runtime: 'cli' });
+        expect(PREDICATES.mcpRuntimeOnly(ctx)).toBe(false);
+      });
+    });
+
     describe('hideWhenXcodeAgentMode', () => {
       it('should return true when not running under Xcode', () => {
         const ctx = createContext({ runningUnderXcode: false });
@@ -214,6 +226,7 @@ describe('predicate-registry', () => {
       expect(names).toContain('runningUnderXcodeAgent');
       expect(names).toContain('requiresXcodeTools');
       expect(names).toContain('xcodeToolsAvailable');
+      expect(names).toContain('mcpRuntimeOnly');
       expect(names).toContain('hideWhenXcodeAgentMode');
       expect(names).toContain('xcodeAutoSyncDisabled');
       expect(names).toContain('always');

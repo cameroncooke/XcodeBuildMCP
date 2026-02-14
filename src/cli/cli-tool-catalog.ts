@@ -85,7 +85,7 @@ function createCliXcodeProxyTool(remoteTool: DynamicBridgeTool): ToolDefinition 
   const cliSchema = jsonSchemaToToolSchemaShape(remoteTool.inputSchema);
 
   return {
-    cliName: `xcode-ide-${toKebabCase(remoteTool.name)}`,
+    cliName: toKebabCase(remoteTool.name),
     mcpName: toLocalToolName(remoteTool.name),
     workflow: 'xcode-ide',
     description: remoteTool.description ?? '',

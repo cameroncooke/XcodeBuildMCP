@@ -15,12 +15,16 @@ enabledWorkflows: ["simulator", "debugging", "xcode-ide"]
 
 If the workflow is not enabled, XcodeBuildMCP does not start the bridge.
 
-## Tool naming
+## MCP tools in `xcode-ide` workflow
 
-Proxied tools are registered dynamically, based on whatever Xcode advertises via `tools/list`:
+When `xcode-ide` is enabled and `mcpbridge` is available, XcodeBuildMCP exposes two gateway tools:
 
-- Remote: `XcodeListWindows`
-- Local proxy: `xcode_tools_XcodeListWindows`
+- `xcode_ide_list_tools`: Lists remote tools from Xcode's MCP server (name, description, schemas).
+- `xcode_ide_call_tool`: Calls a remote Xcode tool by name with a JSON argument payload.
+
+These tools are stable and manifest-managed. They are shown only when `mcpbridge` is available.
+
+CLI behavior is unchanged and continues to use dynamic `xcode_tools_*` proxy naming.
 
 ## Bridge debug tools
 
@@ -38,7 +42,7 @@ Recommended flow:
 
 1. Launch Xcode.
 2. Start XcodeBuildMCP with `xcode-ide` enabled.
-3. If you don’t see any `xcode_tools_*` tools, temporarily set `debug: true` and call `xcode_tools_bridge_sync` after approving any prompts.
+3. If `xcode_ide_list_tools` fails, temporarily set `debug: true` and call `xcode_tools_bridge_status` to inspect bridge health, then retry after approving prompts.
 
 ## Targeting a specific Xcode instance (optional)
 

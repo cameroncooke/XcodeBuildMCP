@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Changed MCP `xcode-ide` integration to expose manifest-managed gateway tools (`xcode_ide_list_tools`, `xcode_ide_call_tool`) while keeping CLI dynamic `xcode_tools_*` behavior unchanged ([#210](https://github.com/getsentry/XcodeBuildMCP/issues/210))
+- Deferred non-critical Xcode IDE state synchronization and Sentry enrichment work until after MCP connect to reduce handshake-path latency ([#210](https://github.com/getsentry/XcodeBuildMCP/issues/210))
+
+### Fixed
+
+- Removed startup dependency on handshake-time Xcode bridge `tools/list` sync for MCP tool registration, preventing bridge list latency from delaying initial connect ([#210](https://github.com/getsentry/XcodeBuildMCP/issues/210))
+
 ## [2.0.7]
 
 ### Changed
@@ -272,5 +283,4 @@ Please note that the UI automation features are an early preview and currently i
 ## [v1.0.1] - 2025-04-02
 - Initial release of XcodeBuildMCP
 - Basic support for building iOS and macOS applications
-
 

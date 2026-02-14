@@ -93,6 +93,7 @@ xcuserdata/
 .sentryclirc
 
 # Claude Config File
+.claude/
 **/.claude/settings.local.json
 
 # incremental builds

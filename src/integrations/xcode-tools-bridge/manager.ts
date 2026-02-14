@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { log } from '../../utils/logger.ts';
 import {
   createErrorResponse,
@@ -144,5 +145,92 @@ export class XcodeToolsBridgeManager {
       const message = error instanceof Error ? error.message : String(error);
       return createErrorResponse('Bridge disconnect failed', message);
     }
+  }
+
+  async listToolsTool(params: { refresh?: boolean }): Promise<ToolResponse> {
+    if (!this.workflowEnabled) {
+      return this.createBridgeFailureResponse(
+        'XCODE_MCP_UNAVAILABLE',
+        'xcode-ide workflow is not enabled',
+      );
+    }
+
+    try {
+      const tools = await this.service.listTools({ refresh: params.refresh !== false });
+      const payload = {
+        toolCount: tools.length,
+        tools: tools.map((tool) => this.serializeTool(tool)),
+      };
+      return createTextResponse(JSON.stringify(payload, null, 2));
+    } catch (error) {
+      return this.createBridgeFailureResponse(this.classifyBridgeError(error, 'list'), error);
+    }
+  }
+
+  async callToolTool(params: {
+    remoteTool: string;
+    arguments: Record<string, unknown>;
+    timeoutMs?: number;
+  }): Promise<ToolResponse> {
+    if (!this.workflowEnabled) {
+      return this.createBridgeFailureResponse(
+        'XCODE_MCP_UNAVAILABLE',
+        'xcode-ide workflow is not enabled',
+      );
+    }
+
+    try {
+      const response = await this.service.invokeTool(params.remoteTool, params.arguments, {
+        timeoutMs: params.timeoutMs,
+      });
+      return response as ToolResponse;
+    } catch (error) {
+      return this.createBridgeFailureResponse(this.classifyBridgeError(error, 'call'), error);
+    }
+  }
+
+  private serializeTool(tool: Tool): Record<string, unknown> {
+    return {
+      name: tool.name,
+      title: tool.title,
+      description: tool.description,
+      inputSchema: tool.inputSchema,
+      outputSchema: tool.outputSchema,
+      annotations: tool.annotations,
+    };
+  }
+
+  private createBridgeFailureResponse(code: string, error: unknown): ToolResponse {
+    const message = error instanceof Error ? error.message : String(error);
+    return createErrorResponse(code, message);
+  }
+
+  private classifyBridgeError(error: unknown, operation: 'list' | 'call'): string {
+    const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
+    const clientStatus = this.service.getClientStatus();
+
+    if (message.includes('mcpbridge not available')) {
+      return 'MCPBRIDGE_NOT_FOUND';
+    }
+    if (message.includes('workflow is not enabled')) {
+      return 'XCODE_MCP_UNAVAILABLE';
+    }
+    if (message.includes('timed out') || message.includes('timeout')) {
+      if (!clientStatus.connected) {
+        return 'BRIDGE_CONNECT_TIMEOUT';
+      }
+      return operation === 'list' ? 'BRIDGE_LIST_TIMEOUT' : 'BRIDGE_CALL_TIMEOUT';
+    }
+    if (message.includes('permission') || message.includes('not allowed')) {
+      return 'XCODE_APPROVAL_REQUIRED';
+    }
+    if (
+      message.includes('connection closed') ||
+      message.includes('closed') ||
+      message.includes('disconnected')
+    ) {
+      return 'XCODE_SESSION_NOT_READY';
+    }
+    return 'XCODE_MCP_UNAVAILABLE';
   }
 }
