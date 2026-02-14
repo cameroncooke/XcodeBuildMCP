@@ -63,8 +63,7 @@ async function main(): Promise<void> {
     excludeWorkflows: ['session-management', 'workflow-discovery'],
   });
   const topLevelCommand = findTopLevelCommand(process.argv.slice(2));
-  const discoveryMode =
-    topLevelCommand === 'xcode-ide' || topLevelCommand === 'tools' ? 'quick' : 'none';
+  const discoveryMode = topLevelCommand === 'xcode-ide' ? 'quick' : 'none';
 
   // CLI uses a manifest-resolved catalog plus daemon-backed xcode-ide dynamic tools.
   const catalog = await buildCliToolCatalog({

@@ -9,12 +9,13 @@
 
 import { createServer, startServer } from './server.ts';
 import { log, setLogLevel } from '../utils/logger.ts';
-import { initSentry } from '../utils/sentry.ts';
+import { enrichSentryContext, initSentry } from '../utils/sentry.ts';
 import { getDefaultDebuggerManager } from '../utils/debugger/index.ts';
 import { version } from '../version.ts';
 import process from 'node:process';
 import { bootstrapServer } from './bootstrap.ts';
 import { shutdownXcodeToolsBridge } from '../integrations/xcode-tools-bridge/index.ts';
+import { createStartupProfiler, getStartupProfileNowMs } from './startup-profiler.ts';
 
 /**
  * Start the MCP server.
@@ -23,17 +24,37 @@ import { shutdownXcodeToolsBridge } from '../integrations/xcode-tools-bridge/ind
  */
 export async function startMcpServer(): Promise<void> {
   try {
+    const profiler = createStartupProfiler('start-mcp-server');
+
     // MCP mode defaults to info level logging
     // Clients can override via logging/setLevel MCP request
     setLogLevel('info');
 
+    let stageStartMs = getStartupProfileNowMs();
     initSentry();
+    profiler.mark('initSentry', stageStartMs);
 
+    stageStartMs = getStartupProfileNowMs();
     const server = createServer();
+    profiler.mark('createServer', stageStartMs);
 
-    await bootstrapServer(server);
+    stageStartMs = getStartupProfileNowMs();
+    const bootstrap = await bootstrapServer(server);
+    profiler.mark('bootstrapServer', stageStartMs);
 
+    stageStartMs = getStartupProfileNowMs();
     await startServer(server);
+    profiler.mark('startServer', stageStartMs);
+
+    void bootstrap.runDeferredInitialization().catch((error) => {
+      log(
+        'warning',
+        `Deferred bootstrap initialization failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
+    setImmediate(() => {
+      enrichSentryContext();
+    });
 
     let shuttingDown = false;
     const shutdown = async (signal: NodeJS.Signals): Promise<void> => {

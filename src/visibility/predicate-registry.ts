@@ -40,6 +40,12 @@ export const PREDICATES: Record<string, PredicateFn> = {
   xcodeToolsAvailable: (ctx: PredicateContext): boolean => ctx.xcodeToolsAvailable === true,
 
   /**
+   * Show only for MCP runtime.
+   * Use for MCP-only gateway tools that should not appear in CLI workflows.
+   */
+  mcpRuntimeOnly: (ctx: PredicateContext): boolean => ctx.runtime === 'mcp',
+
+  /**
    * Hide when running inside Xcode's coding agent.
    * Use for XcodeBuildMCP tools that conflict with Xcode's native equivalents.
    */
