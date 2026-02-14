@@ -10,6 +10,12 @@ export interface XcodeToolsBridgeToolHandler {
   statusTool(): Promise<ToolResponse>;
   syncTool(): Promise<ToolResponse>;
   disconnectTool(): Promise<ToolResponse>;
+  listToolsTool(params: { refresh?: boolean }): Promise<ToolResponse>;
+  callToolTool(params: {
+    remoteTool: string;
+    arguments: Record<string, unknown>;
+    timeoutMs?: number;
+  }): Promise<ToolResponse>;
 }
 
 export function getXcodeToolsBridgeManager(server?: McpServer): XcodeToolsBridgeManager | null {

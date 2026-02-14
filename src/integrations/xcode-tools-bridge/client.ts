@@ -139,7 +139,11 @@ export class XcodeToolsBridgeClient {
     return result.tools;
   }
 
-  async callTool(name: string, args: Record<string, unknown>): Promise<CallToolResult> {
+  async callTool(
+    name: string,
+    args: Record<string, unknown>,
+    opts: { timeoutMs?: number } = {},
+  ): Promise<CallToolResult> {
     if (!this.client) {
       throw new Error('Bridge client is not connected');
     }
@@ -147,7 +151,7 @@ export class XcodeToolsBridgeClient {
       { method: 'tools/call', params: { name, arguments: args } },
       CompatibilityCallToolResultSchema,
       {
-        timeout: this.options.callToolTimeoutMs,
+        timeout: opts.timeoutMs ?? this.options.callToolTimeoutMs,
         resetTimeoutOnProgress: true,
       },
     );

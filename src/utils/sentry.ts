@@ -82,6 +82,7 @@ function checkBinaryAvailability(binary: string): { available: boolean; version?
 }
 
 let initialized = false;
+let enriched = false;
 
 function isSentryDisabled(): boolean {
   return (
@@ -119,13 +120,20 @@ export function initSentry(): void {
     // We recommend adjusting this value in production
     tracesSampleRate: 1.0,
   });
+}
+
+export function enrichSentryContext(): void {
+  if (!initialized || enriched || isSentryDisabled() || isTestEnv()) {
+    return;
+  }
+
+  enriched = true;
 
   const axeAvailable = checkBinaryAvailability('axe');
   const miseAvailable = checkBinaryAvailability('mise');
   const envVars = getEnvironmentVariables();
   const xcodeInfo = getXcodeInfo();
 
-  // Add additional context that might be helpful for debugging
   const tags: Record<string, string> = {
     nodeVersion: process.version,
     platform: process.platform,

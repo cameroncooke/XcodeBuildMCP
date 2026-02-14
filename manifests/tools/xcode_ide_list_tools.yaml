@@ -1,0 +1,11 @@
+id: xcode_ide_list_tools
+module: mcp/tools/xcode-ide/xcode_ide_list_tools
+names:
+  mcp: xcode_ide_list_tools
+  cli: xcode-ide-list-tools
+description: List remote Xcode IDE MCP tools available through mcpbridge.
+predicates:
+  - mcpRuntimeOnly
+annotations:
+  title: List Xcode IDE Tools
+  readOnlyHint: true

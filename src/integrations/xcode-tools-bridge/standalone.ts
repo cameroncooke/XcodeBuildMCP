@@ -62,4 +62,64 @@ export class StandaloneXcodeToolsBridge {
       return createErrorResponse('Bridge disconnect failed', message);
     }
   }
+
+  async listToolsTool(params: { refresh?: boolean }): Promise<ToolResponse> {
+    try {
+      const tools = await this.service.listTools({ refresh: params.refresh !== false });
+      return createTextResponse(
+        JSON.stringify(
+          {
+            toolCount: tools.length,
+            tools,
+          },
+          null,
+          2,
+        ),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return createErrorResponse(this.classifyBridgeError(error, 'list'), message);
+    }
+  }
+
+  async callToolTool(params: {
+    remoteTool: string;
+    arguments: Record<string, unknown>;
+    timeoutMs?: number;
+  }): Promise<ToolResponse> {
+    try {
+      const response = await this.service.invokeTool(params.remoteTool, params.arguments, {
+        timeoutMs: params.timeoutMs,
+      });
+      return response as ToolResponse;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return createErrorResponse(this.classifyBridgeError(error, 'call'), message);
+    }
+  }
+
+  private classifyBridgeError(error: unknown, operation: 'list' | 'call'): string {
+    const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
+
+    if (message.includes('mcpbridge not available')) {
+      return 'MCPBRIDGE_NOT_FOUND';
+    }
+    if (message.includes('workflow is not enabled')) {
+      return 'XCODE_MCP_UNAVAILABLE';
+    }
+    if (message.includes('timed out') || message.includes('timeout')) {
+      return operation === 'list' ? 'BRIDGE_LIST_TIMEOUT' : 'BRIDGE_CALL_TIMEOUT';
+    }
+    if (message.includes('permission') || message.includes('not allowed')) {
+      return 'XCODE_APPROVAL_REQUIRED';
+    }
+    if (
+      message.includes('connection closed') ||
+      message.includes('closed') ||
+      message.includes('disconnected')
+    ) {
+      return 'XCODE_SESSION_NOT_READY';
+    }
+    return 'XCODE_MCP_UNAVAILABLE';
+  }
 }
