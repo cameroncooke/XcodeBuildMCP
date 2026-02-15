@@ -3,7 +3,11 @@ import {
   createTextResponse,
   type ToolResponse,
 } from '../../utils/responses/index.ts';
-import { buildXcodeToolsBridgeStatus, type XcodeToolsBridgeStatus } from './core.ts';
+import {
+  buildXcodeToolsBridgeStatus,
+  classifyBridgeError,
+  type XcodeToolsBridgeStatus,
+} from './core.ts';
 import { XcodeIdeToolService } from './tool-service.ts';
 
 export class StandaloneXcodeToolsBridge {
@@ -78,7 +82,7 @@ export class StandaloneXcodeToolsBridge {
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      return createErrorResponse(this.classifyBridgeError(error, 'list'), message);
+      return createErrorResponse(classifyBridgeError(error, 'list'), message);
     }
   }
 
@@ -94,32 +98,7 @@ export class StandaloneXcodeToolsBridge {
       return response as ToolResponse;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      return createErrorResponse(this.classifyBridgeError(error, 'call'), message);
+      return createErrorResponse(classifyBridgeError(error, 'call'), message);
     }
-  }
-
-  private classifyBridgeError(error: unknown, operation: 'list' | 'call'): string {
-    const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
-
-    if (message.includes('mcpbridge not available')) {
-      return 'MCPBRIDGE_NOT_FOUND';
-    }
-    if (message.includes('workflow is not enabled')) {
-      return 'XCODE_MCP_UNAVAILABLE';
-    }
-    if (message.includes('timed out') || message.includes('timeout')) {
-      return operation === 'list' ? 'BRIDGE_LIST_TIMEOUT' : 'BRIDGE_CALL_TIMEOUT';
-    }
-    if (message.includes('permission') || message.includes('not allowed')) {
-      return 'XCODE_APPROVAL_REQUIRED';
-    }
-    if (
-      message.includes('connection closed') ||
-      message.includes('closed') ||
-      message.includes('disconnected')
-    ) {
-      return 'XCODE_SESSION_NOT_READY';
-    }
-    return 'XCODE_MCP_UNAVAILABLE';
   }
 }

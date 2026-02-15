@@ -9,6 +9,7 @@ import {
 import { XcodeToolsProxyRegistry, type ProxySyncResult } from './registry.ts';
 import {
   buildXcodeToolsBridgeStatus,
+  classifyBridgeError,
   getMcpBridgeAvailability,
   type XcodeToolsBridgeStatus,
 } from './core.ts';
@@ -163,7 +164,12 @@ export class XcodeToolsBridgeManager {
       };
       return createTextResponse(JSON.stringify(payload, null, 2));
     } catch (error) {
-      return this.createBridgeFailureResponse(this.classifyBridgeError(error, 'list'), error);
+      return this.createBridgeFailureResponse(
+        classifyBridgeError(error, 'list', {
+          connected: this.service.getClientStatus().connected,
+        }),
+        error,
+      );
     }
   }
 
@@ -185,7 +191,12 @@ export class XcodeToolsBridgeManager {
       });
       return response as ToolResponse;
     } catch (error) {
-      return this.createBridgeFailureResponse(this.classifyBridgeError(error, 'call'), error);
+      return this.createBridgeFailureResponse(
+        classifyBridgeError(error, 'call', {
+          connected: this.service.getClientStatus().connected,
+        }),
+        error,
+      );
     }
   }
 
@@ -203,34 +214,5 @@ export class XcodeToolsBridgeManager {
   private createBridgeFailureResponse(code: string, error: unknown): ToolResponse {
     const message = error instanceof Error ? error.message : String(error);
     return createErrorResponse(code, message);
-  }
-
-  private classifyBridgeError(error: unknown, operation: 'list' | 'call'): string {
-    const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
-    const clientStatus = this.service.getClientStatus();
-
-    if (message.includes('mcpbridge not available')) {
-      return 'MCPBRIDGE_NOT_FOUND';
-    }
-    if (message.includes('workflow is not enabled')) {
-      return 'XCODE_MCP_UNAVAILABLE';
-    }
-    if (message.includes('timed out') || message.includes('timeout')) {
-      if (!clientStatus.connected) {
-        return 'BRIDGE_CONNECT_TIMEOUT';
-      }
-      return operation === 'list' ? 'BRIDGE_LIST_TIMEOUT' : 'BRIDGE_CALL_TIMEOUT';
-    }
-    if (message.includes('permission') || message.includes('not allowed')) {
-      return 'XCODE_APPROVAL_REQUIRED';
-    }
-    if (
-      message.includes('connection closed') ||
-      message.includes('closed') ||
-      message.includes('disconnected')
-    ) {
-      return 'XCODE_SESSION_NOT_READY';
-    }
-    return 'XCODE_MCP_UNAVAILABLE';
   }
 }
