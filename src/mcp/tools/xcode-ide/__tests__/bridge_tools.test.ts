@@ -6,7 +6,9 @@ vi.mock('../../../../server/server-state.ts', () => ({
 
 vi.mock('../../../../integrations/xcode-tools-bridge/core.ts', () => ({
   buildXcodeToolsBridgeStatus: vi.fn(),
+  classifyBridgeError: vi.fn(() => 'XCODE_MCP_UNAVAILABLE'),
   getMcpBridgeAvailability: vi.fn(),
+  serializeBridgeTool: vi.fn((tool) => tool),
 }));
 
 const clientMocks = {

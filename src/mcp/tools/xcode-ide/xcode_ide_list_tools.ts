@@ -1,8 +1,7 @@
 import * as z from 'zod';
 import type { ToolResponse } from '../../../types/common.ts';
-import { getServer } from '../../../server/server-state.ts';
-import { getXcodeToolsBridgeToolHandler } from '../../../integrations/xcode-tools-bridge/index.ts';
 import { createErrorResponse } from '../../../utils/responses/index.ts';
+import { withBridgeToolHandler } from './shared.ts';
 
 const schemaObject = z.object({
   refresh: z
@@ -14,11 +13,7 @@ const schemaObject = z.object({
 type Params = z.infer<typeof schemaObject>;
 
 export async function xcodeIdeListToolsLogic(params: Params): Promise<ToolResponse> {
-  const bridge = getXcodeToolsBridgeToolHandler(getServer());
-  if (!bridge) {
-    return createErrorResponse('Bridge unavailable', 'Unable to initialize xcode tools bridge');
-  }
-  return bridge.listToolsTool({ refresh: params.refresh });
+  return withBridgeToolHandler(async (bridge) => bridge.listToolsTool({ refresh: params.refresh }));
 }
 
 export const schema = schemaObject.shape;
