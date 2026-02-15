@@ -3,10 +3,10 @@ import {
   createTextResponse,
   type ToolResponse,
 } from '../../utils/responses/index.ts';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import {
   buildXcodeToolsBridgeStatus,
   classifyBridgeError,
+  serializeBridgeTool,
   type XcodeToolsBridgeStatus,
 } from './core.ts';
 import { XcodeIdeToolService } from './tool-service.ts';
@@ -75,7 +75,7 @@ export class StandaloneXcodeToolsBridge {
         JSON.stringify(
           {
             toolCount: tools.length,
-            tools: tools.map((tool) => this.serializeTool(tool)),
+            tools: tools.map(serializeBridgeTool),
           },
           null,
           2,
@@ -101,16 +101,5 @@ export class StandaloneXcodeToolsBridge {
       const message = error instanceof Error ? error.message : String(error);
       return createErrorResponse(classifyBridgeError(error, 'call'), message);
     }
-  }
-
-  private serializeTool(tool: Tool): Record<string, unknown> {
-    return {
-      name: tool.name,
-      title: tool.title,
-      description: tool.description,
-      inputSchema: tool.inputSchema,
-      outputSchema: tool.outputSchema,
-      annotations: tool.annotations,
-    };
   }
 }

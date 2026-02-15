@@ -1,5 +1,4 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { log } from '../../utils/logger.ts';
 import {
   createErrorResponse,
@@ -11,6 +10,7 @@ import {
   buildXcodeToolsBridgeStatus,
   classifyBridgeError,
   getMcpBridgeAvailability,
+  serializeBridgeTool,
   type XcodeToolsBridgeStatus,
 } from './core.ts';
 import { XcodeIdeToolService } from './tool-service.ts';
@@ -160,7 +160,7 @@ export class XcodeToolsBridgeManager {
       const tools = await this.service.listTools({ refresh: params.refresh !== false });
       const payload = {
         toolCount: tools.length,
-        tools: tools.map((tool) => this.serializeTool(tool)),
+        tools: tools.map(serializeBridgeTool),
       };
       return createTextResponse(JSON.stringify(payload, null, 2));
     } catch (error) {
@@ -198,17 +198,6 @@ export class XcodeToolsBridgeManager {
         error,
       );
     }
-  }
-
-  private serializeTool(tool: Tool): Record<string, unknown> {
-    return {
-      name: tool.name,
-      title: tool.title,
-      description: tool.description,
-      inputSchema: tool.inputSchema,
-      outputSchema: tool.outputSchema,
-      annotations: tool.annotations,
-    };
   }
 
   private createBridgeFailureResponse(code: string, error: unknown): ToolResponse {

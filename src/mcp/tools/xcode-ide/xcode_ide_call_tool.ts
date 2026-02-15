@@ -1,8 +1,7 @@
 import * as z from 'zod';
 import type { ToolResponse } from '../../../types/common.ts';
-import { getServer } from '../../../server/server-state.ts';
-import { getXcodeToolsBridgeToolHandler } from '../../../integrations/xcode-tools-bridge/index.ts';
 import { createErrorResponse } from '../../../utils/responses/index.ts';
+import { withBridgeToolHandler } from './shared.ts';
 
 const schemaObject = z.object({
   remoteTool: z.string().min(1).describe('Exact remote Xcode MCP tool name.'),
@@ -23,16 +22,13 @@ const schemaObject = z.object({
 type Params = z.infer<typeof schemaObject>;
 
 export async function xcodeIdeCallToolLogic(params: Params): Promise<ToolResponse> {
-  const bridge = getXcodeToolsBridgeToolHandler(getServer());
-  if (!bridge) {
-    return createErrorResponse('Bridge unavailable', 'Unable to initialize xcode tools bridge');
-  }
-
-  return bridge.callToolTool({
-    remoteTool: params.remoteTool,
-    arguments: params.arguments ?? {},
-    timeoutMs: params.timeoutMs,
-  });
+  return withBridgeToolHandler((bridge) =>
+    bridge.callToolTool({
+      remoteTool: params.remoteTool,
+      arguments: params.arguments ?? {},
+      timeoutMs: params.timeoutMs,
+    }),
+  );
 }
 
 export const schema = schemaObject.shape;

@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import process from 'node:process';
 import { promisify } from 'node:util';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { XcodeToolsBridgeClientStatus } from './client.ts';
 
 const execFileAsync = promisify(execFile);
@@ -17,6 +18,17 @@ export type XcodeToolsBridgeStatus = {
   xcodePid: string | null;
   xcodeSessionId: string | null;
 };
+
+export function serializeBridgeTool(tool: Tool): Record<string, unknown> {
+  return {
+    name: tool.name,
+    title: tool.title,
+    description: tool.description,
+    inputSchema: tool.inputSchema,
+    outputSchema: tool.outputSchema,
+    annotations: tool.annotations,
+  };
+}
 
 export interface BuildXcodeToolsBridgeStatusArgs {
   workflowEnabled: boolean;
