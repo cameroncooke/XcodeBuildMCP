@@ -32,8 +32,6 @@ function createContext(overrides: Partial<PredicateContext> = {}): PredicateCont
     runtime: 'mcp',
     config: createDefaultConfig(),
     runningUnderXcode: false,
-    xcodeToolsActive: false,
-    xcodeToolsAvailable: false,
     ...overrides,
   };
 }
@@ -81,30 +79,6 @@ describe('predicate-registry', () => {
       it('should return false when not running under Xcode', () => {
         const ctx = createContext({ runningUnderXcode: false });
         expect(PREDICATES.runningUnderXcodeAgent(ctx)).toBe(false);
-      });
-    });
-
-    describe('requiresXcodeTools', () => {
-      it('should return true when Xcode tools are active', () => {
-        const ctx = createContext({ xcodeToolsActive: true });
-        expect(PREDICATES.requiresXcodeTools(ctx)).toBe(true);
-      });
-
-      it('should return false when Xcode tools are not active', () => {
-        const ctx = createContext({ xcodeToolsActive: false });
-        expect(PREDICATES.requiresXcodeTools(ctx)).toBe(false);
-      });
-    });
-
-    describe('xcodeToolsAvailable', () => {
-      it('should return true when Xcode tools bridge is available', () => {
-        const ctx = createContext({ xcodeToolsAvailable: true });
-        expect(PREDICATES.xcodeToolsAvailable(ctx)).toBe(true);
-      });
-
-      it('should return false when Xcode tools bridge is not available', () => {
-        const ctx = createContext({ xcodeToolsAvailable: false });
-        expect(PREDICATES.xcodeToolsAvailable(ctx)).toBe(false);
       });
     });
 
@@ -224,8 +198,6 @@ describe('predicate-registry', () => {
       expect(names).toContain('debugEnabled');
       expect(names).toContain('experimentalWorkflowDiscoveryEnabled');
       expect(names).toContain('runningUnderXcodeAgent');
-      expect(names).toContain('requiresXcodeTools');
-      expect(names).toContain('xcodeToolsAvailable');
       expect(names).toContain('mcpRuntimeOnly');
       expect(names).toContain('hideWhenXcodeAgentMode');
       expect(names).toContain('xcodeAutoSyncDisabled');

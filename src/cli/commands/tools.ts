@@ -9,7 +9,6 @@ import { getEffectiveCliName } from '../../core/manifest/schema.ts';
 import { isWorkflowEnabledForRuntime, isToolExposedForRuntime } from '../../visibility/exposure.ts';
 import type { PredicateContext } from '../../visibility/predicate-types.ts';
 import { getConfig } from '../../utils/config-store.ts';
-import { getMcpBridgeAvailability } from '../../integrations/xcode-tools-bridge/core.ts';
 
 const CLI_EXCLUDED_WORKFLOWS = new Set(['session-management', 'workflow-discovery']);
 
@@ -82,13 +81,10 @@ function toGroupedJsonTool(tool: ToolListItem): JsonTool {
  * CLI is never running under Xcode and never has Xcode tools active.
  */
 async function buildCliPredicateContext(): Promise<PredicateContext> {
-  const bridge = await getMcpBridgeAvailability();
   return {
     runtime: 'cli',
     config: getConfig(),
     runningUnderXcode: false,
-    xcodeToolsActive: false,
-    xcodeToolsAvailable: bridge.available,
   };
 }
 

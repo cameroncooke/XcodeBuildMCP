@@ -39,8 +39,6 @@ function createContext(overrides: Partial<PredicateContext> = {}): PredicateCont
     runtime: 'mcp',
     config: createDefaultConfig(),
     runningUnderXcode: false,
-    xcodeToolsActive: false,
-    xcodeToolsAvailable: false,
     ...overrides,
   };
 }

@@ -85,8 +85,6 @@ export async function bootstrapServer(
     runtime: 'mcp',
     config: result.runtime.config,
     runningUnderXcode: xcodeDetection.runningUnderXcode,
-    xcodeToolsActive: false,
-    xcodeToolsAvailable: true,
   };
 
   stageStartMs = getStartupProfileNowMs();
