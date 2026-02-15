@@ -3,16 +3,17 @@ enabledWorkflows:
   - simulator
   - ui-automation
   - debugging
+  - xcode-ide
 sessionDefaults:
   workspacePath: ./CalculatorApp.xcworkspace
   scheme: CalculatorApp
   configuration: Debug
   simulatorName: iPhone 17 Pro
+  simulatorId: B38FE93D-578B-454B-BE9A-C6FA0CE5F096
+  simulatorPlatform: iOS Simulator
   useLatestOS: true
   arch: arm64
   suppressWarnings: false
   derivedDataPath: ./iOS_Calculator/.derivedData
   preferXcodebuild: true
   bundleId: io.sentry.calculatorapp
-  simulatorId: B38FE93D-578B-454B-BE9A-C6FA0CE5F096
-  simulatorPlatform: iOS Simulator

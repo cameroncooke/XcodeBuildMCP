@@ -2,8 +2,8 @@ id: xcode_ide_call_tool
 module: mcp/tools/xcode-ide/xcode_ide_call_tool
 names:
   mcp: xcode_ide_call_tool
-  cli: xcode-ide-call-tool
-description: Call a remote Xcode IDE MCP tool through mcpbridge.
+  cli: call-tool
+description: Call a remote Xcode IDE MCP tool.
 predicates:
   - mcpRuntimeOnly
 annotations:
