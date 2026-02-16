@@ -71,40 +71,20 @@ describe('list_schemes plugin', () => {
             text: 'Hint: Consider saving a default scheme with session-set-defaults { scheme: "MyProject" } to avoid repeating it.',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'build_macos',
-            label: 'Build for macOS',
-            params: { projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyProject' },
-            priority: 1,
+        nextStepParams: {
+          build_macos: { projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyProject' },
+          build_run_sim: {
+            projectPath: '/path/to/MyProject.xcodeproj',
+            scheme: 'MyProject',
+            simulatorName: 'iPhone 16',
           },
-          {
-            tool: 'build_run_sim',
-            label: 'Build and run on iOS Simulator (default for run intent)',
-            params: {
-              projectPath: '/path/to/MyProject.xcodeproj',
-              scheme: 'MyProject',
-              simulatorName: 'iPhone 16',
-            },
-            priority: 2,
+          build_sim: {
+            projectPath: '/path/to/MyProject.xcodeproj',
+            scheme: 'MyProject',
+            simulatorName: 'iPhone 16',
           },
-          {
-            tool: 'build_sim',
-            label: 'Build for iOS Simulator (compile-only)',
-            params: {
-              projectPath: '/path/to/MyProject.xcodeproj',
-              scheme: 'MyProject',
-              simulatorName: 'iPhone 16',
-            },
-            priority: 3,
-          },
-          {
-            tool: 'show_build_settings',
-            label: 'Show build settings',
-            params: { projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyProject' },
-            priority: 4,
-          },
-        ],
+          show_build_settings: { projectPath: '/path/to/MyProject.xcodeproj', scheme: 'MyProject' },
+        },
         isError: false,
       });
     });
@@ -175,7 +155,6 @@ describe('list_schemes plugin', () => {
             text: '',
           },
         ],
-        nextSteps: [],
         isError: false,
       });
     });
@@ -319,40 +298,20 @@ describe('list_schemes plugin', () => {
             text: 'Hint: Consider saving a default scheme with session-set-defaults { scheme: "MyApp" } to avoid repeating it.',
           },
         ],
-        nextSteps: [
-          {
-            tool: 'build_macos',
-            label: 'Build for macOS',
-            params: { workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyApp' },
-            priority: 1,
+        nextStepParams: {
+          build_macos: { workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyApp' },
+          build_run_sim: {
+            workspacePath: '/path/to/MyProject.xcworkspace',
+            scheme: 'MyApp',
+            simulatorName: 'iPhone 16',
           },
-          {
-            tool: 'build_run_sim',
-            label: 'Build and run on iOS Simulator (default for run intent)',
-            params: {
-              workspacePath: '/path/to/MyProject.xcworkspace',
-              scheme: 'MyApp',
-              simulatorName: 'iPhone 16',
-            },
-            priority: 2,
+          build_sim: {
+            workspacePath: '/path/to/MyProject.xcworkspace',
+            scheme: 'MyApp',
+            simulatorName: 'iPhone 16',
           },
-          {
-            tool: 'build_sim',
-            label: 'Build for iOS Simulator (compile-only)',
-            params: {
-              workspacePath: '/path/to/MyProject.xcworkspace',
-              scheme: 'MyApp',
-              simulatorName: 'iPhone 16',
-            },
-            priority: 3,
-          },
-          {
-            tool: 'show_build_settings',
-            label: 'Show build settings',
-            params: { workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyApp' },
-            priority: 4,
-          },
-        ],
+          show_build_settings: { workspacePath: '/path/to/MyProject.xcworkspace', scheme: 'MyApp' },
+        },
         isError: false,
       });
     });
