@@ -193,28 +193,13 @@ async function main(): Promise<void> {
     (workflowId) => !excludedWorkflows.includes(workflowId),
   );
   const xcodeIdeWorkflowEnabled = daemonWorkflows.includes('xcode-ide');
-  const commandExecutor = getDefaultCommandExecutor();
-  const xcodeVersion = await getXcodeVersionMetadata(async (command) => {
-    const result = await commandExecutor(command, 'Get Xcode Version');
-    return { success: result.success, output: result.output };
-  });
-  const xcodeAvailable = Boolean(
-    xcodeVersion.version ||
-      xcodeVersion.buildVersion ||
-      xcodeVersion.developerDir ||
-      xcodeVersion.xcodebuildPath,
-  );
   const axeBinary = resolveAxeBinary();
   const axeAvailable = axeBinary !== null;
-  const axeSource = axeBinary?.source ?? 'unavailable';
+  const axeSource: 'env' | 'bundled' | 'path' | 'unavailable' = axeBinary?.source ?? 'unavailable';
   const xcodemakeAvailable = isXcodemakeBinaryAvailable();
-  const axeVersion = await getAxeVersionMetadata(async (command) => {
-    const result = await commandExecutor(command, 'Get AXe Version');
-    return { success: result.success, output: result.output };
-  }, axeBinary?.path);
-  setSentryRuntimeContext({
-    mode: 'cli-daemon',
-    xcodeAvailable,
+  const xcodemakeEnabled = isXcodemakeEnabled();
+  const baseSentryRuntimeContext = {
+    mode: 'cli-daemon' as const,
     enabledWorkflows: daemonWorkflows,
     disableSessionDefaults: result.runtime.config.disableSessionDefaults,
     disableXcodeAutoSync: result.runtime.config.disableXcodeAutoSync,
@@ -224,14 +209,38 @@ async function main(): Promise<void> {
     xcodeIdeWorkflowEnabled,
     axeAvailable,
     axeSource,
-    axeVersion,
-    xcodeDeveloperDir: xcodeVersion.developerDir,
-    xcodebuildPath: xcodeVersion.xcodebuildPath,
     xcodemakeAvailable,
-    xcodemakeEnabled: isXcodemakeEnabled(),
-    xcodeVersion: xcodeVersion.version,
-    xcodeBuildVersion: xcodeVersion.buildVersion,
-  });
+    xcodemakeEnabled,
+  };
+  setSentryRuntimeContext(baseSentryRuntimeContext);
+
+  const enrichSentryMetadata = async (): Promise<void> => {
+    const commandExecutor = getDefaultCommandExecutor();
+    const xcodeVersion = await getXcodeVersionMetadata(async (command) => {
+      const result = await commandExecutor(command, 'Get Xcode Version');
+      return { success: result.success, output: result.output };
+    });
+    const xcodeAvailable = Boolean(
+      xcodeVersion.version ||
+        xcodeVersion.buildVersion ||
+        xcodeVersion.developerDir ||
+        xcodeVersion.xcodebuildPath,
+    );
+    const axeVersion = await getAxeVersionMetadata(async (command) => {
+      const result = await commandExecutor(command, 'Get AXe Version');
+      return { success: result.success, output: result.output };
+    }, axeBinary?.path);
+
+    setSentryRuntimeContext({
+      ...baseSentryRuntimeContext,
+      xcodeAvailable,
+      axeVersion,
+      xcodeDeveloperDir: xcodeVersion.developerDir,
+      xcodebuildPath: xcodeVersion.xcodebuildPath,
+      xcodeVersion: xcodeVersion.version,
+      xcodeBuildVersion: xcodeVersion.buildVersion,
+    });
+  };
 
   const catalog = await buildDaemonToolCatalogFromManifest({
     excludeWorkflows: excludedWorkflows,
@@ -391,6 +400,13 @@ async function main(): Promise<void> {
     writeLine(`Socket: ${socketPath}`);
     writeLine(`Tools: ${catalog.tools.length}`);
     recordBootstrapDurationMetric('cli-daemon', Date.now() - daemonBootstrapStart);
+
+    setImmediate(() => {
+      void enrichSentryMetadata().catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        log('warning', `[Daemon] Failed to enrich Sentry metadata: ${message}`);
+      });
+    });
   });
 
   process.on('SIGTERM', shutdown);
