@@ -32,6 +32,9 @@ describe('sentry redaction', () => {
       extra: {
         output: 'log at /Users/cam/project/build.log',
         attempts: 1,
+        nested: {
+          cwd: '/Users/cam/project',
+        },
       },
     };
 
@@ -50,6 +53,7 @@ describe('sentry redaction', () => {
     );
     expect(redacted.extra?.output).toBe('log at /Users/<redacted>/project/build.log');
     expect(redacted.extra?.attempts).toBe(1);
+    expect(redacted.extra?.nested).toEqual({ cwd: '/Users/<redacted>/project' });
   });
 
   it('parses xcode version metadata safely', () => {

@@ -18,7 +18,6 @@ export type SentryToolRuntime = 'cli' | 'daemon' | 'mcp';
 export type SentryToolTransport = 'direct' | 'daemon' | 'xcode-ide-daemon';
 export type SentryToolInvocationOutcome = 'completed' | 'infra_error';
 export type SentryDaemonLifecycleEvent = 'start' | 'shutdown' | 'crash';
-export type SentryXcodeBridgeSyncOutcome = 'success' | 'error' | 'empty';
 
 export interface SentryRuntimeContext {
   mode: SentryRuntimeMode;
@@ -98,9 +97,7 @@ function redactEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent {
 
   if (event.extra) {
     for (const [key, value] of Object.entries(event.extra)) {
-      if (typeof value === 'string') {
-        event.extra[key] = redactPathLikeData(value);
-      }
+      event.extra[key] = redactUnknown(value);
     }
   }
 
@@ -224,7 +221,6 @@ function applyRuntimeContext(context: SentryRuntimeContext): void {
   setTagIfDefined('config.xcode_ide_workflow_enabled', boolToTag(context.xcodeIdeWorkflowEnabled));
   setTagIfDefined('axe.available', boolToTag(context.axeAvailable));
   setTagIfDefined('axe.source', context.axeSource);
-  setTagIfDefined('axe.path_mode', context.axeSource);
   setTagIfDefined('axe.version', context.axeVersion);
   setTagIfDefined('xcodemake.available', boolToTag(context.xcodemakeAvailable));
   setTagIfDefined('xcodemake.enabled', boolToTag(context.xcodemakeEnabled));
@@ -476,30 +472,6 @@ export function recordBootstrapDurationMetric(
         runtime,
       },
     });
-  } catch {
-    // Metrics are best effort and must never affect runtime behavior.
-  }
-}
-
-export function recordXcodeBridgeSyncDurationMetric(
-  durationMs: number,
-  outcome: SentryXcodeBridgeSyncOutcome,
-): void {
-  if (!shouldEmitMetrics()) {
-    return;
-  }
-
-  try {
-    Sentry.metrics.distribution(
-      'xcodebuildmcp.xcode_bridge.sync.duration_ms',
-      Math.max(0, durationMs),
-      {
-        attributes: {
-          runtime: 'mcp',
-          outcome,
-        },
-      },
-    );
   } catch {
     // Metrics are best effort and must never affect runtime behavior.
   }
