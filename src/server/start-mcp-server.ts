@@ -9,13 +9,20 @@
 
 import { createServer, startServer } from './server.ts';
 import { log, setLogLevel } from '../utils/logger.ts';
-import { enrichSentryContext, initSentry } from '../utils/sentry.ts';
+import {
+  enrichSentryContext,
+  flushAndCloseSentry,
+  initSentry,
+  setSentryRuntimeContext,
+} from '../utils/sentry.ts';
 import { getDefaultDebuggerManager } from '../utils/debugger/index.ts';
 import { version } from '../version.ts';
 import process from 'node:process';
 import { bootstrapServer } from './bootstrap.ts';
 import { shutdownXcodeToolsBridge } from '../integrations/xcode-tools-bridge/index.ts';
 import { createStartupProfiler, getStartupProfileNowMs } from './startup-profiler.ts';
+import { getConfig } from '../utils/config-store.ts';
+import { getRegisteredWorkflows } from '../utils/tool-registry.ts';
 
 /**
  * Start the MCP server.
@@ -31,7 +38,7 @@ export async function startMcpServer(): Promise<void> {
     setLogLevel('info');
 
     let stageStartMs = getStartupProfileNowMs();
-    initSentry();
+    initSentry({ mode: 'mcp' });
     profiler.mark('initSentry', stageStartMs);
 
     stageStartMs = getStartupProfileNowMs();
@@ -45,6 +52,19 @@ export async function startMcpServer(): Promise<void> {
     stageStartMs = getStartupProfileNowMs();
     await startServer(server);
     profiler.mark('startServer', stageStartMs);
+
+    const config = getConfig();
+    const enabledWorkflows = getRegisteredWorkflows();
+    setSentryRuntimeContext({
+      mode: 'mcp',
+      enabledWorkflows,
+      disableSessionDefaults: config.disableSessionDefaults,
+      disableXcodeAutoSync: config.disableXcodeAutoSync,
+      incrementalBuildsEnabled: config.incrementalBuildsEnabled,
+      debugEnabled: config.debug,
+      uiDebuggerGuardMode: config.uiDebuggerGuardMode,
+      xcodeIdeWorkflowEnabled: enabledWorkflows.includes('xcode-ide'),
+    });
 
     void bootstrap.runDeferredInitialization().catch((error) => {
       log(
@@ -69,23 +89,24 @@ export async function startMcpServer(): Promise<void> {
         await shutdownXcodeToolsBridge();
       } catch (error) {
         exitCode = 1;
-        log('error', `Failed to shutdown Xcode tools bridge: ${String(error)}`);
+        log('error', `Failed to shutdown Xcode tools bridge: ${String(error)}`, { sentry: true });
       }
 
       try {
         await getDefaultDebuggerManager().disposeAll();
       } catch (error) {
         exitCode = 1;
-        log('error', `Failed to dispose debugger sessions: ${String(error)}`);
+        log('error', `Failed to dispose debugger sessions: ${String(error)}`, { sentry: true });
       }
 
       try {
         await server.close();
       } catch (error) {
         exitCode = 1;
-        log('error', `Failed to close MCP server: ${String(error)}`);
+        log('error', `Failed to close MCP server: ${String(error)}`, { sentry: true });
       }
 
+      await flushAndCloseSentry(2000);
       process.exit(exitCode);
     };
 
@@ -99,7 +120,9 @@ export async function startMcpServer(): Promise<void> {
 
     log('info', `XcodeBuildMCP server (version ${version}) started successfully`);
   } catch (error) {
+    log('error', `Fatal error in startMcpServer(): ${String(error)}`, { sentry: true });
     console.error('Fatal error in startMcpServer():', error);
+    await flushAndCloseSentry(2000);
     process.exit(1);
   }
 }

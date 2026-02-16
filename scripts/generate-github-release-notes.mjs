@@ -107,7 +107,7 @@ function extractChangelogSection(changelog, version) {
   if (sectionStartLine === -1) {
     throw new Error(
       `Missing CHANGELOG section for version: ${normalizedTarget}\n` +
-        `Add a heading like: ## [${normalizedTarget}] (or ## [v${normalizedTarget}] - YYYY-MM-DD)`
+        `Add a heading like: ## [${normalizedTarget}] (or ## [v${normalizedTarget}] - YYYY-MM-DD)`,
     );
   }
 
@@ -168,14 +168,9 @@ function buildInstallAndSetupSection(version, packageName) {
 function buildReleaseBody(version, changelogSection, packageName) {
   const normalizedVersion = normalizeVersion(version);
   const installAndSetup = buildInstallAndSetupSection(normalizedVersion, packageName);
-  return [
-    `## Release v${normalizedVersion}`,
-    '',
-    changelogSection,
-    '',
-    installAndSetup,
-    '',
-  ].join('\n');
+  return [`## Release v${normalizedVersion}`, '', changelogSection, '', installAndSetup, ''].join(
+    '\n',
+  );
 }
 
 async function main() {

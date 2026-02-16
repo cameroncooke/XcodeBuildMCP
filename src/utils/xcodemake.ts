@@ -16,7 +16,7 @@
 import { log } from './logger.ts';
 import type { CommandResponse } from './command.ts';
 import { getDefaultCommandExecutor } from './command.ts';
-import { existsSync, readdirSync } from 'fs';
+import { existsSync, readdirSync, statSync } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs/promises';
@@ -42,6 +42,36 @@ export function isXcodemakeEnabled(): boolean {
  */
 function getXcodemakeCommand(): string {
   return overriddenXcodemakePath ?? 'xcodemake';
+}
+
+function isExecutable(path: string): boolean {
+  try {
+    const stat = statSync(path);
+    return stat.isFile() && (stat.mode & 0o111) !== 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check whether xcodemake binary is currently resolvable without side effects.
+ * This does not attempt download or installation.
+ */
+export function isXcodemakeBinaryAvailable(): boolean {
+  if (overriddenXcodemakePath && isExecutable(overriddenXcodemakePath)) {
+    return true;
+  }
+
+  const pathValue = process.env.PATH ?? '';
+  const entries = pathValue.split(path.delimiter).filter(Boolean);
+  for (const entry of entries) {
+    const candidate = path.join(entry, 'xcodemake');
+    if (isExecutable(candidate)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -123,16 +153,15 @@ export async function isXcodemakeAvailable(): Promise<boolean> {
       return true;
     }
 
-    // If not found, download and install it
     log('info', 'xcodemake not found in PATH, attempting to download...');
     const installed = await installXcodemake();
-    if (installed) {
-      log('info', 'xcodemake installed successfully');
-      return true;
-    } else {
-      log('warn', 'xcodemake installation failed');
+    if (!installed) {
+      log('warning', 'xcodemake installation failed');
       return false;
     }
+
+    log('info', 'xcodemake installed successfully');
+    return true;
   } catch (error) {
     log(
       'error',

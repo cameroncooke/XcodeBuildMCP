@@ -10,6 +10,7 @@
 ### Fixed
 
 - Removed startup dependency on handshake-time Xcode bridge `tools/list` sync for MCP tool registration, preventing bridge list latency from delaying initial connect ([#210](https://github.com/getsentry/XcodeBuildMCP/issues/210))
+- Fixed Sentry telemetry scope to capture only internal XcodeBuildMCP runtime failures, removing broad MCP wrapping, PII-heavy tags, and default per-error log capture ([#204](https://github.com/getsentry/XcodeBuildMCP/issues/204))
 
 ## [2.0.7]
 

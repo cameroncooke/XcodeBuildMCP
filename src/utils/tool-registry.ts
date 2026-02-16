@@ -8,6 +8,7 @@ import { importToolModule } from '../core/manifest/import-tool-module.ts';
 import type { PredicateContext } from '../visibility/predicate-types.ts';
 import { selectWorkflowsForMcp, isToolExposedForRuntime } from '../visibility/exposure.ts';
 import { getConfig } from './config-store.ts';
+import { recordInternalErrorMetric, recordToolInvocationMetric } from './sentry.ts';
 
 export interface RuntimeToolInfo {
   enabledWorkflows: string[];
@@ -39,21 +40,21 @@ export function getRegisteredWorkflows(): string[] {
   return [...registryState.enabledWorkflows];
 }
 
+function defaultPredicateContext(): PredicateContext {
+  return {
+    runtime: 'mcp',
+    config: getConfig(),
+    runningUnderXcode: false,
+  };
+}
+
 /**
  * Get the current MCP predicate context.
  * Returns the context used for the most recent workflow registration,
  * or a default context if not yet initialized.
  */
 export function getMcpPredicateContext(): PredicateContext {
-  if (registryState.currentContext) {
-    return registryState.currentContext;
-  }
-  // Default context when not yet initialized
-  return {
-    runtime: 'mcp',
-    config: getConfig(),
-    runningUnderXcode: false,
-  };
+  return registryState.currentContext ?? defaultPredicateContext();
 }
 
 /**
@@ -100,7 +101,7 @@ export async function applyWorkflowSelectionFromManifest(
         try {
           toolModule = await importToolModule(toolManifest.module);
         } catch (err) {
-          log('warn', `Failed to import tool module ${toolManifest.module}: ${err}`);
+          log('warning', `Failed to import tool module ${toolManifest.module}: ${err}`);
           continue;
         }
 
@@ -112,8 +113,32 @@ export async function applyWorkflowSelectionFromManifest(
             annotations: toolManifest.annotations,
           },
           async (args: unknown): Promise<ToolResponse> => {
-            const response = await toolModule.handler(args as Record<string, unknown>);
-            return processToolResponse(response as ToolResponse, 'mcp', 'normal');
+            const startedAt = Date.now();
+            try {
+              const response = await toolModule.handler(args as Record<string, unknown>);
+              recordToolInvocationMetric({
+                toolName,
+                runtime: 'mcp',
+                transport: 'direct',
+                outcome: 'completed',
+                durationMs: Date.now() - startedAt,
+              });
+              return processToolResponse(response as ToolResponse, 'mcp', 'normal');
+            } catch (error) {
+              recordInternalErrorMetric({
+                component: 'mcp-tool-registry',
+                runtime: 'mcp',
+                errorKind: error instanceof Error ? error.name || 'Error' : typeof error,
+              });
+              recordToolInvocationMetric({
+                toolName,
+                runtime: 'mcp',
+                transport: 'direct',
+                outcome: 'infra_error',
+                durationMs: Date.now() - startedAt,
+              });
+              throw error;
+            }
           },
         );
         registryState.tools.set(toolName, registeredTool);
@@ -147,12 +172,7 @@ export async function registerWorkflowsFromManifest(
   workflowNames?: string[],
   ctx?: PredicateContext,
 ): Promise<void> {
-  const effectiveCtx: PredicateContext = ctx ?? {
-    runtime: 'mcp',
-    config: getConfig(),
-    runningUnderXcode: false,
-  };
-  await applyWorkflowSelectionFromManifest(workflowNames, effectiveCtx);
+  await applyWorkflowSelectionFromManifest(workflowNames, ctx ?? defaultPredicateContext());
 }
 
 /**

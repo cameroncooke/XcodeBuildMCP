@@ -564,4 +564,6 @@ The guide covers:
 
 - Sensitive information scrubbed from errors
 - Stack traces limited to application code
-- Sentry integration respects privacy settings
+- Sentry capture is explicit (`{ sentry: true }`) and limited to internal runtime failures
+- MCP wrapper auto-instrumentation is enabled for MCP observability, with tool input/output capture disabled (`recordInputs: false`, `recordOutputs: false`)
+- Request/user context and user home paths are scrubbed before telemetry is sent

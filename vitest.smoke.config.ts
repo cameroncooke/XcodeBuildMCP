@@ -4,9 +4,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: [
-      'src/smoke-tests/__tests__/**/*.test.ts',
-    ],
+    include: ['src/smoke-tests/__tests__/**/*.test.ts'],
     pool: 'forks',
     poolOptions: {
       forks: {

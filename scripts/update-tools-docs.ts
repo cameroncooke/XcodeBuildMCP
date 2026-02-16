@@ -209,7 +209,7 @@ function generateToolsDocumentation(manifest: ToolsManifest): string {
       const workflowTools = toolsByWorkflow.get(workflow.name) ?? [];
       const docTools = workflowTools.map((tool) => {
         const originWorkflow = tool.originWorkflow
-          ? workflowMeta.get(tool.originWorkflow)?.displayName ?? tool.originWorkflow
+          ? (workflowMeta.get(tool.originWorkflow)?.displayName ?? tool.originWorkflow)
           : undefined;
 
         return {
@@ -283,7 +283,7 @@ function generateCliToolsDocumentation(manifest: ToolsManifest): CliDocumentatio
 
     const tools = toolsByWorkflow.get(tool.workflow) ?? [];
     const originWorkflow = tool.originWorkflow
-      ? workflowMeta.get(tool.originWorkflow)?.displayName ?? tool.originWorkflow
+      ? (workflowMeta.get(tool.originWorkflow)?.displayName ?? tool.originWorkflow)
       : undefined;
 
     tools.push({
@@ -427,9 +427,7 @@ async function main(): Promise<void> {
     ];
 
     const changes = targets.map((target) => {
-      const existing = fs.existsSync(target.path)
-        ? fs.readFileSync(target.path, 'utf-8')
-        : '';
+      const existing = fs.existsSync(target.path) ? fs.readFileSync(target.path, 'utf-8') : '';
 
       const changed = existing !== target.content;
       return { ...target, existing, changed };
@@ -463,7 +461,9 @@ async function main(): Promise<void> {
         console.log(`   - ${path.relative(projectRoot, target.path)} (${target.label})`);
       }
       console.log(`   - MCP tools: ${manifest.stats.canonicalTools} canonical tools`);
-      console.log(`   - CLI tools: ${cliStats.toolCount} tools across ${cliStats.workflowCount} workflows`);
+      console.log(
+        `   - CLI tools: ${cliStats.toolCount} tools across ${cliStats.workflowCount} workflows`,
+      );
       console.log(`   - MCP lines: ${mcpContent.split('\n').length}`);
       console.log(`   - CLI lines: ${cliContent.split('\n').length}`);
 

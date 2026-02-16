@@ -20,7 +20,6 @@
 import { createWriteStream, type WriteStream } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
-// Note: Removed "import * as Sentry from '@sentry/node'" to prevent native module loading at import time
 
 function isSentryDisabledFromEnv(): boolean {
   return (
@@ -52,6 +51,10 @@ export interface LogContext {
   sentry?: boolean;
 }
 
+export function __shouldCaptureToSentryForTests(context?: LogContext): boolean {
+  return context?.sentry === true;
+}
+
 // Client-requested log level ("none" means no output unless explicitly enabled)
 let clientLogLevel: LogLevel = 'none';
 
@@ -67,6 +70,7 @@ function isTestEnv(): boolean {
 }
 
 type SentryModule = typeof import('@sentry/node');
+type SentryLogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
 const require = createRequire(
   typeof __filename === 'string' ? __filename : resolve(process.cwd(), 'package.json'),
@@ -74,25 +78,54 @@ const require = createRequire(
 let cachedSentry: SentryModule | null = null;
 
 function loadSentrySync(): SentryModule | null {
-  if (!sentryEnabled || isTestEnv()) return null;
-  if (cachedSentry) return cachedSentry;
+  if (!sentryEnabled || isTestEnv()) {
+    return null;
+  }
+  if (cachedSentry) {
+    return cachedSentry;
+  }
   try {
     cachedSentry = require('@sentry/node') as SentryModule;
     return cachedSentry;
   } catch {
-    // If @sentry/node is not installed in some environments, fail silently.
     return null;
   }
 }
 
 function withSentry(cb: (s: SentryModule) => void): void {
   const s = loadSentrySync();
-  if (!s) return;
+  if (!s) {
+    return;
+  }
   try {
     cb(s);
   } catch {
-    // no-op: avoid throwing inside logger
+    // Avoid throwing inside logger
   }
+}
+
+function mapLogLevelToSentry(level: string): SentryLogLevel {
+  switch (level.toLowerCase()) {
+    case 'emergency':
+    case 'alert':
+      return 'fatal';
+    case 'critical':
+    case 'error':
+      return 'error';
+    case 'warning':
+      return 'warn';
+    case 'debug':
+      return 'debug';
+    case 'notice':
+    case 'info':
+      return 'info';
+    default:
+      return 'info';
+  }
+}
+
+export function __mapLogLevelToSentryForTests(level: string): SentryLogLevel {
+  return mapLogLevelToSentry(level);
 }
 
 /**
@@ -164,7 +197,6 @@ export function getLogLevel(): LogLevel {
  * @returns true if the message should be logged
  */
 function shouldLog(level: string): boolean {
-  // Suppress logging during tests to keep test output clean
   if (isTestEnv() && !logFileStream) {
     return false;
   }
@@ -173,13 +205,11 @@ function shouldLog(level: string): boolean {
     return false;
   }
 
-  // Check if the level is valid
   const levelKey = level.toLowerCase() as LogLevel;
   if (!(levelKey in LOG_LEVELS)) {
-    return true; // Log unknown levels
+    return true;
   }
 
-  // Only log if the message level is at or above the client's requested level
   return LOG_LEVELS[levelKey] <= LOG_LEVELS[clientLogLevel];
 }
 
@@ -193,12 +223,18 @@ export function log(level: string, message: string, context?: LogContext): void 
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
 
-  // Default: error level goes to Sentry
-  // But respect explicit override from context
-  const captureToSentry = sentryEnabled && (context?.sentry ?? level === 'error');
+  const captureToSentry = sentryEnabled && __shouldCaptureToSentryForTests(context);
 
   if (captureToSentry) {
-    withSentry((s) => s.captureMessage(logMessage));
+    withSentry((s) => {
+      const sentryLevel = mapLogLevelToSentry(level);
+      const loggerMethod = s.logger?.[sentryLevel];
+      if (typeof loggerMethod === 'function') {
+        loggerMethod(message);
+        return;
+      }
+      s.captureMessage(logMessage);
+    });
   }
 
   if (logFileStream && clientLogLevel !== 'none') {
@@ -209,12 +245,11 @@ export function log(level: string, message: string, context?: LogContext): void 
     }
   }
 
-  // Check if we should log this level to stderr
   if (!shouldLog(level)) {
     return;
   }
 
-  // It's important to use console.error here to ensure logs don't interfere with MCP protocol communication
-  // see https://modelcontextprotocol.io/docs/tools/debugging#server-side-logging
+  // Uses stderr to avoid interfering with MCP protocol on stdout
+  // https://modelcontextprotocol.io/docs/tools/debugging#server-side-logging
   console.error(logMessage);
 }

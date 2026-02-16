@@ -5,6 +5,7 @@ import { buildYargsApp } from './cli/yargs-app.ts';
 import { getSocketPath, getWorkspaceKey, resolveWorkspaceRoot } from './daemon/socket-path.ts';
 import { startMcpServer } from './server/start-mcp-server.ts';
 import { listCliWorkflowIdsFromManifest } from './runtime/tool-catalog.ts';
+import { flushAndCloseSentry, initSentry, recordBootstrapDurationMetric } from './utils/sentry.ts';
 
 function findTopLevelCommand(argv: string[]): string | undefined {
   const flagsWithValue = new Set(['--socket', '--log-level', '--style']);
@@ -30,10 +31,12 @@ function findTopLevelCommand(argv: string[]): string | undefined {
 }
 
 async function main(): Promise<void> {
+  const cliBootstrapStartedAt = Date.now();
   if (process.argv.includes('mcp')) {
     await startMcpServer();
     return;
   }
+  initSentry({ mode: 'cli' });
 
   // CLI mode uses disableSessionDefaults to show all tool parameters as flags
   const result = await bootstrapRuntime({
@@ -74,22 +77,26 @@ async function main(): Promise<void> {
     discoveryMode,
   });
 
-  const workflowNames = cliExposedWorkflowIds;
-
   const yargsApp = buildYargsApp({
     catalog,
     runtimeConfig: result.runtime.config,
     defaultSocketPath,
     workspaceRoot,
     workspaceKey,
-    workflowNames,
+    workflowNames: cliExposedWorkflowIds,
     cliExposedWorkflowIds,
   });
 
+  recordBootstrapDurationMetric('cli', Date.now() - cliBootstrapStartedAt);
   await yargsApp.parseAsync();
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : String(err));
-  process.exit(1);
-});
+main()
+  .then(async () => {
+    await flushAndCloseSentry(2000);
+  })
+  .catch(async (err) => {
+    console.error(err instanceof Error ? err.message : String(err));
+    await flushAndCloseSentry(2000);
+    process.exit(1);
+  });
