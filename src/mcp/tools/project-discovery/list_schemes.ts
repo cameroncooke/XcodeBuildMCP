@@ -79,52 +79,27 @@ export async function listSchemesLogic(
     const schemeLines = schemesMatch[1].trim().split('\n');
     const schemes = schemeLines.map((line) => line.trim()).filter((line) => line);
 
-    // Prepare next steps with the first scheme if available
-    const nextSteps: Array<{
-      tool: string;
-      label: string;
-      params: Record<string, string | number | boolean>;
-      priority?: number;
-    }> = [];
+    // Prepare next-step params with the first scheme if available
+    let nextStepParams: Record<string, Record<string, string | number | boolean>> | undefined;
     let hintText = '';
 
     if (schemes.length > 0) {
       const firstScheme = schemes[0];
 
-      nextSteps.push(
-        {
-          tool: 'build_macos',
-          label: 'Build for macOS',
-          params: { [`${projectOrWorkspace}Path`]: path!, scheme: firstScheme },
-          priority: 1,
+      nextStepParams = {
+        build_macos: { [`${projectOrWorkspace}Path`]: path!, scheme: firstScheme },
+        build_run_sim: {
+          [`${projectOrWorkspace}Path`]: path!,
+          scheme: firstScheme,
+          simulatorName: 'iPhone 16',
         },
-        {
-          tool: 'build_run_sim',
-          label: 'Build and run on iOS Simulator (default for run intent)',
-          params: {
-            [`${projectOrWorkspace}Path`]: path!,
-            scheme: firstScheme,
-            simulatorName: 'iPhone 16',
-          },
-          priority: 2,
+        build_sim: {
+          [`${projectOrWorkspace}Path`]: path!,
+          scheme: firstScheme,
+          simulatorName: 'iPhone 16',
         },
-        {
-          tool: 'build_sim',
-          label: 'Build for iOS Simulator (compile-only)',
-          params: {
-            [`${projectOrWorkspace}Path`]: path!,
-            scheme: firstScheme,
-            simulatorName: 'iPhone 16',
-          },
-          priority: 3,
-        },
-        {
-          tool: 'show_build_settings',
-          label: 'Show build settings',
-          params: { [`${projectOrWorkspace}Path`]: path!, scheme: firstScheme },
-          priority: 4,
-        },
-      );
+        show_build_settings: { [`${projectOrWorkspace}Path`]: path!, scheme: firstScheme },
+      };
 
       hintText =
         `Hint: Consider saving a default scheme with session-set-defaults ` +
@@ -138,7 +113,7 @@ export async function listSchemesLogic(
 
     return {
       content,
-      nextSteps,
+      ...(nextStepParams ? { nextStepParams } : {}),
       isError: false,
     };
   } catch (error) {
