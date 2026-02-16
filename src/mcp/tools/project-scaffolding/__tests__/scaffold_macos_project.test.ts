@@ -249,6 +249,16 @@ describe('scaffold_macos_project plugin', () => {
             ),
           },
         ],
+        nextStepParams: {
+          build_macos: {
+            workspacePath: '/tmp/test-projects/TestMacApp.xcworkspace',
+            scheme: 'TestMacApp',
+          },
+          build_run_macos: {
+            workspacePath: '/tmp/test-projects/TestMacApp.xcworkspace',
+            scheme: 'TestMacApp',
+          },
+        },
       });
 
       // Verify template manager calls using manual tracking
@@ -284,6 +294,16 @@ describe('scaffold_macos_project plugin', () => {
             ),
           },
         ],
+        nextStepParams: {
+          build_macos: {
+            workspacePath: '/tmp/test-projects/MyProject.xcworkspace',
+            scheme: 'MyProject',
+          },
+          build_run_macos: {
+            workspacePath: '/tmp/test-projects/MyProject.xcworkspace',
+            scheme: 'MyProject',
+          },
+        },
       });
     });
 

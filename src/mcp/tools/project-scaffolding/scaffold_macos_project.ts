@@ -332,6 +332,9 @@ export async function scaffold_macos_projectLogic(
     const projectParams = { ...params, platform: 'macOS' as const };
     const projectPath = await scaffoldProject(projectParams, commandExecutor, fileSystemExecutor);
 
+    const generatedProjectName = params.customizeNames === false ? 'MyProject' : params.projectName;
+    const workspacePath = `${projectPath}/${generatedProjectName}.xcworkspace`;
+
     const response = {
       success: true,
       projectPath,
@@ -346,6 +349,16 @@ export async function scaffold_macos_projectLogic(
           text: JSON.stringify(response, null, 2),
         },
       ],
+      nextStepParams: {
+        build_macos: {
+          workspacePath,
+          scheme: generatedProjectName,
+        },
+        build_run_macos: {
+          workspacePath,
+          scheme: generatedProjectName,
+        },
+      },
     };
   } catch (error) {
     log(

@@ -370,6 +370,59 @@ describe('DefaultToolInvoker next steps post-processing', () => {
     ]);
   });
 
+  it('maps dynamic params to the correct template tool after catalog filtering', async () => {
+    const directHandler = vi.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'ok' }],
+      nextStepParams: {
+        stop_sim_log_cap: { logSessionId: 'session-123' },
+      },
+    } satisfies ToolResponse);
+
+    const catalog = createToolCatalog([
+      makeTool({
+        id: 'start_sim_log_cap',
+        cliName: 'start-simulator-log-capture',
+        mcpName: 'start_sim_log_cap',
+        workflow: 'logging',
+        stateful: false,
+        nextStepTemplates: [
+          {
+            label: 'Unavailable step',
+            toolId: 'missing_tool',
+          },
+          {
+            label: 'Stop capture and retrieve logs',
+            toolId: 'stop_sim_log_cap',
+            priority: 1,
+          },
+        ],
+        handler: directHandler,
+      }),
+      makeTool({
+        id: 'stop_sim_log_cap',
+        cliName: 'stop-simulator-log-capture',
+        mcpName: 'stop_sim_log_cap',
+        workflow: 'logging',
+        stateful: true,
+        handler: vi.fn().mockResolvedValue(textResponse('stop')),
+      }),
+    ]);
+
+    const invoker = new DefaultToolInvoker(catalog);
+    const response = await invoker.invoke('start-simulator-log-capture', {}, { runtime: 'cli' });
+
+    expect(response.nextSteps).toEqual([
+      {
+        tool: 'stop_sim_log_cap',
+        label: 'Stop capture and retrieve logs',
+        params: { logSessionId: 'session-123' },
+        priority: 1,
+        workflow: 'logging',
+        cliTool: 'stop-simulator-log-capture',
+      },
+    ]);
+  });
+
   it('keeps tool-provided next steps when template count does not match', async () => {
     const directHandler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],
