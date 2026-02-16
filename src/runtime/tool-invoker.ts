@@ -43,21 +43,28 @@ function resolveTemplateParams(
   return resolved;
 }
 
+type BuiltTemplateNextStep = {
+  step: NextStep;
+  templateToolId?: string;
+};
+
 function buildTemplateNextSteps(
   tool: ToolDefinition,
   args: Record<string, unknown>,
   catalog: ToolCatalog,
-): NextStep[] {
+): BuiltTemplateNextStep[] {
   if (!tool.nextStepTemplates || tool.nextStepTemplates.length === 0) {
     return [];
   }
 
-  const built: NextStep[] = [];
+  const built: BuiltTemplateNextStep[] = [];
   for (const template of tool.nextStepTemplates) {
     if (!template.toolId) {
       built.push({
-        label: template.label,
-        priority: template.priority,
+        step: {
+          label: template.label,
+          priority: template.priority,
+        },
       });
       continue;
     }
@@ -68,10 +75,13 @@ function buildTemplateNextSteps(
     }
 
     built.push({
-      tool: target.mcpName,
-      label: template.label,
-      params: resolveTemplateParams(template.params ?? {}, args),
-      priority: template.priority,
+      step: {
+        tool: target.mcpName,
+        label: template.label,
+        params: resolveTemplateParams(template.params ?? {}, args),
+        priority: template.priority,
+      },
+      templateToolId: template.toolId,
     });
   }
 
@@ -102,21 +112,27 @@ function consumeDynamicParams(
 }
 
 function mergeTemplateAndResponseNextSteps(
-  tool: ToolDefinition,
-  templateSteps: NextStep[],
+  templateSteps: BuiltTemplateNextStep[],
   responseParamsMap: NextStepParamsMap | undefined,
   responseSteps: NextStep[] | undefined,
 ): NextStep[] {
   const consumedCounts = new Map<string, number>();
-  const templates = tool.nextStepTemplates ?? [];
 
-  return templateSteps.map((templateStep, index) => {
-    const template = templates[index];
-    if (!template?.toolId || !templateStep.tool || hasTemplateParams(templateStep)) {
+  return templateSteps.map((builtTemplateStep, index) => {
+    const templateStep = builtTemplateStep.step;
+    if (
+      !builtTemplateStep.templateToolId ||
+      !templateStep.tool ||
+      hasTemplateParams(templateStep)
+    ) {
       return templateStep;
     }
 
-    const paramsFromMap = consumeDynamicParams(responseParamsMap, template.toolId, consumedCounts);
+    const paramsFromMap = consumeDynamicParams(
+      responseParamsMap,
+      builtTemplateStep.templateToolId,
+      consumedCounts,
+    );
     if (paramsFromMap) {
       return {
         ...templateStep,
@@ -192,7 +208,6 @@ function postProcessToolResponse(params: {
     ? {
         ...response,
         nextSteps: mergeTemplateAndResponseNextSteps(
-          tool,
           templateSteps,
           response.nextStepParams,
           response.nextSteps,

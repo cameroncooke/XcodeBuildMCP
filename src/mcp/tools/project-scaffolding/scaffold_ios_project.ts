@@ -358,6 +358,9 @@ export async function scaffold_ios_projectLogic(
     const projectParams = { ...params, platform: 'iOS' };
     const projectPath = await scaffoldProject(projectParams, commandExecutor, fileSystemExecutor);
 
+    const generatedProjectName = params.customizeNames === false ? 'MyProject' : params.projectName;
+    const workspacePath = `${projectPath}/${generatedProjectName}.xcworkspace`;
+
     const response = {
       success: true,
       projectPath,
@@ -372,6 +375,18 @@ export async function scaffold_ios_projectLogic(
           text: JSON.stringify(response, null, 2),
         },
       ],
+      nextStepParams: {
+        build_sim: {
+          workspacePath,
+          scheme: generatedProjectName,
+          simulatorName: 'iPhone 16',
+        },
+        build_run_sim: {
+          workspacePath,
+          scheme: generatedProjectName,
+          simulatorName: 'iPhone 16',
+        },
+      },
     };
   } catch (error) {
     log(
