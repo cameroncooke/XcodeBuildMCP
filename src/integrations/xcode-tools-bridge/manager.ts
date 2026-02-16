@@ -8,7 +8,9 @@ import {
 import { XcodeToolsProxyRegistry, type ProxySyncResult } from './registry.ts';
 import {
   buildXcodeToolsBridgeStatus,
+  classifyBridgeError,
   getMcpBridgeAvailability,
+  serializeBridgeTool,
   type XcodeToolsBridgeStatus,
 } from './core.ts';
 import { XcodeIdeToolService } from './tool-service.ts';
@@ -144,5 +146,62 @@ export class XcodeToolsBridgeManager {
       const message = error instanceof Error ? error.message : String(error);
       return createErrorResponse('Bridge disconnect failed', message);
     }
+  }
+
+  async listToolsTool(params: { refresh?: boolean }): Promise<ToolResponse> {
+    if (!this.workflowEnabled) {
+      return this.createBridgeFailureResponse(
+        'XCODE_MCP_UNAVAILABLE',
+        'xcode-ide workflow is not enabled',
+      );
+    }
+
+    try {
+      const tools = await this.service.listTools({ refresh: params.refresh !== false });
+      const payload = {
+        toolCount: tools.length,
+        tools: tools.map(serializeBridgeTool),
+      };
+      return createTextResponse(JSON.stringify(payload, null, 2));
+    } catch (error) {
+      return this.createBridgeFailureResponse(
+        classifyBridgeError(error, 'list', {
+          connected: this.service.getClientStatus().connected,
+        }),
+        error,
+      );
+    }
+  }
+
+  async callToolTool(params: {
+    remoteTool: string;
+    arguments: Record<string, unknown>;
+    timeoutMs?: number;
+  }): Promise<ToolResponse> {
+    if (!this.workflowEnabled) {
+      return this.createBridgeFailureResponse(
+        'XCODE_MCP_UNAVAILABLE',
+        'xcode-ide workflow is not enabled',
+      );
+    }
+
+    try {
+      const response = await this.service.invokeTool(params.remoteTool, params.arguments, {
+        timeoutMs: params.timeoutMs,
+      });
+      return response as ToolResponse;
+    } catch (error) {
+      return this.createBridgeFailureResponse(
+        classifyBridgeError(error, 'call', {
+          connected: this.service.getClientStatus().connected,
+        }),
+        error,
+      );
+    }
+  }
+
+  private createBridgeFailureResponse(code: string, error: unknown): ToolResponse {
+    const message = error instanceof Error ? error.message : String(error);
+    return createErrorResponse(code, message);
   }
 }

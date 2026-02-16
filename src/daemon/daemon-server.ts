@@ -42,13 +42,6 @@ export function startDaemonServer(ctx: DaemonServerContext): net.Server {
   const invoker = new DefaultToolInvoker(ctx.catalog);
   const xcodeIdeService = new XcodeIdeToolService();
   xcodeIdeService.setWorkflowEnabled(ctx.xcodeIdeWorkflowEnabled);
-  if (ctx.xcodeIdeWorkflowEnabled) {
-    // Warm dynamic tool cache in the background so CLI discovery can stay fast.
-    void xcodeIdeService.listTools({ refresh: true }).catch((error) => {
-      const message = error instanceof Error ? error.message : String(error);
-      log('debug', `[Daemon] Initial xcode-ide bridge prefetch failed: ${message}`);
-    });
-  }
 
   const server = net.createServer((socket) => {
     log('info', '[Daemon] Client connected');

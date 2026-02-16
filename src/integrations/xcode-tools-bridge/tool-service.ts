@@ -89,10 +89,14 @@ export class XcodeIdeToolService {
     return this.refreshTools();
   }
 
-  async invokeTool(name: string, args: Record<string, unknown>): Promise<CallToolResult> {
+  async invokeTool(
+    name: string,
+    args: Record<string, unknown>,
+    opts: { timeoutMs?: number } = {},
+  ): Promise<CallToolResult> {
     await this.ensureConnected();
     try {
-      const response = await this.client.callTool(name, args);
+      const response = await this.client.callTool(name, args, opts);
       this.lastError = null;
       return response;
     } catch (error) {

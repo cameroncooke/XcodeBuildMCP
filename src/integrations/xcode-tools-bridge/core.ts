@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import process from 'node:process';
 import { promisify } from 'node:util';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { XcodeToolsBridgeClientStatus } from './client.ts';
 
 const execFileAsync = promisify(execFile);
@@ -17,6 +18,17 @@ export type XcodeToolsBridgeStatus = {
   xcodePid: string | null;
   xcodeSessionId: string | null;
 };
+
+export function serializeBridgeTool(tool: Tool): Record<string, unknown> {
+  return {
+    name: tool.name,
+    title: tool.title,
+    description: tool.description,
+    inputSchema: tool.inputSchema,
+    outputSchema: tool.outputSchema,
+    annotations: tool.annotations,
+  };
+}
 
 export interface BuildXcodeToolsBridgeStatusArgs {
   workflowEnabled: boolean;
@@ -67,4 +79,36 @@ export async function isXcodeRunning(): Promise<boolean | null> {
   } catch {
     return null;
   }
+}
+
+export function classifyBridgeError(
+  error: unknown,
+  operation: 'list' | 'call',
+  opts?: { connected?: boolean },
+): string {
+  const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
+
+  if (message.includes('mcpbridge not available')) {
+    return 'MCPBRIDGE_NOT_FOUND';
+  }
+  if (message.includes('workflow is not enabled')) {
+    return 'XCODE_MCP_UNAVAILABLE';
+  }
+  if (message.includes('timed out') || message.includes('timeout')) {
+    if (opts?.connected === false) {
+      return 'BRIDGE_CONNECT_TIMEOUT';
+    }
+    return operation === 'list' ? 'BRIDGE_LIST_TIMEOUT' : 'BRIDGE_CALL_TIMEOUT';
+  }
+  if (message.includes('permission') || message.includes('not allowed')) {
+    return 'XCODE_APPROVAL_REQUIRED';
+  }
+  if (
+    message.includes('connection closed') ||
+    message.includes('closed') ||
+    message.includes('disconnected')
+  ) {
+    return 'XCODE_SESSION_NOT_READY';
+  }
+  return 'XCODE_MCP_UNAVAILABLE';
 }

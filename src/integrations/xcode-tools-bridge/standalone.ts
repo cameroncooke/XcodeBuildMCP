@@ -3,7 +3,12 @@ import {
   createTextResponse,
   type ToolResponse,
 } from '../../utils/responses/index.ts';
-import { buildXcodeToolsBridgeStatus, type XcodeToolsBridgeStatus } from './core.ts';
+import {
+  buildXcodeToolsBridgeStatus,
+  classifyBridgeError,
+  serializeBridgeTool,
+  type XcodeToolsBridgeStatus,
+} from './core.ts';
 import { XcodeIdeToolService } from './tool-service.ts';
 
 export class StandaloneXcodeToolsBridge {
@@ -60,6 +65,41 @@ export class StandaloneXcodeToolsBridge {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return createErrorResponse('Bridge disconnect failed', message);
+    }
+  }
+
+  async listToolsTool(params: { refresh?: boolean }): Promise<ToolResponse> {
+    try {
+      const tools = await this.service.listTools({ refresh: params.refresh !== false });
+      return createTextResponse(
+        JSON.stringify(
+          {
+            toolCount: tools.length,
+            tools: tools.map(serializeBridgeTool),
+          },
+          null,
+          2,
+        ),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return createErrorResponse(classifyBridgeError(error, 'list'), message);
+    }
+  }
+
+  async callToolTool(params: {
+    remoteTool: string;
+    arguments: Record<string, unknown>;
+    timeoutMs?: number;
+  }): Promise<ToolResponse> {
+    try {
+      const response = await this.service.invokeTool(params.remoteTool, params.arguments, {
+        timeoutMs: params.timeoutMs,
+      });
+      return response as ToolResponse;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return createErrorResponse(classifyBridgeError(error, 'call'), message);
     }
   }
 }

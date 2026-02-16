@@ -4,9 +4,10 @@ description: Bridge tools for connecting to Xcode's built-in MCP server (mcpbrid
 availability:
   cli: false
 predicates:
-  - xcodeToolsAvailable
   - hideWhenXcodeAgentMode
 tools:
+  - xcode_ide_list_tools
+  - xcode_ide_call_tool
   - xcode_tools_bridge_status
   - xcode_tools_bridge_sync
   - xcode_tools_bridge_disconnect

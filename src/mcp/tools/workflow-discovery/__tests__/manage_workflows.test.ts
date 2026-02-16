@@ -7,7 +7,6 @@ vi.mock('../../../../utils/tool-registry.ts', () => ({
     runtime: 'mcp',
     config: { debug: false },
     runningUnderXcode: false,
-    xcodeToolsActive: false,
   }),
 }));
 

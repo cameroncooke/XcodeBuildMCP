@@ -219,8 +219,6 @@ export async function buildDaemonToolCatalogFromManifest(opts?: {
     runtime: 'daemon',
     config: getConfig(),
     runningUnderXcode: false,
-    xcodeToolsActive: false,
-    xcodeToolsAvailable: false,
   };
 
   return buildToolCatalogFromManifest({
@@ -238,7 +236,5 @@ async function buildCliPredicateContext(): Promise<PredicateContext> {
     runtime: 'cli',
     config: getConfig(),
     runningUnderXcode: false,
-    xcodeToolsActive: false,
-    xcodeToolsAvailable: false,
   };
 }

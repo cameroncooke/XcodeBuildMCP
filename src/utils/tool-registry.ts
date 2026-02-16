@@ -45,8 +45,6 @@ function defaultPredicateContext(): PredicateContext {
     runtime: 'mcp',
     config: getConfig(),
     runningUnderXcode: false,
-    xcodeToolsActive: false,
-    xcodeToolsAvailable: false,
   };
 }
 

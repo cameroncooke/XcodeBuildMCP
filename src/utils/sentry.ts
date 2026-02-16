@@ -153,6 +153,9 @@ export function __parseXcodeVersionForTests(output: string): {
 }
 
 let initialized = false;
+let enriched = false;
+let selfTestEmitted = false;
+let pendingRuntimeContext: SentryRuntimeContext | null = null;
 
 function isSentryDisabled(): boolean {
   return (
@@ -170,7 +173,7 @@ function isSentrySelfTestEnabled(): boolean {
 }
 
 function emitSentrySelfTest(mode: SentryRuntimeMode | undefined): void {
-  if (!isSentrySelfTestEnabled()) {
+  if (!isSentrySelfTestEnabled() || selfTestEmitted) {
     return;
   }
 
@@ -192,6 +195,8 @@ function emitSentrySelfTest(mode: SentryRuntimeMode | undefined): void {
     },
     () => undefined,
   );
+
+  selfTestEmitted = true;
 }
 
 function boolToTag(value: boolean | undefined): string | undefined {
@@ -208,11 +213,7 @@ function setTagIfDefined(key: string, value: string | undefined): void {
   Sentry.setTag(key, value);
 }
 
-export function setSentryRuntimeContext(context: SentryRuntimeContext): void {
-  if (!initialized || isSentryDisabled() || isTestEnv()) {
-    return;
-  }
-
+function applyRuntimeContext(context: SentryRuntimeContext): void {
   setTagIfDefined('runtime.mode', context.mode);
   setTagIfDefined('xcode.available', boolToTag(context.xcodeAvailable));
   setTagIfDefined('config.disable_session_defaults', boolToTag(context.disableSessionDefaults));
@@ -225,8 +226,6 @@ export function setSentryRuntimeContext(context: SentryRuntimeContext): void {
   setTagIfDefined('axe.source', context.axeSource);
   setTagIfDefined('axe.path_mode', context.axeSource);
   setTagIfDefined('axe.version', context.axeVersion);
-  setTagIfDefined('xcode.developer_dir', context.xcodeDeveloperDir);
-  setTagIfDefined('xcode.xcodebuild_path', context.xcodebuildPath);
   setTagIfDefined('xcodemake.available', boolToTag(context.xcodemakeAvailable));
   setTagIfDefined('xcodemake.enabled', boolToTag(context.xcodemakeEnabled));
   setTagIfDefined('xcode.version', context.xcodeVersion);
@@ -238,6 +237,16 @@ export function setSentryRuntimeContext(context: SentryRuntimeContext): void {
       enabledWorkflows: context.enabledWorkflows.join(','),
     });
   }
+}
+
+export function setSentryRuntimeContext(context: SentryRuntimeContext): void {
+  pendingRuntimeContext = context;
+
+  if (!initialized || isSentryDisabled() || isTestEnv()) {
+    return;
+  }
+
+  applyRuntimeContext(context);
 }
 
 interface XcodeVersionMetadata {
@@ -337,6 +346,22 @@ export function initSentry(context?: Pick<SentryRuntimeContext, 'mode'>): void {
   }
 
   emitSentrySelfTest(context?.mode);
+}
+
+export function enrichSentryContext(): void {
+  if (!initialized || enriched || isSentryDisabled() || isTestEnv()) {
+    return;
+  }
+
+  enriched = true;
+
+  if (pendingRuntimeContext) {
+    applyRuntimeContext(pendingRuntimeContext);
+    emitSentrySelfTest(pendingRuntimeContext.mode);
+    return;
+  }
+
+  emitSentrySelfTest(undefined);
 }
 
 export async function flushAndCloseSentry(timeoutMs = 2000): Promise<void> {

@@ -299,11 +299,16 @@ Predicates control visibility based on runtime context. All predicates in the ar
 |-----------|-------------|
 | `debugEnabled` | Show only when `config.debug` is `true` |
 | `experimentalWorkflowDiscoveryEnabled` | Show only when experimental workflow discovery is enabled |
+| `mcpRuntimeOnly` | Show only in MCP runtime (hide in CLI/daemon catalogs) |
 | `runningUnderXcodeAgent` | Show only when running under Xcode's coding agent |
-| `requiresXcodeTools` | Show only when Xcode Tools bridge is active |
 | `hideWhenXcodeAgentMode` | Hide when running inside Xcode's coding agent (tools conflict with Xcode's native equivalents) |
+| `xcodeAutoSyncDisabled` | Show only when running under Xcode and `config.disableXcodeAutoSync` is `true` |
 | `always` | Always visible (explicit documentation) |
 | `never` | Never visible (temporarily disable) |
+
+Notes:
+- Bridge availability/connection is handled at tool call time, not as a visibility predicate.
+- Prefer runtime/config predicates for deterministic tool exposure.
 
 ### Predicate Context
 
@@ -314,7 +319,6 @@ interface PredicateContext {
   runtime: 'cli' | 'mcp' | 'daemon';
   config: ResolvedRuntimeConfig;
   runningUnderXcode: boolean;
-  xcodeToolsActive: boolean;
 }
 ```
 
@@ -354,12 +358,20 @@ selection:
   mcp:
     defaultEnabled: true
 
+# MCP-only workflow/tool visibility
+predicates:
+  - mcpRuntimeOnly
+
 # Auto-included only when predicates pass (e.g., debug mode)
 selection:
   mcp:
     autoInclude: true
 predicates:
   - debugEnabled
+
+# Show only when manual Xcode sync is needed
+predicates:
+  - xcodeAutoSyncDisabled
 ```
 
 ## Tool Re-export

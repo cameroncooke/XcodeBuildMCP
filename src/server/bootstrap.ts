@@ -7,7 +7,6 @@ import type { RuntimeConfigOverrides } from '../utils/config-store.ts';
 import { getRegisteredWorkflows, registerWorkflowsFromManifest } from '../utils/tool-registry.ts';
 import { bootstrapRuntime } from '../runtime/bootstrap-runtime.ts';
 import { getXcodeToolsBridgeManager } from '../integrations/xcode-tools-bridge/index.ts';
-import { getMcpBridgeAvailability } from '../integrations/xcode-tools-bridge/core.ts';
 import { resolveWorkspaceRoot } from '../daemon/socket-path.ts';
 import { detectXcodeRuntime } from '../utils/xcode-process.ts';
 import { readXcodeIdeState } from '../utils/xcode-state-reader.ts';
@@ -15,15 +14,7 @@ import { sessionStore } from '../utils/session-store.ts';
 import { startXcodeStateWatcher, lookupBundleId } from '../utils/xcode-state-watcher.ts';
 import { getDefaultCommandExecutor } from '../utils/command.ts';
 import type { PredicateContext } from '../visibility/predicate-types.ts';
-import { resolveAxeBinary } from '../utils/axe/index.ts';
-import { isXcodemakeBinaryAvailable, isXcodemakeEnabled } from '../utils/xcodemake/index.ts';
-import {
-  getAxeVersionMetadata,
-  getXcodeVersionMetadata,
-  recordBootstrapDurationMetric,
-  recordXcodeBridgeSyncDurationMetric,
-  setSentryRuntimeContext,
-} from '../utils/sentry.ts';
+import { createStartupProfiler, getStartupProfileNowMs } from './startup-profiler.ts';
 
 export interface BootstrapOptions {
   enabledWorkflows?: string[];
@@ -32,11 +23,16 @@ export interface BootstrapOptions {
   cwd?: string;
 }
 
+export interface BootstrapResult {
+  runDeferredInitialization: () => Promise<void>;
+}
+
 export async function bootstrapServer(
   server: McpServer,
   options: BootstrapOptions = {},
-): Promise<void> {
-  const bootstrapStartedAt = Date.now();
+): Promise<BootstrapResult> {
+  const profiler = createStartupProfiler('bootstrap');
+
   server.server.setRequestHandler(SetLevelRequestSchema, async (request) => {
     const { level } = request.params;
     setLogLevel(level as LogLevel);
@@ -57,12 +53,14 @@ export async function bootstrapServer(
     overrides.enabledWorkflows = options.enabledWorkflows ?? [];
   }
 
+  let stageStartMs = getStartupProfileNowMs();
   const result = await bootstrapRuntime({
     runtime: 'mcp',
     cwd: options.cwd,
     fs: options.fileSystemExecutor,
     configOverrides: overrides,
   });
+  profiler.mark('bootstrapRuntime', stageStartMs);
 
   if (result.configFound) {
     for (const notice of result.notices) {
@@ -75,155 +73,109 @@ export async function bootstrapServer(
     cwd: result.runtime.cwd,
     projectConfigPath: result.configPath,
   });
-  const mcpBridge = await getMcpBridgeAvailability();
-  const xcodeToolsAvailable = mcpBridge.available;
+
   log('info', `🚀 Initializing server...`);
 
   const executor = getDefaultCommandExecutor();
+  stageStartMs = getStartupProfileNowMs();
   const xcodeDetection = await detectXcodeRuntime(executor);
-  if (xcodeDetection.runningUnderXcode) {
-    log('info', `[xcode] Running under Xcode agent environment`);
+  profiler.mark('detectXcodeRuntime', stageStartMs);
 
-    const configSessionDefaults = result.runtime.config.sessionDefaults;
-    const projectPath = configSessionDefaults?.projectPath;
-    const workspacePath = configSessionDefaults?.workspacePath;
+  const ctx: PredicateContext = {
+    runtime: 'mcp',
+    config: result.runtime.config,
+    runningUnderXcode: xcodeDetection.runningUnderXcode,
+  };
 
-    const xcodeState = await readXcodeIdeState({
-      executor,
-      cwd: result.runtime.cwd,
-      searchRoot: workspaceRoot,
-      projectPath,
-      workspacePath,
-    });
+  stageStartMs = getStartupProfileNowMs();
+  await registerWorkflowsFromManifest(enabledWorkflows, ctx);
+  profiler.mark('registerWorkflowsFromManifest', stageStartMs);
 
-    if (xcodeState.error) {
-      log('debug', `[xcode] Could not read Xcode IDE state: ${xcodeState.error}`);
-    } else {
-      const entries = Object.entries({
-        scheme: xcodeState.scheme,
-        simulatorId: xcodeState.simulatorId,
-        simulatorName: xcodeState.simulatorName,
-      }).filter(
-        (entry): entry is [string, string] =>
-          typeof entry[1] === 'string' && entry[1].trim().length > 0,
-      );
+  const resolvedWorkflows = getRegisteredWorkflows();
+  const xcodeIdeEnabled = resolvedWorkflows.includes('xcode-ide');
+  const xcodeToolsBridge = xcodeIdeEnabled ? getXcodeToolsBridgeManager(server) : null;
+  xcodeToolsBridge?.setWorkflowEnabled(xcodeIdeEnabled);
 
-      if (entries.length > 0) {
-        const syncedDefaults = Object.fromEntries(entries);
-        sessionStore.setDefaults(syncedDefaults);
-        log(
-          'info',
-          `[xcode] Synced session defaults from Xcode: ${JSON.stringify(syncedDefaults)}`,
-        );
+  stageStartMs = getStartupProfileNowMs();
+  await registerResources(server);
+  profiler.mark('registerResources', stageStartMs);
+
+  return {
+    runDeferredInitialization: async (): Promise<void> => {
+      const deferredProfiler = createStartupProfiler('bootstrap-deferred');
+
+      if (!xcodeDetection.runningUnderXcode) {
+        return;
       }
 
-      if (xcodeState.scheme) {
-        lookupBundleId(executor, xcodeState.scheme, projectPath, workspacePath)
-          .then((bundleId) => {
-            if (bundleId) {
-              sessionStore.setDefaults({ bundleId });
-              log('info', `[xcode] Bundle ID resolved: "${bundleId}"`);
-            }
-          })
-          .catch((e) => {
-            log('debug', `[xcode] Failed to lookup bundle ID: ${e}`);
-          });
-      }
-    }
+      log('info', `[xcode] Running under Xcode agent environment`);
 
-    if (!result.runtime.config.disableXcodeAutoSync) {
-      const watcherStarted = await startXcodeStateWatcher({
+      const configSessionDefaults = result.runtime.config.sessionDefaults;
+      const projectPath = configSessionDefaults?.projectPath;
+      const workspacePath = configSessionDefaults?.workspacePath;
+
+      let deferredStageStartMs = getStartupProfileNowMs();
+      const xcodeState = await readXcodeIdeState({
         executor,
         cwd: result.runtime.cwd,
         searchRoot: workspaceRoot,
         projectPath,
         workspacePath,
       });
-      if (watcherStarted) {
-        log('info', `[xcode] Started file watcher for automatic sync`);
-      }
-    } else {
-      log('info', `[xcode] Automatic Xcode sync disabled via config`);
-    }
-  }
+      deferredProfiler.mark('readXcodeIdeState', deferredStageStartMs);
 
-  const ctx: PredicateContext = {
-    runtime: 'mcp',
-    config: result.runtime.config,
-    runningUnderXcode: xcodeDetection.runningUnderXcode,
-    xcodeToolsActive: false,
-    xcodeToolsAvailable,
+      if (xcodeState.error) {
+        log('debug', `[xcode] Could not read Xcode IDE state: ${xcodeState.error}`);
+      } else {
+        const syncedDefaults: Record<string, string> = {};
+        if (xcodeState.scheme) {
+          syncedDefaults.scheme = xcodeState.scheme;
+        }
+        if (xcodeState.simulatorId) {
+          syncedDefaults.simulatorId = xcodeState.simulatorId;
+        }
+        if (xcodeState.simulatorName) {
+          syncedDefaults.simulatorName = xcodeState.simulatorName;
+        }
+
+        if (Object.keys(syncedDefaults).length > 0) {
+          sessionStore.setDefaults(syncedDefaults);
+          log(
+            'info',
+            `[xcode] Synced session defaults from Xcode: ${JSON.stringify(syncedDefaults)}`,
+          );
+        }
+
+        if (xcodeState.scheme) {
+          lookupBundleId(executor, xcodeState.scheme, projectPath, workspacePath)
+            .then((bundleId) => {
+              if (bundleId) {
+                sessionStore.setDefaults({ bundleId });
+                log('info', `[xcode] Bundle ID resolved: "${bundleId}"`);
+              }
+            })
+            .catch((e) => {
+              log('debug', `[xcode] Failed to lookup bundle ID: ${e}`);
+            });
+        }
+      }
+
+      if (!result.runtime.config.disableXcodeAutoSync) {
+        deferredStageStartMs = getStartupProfileNowMs();
+        const watcherStarted = await startXcodeStateWatcher({
+          executor,
+          cwd: result.runtime.cwd,
+          searchRoot: workspaceRoot,
+          projectPath,
+          workspacePath,
+        });
+        deferredProfiler.mark('startXcodeStateWatcher', deferredStageStartMs);
+        if (watcherStarted) {
+          log('info', `[xcode] Started file watcher for automatic sync`);
+        }
+      } else {
+        log('info', `[xcode] Automatic Xcode sync disabled via config`);
+      }
+    },
   };
-
-  await registerWorkflowsFromManifest(enabledWorkflows, ctx);
-
-  const resolvedWorkflows = getRegisteredWorkflows();
-  const xcodeIdeEnabled = resolvedWorkflows.includes('xcode-ide');
-  const xcodeToolsBridge = xcodeToolsAvailable ? getXcodeToolsBridgeManager(server) : null;
-  xcodeToolsBridge?.setWorkflowEnabled(xcodeIdeEnabled);
-  if (xcodeIdeEnabled && xcodeToolsBridge) {
-    const syncStartedAt = Date.now();
-    try {
-      const syncResult = await xcodeToolsBridge.syncTools({ reason: 'startup' });
-      recordXcodeBridgeSyncDurationMetric(
-        Date.now() - syncStartedAt,
-        syncResult.total > 0 ? 'success' : 'empty',
-      );
-      // After sync, if Xcode tools are active, re-register with updated context
-      if (syncResult.total > 0 && xcodeDetection.runningUnderXcode) {
-        log('info', `[xcode-ide] Xcode tools active - applying conflict filtering`);
-        ctx.xcodeToolsActive = true;
-        await registerWorkflowsFromManifest(enabledWorkflows, ctx);
-      }
-    } catch (error) {
-      recordXcodeBridgeSyncDurationMetric(Date.now() - syncStartedAt, 'error');
-      log(
-        'warning',
-        `[xcode-ide] Startup sync failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      log('warning', '[infra/bootstrap] xcode-ide startup sync failed', { sentry: true });
-    }
-  }
-
-  const xcodeVersion = await getXcodeVersionMetadata(async (command) => {
-    const commandResult = await executor(command, 'Get Xcode Version');
-    return { success: commandResult.success, output: commandResult.output };
-  });
-  const xcodeAvailable = Boolean(
-    xcodeVersion.version ||
-      xcodeVersion.buildVersion ||
-      xcodeVersion.developerDir ||
-      xcodeVersion.xcodebuildPath,
-  );
-  const axeBinary = resolveAxeBinary();
-  const axeAvailable = axeBinary !== null;
-  const axeSource = axeBinary?.source ?? 'unavailable';
-  const xcodemakeAvailable = isXcodemakeBinaryAvailable();
-  const axeVersion = await getAxeVersionMetadata(async (command) => {
-    const commandResult = await executor(command, 'Get AXe Version');
-    return { success: commandResult.success, output: commandResult.output };
-  }, axeBinary?.path);
-  setSentryRuntimeContext({
-    mode: 'mcp',
-    xcodeAvailable,
-    enabledWorkflows: resolvedWorkflows,
-    disableSessionDefaults: result.runtime.config.disableSessionDefaults,
-    disableXcodeAutoSync: result.runtime.config.disableXcodeAutoSync,
-    incrementalBuildsEnabled: result.runtime.config.incrementalBuildsEnabled,
-    debugEnabled: result.runtime.config.debug,
-    uiDebuggerGuardMode: result.runtime.config.uiDebuggerGuardMode,
-    xcodeIdeWorkflowEnabled: xcodeIdeEnabled,
-    axeAvailable,
-    axeSource,
-    axeVersion,
-    xcodeDeveloperDir: xcodeVersion.developerDir,
-    xcodebuildPath: xcodeVersion.xcodebuildPath,
-    xcodemakeAvailable,
-    xcodemakeEnabled: isXcodemakeEnabled(),
-    xcodeVersion: xcodeVersion.version,
-    xcodeBuildVersion: xcodeVersion.buildVersion,
-  });
-
-  await registerResources(server);
-  recordBootstrapDurationMetric('mcp', Date.now() - bootstrapStartedAt);
 }

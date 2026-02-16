@@ -23,12 +23,6 @@ export interface PredicateContext {
 
   /** Whether running under Xcode agent environment */
   runningUnderXcode: boolean;
-
-  /** Whether Xcode Tools bridge is active (MCP only; false otherwise) */
-  xcodeToolsActive: boolean;
-
-  /** Whether the Xcode Tools bridge binary is available on this system */
-  xcodeToolsAvailable?: boolean;
 }
 
 /**

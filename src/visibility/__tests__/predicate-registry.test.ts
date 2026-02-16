@@ -32,8 +32,6 @@ function createContext(overrides: Partial<PredicateContext> = {}): PredicateCont
     runtime: 'mcp',
     config: createDefaultConfig(),
     runningUnderXcode: false,
-    xcodeToolsActive: false,
-    xcodeToolsAvailable: false,
     ...overrides,
   };
 }
@@ -84,27 +82,15 @@ describe('predicate-registry', () => {
       });
     });
 
-    describe('requiresXcodeTools', () => {
-      it('should return true when Xcode tools are active', () => {
-        const ctx = createContext({ xcodeToolsActive: true });
-        expect(PREDICATES.requiresXcodeTools(ctx)).toBe(true);
+    describe('mcpRuntimeOnly', () => {
+      it('should return true for MCP runtime', () => {
+        const ctx = createContext({ runtime: 'mcp' });
+        expect(PREDICATES.mcpRuntimeOnly(ctx)).toBe(true);
       });
 
-      it('should return false when Xcode tools are not active', () => {
-        const ctx = createContext({ xcodeToolsActive: false });
-        expect(PREDICATES.requiresXcodeTools(ctx)).toBe(false);
-      });
-    });
-
-    describe('xcodeToolsAvailable', () => {
-      it('should return true when Xcode tools bridge is available', () => {
-        const ctx = createContext({ xcodeToolsAvailable: true });
-        expect(PREDICATES.xcodeToolsAvailable(ctx)).toBe(true);
-      });
-
-      it('should return false when Xcode tools bridge is not available', () => {
-        const ctx = createContext({ xcodeToolsAvailable: false });
-        expect(PREDICATES.xcodeToolsAvailable(ctx)).toBe(false);
+      it('should return false for CLI runtime', () => {
+        const ctx = createContext({ runtime: 'cli' });
+        expect(PREDICATES.mcpRuntimeOnly(ctx)).toBe(false);
       });
     });
 
@@ -212,8 +198,7 @@ describe('predicate-registry', () => {
       expect(names).toContain('debugEnabled');
       expect(names).toContain('experimentalWorkflowDiscoveryEnabled');
       expect(names).toContain('runningUnderXcodeAgent');
-      expect(names).toContain('requiresXcodeTools');
-      expect(names).toContain('xcodeToolsAvailable');
+      expect(names).toContain('mcpRuntimeOnly');
       expect(names).toContain('hideWhenXcodeAgentMode');
       expect(names).toContain('xcodeAutoSyncDisabled');
       expect(names).toContain('always');

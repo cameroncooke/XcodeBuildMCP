@@ -147,7 +147,7 @@ enabledWorkflows: ["simulator", "ui-automation", "debugging"]
 
 See [TOOLS.md](TOOLS.md) for available workflows and their tools.
 
-To proxy Xcode IDE tools (Xcode 26+ `xcrun mcpbridge`), enable `xcode-ide`. See [XCODE_IDE_MCPBRIDGE.md](XCODE_IDE_MCPBRIDGE.md).
+To access Xcode IDE tools (Xcode 26+ `xcrun mcpbridge`), enable `xcode-ide`. This workflow exposes `xcode_ide_list_tools` and `xcode_ide_call_tool` for MCP clients. See [XCODE_IDE_MCPBRIDGE.md](XCODE_IDE_MCPBRIDGE.md).
 
 ### Experimental workflow discovery
 
