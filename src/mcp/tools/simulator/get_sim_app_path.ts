@@ -13,6 +13,7 @@ import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 import type { ToolResponse } from '../../../types/common.ts';
 import { XcodePlatform } from '../../../types/common.ts';
+import { constructDestinationString } from '../../../utils/xcode.ts';
 import {
   createSessionAwareTool,
   getSessionAwareToolSchemaShape,
@@ -125,9 +126,14 @@ export async function get_sim_app_pathLogic(
     let destinationString = '';
 
     if (simulatorId) {
-      destinationString = `platform=${platform},id=${simulatorId}`;
+      destinationString = constructDestinationString(platform, undefined, simulatorId);
     } else if (simulatorName) {
-      destinationString = `platform=${platform},name=${simulatorName}${useLatestOS ? ',OS=latest' : ''}`;
+      destinationString = constructDestinationString(
+        platform,
+        simulatorName,
+        undefined,
+        useLatestOS,
+      );
     } else {
       return createTextResponse(
         `For ${platform} platform, either simulatorId or simulatorName must be provided`,
