@@ -86,6 +86,11 @@ export async function snapshot_uiLogic(
           text: `Tips:\n- Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)\n- If a debugger is attached, ensure the app is running (not stopped on breakpoints)\n- Screenshots are for visual verification only`,
         },
       ],
+      nextStepParams: {
+        snapshot_ui: { simulatorId },
+        tap: { simulatorId, x: 0, y: 0 },
+        screenshot: { simulatorId },
+      },
     };
     if (guard.warningText) {
       response.content.push({ type: 'text', text: guard.warningText });

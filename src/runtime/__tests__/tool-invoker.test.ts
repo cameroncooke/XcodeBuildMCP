@@ -252,8 +252,14 @@ describe('DefaultToolInvoker next steps post-processing', () => {
     ]);
   });
 
-  it('injects manifest template next steps when a response omits nextSteps', async () => {
-    const directHandler = vi.fn().mockResolvedValue(textResponse('ok'));
+  it('injects manifest template next steps from dynamic nextStepParams when response omits nextSteps', async () => {
+    const directHandler = vi.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'ok' }],
+      nextStepParams: {
+        snapshot_ui: { simulatorId: '12345678-1234-4234-8234-123456789012' },
+        tap: { simulatorId: '12345678-1234-4234-8234-123456789012', x: 0, y: 0 },
+      },
+    } satisfies ToolResponse);
     const catalog = createToolCatalog([
       makeTool({
         id: 'snapshot_ui',
@@ -265,7 +271,7 @@ describe('DefaultToolInvoker next steps post-processing', () => {
           {
             label: 'Refresh',
             toolId: 'snapshot_ui',
-            params: { simulatorId: '${simulatorId}' },
+            params: { simulatorId: 'SIMULATOR_UUID' },
           },
           {
             label: 'Visually verify hierarchy output',
@@ -273,7 +279,7 @@ describe('DefaultToolInvoker next steps post-processing', () => {
           {
             label: 'Tap on element',
             toolId: 'tap',
-            params: { simulatorId: '${simulatorId}', x: 0, y: 0 },
+            params: { simulatorId: 'SIMULATOR_UUID', x: 0, y: 0 },
           },
         ],
         handler: directHandler,
@@ -289,11 +295,7 @@ describe('DefaultToolInvoker next steps post-processing', () => {
     ]);
 
     const invoker = new DefaultToolInvoker(catalog);
-    const response = await invoker.invoke(
-      'snapshot-ui',
-      { simulatorId: '12345678-1234-4234-8234-123456789012' },
-      { runtime: 'cli' },
-    );
+    const response = await invoker.invoke('snapshot-ui', {}, { runtime: 'cli' });
 
     expect(response.nextSteps).toEqual([
       {

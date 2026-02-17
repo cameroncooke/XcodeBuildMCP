@@ -148,7 +148,6 @@ export async function applyWorkflowSelectionFromManifest(
                   ? postProcessToolResponse({
                       tool: catalogTool,
                       response: response as ToolResponse,
-                      args: args as Record<string, unknown>,
                       catalog,
                       runtime: 'mcp',
                     })
