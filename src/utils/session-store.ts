@@ -112,10 +112,6 @@ class SessionStore {
     return this.getAllForProfile(this.activeProfile);
   }
 
-  getAllGlobal(): SessionDefaults {
-    return { ...this.globalDefaults };
-  }
-
   getAllForProfile(profile: string | null): SessionDefaults {
     if (profile === null) {
       return { ...this.globalDefaults };
