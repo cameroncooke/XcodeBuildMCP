@@ -20,14 +20,16 @@ If a capability is missing, assume your tool list may be hiding tools (search/pr
 
 ### Session defaults
 
-Before you call any other tools, you **must** call `session_show_defaults` to show the current defaults, ensure you then fill in the appropriate missing defaults. You may need to call one or more discovery/list tools to obtain the values needed.
+Before you call any other tools, you **must** call `session_show_defaults` to show the current defaults, then fill in any missing defaults. You may need discovery/list tools first to obtain valid values.
 
-- `session_set_defaults`
-  - Set the session defaults, should be called at least once to set tool defaults.
 - `session_show_defaults`
-  - Show session defaults.
+  - Show the current active defaults (including the active profile name).
+- `session_set_defaults`
+  - Set defaults for the current active profile, or set defaults for a specific profile via `profile`.
+- `session_use_defaults_profile`
+  - Switch the active defaults profile.
 - `session_clear_defaults`
-  - Clear session defaults.
+  - Clear defaults (current active profile by default, or a specific profile when provided).
 
 ### Project discovery
 

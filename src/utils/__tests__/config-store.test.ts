@@ -6,6 +6,7 @@ import {
   getConfig,
   initConfigStore,
   persistActiveSessionDefaultsProfile,
+  persistSessionDefaultsPatch,
 } from '../config-store.ts';
 
 const cwd = '/repo';
@@ -155,5 +156,93 @@ describe('config-store', () => {
 
     expect(getConfig().activeSessionDefaultsProfile).toBe('ios');
     expect(writes).toHaveLength(1);
+  });
+
+  it('normalizes profile names for persisted defaults patch and resolved config', async () => {
+    const writes: { path: string; content: string }[] = [];
+    let persistedYaml = 'schemaVersion: 1\n';
+    const fs = createMockFileSystemExecutor({
+      existsSync: () => true,
+      readFile: async () => persistedYaml,
+      writeFile: async (targetPath, content) => {
+        writes.push({ path: targetPath, content });
+        persistedYaml = content;
+      },
+    });
+
+    await initConfigStore({ cwd, fs });
+    await persistSessionDefaultsPatch({
+      profile: ' ios ',
+      patch: { scheme: 'App' },
+    });
+
+    expect(getConfig().sessionDefaultsProfiles?.ios?.scheme).toBe('App');
+    expect(getConfig().sessionDefaultsProfiles?.[' ios ']).toBeUndefined();
+    expect(writes).toHaveLength(1);
+  });
+
+  it('normalizes profile names for active profile persistence', async () => {
+    const writes: { path: string; content: string }[] = [];
+    const fs = createMockFileSystemExecutor({
+      existsSync: () => true,
+      readFile: async () => 'schemaVersion: 1\n',
+      writeFile: async (targetPath, content) => {
+        writes.push({ path: targetPath, content });
+      },
+    });
+
+    await initConfigStore({ cwd, fs });
+    await persistActiveSessionDefaultsProfile(' ios ');
+
+    expect(getConfig().activeSessionDefaultsProfile).toBe('ios');
+    expect(writes).toHaveLength(1);
+  });
+
+  it('keeps non-session config immutable after init when persisting session defaults', async () => {
+    let persistedYaml = 'schemaVersion: 1\n';
+    const fs = createMockFileSystemExecutor({
+      existsSync: () => true,
+      readFile: async () => persistedYaml,
+      writeFile: async (_targetPath, content) => {
+        persistedYaml = content;
+      },
+    });
+
+    await initConfigStore({
+      cwd,
+      fs,
+      env: { XCODEBUILDMCP_DEBUG: 'true' },
+    });
+
+    expect(getConfig().debug).toBe(true);
+
+    await persistSessionDefaultsPatch({ patch: { scheme: 'App' } });
+
+    expect(getConfig().debug).toBe(true);
+    expect(getConfig().sessionDefaults?.scheme).toBe('App');
+  });
+
+  it('keeps non-session config immutable after init when persisting active profile', async () => {
+    let persistedYaml = 'schemaVersion: 1\n';
+    const fs = createMockFileSystemExecutor({
+      existsSync: () => true,
+      readFile: async () => persistedYaml,
+      writeFile: async (_targetPath, content) => {
+        persistedYaml = content;
+      },
+    });
+
+    await initConfigStore({
+      cwd,
+      fs,
+      env: { XCODEBUILDMCP_DEBUG: 'true' },
+    });
+
+    expect(getConfig().debug).toBe(true);
+
+    await persistActiveSessionDefaultsProfile('ios');
+
+    expect(getConfig().debug).toBe(true);
+    expect(getConfig().activeSessionDefaultsProfile).toBe('ios');
   });
 });

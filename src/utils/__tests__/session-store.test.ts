@@ -62,6 +62,19 @@ describe('SessionStore', () => {
     expect(sessionStore.getAll()).toMatchObject({ scheme: 'GlobalApp' });
   });
 
+  it('does not inherit global project/workspace defaults into named profiles', () => {
+    sessionStore.setDefaults({ workspacePath: '/repo/MyApp.xcworkspace' });
+
+    sessionStore.setActiveProfile('ios');
+    sessionStore.setDefaults({ scheme: 'iOSApp' });
+
+    expect(sessionStore.getAll().workspacePath).toBeUndefined();
+    expect(sessionStore.getAll()).toMatchObject({ scheme: 'iOSApp' });
+
+    sessionStore.setActiveProfile(null);
+    expect(sessionStore.getAll()).toMatchObject({ workspacePath: '/repo/MyApp.xcworkspace' });
+  });
+
   it('clear(keys) only affects active profile while clear() clears all profiles', () => {
     sessionStore.setActiveProfile('ios');
     sessionStore.setDefaults({ scheme: 'iOSApp', simulatorId: 'SIM-1' });

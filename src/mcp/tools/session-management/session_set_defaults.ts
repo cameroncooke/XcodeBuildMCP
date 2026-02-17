@@ -1,5 +1,8 @@
 import * as z from 'zod';
-import { persistSessionDefaultsPatch } from '../../../utils/config-store.ts';
+import {
+  persistActiveSessionDefaultsProfile,
+  persistSessionDefaultsPatch,
+} from '../../../utils/config-store.ts';
 import { removeUndefined } from '../../../utils/remove-undefined.ts';
 import { scheduleSimulatorDefaultsRefresh } from '../../../utils/simulator-defaults-refresh.ts';
 import { sessionStore, type SessionDefaults } from '../../../utils/session-store.ts';
@@ -10,13 +13,23 @@ import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { getDefaultCommandExecutor } from '../../../utils/execution/index.ts';
 
 const schemaObj = sessionDefaultsSchema.extend({
+  profile: z
+    .string()
+    .min(1)
+    .optional()
+    .describe('Set defaults for this named profile and make it active for the current session.'),
+  createIfNotExists: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Create the named profile if it does not exist. Defaults to false.'),
   persist: z
     .boolean()
     .optional()
     .describe('Persist provided defaults to .xcodebuildmcp/config.yaml'),
 });
 
-type Params = z.infer<typeof schemaObj>;
+type Params = z.input<typeof schemaObj>;
 
 type SessionSetDefaultsContext = {
   executor: CommandExecutor;
@@ -27,9 +40,47 @@ export async function sessionSetDefaultsLogic(
   context: SessionSetDefaultsContext,
 ): Promise<ToolResponse> {
   const notices: string[] = [];
-  const activeProfile = sessionStore.getActiveProfile();
+  let activeProfile = sessionStore.getActiveProfile();
+  const {
+    persist,
+    profile: rawProfile,
+    createIfNotExists: rawCreateIfNotExists,
+    ...rawParams
+  } = params;
+  const createIfNotExists = rawCreateIfNotExists ?? false;
+
+  if (rawProfile !== undefined) {
+    const profile = rawProfile.trim();
+    if (profile.length === 0) {
+      return {
+        content: [{ type: 'text', text: 'Profile name cannot be empty.' }],
+        isError: true,
+      };
+    }
+
+    const profileExists = sessionStore.listProfiles().includes(profile);
+    if (!profileExists && !createIfNotExists) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Profile "${profile}" does not exist. Pass createIfNotExists=true to create it.`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    sessionStore.setActiveProfile(profile);
+    activeProfile = profile;
+    if (!profileExists) {
+      notices.push(`Created and activated profile "${profile}".`);
+    } else {
+      notices.push(`Activated profile "${profile}".`);
+    }
+  }
+
   const current = sessionStore.getAll();
-  const { persist, ...rawParams } = params;
   const nextParams = removeUndefined(
     rawParams as Record<string, unknown>,
   ) as Partial<SessionDefaults>;
@@ -137,6 +188,11 @@ export async function sessionSetDefaultsLogic(
         profile: activeProfile,
       });
       notices.push(`Persisted defaults to ${path}`);
+    }
+
+    if (rawProfile !== undefined) {
+      const { path } = await persistActiveSessionDefaultsProfile(activeProfile);
+      notices.push(`Persisted active profile selection to ${path}`);
     }
   }
 
