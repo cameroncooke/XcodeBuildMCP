@@ -8,17 +8,17 @@ nextSteps:
   - label: Refresh after layout changes
     toolId: snapshot_ui
     params:
-      simulatorId: ${simulatorId}
+      simulatorId: SIMULATOR_UUID
   - label: Tap on element
     toolId: tap
     params:
-      simulatorId: ${simulatorId}
+      simulatorId: SIMULATOR_UUID
       x: 0
       y: 0
   - label: Take screenshot for verification
     toolId: screenshot
     params:
-      simulatorId: ${simulatorId}
+      simulatorId: SIMULATOR_UUID
 annotations:
   title: Snapshot UI
   readOnlyHint: true

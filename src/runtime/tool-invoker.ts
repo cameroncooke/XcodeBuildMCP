@@ -12,37 +12,6 @@ import {
   type SentryToolTransport,
 } from '../utils/sentry.ts';
 
-/**
- * Resolve template params using input args.
- * Supports primitive passthrough and ${argName} substitution.
- */
-function resolveTemplateParams(
-  params: Record<string, string | number | boolean>,
-  args: Record<string, unknown>,
-): Record<string, string | number | boolean> {
-  const resolved: Record<string, string | number | boolean> = {};
-
-  for (const [key, value] of Object.entries(params)) {
-    if (typeof value === 'string') {
-      const match = value.match(/^\$\{([^}]+)\}$/);
-      if (match) {
-        const argValue = args[match[1]];
-        if (
-          typeof argValue === 'string' ||
-          typeof argValue === 'number' ||
-          typeof argValue === 'boolean'
-        ) {
-          resolved[key] = argValue;
-          continue;
-        }
-      }
-    }
-    resolved[key] = value;
-  }
-
-  return resolved;
-}
-
 type BuiltTemplateNextStep = {
   step: NextStep;
   templateToolId?: string;
@@ -50,7 +19,6 @@ type BuiltTemplateNextStep = {
 
 function buildTemplateNextSteps(
   tool: ToolDefinition,
-  args: Record<string, unknown>,
   catalog: ToolCatalog,
 ): BuiltTemplateNextStep[] {
   if (!tool.nextStepTemplates || tool.nextStepTemplates.length === 0) {
@@ -78,7 +46,7 @@ function buildTemplateNextSteps(
       step: {
         tool: target.mcpName,
         label: template.label,
-        params: resolveTemplateParams(template.params ?? {}, args),
+        params: template.params ?? {},
         priority: template.priority,
       },
       templateToolId: template.toolId,
@@ -194,13 +162,12 @@ function normalizeNextSteps(
 export function postProcessToolResponse(params: {
   tool: ToolDefinition;
   response: ToolResponse;
-  args: Record<string, unknown>;
   catalog: ToolCatalog;
   runtime: InvokeOptions['runtime'];
 }): ToolResponse {
-  const { tool, response, args, catalog, runtime } = params;
+  const { tool, response, catalog, runtime } = params;
 
-  const templateSteps = buildTemplateNextSteps(tool, args, catalog);
+  const templateSteps = buildTemplateNextSteps(tool, catalog);
   const canApplyTemplates =
     templateSteps.length > 0 &&
     (!response.nextSteps ||
@@ -292,15 +259,13 @@ export class DefaultToolInvoker implements ToolInvoker {
 
   private buildPostProcessParams(
     tool: ToolDefinition,
-    args: Record<string, unknown>,
     runtime: InvokeOptions['runtime'],
   ): {
     tool: ToolDefinition;
-    args: Record<string, unknown>;
     catalog: ToolCatalog;
     runtime: InvokeOptions['runtime'];
   } {
-    return { tool, args, catalog: this.catalog, runtime };
+    return { tool, catalog: this.catalog, runtime };
   }
 
   private async invokeViaDaemon(
@@ -313,7 +278,6 @@ export class DefaultToolInvoker implements ToolInvoker {
       captureInvocationMetric: (outcome: SentryToolInvocationOutcome) => void;
       postProcessParams: {
         tool: ToolDefinition;
-        args: Record<string, unknown>;
         catalog: ToolCatalog;
         runtime: InvokeOptions['runtime'];
       };
@@ -407,7 +371,7 @@ export class DefaultToolInvoker implements ToolInvoker {
       });
     };
 
-    const postProcessParams = this.buildPostProcessParams(tool, args, opts.runtime);
+    const postProcessParams = this.buildPostProcessParams(tool, opts.runtime);
     const xcodeIdeRemoteToolName = tool.xcodeIdeRemoteToolName;
     const isDynamicXcodeIdeTool =
       tool.workflow === 'xcode-ide' && typeof xcodeIdeRemoteToolName === 'string';

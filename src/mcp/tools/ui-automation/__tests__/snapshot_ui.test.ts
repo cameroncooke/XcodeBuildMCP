@@ -102,6 +102,11 @@ describe('Snapshot UI Plugin', () => {
             text: 'Tips:\n- Use frame coordinates for tap/swipe (center: x+width/2, y+height/2)\n- If a debugger is attached, ensure the app is running (not stopped on breakpoints)\n- Screenshots are for visual verification only',
           },
         ],
+        nextStepParams: {
+          snapshot_ui: { simulatorId: '12345678-1234-4234-8234-123456789012' },
+          tap: { simulatorId: '12345678-1234-4234-8234-123456789012', x: 0, y: 0 },
+          screenshot: { simulatorId: '12345678-1234-4234-8234-123456789012' },
+        },
       });
     });
 
