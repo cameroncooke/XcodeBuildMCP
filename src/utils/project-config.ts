@@ -6,6 +6,7 @@ import type { SessionDefaults } from './session-store.ts';
 import { log } from './logger.ts';
 import { removeUndefined } from './remove-undefined.ts';
 import { runtimeConfigFileSchema, type RuntimeConfigFile } from './runtime-config-schema.ts';
+import { normalizeSessionDefaultsProfileName } from './session-defaults-profile.ts';
 
 const CONFIG_DIR = '.xcodebuildmcp';
 const CONFIG_FILE = 'config.yaml';
@@ -216,17 +217,6 @@ function parseProjectConfig(rawText: string): RuntimeConfigFile {
   return runtimeConfigFileSchema.parse(parsed) as RuntimeConfigFile;
 }
 
-function normalizeProfileForPersistence(profile?: string | null): string | null {
-  if (profile == null) {
-    return null;
-  }
-  const trimmed = profile.trim();
-  if (trimmed.length === 0) {
-    throw new Error('Profile name cannot be empty.');
-  }
-  return trimmed;
-}
-
 async function readBaseConfigForPersistence(
   options: PersistenceTargetOptions,
 ): Promise<ProjectConfig> {
@@ -303,7 +293,7 @@ export async function persistSessionDefaultsToProjectConfig(
   const baseConfig = await readBaseConfigForPersistence({ fs: options.fs, configPath });
 
   const patch = removeUndefined(options.patch as Record<string, unknown>);
-  const targetProfile = normalizeProfileForPersistence(options.profile);
+  const targetProfile = normalizeSessionDefaultsProfileName(options.profile);
   const isGlobalProfile = targetProfile === null;
   const baseDefaults = isGlobalProfile
     ? (baseConfig.sessionDefaults ?? {})
@@ -341,7 +331,7 @@ export async function persistActiveSessionDefaultsProfileToProjectConfig(
   const baseConfig = await readBaseConfigForPersistence({ fs: options.fs, configPath });
 
   const nextConfig: ProjectConfig = { ...baseConfig, schemaVersion: 1 };
-  const activeProfile = normalizeProfileForPersistence(options.profile);
+  const activeProfile = normalizeSessionDefaultsProfileName(options.profile);
   if (activeProfile === null) {
     delete nextConfig.activeSessionDefaultsProfile;
   } else {

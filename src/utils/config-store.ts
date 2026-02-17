@@ -9,6 +9,7 @@ import {
 } from './project-config.ts';
 import type { DebuggerBackendKind } from './debugger/types.ts';
 import type { UiDebuggerGuardMode } from './runtime-config-types.ts';
+import { normalizeSessionDefaultsProfileName } from './session-defaults-profile.ts';
 
 export type RuntimeConfigOverrides = Partial<{
   enabledWorkflows: string[];
@@ -319,19 +320,6 @@ function getCurrentFileConfig(): ProjectConfig {
   return storeState.fileConfig ?? { schemaVersion: 1 };
 }
 
-function normalizeProfileNameForStore(profile?: string | null): string | null {
-  if (profile == null) {
-    return null;
-  }
-
-  const trimmed = profile.trim();
-  if (trimmed.length === 0) {
-    throw new Error('Profile name cannot be empty.');
-  }
-
-  return trimmed;
-}
-
 function applySessionDefaultsPatchToFileConfig(opts: {
   fileConfig: ProjectConfig;
   profile: string | null;
@@ -562,7 +550,7 @@ export async function persistSessionDefaultsPatch(opts: {
     throw new Error('Config store has not been initialized.');
   }
 
-  const normalizedProfile = normalizeProfileNameForStore(opts.profile);
+  const normalizedProfile = normalizeSessionDefaultsProfileName(opts.profile);
 
   const result = await persistSessionDefaultsToProjectConfig({
     fs: storeState.fs,
@@ -590,7 +578,7 @@ export async function persistActiveSessionDefaultsProfile(
     throw new Error('Config store has not been initialized.');
   }
 
-  const normalizedProfile = normalizeProfileNameForStore(profile);
+  const normalizedProfile = normalizeSessionDefaultsProfileName(profile);
 
   const result = await persistActiveSessionDefaultsProfileToProjectConfig({
     fs: storeState.fs,

@@ -49,13 +49,13 @@ describe('session-clear-defaults tool', () => {
       expect(current.arch).toBe('arm64');
     });
 
-    it('should clear all when all=true', async () => {
+    it('should clear all profiles only when all=true', async () => {
       sessionStore.setActiveProfile('ios');
       sessionStore.setDefaults({ scheme: 'IOS' });
       sessionStore.setActiveProfile(null);
       const result = await sessionClearDefaultsLogic({ all: true });
       expect(result.isError).toBe(false);
-      expect(result.content[0].text).toBe('Session defaults cleared');
+      expect(result.content[0].text).toBe('All session defaults cleared');
 
       const current = sessionStore.getAll();
       expect(Object.keys(current).length).toBe(0);
@@ -63,11 +63,48 @@ describe('session-clear-defaults tool', () => {
       expect(sessionStore.getActiveProfile()).toBeNull();
     });
 
-    it('should clear all when no params provided', async () => {
+    it('should clear only active profile when no params provided', async () => {
+      sessionStore.setActiveProfile('ios');
+      sessionStore.setDefaults({ scheme: 'IOS', projectPath: '/ios/project.xcodeproj' });
+      sessionStore.setActiveProfile(null);
+      sessionStore.setDefaults({ scheme: 'Global' });
+      sessionStore.setActiveProfile('ios');
+
       const result = await sessionClearDefaultsLogic({});
       expect(result.isError).toBe(false);
-      const current = sessionStore.getAll();
-      expect(Object.keys(current).length).toBe(0);
+
+      expect(sessionStore.getAll()).toEqual({});
+      expect(sessionStore.listProfiles()).toEqual([]);
+
+      sessionStore.setActiveProfile(null);
+      expect(sessionStore.getAll().scheme).toBe('Global');
+    });
+
+    it('should clear a specific profile when profile is provided', async () => {
+      sessionStore.setActiveProfile('ios');
+      sessionStore.setDefaults({ scheme: 'IOS' });
+      sessionStore.setActiveProfile('watch');
+      sessionStore.setDefaults({ scheme: 'Watch' });
+      sessionStore.setActiveProfile('watch');
+
+      const result = await sessionClearDefaultsLogic({ profile: 'ios' });
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('profile "ios"');
+
+      expect(sessionStore.listProfiles()).toEqual(['watch']);
+      expect(sessionStore.getAll().scheme).toBe('Watch');
+    });
+
+    it('should error when the specified profile does not exist', async () => {
+      const result = await sessionClearDefaultsLogic({ profile: 'missing' });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('does not exist');
+    });
+
+    it('should reject all=true when combined with scoped arguments', async () => {
+      const result = await sessionClearDefaultsLogic({ all: true, profile: 'ios' });
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('cannot be combined');
     });
 
     it('should validate keys enum', async () => {

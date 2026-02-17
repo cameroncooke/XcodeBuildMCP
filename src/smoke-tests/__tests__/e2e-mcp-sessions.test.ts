@@ -180,21 +180,23 @@ describe('MCP Session Management (e2e)', () => {
 
   it('supports namespaced defaults by switching active profile', async () => {
     await harness.client.callTool({
-      name: 'session_use_defaults_profile',
-      arguments: { profile: 'ios' },
-    });
-    await harness.client.callTool({
       name: 'session_set_defaults',
-      arguments: { scheme: 'IOSScheme', projectPath: '/ios/project.xcodeproj' },
+      arguments: {
+        profile: 'ios',
+        createIfNotExists: true,
+        scheme: 'IOSScheme',
+        projectPath: '/ios/project.xcodeproj',
+      },
     });
 
     await harness.client.callTool({
-      name: 'session_use_defaults_profile',
-      arguments: { profile: 'watch' },
-    });
-    await harness.client.callTool({
       name: 'session_set_defaults',
-      arguments: { scheme: 'WatchScheme', projectPath: '/watch/project.xcodeproj' },
+      arguments: {
+        profile: 'watch',
+        createIfNotExists: true,
+        scheme: 'WatchScheme',
+        projectPath: '/watch/project.xcodeproj',
+      },
     });
 
     const activeWatch = await harness.client.callTool({
