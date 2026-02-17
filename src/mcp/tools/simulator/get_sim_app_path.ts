@@ -56,7 +56,6 @@ const baseGetSimulatorAppPathSchema = z.object({
     .boolean()
     .optional()
     .describe('Whether to use the latest OS version for the named simulator'),
-  arch: z.string().optional().describe('Optional architecture'),
 });
 
 // Add XOR validation with preprocessing
@@ -201,7 +200,6 @@ const publicSchemaObject = baseGetSimulatorAppPathSchema.omit({
   simulatorName: true,
   configuration: true,
   useLatestOS: true,
-  arch: true,
 } as const);
 
 export const schema = getSessionAwareToolSchemaShape({
