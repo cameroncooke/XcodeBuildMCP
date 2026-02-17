@@ -10,10 +10,10 @@ annotations:
   title: Scaffold macOS Project
   destructiveHint: true
 nextSteps:
-  - label: Read the generated README in the workspace root before working on the project
+  - label: "Important: Before working on the project make sure to read the README.md file in the workspace root directory."
   - label: Build for macOS
     toolId: build_macos
     priority: 1
-  - label: Build and run on macOS
+  - label: Build & Run on macOS
     toolId: build_run_macos
     priority: 2
