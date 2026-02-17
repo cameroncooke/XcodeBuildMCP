@@ -21,6 +21,7 @@ import type { CommandExecutor } from '../../../utils/execution/index.ts';
 import { determineSimulatorUuid } from '../../../utils/simulator-utils.ts';
 import { nullifyEmptyStrings } from '../../../utils/schema-helpers.ts';
 import { inferPlatform } from '../../../utils/infer-platform.ts';
+import { constructDestinationString } from '../../../utils/xcode.ts';
 
 // Unified schema: XOR between projectPath and workspacePath, and XOR between simulatorId and simulatorName
 const baseOptions = {
@@ -185,12 +186,21 @@ export async function build_run_simLogic(
     // Handle destination for simulator
     let destinationString: string;
     if (params.simulatorId) {
-      destinationString = `platform=${detectedPlatform},id=${params.simulatorId}`;
+      destinationString = constructDestinationString(
+        detectedPlatform,
+        undefined,
+        params.simulatorId,
+      );
     } else if (params.simulatorName) {
-      destinationString = `platform=${detectedPlatform},name=${params.simulatorName}${(params.useLatestOS ?? true) ? ',OS=latest' : ''}`;
+      destinationString = constructDestinationString(
+        detectedPlatform,
+        params.simulatorName,
+        undefined,
+        params.useLatestOS ?? true,
+      );
     } else {
       // This shouldn't happen due to validation, but handle it
-      destinationString = `platform=${detectedPlatform}`;
+      destinationString = constructDestinationString(detectedPlatform);
     }
     command.push('-destination', destinationString);
 
