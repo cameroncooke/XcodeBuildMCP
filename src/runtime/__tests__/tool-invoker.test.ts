@@ -329,6 +329,9 @@ describe('DefaultToolInvoker next steps post-processing', () => {
           priority: 99,
         },
       ],
+      nextStepParams: {
+        stop_sim_log_cap: { logSessionId: 'session-123' },
+      },
     } satisfies ToolResponse);
 
     const catalog = createToolCatalog([
@@ -473,7 +476,7 @@ describe('DefaultToolInvoker next steps post-processing', () => {
     ]);
   });
 
-  it('keeps tool-provided next steps when template count does not match', async () => {
+  it('always uses manifest templates when they exist', async () => {
     const directHandler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],
       nextSteps: [
@@ -530,12 +533,20 @@ describe('DefaultToolInvoker next steps post-processing', () => {
 
     expect(response.nextSteps).toEqual([
       {
-        tool: 'launch_app_sim',
-        label: 'Launch app (platform-specific)',
-        params: { simulatorId: '123', bundleId: 'com.example.app' },
+        tool: 'get_app_bundle_id',
+        label: 'Get bundle ID',
+        params: {},
         priority: 1,
+        workflow: 'project-discovery',
+        cliTool: 'get-app-bundle-id',
+      },
+      {
+        tool: 'boot_sim',
+        label: 'Boot simulator',
+        params: {},
+        priority: 2,
         workflow: 'simulator',
-        cliTool: 'launch-app',
+        cliTool: 'boot',
       },
     ]);
   });
