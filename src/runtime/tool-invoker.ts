@@ -120,11 +120,7 @@ function mergeTemplateAndResponseNextSteps(
 
   return templateSteps.map((builtTemplateStep, index) => {
     const templateStep = builtTemplateStep.step;
-    if (
-      !builtTemplateStep.templateToolId ||
-      !templateStep.tool ||
-      hasTemplateParams(templateStep)
-    ) {
+    if (!builtTemplateStep.templateToolId || !templateStep.tool) {
       return templateStep;
     }
 
@@ -136,8 +132,15 @@ function mergeTemplateAndResponseNextSteps(
     if (paramsFromMap) {
       return {
         ...templateStep,
-        params: paramsFromMap,
+        params: {
+          ...(templateStep.params ?? {}),
+          ...paramsFromMap,
+        },
       };
+    }
+
+    if (hasTemplateParams(templateStep)) {
+      return templateStep;
     }
 
     const fallbackStep = responseSteps?.[index];

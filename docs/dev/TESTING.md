@@ -18,53 +18,40 @@ This document provides comprehensive testing guidelines for XcodeBuildMCP plugin
 
 ## Testing Philosophy
 
-### 🚨 CRITICAL: No Vitest Mocking Allowed
+### 🚨 CRITICAL: External Dependency Mocking Rules
 
-### ABSOLUTE RULE: ALL VITEST MOCKING IS COMPLETELY BANNED
+### ABSOLUTE RULE: External side effects must use dependency injection utilities
 
-### FORBIDDEN PATTERNS (will cause immediate test failure):
+### Use dependency-injection mocks for EXTERNAL dependencies:
+- `createMockExecutor()` / `createNoopExecutor()` for command execution (`xcrun`, `xcodebuild`, AXe, etc.)
+- `createMockFileSystemExecutor()` / `createNoopFileSystemExecutor()` for file system interactions
 
-#### Vitest Mocking (COMPLETELY BANNED):
-- `vi.mock()` - BANNED
-- `vi.fn()` - BANNED  
-- `vi.mocked()` - BANNED
-- `vi.spyOn()` - BANNED
-- `.mockResolvedValue()` - BANNED
-- `.mockRejectedValue()` - BANNED
-- `.mockReturnValue()` - BANNED
-- `.mockImplementation()` - BANNED
-- `.toHaveBeenCalled()` - BANNED
-- `.toHaveBeenCalledWith()` - BANNED
-- `MockedFunction` type - BANNED
+### Internal mocking guidance:
+- Vitest mocking (`vi.fn`, `vi.mock`, `vi.spyOn`, `.mockResolvedValue`, etc.) is allowed for internal modules and in-memory collaborators
+- Prefer straightforward, readable test doubles over over-engineered mocks
 
-#### Manual Mock Implementations (BANNED - use our utilities instead):
-- `const mockExecutor = async (...) => { ... }` - Use `createMockExecutor()` instead
-- `const mockFsDeps = { readFile: async () => ... }` - Use `createMockFileSystemExecutor()` instead
-- `const mockServer = { ... }` - Refactor to use dependency injection pattern
-- Any manual async function implementations for mocking behavior
-
-### ONLY ALLOWED MOCKING:
-- `createMockExecutor({ success: true, output: 'result' })` - command execution
-- `createMockFileSystemExecutor({ readFile: async () => 'content' })` - file system operations
+### Still forbidden:
+- Hitting real external systems in unit tests (real `xcodebuild`, `xcrun`, AXe, filesystem writes/reads outside test harness)
+- Bypassing dependency injection for external effects
 
 ### OUR CORE PRINCIPLE
 
-**Simple Rule**: No mocking other than `createMockExecutor()` and `createMockFileSystemExecutor()` (and their noop variants).
+**Simple Rule**: Use dependency-injection mock executors for external boundaries; use Vitest mocking only for internal behavior.
 
 **Why This Rule Exists**:
-1. **Consistency**: All tests use the same mocking utilities, making them predictable and maintainable
-2. **Reliability**: Our utilities are thoroughly tested and handle edge cases properly
-3. **Architectural Enforcement**: Prevents bypassing our dependency injection patterns
-4. **Simplicity**: One clear rule instead of complex guidelines about what mocking is acceptable
+1. **Reliability**: External side effects stay deterministic and hermetic
+2. **Clarity**: Internal collaboration assertions remain concise and readable
+3. **Architectural Enforcement**: External boundaries are explicit in tool logic signatures
+4. **Maintainability**: Tests fail for behavior regressions, not incidental environment differences
 
 ### Integration Testing with Dependency Injection
 
-XcodeBuildMCP follows a **pure dependency injection** testing philosophy that eliminates vitest mocking:
+XcodeBuildMCP follows a dependency-injection testing philosophy for external boundaries:
 
 - ✅ **Test plugin interfaces** (public API contracts)
 - ✅ **Test integration flows** (plugin → utilities → external tools)
-- ✅ **Use dependency injection** with createMockExecutor()
-- ❌ **Never mock vitest functions** (vi.mock, vi.fn, etc.)
+- ✅ **Use dependency injection** with createMockExecutor()/createMockFileSystemExecutor() for external dependencies
+- ✅ **Use Vitest mocking when needed** for internal modules and collaborators
 
 ### Benefits
 
@@ -76,7 +63,7 @@ XcodeBuildMCP follows a **pure dependency injection** testing philosophy that el
 
 ### Automated Violation Checking
 
-To enforce the no-mocking policy, the project includes a script that automatically checks for banned testing patterns.
+To enforce external-boundary testing policy, the project includes a script that checks for architectural test-pattern violations.
 
 ```bash
 # Run the script to check for violations
@@ -91,7 +78,7 @@ This script is part of the standard development workflow and should be run befor
 - Manual mock executors: `const mockExecutor = async (...) => { ... }`
 - Manual filesystem mocks: `const mockFsDeps = { readFile: async () => ... }`
 - Manual server mocks: `const mockServer = { ... }`
-- Vitest mocking patterns: `vi.mock()`, `vi.fn()`, etc.
+- External side-effect patterns that bypass injected executors/filesystem dependencies
 
 #### ❌ FALSE POSITIVES (should NOT be flagged):
 - Test data tracking: `commandCalls.push({ ... })` - This is just collecting test data, not mocking behavior
@@ -118,7 +105,7 @@ Test → Plugin Handler → utilities → [DEPENDENCY INJECTION] createMockExecu
 ### What Gets Mocked
 - Command execution via `createMockExecutor()`
 - File system operations via `createMockFileSystemExecutor()`
-- Nothing else - all vitest mocking is banned
+- Internal modules can use Vitest mocks where appropriate
 
 ## Dependency Injection Strategy
 
@@ -359,8 +346,8 @@ describe('simulator-project re-exports', () => {
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 
-// CRITICAL: NO VITEST MOCKING ALLOWED
-// Import ONLY what you need - no mock setup
+// Use dependency-injection mocks for external boundaries.
+// Vitest mocks are acceptable for internal collaborators when needed.
 
 import tool from '../tool_name.ts';
 import { createMockExecutor } from '../../utils/command.js';
@@ -1266,8 +1253,8 @@ npm run test:coverage -- src/plugins/simulator-workspace/
 ### Validation Scripts
 
 ```bash
-# Check for vitest mocking violations
-node scripts/check-code-patterns.js --pattern=vitest
+# Check for architectural pattern violations
+node scripts/check-code-patterns.js
 
 # Check dependency injection compliance
 node scripts/audit-dependency-container.js
@@ -1278,7 +1265,7 @@ node scripts/audit-dependency-container.js
 ## Best Practices Summary
 
 1. **Dependency injection**: Always use createMockExecutor() and createMockFileSystemExecutor()
-2. **No vitest mocking**: All vi.mock, vi.fn, etc. patterns are banned
+2. **External boundaries via DI**: mock command execution/filesystem with injected executors
 3. **Three dimensions**: Test input validation, command execution, and output processing
 4. **Literal expectations**: Use exact strings in assertions to catch regressions
 5. **Performance**: Ensure fast execution through proper mocking
@@ -1286,4 +1273,4 @@ node scripts/audit-dependency-container.js
 7. **Consistency**: Follow standard patterns across all plugin tests
 8. **Test safety**: Default executors prevent accidental real system calls
 
-This testing strategy ensures robust, maintainable tests that provide confidence in plugin functionality while remaining resilient to implementation changes and completely eliminating vitest mocking dependencies.
+This testing strategy ensures robust, maintainable tests that provide confidence in plugin functionality while remaining resilient to implementation changes and keeping external boundaries deterministic.

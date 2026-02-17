@@ -26,49 +26,6 @@ const SIMULATOR_PLATFORMS = [
   XcodePlatform.visionOSSimulator,
 ] as const;
 
-function constructDestinationString(
-  platform: XcodePlatform,
-  simulatorName: string,
-  simulatorId: string,
-  useLatest: boolean = true,
-  arch?: string,
-): string {
-  const isSimulatorPlatform = SIMULATOR_PLATFORMS.includes(
-    platform as (typeof SIMULATOR_PLATFORMS)[number],
-  );
-
-  // If ID is provided for a simulator, it takes precedence and uniquely identifies it.
-  if (isSimulatorPlatform && simulatorId) {
-    return `platform=${platform},id=${simulatorId}`;
-  }
-
-  // If name is provided for a simulator
-  if (isSimulatorPlatform && simulatorName) {
-    return `platform=${platform},name=${simulatorName}${useLatest ? ',OS=latest' : ''}`;
-  }
-
-  if (isSimulatorPlatform) {
-    throw new Error(`Simulator name or ID is required for specific ${platform} operations`);
-  }
-
-  // Handle non-simulator platforms
-  switch (platform) {
-    case XcodePlatform.macOS:
-      return arch ? `platform=macOS,arch=${arch}` : 'platform=macOS';
-    case XcodePlatform.iOS:
-      return 'generic/platform=iOS';
-    case XcodePlatform.watchOS:
-      return 'generic/platform=watchOS';
-    case XcodePlatform.tvOS:
-      return 'generic/platform=tvOS';
-    case XcodePlatform.visionOS:
-      return 'generic/platform=visionOS';
-  }
-  // Fallback just in case (shouldn't be reached with enum)
-  log('error', `Reached unexpected point in constructDestinationString for platform: ${platform}`);
-  return `platform=${platform}`;
-}
-
 // Define base schema
 const baseGetSimulatorAppPathSchema = z.object({
   projectPath: z
@@ -80,14 +37,7 @@ const baseGetSimulatorAppPathSchema = z.object({
     .optional()
     .describe('Path to .xcworkspace file. Provide EITHER this OR projectPath, not both'),
   scheme: z.string().describe('The scheme to use (Required)'),
-  platform: z
-    .nativeEnum(XcodePlatform)
-    .refine(
-      (platform) => SIMULATOR_PLATFORMS.includes(platform as (typeof SIMULATOR_PLATFORMS)[number]),
-      {
-        message: 'platform must be a simulator platform',
-      },
-    ),
+  platform: z.enum(SIMULATOR_PLATFORMS),
   simulatorId: z
     .string()
     .optional()
@@ -145,7 +95,6 @@ export async function get_sim_app_pathLogic(
   const simulatorName = params.simulatorName;
   const configuration = params.configuration ?? 'Debug';
   const useLatestOS = params.useLatestOS ?? true;
-  const arch = params.arch;
 
   // Log warning if useLatestOS is provided with simulatorId
   if (simulatorId && params.useLatestOS !== undefined) {
@@ -172,36 +121,18 @@ export async function get_sim_app_pathLogic(
     command.push('-scheme', scheme);
     command.push('-configuration', configuration);
 
-    // Handle destination based on platform
-    const isSimulatorPlatform = SIMULATOR_PLATFORMS.includes(
-      platform as (typeof SIMULATOR_PLATFORMS)[number],
-    );
-
+    // Handle destination for simulator platforms
     let destinationString = '';
 
-    if (isSimulatorPlatform) {
-      if (simulatorId) {
-        destinationString = `platform=${platform},id=${simulatorId}`;
-      } else if (simulatorName) {
-        destinationString = `platform=${platform},name=${simulatorName}${useLatestOS ? ',OS=latest' : ''}`;
-      } else {
-        return createTextResponse(
-          `For ${platform} platform, either simulatorId or simulatorName must be provided`,
-          true,
-        );
-      }
-    } else if (platform === XcodePlatform.macOS) {
-      destinationString = constructDestinationString(platform, '', '', false, arch);
-    } else if (platform === XcodePlatform.iOS) {
-      destinationString = 'generic/platform=iOS';
-    } else if (platform === XcodePlatform.watchOS) {
-      destinationString = 'generic/platform=watchOS';
-    } else if (platform === XcodePlatform.tvOS) {
-      destinationString = 'generic/platform=tvOS';
-    } else if (platform === XcodePlatform.visionOS) {
-      destinationString = 'generic/platform=visionOS';
+    if (simulatorId) {
+      destinationString = `platform=${platform},id=${simulatorId}`;
+    } else if (simulatorName) {
+      destinationString = `platform=${platform},name=${simulatorName}${useLatestOS ? ',OS=latest' : ''}`;
     } else {
-      return createTextResponse(`Unsupported platform: ${platform}`, true);
+      return createTextResponse(
+        `For ${platform} platform, either simulatorId or simulatorName must be provided`,
+        true,
+      );
     }
 
     command.push('-destination', destinationString);

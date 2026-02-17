@@ -61,9 +61,9 @@ XcodeBuildMCP enforces several architectural patterns that cannot be expressed t
 - Logic functions accepting `executor?: CommandExecutor` parameter
 
 ❌ **Forbidden**:
-- Direct use of `vi.mock()`, `vi.fn()`, or any Vitest mocking
 - Direct calls to `execSync`, `spawn`, or `exec` in production code
 - Testing handler functions directly
+- Real external side effects in unit tests (xcodebuild/xcrun/filesystem writes outside mocks)
 
 ### 2. Handler Signature Compliance
 
@@ -145,7 +145,7 @@ The pattern checker enforces XcodeBuildMCP-specific architectural rules:
 node scripts/check-code-patterns.js
 
 # Check specific pattern type
-node scripts/check-code-patterns.js --pattern=vitest
+node scripts/check-code-patterns.js
 node scripts/check-code-patterns.js --pattern=execsync
 node scripts/check-code-patterns.js --pattern=handler
 node scripts/check-code-patterns.js --pattern=handler-testing
@@ -172,12 +172,11 @@ npm run tools:all
 
 The pattern checker identifies the following violations:
 
-### 1. Vitest Mocking Violations
+### 1. External-Boundary Mocking Violations
 
-**What**: Any use of Vitest mocking functions
-**Why**: Breaks dependency injection architecture
-**Fix**: Use `createMockExecutor()` instead
-
+**What**: Tests that mock external side effects without injected executors/filesystem dependencies
+**Why**: Breaks deterministic external-boundary testing
+**Fix**: Use `createMockExecutor()` / `createMockFileSystemExecutor()` for external dependencies
 ### 2. ExecSync Violations
 
 **What**: Direct use of Node.js child_process functions in production code
@@ -251,7 +250,7 @@ node scripts/check-code-patterns.js  # Check architectural compliance
 ### 3. Writing Tests
 
 1. Import the logic function, not the default export
-2. Use `createMockExecutor()` for mocking
+2. Use `createMockExecutor()` / `createMockFileSystemExecutor()` for external side effects
 3. Test three dimensions: validation, command generation, output processing
 4. Never test handlers directly
 
