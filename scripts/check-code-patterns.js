@@ -11,11 +11,10 @@
  *   node scripts/check-code-patterns.js --help
  *
  * ARCHITECTURAL RULES ENFORCED:
- * 1. NO vitest mocking patterns (vi.mock, vi.fn, .mockResolvedValue, etc.)
+ * 1. External boundaries in tests should use dependency-injection utilities
  * 2. NO execSync usage in production code (use CommandExecutor instead)
- * 3. ONLY dependency injection with createMockExecutor() and createMockFileSystemExecutor()
- * 4. NO handler signature violations (handlers must have exact MCP SDK signatures)
- * 5. NO handler testing violations (test logic functions, not handlers directly)
+ * 3. NO handler signature violations (handlers must have exact MCP SDK signatures)
+ * 4. NO handler testing violations (test logic functions, not handlers directly)
  *
  * For comprehensive code quality documentation, see docs/dev/CODE_QUALITY.md
  *
@@ -49,7 +48,7 @@ OPTIONS:
   --help, -h        Show this help message
 
 PATTERN TYPES:
-  vitest           Check only vitest mocking violations (vi.mock, vi.fn, etc.)
+  vitest           Check only custom vitest policy violations (currently none)
   execsync         Check only execSync usage in production code
   handler          Check only handler signature violations
   handler-testing  Check only handler testing violations (testing handlers instead of logic functions)
@@ -77,28 +76,9 @@ const EXECSYNC_PATTERNS = [
   /^import\s+{[^}]*(?:exec|spawn|execSync)[^}]*}\s+from\s+['"](?:node:)?child_process['"]/m, // Named imports of functions
 ];
 
-// CRITICAL: ALL VITEST MOCKING PATTERNS ARE COMPLETELY FORBIDDEN
-// ONLY dependency injection with approved mock utilities is allowed
-const VITEST_GENERIC_PATTERNS = [
-  /vi\.mock\s*\(/, // vi.mock() - BANNED
-  /vi\.fn\s*\(/, // vi.fn() - BANNED
-  /vi\.mocked\s*\(/, // vi.mocked() - BANNED
-  /vi\.spyOn\s*\(/, // vi.spyOn() - BANNED
-  /vi\.clearAllMocks\s*\(/, // vi.clearAllMocks() - BANNED
-  /\.mockResolvedValue/, // .mockResolvedValue - BANNED
-  /\.mockRejectedValue/, // .mockRejectedValue - BANNED
-  /\.mockReturnValue/, // .mockReturnValue - BANNED
-  /\.mockImplementation/, // .mockImplementation - BANNED
-  /\.mockClear/, // .mockClear - BANNED
-  /\.mockReset/, // .mockReset - BANNED
-  /\.mockRestore/, // .mockRestore - BANNED
-  /\.toHaveBeenCalled/, // .toHaveBeenCalled - BANNED
-  /\.toHaveBeenCalledWith/, // .toHaveBeenCalledWith - BANNED
-  /MockedFunction/, // MockedFunction type - BANNED
-  /as MockedFunction/, // Type casting to MockedFunction - BANNED
-  /\bexecSync\b/, // execSync usage - BANNED (use executeCommand instead)
-  /\bexecSyncFn\b/, // execSyncFn usage - BANNED (use executeCommand instead)
-];
+// Vitest mocking is allowed for internal collaborators.
+// Keep this list empty unless a specific project policy requires certain vitest patterns to be blocked.
+const VITEST_GENERIC_PATTERNS = [];
 
 // APPROVED mock utilities - ONLY these are allowed
 const APPROVED_MOCK_PATTERNS = [
@@ -110,14 +90,8 @@ const APPROVED_MOCK_PATTERNS = [
   /\bcreateMockEnvironmentDetector\b/,
 ];
 
-// REFINED PATTERNS - Only flag ACTUAL vitest violations, not approved dependency injection patterns
-// Manual executors and mock objects are APPROVED when used for dependency injection
-const UNAPPROVED_MOCK_PATTERNS = [
-  // ONLY ACTUAL VITEST PATTERNS (vi.* usage) - Everything else is approved
-  /\bmock[A-Z][a-zA-Z0-9]*\s*=\s*vi\./, // mockSomething = vi.fn() - vitest assignments only
-
-  // No other patterns - manual executors and mock objects are approved for dependency injection
-];
+// Custom vitest restrictions can be added here if needed.
+const UNAPPROVED_MOCK_PATTERNS = [];
 
 // Function to check if a line contains unapproved mock patterns
 function hasUnapprovedMockPattern(line) {
@@ -615,8 +589,8 @@ function main() {
   console.log('🔍 XcodeBuildMCP Code Pattern Violations Checker\n');
   console.log(`🎯 Checking pattern type: ${patternFilter.toUpperCase()}\n`);
   console.log('CODE GUIDELINES ENFORCED:');
-  console.log('✅ ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()');
-  console.log('❌ BANNED: vitest mocking patterns (vi.mock, vi.fn, .mockResolvedValue, etc.)');
+  console.log('✅ External boundaries in tests should use createMockExecutor()/createMockFileSystemExecutor()');
+  console.log('✅ Vitest mocking is allowed for internal collaborators');
   console.log('❌ BANNED: execSync usage in production code (use CommandExecutor instead)');
   console.log('ℹ️  TypeScript patterns: Handled by ESLint with proper test exceptions');
   console.log(
@@ -898,12 +872,11 @@ function main() {
   if (needsConversion.length > 0) {
     console.log(`🚨 CRITICAL ACTION REQUIRED (TEST FILES):`);
     console.log(`=======================================`);
-    console.log(`1. IMMEDIATELY remove ALL vitest mocking from ${needsConversion.length} files`);
-    console.log(`2. BANNED: vi.mock(), vi.fn(), .mockResolvedValue(), .toHaveBeenCalled(), etc.`);
+    console.log(`1. Fix architectural violations in ${needsConversion.length} files`);
     console.log(
-      `3. BANNED: Testing handlers directly (.handler()) - test logic functions with dependency injection`,
+      `2. BANNED: Testing handlers directly (.handler()) - test logic functions with dependency injection`,
     );
-    console.log(`4. ONLY ALLOWED: createMockExecutor() and createMockFileSystemExecutor()`);
+    console.log(`3. Use injected executors/filesystem mocks for external side effects`);
     console.log(`4. Update plugin implementations to accept executor?: CommandExecutor parameter`);
     console.log(`5. Run this script again after each fix to track progress`);
     console.log('');
@@ -974,7 +947,7 @@ function main() {
   if (!hasViolations && mixed.length === 0) {
     console.log(`🎉 ALL FILES COMPLY WITH PROJECT STANDARDS!`);
     console.log(`==========================================`);
-    console.log(`✅ All files use ONLY createMockExecutor() and createMockFileSystemExecutor()`);
+    console.log(`✅ External boundary tests use injected executors/filesystem dependencies`);
     console.log(`✅ All files follow TypeScript best practices (no unsafe casts)`);
     console.log(`✅ All handler signatures comply with MCP SDK requirements`);
     console.log(`✅ All utilities properly use CommandExecutor dependency injection`);

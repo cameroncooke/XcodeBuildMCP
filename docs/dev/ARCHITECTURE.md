@@ -418,7 +418,7 @@ Not all parts are required for every tool. For example, `swift_package_build` ha
 
 ### Testing Principles
 
-XcodeBuildMCP uses a strict **Dependency Injection (DI)** pattern for testing, which completely bans the use of traditional mocking libraries like Vitest's `vi.mock` or `vi.fn`. This ensures that tests are robust, maintainable, and verify the actual integration between components.
+XcodeBuildMCP uses a **Dependency Injection (DI)** pattern for testing external boundaries (command execution, filesystem, and other side effects). Vitest mocking libraries (`vi.mock`, `vi.fn`, etc.) are acceptable for internal collaborators when needed. This keeps tests robust while preserving deterministic behavior at external boundaries.
 
 For detailed guidelines, see the [Testing Guide](TESTING.md).
 

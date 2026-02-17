@@ -370,6 +370,54 @@ describe('DefaultToolInvoker next steps post-processing', () => {
     ]);
   });
 
+  it('overrides unresolved template placeholders with dynamic next-step params', async () => {
+    const directHandler = vi.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'ok' }],
+      nextStepParams: {
+        boot_sim: { simulatorId: 'ABC-123' },
+      },
+    } satisfies ToolResponse);
+
+    const catalog = createToolCatalog([
+      makeTool({
+        id: 'launch_app_sim',
+        cliName: 'launch-app-sim',
+        mcpName: 'launch_app_sim',
+        workflow: 'simulator',
+        stateful: false,
+        nextStepTemplates: [
+          {
+            label: 'Boot simulator',
+            toolId: 'boot_sim',
+            params: { simulatorId: '${simulatorId}' },
+          },
+        ],
+        handler: directHandler,
+      }),
+      makeTool({
+        id: 'boot_sim',
+        cliName: 'boot-sim',
+        mcpName: 'boot_sim',
+        workflow: 'simulator',
+        stateful: false,
+        handler: vi.fn().mockResolvedValue(textResponse('boot')),
+      }),
+    ]);
+
+    const invoker = new DefaultToolInvoker(catalog);
+    const response = await invoker.invoke('launch-app-sim', {}, { runtime: 'cli' });
+
+    expect(response.nextSteps).toEqual([
+      {
+        tool: 'boot_sim',
+        label: 'Boot simulator',
+        params: { simulatorId: 'ABC-123' },
+        workflow: 'simulator',
+        cliTool: 'boot-sim',
+      },
+    ]);
+  });
+
   it('maps dynamic params to the correct template tool after catalog filtering', async () => {
     const directHandler = vi.fn().mockResolvedValue({
       content: [{ type: 'text', text: 'ok' }],

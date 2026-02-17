@@ -270,8 +270,8 @@ Before making changes, please familiarize yourself with:
 All contributions must adhere to the testing standards outlined in the [**XcodeBuildMCP Plugin Testing Guidelines (TESTING.md)**](TESTING.md). This is the canonical source of truth for all testing practices.
 
 **Key Principles (Summary):**
-- **No Vitest Mocking**: All forms of `vi.mock`, `vi.fn`, `vi.spyOn`, etc., are strictly forbidden.
-- **Dependency Injection**: All external dependencies (command execution, file system access) must be injected into tool logic functions using the `CommandExecutor` and `FileSystemExecutor` patterns.
+- **Dependency Injection for External Boundaries**: All external dependencies (command execution, file system access) must be injected into tool logic functions using the `CommandExecutor` and `FileSystemExecutor` patterns.
+- **Internal Mocking Is Allowed**: Vitest mocking (`vi.mock`, `vi.fn`, `vi.spyOn`, etc.) is acceptable for internal modules/collaborators.
 - **Test Production Code**: Tests must import and execute the actual tool logic, not mock implementations.
 - **Comprehensive Coverage**: Tests must cover input validation, command generation, and output processing.
 
