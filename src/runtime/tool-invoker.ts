@@ -191,7 +191,7 @@ function normalizeNextSteps(
   };
 }
 
-function postProcessToolResponse(params: {
+export function postProcessToolResponse(params: {
   tool: ToolDefinition;
   response: ToolResponse;
   args: Record<string, unknown>;

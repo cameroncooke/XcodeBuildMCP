@@ -1,10 +1,14 @@
 import { type RegisteredTool } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { server } from '../server/server-state.ts';
 import type { ToolResponse } from '../types/common.ts';
+import type { ToolCatalog, ToolDefinition } from '../runtime/types.ts';
 import { log } from './logger.ts';
 import { processToolResponse } from './responses/index.ts';
 import { loadManifest } from '../core/manifest/load-manifest.ts';
 import { importToolModule } from '../core/manifest/import-tool-module.ts';
+import { getEffectiveCliName } from '../core/manifest/schema.ts';
+import { createToolCatalog } from '../runtime/tool-catalog.ts';
+import { postProcessToolResponse } from '../runtime/tool-invoker.ts';
 import type { PredicateContext } from '../visibility/predicate-types.ts';
 import { selectWorkflowsForMcp, isToolExposedForRuntime } from '../visibility/exposure.ts';
 import { getConfig } from './config-store.ts';
@@ -20,10 +24,13 @@ const registryState: {
   enabledWorkflows: Set<string>;
   /** Current MCP predicate context (stored for use by manage_workflows) */
   currentContext: PredicateContext | null;
+  /** Catalog of currently registered MCP tools for next-step template resolution */
+  catalog: ToolCatalog | null;
 } = {
   tools: new Map<string, RegisteredTool>(),
   enabledWorkflows: new Set<string>(),
   currentContext: null,
+  catalog: null,
 };
 
 export function getRuntimeRegistration(): RuntimeToolInfo | null {
@@ -79,6 +86,8 @@ export async function applyWorkflowSelectionFromManifest(
 
   const desiredToolNames = new Set<string>();
   const desiredWorkflows = new Set<string>();
+  const catalogTools: ToolDefinition[] = [];
+  const moduleCache = new Map<string, Awaited<ReturnType<typeof importToolModule>>>();
 
   for (const workflow of selectedWorkflows) {
     desiredWorkflows.add(workflow.id);
@@ -95,16 +104,32 @@ export async function applyWorkflowSelectionFromManifest(
       const toolName = toolManifest.names.mcp;
       desiredToolNames.add(toolName);
 
-      if (!registryState.tools.has(toolName)) {
-        // Import the tool module
-        let toolModule;
+      let toolModule = moduleCache.get(toolId);
+      if (!toolModule) {
         try {
           toolModule = await importToolModule(toolManifest.module);
+          moduleCache.set(toolId, toolModule);
         } catch (err) {
           log('warning', `Failed to import tool module ${toolManifest.module}: ${err}`);
           continue;
         }
+      }
 
+      catalogTools.push({
+        id: toolManifest.id,
+        cliName: getEffectiveCliName(toolManifest),
+        mcpName: toolName,
+        workflow: workflow.id,
+        description: toolManifest.description,
+        annotations: toolManifest.annotations,
+        nextStepTemplates: toolManifest.nextSteps,
+        mcpSchema: toolModule.schema,
+        cliSchema: toolModule.schema,
+        stateful: toolManifest.routing?.stateful ?? false,
+        handler: toolModule.handler as ToolDefinition['handler'],
+      });
+
+      if (!registryState.tools.has(toolName)) {
         const registeredTool = server.registerTool(
           toolName,
           {
@@ -116,6 +141,19 @@ export async function applyWorkflowSelectionFromManifest(
             const startedAt = Date.now();
             try {
               const response = await toolModule.handler(args as Record<string, unknown>);
+              const catalog = registryState.catalog;
+              const catalogTool = catalog?.getByMcpName(toolName);
+              const postProcessedResponse =
+                catalog && catalogTool
+                  ? postProcessToolResponse({
+                      tool: catalogTool,
+                      response: response as ToolResponse,
+                      args: args as Record<string, unknown>,
+                      catalog,
+                      runtime: 'mcp',
+                    })
+                  : (response as ToolResponse);
+
               recordToolInvocationMetric({
                 toolName,
                 runtime: 'mcp',
@@ -123,7 +161,8 @@ export async function applyWorkflowSelectionFromManifest(
                 outcome: 'completed',
                 durationMs: Date.now() - startedAt,
               });
-              return processToolResponse(response as ToolResponse, 'mcp', 'normal');
+
+              return processToolResponse(postProcessedResponse, 'mcp', 'normal');
             } catch (error) {
               recordInternalErrorMetric({
                 component: 'mcp-tool-registry',
@@ -145,6 +184,8 @@ export async function applyWorkflowSelectionFromManifest(
       }
     }
   }
+
+  registryState.catalog = createToolCatalog(catalogTools);
 
   // Unregister tools no longer in selection
   for (const [toolName, registeredTool] of registryState.tools.entries()) {
@@ -196,4 +237,5 @@ export function __resetToolRegistryForTests(): void {
   registryState.tools.clear();
   registryState.enabledWorkflows.clear();
   registryState.currentContext = null;
+  registryState.catalog = null;
 }
