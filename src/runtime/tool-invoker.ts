@@ -56,10 +56,6 @@ function buildTemplateNextSteps(
   return built;
 }
 
-function hasTemplateParams(step: NextStep): boolean {
-  return !!step.params && Object.keys(step.params).length > 0;
-}
-
 function consumeDynamicParams(
   nextStepParams: NextStepParamsMap | undefined,
   toolId: string,
@@ -82,11 +78,10 @@ function consumeDynamicParams(
 function mergeTemplateAndResponseNextSteps(
   templateSteps: BuiltTemplateNextStep[],
   responseParamsMap: NextStepParamsMap | undefined,
-  responseSteps: NextStep[] | undefined,
 ): NextStep[] {
   const consumedCounts = new Map<string, number>();
 
-  return templateSteps.map((builtTemplateStep, index) => {
+  return templateSteps.map((builtTemplateStep) => {
     const templateStep = builtTemplateStep.step;
     if (!builtTemplateStep.templateToolId || !templateStep.tool) {
       return templateStep;
@@ -97,28 +92,16 @@ function mergeTemplateAndResponseNextSteps(
       builtTemplateStep.templateToolId,
       consumedCounts,
     );
-    if (paramsFromMap) {
-      return {
-        ...templateStep,
-        params: {
-          ...(templateStep.params ?? {}),
-          ...paramsFromMap,
-        },
-      };
-    }
-
-    if (hasTemplateParams(templateStep)) {
-      return templateStep;
-    }
-
-    const fallbackStep = responseSteps?.[index];
-    if (!fallbackStep?.params) {
+    if (!paramsFromMap) {
       return templateStep;
     }
 
     return {
       ...templateStep,
-      params: fallbackStep.params,
+      params: {
+        ...(templateStep.params ?? {}),
+        ...paramsFromMap,
+      },
     };
   });
 }
@@ -168,22 +151,14 @@ export function postProcessToolResponse(params: {
   const { tool, response, catalog, runtime } = params;
 
   const templateSteps = buildTemplateNextSteps(tool, catalog);
-  const canApplyTemplates =
-    templateSteps.length > 0 &&
-    (!response.nextSteps ||
-      response.nextSteps.length === 0 ||
-      response.nextSteps.length === templateSteps.length);
 
-  const withTemplates = canApplyTemplates
-    ? {
-        ...response,
-        nextSteps: mergeTemplateAndResponseNextSteps(
-          templateSteps,
-          response.nextStepParams,
-          response.nextSteps,
-        ),
-      }
-    : response;
+  const withTemplates =
+    templateSteps.length > 0
+      ? {
+          ...response,
+          nextSteps: mergeTemplateAndResponseNextSteps(templateSteps, response.nextStepParams),
+        }
+      : response;
 
   const result = normalizeNextSteps(withTemplates, catalog, runtime);
   delete result.nextStepParams;
