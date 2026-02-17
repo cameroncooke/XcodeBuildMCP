@@ -82,13 +82,6 @@ const storeState: ConfigStoreState = {
   resolved: { ...DEFAULT_CONFIG },
 };
 
-function refreshResolvedConfig(): void {
-  storeState.resolved = resolveConfig({
-    fileConfig: storeState.fileConfig,
-    overrides: storeState.overrides,
-  });
-}
-
 function hasOwnProperty<T extends object, K extends PropertyKey>(
   obj: T | undefined,
   key: K,
@@ -294,8 +287,49 @@ function resolveSessionDefaultsProfiles(opts: {
   return merged;
 }
 
+function resolveActiveSessionDefaultsProfile(opts: {
+  overrides?: RuntimeConfigOverrides;
+  fileConfig?: ProjectConfig;
+}): string | undefined {
+  if (hasOwnProperty(opts.overrides, 'activeSessionDefaultsProfile')) {
+    return opts.overrides.activeSessionDefaultsProfile;
+  }
+  if (hasOwnProperty(opts.fileConfig, 'activeSessionDefaultsProfile')) {
+    return opts.fileConfig.activeSessionDefaultsProfile;
+  }
+  return undefined;
+}
+
+function refreshResolvedSessionFields(): void {
+  storeState.resolved.sessionDefaults = resolveSessionDefaults({
+    overrides: storeState.overrides,
+    fileConfig: storeState.fileConfig,
+  });
+  storeState.resolved.sessionDefaultsProfiles = resolveSessionDefaultsProfiles({
+    overrides: storeState.overrides,
+    fileConfig: storeState.fileConfig,
+  });
+  storeState.resolved.activeSessionDefaultsProfile = resolveActiveSessionDefaultsProfile({
+    overrides: storeState.overrides,
+    fileConfig: storeState.fileConfig,
+  });
+}
+
 function getCurrentFileConfig(): ProjectConfig {
   return storeState.fileConfig ?? { schemaVersion: 1 };
+}
+
+function normalizeProfileNameForStore(profile?: string | null): string | null {
+  if (profile == null) {
+    return null;
+  }
+
+  const trimmed = profile.trim();
+  if (trimmed.length === 0) {
+    throw new Error('Profile name cannot be empty.');
+  }
+
+  return trimmed;
 }
 
 function applySessionDefaultsPatchToFileConfig(opts: {
@@ -463,11 +497,9 @@ function resolveConfig(opts: {
       overrides: opts.overrides,
       fileConfig: opts.fileConfig,
     }),
-    activeSessionDefaultsProfile: resolveFromLayers<string>({
-      key: 'activeSessionDefaultsProfile',
+    activeSessionDefaultsProfile: resolveActiveSessionDefaultsProfile({
       overrides: opts.overrides,
       fileConfig: opts.fileConfig,
-      envConfig,
     }),
   };
 }
@@ -530,21 +562,23 @@ export async function persistSessionDefaultsPatch(opts: {
     throw new Error('Config store has not been initialized.');
   }
 
+  const normalizedProfile = normalizeProfileNameForStore(opts.profile);
+
   const result = await persistSessionDefaultsToProjectConfig({
     fs: storeState.fs,
     cwd: storeState.cwd,
     patch: opts.patch,
     deleteKeys: opts.deleteKeys,
-    profile: opts.profile,
+    profile: normalizedProfile,
   });
 
   storeState.fileConfig = applySessionDefaultsPatchToFileConfig({
     fileConfig: getCurrentFileConfig(),
-    profile: opts.profile ?? null,
+    profile: normalizedProfile,
     patch: opts.patch,
     deleteKeys: opts.deleteKeys,
   });
-  refreshResolvedConfig();
+  refreshResolvedSessionFields();
 
   return result;
 }
@@ -556,17 +590,19 @@ export async function persistActiveSessionDefaultsProfile(
     throw new Error('Config store has not been initialized.');
   }
 
+  const normalizedProfile = normalizeProfileNameForStore(profile);
+
   const result = await persistActiveSessionDefaultsProfileToProjectConfig({
     fs: storeState.fs,
     cwd: storeState.cwd,
-    profile,
+    profile: normalizedProfile,
   });
 
   storeState.fileConfig = applyActiveProfileToFileConfig({
     fileConfig: getCurrentFileConfig(),
-    profile,
+    profile: normalizedProfile,
   });
-  refreshResolvedConfig();
+  refreshResolvedSessionFields();
 
   return result;
 }

@@ -216,6 +216,17 @@ function parseProjectConfig(rawText: string): RuntimeConfigFile {
   return runtimeConfigFileSchema.parse(parsed) as RuntimeConfigFile;
 }
 
+function normalizeProfileForPersistence(profile?: string | null): string | null {
+  if (profile == null) {
+    return null;
+  }
+  const trimmed = profile.trim();
+  if (trimmed.length === 0) {
+    throw new Error('Profile name cannot be empty.');
+  }
+  return trimmed;
+}
+
 async function readBaseConfigForPersistence(
   options: PersistenceTargetOptions,
 ): Promise<ProjectConfig> {
@@ -292,7 +303,7 @@ export async function persistSessionDefaultsToProjectConfig(
   const baseConfig = await readBaseConfigForPersistence({ fs: options.fs, configPath });
 
   const patch = removeUndefined(options.patch as Record<string, unknown>);
-  const targetProfile = options.profile ?? null;
+  const targetProfile = normalizeProfileForPersistence(options.profile);
   const isGlobalProfile = targetProfile === null;
   const baseDefaults = isGlobalProfile
     ? (baseConfig.sessionDefaults ?? {})
@@ -330,7 +341,7 @@ export async function persistActiveSessionDefaultsProfileToProjectConfig(
   const baseConfig = await readBaseConfigForPersistence({ fs: options.fs, configPath });
 
   const nextConfig: ProjectConfig = { ...baseConfig, schemaVersion: 1 };
-  const activeProfile = options.profile ?? null;
+  const activeProfile = normalizeProfileForPersistence(options.profile);
   if (activeProfile === null) {
     delete nextConfig.activeSessionDefaultsProfile;
   } else {

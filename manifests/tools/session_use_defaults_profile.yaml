@@ -3,7 +3,7 @@ module: mcp/tools/session-management/session_use_defaults_profile
 names:
   mcp: session_use_defaults_profile
   cli: use-defaults-profile
-description: Select the active session defaults profile for multi-target workflows.
+description: Switch the active session defaults profile.
 annotations:
   title: Use Session Defaults Profile
-  readOnlyHint: true
+  readOnlyHint: false

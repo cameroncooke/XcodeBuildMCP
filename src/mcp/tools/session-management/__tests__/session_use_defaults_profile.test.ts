@@ -25,7 +25,10 @@ describe('session-use-defaults-profile tool', () => {
     expect(typeof schema).toBe('object');
   });
 
-  it('activates a named profile', async () => {
+  it('activates an existing named profile', async () => {
+    sessionStore.setActiveProfile('ios');
+    sessionStore.setActiveProfile(null);
+
     const result = await sessionUseDefaultsProfileLogic({ profile: 'ios' });
     expect(result.isError).toBe(false);
     expect(sessionStore.getActiveProfile()).toBe('ios');
@@ -45,10 +48,16 @@ describe('session-use-defaults-profile tool', () => {
     expect(result.content[0].text).toContain('either global=true or profile');
   });
 
-  it('returns error when profile is missing and create=false', async () => {
-    const result = await sessionUseDefaultsProfileLogic({ profile: 'macos', create: false });
+  it('returns error when profile does not exist', async () => {
+    const result = await sessionUseDefaultsProfileLogic({ profile: 'macos' });
     expect(result.isError).toBe(true);
     expect(result.content[0].text).toContain('does not exist');
+  });
+
+  it('returns error when profile name is blank after trimming', async () => {
+    const result = await sessionUseDefaultsProfileLogic({ profile: '   ' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('Profile name cannot be empty');
   });
 
   it('returns status for empty args', async () => {
@@ -67,6 +76,9 @@ describe('session-use-defaults-profile tool', () => {
       },
     });
     await initConfigStore({ cwd, fs });
+
+    sessionStore.setActiveProfile('ios');
+    sessionStore.setActiveProfile(null);
 
     const result = await sessionUseDefaultsProfileLogic({ profile: 'ios', persist: true });
     expect(result.isError).toBe(false);

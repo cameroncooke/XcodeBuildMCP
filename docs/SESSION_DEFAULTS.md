@@ -28,8 +28,12 @@ You can also manually create the config file to essentially seed the defaults at
 ## Namespaced profiles
 Session defaults support named profiles so one workspace can keep separate defaults for iOS/watchOS/macOS (or any custom profile names).
 
-- Use `session_use_defaults_profile` to switch the active profile.
+- Use `session_use_defaults_profile` to switch the active profile (existing profiles only).
 - Existing tools (`session_set_defaults`, `session_show_defaults`, build/test tools) use the active profile automatically.
+- `session_set_defaults` can also accept `profile` to switch and set in one call; use `createIfNotExists: true` to create a new profile intentionally.
+- Profiles are strictly isolated: values are not inherited from global defaults or other profiles.
+- The unnamed global defaults profile exists for backwards compatibility and is the default active profile when no named profile is selected.
+- There is always an active profile context: either a named profile or `global`.
 - Use `global: true` to switch back to the unnamed global profile.
 - Set `persist: true` on `session_use_defaults_profile` to write `activeSessionDefaultsProfile` in `.xcodebuildmcp/config.yaml`.
 
@@ -58,6 +62,11 @@ Switch targets later in the same session:
   "persist":true
 }}
 ```
+
+Isolation example:
+- Global profile has `workspacePath: /repo/MyApp.xcworkspace`
+- Active profile is `watch` with only `scheme` set
+- Result: `watch` does not see global `workspacePath` until you set it on `watch` or switch back to `global`
 
 ## Related docs
 - Configuration options: [CONFIGURATION.md](CONFIGURATION.md)

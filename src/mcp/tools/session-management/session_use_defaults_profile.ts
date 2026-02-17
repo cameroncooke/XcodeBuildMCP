@@ -12,14 +12,13 @@ const schemaObj = z.object({
     .optional()
     .describe('Activate a named session defaults profile (example: ios or watch).'),
   global: z.boolean().optional().describe('Activate the global unnamed defaults profile.'),
-  create: z.boolean().optional().describe('Create the profile when missing. Defaults to true.'),
   persist: z
     .boolean()
     .optional()
     .describe('Persist activeSessionDefaultsProfile to .xcodebuildmcp/config.yaml.'),
 });
 
-type Params = z.infer<typeof schemaObj>;
+type Params = z.input<typeof schemaObj>;
 
 function normalizeProfileName(profile: string): string {
   return profile.trim();
@@ -40,7 +39,6 @@ function resolveProfileToActivate(params: Params): string | null | undefined {
 
 function validateProfileActivation(
   profileToActivate: string | null | undefined,
-  create: boolean | undefined,
 ): ToolResponse | null {
   if (profileToActivate === undefined || profileToActivate === null) {
     return null;
@@ -51,7 +49,7 @@ function validateProfileActivation(
   }
 
   const profileExists = sessionStore.listProfiles().includes(profileToActivate);
-  if (!profileExists && create === false) {
+  if (!profileExists) {
     return errorResponse(`Profile "${profileToActivate}" does not exist.`);
   }
 
@@ -66,7 +64,7 @@ export async function sessionUseDefaultsProfileLogic(params: Params): Promise<To
   }
 
   const profileToActivate = resolveProfileToActivate(params);
-  const validationError = validateProfileActivation(profileToActivate, params.create);
+  const validationError = validateProfileActivation(profileToActivate);
   if (validationError) {
     return validationError;
   }

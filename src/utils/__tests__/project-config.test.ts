@@ -269,6 +269,37 @@ describe('project-config', () => {
       expect(parsed.sessionDefaultsProfiles?.ios?.scheme).toBe('NewIOS');
       expect(parsed.sessionDefaultsProfiles?.ios?.simulatorId).toBe('SIM-1');
     });
+
+    it('trims named profile before persisting session defaults', async () => {
+      const { fs, writes } = createFsFixture({ exists: false });
+
+      await persistSessionDefaultsToProjectConfig({
+        fs,
+        cwd,
+        profile: ' ios ',
+        patch: { scheme: 'NewIOS' },
+      });
+
+      expect(writes.length).toBe(1);
+      const parsed = parseYaml(writes[0].content) as {
+        sessionDefaultsProfiles?: Record<string, Record<string, unknown>>;
+      };
+      expect(parsed.sessionDefaultsProfiles?.ios?.scheme).toBe('NewIOS');
+      expect(parsed.sessionDefaultsProfiles?.[' ios ']).toBeUndefined();
+    });
+
+    it('throws when named profile is empty after trimming', async () => {
+      const { fs } = createFsFixture({ exists: false });
+
+      await expect(
+        persistSessionDefaultsToProjectConfig({
+          fs,
+          cwd,
+          profile: '   ',
+          patch: { scheme: 'NewIOS' },
+        }),
+      ).rejects.toThrow('Profile name cannot be empty.');
+    });
   });
 
   describe('persistActiveSessionDefaultsProfileToProjectConfig', () => {
@@ -279,6 +310,22 @@ describe('project-config', () => {
         fs,
         cwd,
         profile: 'ios',
+      });
+
+      expect(writes.length).toBe(1);
+      const parsed = parseYaml(writes[0].content) as {
+        activeSessionDefaultsProfile?: string;
+      };
+      expect(parsed.activeSessionDefaultsProfile).toBe('ios');
+    });
+
+    it('trims active profile name before persisting', async () => {
+      const { fs, writes } = createFsFixture({ exists: true, readFile: 'schemaVersion: 1\n' });
+
+      await persistActiveSessionDefaultsProfileToProjectConfig({
+        fs,
+        cwd,
+        profile: ' ios ',
       });
 
       expect(writes.length).toBe(1);

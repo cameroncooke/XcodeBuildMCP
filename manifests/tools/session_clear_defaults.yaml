@@ -3,7 +3,7 @@ module: mcp/tools/session-management/session_clear_defaults
 names:
   mcp: session_clear_defaults
   cli: clear-defaults
-description: Clear session defaults.
+description: Clear session defaults for the active profile or a specified profile.
 annotations:
   title: Clear Session Defaults
   destructiveHint: true

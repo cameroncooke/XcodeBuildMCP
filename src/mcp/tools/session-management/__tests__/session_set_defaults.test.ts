@@ -258,7 +258,58 @@ describe('session-set-defaults tool', () => {
       expect(parsed.sessionDefaults?.simulatorName).toBeUndefined();
     });
 
-    it('should persist into the active named profile when selected', async () => {
+    it('sets defaults on existing named profile and activates it', async () => {
+      sessionStore.setActiveProfile('ios');
+      sessionStore.setDefaults({ scheme: 'OldIOS' });
+      sessionStore.setActiveProfile(null);
+
+      const result = await sessionSetDefaultsLogic(
+        {
+          profile: 'ios',
+          scheme: 'NewIOS',
+          simulatorName: 'iPhone 16',
+        },
+        createContext(),
+      );
+
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('Activated profile "ios".');
+      expect(sessionStore.getActiveProfile()).toBe('ios');
+      expect(sessionStore.getAll().scheme).toBe('NewIOS');
+      expect(sessionStore.getAll().simulatorName).toBe('iPhone 16');
+    });
+
+    it('returns error when profile does not exist and createIfNotExists is false', async () => {
+      const result = await sessionSetDefaultsLogic(
+        {
+          profile: 'missing',
+          scheme: 'NewIOS',
+        },
+        createContext(),
+      );
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Profile "missing" does not exist');
+      expect(result.content[0].text).toContain('createIfNotExists=true');
+    });
+
+    it('creates profile when createIfNotExists is true and activates it', async () => {
+      const result = await sessionSetDefaultsLogic(
+        {
+          profile: 'ios',
+          createIfNotExists: true,
+          scheme: 'NewIOS',
+        },
+        createContext(),
+      );
+
+      expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('Created and activated profile "ios".');
+      expect(sessionStore.getActiveProfile()).toBe('ios');
+      expect(sessionStore.getAll().scheme).toBe('NewIOS');
+    });
+
+    it('persists defaults and active profile when profile is provided', async () => {
       const yaml = [
         'schemaVersion: 1',
         'sessionDefaultsProfiles:',
@@ -268,24 +319,28 @@ describe('session-set-defaults tool', () => {
       ].join('\n');
 
       const writes: { path: string; content: string }[] = [];
+      let persistedYaml = yaml;
       const fs = createMockFileSystemExecutor({
         existsSync: (targetPath: string) => targetPath === configPath,
         readFile: async (targetPath: string) => {
           if (targetPath !== configPath) {
             throw new Error(`Unexpected readFile path: ${targetPath}`);
           }
-          return yaml;
+          return persistedYaml;
         },
         writeFile: async (targetPath: string, content: string) => {
           writes.push({ path: targetPath, content });
+          persistedYaml = content;
         },
       });
 
       await initConfigStore({ cwd, fs });
       sessionStore.setActiveProfile('ios');
+      sessionStore.setActiveProfile(null);
 
       await sessionSetDefaultsLogic(
         {
+          profile: 'ios',
           scheme: 'NewIOS',
           simulatorName: 'iPhone 16',
           persist: true,
@@ -293,12 +348,14 @@ describe('session-set-defaults tool', () => {
         createContext(),
       );
 
-      expect(writes.length).toBe(1);
-      const parsed = parseYaml(writes[0].content) as {
+      expect(writes.length).toBe(2);
+      const parsed = parseYaml(writes[writes.length - 1].content) as {
         sessionDefaultsProfiles?: Record<string, Record<string, unknown>>;
+        activeSessionDefaultsProfile?: string;
       };
       expect(parsed.sessionDefaultsProfiles?.ios?.scheme).toBe('NewIOS');
       expect(parsed.sessionDefaultsProfiles?.ios?.simulatorName).toBe('iPhone 16');
+      expect(parsed.activeSessionDefaultsProfile).toBe('ios');
     });
 
     it('should not persist when persist is true but no defaults were provided', async () => {
