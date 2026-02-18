@@ -60,30 +60,6 @@ describe('next-steps-renderer', () => {
       expect(renderNextStep(step, 'cli')).toBe('Open the Simulator app: xcodebuildmcp open-sim');
     });
 
-    it('should not throw when cliTool is absent and tool name contains underscores (regression for #226)', () => {
-      // In v2.0.7, snapshot_ui next steps referenced 'tap_coordinate' and 'take_screenshot',
-      // which had no catalog entries, so enrichNextStepsForCli left cliTool undefined.
-      // The renderer then threw: "Next step for tool 'tap_coordinate' is missing cliTool".
-      // The fix: fall back to toKebabCase(tool) instead of throwing.
-      const steps: NextStep[] = [
-        {
-          tool: 'tap_coordinate',
-          label: 'Tap on element',
-          params: { simulatorId: 'ABC', x: 0, y: 0 },
-        },
-        {
-          tool: 'take_screenshot',
-          label: 'Take screenshot for verification',
-          params: { simulatorId: 'ABC' },
-        },
-      ];
-
-      expect(() => renderNextStepsSection(steps, 'cli')).not.toThrow();
-      const result = renderNextStepsSection(steps, 'cli');
-      expect(result).toContain('xcodebuildmcp tap-coordinate');
-      expect(result).toContain('xcodebuildmcp take-screenshot');
-    });
-
     it('should format step for CLI without workflow', () => {
       const step: NextStep = {
         tool: 'open_sim',
@@ -246,6 +222,30 @@ describe('next-steps-renderer', () => {
       const result = renderNextStepsSection(steps, 'cli');
       expect(result).toContain('1. Take a look at the screenshot');
       expect(result).toContain('2. Open simulator: xcodebuildmcp open-sim');
+    });
+
+    it('should not throw when cliTool is absent and tool name contains underscores (regression for #226)', () => {
+      // In v2.0.7, snapshot_ui next steps referenced 'tap_coordinate' and 'take_screenshot',
+      // which had no catalog entries, so enrichNextStepsForCli left cliTool undefined.
+      // The renderer then threw: "Next step for tool 'tap_coordinate' is missing cliTool".
+      // The fix: fall back to toKebabCase(tool) instead of throwing.
+      const steps: NextStep[] = [
+        {
+          tool: 'tap_coordinate',
+          label: 'Tap on element',
+          params: { simulatorId: 'ABC', x: 0, y: 0 },
+        },
+        {
+          tool: 'take_screenshot',
+          label: 'Take screenshot for verification',
+          params: { simulatorId: 'ABC' },
+        },
+      ];
+
+      expect(() => renderNextStepsSection(steps, 'cli')).not.toThrow();
+      const result = renderNextStepsSection(steps, 'cli');
+      expect(result).toContain('xcodebuildmcp tap-coordinate');
+      expect(result).toContain('xcodebuildmcp take-screenshot');
     });
   });
 
