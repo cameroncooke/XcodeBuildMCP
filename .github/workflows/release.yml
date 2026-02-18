@@ -58,14 +58,17 @@ jobs:
 
       - name: Get version from tag or input
         id: get_version
+        env:
+          GH_EVENT_NAME: ${{ github.event_name }}
+          GH_INPUT_VERSION: ${{ github.event.inputs.version }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
+          if [ "$GH_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$GH_INPUT_VERSION"
             echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
             echo "IS_TEST=true" >> $GITHUB_OUTPUT
             echo "📝 Test version: $VERSION"
             # Update package.json version for test releases only
-            npm version $VERSION --no-git-tag-version
+            npm version "$VERSION" --no-git-tag-version
           else
             VERSION=${GITHUB_REF#refs/tags/v}
             echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
