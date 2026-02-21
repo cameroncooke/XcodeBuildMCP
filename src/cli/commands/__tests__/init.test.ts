@@ -243,6 +243,26 @@ describe('init command', () => {
 
       stdoutSpy.mockRestore();
     });
+
+    it('gracefully reports no installed skills when auto-detect finds no clients', async () => {
+      const emptyHome = join(tempDir, 'empty-home-uninstall');
+      mkdirSync(emptyHome, { recursive: true });
+      mockedHomedir.mockReturnValue(emptyHome);
+
+      const yargs = (await import('yargs')).default;
+      const mod = await loadInitModule();
+
+      const app = yargs(['init', '--uninstall']).scriptName('').fail(false);
+      mod.registerInitCommand(app);
+
+      const stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+      await app.parseAsync();
+
+      const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
+      expect(output).toContain('No installed skill directories found');
+
+      stdoutSpy.mockRestore();
+    });
   });
 
   describe('--print', () => {
@@ -311,7 +331,7 @@ describe('init command', () => {
       mod.registerInitCommand(app);
 
       await expect(app.parseAsync()).rejects.toThrow(
-        'Refusing to install skills into filesystem root',
+        'Refusing to use filesystem root as skills destination',
       );
     });
 

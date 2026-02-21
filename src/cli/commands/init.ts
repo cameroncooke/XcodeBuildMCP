@@ -162,12 +162,13 @@ function uninstallSkill(
 function resolveTargets(
   clientFlag: string | undefined,
   destFlag: string | undefined,
+  operation: 'install' | 'uninstall',
 ): ClientInfo[] {
   if (destFlag) {
     const resolvedDest = path.resolve(destFlag);
     if (resolvedDest === path.parse(resolvedDest).root) {
       throw new Error(
-        'Refusing to install skills into filesystem root. Use a dedicated directory.',
+        'Refusing to use filesystem root as skills destination. Use a dedicated directory.',
       );
     }
     return [{ name: 'Custom', id: 'custom', skillsDir: resolvedDest }];
@@ -184,6 +185,10 @@ function resolveTargets(
 
   const detected = detectClients();
   if (detected.length === 0) {
+    if (operation === 'uninstall') {
+      return [];
+    }
+
     throw new Error(
       'No supported AI clients detected.\n' +
         'Use --client to specify a client, --dest to specify a custom path, or --print to output the skill content.',
@@ -248,6 +253,7 @@ export function registerInitCommand(app: Argv): void {
         const targets = resolveTargets(
           argv.client as string | undefined,
           argv.dest as string | undefined,
+          'uninstall',
         );
         let anyRemoved = false;
 
@@ -274,6 +280,7 @@ export function registerInitCommand(app: Argv): void {
       const targets = resolveTargets(
         argv.client as string | undefined,
         argv.dest as string | undefined,
+        'install',
       );
 
       const results: InstallResult[] = [];
