@@ -3,7 +3,7 @@ import { sessionStore } from '../session-store.ts';
 
 describe('SessionStore', () => {
   beforeEach(() => {
-    sessionStore.clear();
+    sessionStore.clearAll();
   });
 
   it('should set and get defaults', () => {
@@ -75,9 +75,12 @@ describe('SessionStore', () => {
     expect(sessionStore.getAll()).toMatchObject({ workspacePath: '/repo/MyApp.xcworkspace' });
   });
 
-  it('clear(keys) only affects active profile while clear() clears all profiles', () => {
+  it('clear(keys) only affects active profile while clear() clears active profile and resets to global', () => {
+    sessionStore.setDefaults({ scheme: 'GlobalApp' });
+
     sessionStore.setActiveProfile('ios');
     sessionStore.setDefaults({ scheme: 'iOSApp', simulatorId: 'SIM-1' });
+
     sessionStore.setActiveProfile('watch');
     sessionStore.setDefaults({ scheme: 'WatchApp', simulatorId: 'SIM-2' });
 
@@ -89,10 +92,23 @@ describe('SessionStore', () => {
     sessionStore.setActiveProfile('watch');
     expect(sessionStore.getAll().simulatorId).toBe('SIM-2');
 
+    sessionStore.setActiveProfile('ios');
     sessionStore.clear();
-    expect(sessionStore.getAll()).toEqual({});
     expect(sessionStore.getActiveProfile()).toBeNull();
-    expect(sessionStore.listProfiles()).toEqual([]);
+    expect(sessionStore.getAll()).toMatchObject({ scheme: 'GlobalApp' });
+
+    sessionStore.setActiveProfile('watch');
+    expect(sessionStore.getAll()).toMatchObject({ scheme: 'WatchApp', simulatorId: 'SIM-2' });
+  });
+
+  it('does not retain external env object references passed into setDefaults', () => {
+    const env = { API_KEY: 'secret' };
+    sessionStore.setDefaults({ env });
+
+    env.API_KEY = 'tampered';
+
+    const stored = sessionStore.getAll();
+    expect(stored.env).toEqual({ API_KEY: 'secret' });
   });
 
   it('getAll returns a detached copy of env so mutations do not affect stored defaults', () => {

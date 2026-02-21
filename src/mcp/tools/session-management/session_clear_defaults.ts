@@ -38,7 +38,7 @@ export async function sessionClearDefaultsLogic(params: Params): Promise<ToolRes
       };
     }
 
-    sessionStore.clear();
+    sessionStore.clearAll();
     return { content: [{ type: 'text', text: 'All session defaults cleared' }], isError: false };
   }
 
@@ -73,7 +73,7 @@ export async function sessionClearDefaultsLogic(params: Params): Promise<ToolRes
   if (params.keys) {
     sessionStore.clear(params.keys);
   } else {
-    sessionStore.clearForProfile(sessionStore.getActiveProfile());
+    sessionStore.clear();
   }
 
   return { content: [{ type: 'text', text: 'Session defaults cleared' }], isError: false };

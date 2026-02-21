@@ -21,7 +21,7 @@ async function initConfigStoreForTest(overrides?: RuntimeConfigOverrides): Promi
 
 describe('createSessionAwareTool', () => {
   beforeEach(async () => {
-    sessionStore.clear();
+    sessionStore.clearAll();
     await initConfigStoreForTest({ disableSessionDefaults: false });
   });
 
@@ -159,7 +159,7 @@ describe('createSessionAwareTool', () => {
     expect(res.content[0].text).toBe('OK');
   });
 
-  it('exclusivePairs should NOT prune when user provides undefined (key present)', async () => {
+  it('exclusivePairs should NOT prune when user provides undefined (treated as not provided)', async () => {
     const handlerWithExclusive = createSessionAwareTool<Params>({
       internalSchema,
       logicFunction: logic,
