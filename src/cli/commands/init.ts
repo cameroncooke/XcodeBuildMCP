@@ -31,8 +31,8 @@ function altSkillDirName(skillType: SkillType): string {
   return skillType === 'mcp' ? 'xcodebuildmcp-cli' : 'xcodebuildmcp';
 }
 
-function skillLabel(skillType: SkillType): string {
-  return skillType === 'mcp' ? 'xcodebuildmcp' : 'xcodebuildmcp-cli';
+function skillDisplayName(skillType: SkillType): string {
+  return skillType === 'mcp' ? 'XcodeBuildMCP (MCP server)' : 'XcodeBuildMCP CLI';
 }
 
 function detectClients(): ClientInfo[] {
@@ -285,7 +285,7 @@ export function registerInitCommand(app: Argv): void {
         results.push(result);
       }
 
-      writeLine(`Installed ${skillLabel(skillType)} skill`);
+      writeLine(`Installed ${skillDisplayName(skillType)} skill`);
       for (const result of results) {
         writeLine(`  Client: ${result.client}`);
         writeLine(`  Location: ${result.location}`);

@@ -78,7 +78,7 @@ describe('init command', () => {
       expect(readFileSync(installed, 'utf8')).toBe('# CLI Skill Content');
 
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('Installed xcodebuildmcp-cli skill');
+      expect(output).toContain('Installed XcodeBuildMCP CLI skill');
       expect(output).toContain('Custom');
       expect(output).toContain(installed);
 
@@ -103,7 +103,7 @@ describe('init command', () => {
       expect(readFileSync(installed, 'utf8')).toBe('# MCP Skill Content');
 
       const output = stdoutSpy.mock.calls.map((c) => String(c[0])).join('');
-      expect(output).toContain('Installed xcodebuildmcp skill');
+      expect(output).toContain('Installed XcodeBuildMCP (MCP server) skill');
 
       stdoutSpy.mockRestore();
     });
