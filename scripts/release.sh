@@ -51,7 +51,7 @@ EOF
 
 # Function to get the highest version from git tags
 get_highest_version() {
-  git tag | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?$' | sed 's/^v//' | sort -V | tail -1
+  git tag | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$' | sed 's/^v//' | sort -V | tail -1
 }
 
 # Function to parse version components
@@ -92,9 +92,9 @@ bump_version() {
 # Function to validate version format
 validate_version() {
   local version=$1
-  if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?$ ]]; then
+  if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
     echo "❌ Invalid version format: $version"
-    echo "Version must be in format: x.y.z or x.y.z-tag.n (e.g., 1.4.0 or 1.4.0-beta.3)"
+    echo "Version must be in format: x.y.z or x.y.z-prerelease (e.g., 1.4.0, 1.4.0-beta, 1.4.0-beta.3)"
     return 1
   fi
   return 0
@@ -427,8 +427,8 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
   # README update
   echo ""
   echo "📝 Updating install tags in README.md and docs/GETTING_STARTED.md..."
-  README_AT_TAG_REGEX='xcodebuildmcp@([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?|latest|beta|alpha)'
-  README_URLENCODED_AT_TAG_REGEX='xcodebuildmcp%40([0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?|latest|beta|alpha)'
+  README_AT_TAG_REGEX='xcodebuildmcp@([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?|latest|beta|alpha)'
+  README_URLENCODED_AT_TAG_REGEX='xcodebuildmcp%40([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?|latest|beta|alpha)'
   run sed_inplace "s/${README_AT_TAG_REGEX}/xcodebuildmcp@${NPM_TAG}/g" README.md
   run sed_inplace "s/${README_AT_TAG_REGEX}/xcodebuildmcp@${NPM_TAG}/g" docs/GETTING_STARTED.md
   run sed_inplace "s/${README_URLENCODED_AT_TAG_REGEX}/xcodebuildmcp%40${NPM_TAG}/g" README.md
