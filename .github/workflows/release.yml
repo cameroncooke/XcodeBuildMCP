@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Test version (e.g., 1.9.1-beta.1)'
+        description: 'Test version (e.g., 1.9.1-beta or 1.9.1-beta.1)'
         required: true
         type: string
 
@@ -73,7 +73,7 @@ jobs:
           fi
 
           # Validate version format before using it in later steps.
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+\.[0-9]+)?$ ]]; then
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
             echo "Invalid version format: $VERSION" >&2
             exit 1
           fi
