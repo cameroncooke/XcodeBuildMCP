@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added `xcodebuildmcp init` CLI command to install agent skills, replacing the standalone `install-skill.sh` script. Supports auto-detection of AI clients (Claude Code, Cursor, Codex), `--print` for unsupported clients, and `--uninstall` for removal.
+
 ### Changed
 
 - Changed MCP `xcode-ide` integration to expose manifest-managed gateway tools (`xcode_ide_list_tools`, `xcode_ide_call_tool`) while keeping CLI dynamic `xcode_tools_*` behavior unchanged ([#210](https://github.com/getsentry/XcodeBuildMCP/issues/210))
@@ -11,6 +15,10 @@
 
 - Removed startup dependency on handshake-time Xcode bridge `tools/list` sync for MCP tool registration, preventing bridge list latency from delaying initial connect ([#210](https://github.com/getsentry/XcodeBuildMCP/issues/210))
 - Fixed Sentry telemetry scope to capture only internal XcodeBuildMCP runtime failures, removing broad MCP wrapping, PII-heavy tags, and default per-error log capture ([#204](https://github.com/getsentry/XcodeBuildMCP/issues/204))
+
+### Removed
+
+- Removed `scripts/install-skill.sh` in favour of `xcodebuildmcp init`.
 
 ## [2.0.7]
 

@@ -87,6 +87,10 @@ if [[ ! -d "$PORTABLE_ROOT/libexec/bundled/Frameworks" ]]; then
   echo "Missing bundled Frameworks under libexec"
   exit 1
 fi
+if [[ ! -d "$PORTABLE_ROOT/libexec/skills" ]]; then
+  echo "Missing skills directory under libexec"
+  exit 1
+fi
 
 HOST_ARCH="$(uname -m)"
 NODE_RUNTIME="$PORTABLE_ROOT/libexec/node-runtime"
@@ -120,6 +124,7 @@ done
 if [[ "$CAN_EXECUTE" == "true" ]]; then
   "$PORTABLE_ROOT/bin/xcodebuildmcp" --help >/dev/null
   "$PORTABLE_ROOT/bin/xcodebuildmcp-doctor" --help >/dev/null
+  "$PORTABLE_ROOT/bin/xcodebuildmcp" init --print >/dev/null
 else
   echo "Skipping binary execution checks: host arch ($HOST_ARCH) not in runtime archs ($RUNTIME_ARCHS)"
 fi

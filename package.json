@@ -47,7 +47,8 @@
     "build",
     "bundled",
     "plugins",
-    "manifests"
+    "manifests",
+    "skills"
   ],
   "keywords": [
     "xcodebuild",
