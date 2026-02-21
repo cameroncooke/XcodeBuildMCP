@@ -29,11 +29,19 @@ class SessionStore {
   private activeProfile: string | null = null;
   private revision = 0;
 
+  private cloneDefaults(defaults: SessionDefaults): SessionDefaults {
+    const copy = { ...defaults };
+    if (copy.env) {
+      copy.env = { ...copy.env };
+    }
+    return copy;
+  }
+
   private getProfileLabel(profile: string | null): string {
     return profile ?? 'global';
   }
 
-  private clearAll(): void {
+  private clearAllInternal(): void {
     this.globalDefaults = {};
     this.profiles = {};
     this.activeProfile = null;
@@ -55,11 +63,12 @@ class SessionStore {
   }
 
   private setDefaultsForResolvedProfile(profile: string | null, defaults: SessionDefaults): void {
+    const storedDefaults = this.cloneDefaults(defaults);
     if (profile === null) {
-      this.globalDefaults = defaults;
+      this.globalDefaults = storedDefaults;
       return;
     }
-    this.profiles[profile] = defaults;
+    this.profiles[profile] = storedDefaults;
   }
 
   setDefaults(partial: Partial<SessionDefaults>): void {
@@ -77,16 +86,25 @@ class SessionStore {
 
   clear(keys?: (keyof SessionDefaults)[]): void {
     if (keys == null) {
-      this.clearAll();
+      this.clearForProfile(this.activeProfile);
       return;
     }
 
     this.clearForProfile(this.activeProfile, keys);
   }
 
+  clearAll(): void {
+    this.clearAllInternal();
+  }
+
   clearForProfile(profile: string | null, keys?: (keyof SessionDefaults)[]): void {
     if (keys == null) {
+      const wasActiveNamedProfile = profile !== null && profile === this.activeProfile;
       this.clearAllForProfile(profile);
+      if (wasActiveNamedProfile) {
+        this.activeProfile = null;
+        log('info', '[Session] Active defaults profile reset to global');
+      }
       return;
     }
 
@@ -115,11 +133,7 @@ class SessionStore {
 
   getAllForProfile(profile: string | null): SessionDefaults {
     const defaults = profile === null ? this.globalDefaults : (this.profiles[profile] ?? {});
-    const copy = { ...defaults };
-    if (copy.env) {
-      copy.env = { ...copy.env };
-    }
-    return copy;
+    return this.cloneDefaults(defaults);
   }
 
   listProfiles(): string[] {

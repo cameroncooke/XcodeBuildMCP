@@ -4,7 +4,7 @@ import { schema, handler, sessionClearDefaultsLogic } from '../session_clear_def
 
 describe('session-clear-defaults tool', () => {
   beforeEach(() => {
-    sessionStore.clear();
+    sessionStore.clearAll();
     sessionStore.setDefaults({
       scheme: 'MyScheme',
       projectPath: '/path/to/proj.xcodeproj',
@@ -17,7 +17,7 @@ describe('session-clear-defaults tool', () => {
   });
 
   afterEach(() => {
-    sessionStore.clear();
+    sessionStore.clearAll();
   });
 
   describe('Export Field Validation', () => {
@@ -86,7 +86,7 @@ describe('session-clear-defaults tool', () => {
       const result = await sessionClearDefaultsLogic({});
       expect(result.isError).toBe(false);
 
-      expect(sessionStore.getAll()).toEqual({});
+      expect(sessionStore.getAll().scheme).toBe('Global');
       expect(sessionStore.listProfiles()).toEqual([]);
 
       sessionStore.setActiveProfile(null);

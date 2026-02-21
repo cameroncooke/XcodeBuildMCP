@@ -10,7 +10,7 @@ import type { CommandExecutor } from '../../../../utils/execution/index.ts';
 describe('session-set-defaults tool', () => {
   beforeEach(() => {
     __resetConfigStoreForTests();
-    sessionStore.clear();
+    sessionStore.clearAll();
   });
 
   const cwd = '/repo';
@@ -97,6 +97,16 @@ describe('session-set-defaults tool', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('Parameter validation failed');
       expect(result.content[0].text).toContain('env');
+    });
+
+    it('should reject empty string defaults for required string fields', async () => {
+      const result = await handler({
+        scheme: '',
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Parameter validation failed');
+      expect(result.content[0].text).toContain('scheme');
     });
 
     it('should clear workspacePath when projectPath is set', async () => {
