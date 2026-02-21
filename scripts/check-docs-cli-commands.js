@@ -125,7 +125,7 @@ function extractCommandCandidates(content) {
 }
 
 function findInvalidCommands(files, validPairs, validWorkflows) {
-  const validTopLevel = new Set(['mcp', 'tools', 'daemon']);
+  const validTopLevel = new Set(['mcp', 'tools', 'daemon', 'init']);
   const validDaemonActions = new Set(['status', 'start', 'stop', 'restart', 'list']);
   const findings = [];
 

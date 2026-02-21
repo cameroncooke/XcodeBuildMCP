@@ -300,13 +300,19 @@ XcodeBuildMCP now includes two optional agent skills:
 - **CLI Skill**: Primes the agent with instructions on how to navigate the CLI (recommended when using the CLI).
 
 
-To install, copy and paste the command below into a terminal and follow the on-screen instructions.
+To install with a global binary:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/getsentry/XcodeBuildMCP/v2.0.7/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh
+xcodebuildmcp init
 ```
 
-For further information on how to install the skill, see: [docs/SKILLS.md](docs/SKILLS.md)
+Or install directly via npx without a global install:
+
+```bash
+npx -y xcodebuildmcp@latest init
+```
+
+For further information on installing skills, see: [docs/SKILLS.md](docs/SKILLS.md)
 
 ## Notes
 

@@ -229,10 +229,16 @@ v2.0.0 introduces optional skill files that prime your coding agent with usage i
 - **CLI Skill** -- strongly recommended when using the CLI with a coding agent.
 - **MCP Skill** -- optional when using the MCP server; gives the agent better context on available tools.
 
-Install via the interactive installer:
+Install via the built-in CLI command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/getsentry/XcodeBuildMCP/v2.0.0/scripts/install-skill.sh -o install-skill.sh && bash install-skill.sh
+xcodebuildmcp init
+```
+
+Or run it via npx without a global install:
+
+```bash
+npx -y xcodebuildmcp@latest init
 ```
 
 See [SKILLS.md](SKILLS.md) for more details.

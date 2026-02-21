@@ -437,19 +437,6 @@ if [[ "$SKIP_VERSION_UPDATE" == "false" ]]; then
   CURSOR_INSTALL_CONFIG=$(node -e "const tag='${NPM_TAG}';const config=JSON.stringify({command:\`npx -y xcodebuildmcp@\${tag} mcp\`});console.log(encodeURIComponent(Buffer.from(config).toString('base64')));")
   run node -e "const fs=require('fs');const path='README.md';const next='config=${CURSOR_INSTALL_CONFIG}';const contents=fs.readFileSync(path,'utf8');const updated=contents.replace(/config=[^)\\s]+/g,next);fs.writeFileSync(path,updated);"
 
-  # Update skill installer URL and versioned ref in README.md
-  echo "📝 Updating skill installer URL in README.md..."
-  README_SKILL_INSTALL_URL_REGEX='https://raw.githubusercontent.com/getsentry/XcodeBuildMCP/[^/]+/scripts/install-skill.sh'
-  run sed_inplace "s#${README_SKILL_INSTALL_URL_REGEX}#https://raw.githubusercontent.com/getsentry/XcodeBuildMCP/v${VERSION}/scripts/install-skill.sh#g" README.md
-
-  # Update skill installer URL in docs/SKILLS.md
-  if [[ -f docs/SKILLS.md ]]; then
-    echo "📝 Updating skill installer URL in docs/SKILLS.md..."
-    run sed_inplace "s#${README_SKILL_INSTALL_URL_REGEX}#https://raw.githubusercontent.com/getsentry/XcodeBuildMCP/v${VERSION}/scripts/install-skill.sh#g" docs/SKILLS.md
-  else
-    echo "⚠️  docs/SKILLS.md not found; skipping update"
-  fi
-
   # server.json update
   echo ""
   if [[ -f server.json ]]; then

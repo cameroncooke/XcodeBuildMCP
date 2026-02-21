@@ -6,6 +6,7 @@ import { getSocketPath, getWorkspaceKey, resolveWorkspaceRoot } from './daemon/s
 import { startMcpServer } from './server/start-mcp-server.ts';
 import { listCliWorkflowIdsFromManifest } from './runtime/tool-catalog.ts';
 import { flushAndCloseSentry, initSentry, recordBootstrapDurationMetric } from './utils/sentry.ts';
+import { setLogLevel, type LogLevel } from './utils/logger.ts';
 
 function findTopLevelCommand(argv: string[]): string | undefined {
   const flagsWithValue = new Set(['--socket', '--log-level', '--style']);
@@ -30,10 +31,51 @@ function findTopLevelCommand(argv: string[]): string | undefined {
   return undefined;
 }
 
+async function runInitCommand(): Promise<void> {
+  const yargs = (await import('yargs')).default;
+  const { hideBin } = await import('yargs/helpers');
+  const { registerInitCommand } = await import('./cli/commands/init.ts');
+
+  const app = yargs(hideBin(process.argv))
+    .scriptName('')
+    .strict()
+    .help()
+    .option('socket', {
+      type: 'string',
+      describe: 'Override daemon unix socket path',
+      hidden: true,
+    })
+    .option('log-level', {
+      type: 'string',
+      describe: 'Set log verbosity level',
+      choices: ['none', 'error', 'warning', 'info', 'debug'] as const,
+      default: 'none',
+    })
+    .option('style', {
+      type: 'string',
+      describe: 'Output verbosity (minimal hides next steps)',
+      choices: ['normal', 'minimal'] as const,
+      default: 'normal',
+    })
+    .middleware((argv) => {
+      const level = argv['log-level'] as LogLevel | undefined;
+      if (level) {
+        setLogLevel(level);
+      }
+    });
+  registerInitCommand(app);
+  await app.parseAsync();
+}
+
 async function main(): Promise<void> {
   const cliBootstrapStartedAt = Date.now();
-  if (process.argv.includes('mcp')) {
+  const earlyCommand = findTopLevelCommand(process.argv.slice(2));
+  if (earlyCommand === 'mcp') {
     await startMcpServer();
+    return;
+  }
+  if (earlyCommand === 'init') {
+    await runInitCommand();
     return;
   }
   initSentry({ mode: 'cli' });

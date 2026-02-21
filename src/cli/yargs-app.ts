@@ -3,6 +3,7 @@ import { hideBin } from 'yargs/helpers';
 import type { ToolCatalog } from '../runtime/types.ts';
 import type { ResolvedRuntimeConfig } from '../utils/config-store.ts';
 import { registerDaemonCommands } from './commands/daemon.ts';
+import { registerInitCommand } from './commands/init.ts';
 import { registerMcpCommand } from './commands/mcp.ts';
 import { registerToolsCommand } from './commands/tools.ts';
 import { registerToolCommands } from './register-tool-commands.ts';
@@ -70,6 +71,7 @@ export function buildYargsApp(opts: YargsAppOptions): ReturnType<typeof yargs> {
 
   // Register command groups with workspace context
   registerMcpCommand(app);
+  registerInitCommand(app);
   registerToolsCommand(app);
   registerToolCommands(app, opts.catalog, {
     workspaceRoot: opts.workspaceRoot,
